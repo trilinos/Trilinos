@@ -1,3 +1,4 @@
+#include <PyROL_Teuchos_Custom.hpp>
 #include <ROL_AffineTransformConstraint.hpp>
 #include <ROL_AffineTransformObjective.hpp>
 #include <ROL_AugmentedLagrangianObjective.hpp>

@@ -63,3 +63,5 @@ ROL_TrustRegionTypes.cpp
 ROL_KelleySachsModel.cpp
 unknown/unknown_4.cpp
 unknown/unknown_5.cpp
+PyROL_Teuchos_ETI.cpp
+ROL_PartitionedVector.cpp

@@ -1,3 +1,4 @@
+#include <PyROL_Teuchos_Custom.hpp>
 #include <ROL_BoundConstraint.hpp>
 #include <ROL_ColemanLiModel.hpp>
 #include <ROL_Elementwise_Function.hpp>
@@ -53,12 +54,12 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<double>(); } ) );
 	}
 	{ // Teuchos::ConstTypeTraits file:Teuchos_ConstTypeTraits.hpp line:59
-		pybind11::class_<Teuchos::ConstTypeTraits<Teuchos::any::placeholder>, Teuchos::RCP<Teuchos::ConstTypeTraits<Teuchos::any::placeholder>>> cl(M("Teuchos"), "ConstTypeTraits_Teuchos_any_placeholder_t", "", pybind11::module_local());
-		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<Teuchos::any::placeholder>(); } ) );
-	}
-	{ // Teuchos::ConstTypeTraits file:Teuchos_ConstTypeTraits.hpp line:59
 		pybind11::class_<Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>, Teuchos::RCP<Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>>> cl(M("Teuchos"), "ConstTypeTraits_ROL_TrustRegionModel_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>(); } ) );
+	}
+	{ // Teuchos::ConstTypeTraits file:Teuchos_ConstTypeTraits.hpp line:59
+		pybind11::class_<Teuchos::ConstTypeTraits<Teuchos::any::placeholder>, Teuchos::RCP<Teuchos::ConstTypeTraits<Teuchos::any::placeholder>>> cl(M("Teuchos"), "ConstTypeTraits_Teuchos_any_placeholder_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<Teuchos::any::placeholder>(); } ) );
 	}
 	// Teuchos::demangleName(const std::string &) file:Teuchos_TypeNameTraits.hpp line:77
 	M("Teuchos").def("demangleName", (std::string (*)(const std::string &)) &Teuchos::demangleName, "Demangle a C++ name if valid.\n\n The name must have come from typeid(...).name() in order to be\n valid name to pass to this function.\n\n \n\n \n\nC++: Teuchos::demangleName(const std::string &) --> std::string", pybind11::arg("mangledName"));
@@ -82,12 +83,6 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 		cl.def_static("concreteName", (std::string (*)(const class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > &)) &Teuchos::TypeNameTraits<Teuchos::basic_FancyOStream<char, std::char_traits<char> > >::concreteName, "C++: Teuchos::TypeNameTraits<Teuchos::basic_FancyOStream<char, std::char_traits<char> > >::concreteName(const class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > &) --> std::string", pybind11::arg("t"));
 	}
 	{ // Teuchos::TypeNameTraits file:Teuchos_TypeNameTraits.hpp line:85
-		pybind11::class_<Teuchos::TypeNameTraits<Teuchos::any::placeholder>, Teuchos::RCP<Teuchos::TypeNameTraits<Teuchos::any::placeholder>>> cl(M("Teuchos"), "TypeNameTraits_Teuchos_any_placeholder_t", "", pybind11::module_local());
-		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<Teuchos::any::placeholder>(); } ) );
-		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<Teuchos::any::placeholder>::name, "C++: Teuchos::TypeNameTraits<Teuchos::any::placeholder>::name() --> std::string");
-		cl.def_static("concreteName", (std::string (*)(const class Teuchos::any::placeholder &)) &Teuchos::TypeNameTraits<Teuchos::any::placeholder>::concreteName, "C++: Teuchos::TypeNameTraits<Teuchos::any::placeholder>::concreteName(const class Teuchos::any::placeholder &) --> std::string", pybind11::arg("t"));
-	}
-	{ // Teuchos::TypeNameTraits file:Teuchos_TypeNameTraits.hpp line:85
 		pybind11::class_<Teuchos::TypeNameTraits<ROL::TrustRegionModel<double>>, Teuchos::RCP<Teuchos::TypeNameTraits<ROL::TrustRegionModel<double>>>> cl(M("Teuchos"), "TypeNameTraits_ROL_TrustRegionModel_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<ROL::TrustRegionModel<double>>(); } ) );
 		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<ROL::TrustRegionModel<double> >::name, "C++: Teuchos::TypeNameTraits<ROL::TrustRegionModel<double> >::name() --> std::string");
@@ -104,6 +99,12 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<ROL::ColemanLiModel<double>>(); } ) );
 		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<ROL::ColemanLiModel<double> >::name, "C++: Teuchos::TypeNameTraits<ROL::ColemanLiModel<double> >::name() --> std::string");
 		cl.def_static("concreteName", (std::string (*)(const class ROL::ColemanLiModel<double> &)) &Teuchos::TypeNameTraits<ROL::ColemanLiModel<double> >::concreteName, "C++: Teuchos::TypeNameTraits<ROL::ColemanLiModel<double> >::concreteName(const class ROL::ColemanLiModel<double> &) --> std::string", pybind11::arg("t"));
+	}
+	{ // Teuchos::TypeNameTraits file:Teuchos_TypeNameTraits.hpp line:85
+		pybind11::class_<Teuchos::TypeNameTraits<Teuchos::any::placeholder>, Teuchos::RCP<Teuchos::TypeNameTraits<Teuchos::any::placeholder>>> cl(M("Teuchos"), "TypeNameTraits_Teuchos_any_placeholder_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<Teuchos::any::placeholder>(); } ) );
+		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<Teuchos::any::placeholder>::name, "C++: Teuchos::TypeNameTraits<Teuchos::any::placeholder>::name() --> std::string");
+		cl.def_static("concreteName", (std::string (*)(const class Teuchos::any::placeholder &)) &Teuchos::TypeNameTraits<Teuchos::any::placeholder>::concreteName, "C++: Teuchos::TypeNameTraits<Teuchos::any::placeholder>::concreteName(const class Teuchos::any::placeholder &) --> std::string", pybind11::arg("t"));
 	}
 	// Teuchos::typeName(const class Teuchos::any::placeholder &) file:Teuchos_TypeNameTraits.hpp line:115
 	M("Teuchos").def("typeName", (std::string (*)(const class Teuchos::any::placeholder &)) &Teuchos::typeName<Teuchos::any::placeholder>, "C++: Teuchos::typeName(const class Teuchos::any::placeholder &) --> std::string", pybind11::arg("t"));

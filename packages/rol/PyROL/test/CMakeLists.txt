@@ -1,0 +1,5 @@
+ENABLE_TESTING()
+
+INCLUDE(PyROLMakeTest)
+
+PyROL_MAKE_TEST(parameterList)

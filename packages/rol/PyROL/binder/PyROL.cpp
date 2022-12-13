@@ -73,6 +73,8 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_4(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_PyROL_Teuchos_ETI(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_PartitionedVector(std::function< pybind11::module &(std::string const &namespace_) > &M);
 
 
 PYBIND11_MODULE(PyROL, root_module) {
@@ -179,5 +181,7 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_KelleySachsModel(M);
 	bind_unknown_unknown_4(M);
 	bind_unknown_unknown_5(M);
+	bind_PyROL_Teuchos_ETI(M);
+	bind_ROL_PartitionedVector(M);
 
 }

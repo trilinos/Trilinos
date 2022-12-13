@@ -1,5 +1,17 @@
+#include <PyROL_Teuchos_Custom.hpp>
+#include <Teuchos_ENull.hpp>
+#include <Teuchos_FilteredIterator.hpp>
+#include <Teuchos_ParameterEntry.hpp>
+#include <Teuchos_ParameterEntryValidator.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListModifier.hpp>
+#include <Teuchos_PtrDecl.hpp>
+#include <Teuchos_RCPDecl.hpp>
+#include <Teuchos_RCPNode.hpp>
+#include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <Teuchos_any.hpp>
 #include <cwchar>
+#include <deque>
 #include <ios>
 #include <iterator>
 #include <locale>
@@ -25,64 +37,6 @@
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
-
-// Teuchos::any::holder file:Teuchos_any.hpp line:268
-struct PyCallBack_Teuchos_any_holder_std_string_t : public Teuchos::any::holder<std::string> {
-	using Teuchos::any::holder<std::string>::holder;
-
-	const class std::type_info & type() const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "type");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class std::type_info &>::value) {
-				static pybind11::detail::override_caster_t<const class std::type_info &> caster;
-				return pybind11::detail::cast_ref<const class std::type_info &>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<const class std::type_info &>(std::move(o));
-		}
-		return holder::type();
-	}
-	std::string typeName() const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "typeName");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
-				static pybind11::detail::override_caster_t<std::string> caster;
-				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<std::string>(std::move(o));
-		}
-		return holder::typeName();
-	}
-	class Teuchos::any::placeholder * clone() const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "clone");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::any::placeholder *>::value) {
-				static pybind11::detail::override_caster_t<class Teuchos::any::placeholder *> caster;
-				return pybind11::detail::cast_ref<class Teuchos::any::placeholder *>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<class Teuchos::any::placeholder *>(std::move(o));
-		}
-		return holder::clone();
-	}
-	bool same(const class Teuchos::any::placeholder & a0) const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "same");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<bool>::value) {
-				static pybind11::detail::override_caster_t<bool> caster;
-				return pybind11::detail::cast_ref<bool>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<bool>(std::move(o));
-		}
-		return holder::same(a0);
-	}
-};
 
 // Teuchos::any::holder file:Teuchos_any.hpp line:268
 struct PyCallBack_Teuchos_any_holder_bool_t : public Teuchos::any::holder<bool> {
@@ -130,6 +84,64 @@ struct PyCallBack_Teuchos_any_holder_bool_t : public Teuchos::any::holder<bool> 
 	bool same(const class Teuchos::any::placeholder & a0) const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<bool> *>(this), "same");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<bool>::value) {
+				static pybind11::detail::override_caster_t<bool> caster;
+				return pybind11::detail::cast_ref<bool>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<bool>(std::move(o));
+		}
+		return holder::same(a0);
+	}
+};
+
+// Teuchos::any::holder file:Teuchos_any.hpp line:268
+struct PyCallBack_Teuchos_any_holder_int_t : public Teuchos::any::holder<int> {
+	using Teuchos::any::holder<int>::holder;
+
+	const class std::type_info & type() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "type");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::type_info &>::value) {
+				static pybind11::detail::override_caster_t<const class std::type_info &> caster;
+				return pybind11::detail::cast_ref<const class std::type_info &>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<const class std::type_info &>(std::move(o));
+		}
+		return holder::type();
+	}
+	std::string typeName() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "typeName");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
+				static pybind11::detail::override_caster_t<std::string> caster;
+				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::string>(std::move(o));
+		}
+		return holder::typeName();
+	}
+	class Teuchos::any::placeholder * clone() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "clone");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::any::placeholder *>::value) {
+				static pybind11::detail::override_caster_t<class Teuchos::any::placeholder *> caster;
+				return pybind11::detail::cast_ref<class Teuchos::any::placeholder *>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<class Teuchos::any::placeholder *>(std::move(o));
+		}
+		return holder::clone();
+	}
+	bool same(const class Teuchos::any::placeholder & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "same");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
 			if (pybind11::detail::cast_is_temporary_value_reference<bool>::value) {
@@ -201,12 +213,12 @@ struct PyCallBack_Teuchos_any_holder_double_t : public Teuchos::any::holder<doub
 };
 
 // Teuchos::any::holder file:Teuchos_any.hpp line:268
-struct PyCallBack_Teuchos_any_holder_int_t : public Teuchos::any::holder<int> {
-	using Teuchos::any::holder<int>::holder;
+struct PyCallBack_Teuchos_any_holder_std_string_t : public Teuchos::any::holder<std::string> {
+	using Teuchos::any::holder<std::string>::holder;
 
 	const class std::type_info & type() const override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "type");
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "type");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
 			if (pybind11::detail::cast_is_temporary_value_reference<const class std::type_info &>::value) {
@@ -219,7 +231,7 @@ struct PyCallBack_Teuchos_any_holder_int_t : public Teuchos::any::holder<int> {
 	}
 	std::string typeName() const override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "typeName");
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "typeName");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
 			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
@@ -232,7 +244,7 @@ struct PyCallBack_Teuchos_any_holder_int_t : public Teuchos::any::holder<int> {
 	}
 	class Teuchos::any::placeholder * clone() const override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "clone");
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "clone");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
 			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::any::placeholder *>::value) {
@@ -245,7 +257,65 @@ struct PyCallBack_Teuchos_any_holder_int_t : public Teuchos::any::holder<int> {
 	}
 	bool same(const class Teuchos::any::placeholder & a0) const override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<int> *>(this), "same");
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<std::string> *>(this), "same");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<bool>::value) {
+				static pybind11::detail::override_caster_t<bool> caster;
+				return pybind11::detail::cast_ref<bool>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<bool>(std::move(o));
+		}
+		return holder::same(a0);
+	}
+};
+
+// Teuchos::any::holder file:Teuchos_any.hpp line:268
+struct PyCallBack_Teuchos_any_holder_Teuchos_ParameterList_t : public Teuchos::any::holder<Teuchos::ParameterList> {
+	using Teuchos::any::holder<Teuchos::ParameterList>::holder;
+
+	const class std::type_info & type() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<Teuchos::ParameterList> *>(this), "type");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::type_info &>::value) {
+				static pybind11::detail::override_caster_t<const class std::type_info &> caster;
+				return pybind11::detail::cast_ref<const class std::type_info &>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<const class std::type_info &>(std::move(o));
+		}
+		return holder::type();
+	}
+	std::string typeName() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<Teuchos::ParameterList> *>(this), "typeName");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
+				static pybind11::detail::override_caster_t<std::string> caster;
+				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::string>(std::move(o));
+		}
+		return holder::typeName();
+	}
+	class Teuchos::any::placeholder * clone() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<Teuchos::ParameterList> *>(this), "clone");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::any::placeholder *>::value) {
+				static pybind11::detail::override_caster_t<class Teuchos::any::placeholder *> caster;
+				return pybind11::detail::cast_ref<class Teuchos::any::placeholder *>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<class Teuchos::any::placeholder *>(std::move(o));
+		}
+		return holder::clone();
+	}
+	bool same(const class Teuchos::any::placeholder & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::any::holder<Teuchos::ParameterList> *>(this), "same");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
 			if (pybind11::detail::cast_is_temporary_value_reference<bool>::value) {
@@ -306,26 +376,6 @@ void bind_Teuchos_any(std::function< pybind11::module &(std::string const &names
 
 		{ // Teuchos::any::holder file:Teuchos_any.hpp line:268
 			auto & enclosing_class = cl;
-			pybind11::class_<Teuchos::any::holder<std::string>, Teuchos::RCP<Teuchos::any::holder<std::string>>, PyCallBack_Teuchos_any_holder_std_string_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_std_string_t", "", pybind11::module_local());
-			cl.def( pybind11::init<const std::string &>(), pybind11::arg("value") );
-
-			cl.def( pybind11::init( [](PyCallBack_Teuchos_any_holder_std_string_t const &o){ return new PyCallBack_Teuchos_any_holder_std_string_t(o); } ) );
-			cl.def( pybind11::init( [](Teuchos::any::holder<std::string> const &o){ return new Teuchos::any::holder<std::string>(o); } ) );
-			cl.def_readwrite("held", &Teuchos::any::holder<std::string>::held);
-			cl.def("type", (const class std::type_info & (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::type, "C++: Teuchos::any::holder<std::string >::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
-			cl.def("typeName", (std::string (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::typeName, "C++: Teuchos::any::holder<std::string >::typeName() const --> std::string");
-			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::clone, "C++: Teuchos::any::holder<std::string >::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
-			cl.def("same", (bool (Teuchos::any::holder<std::string>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<std::string >::same, "C++: Teuchos::any::holder<std::string >::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
-			cl.def("assign", (class Teuchos::any::holder<std::string > & (Teuchos::any::holder<std::string>::*)(const class Teuchos::any::holder<std::string > &)) &Teuchos::any::holder<std::string >::operator=, "C++: Teuchos::any::holder<std::string >::operator=(const class Teuchos::any::holder<std::string > &) --> class Teuchos::any::holder<std::string > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
-			cl.def("type", (const class std::type_info & (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::type, ". \n\nC++: Teuchos::any::placeholder::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
-			cl.def("typeName", (std::string (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::typeName, ". \n\nC++: Teuchos::any::placeholder::typeName() const --> std::string");
-			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::clone, ". \n\nC++: Teuchos::any::placeholder::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
-			cl.def("same", (bool (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::placeholder::same, ". \n\nC++: Teuchos::any::placeholder::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
-			cl.def("assign", (class Teuchos::any::placeholder & (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &)) &Teuchos::any::placeholder::operator=, "C++: Teuchos::any::placeholder::operator=(const class Teuchos::any::placeholder &) --> class Teuchos::any::placeholder &", pybind11::return_value_policy::automatic, pybind11::arg(""));
-		}
-
-		{ // Teuchos::any::holder file:Teuchos_any.hpp line:268
-			auto & enclosing_class = cl;
 			pybind11::class_<Teuchos::any::holder<bool>, Teuchos::RCP<Teuchos::any::holder<bool>>, PyCallBack_Teuchos_any_holder_bool_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_bool_t", "", pybind11::module_local());
 			cl.def( pybind11::init<const bool &>(), pybind11::arg("value") );
 
@@ -337,6 +387,26 @@ void bind_Teuchos_any(std::function< pybind11::module &(std::string const &names
 			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<bool>::*)() const) &Teuchos::any::holder<bool>::clone, "C++: Teuchos::any::holder<bool>::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
 			cl.def("same", (bool (Teuchos::any::holder<bool>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<bool>::same, "C++: Teuchos::any::holder<bool>::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
 			cl.def("assign", (class Teuchos::any::holder<bool> & (Teuchos::any::holder<bool>::*)(const class Teuchos::any::holder<bool> &)) &Teuchos::any::holder<bool>::operator=, "C++: Teuchos::any::holder<bool>::operator=(const class Teuchos::any::holder<bool> &) --> class Teuchos::any::holder<bool> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+			cl.def("type", (const class std::type_info & (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::type, ". \n\nC++: Teuchos::any::placeholder::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
+			cl.def("typeName", (std::string (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::typeName, ". \n\nC++: Teuchos::any::placeholder::typeName() const --> std::string");
+			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::clone, ". \n\nC++: Teuchos::any::placeholder::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
+			cl.def("same", (bool (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::placeholder::same, ". \n\nC++: Teuchos::any::placeholder::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
+			cl.def("assign", (class Teuchos::any::placeholder & (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &)) &Teuchos::any::placeholder::operator=, "C++: Teuchos::any::placeholder::operator=(const class Teuchos::any::placeholder &) --> class Teuchos::any::placeholder &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		}
+
+		{ // Teuchos::any::holder file:Teuchos_any.hpp line:268
+			auto & enclosing_class = cl;
+			pybind11::class_<Teuchos::any::holder<int>, Teuchos::RCP<Teuchos::any::holder<int>>, PyCallBack_Teuchos_any_holder_int_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_int_t", "", pybind11::module_local());
+			cl.def( pybind11::init<const int &>(), pybind11::arg("value") );
+
+			cl.def( pybind11::init( [](PyCallBack_Teuchos_any_holder_int_t const &o){ return new PyCallBack_Teuchos_any_holder_int_t(o); } ) );
+			cl.def( pybind11::init( [](Teuchos::any::holder<int> const &o){ return new Teuchos::any::holder<int>(o); } ) );
+			cl.def_readwrite("held", &Teuchos::any::holder<int>::held);
+			cl.def("type", (const class std::type_info & (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::type, "C++: Teuchos::any::holder<int>::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
+			cl.def("typeName", (std::string (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::typeName, "C++: Teuchos::any::holder<int>::typeName() const --> std::string");
+			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::clone, "C++: Teuchos::any::holder<int>::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
+			cl.def("same", (bool (Teuchos::any::holder<int>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<int>::same, "C++: Teuchos::any::holder<int>::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
+			cl.def("assign", (class Teuchos::any::holder<int> & (Teuchos::any::holder<int>::*)(const class Teuchos::any::holder<int> &)) &Teuchos::any::holder<int>::operator=, "C++: Teuchos::any::holder<int>::operator=(const class Teuchos::any::holder<int> &) --> class Teuchos::any::holder<int> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 			cl.def("type", (const class std::type_info & (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::type, ". \n\nC++: Teuchos::any::placeholder::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
 			cl.def("typeName", (std::string (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::typeName, ". \n\nC++: Teuchos::any::placeholder::typeName() const --> std::string");
 			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::clone, ". \n\nC++: Teuchos::any::placeholder::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
@@ -366,17 +436,37 @@ void bind_Teuchos_any(std::function< pybind11::module &(std::string const &names
 
 		{ // Teuchos::any::holder file:Teuchos_any.hpp line:268
 			auto & enclosing_class = cl;
-			pybind11::class_<Teuchos::any::holder<int>, Teuchos::RCP<Teuchos::any::holder<int>>, PyCallBack_Teuchos_any_holder_int_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_int_t", "", pybind11::module_local());
-			cl.def( pybind11::init<const int &>(), pybind11::arg("value") );
+			pybind11::class_<Teuchos::any::holder<std::string>, Teuchos::RCP<Teuchos::any::holder<std::string>>, PyCallBack_Teuchos_any_holder_std_string_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_std_string_t", "", pybind11::module_local());
+			cl.def( pybind11::init<const std::string &>(), pybind11::arg("value") );
 
-			cl.def( pybind11::init( [](PyCallBack_Teuchos_any_holder_int_t const &o){ return new PyCallBack_Teuchos_any_holder_int_t(o); } ) );
-			cl.def( pybind11::init( [](Teuchos::any::holder<int> const &o){ return new Teuchos::any::holder<int>(o); } ) );
-			cl.def_readwrite("held", &Teuchos::any::holder<int>::held);
-			cl.def("type", (const class std::type_info & (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::type, "C++: Teuchos::any::holder<int>::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
-			cl.def("typeName", (std::string (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::typeName, "C++: Teuchos::any::holder<int>::typeName() const --> std::string");
-			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<int>::*)() const) &Teuchos::any::holder<int>::clone, "C++: Teuchos::any::holder<int>::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
-			cl.def("same", (bool (Teuchos::any::holder<int>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<int>::same, "C++: Teuchos::any::holder<int>::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
-			cl.def("assign", (class Teuchos::any::holder<int> & (Teuchos::any::holder<int>::*)(const class Teuchos::any::holder<int> &)) &Teuchos::any::holder<int>::operator=, "C++: Teuchos::any::holder<int>::operator=(const class Teuchos::any::holder<int> &) --> class Teuchos::any::holder<int> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+			cl.def( pybind11::init( [](PyCallBack_Teuchos_any_holder_std_string_t const &o){ return new PyCallBack_Teuchos_any_holder_std_string_t(o); } ) );
+			cl.def( pybind11::init( [](Teuchos::any::holder<std::string> const &o){ return new Teuchos::any::holder<std::string>(o); } ) );
+			cl.def_readwrite("held", &Teuchos::any::holder<std::string>::held);
+			cl.def("type", (const class std::type_info & (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::type, "C++: Teuchos::any::holder<std::string >::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
+			cl.def("typeName", (std::string (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::typeName, "C++: Teuchos::any::holder<std::string >::typeName() const --> std::string");
+			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<std::string>::*)() const) &Teuchos::any::holder<std::string >::clone, "C++: Teuchos::any::holder<std::string >::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
+			cl.def("same", (bool (Teuchos::any::holder<std::string>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<std::string >::same, "C++: Teuchos::any::holder<std::string >::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
+			cl.def("assign", (class Teuchos::any::holder<std::string > & (Teuchos::any::holder<std::string>::*)(const class Teuchos::any::holder<std::string > &)) &Teuchos::any::holder<std::string >::operator=, "C++: Teuchos::any::holder<std::string >::operator=(const class Teuchos::any::holder<std::string > &) --> class Teuchos::any::holder<std::string > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+			cl.def("type", (const class std::type_info & (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::type, ". \n\nC++: Teuchos::any::placeholder::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
+			cl.def("typeName", (std::string (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::typeName, ". \n\nC++: Teuchos::any::placeholder::typeName() const --> std::string");
+			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::clone, ". \n\nC++: Teuchos::any::placeholder::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
+			cl.def("same", (bool (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::placeholder::same, ". \n\nC++: Teuchos::any::placeholder::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
+			cl.def("assign", (class Teuchos::any::placeholder & (Teuchos::any::placeholder::*)(const class Teuchos::any::placeholder &)) &Teuchos::any::placeholder::operator=, "C++: Teuchos::any::placeholder::operator=(const class Teuchos::any::placeholder &) --> class Teuchos::any::placeholder &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		}
+
+		{ // Teuchos::any::holder file:Teuchos_any.hpp line:268
+			auto & enclosing_class = cl;
+			pybind11::class_<Teuchos::any::holder<Teuchos::ParameterList>, Teuchos::RCP<Teuchos::any::holder<Teuchos::ParameterList>>, PyCallBack_Teuchos_any_holder_Teuchos_ParameterList_t, Teuchos::any::placeholder> cl(enclosing_class, "holder_Teuchos_ParameterList_t", "", pybind11::module_local());
+			cl.def( pybind11::init<const class Teuchos::ParameterList &>(), pybind11::arg("value") );
+
+			cl.def( pybind11::init( [](PyCallBack_Teuchos_any_holder_Teuchos_ParameterList_t const &o){ return new PyCallBack_Teuchos_any_holder_Teuchos_ParameterList_t(o); } ) );
+			cl.def( pybind11::init( [](Teuchos::any::holder<Teuchos::ParameterList> const &o){ return new Teuchos::any::holder<Teuchos::ParameterList>(o); } ) );
+			cl.def_readwrite("held", &Teuchos::any::holder<Teuchos::ParameterList>::held);
+			cl.def("type", (const class std::type_info & (Teuchos::any::holder<Teuchos::ParameterList>::*)() const) &Teuchos::any::holder<Teuchos::ParameterList>::type, "C++: Teuchos::any::holder<Teuchos::ParameterList>::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
+			cl.def("typeName", (std::string (Teuchos::any::holder<Teuchos::ParameterList>::*)() const) &Teuchos::any::holder<Teuchos::ParameterList>::typeName, "C++: Teuchos::any::holder<Teuchos::ParameterList>::typeName() const --> std::string");
+			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::holder<Teuchos::ParameterList>::*)() const) &Teuchos::any::holder<Teuchos::ParameterList>::clone, "C++: Teuchos::any::holder<Teuchos::ParameterList>::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
+			cl.def("same", (bool (Teuchos::any::holder<Teuchos::ParameterList>::*)(const class Teuchos::any::placeholder &) const) &Teuchos::any::holder<Teuchos::ParameterList>::same, "C++: Teuchos::any::holder<Teuchos::ParameterList>::same(const class Teuchos::any::placeholder &) const --> bool", pybind11::arg("other"));
+			cl.def("assign", (class Teuchos::any::holder<class Teuchos::ParameterList> & (Teuchos::any::holder<Teuchos::ParameterList>::*)(const class Teuchos::any::holder<class Teuchos::ParameterList> &)) &Teuchos::any::holder<Teuchos::ParameterList>::operator=, "C++: Teuchos::any::holder<Teuchos::ParameterList>::operator=(const class Teuchos::any::holder<class Teuchos::ParameterList> &) --> class Teuchos::any::holder<class Teuchos::ParameterList> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 			cl.def("type", (const class std::type_info & (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::type, ". \n\nC++: Teuchos::any::placeholder::type() const --> const class std::type_info &", pybind11::return_value_policy::automatic);
 			cl.def("typeName", (std::string (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::typeName, ". \n\nC++: Teuchos::any::placeholder::typeName() const --> std::string");
 			cl.def("clone", (class Teuchos::any::placeholder * (Teuchos::any::placeholder::*)() const) &Teuchos::any::placeholder::clone, ". \n\nC++: Teuchos::any::placeholder::clone() const --> class Teuchos::any::placeholder *", pybind11::return_value_policy::automatic);
@@ -394,28 +484,34 @@ void bind_Teuchos_any(std::function< pybind11::module &(std::string const &names
 		cl.def("assign", (class Teuchos::bad_any_cast & (Teuchos::bad_any_cast::*)(const class Teuchos::bad_any_cast &)) &Teuchos::bad_any_cast::operator=, "C++: Teuchos::bad_any_cast::operator=(const class Teuchos::bad_any_cast &) --> class Teuchos::bad_any_cast &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
-	M("Teuchos").def("any_cast", (std::string & (*)(class Teuchos::any &)) &Teuchos::any_cast<std::string>, "C++: Teuchos::any_cast(class Teuchos::any &) --> std::string &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
-
-	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
-	M("Teuchos").def("any_cast", (double & (*)(class Teuchos::any &)) &Teuchos::any_cast<double>, "C++: Teuchos::any_cast(class Teuchos::any &) --> double &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
-
-	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
 	M("Teuchos").def("any_cast", (bool & (*)(class Teuchos::any &)) &Teuchos::any_cast<bool>, "C++: Teuchos::any_cast(class Teuchos::any &) --> bool &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
 	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
 	M("Teuchos").def("any_cast", (int & (*)(class Teuchos::any &)) &Teuchos::any_cast<int>, "C++: Teuchos::any_cast(class Teuchos::any &) --> int &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
-	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
-	M("Teuchos").def("any_cast", (const std::string & (*)(const class Teuchos::any &)) &Teuchos::any_cast<std::string>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const std::string &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
+	M("Teuchos").def("any_cast", (double & (*)(class Teuchos::any &)) &Teuchos::any_cast<double>, "C++: Teuchos::any_cast(class Teuchos::any &) --> double &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
-	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
-	M("Teuchos").def("any_cast", (const double & (*)(const class Teuchos::any &)) &Teuchos::any_cast<double>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const double &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
+	M("Teuchos").def("any_cast", (std::string & (*)(class Teuchos::any &)) &Teuchos::any_cast<std::string>, "C++: Teuchos::any_cast(class Teuchos::any &) --> std::string &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+
+	// Teuchos::any_cast(class Teuchos::any &) file:Teuchos_any.hpp line:339
+	M("Teuchos").def("any_cast", (class Teuchos::ParameterList & (*)(class Teuchos::any &)) &Teuchos::any_cast<Teuchos::ParameterList>, "C++: Teuchos::any_cast(class Teuchos::any &) --> class Teuchos::ParameterList &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
 	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
 	M("Teuchos").def("any_cast", (const bool & (*)(const class Teuchos::any &)) &Teuchos::any_cast<bool>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const bool &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
 	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
 	M("Teuchos").def("any_cast", (const int & (*)(const class Teuchos::any &)) &Teuchos::any_cast<int>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const int &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+
+	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
+	M("Teuchos").def("any_cast", (const double & (*)(const class Teuchos::any &)) &Teuchos::any_cast<double>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const double &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+
+	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
+	M("Teuchos").def("any_cast", (const std::string & (*)(const class Teuchos::any &)) &Teuchos::any_cast<std::string>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const std::string &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
+
+	// Teuchos::any_cast(const class Teuchos::any &) file:Teuchos_any.hpp line:375
+	M("Teuchos").def("any_cast", (const class Teuchos::ParameterList & (*)(const class Teuchos::any &)) &Teuchos::any_cast<Teuchos::ParameterList>, "C++: Teuchos::any_cast(const class Teuchos::any &) --> const class Teuchos::ParameterList &", pybind11::return_value_policy::automatic, pybind11::arg("operand"));
 
 	// Teuchos::toString(const class Teuchos::any &) file:Teuchos_any.hpp line:398
 	M("Teuchos").def("toString", (std::string (*)(const class Teuchos::any &)) &Teuchos::toString, "Converts the value in any to a std::string.\n    \n\n This function with throw an exception if\n             the held type can't be printed via operator<< !\n\nC++: Teuchos::toString(const class Teuchos::any &) --> std::string", pybind11::arg("rhs"));

@@ -1,3 +1,4 @@
+#include <PyROL_Teuchos_Custom.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 #include <Teuchos_ENull.hpp>

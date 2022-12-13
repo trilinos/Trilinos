@@ -1,3 +1,4 @@
+#include <PyROL_Teuchos_Custom.hpp>
 #include <Teuchos_Dependency.hpp>
 #include <Teuchos_DependencySheet.hpp>
 #include <Teuchos_Describable.hpp>

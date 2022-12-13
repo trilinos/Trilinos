@@ -1,3 +1,4 @@
+#include <PyROL_Teuchos_Custom.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_DataAccess.hpp>
