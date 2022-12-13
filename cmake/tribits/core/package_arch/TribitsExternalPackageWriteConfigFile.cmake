@@ -166,8 +166,9 @@ endfunction()
 
 # @FUNCTION: tribits_extpkg_write_config_file_str()
 #
-# Create the text string for a ``<tplName>Config.cmake`` file given the list of
-# include directories and libraries for an external package/TPL.
+# Create the text string for a ``<tplName>Config.cmake`` file given the list
+# of include directories and libraries for an external package/TPL from the
+# legacy TriBITS TPL specification.
 #
 # Usage::
 #
@@ -194,9 +195,11 @@ endfunction()
 # packages listed in ``<tplName>_LIB_ENABLED_DEPENDENCIES``.
 #
 # The arguments in ``TPL_<tplName>_LIBRARIES`` are handled in special ways in
-# order to create the namespaced IMPORTED targets ``<tplName>::<libname>`` and
-# the ``<tplName>::all_libs`` target that depends on these.  The types of
-# arguments that are handled and how the are interpreted:
+# order to create the namespaced IMPORTED targets
+# ``tribits::<tplName>::<libname>`` and the ``<tplName>::all_libs`` target
+# that depends on these.
+#
+# The types of arguments that are handled and how the are interpreted:
 #
 #   ``<abs-base-path>/[lib]<libname>.<longest-ext>``
 #
@@ -204,13 +207,13 @@ endfunction()
 #     imported target name ``<libname>`` is derived from the file name (of the
 #     form ``lib<libname>.<longest-ext>`` removing beginning ``lib`` and file
 #     extension ``.<longest-ext>``).  The IMPORTED target
-#     ``<tplName>::<libname>`` is created and the file path is set using the
-#     ``IMPORTED_LOCATION`` target property.
+#     ``tribits::<tplName>::<libname>`` is created and the file path is set
+#     using the ``IMPORTED_LOCATION`` target property.
 #
 #   ``-l<libname>``
 #
 #     Arguments of the form ``-l<libname>`` are used to create IMPORTED
-#     targets with the name ``<tplName>::<libname>`` using the
+#     targets with the name ``tribits::<tplName>::<libname>`` using the
 #     ``IMPORTED_LIBNAME`` target property.
 #
 #   ``<libname>``
@@ -247,6 +250,20 @@ endfunction()
 # Finally, for every ``<upstreamTplName>`` listed in
 # ``<tplName>_LIB_ENABLED_DEPENDENCIES``, a link dependency is created using
 # ``target_link_library(<tplName>::all_libs INTERFACE <upstreamTplName>)``.
+#
+# NOTE: The IMPORTED targets generated for each library argument
+# ``<tplName>::<libname>`` are prefixed with ``tribits::`` to give
+# ``tribits::<tplName>::<libname>``.  This is to avoid clashing with IMPORTED
+# targets ``<tplName>::<libname>`` from other package config files
+# ``<tplName>Config.cmake`` or find modules ``Find<tplName>.cmake`` that may
+# clash (see TriBITSPub/TriBITS#548). But the generated INTERFACE IMPORTED
+# target ``<tplName>::all_libs`` is **not** namespaced with ``tribits::``
+# since the ``all_libs`` target is unlikely to clash.  The targets
+# ``tribits::<tplName>::<libname>`` are not directly used in downstream
+# ``target_link_library()`` calls so the names of these targets are really
+# just an implementation detail.  (The reason we give these a name based of
+# the library name they represent ``<libname>`` is to make it more clear what
+# the matching library is and to make the name unique.)
 #
 function(tribits_extpkg_write_config_file_str  tplName  tplConfigFileStrOut)
 
@@ -529,14 +546,14 @@ function(tribits_extpkg_process_libraries_list_library_entry
   tribits_extpkg_get_libname_and_path_from_libentry(
     "${libentry}"  ${libEntryType}  libname  libpath)
   # Create IMPORTED library target
-  set(prefixed_libname "${tplName}::${libname}")
+  set(prefixed_libname "tribits::${tplName}::${libname}")
   if (NOT (prefixed_libname IN_LIST libTargets))
     tribits_extpkg_append_add_library_str (${libname} ${prefixed_libname}
       ${libEntryType} "${libpath}" configFileStr)
     if (lastLibProcessed)
       string(APPEND configFileStr
         "target_link_libraries(${prefixed_libname}\n"
-        "  INTERFACE ${tplName}::${lastLibProcessed})\n"
+        "  INTERFACE tribits::${tplName}::${lastLibProcessed})\n"
         )
     else()
       tribits_extpkg_append_upstream_target_link_libraries_str( ${tplName}
@@ -553,10 +570,11 @@ function(tribits_extpkg_process_libraries_list_library_entry
   set(${lastLibProcessedInOut} ${lastLibProcessed} PARENT_SCOPE)
   set(${configFileStrInOut} ${configFileStr} PARENT_SCOPE)
 endfunction()
-# NOTE: Above, we only need to link the first library <tplName>::<libname0>
-# against the upstream TPL libraries <upstreamTpl>::all_libs.  The other
-# imported targets <tplName>::<libnamei> for this TPL are linked to this first
-# <tplName>::<libname0> which has the needed dependencies.
+# NOTE: Above, we only need to link the first library
+# tribits::<tplName>::<libname0> against the upstream TPL libraries
+# <upstreamTpl>::all_libs.  The other imported targets
+# tribits::<tplName>::<libnamei> for this TPL are linked to this first
+# tribits::<tplName>::<libname0> which has the needed dependencies.
 
 
 function(tribits_extpkg_get_libname_and_path_from_libentry

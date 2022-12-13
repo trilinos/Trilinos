@@ -334,29 +334,32 @@ function(tribits_is_primary_meta_project_package  PACKAGE_NAME_IN
 endfunction()
 
 
-# Function that determines if it is okay to allow an implicit package enable
-# based on its classification.
+# Function that determines if it is okay to allow an implicit enable of an
+# upstream package given the disable of a downstream package that depends on
+# it.
 #
-function(tribits_implicit_package_enable_is_allowed  UPSTREAM_PACKAGE_NAME_IN
-  PACKAGE_NAME_IN  IMPLICIT_PACKAGE_ENABLE_ALLOWED_OUT
+function(tribits_implicit_package_enable_is_allowed  upstreamPackageName
+    packageName  implictPackageEnableAllowedOut
   )
 
-  if (${PACKAGE_NAME_IN}_TESTGROUP STREQUAL PT)
-    set(IMPLICIT_PACKAGE_ENABLE_ALLOWED TRUE)
-  elseif (${PACKAGE_NAME_IN}_TESTGROUP STREQUAL ST
-    AND ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
+  if (${packageName}_PACKAGE_BUILD_STATUS  STREQUAL  "EXTERNAL")
+    set(implicitPackageEnableAllowed  FALSE)
+  elseif (${packageName}_TESTGROUP  STREQUAL  "PT")
+    set(implicitPackageEnableAllowed TRUE)
+  elseif (${packageName}_TESTGROUP  STREQUAL  "ST"
+      AND ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
     )
-    set(IMPLICIT_PACKAGE_ENABLE_ALLOWED TRUE)
+    set(implicitPackageEnableAllowed  TRUE)
   else()
-    if (UPSTREAM_PACKAGE_NAME_IN)
-      message("-- " "NOTE: Not Setting ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME_IN}=ON"
-        " even though ${UPSTREAM_PACKAGE_NAME_IN} has an optional dependence on"
-        " ${PACKAGE_NAME_IN} because ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=OFF" )
+    if (upstreamPackageName)
+      message("-- " "NOTE: Not Setting ${PROJECT_NAME}_ENABLE_${packageName}=ON"
+        " even though ${upstreamPackageName} has an optional dependence on"
+        " ${packageName} because ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=OFF" )
     endif()
-    set(IMPLICIT_PACKAGE_ENABLE_ALLOWED FALSE)
+    set(implicitPackageEnableAllowed  FALSE)
   endif()
 
-  set(${IMPLICIT_PACKAGE_ENABLE_ALLOWED_OUT} ${IMPLICIT_PACKAGE_ENABLE_ALLOWED}
+  set(${implictPackageEnableAllowedOut} "${implicitPackageEnableAllowed}"
     PARENT_SCOPE )
 
 endfunction()
@@ -378,7 +381,6 @@ endfunction()
 #   * `${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
 #   * `${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
 #   * ``${PROJECT_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX``
-#   * ``${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES``
 #
 # For each of the listed top-level (parent) packages ${PACKAGE_NAME}, it also
 # sets up constant variables defined in `TriBITS Package Top-Level Local
@@ -386,12 +388,15 @@ endfunction()
 #
 # * `${PACKAGE_NAME}_SOURCE_DIR`_
 # * `${PACKAGE_NAME}_REL_SOURCE_DIR`_
+# * `${PACKAGE_NAME}_PARENT_PACKAGE`_ (to empty "")
+# * `${PACKAGE_NAME}_PARENT_REPOSITORY`_ (to empty "")
 # * `${PACKAGE_NAME}_TESTGROUP`_
+# * `${PACKAGE_NAME}_PACKAGE_BUILD_STATUS`_ (to ``INTERNAL``)
 #
 # and sets up some standard enable/disable vars with default values as defined
-# in `TriBITS Package Cache Variables`_ like::
+# in `TriBITS Package Cache Variables`_ like:
 #
-#   ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}
+# * `${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}`_
 #
 # NOTE: Set ``TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE=TRUE`` to see
 # really verbose debug output from this macro.
@@ -541,11 +546,12 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         print_var(REPOSITORY_AND_PACKAGE_DIR)
         print_var(PACKAGE_ABS_DIR)
         print_var(PACKAGE_EXISTS)
-        print_var(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
+        print_var(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES)
         print_var(${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE)
       endif()
 
-      if (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
+      if (${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+          ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
         AND NOT PACKAGE_EXISTS
         AND NOT ${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE
         )
@@ -558,15 +564,14 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
 
       if (PACKAGE_EXISTS OR ${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK)
         list(APPEND ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES ${TRIBITS_PACKAGE})
-        tribits_insert_standard_package_options(${TRIBITS_PACKAGE}
-          ${PACKAGE_TESTGROUP})
-        set(${TRIBITS_PACKAGE}_PACKAGE_BUILD_STATUS INTERNAL)
         set(${TRIBITS_PACKAGE}_SOURCE_DIR
           "${PROJECT_SOURCE_DIR}/${REPOSITORY_AND_PACKAGE_DIR}")
         set(${TRIBITS_PACKAGE}_REL_SOURCE_DIR
           "${REPOSITORY_AND_PACKAGE_DIR}")
         set(${TRIBITS_PACKAGE}_PARENT_PACKAGE "")
         set(${TRIBITS_PACKAGE}_PARENT_REPOSITORY ${REPOSITORY_NAME})
+        tribits_insert_standard_package_options(${TRIBITS_PACKAGE}  ${PACKAGE_TESTGROUP})
+        set(${TRIBITS_PACKAGE}_PACKAGE_BUILD_STATUS INTERNAL)
       else()
         if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           message(
@@ -580,10 +585,14 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
       # gets set to TRUE for some unit tests.  Otherwise, in every legitimate
       # usage of this macro it is always FALSE.
 
-      if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
+      if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE
+          OR  ${PROJECT_NAME}_VERBOSE_CONFIGURE
+        )
         print_var(${TRIBITS_PACKAGE}_SOURCE_DIR)
+        print_var(${TRIBITS_PACKAGE}_REL_SOURCE_DIR)
         print_var(${TRIBITS_PACKAGE}_PARENT_PACKAGE)
         print_var(${TRIBITS_PACKAGE}_PARENT_REPOSITORY)
+        print_var(${TRIBITS_PACKAGE}_PACKAGE_BUILD_STATUS)
       endif()
 
       if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
@@ -598,12 +607,6 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
       ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES )
     math(EXPR ${PROJECT_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX
       "${${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES}-1")
-
-    # Create a reverse list for later use
-
-    set(${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
-      ${${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES})
-    list(REVERSE ${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
 
   else()
 

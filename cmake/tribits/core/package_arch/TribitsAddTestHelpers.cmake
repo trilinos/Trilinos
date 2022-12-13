@@ -211,8 +211,8 @@ function(tribits_add_test_process_enable_tests  ADD_THE_TEST_OUT)
    set(ADD_THE_TEST TRUE)
   else()
     message_wrapper(
-      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}'."
-     )
+      "-- ${TEST_NAME}: NOT added test because"
+      " ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}'.")
    set(ADD_THE_TEST FALSE)
   endif()
   set(${ADD_THE_TEST_OUT} ${ADD_THE_TEST} PARENT_SCOPE)

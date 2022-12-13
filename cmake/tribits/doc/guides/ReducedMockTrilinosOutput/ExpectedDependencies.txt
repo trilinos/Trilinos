@@ -15,73 +15,96 @@ Package dependencies information:
 -- Trilinos_DEFINED_PACKAGES: MPI BLAS LAPACK Boost UMFPACK AMD PETSC Teuchos RTOp Epetra Triutils EpetraExt ThyraCoreLibs ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt Thyra
 -- Trilinos_NUM_DEFINED_PACKAGES='18'
 
--- Teuchos_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
--- Teuchos_LIB_OPTIONAL_DEP_TPLS: Boost MPI
+-- MPI_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[O] Epetra[O]
 
--- RTOp_LIB_REQUIRED_DEP_PACKAGES: Teuchos
+-- BLAS_FORWARD_LIB_DEFINED_DEPENDENCIES: LAPACK[R] Teuchos[R] Epetra[R]
 
--- Epetra_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
--- Epetra_LIB_OPTIONAL_DEP_TPLS: MPI
+-- LAPACK_LIB_DEFINED_DEPENDENCIES: BLAS[R]
+-- LAPACK_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[R] Epetra[R]
 
--- Triutils_LIB_REQUIRED_DEP_PACKAGES: Epetra
+-- Boost_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[O]
 
--- EpetraExt_LIB_REQUIRED_DEP_PACKAGES: Teuchos Epetra
--- EpetraExt_LIB_OPTIONAL_DEP_PACKAGES: Triutils
--- EpetraExt_LIB_OPTIONAL_DEP_TPLS: UMFPACK AMD PETSC
+-- UMFPACK_FORWARD_LIB_DEFINED_DEPENDENCIES: EpetraExt[O]
 
--- ThyraCoreLibs_LIB_REQUIRED_DEP_PACKAGES: Teuchos RTOp
+-- AMD_FORWARD_LIB_DEFINED_DEPENDENCIES: EpetraExt[O]
 
--- ThyraGoodStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
+-- PETSC_FORWARD_LIB_DEFINED_DEPENDENCIES: EpetraExt[O]
 
--- ThyraCrazyStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraGoodStuff
+-- Teuchos_LIB_DEFINED_DEPENDENCIES: BLAS[R] LAPACK[R] Boost[O] MPI[O]
+-- Teuchos_FORWARD_LIB_DEFINED_DEPENDENCIES: RTOp[R] EpetraExt[R] ThyraCoreLibs[R]
 
--- ThyraEpetra_LIB_REQUIRED_DEP_PACKAGES: Epetra ThyraCoreLibs
+-- RTOp_LIB_DEFINED_DEPENDENCIES: Teuchos[R]
+-- RTOp_FORWARD_LIB_DEFINED_DEPENDENCIES: ThyraCoreLibs[R]
 
--- ThyraEpetraExt_LIB_REQUIRED_DEP_PACKAGES: ThyraEpetra EpetraExt
+-- Epetra_LIB_DEFINED_DEPENDENCIES: BLAS[R] LAPACK[R] MPI[O]
+-- Epetra_FORWARD_LIB_DEFINED_DEPENDENCIES: Triutils[R] EpetraExt[R] ThyraEpetra[R]
 
--- Thyra_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
--- Thyra_LIB_OPTIONAL_DEP_PACKAGES: ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt
+-- Triutils_LIB_DEFINED_DEPENDENCIES: Epetra[R]
+-- Triutils_FORWARD_LIB_DEFINED_DEPENDENCIES: EpetraExt[O]
 
-Dumping direct dependencies for each package ...
+-- EpetraExt_LIB_DEFINED_DEPENDENCIES: Teuchos[R] Epetra[R] Triutils[O] UMFPACK[O] AMD[O] PETSC[O]
+-- EpetraExt_FORWARD_LIB_DEFINED_DEPENDENCIES: ThyraEpetraExt[R]
 
--- MPI_LIB_DEFINED_DEPENDENCIES:
+-- ThyraCoreLibs_LIB_DEFINED_DEPENDENCIES: Teuchos[R] RTOp[R]
+-- ThyraCoreLibs_FORWARD_LIB_DEFINED_DEPENDENCIES: ThyraGoodStuff[R] ThyraEpetra[R] Thyra[R]
 
--- BLAS_LIB_DEFINED_DEPENDENCIES:
+-- ThyraGoodStuff_LIB_DEFINED_DEPENDENCIES: ThyraCoreLibs[R]
+-- ThyraGoodStuff_FORWARD_LIB_DEFINED_DEPENDENCIES: ThyraCrazyStuff[R] Thyra[O]
 
--- LAPACK_LIB_DEFINED_DEPENDENCIES:
+-- ThyraCrazyStuff_LIB_DEFINED_DEPENDENCIES: ThyraGoodStuff[R]
+-- ThyraCrazyStuff_FORWARD_LIB_DEFINED_DEPENDENCIES: Thyra[O]
 
--- Boost_LIB_DEFINED_DEPENDENCIES:
+-- ThyraEpetra_LIB_DEFINED_DEPENDENCIES: Epetra[R] ThyraCoreLibs[R]
+-- ThyraEpetra_FORWARD_LIB_DEFINED_DEPENDENCIES: ThyraEpetraExt[R] Thyra[O]
 
--- UMFPACK_LIB_DEFINED_DEPENDENCIES:
+-- ThyraEpetraExt_LIB_DEFINED_DEPENDENCIES: ThyraEpetra[R] EpetraExt[R]
+-- ThyraEpetraExt_FORWARD_LIB_DEFINED_DEPENDENCIES: Thyra[O]
 
--- AMD_LIB_DEFINED_DEPENDENCIES:
+-- Thyra_LIB_DEFINED_DEPENDENCIES: ThyraCoreLibs[R] ThyraGoodStuff[O] ThyraCrazyStuff[O] ThyraEpetra[O] ThyraEpetraExt[O]
 
--- PETSC_LIB_DEFINED_DEPENDENCIES:
+Dumping direct enabled dependencies for each package ...
 
--- Teuchos_LIB_ENABLED_DEPENDENCIES: BLAS LAPACK
--- Teuchos_LIB_DEFINED_DEPENDENCIES: BLAS LAPACK Boost MPI
+-- MPI: No enabled dependencies!
 
--- RTOp_LIB_ENABLED_DEPENDENCIES: Teuchos
--- RTOp_LIB_DEFINED_DEPENDENCIES: Teuchos
+-- BLAS: No enabled dependencies!
 
--- Epetra_LIB_ENABLED_DEPENDENCIES: BLAS LAPACK
--- Epetra_LIB_DEFINED_DEPENDENCIES: BLAS LAPACK MPI
+-- LAPACK_LIB_ENABLED_DEPENDENCIES: BLAS[R]
 
--- Triutils_LIB_DEFINED_DEPENDENCIES: Epetra
+-- Boost: No enabled dependencies!
 
--- EpetraExt_LIB_DEFINED_DEPENDENCIES: Teuchos Epetra Triutils UMFPACK AMD PETSC
+-- UMFPACK: No enabled dependencies!
 
--- ThyraCoreLibs_LIB_ENABLED_DEPENDENCIES: Teuchos RTOp
--- ThyraCoreLibs_LIB_DEFINED_DEPENDENCIES: Teuchos RTOp
+-- AMD: No enabled dependencies!
 
--- ThyraGoodStuff_LIB_DEFINED_DEPENDENCIES: ThyraCoreLibs
+-- PETSC: No enabled dependencies!
 
--- ThyraCrazyStuff_LIB_DEFINED_DEPENDENCIES: ThyraGoodStuff
+-- Teuchos_LIB_ENABLED_DEPENDENCIES: BLAS[R] LAPACK[R]
 
--- ThyraEpetra_LIB_ENABLED_DEPENDENCIES: Epetra ThyraCoreLibs
--- ThyraEpetra_LIB_DEFINED_DEPENDENCIES: Epetra ThyraCoreLibs
+-- RTOp_LIB_ENABLED_DEPENDENCIES: Teuchos[R]
 
--- ThyraEpetraExt_LIB_DEFINED_DEPENDENCIES: ThyraEpetra EpetraExt
+-- Epetra_LIB_ENABLED_DEPENDENCIES: BLAS[R] LAPACK[R]
 
--- Thyra_LIB_ENABLED_DEPENDENCIES: ThyraCoreLibs ThyraEpetra
--- Thyra_LIB_DEFINED_DEPENDENCIES: ThyraCoreLibs ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt
+-- Triutils: No enabled dependencies!
+
+-- EpetraExt: No enabled dependencies!
+
+-- ThyraCoreLibs_LIB_ENABLED_DEPENDENCIES: Teuchos[R] RTOp[R]
+
+-- ThyraGoodStuff: No enabled dependencies!
+
+-- ThyraCrazyStuff: No enabled dependencies!
+
+-- ThyraEpetra_LIB_ENABLED_DEPENDENCIES: Epetra[R] ThyraCoreLibs[R]
+
+-- ThyraEpetraExt: No enabled dependencies!
+
+-- Thyra_LIB_ENABLED_DEPENDENCIES: ThyraCoreLibs[R] ThyraEpetra[O]
+
+Setting up export dependencies for all enabled packages ...
+
+-- Teuchos: No library dependencies!
+-- RTOp_FULL_ENABLED_DEP_PACKAGES: Teuchos
+-- Epetra: No library dependencies!
+-- ThyraCoreLibs_FULL_ENABLED_DEP_PACKAGES: RTOp Teuchos
+-- ThyraEpetra_FULL_ENABLED_DEP_PACKAGES: ThyraCoreLibs Epetra RTOp Teuchos
+-- Thyra_FULL_ENABLED_DEP_PACKAGES: ThyraEpetra ThyraCoreLibs Epetra RTOp Teuchos
