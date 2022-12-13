@@ -44,6 +44,12 @@ class npVector(getTypeName('Vector')):
     def setScalar(self, new_value):
         self.values[:] = new_value
 
+    def reduce(self, op):
+        v = op.initialValue()
+        for i in range(self.dimension()):
+            op.reduce(self.values[i], v)
+        return v
+
     def __getitem__(self, index):
         return self.values[index]
 
