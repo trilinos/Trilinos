@@ -1780,6 +1780,8 @@ defined:
     the package is in relation to other packages.  NOTE: This variable is
     **only** defined if the package is actually enabled!
 
+  .. _${PACKAGE_NAME}_PARENT_REPOSITORY:
+
   ``${PACKAGE_NAME}_PARENT_REPOSITORY``
 
     The name of the package's parent repository.  This can be used by a
@@ -2161,8 +2163,8 @@ version will be used all of the downstream packages that uses it.  Also, by
 defining a TriBITS TPL, automatic enable/disable logic will be applied as
 described in `Package Dependencies and Enable/Disable Logic`_.  For example,
 if an external package/TPL is explicitly disabled, all of the downstream
-packages that depend on it will be automatically disabled as well (see `TPL
-disable triggers auto-disables of downstream dependencies`_).
+packages that depend on it will be automatically disabled as well (see
+`Package disable triggers auto-disables of downstream dependencies`_).
 
 .. _Globally unique TriBITS TPL names:
 
@@ -3361,21 +3363,20 @@ system are:
 6)  `EX TPLs given default unset enable/disable state`_
 7)  `Required TPLs are auto-enabled for enabled packages`_
 8)  `Optional TPLs only enabled explicitly by the user`_
-9)  `TPL disable triggers auto-disables of downstream dependencies`_
-10) `Disables trump enables where there is a conflict`_
-11) `Enable/disable of parent package is enable/disable for subpackages`_
-12) `Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples`_
-13) `Subpackage enable does not auto-enable the parent package`_
-14) `Support for optional package/TPL is enabled by default`_
-15) `Support for optional package can be explicitly disabled`_
-16) `Explicit enable of optional package/TPL support auto-enables package/TPL`_
-17) `ST packages only auto-enabled if ST code is enabled`_
-18) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests`_
-19) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) packages`_
-20) `<Project>_ENABLE_TESTS only enables explicitly enabled package tests`_
-21) `If no packages are enabled, nothing will get built`_
-22) `TriBITS prints all enables and disables to stdout`_
-23) `TriBITS auto-enables/disables done using non-cache local variables`_
+9)  `Disables trump enables where there is a conflict`_
+10) `Enable/disable of parent package is enable/disable for subpackages`_
+11) `Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples`_
+12) `Subpackage enable does not auto-enable the parent package`_
+13) `Support for optional package/TPL is enabled by default`_
+14) `Support for optional package can be explicitly disabled`_
+15) `Explicit enable of optional package/TPL support auto-enables package/TPL`_
+16) `ST packages only auto-enabled if ST code is enabled`_
+17) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests`_
+18) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) packages`_
+19) `<Project>_ENABLE_TESTS only enables explicitly enabled package tests`_
+20) `If no packages are enabled, nothing will get built`_
+21) `TriBITS prints all enables and disables to stdout`_
+22) `TriBITS auto-enables/disables done using non-cache local variables`_
 
 In more detail, these rules/behaviors are:
 
@@ -3443,15 +3444,16 @@ In more detail, these rules/behaviors are:
 
 .. _Package disable triggers auto-disables of downstream dependencies:
 
-4) **Package disable triggers auto-disables of downstream dependencies**:
-   Any package ``<TRIBITS_PACKAGE>`` can be explicitly **disabled** by the
-   user by setting the cache variable
-   ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>=OFF``
-   (e.g. ``Trilinos_ENABLE_Teuchos=OFF``).  When an package is explicitly
-   disabled, it will result in the disable of all `downstream`_ packages
-   that have required dependency on it.  It will also disable optional support
-   for the disabled packages in downstream packages that list it as an
-   optional dependency.  For an example, see `Explicit disable of a package`_.
+4) **Package disable triggers auto-disables of downstream dependencies**: Any
+   package ``<TRIBITS_PACKAGE>`` can be explicitly **disabled** by the user by
+   setting the cache variable ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>=OFF``
+   (or ``TPL_ENABLE_<TRIBITS_PACKAGE>=OFF`` for an external package/TPL)
+   (e.g. ``Trilinos_ENABLE_Teuchos=OFF``, ``TPL_ENABLE_BLAS=OFF``).  When an
+   package is explicitly disabled, it will result in the disable of all
+   dependent `downstream`_ external packages/TPLs and internal packages that
+   have required dependency on it.  It will also disable optional support for
+   the disabled packages in downstream packages that list it as an optional
+   dependency.  For an example, see `Explicit disable of a package`_.
 
 .. _PT/ST TPLs given default unset enable/disable state:
 
@@ -3505,24 +3507,9 @@ In more detail, these rules/behaviors are:
    ``TPL_ENABLE_Boost=ON``.  For an example, see `Explicit enable of a
    package, its tests, an optional TPL, with ST enabled`_.
 
-.. _TPL disable triggers auto-disables of downstream dependencies:
-
-9) **TPL disable triggers auto-disables of downstream dependencies**: Any TPLs
-   that are explicitly disabled (i.e. ``TPL_ENABLE_<TRIBITS_TPL>=OFF``) will
-   result in the disable of all `downstream`_ dependent packages that have a
-   required dependency on the TPL.  For example, if the user sets
-   ``TPL_ENABLE_LAPACK=OFF``, then this will result in the disable of packages
-   ``Teuchos`` and ``Epetra``, and all of the required packages downstream
-   from them.  Also, the explicitly disabled TPL will result in the disable of
-   optional support in all downstream packages.  For example, if the user sets
-   ``TPL_ENABLE_MPI=OFF``, then TriBITS will automatically set
-   ``Teuchos_ENABLE_MPI=OFF`` and ``Epetra_ENABLE_MPI=OFF``.  For examples,
-   see `Explicit disable of an optional TPL`_ and `Explicit disable of a
-   required TPL`_.
-
 .. _Disables trump enables where there is a conflict:
 
-10) **Disables trump enables where there is a conflict** and TriBITS will
+9)  **Disables trump enables where there is a conflict** and TriBITS will
     never override a disable in order to satisfy some dependency.  For
     example, if the user sets ``Trilinos_ENABLE_Teuchos=OFF`` and
     ``Trilinos_ENABLE_RTOp=ON``, then TriBITS will **not** override the
@@ -3553,7 +3540,7 @@ In more detail, these rules/behaviors are:
 
 .. _Enable/disable of parent package is enable/disable for subpackages:
 
-11) **Enable/disable of parent package is enable/disable for subpackages**: An
+10) **Enable/disable of parent package is enable/disable for subpackages**: An
     explicit enable/disable of a top-level parent package with subpackages
     with ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>=(ON|OFF)`` is equivalent
     to the explicit enable/disable of all of the parent package's subpackages.
@@ -3576,7 +3563,7 @@ In more detail, these rules/behaviors are:
 
 .. _Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples:
 
-12) **Enable/disable of parent package tests/examples is enable/disable for
+11) **Enable/disable of parent package tests/examples is enable/disable for
     subpackages tests/examples**: Setting
     ``<TRIBITS_PACKAGE>_ENABLE_TESTS=[ON|OFF]`` is equivalent to setting the
     default for ``<TRIBITS_PACKAGE><SP>_ENABLE_TESTS=[ON|OFF]`` for each
@@ -3590,7 +3577,7 @@ In more detail, these rules/behaviors are:
 
 .. _Subpackage enable does not auto-enable the parent package:
 
-13) **Subpackage enable does not auto-enable the parent package**: Enabling an
+12) **Subpackage enable does not auto-enable the parent package**: Enabling an
     package that is a subpackage does **not** automatically enable the
     parent package (except for at the very end, mostly just for show).  For
     example, enabling the package ``ThyraEpetra`` does not result in enable
@@ -3613,7 +3600,7 @@ In more detail, these rules/behaviors are:
 
 .. _Support for optional package/TPL is enabled by default:
 
-14) **Support for optional package/TPL is enabled by default**: For an package
+13) **Support for optional package/TPL is enabled by default**: For an package
     ``<TRIBITS_PACKAGE>`` with an optional dependency on an `upstream`_
     package or TPL ``<TRIBITS_DEP_PACKAGE_OR_TPL>``, TriBITS will
     automatically set the intra-enable variable
@@ -3630,7 +3617,7 @@ In more detail, these rules/behaviors are:
 
 .. _Support for optional package can be explicitly disabled:
 
-15) **Support for optional package can be explicitly disabled:** Even
+14) **Support for optional package can be explicitly disabled:** Even
     though TriBITS will automatically set
     ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` by default if
     ``<TRIBITS_PACKAGE>`` and ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` are both
@@ -3650,7 +3637,7 @@ In more detail, these rules/behaviors are:
 
 .. _Explicit enable of optional package/TPL support auto-enables package/TPL:
 
-16) **Explicit enable of optional package/TPL support auto-enables
+15) **Explicit enable of optional package/TPL support auto-enables
     package/TPL**: If the user explicitly enables the TriBITS package
     ``<TRIBITS_PACKAGE>`` and explicitly sets
     ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` on input,
@@ -3670,7 +3657,7 @@ In more detail, these rules/behaviors are:
 
 .. _ST packages only auto-enabled if ST code is enabled:
 
-17) **ST packages only auto-enabled if ST code is enabled**: TriBITS will
+16) **ST packages only auto-enabled if ST code is enabled**: TriBITS will
     only enable an optional ``ST`` package when
     ``${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON`` if
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON`` is also set.  Otherwise, when
@@ -3689,7 +3676,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests:
 
-18) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests**:
+17) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests**:
     Setting the user cache-variable
     ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_PACKAGES=ON`` will result in the
     `downstream`_ ``PT`` packages and tests to be enabled (and all ``PT``
@@ -3707,7 +3694,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) packages:
 
-19) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) packages**:
+18) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) packages**:
     Setting the user cache-variable ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON``
     will result in the enable of all ``PT`` packages when
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF`` and all ``PT`` and ``ST``
@@ -3726,7 +3713,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_TESTS only enables explicitly enabled package tests:
 
-20) **<Project>_ENABLE_TESTS only enables explicitly enabled package
+19) **<Project>_ENABLE_TESTS only enables explicitly enabled package
     tests**: Setting ``${PROJECT_NAME}_ENABLE_TESTS=ON`` will **only enable
     tests for explicitly enabled packages** on input.  For example,
     configuring with ``Trilinos_ENABLE_RTOp=ON`` and
@@ -3741,7 +3728,7 @@ In more detail, these rules/behaviors are:
 
 .. _If no packages are enabled, nothing will get built:
 
-21) **If no packages are enabled, nothing will get built**: Most TriBITS
+20) **If no packages are enabled, nothing will get built**: Most TriBITS
     projects are set up such that if the user does not explicitly enable at
     least one package in some way, then nothing will be enabled or built.
     In this case, when ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=TRUE`` a warning
@@ -3755,7 +3742,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS prints all enables and disables to stdout:
 
-22) **TriBITS prints all enables and disables to stdout**: TriBITS prints out
+21) **TriBITS prints all enables and disables to stdout**: TriBITS prints out
     (to ``cmake`` stdout) the initial set of enables/disables on input, prints
     a line whenever it sets (or overrides) an enable or disable, and prints
     out the final set of enables/disables.  Therefore, the user just needs to
@@ -3768,7 +3755,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS auto-enables/disables done using non-cache local variables:
 
-23) **TriBITS auto-enables/disables done using non-cache local variables**:
+22) **TriBITS auto-enables/disables done using non-cache local variables**:
     TriBITS setting (or overrides) of enable/disable cache variables are done
     by setting local non-cache variables at the top project-level scope
     (i.e. the ``<projectDir>/CMakeLists.txt`` file scope).  This is done so

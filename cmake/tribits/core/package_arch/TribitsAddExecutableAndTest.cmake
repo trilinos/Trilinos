@@ -40,6 +40,7 @@
 
 include(TribitsAddExecutable)
 include(TribitsAddTest)
+include(TribitsDeprecatedHelpers)
 
 
 #
@@ -146,6 +147,16 @@ endmacro()
 # through ``ARGS``.  For more flexibility, just use
 # ``tribits_add_executable()`` followed by ``tribits_add_test()``.
 #
+# Finally, the tests are only added if tests are enabled for the package
+# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_ ``= ON``) and other criteria are met.
+# But the test executable will always be added if this function is called,
+# regardless of the value of ``${PACKAGE_NAME}_ENABLE_TESTS``.  To avoid
+# adding the test (or example) executable when
+# ``${PACKAGE_NAME}_ENABLE_TESTS=OFF``, put this command in a subdir under
+# ``test/`` or ``example/`` and that subdir with
+# `tribits_add_test_directories()`_ or `tribits_add_example_directories()`_,
+# respectively.
+#
 function(tribits_add_executable_and_test EXE_NAME)
 
   #
@@ -196,6 +207,10 @@ function(tribits_add_executable_and_test EXE_NAME)
   #
   # C) tribits_add_executable(...)
   #
+
+  if (PARSE_DEPLIBS)
+    tribits_deprecated("DEPLIBS argument of tribits_add_executable_and_test() is deprecated.")
+  endif()
 
   set(CALL_ARGS "")
   tribits_fwd_parse_arg(CALL_ARGS SOURCES)
@@ -257,3 +272,5 @@ function(tribits_add_executable_and_test EXE_NAME)
   endif()
 
 endfunction()
+
+#  LocalWords:  executables

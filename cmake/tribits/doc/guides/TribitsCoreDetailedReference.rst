@@ -61,6 +61,7 @@ The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
 * `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
+* `${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -119,6 +120,25 @@ These options are described below.
     set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
 
   in the project's base `<projectDir>/ProjectName.cmake`_ file.
+
+
+.. _${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES:
+
+**${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES**
+
+  To set ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` a different default,
+  set::
+
+    set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  <newDefault>)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file, where
+  ``<newDefault>`` can be ``FATAL_ERROR``, ``SEND_ERROR``, ``WARNING``,
+  ``NOTICE`` or ``IGNORE``
+
+  Otherwise, the default is ``WARNING`` when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``ON`` and if ``IGNORE`` if
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``OFF``.
+
 
 .. _${PROJECT_NAME}_C_Standard:
 
@@ -349,11 +369,12 @@ These options are described below.
   to ``OFF`` when creating a release (see `Project and Repository Versioning
   and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
   ``ON``, several other variables are given defaults appropriate for
-  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
-  is set to ``ON`` by default in development mode but is set to ``OFF`` by
-  default in release mode.  In addition, strong compiler warnings are enabled
-  by default in development mode but are disabled by default in release mode.
-  This variable also affects the behavior of `tribits_set_st_for_dev_mode()`_.
+  development mode.  For example,
+  ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` is set to ``FATAL_ERROR`` by
+  default in development mode but is set to ``IGNORE`` by default in release
+  mode.  In addition, strong compiler warnings are enabled by default in
+  development mode but are disabled by default in release mode.  This variable
+  also affects the behavior of `tribits_set_st_for_dev_mode()`_.
  
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   

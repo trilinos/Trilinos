@@ -39,6 +39,7 @@
 
 include(ConcatStrings)
 include(PrintVar)
+include(TribitsDeprecatedHelpers)
 
 
 # @FUNCTION: append_string_var()
@@ -60,6 +61,8 @@ include(PrintVar)
 #   string(APPEND <stringVar> "<string1>" "<string2>" ...)
 #
 function(append_string_var STRING_VAR_OUT)
+  tribits_deprecated_command(append_string_var
+    MESSAGE "Use string(APPEND) instead.")
   #message("APPEND_STRING_VAR: ${STRING_VAR_OUT} {${ARGN}}")
   concat_strings( STRING_VAR "${${STRING_VAR_OUT}}" ${ARGN} )
   #print_var( STRING_VAR )

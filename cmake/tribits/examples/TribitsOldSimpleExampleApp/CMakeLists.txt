@@ -52,11 +52,14 @@ target_include_directories(app
 
 enable_testing()
 
-if ("SimpleTpl" IN_LIST TribitsExProj_TPL_LIST)
+if ("SimpleTpl"  IN_LIST  TribitsExProj_TPL_LIST  OR  TARGET  SimpleTpl::all_libs)
   set(simpleCxxDeps "simpletpl headeronlytpl")
 else()
   set(simpleCxxDeps "headeronlytpl")
 endif()
+# NOTE: Above, TribitsExProj_TPL_LIST does not exist in new TriBITS so to make
+# this work for new TriBITS as well, we need to check for target
+# SimpleTpl::all_libs.  Small price to pay for progress!
 
 add_test(NAME util_test COMMAND util)
 set_tests_properties(util_test PROPERTIES

@@ -38,6 +38,7 @@
 # @HEADER
 
 include(CMakeParseArguments)
+include(TribitsDeprecatedHelpers)
 
 
 # @MACRO: tribits_include_directories()
@@ -89,7 +90,11 @@ endmacro()
 # Deprecated.  Use tribits_include_directories() instead!
 macro(include_directories)
 
- cmake_parse_arguments(
+  tribits_deprecated_command(include_directories
+    MESSAGE "Use tribits_include_directories() instead."
+    )
+
+  cmake_parse_arguments(
     #prefix
     PARSE
     #options
@@ -100,11 +105,6 @@ macro(include_directories)
     ""
     ${ARGN}
     )
-
-#  if (PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
-#    message(WARNING "Warning: the override include_directories() is deprecated,"
-#    " use tribits_include_directories() instead!")
-#  endif()
 
   if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
     _include_directories(${PARSE_UNPARSED_ARGUMENTS})
