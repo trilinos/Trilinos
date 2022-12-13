@@ -4,7 +4,7 @@ def version():
 
 
 import importlib
-from . getTypeName import getTypeName, getDefaultScalarType, ROL_classes
+from . getTypeName import getTypeName, getDefaultScalarType, ROL_classes, ROL_members
 
 def getWrapper(classname):
     def wrapper(scalarType=getDefaultScalarType()):
@@ -14,9 +14,11 @@ def getWrapper(classname):
     return wrapper
 
 defaultScalarType = getDefaultScalarType()
-for classnameLong, _ in ROL_classes:
+for classnameLong in ROL_members:
+    class_obj, isClass = ROL_members[classnameLong]
     pos = classnameLong.find('_'+defaultScalarType+'_t')
     if pos <= 0:
+        locals().update({classnameLong: class_obj})
         continue
     classname = classnameLong[:pos]
 

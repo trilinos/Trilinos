@@ -2,6 +2,7 @@ from PyROL.PyROL import ROL
 import inspect
 import sys
 
+ROL_members = {cls_name: (cls_obj, inspect.isclass(cls_obj)) for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL'])}
 ROL_classes = [(cls_name , cls_obj) for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL']) if inspect.isclass(cls_obj)]
 
 def getDefaultScalarType():
