@@ -50,6 +50,16 @@ class npVector(getTypeName('Vector')):
             op.reduce(self.values[i], v)
         return v
 
+    def applyUnary(self, op, other):
+        assert self.dimension() == other.dimension()
+        for i in range(self.dimension()):
+            values[i] = op.apply(values[i])
+
+    def applyBinary(self, op, other):
+        assert self.dimension() == other.dimension()
+        for i in range(self.dimension()):
+            self.values[i] = op.apply(self.values[i], other.values[i])
+
     def __getitem__(self, index):
         return self.values[index]
 
