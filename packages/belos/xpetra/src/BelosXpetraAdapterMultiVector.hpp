@@ -54,9 +54,7 @@
 #include <Xpetra_EpetraMultiVector.hpp>
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
-#endif
 
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
@@ -67,10 +65,8 @@
 #include <BelosEpetraAdapter.hpp>
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <BelosTpetraAdapter.hpp>
 #include <TpetraCore_config.h>
-#endif
 
 #ifdef HAVE_BELOS_TSQR
 namespace BelosXpetraTsqrImpl {
@@ -121,7 +117,6 @@ namespace BelosXpetraTsqrImpl {
     }
   };
 
-#ifdef HAVE_XPETRA_TPETRA
   template<class Scalar, class LO, class GO, class Node>
   class XpetraTpetraTsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
@@ -179,7 +174,6 @@ namespace BelosXpetraTsqrImpl {
     typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar,LO,GO,Node> > tpetra_tsqr_adaptor_type;
     tpetra_tsqr_adaptor_type tpetraImpl_;
   };
-#endif // HAVE_XPETRA_TPETRA
 
 } // namespace BelosXpetraTsqrImpl
 #endif // HAVE_BELOS_TSQR
@@ -202,10 +196,8 @@ namespace Belos {
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> > {
   private:
-#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                   TpetraMultiVector;
     typedef MultiVecTraits<Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-#endif
 
   public:
 
@@ -216,10 +208,8 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::Clone(toTpetra(mv), numvecs)));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -228,10 +218,8 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv))));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -240,10 +228,8 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -254,10 +240,8 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -266,10 +250,8 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -280,10 +262,8 @@ namespace Belos {
                       const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -292,13 +272,11 @@ namespace Belos {
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
         RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > r = MultiVecTraitsTpetra::CloneView(toTpetra(mv), index);
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -309,13 +287,11 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
         RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > r = MultiVecTraitsTpetra::CloneView(toTpetra(mv), index);
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -324,10 +300,8 @@ namespace Belos {
     static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -336,10 +310,8 @@ namespace Belos {
     static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetNumberVecs(toTpetra(mv));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -348,10 +320,8 @@ namespace Belos {
     static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return  MultiVecTraitsTpetra::HasConstantStride(toTpetra(mv));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -367,12 +337,10 @@ namespace Belos {
 #endif
 
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTimesMatAddMv(alpha, toTpetra(A), B, beta, toTpetra(mv));
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -381,13 +349,10 @@ namespace Belos {
     static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvAddMv(alpha, toTpetra(A), beta, toTpetra(B), toTpetra(mv));
         return;
       }
-
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -396,12 +361,10 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alpha);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -410,12 +373,10 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alphas);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -428,12 +389,10 @@ namespace Belos {
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTransMv(alpha, toTpetra(A), toTpetra(B), C);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -442,12 +401,10 @@ namespace Belos {
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvDot(toTpetra(A), toTpetra(B), dots);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -456,12 +413,10 @@ namespace Belos {
     static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvNorm(toTpetra(mv), normvec, type);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -470,12 +425,10 @@ namespace Belos {
     static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -487,12 +440,10 @@ namespace Belos {
               Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -503,12 +454,10 @@ namespace Belos {
             Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::Assign(toTpetra(A), toTpetra(mv));
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -517,12 +466,10 @@ namespace Belos {
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvRandom(toTpetra(mv));
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -531,12 +478,10 @@ namespace Belos {
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvInit(toTpetra(mv), alpha);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
@@ -545,23 +490,17 @@ namespace Belos {
     static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvPrint(toTpetra(mv), os);
         return;
       }
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
     }
 
 #ifdef HAVE_BELOS_TSQR
-#  ifdef HAVE_XPETRA_TPETRA
     typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
-#  else
-    typedef BelosXpetraTsqrImpl::XpetraStubTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
-#  endif // HAVE_XPETRA_TPETRA
 #endif // HAVE_BELOS_TSQR
   };
 
@@ -575,12 +514,10 @@ namespace Belos {
     typedef int                 GO;
     typedef Xpetra::EpetraNode  Node;
 
-#ifdef HAVE_XPETRA_TPETRA // TODO check whether Tpetra is instantiated on all template parameters!
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
     typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -597,14 +534,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::Clone(toTpetra(mv), numvecs)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -617,14 +552,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv))));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -637,14 +570,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -659,14 +590,12 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -679,14 +608,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -721,7 +648,6 @@ namespace Belos {
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -730,7 +656,6 @@ namespace Belos {
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -748,7 +673,6 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -757,7 +681,6 @@ namespace Belos {
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -773,14 +696,12 @@ namespace Belos {
     static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -793,14 +714,12 @@ namespace Belos {
     static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return MultiVecTraitsTpetra::GetNumberVecs(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -813,14 +732,12 @@ namespace Belos {
     static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
         return  MultiVecTraitsTpetra::HasConstantStride(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -839,7 +756,6 @@ namespace Belos {
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -847,7 +763,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -862,7 +777,6 @@ namespace Belos {
     static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -870,7 +784,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -885,7 +798,6 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -893,7 +805,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -908,7 +819,6 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -916,7 +826,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -935,7 +844,6 @@ namespace Belos {
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -943,7 +851,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (A.getMap()->lib() == Xpetra::UseEpetra) {
@@ -958,7 +865,6 @@ namespace Belos {
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -966,7 +872,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (A.getMap()->lib() == Xpetra::UseEpetra) {
@@ -981,7 +886,6 @@ namespace Belos {
     static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -989,7 +893,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1004,7 +907,6 @@ namespace Belos {
     static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1012,7 +914,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1030,7 +931,6 @@ namespace Belos {
               Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1038,7 +938,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1055,7 +954,6 @@ namespace Belos {
             Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1063,7 +961,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1078,7 +975,6 @@ namespace Belos {
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1086,7 +982,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1101,7 +996,6 @@ namespace Belos {
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1109,7 +1003,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1124,7 +1017,6 @@ namespace Belos {
     static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1132,7 +1024,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1145,8 +1036,7 @@ namespace Belos {
     }
 
 #ifdef HAVE_BELOS_TSQR
-#  if defined(HAVE_XPETRA_TPETRA) && \
-  ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
+#  if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
     typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
 #  else
@@ -1168,12 +1058,10 @@ namespace Belos {
     typedef long long           GO;
     typedef Xpetra::EpetraNode  Node;
 
-#ifdef HAVE_XPETRA_TPETRA // TODO check whether Tpetra is instantiated on all template parameters!
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
     typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -1190,14 +1078,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::Clone(toTpetra(mv), numvecs)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1210,14 +1096,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv))));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1230,14 +1114,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1252,14 +1134,12 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1272,14 +1152,12 @@ namespace Belos {
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1314,7 +1192,6 @@ namespace Belos {
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1323,7 +1200,6 @@ namespace Belos {
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1341,7 +1217,6 @@ namespace Belos {
                const Teuchos::Range1D& index)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1350,7 +1225,6 @@ namespace Belos {
         return rcp(new TpetraMultiVector(Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LO,GO,Node> >(r)));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1366,14 +1240,12 @@ namespace Belos {
     static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1386,14 +1258,12 @@ namespace Belos {
     static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return MultiVecTraitsTpetra::GetNumberVecs(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1406,14 +1276,12 @@ namespace Belos {
     static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         return  MultiVecTraitsTpetra::HasConstantStride(toTpetra(mv));
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
@@ -1432,7 +1300,6 @@ namespace Belos {
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1440,7 +1307,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1455,7 +1321,6 @@ namespace Belos {
     static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1463,7 +1328,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1478,7 +1342,6 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1486,7 +1349,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1501,7 +1363,6 @@ namespace Belos {
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1509,7 +1370,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1528,7 +1388,6 @@ namespace Belos {
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1536,7 +1395,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (A.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1551,7 +1409,6 @@ namespace Belos {
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1559,7 +1416,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (A.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1574,7 +1430,6 @@ namespace Belos {
     static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1582,7 +1437,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1597,7 +1451,6 @@ namespace Belos {
     static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1605,7 +1458,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1623,7 +1475,6 @@ namespace Belos {
               Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1631,7 +1482,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1648,7 +1498,6 @@ namespace Belos {
             Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1656,7 +1505,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1671,7 +1519,6 @@ namespace Belos {
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1679,7 +1526,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1694,7 +1540,6 @@ namespace Belos {
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1702,7 +1547,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1717,7 +1561,6 @@ namespace Belos {
     static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     {
 
-#ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
 #if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
@@ -1725,7 +1568,6 @@ namespace Belos {
         return;
 #endif
       }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
@@ -1738,8 +1580,7 @@ namespace Belos {
     }
 
 #ifdef HAVE_BELOS_TSQR
-#  if defined(HAVE_XPETRA_TPETRA) && \
-  ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+#  if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
 #  else
