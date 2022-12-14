@@ -71,9 +71,7 @@
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Exceptions.hpp>
 #include <Xpetra_Map.hpp> // for enum UnderlyingLib
-#ifdef HAVE_XPETRA_TPETRA
-#  include <Xpetra_TpetraMap.hpp>
-#endif
+#include <Xpetra_TpetraMap.hpp>
 #ifdef HAVE_XPETRA_EPETRA
 #  include <Xpetra_EpetraMap.hpp>
 #endif
@@ -141,10 +139,8 @@ namespace Galeri {
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
-#ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
         return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
-#endif
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == ::Xpetra::UseEpetra) {
         return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
@@ -161,10 +157,8 @@ namespace Galeri {
       typedef int GlobalOrdinal;
       typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
-#ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
         return CreateMap<int, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
-#endif
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == ::Xpetra::UseEpetra)
         return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
@@ -181,10 +175,8 @@ namespace Galeri {
       typedef long long GlobalOrdinal;
       typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
-#ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
         return CreateMap<int, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
-#endif
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == ::Xpetra::UseEpetra)
         return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);

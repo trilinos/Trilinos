@@ -64,9 +64,7 @@
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Exceptions.hpp>
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMap.hpp>
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraMap.hpp>
 #endif
@@ -113,7 +111,6 @@ namespace Galeri {
 #endif // HAVE_GALERI_TPETRA
 
 #ifdef HAVE_GALERI_XPETRA
-#ifdef HAVE_XPETRA_TPETRA
     /* Specialized traits for Map = Xpetra::TpetraMap<...> */
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     class MapTraits <GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> >
@@ -125,7 +122,6 @@ namespace Galeri {
       static Teuchos::RCP< ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
       { return Teuchos::rcp( new ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm) ); }
     };
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
     /* Specialized traits for Map = Xpetra::EpetraMap<int,GlobalOrdinal,Node> */
