@@ -73,12 +73,10 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
         return rcp(new Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, NumVectors, zeroOut));
     }
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, NumVectors, zeroOut));
     }
-#endif
 
     XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
     XPETRA_FACTORY_END;
@@ -94,12 +92,10 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, ArrayOfPtrs, NumVectors));
     }
-#endif
 
     XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
     XPETRA_FACTORY_END;
@@ -114,12 +110,10 @@ Build(const Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, 
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-#ifdef HAVE_XPETRA_TPETRA
     if(source->getMap()->lib() == UseTpetra)
     {
       return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*source, copyOrView));
     }
-#endif
 
     XPETRA_FACTORY_ERROR_IF_EPETRA(source->getMap()->lib());
     XPETRA_FACTORY_END;

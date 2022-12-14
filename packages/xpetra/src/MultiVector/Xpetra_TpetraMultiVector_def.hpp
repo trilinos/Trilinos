@@ -467,8 +467,6 @@ namespace Xpetra {
   setSeed(unsigned int seed) { XPETRA_MONITOR("TpetraMultiVector::seedrandom"); Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
   
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_host_const_um
   TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
@@ -513,8 +511,6 @@ namespace Xpetra {
   getDeviceLocalView(Access::ReadWriteStruct) const {
     return subview(vec_->getLocalViewDevice(Tpetra::Access::ReadWrite),Kokkos::ALL(), Kokkos::ALL());
   }
-
-#endif
 
   /// \brief Implementation of the assignment operator (operator=);
   ///   does a deep copy.

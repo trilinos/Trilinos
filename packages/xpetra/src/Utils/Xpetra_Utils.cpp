@@ -58,8 +58,6 @@ namespace Xpetra {
     }
   }
 
-#ifdef HAVE_XPETRA_TPETRA
-
   Xpetra::LookupStatus toXpetra(Tpetra::LookupStatus ls) {
 
     if (ls == Tpetra::AllIDsPresent)
@@ -107,8 +105,6 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LocalGlobal");
 
   }
-
-#endif // HAVE_XPETRA_TPETRA
 
 #ifdef HAVE_XPETRA_EPETRA
 

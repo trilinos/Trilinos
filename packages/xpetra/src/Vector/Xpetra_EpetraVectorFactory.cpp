@@ -71,12 +71,10 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, int, EpetraNode>>& map, bool zer
     }
 
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraVector(map, zeroOut));
     }
-#endif      // HAVE_XPETRA_TPETRA
 
     if(map->lib() == UseEpetra)
     {
@@ -105,12 +103,10 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, long long, EpetraNode>>& map, bo
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
     }
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraVector(map, zeroOut));
     }
-#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -140,12 +136,10 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, int, EpetraNode>>& map, bool zer
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
     }
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraVector(map, zeroOut));
     }
-#endif      // HAVE_XPETRA_TPETRA
 
     if(map->lib() == UseEpetra)
     {
@@ -175,12 +169,10 @@ Build(const Teuchos::RCP<const Xpetra::Map<int, long long, EpetraNode>>& map, bo
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
     }
 
-#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraVector(map, zeroOut));
     }
-#endif      // HAVE_XPETRA_TPETRA
 
     if(map->lib() == UseEpetra)
     {

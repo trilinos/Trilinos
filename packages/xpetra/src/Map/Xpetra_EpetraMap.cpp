@@ -76,7 +76,6 @@ namespace Xpetra {
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "TpetraCore_config.h"
 #if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
     (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
@@ -116,13 +115,6 @@ template const RCP< const Map<int, int, default_node_type > > toXpetra<int, defa
 template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, int, default_node_type> & map);
 #endif
-#else
-// Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Xpetra::EpetraNode default_node_type;
-template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
-template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, int, default_node_type> & map);
-#endif    // HAVE_XPETRA_TPETRA
 
 #endif    // XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
@@ -130,7 +122,6 @@ template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, in
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "TpetraCore_config.h"
 #if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
     (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
@@ -175,14 +166,6 @@ template const RCP< const Map<int, long long, default_node_type > > toXpetra<lon
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< int, long long, default_node_type> & map);
 #endif
-
-#else
-// Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Xpetra::EpetraNode default_node_type;
-template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);
-template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< int, long long, default_node_type> & map);
-#endif   // HAVE_XPETRA_TPETRA
 
 #endif   // HAVE_XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 

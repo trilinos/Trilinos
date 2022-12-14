@@ -1488,7 +1488,6 @@ namespace Xpetra {
     }
     //@}
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrixDevice () const {
@@ -1505,8 +1504,6 @@ namespace Xpetra {
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
     }
 
-
-#endif
 
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator() {

@@ -273,7 +273,6 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_COMPILE \
                          DOXYGEN_SHOULD_SKIP_THIS \
                          EPETRA_MPI \
-                         HAVE_XPETRA_TPETRA \
                          HAVE_XPETRA_EPETRA \
                          HAVE_XPETRA_EPETRAEXT
 EXPAND_AS_DEFINED      =

@@ -317,19 +317,10 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     size_t getMapIndexForGID(GlobalOrdinal gid) const;
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    #ifdef HAVE_XPETRA_TPETRA
         using local_map_type = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
 
         /// \brief Get the local Map for Kokkos kernels.
         local_map_type getLocalMap() const { return fullmap_->getLocalMap(); }
-
-    #else   // HAVE_XPETRA_TPETRA
-        #ifdef __GNUC__
-            #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-        #endif  // __GNUC__
-    #endif  // #else !HAVE_XPETRA_TPETRA
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
 
     //@}

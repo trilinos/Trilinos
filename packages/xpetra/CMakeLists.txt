@@ -143,7 +143,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 ENDIF()
 
-GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
 GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
 GLOBAL_SET(HAVE_XPETRA_THYRA ${${PACKAGE_NAME}_ENABLE_Thyra})
@@ -174,15 +173,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
   "Enable detailed timing of Xpetra."
   OFF)
 
-# Define option to enable code that is refactored to use Kokkos
-SET(Kokkos_Refactor_On_By_Default ON)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable Xpetra code refactored to use Kokkos."
-  ${Kokkos_Refactor_On_By_Default})
-
 #
 #
 #
@@ -210,4 +200,3 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
-

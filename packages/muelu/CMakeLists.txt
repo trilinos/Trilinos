@@ -16,7 +16,6 @@ ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
-ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
 IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
 ENDIF()
@@ -225,10 +224,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
   "Enable Boost"
   OFF)
-
-IF (NOT Xpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
-ENDIF()
 
 # Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)

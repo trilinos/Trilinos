@@ -53,9 +53,7 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #endif
@@ -152,13 +150,10 @@ namespace {
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
   #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
     typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N;
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -174,16 +169,12 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixUtils, SwitchMatrixToStridedMaps, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
-
-#endif
 
 
 #if defined(HAVE_XPETRA_EPETRA)

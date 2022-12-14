@@ -61,10 +61,8 @@
 
 #include "Xpetra_ThyraUtils.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraVector.hpp"
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
@@ -348,14 +346,11 @@ namespace {
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
   #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
     typedef typename Xpetra::TpetraMultiVector<S,LO,GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::TpetraVector<S,LO,GO,N> V##S##LO##GO##N;       \
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -372,13 +367,11 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Create,          M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, CreateProductMV, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
-#if defined(HAVE_XPETRA_TPETRA)
   #include <TpetraCore_config.h>
   #include <TpetraCore_ETIHelperMacros.h>
   TPETRA_ETI_MANGLING_TYPEDEFS()
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_THYRAMULTIVECTOR_INSTANT )
-#endif
 
 
 #ifdef HAVE_XPETRA_EPETRA

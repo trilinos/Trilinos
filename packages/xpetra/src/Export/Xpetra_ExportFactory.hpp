@@ -50,9 +50,7 @@
 
 #include "Xpetra_Export.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraExport.hpp"
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraExport.hpp"
 #endif
@@ -76,10 +74,8 @@ namespace Xpetra {
       XPETRA_MONITOR("ExportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(source->lib());
       XPETRA_FACTORY_END;
@@ -107,10 +103,8 @@ namespace Xpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
-#endif
 
       if (source->lib() == UseEpetra)
         return rcp( new EpetraExportT<int, Node>(source, target));
@@ -141,10 +135,8 @@ namespace Xpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
-#endif
 
       if (source->lib() == UseEpetra)
         return rcp( new EpetraExportT<long long, Node>(source, target));

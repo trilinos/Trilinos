@@ -69,7 +69,6 @@
 #include <Epetra_RowMatrixTransposer.h>
 #endif // HAVE_XPETRA_EPETRAEXT
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
@@ -78,7 +77,6 @@
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#endif // HAVE_XPETRA_TPETRA
 
 namespace Xpetra {
 
@@ -159,7 +157,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
     }
 #endif // HAVE_XPETRA_EPETRA
 
-#ifdef HAVE_XPETRA_TPETRA
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> > Op2TpetraCrs(RCP<Matrix> Op) {
       // Get the underlying Tpetra Mtx
       RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(Op);
@@ -299,18 +296,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
        return false;
      }
     }
-#else // HAVE_XPETRA_TPETRA
-    static bool isTpetraCrs(const Matrix& Op) {
-      return false;
-    }
 
-    static bool isTpetraBlockCrs(const Matrix&  Op) {
-      return false;
-    }
-
-#endif // HAVE_XPETRA_TPETRA
-
-#ifdef HAVE_XPETRA_TPETRA
     using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
     static Teuchos::RCP<Matrix> tpetraAdd(
       const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
@@ -373,7 +359,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
       }
     }
-#endif
 
 #ifdef HAVE_XPETRA_EPETRAEXT
     static void epetraExtMult(const Matrix& A, bool transposeA, const Matrix& B, bool transposeB, Matrix& C, bool fillCompleteResult)
@@ -487,7 +472,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
 #endif
       } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA     
         using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
         if(helpers::isTpetraCrs(A) && helpers::isTpetraCrs(B) && helpers::isTpetraCrs(C)) {
           // All matrices are Crs
@@ -536,9 +520,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           // Mix and match
           TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");          
         }
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
       }
 
       if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -791,14 +772,10 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw Exceptions::RuntimeError("TwoMatrixAdd for Epetra matrices needs <double,int,int> for Scalar, LocalOrdinal and GlobalOrdinal.");
       } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
         Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(B);
 
         Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
-#else
-        throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
       }
     } //MatrixMatrix::TwoMatrixAdd()
 
@@ -838,15 +815,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         if (lib == Xpetra::UseEpetra) {
           throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
         } else if (lib == Xpetra::UseTpetra) {
-  #ifdef HAVE_XPETRA_TPETRA
           using tcrs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NO>;
           using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
           const tcrs_matrix_type& tpA = helpers::Op2TpetraCrs(A);
           const tcrs_matrix_type& tpB = helpers::Op2TpetraCrs(B);
           C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
-  #else
-          throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-  #endif
         }
         ///////////////////////// EXPERIMENTAL
         if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));
@@ -1044,7 +1017,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #endif
       } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,int> ETI enabled."));
@@ -1098,9 +1070,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");          
         }
 # endif
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
       }
 
       if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -1527,7 +1496,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
 #endif
       } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
@@ -1537,9 +1505,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
         Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 # endif
-#else
-        throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
       }
     } //MatrixMatrix::TwoMatrixAdd()
 
@@ -1629,7 +1594,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw Exceptions::RuntimeError("MueLu must be compile with EpetraExt.");
   #endif
         } else if (lib == Xpetra::UseTpetra) {
-  #ifdef HAVE_XPETRA_TPETRA
     # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
          (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
@@ -1639,9 +1603,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const tcrs_matrix_type& tpB = helpers::Op2TpetraCrs(B);
           C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
     # endif
-  #else
-          throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
-  #endif
         }
 
         ///////////////////////// EXPERIMENTAL
@@ -1839,7 +1800,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #endif
       } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,long long, EpetraNode> ETI enabled."));
@@ -1894,9 +1854,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         }
       
 # endif
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
       }
 
       if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -2168,7 +2125,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
 #endif
       } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=long long enabled."));
@@ -2178,9 +2134,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
         Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 # endif
-#else
-        throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
       }
     } //MatrixMatrix::TwoMatrixAdd()
 
@@ -2265,7 +2218,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw Exceptions::RuntimeError("MueLu must be compile with EpetraExt.");
   #endif
         } else if (lib == Xpetra::UseTpetra) {
-  #ifdef HAVE_XPETRA_TPETRA
     # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
          (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
           throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=long long enabled."));
@@ -2276,9 +2228,6 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           const tcrs_matrix_type& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
           C = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
     # endif
-  #else
-          throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
-  #endif
         }
 
         ///////////////////////// EXPERIMENTAL

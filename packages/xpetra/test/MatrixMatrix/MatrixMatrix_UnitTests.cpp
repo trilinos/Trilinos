@@ -70,13 +70,11 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
@@ -121,7 +119,6 @@ namespace {
   double errorTolSlack = 1e+1;
 
 
-#if (defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)) || (defined(HAVE_XPETRA_TPETRA))
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
@@ -129,7 +126,6 @@ namespace {
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
-#endif
 
   /////////////////////////////////////////////////////
 
@@ -377,7 +373,6 @@ namespace {
     // The matrix reader does not work with complex scalars. Skip all tests then.
     return;
 #endif
-#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -463,7 +458,6 @@ namespace {
         TEUCHOS_TEST_EQUALITY(xAtBt->getFrobeniusNorm(), yAtBt->getFrobeniusNorm(), out, success );
         TEUCHOS_TEST_EQUALITY(xAtBt->getLocalNumEntries(), yAtBt->getLocalNumEntries(), out, success );
     }// end Tpetra test
-#endif
   }
 
 
@@ -473,7 +467,6 @@ namespace {
     // The matrix reader does not work with complex scalars. Skip all tests then.
     return;
 #endif
-#ifdef HAVE_XPETRA_TPETRA
     typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -510,22 +503,17 @@ namespace {
     TEUCHOS_TEST_EQUALITY(helpers::isTpetraBlockCrs(mat), true, out, success);
     TEUCHOS_TEST_EQUALITY(helpers::isTpetraCrs(mat), false, out, success);
 
-#endif
-
   }
 
 
   //
   // INSTANTIATIONS
   //
-#ifdef HAVE_XPETRA_TPETRA
 
   #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
     typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N; \
     typedef typename Xpetra::TpetraBlockCrsMatrix<S,LO,GO,N> MB##S##LO##GO##N; \
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -548,16 +536,12 @@ namespace {
 #define XP_EPETRA64_MATRIX_INSTANT(S,LO,GO,N) \
       TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, Multiply_Epetra64, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
-
-#endif
 
 
 #if defined(HAVE_XPETRA_EPETRA)

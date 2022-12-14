@@ -50,9 +50,7 @@
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 
@@ -239,15 +237,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortAndMergeCrsEntriesEpetra, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrixUtils, sortAndMergeCrsEntriesEpetra, SC, LO, GO, NO)
 
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_TPETRAONLY )
-
-#endif
 
 
 #if defined(HAVE_XPETRA_EPETRA)

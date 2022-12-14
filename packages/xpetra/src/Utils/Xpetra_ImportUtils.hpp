@@ -61,10 +61,8 @@
 #include "Xpetra_EpetraImport.hpp"
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraImport.hpp"
 #include "Tpetra_Import_Util.hpp"
-#endif
 
 namespace Xpetra {
 
@@ -98,9 +96,7 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::ImportUtils only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPidGidPairs(Xpetra::toTpetra(Importer),gpids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -116,9 +112,7 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::ImportUtils only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -135,9 +129,7 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::ImportUtils only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
    }
 
@@ -153,9 +145,7 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::ImportUtils only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getRemotePIDs(Xpetra::toTpetra(Importer),RemotePIDs);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
     
@@ -184,9 +174,7 @@ public:
         Epetra_Util::GetPidGidPairs(*e_Importer,gpids_v,use_minus_one_for_local);
         std::copy(gpids_v.begin(),gpids_v.end(),gpids.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPidGidPairs(Xpetra::toTpetra(Importer),gpids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -203,9 +191,7 @@ public:
         Epetra_Util::GetPids(*e_Importer,pids_v,use_minus_one_for_local);
         std::copy(pids_v.begin(),pids_v.end(),pids.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -222,9 +208,7 @@ public:
         std::vector<int> pids_v(pids.begin(),pids.end());
         Epetra_Util::GetPids(*e_Importer,pids_v,use_minus_one_for_local);
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
    }
 
@@ -241,9 +225,7 @@ public:
         Epetra_Util::GetRemotePIDs(*e_Importer,pids_v);
         std::copy(pids_v.begin(),pids_v.end(),RemotePIDs.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getRemotePIDs(Xpetra::toTpetra(Importer),RemotePIDs);
-#endif // HAVE_XPETRA_TPETRA
       }
     }  
 
@@ -274,9 +256,7 @@ public:
         std::copy(gpids_v.begin(),gpids_v.end(),gpids.begin());
 
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPidGidPairs(Xpetra::toTpetra(Importer),gpids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -293,9 +273,7 @@ public:
         Epetra_Util::GetPids(*e_Importer,pids_v,use_minus_one_for_local);
         std::copy(pids_v.begin(),pids_v.end(),pids.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
     }
 
@@ -313,9 +291,7 @@ public:
         Epetra_Util::GetPids(*e_Importer,pids_v,use_minus_one_for_local);
         std::copy(pids_v.begin(),pids_v.end(),pids.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer),pids,use_minus_one_for_local);
-#endif // HAVE_XPETRA_TPETRA
       }
    }
 
@@ -332,9 +308,7 @@ public:
         Epetra_Util::GetRemotePIDs(*e_Importer,pids_v);
         std::copy(pids_v.begin(),pids_v.end(),RemotePIDs.begin());
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::getRemotePIDs(Xpetra::toTpetra(Importer),RemotePIDs);
-#endif // HAVE_XPETRA_TPETRA
       }
     }  
 

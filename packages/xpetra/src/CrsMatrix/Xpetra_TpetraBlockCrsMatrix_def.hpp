@@ -826,9 +826,6 @@ getTpetra_BlockCrsMatrixNonConst() const
     return mtx_; 
 } 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
-
 // was:     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 //using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
 
@@ -870,9 +867,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 {
     throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
 }
-
-#endif  // HAVE_XPETRA_TPETRA
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -1200,8 +1194,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     local_matrix_type getLocalMatrix () const {
@@ -1216,8 +1208,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
     }
-#endif  // HAVE_XPETRA_TPETRA
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
     }; // TpetraBlockCrsMatrix class
 
@@ -1543,8 +1533,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     local_matrix_type getLocalMatrix () const {
@@ -1559,8 +1547,6 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
     }
-#endif  // HAVE_XPETRA_TPETRA
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
     }; // TpetraBlockCrsMatrix class
 
