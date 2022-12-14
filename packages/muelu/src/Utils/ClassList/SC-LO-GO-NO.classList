@@ -2,7 +2,7 @@ AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
 AmalgamationFactory_kokkos
-Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+Amesos2Smoother
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
 BelosSmoother - #if defined(HAVE_MUELU_BELOS)
@@ -49,7 +49,7 @@ HierarchyManager
 HierarchyFactory
 HierarchyUtils
 InterfaceAggregationFactory
-Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+Ifpack2Smoother
 IndefBlockedDiagonalSmoother
 InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
@@ -95,8 +95,8 @@ SaPFactory_kokkos
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
-ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
-ShiftedLaplacianOperator - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacian - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacianOperator - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 SimpleSmoother
 Smoother
 SmootherBase
@@ -105,7 +105,7 @@ SmootherPrototype
 SmooVecCoalesceDropFactory
 SolverBase
 SteepestDescentSolver
-StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
 SubBlockAFactory

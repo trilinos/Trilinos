@@ -50,7 +50,6 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#include <Amesos_config.h>
 #include <Amesos2_config.h>
 
 #include <MueLu_TestHelpers.hpp>
@@ -117,46 +116,27 @@ namespace MueLuTests {
         out << "type = " << type << std::endl;
 
         if (type == "klu") {
-          if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_KLU)
-            RUN;
-#else
-            TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-          } else if (lib == Xpetra::UseTpetra) {
+          if (lib == Xpetra::UseTpetra) {
             // Klu defaults to SuperLu in Amesos2Smoother
             // Therefore, we need to check against SuperLU
-#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_AMESOS2_SUPERLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
 #endif
           }
         } else if (type == "superlu") {
-          if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_SUPERLU)
-            RUN;
-#else
-            TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-          } else if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+          if (lib == Xpetra::UseTpetra) {
+#if defined(HAVE_AMESOS2_SUPERLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
 #endif
           }
         } else if (type == "superlu_dist" || type == "superludist") {
-          if (lib == Xpetra::UseEpetra) {
-            out << "Epetra" << std::endl;
-#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_SUPERLUDIST)
-            RUN;
-#else
-            TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-          } else if (lib == Xpetra::UseTpetra) {
+          if (lib == Xpetra::UseTpetra) {
             out << "Tpetra" << std::endl;
-#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLUDIST)
+#if defined(HAVE_AMESOS2_SUPERLUDIST)
             out << "Can run superlu_dist" << std::endl;
             RUN;
 #else
@@ -165,13 +145,7 @@ namespace MueLuTests {
 #endif
           }
         } else if (type == "relaxation") {
-          if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_IFPACK)
-            RUN;
-#else
-            TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-          } else if (lib == Xpetra::UseTpetra) {
+          if (lib == Xpetra::UseTpetra) {
             RUN;
           }
         } else {

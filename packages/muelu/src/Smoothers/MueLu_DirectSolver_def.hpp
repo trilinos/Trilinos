@@ -113,7 +113,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())
@@ -189,28 +189,15 @@ namespace MueLu {
       s_ = (useTpetra ? sTpetra_ : sEpetra_);
       if (s_.is_null()) {
         if (useTpetra) {
-#if not defined(HAVE_MUELU_AMESOS2)
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                     "Error: running in Tpetra mode, but MueLu with Amesos2 was disabled during the configure stage.\n"
-                                     "Please make sure that:\n"
-                                     "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
-                                     "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
-#else
           if (triedTpetra_)
             this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n" << errorTpetra_ << std::endl;
-#endif
         }
         if (!useTpetra) {
-#if not defined(HAVE_MUELU_AMESOS)
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                      "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
                                      "Please make sure that:\n"
                                      "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
                                      "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
-#else
-          if (triedEpetra_)
-            this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n" << errorEpetra_ << std::endl;
-#endif
         }
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                    "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");

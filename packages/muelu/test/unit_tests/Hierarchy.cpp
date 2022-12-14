@@ -57,8 +57,6 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_IO.hpp>
 
-#include <MueLu_AmesosSmoother.hpp>
-#include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_Hierarchy.hpp>
@@ -234,10 +232,6 @@ namespace MueLuTests {
     using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-
     out << "version: " << MueLu::Version() << std::endl;
 
     //matrix
@@ -339,10 +333,6 @@ namespace MueLuTests {
     using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-
     out << "version: " << MueLu::Version() << std::endl;
 
     //matrix
@@ -440,9 +430,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
     using TST                   = Teuchos::ScalarTraits<Scalar>;
     using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
@@ -587,9 +574,6 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TESTING_SET_OSTREAM;
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
 
@@ -899,10 +883,6 @@ namespace MueLuTests {
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 299*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
@@ -996,10 +976,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList galeriList, ifpack2Params;
@@ -1091,10 +1067,6 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 299*comm->getSize();
@@ -1192,9 +1164,6 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
@@ -1309,9 +1278,6 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;

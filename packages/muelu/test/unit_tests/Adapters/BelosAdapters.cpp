@@ -53,6 +53,8 @@
 // Belos / Xpetra-MueLu adapters
 #include "BelosXpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
+#include "BelosTpetraAdapter.hpp"
+
 
 namespace MueLuTests {
 
@@ -146,14 +148,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-
-#if !defined(HAVE_MUELU_EPETRA) or !defined(HAVE_MUELU_IFPACK) or !defined(HAVE_MUELU_AMESOS)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
-
-#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
 
     RCP<TestProblem<SC,LO,GO,NO> > p = rcp (new TestProblem<SC,LO,GO,NO> (lib));
 
