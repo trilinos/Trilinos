@@ -56,7 +56,7 @@
 #include "MueLu.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
 
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_AmalgamationFactory_fwd.hpp>
@@ -313,6 +313,6 @@ namespace MueLu {
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 
-#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#endif //if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
 
 #endif // MUELU_SHIFTEDLAPLACIAN_DECL_HPP

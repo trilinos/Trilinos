@@ -116,7 +116,7 @@ namespace Impl {
 //*************************************************************************************
 //*************************************************************************************
 // Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
 #include <Xpetra_EpetraOperator.hpp>
 #include <ml_MultiLevelPreconditioner.h>
 
@@ -185,14 +185,14 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
    for (int i = 0; i <= numRebuilds; i++) {
      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
      if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX) && defined(HAVE_MUELU_TPETRA)
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac      = Utilities::Op2NonConstTpetraCrs(A);
        RCP<Tpetra::Operator<SC,LO,GO,NO> > At       = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList);
        Prec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
 #endif
      } else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
        mueluList.remove("use external multigrid package");
        if(!coordinates.is_null()) {
          RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<coordinate_type,LO,GO,NO>::MV2EpetraMV(coordinates);
@@ -341,7 +341,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       if(profileSolve) cudaProfilerStart();
 #endif
       if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX) && defined(HAVE_MUELU_TPETRA)
         // Do a fixed-point iteraiton without convergence checks
         RCP<MultiVector> R = MultiVectorFactory::Build(X->getMap(), X->getNumVectors());
         for(int i=0; i<maxIts; i++) {
@@ -372,12 +372,12 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       Teuchos::RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
       Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
       if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX) && defined(HAVE_MUELU_TPETRA)
         belosPrec = rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
       }
       else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
         belosPrec = rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
       }
@@ -418,7 +418,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
 
         Teuchos::RCP<tOP> belosPrecTpetra;
         if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX) && defined(HAVE_MUELU_TPETRA)
           RCP<Xpetra::TpetraOperator<SC,LO,GO,NO> > xto = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<SC,LO,GO,NO> >(Prec);
           belosPrecTpetra = xto->getOperator();
 #endif

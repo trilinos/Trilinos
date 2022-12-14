@@ -122,7 +122,7 @@ namespace MueLuTests {
 
         if (type == "klu") {
           if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_KLU)
+#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_KLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
@@ -130,7 +130,7 @@ namespace MueLuTests {
           } else if (lib == Xpetra::UseTpetra) {
             // Klu defaults to SuperLu in Amesos2Smoother
             // Therefore, we need to check against SuperLU
-#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
@@ -138,13 +138,13 @@ namespace MueLuTests {
           }
         } else if (type == "superlu") {
           if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_SUPERLU)
+#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_SUPERLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
 #endif
           } else if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
@@ -153,14 +153,14 @@ namespace MueLuTests {
         } else if (type == "superlu_dist" || type == "superludist") {
           if (lib == Xpetra::UseEpetra) {
             out << "Epetra" << std::endl;
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_SUPERLUDIST)
+#if defined(HAVE_MUELU_AMESOS) && defined(HAVE_AMESOS_SUPERLUDIST)
             RUN;
 #else
             TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
 #endif
           } else if (lib == Xpetra::UseTpetra) {
             out << "Tpetra" << std::endl;
-#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLUDIST)
+#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLUDIST)
             out << "Can run superlu_dist" << std::endl;
             RUN;
 #else

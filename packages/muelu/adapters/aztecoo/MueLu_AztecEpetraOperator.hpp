@@ -6,7 +6,7 @@
 
 #include "Xpetra_Operator.hpp"
 
-#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 
 namespace MueLu {
 

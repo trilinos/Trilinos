@@ -102,7 +102,7 @@ using Teuchos::TimeMonitor;
 #endif
 
 // Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
 #include <Xpetra_EpetraOperator.hpp>
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MultiLevelOperator.h"

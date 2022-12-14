@@ -52,7 +52,7 @@
 #include "MueLu_Hierarchy.hpp"
 //TODO: Kokkos headers
 
-#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 
 namespace MueLu {
 

@@ -9,7 +9,7 @@
 
 #include "MueLu_AztecEpetraOperator.hpp"
 
-#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 
 namespace MueLu {
 
@@ -85,6 +85,6 @@ const Epetra_Map & AztecEpetraOperator::OperatorRangeMap() const {
 
 }
 
-#endif /*#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)*/
+#endif /*#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)*/
 
 #endif /* PACKAGES_MUELU_ADAPTERS_AZTECOO_MUELU_AZTECEPETRAOPERATOR_CPP_ */

@@ -48,7 +48,7 @@
 
 #include "MueLu_ShiftedLaplacian_decl.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
 
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
@@ -344,11 +344,11 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   // construct smoother
   smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
-#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
-#elif defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_KLU2)
+#elif defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_KLU2)
   coarsestSmooProto_ = rcp( new DirectSolver("Klu",coarsestSmooList_) );
-#elif defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLUDIST)
+#elif defined(HAVE_MUELU_AMESOS2) && defined(HAVE_AMESOS2_SUPERLUDIST)
   coarsestSmooProto_ = rcp( new DirectSolver("Superludist",coarsestSmooList_) );
 #else
   coarsestSmooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
@@ -565,5 +565,5 @@ ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 
-#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#endif //if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
 #endif // MUELU_SHIFTEDLAPLACIAN_DEF_HPP

@@ -121,7 +121,7 @@ private:
 };
     
 // Why does MueLu_EpetraOperator insist on HAVE_MUELU_SERIAL?
-#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 template<>
 class LinearSolver<Epetra_MultiVector, Epetra_Operator, double> :
     public Trilinos::Details::LinearSolver<Epetra_MultiVector, Epetra_Operator, double>,
