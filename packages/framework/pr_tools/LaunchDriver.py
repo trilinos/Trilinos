@@ -34,7 +34,7 @@ def get_launch_env(build_name : str, system : str):
       str: The environment used to launch the driver.
   """
   env = ""
-  if "_cuda" in build_name:
+  if "cuda" in build_name:
       env += " TRILINOS_MAX_CORES=96"
 
   if env == "":
