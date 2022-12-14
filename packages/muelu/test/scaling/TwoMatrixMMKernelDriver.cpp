@@ -137,7 +137,6 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
 
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -296,10 +295,6 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     mkl_sparse_destroy(Temp1MKL);
     if(algorithm_name == "MULT_ADD" ) mkl_sparse_destroy(Temp2MKL);
 
-#else
-    std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
-#endif
-
 
 
   tm = Teuchos::null;
@@ -314,12 +309,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_Import_Util2.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_decl.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-#endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MM2_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B1,   Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B2, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C,Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&Ccolmap, std::string algorithm_name, int team_work_size) {

@@ -982,7 +982,6 @@ namespace MueLu {
                   RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
-#ifdef HAVE_MUELU_TPETRA
   /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
@@ -1277,9 +1276,6 @@ namespace MueLu {
 
   Ptentative = P_wrap;
 
-#else
-    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
-#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>

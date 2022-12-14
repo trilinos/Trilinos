@@ -84,7 +84,6 @@
 
 
 // Conditional Tpetra stuff
-#ifdef HAVE_MUELU_TPETRA
 #include <TpetraCore_config.h>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
@@ -92,7 +91,6 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
-#endif
 
 #include <MueLu_TestHelpers_Common_kokkos.hpp>
 
@@ -570,15 +568,6 @@ namespace MueLuTests {
       }
 
 #if 0
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
-        Teuchos::ParameterList  ifpackList;
-        ifpackList.set("relaxation: type", type);
-        ifpackList.set("relaxation: sweeps", (LO) sweeps);
-        ifpackList.set("relaxation: damping factor", (SC) 1.0);
-        return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-      }
-#endif
 #endif
     }; // class TestFactory
 
@@ -607,7 +596,6 @@ namespace MueLuTests {
          // This only works for Tpetra
          if (lib!=Xpetra::UseTpetra) return Op;
 
-#if defined(HAVE_MUELU_TPETRA)
          // Thanks for the code, Travis!
 
          // Make the graph
@@ -641,7 +629,6 @@ namespace MueLuTests {
 
          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
          Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
-#endif
          return Op;
       } // BuildBlockMatrix()
 
@@ -652,48 +639,6 @@ namespace MueLuTests {
 
     // TAW: 3/14/2016: If both Epetra and Tpetra are enabled we need partial specializations
     //                 on GO=int/long long as well as NO=EpetraNode to disable BuildBlockMatrix
-#ifdef HAVE_MUELU_EPETRA
-    // partial specializations (GO=int not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_INT)
-    template <class Scalar, class LocalOrdinal, class Node>
-    class TpetraTestFactory<Scalar, LocalOrdinal, int, Node> {
-      typedef int GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
-    public:
-      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-    private:
-      TpetraTestFactory() {} // static class
-    }; // class TpetraTestFactory
-#endif
-
-    // partial specializations (GO=long long not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-    template <class Scalar, class LocalOrdinal, class Node>
-    class TpetraTestFactory<Scalar, LocalOrdinal, long long, Node> {
-      typedef long long GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
-    public:
-      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-    private:
-      TpetraTestFactory() {} // static class
-    }; // class TpetraTestFactory
-#endif
-
-    // partial specializations (NO=EpetraNode not enabled with Tpetra)
-#if ((defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_OPENMP))) || \
-    (!defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_SERIAL))))
-
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-    class TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> {
-      typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
-    public:
-      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-    private:
-      TpetraTestFactory() {} // static class
-    }; // class TpetraTestFactory
-#endif
-#endif // endif HAVE_MUELU_EPETRA
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
     ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string & filter);

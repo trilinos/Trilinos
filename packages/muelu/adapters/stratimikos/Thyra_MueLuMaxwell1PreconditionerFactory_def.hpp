@@ -53,9 +53,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_ThyraUtils.hpp>
 #include <MueLu_Maxwell1.hpp>
-#ifdef HAVE_MUELU_TPETRA
 # include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
 
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -89,13 +87,7 @@ namespace Thyra {
   bool MueLuMaxwell1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const {
     const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
 
-#ifdef HAVE_MUELU_TPETRA
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
-    if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
-#endif
 
     return false;
   }

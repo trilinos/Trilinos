@@ -52,40 +52,16 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EPETRA
-# ifdef HAVE_MPI
-#  include "Epetra_MpiComm.h"
-# endif
-#endif
-
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosSparse_getDiagCopy.hpp>
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-#include <EpetraExt_MatrixMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
-#include <EpetraExt_MultiVectorOut.h>
-#include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraExt_MultiVectorIn.h>
-#include <EpetraExt_BlockMapIn.h>
-#include <Xpetra_EpetraUtils.hpp>
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <EpetraExt_BlockMapOut.h>
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#endif
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
@@ -291,7 +267,6 @@ namespace MueLu {
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
-#ifdef HAVE_MUELU_TPETRA
     try {
       Tpetra::CrsMatrix<SC,LO,GO,NO>& tpOp = Op2NonConstTpetraCrs(Op);
 
@@ -354,9 +329,6 @@ namespace MueLu {
     } catch(...) {
       throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
     }
-#else
-    throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-#endif
   } //MyOldScaleMatrix_Tpetra()
 
 
@@ -372,7 +344,6 @@ namespace MueLu {
 
 
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Am = helpers::Op2TpetraBlockCrs(A);
       auto b_graph      = Am.getCrsGraph().getLocalGraphDevice();
       auto b_rowptr     = Am.getCrsGraph().getLocalRowPtrsDevice();
@@ -409,9 +380,6 @@ namespace MueLu {
                            });
 
       return boundaryNodes;
-#else
-      throw Exceptions::RuntimeError("BlockCrs requires Tpetra");
-#endif
     }
     else {
       auto localMatrix = A.getLocalMatrixDevice();

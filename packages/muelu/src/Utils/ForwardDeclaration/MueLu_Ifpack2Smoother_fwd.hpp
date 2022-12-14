@@ -47,7 +47,6 @@
 #define MUELU_IFPACK2SMOOTHER_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -56,8 +55,6 @@ namespace MueLu {
 
 #ifndef MUELU_IFPACK2SMOOTHER_SHORT
 #define MUELU_IFPACK2SMOOTHER_SHORT
-#endif
-
 #endif
 
 #endif // MUELU_IFPACK2SMOOTHER_FWD_HPP

@@ -48,8 +48,6 @@
 
 #include "MueLu_ShiftedLaplacian_decl.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
-
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
@@ -565,5 +563,4 @@ ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 
-#endif //if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_TPETRA)
 #endif // MUELU_SHIFTEDLAPLACIAN_DEF_HPP

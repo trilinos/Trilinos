@@ -103,9 +103,6 @@ namespace MueLuTests {
      */
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#   endif
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -240,9 +237,6 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -348,9 +342,6 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -451,9 +442,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
     using TST                   = Teuchos::ScalarTraits<Scalar>;
     using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
@@ -559,10 +547,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
-
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
 
@@ -606,9 +590,6 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
 
@@ -651,69 +632,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
-
-    // Multigrid Hierarchy
-    Hierarchy H(A);
-    H.setVerbLevel(Teuchos::VERB_HIGH);
-    H.SetMaxCoarseSize(50);
-
-    // Multigrid setup phase (using default parameters)
-    FactoryManager M0; // how to build aggregates and smoother of the first level
-    M0.SetKokkosRefactor(false);
-
-    FactoryManager M1; // first coarse level (Plain aggregation)
-    M1.SetKokkosRefactor(false);
-    M1.SetFactory("A", rcp(new RAPFactory()));
-    M1.SetFactory("P", rcp(new TentativePFactory()));
-
-    FactoryManager M2; // last level (SA)
-    M2.SetKokkosRefactor(false);
-    M2.SetFactory("A", rcp(new RAPFactory()));
-    M2.SetFactory("P", rcp(new SaPFactory()));
-
-    bool r; // cf. Teuchos Bug 5214
-    r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));  TEST_EQUALITY(r, false);
-    r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
-
-    RCP<Level> l0 = H.GetLevel(0);
-    RCP<Level> l1 = H.GetLevel(1);
-
-    /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      l0->print(*stdout,Teuchos::VERB_EXTREME);
-      l1->print(*stdout,Teuchos::VERB_EXTREME);*/
-
-    TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
-    TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
-
-    TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
-    TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-    TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
-
-    TEST_EQUALITY(l1->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
-    TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
-    TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
-    TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-    // TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
-
-    RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
-    RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
-    RHS->setSeed(846930886);
-    RHS->randomize();
-
-    X->putScalar( (Scalar) 0.0);
-
-    int iterations=10;
-    H.Iterate(*RHS, *X, iterations);
-#  endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy2level_AggregateSmooth, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -721,9 +639,6 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -799,9 +714,6 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -882,10 +794,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::ParameterList matrixParams;
@@ -994,9 +902,6 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 299*comm->getSize();
@@ -1094,9 +999,6 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 10*comm->getSize();
@@ -1192,9 +1094,6 @@ namespace MueLuTests {
 
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -1295,9 +1194,6 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -1415,9 +1311,6 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -1552,9 +1445,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     Teuchos::RCP<Teuchos::FancyOStream> allOut = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#   endif
     using TST                   = Teuchos::ScalarTraits<Scalar>;
     using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
@@ -1688,7 +1578,6 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -1797,7 +1686,6 @@ namespace MueLuTests {
     real_type tol = 1.0e-10;
     H.IsPreconditioner(false);
     H.Iterate(*RHS, *X, std::pair<LO,real_type>(iterations,tol));
-#endif
     TEST_EQUALITY(0,0);
   }
 

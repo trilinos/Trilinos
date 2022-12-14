@@ -164,9 +164,6 @@ namespace MueLu {
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
       if (varName == "RfromPfactory")                   return  GetFactory("P");
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      if (varName == "Partition")                       return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
-#endif //ifdef HAVE_MPI
 
       if (varName == "Importer") {
 #ifdef HAVE_MPI

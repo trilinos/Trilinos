@@ -97,10 +97,6 @@
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #endif
 
-#ifdef HAVE_MUELU_ISORROPIA
-#include "MueLu_IsorropiaInterface.hpp"
-#endif
-
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
@@ -181,13 +177,7 @@ int main(int argc, char *argv[]) {
   int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan RCB, 2=Isorropia+Zoltan PHG");
-  LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
-#else
   int optRepartition = 0;
-#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
 
   // - Solve
   int    optFixPoint = 1;                 clp.setOption("fixPoint",       &optFixPoint,           "apply multigrid as solver");
@@ -371,83 +361,7 @@ int main(int argc, char *argv[]) {
         // USER GUIDE         //
 
       } else {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
-        // Repartitioning
-
-        // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
-        // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
-        RFact->SetFactory("P", PFact);
-        //
-        AFact->SetFactory("P", PFact);
-        AFact->SetFactory("R", RFact);
-
-        // Transfer coordinates
-        RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
-        AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
-
-        // Compute partition (creates "Partition" object)
-        if(optRepartition == 1) { // use plain Zoltan Interface
-
-        } else if (optRepartition == 2) { // use Isorropia + Zoltan interface
-
-        }
-
-        // Repartitioning (creates "Importer" from "Partition")
-        RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-        {
-          Teuchos::ParameterList paramList;
-          paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-          paramList.set("repartition: max imbalance", optNnzImbalance);
-          RepartitionFact->SetParameterList(paramList);
-        }
-        RepartitionFact->SetFactory("A", AFact);
-
-        if(optRepartition == 1) {
-          RCP<Factory> ZoltanFact = rcp(new ZoltanInterface());
-          ZoltanFact->SetFactory("A", AFact);
-          ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
-          RepartitionFact->SetFactory("Partition", ZoltanFact);
-        }
-        else if(optRepartition == 2) {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
-          RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-          isoInterface->SetFactory("A", AFact);
-          // we don't need Coordinates here!
-          RepartitionFact->SetFactory("Partition", isoInterface);
-#else
-          if (comm->getRank() == 0)
-            std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
-          return EXIT_FAILURE;
-#endif
-        }
-
-
-        // Reordering of the transfer operators
-        RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
-        RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-        RebalancedPFact->SetFactory("P", PFact);
-        RebalancedPFact->SetFactory("Coordinates", TransferCoordinatesFact);
-        RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
-
-        RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
-        RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-        RebalancedRFact->SetFactory("R", RFact);
-
-        // Compute Ac from rebalanced P and R
-        RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
-        RebalancedAFact->SetFactory("A", AFact);
-
-        // Configure FactoryManager
-        M.SetFactory("A", RebalancedAFact);
-        M.SetFactory("P", RebalancedPFact);
-        M.SetFactory("R", RebalancedRFact);
-        M.SetFactory("Nullspace",   RebalancedPFact);
-        M.SetFactory("Coordinates", RebalancedPFact);
-        M.SetFactory("Importer",    RepartitionFact);
-
-#else
         TEUCHOS_TEST_FOR_EXCEPT(true);
-#endif
       } // optRepartition
 
     } // Transfer

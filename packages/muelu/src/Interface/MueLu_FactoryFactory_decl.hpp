@@ -320,11 +320,7 @@ namespace MueLu {
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
 
       if (factoryName == "ZoltanInterface") {
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-        return Build2<ZoltanInterface>(paramList, factoryMapIn, factoryManagersIn);
-#else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
-#endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
       }
       if (factoryName == "Zoltan2Interface") {
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
@@ -334,11 +330,7 @@ namespace MueLu {
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
       if (factoryName == "IsorropiaInterface") {
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-        return Build2<IsorropiaInterface>(paramList, factoryMapIn, factoryManagersIn);
-#else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
-#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
       if (factoryName == "NodePartitionInterface") {

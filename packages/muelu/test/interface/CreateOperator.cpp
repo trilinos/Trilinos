@@ -63,17 +63,10 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_EpetraOperator.hpp>
-#include <Xpetra_EpetraVector.hpp>
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#endif
 #include <MueLu_TestHelpers.hpp>
 
 const std::string thickSeparator = "==========================================================================================================================";
@@ -93,7 +86,6 @@ namespace MueLuExamples {
     std::filebuf    buffer;
     std::streambuf* oldbuffer = NULL;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
     typedef Tpetra::Vector<SC,LO,GO,NO> Tpetra_Vector;
@@ -115,25 +107,6 @@ namespace MueLuExamples {
         buffer.close();
       }
     }
-#endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
-    if (lib == Xpetra::UseEpetra) {
-      if (myRank == 0) {
-        // Redirect output
-        buffer.open((fname + ".out").c_str(), std::ios::out);
-        oldbuffer = std::cout.rdbuf(&buffer);
-      }
-
-      RCP<Epetra_CrsMatrix>   Ae = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(A);
-      RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae, mueluList);
-
-      if (myRank == 0) {
-        // Redirect output back
-        std::cout.rdbuf(oldbuffer);
-        buffer.close();
-      }
-    }
-#endif
   }
 
   // This routine generate's the user's original A matrix and nullspace

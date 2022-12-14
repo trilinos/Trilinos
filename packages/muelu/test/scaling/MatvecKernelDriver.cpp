@@ -65,12 +65,10 @@
 #include "MueLu_TestHelpers.hpp"
 #include <MatrixLoad.hpp>
 
-#if defined(HAVE_MUELU_TPETRA)
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
-#endif
 #include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
@@ -117,7 +115,6 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
   printf("\n");
 }
 
-#if defined(HAVE_MUELU_TPETRA)
 //==============================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
@@ -180,8 +177,6 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
     }
   }
 }
-
-#endif
 
 
 // =========================================================================
@@ -728,7 +723,6 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y);
@@ -743,7 +737,6 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   auto Y_lcl = y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
 }
-#endif
 
 
 // =========================================================================
@@ -980,7 +973,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     y_baseline->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
 
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
     RCP<const crs_matrix_type> At;
@@ -1064,7 +1056,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       throw std::runtime_error("MKL Type Mismatch");
 
   #endif // end MKL
-#endif
 
 
     globalTimeMonitor = Teuchos::null;
@@ -1084,14 +1075,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::random_device rd;
     std::mt19937 random_source (rd());
 
-    #ifdef HAVE_MUELU_TPETRA
     // compute the baseline
     vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
     if (report_error_norms) MV_Tpetra(*At,xt,yt_baseline);
     const bool error_check_y = true;
-    #else
-    const bool error_check_y = false;
-    #endif
     std::vector<typename Teuchos::ScalarTraits< Scalar >::magnitudeType> dummy;
     dummy.resize(1);
     Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > y_norms (dummy.data(), 1);
@@ -1126,7 +1113,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           break;
         #endif
 
-        #ifdef HAVE_MUELU_TPETRA
         // KK Algorithms
         case Experiments::KK:
         {
@@ -1141,7 +1127,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
            MV_Tpetra(*At,xt,yt);
         }
           break;
-        #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
         // CUSPARSE

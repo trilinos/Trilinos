@@ -476,15 +476,10 @@ int main(int argc, char* argv[]) {
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
     }
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       if (node == "") {
         typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
@@ -584,9 +579,6 @@ int main(int argc, char* argv[]) {
       } else {
         throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
       }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

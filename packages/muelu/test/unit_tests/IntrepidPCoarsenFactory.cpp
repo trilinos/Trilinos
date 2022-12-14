@@ -1628,9 +1628,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -1696,9 +1693,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -1761,9 +1755,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef Scalar SC;
@@ -2598,9 +2589,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -2663,9 +2651,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef Scalar SC;
@@ -2731,9 +2716,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -2797,9 +2779,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef Scalar SC;
@@ -2882,9 +2861,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -2954,9 +2930,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef Scalar SC;
@@ -3030,9 +3003,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     typedef Scalar SC;

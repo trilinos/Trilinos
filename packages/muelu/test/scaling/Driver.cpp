@@ -88,12 +88,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
-#endif
 #endif
 
 
@@ -105,7 +100,6 @@
 #include <MueLu_AMGXOperator.hpp>
 #include <MueLu_AMGX_Setup.hpp>
 #endif
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
@@ -113,16 +107,10 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 
 /*********************************************************************/
 
-#ifdef HAVE_MUELU_TPETRA
 #include "KokkosBlas1_abs_impl.hpp"
 template<class RV, class XV, class SizeType>
 void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
@@ -183,7 +171,6 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
        throw std::runtime_error("Invalid 'equilibrate' option '"+equilibrate+"'");
   }
 }
-#endif
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -244,9 +231,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
-#ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
-#endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
@@ -374,11 +359,9 @@ MueLu::MueLu_AMGX_initialize_plugins();
   tm = Teuchos::null;
 
   // Do equilibration if requested
-#ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
     equilibrateMatrix(A,equilibrate);
   }
-#endif
 
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))

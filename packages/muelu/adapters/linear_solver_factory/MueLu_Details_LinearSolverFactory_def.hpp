@@ -53,16 +53,9 @@
 #include "Trilinos_Details_LinearSolverFactory.hpp"
 #include <type_traits>
 
-#ifdef HAVE_MUELU_EPETRA
-#  include "Epetra_CrsMatrix.h"
-#include "MueLu_CreateEpetraPreconditioner.hpp"
-#endif // HAVE_MUELU_EPETRA
-
 // Tpetra is not a required dependency of MueLu.
-#ifdef HAVE_MUELU_TPETRA
 #  include "Tpetra_Operator.hpp"
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
-#endif // HAVE_MUELU_TPETRA
 
 namespace MueLu {
 namespace Details {
@@ -121,154 +114,7 @@ private:
 };
     
 // Why does MueLu_EpetraOperator insist on HAVE_MUELU_SERIAL?
-#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
-template<>
-class LinearSolver<Epetra_MultiVector, Epetra_Operator, double> :
-    public Trilinos::Details::LinearSolver<Epetra_MultiVector, Epetra_Operator, double>,
-    virtual public Teuchos::Describable
-{
 
-public:
-
-  /// \brief Constructor.
-  LinearSolver () :
-    changedA_(false),
-    changedParams_(false)
-  {}
-
-  //! Destructor (virtual for memory safety).
-  virtual ~LinearSolver () {}
-
-  /// \brief Set the Solver's matrix.
-  ///
-  /// \param A [in] Pointer to the matrix A in the linear system(s)
-  ///   AX=B to solve.
-  void setMatrix (const Teuchos::RCP<const Epetra_Operator>& A)
-  {
-    const char prefix[] = "MueLu::Details::LinearSolver::setMatrix: ";
-    
-    if(A != A_)
-    {
-      if(solver_ != Teuchos::null)
-        changedA_ = true;
-      
-      A_ = rcp_dynamic_cast<const Epetra_CrsMatrix>(A);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (A_.is_null(), std::runtime_error, prefix << "MueLu requires "
-         "an Epetra_CrsMatrix, but the matrix you provided is of a "
-         "different type.  Please provide an Epetra_CrsMatrix instead.");
-    }
-  }
-
-  //! Get a pointer to this Solver's matrix.
-  Teuchos::RCP<const Epetra_Operator> getMatrix () const {
-    return A_;
-  }
-
-  //! Solve the linear system(s) AX=B.
-  void solve (Epetra_MultiVector& X, const Epetra_MultiVector& B)
-  {
-    // TODO amk: Do we assume the user has called numeric before solve, or should we call it for them?
-    const char prefix[] = "MueLu::Details::LinearSolver::solve: ";
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (solver_.is_null (), std::runtime_error, prefix << "The solver does not "
-       "exist yet.  You must call numeric() before you may call this method.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (changedA_, std::runtime_error, prefix << "The matrix A has been reset "
-       "since the last call to numeric().  Please call numeric() again.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (changedParams_, std::runtime_error, prefix << "The parameters have been reset "
-       "since the last call to numeric().  Please call numeric() again.");
-    
-    int err = solver_->ApplyInverse(B, X);
-    
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (err != 0, std::runtime_error, prefix << "EpetraOperator::ApplyInverse returned "
-       "nonzero error code " << err);
-  }
-
-  //! Set this solver's parameters.
-  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
-  {
-    if(solver_ != Teuchos::null && params != params_)
-      changedParams_ = true;
-    
-    params_ = params;
-  }
-
-  /// \brief Set up any part of the solve that depends on the
-  ///   structure of the input matrix, but not its numerical values.
-  void symbolic () {}
-
-  /// \brief Set up any part of the solve that depends on both the
-  ///   structure and the numerical values of the input matrix.
-  void numeric ()
-  {
-    const char prefix[] = "MueLu::Details::LinearSolver::numeric: ";
-    
-    // If the solver is up-to-date, leave it alone
-    if(solver_ == Teuchos::null || changedA_ || changedParams_)
-    {
-      changedA_ = false;
-      changedParams_ = false;
-      
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (A_ == Teuchos::null, std::runtime_error, prefix << "The matrix has not been "
-         "set yet.  You must call setMatrix() with a nonnull matrix before you may "
-         "call this method.");
-      
-      // TODO: We should not have to cast away the constness here
-      // TODO: See bug 6462
-      if(params_ != Teuchos::null)
-        solver_ = CreateEpetraPreconditioner(rcp_const_cast<Epetra_CrsMatrix>(A_), *params_);
-      else
-        solver_ = CreateEpetraPreconditioner(rcp_const_cast<Epetra_CrsMatrix>(A_));
-    }
-  }
-
-  //! Implementation of Teuchos::Describable::description.
-  std::string description () const
-  {
-    if (solver_.is_null()) {
-      return "\"MueLu::Details::LinearSolver\": {MV: Epetra_MultiVector, OP: Epetra_Operator, NormType: double}";
-    }
-    else {
-      return solver_->GetHierarchy()->description ();
-    }
-  }
-
-  //! Implementation of Teuchos::Describable::describe.
-  void
-  describe (Teuchos::FancyOStream& out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const
-  {
-    using std::endl;
-    if (solver_.is_null()) {
-      if(verbLevel > Teuchos::VERB_NONE) {
-        Teuchos::OSTab tab0 (out);
-        out << "\"MueLu::Details::LinearSolver\":" << endl;
-        Teuchos::OSTab tab1 (out);
-        out << "MV: Epetra_MultiVector" << endl
-            << "OP: Epetra_Operator" << endl
-            << "NormType: double" << endl;
-      }
-    }
-    else {
-      solver_->GetHierarchy()->describe (out, verbLevel);
-    }
-  }
-
-private:
-  Teuchos::RCP<const Epetra_CrsMatrix> A_;
-  Teuchos::RCP<Teuchos::ParameterList> params_;
-  Teuchos::RCP<EpetraOperator> solver_;
-  bool changedA_;
-  bool changedParams_;
-};
-#endif // HAVE_MUELU_EPETRA
-
-#ifdef HAVE_MUELU_TPETRA
 template<class Scalar, class LO, class GO, class Node>
 class LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>,
                    Tpetra::Operator<Scalar,LO,GO,Node>,
@@ -432,7 +278,6 @@ private:
   bool changedA_;
   bool changedParams_;
 };
-#endif // HAVE_MUELU_TPETRA
 
 template<class MV, class OP, class NormType>
 Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >

@@ -72,24 +72,15 @@
 
 #include "Kokkos_ArithTraits.hpp"
 
-#ifdef HAVE_MUELU_EPETRA
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Xpetra_EpetraCrsMatrix_fwd.hpp"
-#include "Xpetra_EpetraMultiVector_fwd.hpp"
-#endif
-
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_UtilitiesBase.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Xpetra_TpetraCrsMatrix_fwd.hpp"
 #include "Xpetra_TpetraMultiVector_fwd.hpp"
-#endif
 
 
 namespace MueLu {
@@ -115,26 +106,6 @@ namespace MueLu {
     using CoordinateType        = typename TST::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
-#ifdef HAVE_MUELU_EPETRA
-    //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
-    // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2EpetraMV(vec); }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec)         { return Utilities::MV2EpetraMV(vec); }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2EpetraCrs(Op); }
-    static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op)              { return Utilities::Op2EpetraCrs(Op); }
-    static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_Map&                                Map2EpetraMap(const Map& map)               { return Utilities::Map2EpetraMap(map); }
-    // @}
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     // @{
     static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2TpetraMV(vec); }
@@ -154,7 +125,6 @@ namespace MueLu {
     static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraRow(Op); }
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map)               { return Utilities::Map2TpetraMap(map); }
-#endif
 
     static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utilities::Crs2Op(Op); }
 
@@ -363,26 +333,6 @@ namespace MueLu {
 
   public:
 
-#ifdef HAVE_MUELU_EPETRA
-    //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
-    // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2EpetraMV(vec); }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec)         { return Utilities::MV2EpetraMV(vec); }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2EpetraCrs(Op); }
-    static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op)              { return Utilities::Op2EpetraCrs(Op); }
-    static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_Map&                                Map2EpetraMap(const Map& map)               { return Utilities::Map2EpetraMap(map); }
-    // @}
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     // @{
     static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2TpetraMV(vec); }
@@ -402,7 +352,6 @@ namespace MueLu {
     static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraRow(Op); }
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map)               { return Utilities::Map2TpetraMap(map); }
-#endif
     static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utilities::Crs2Op(Op); }
 
     static RCP<Vector> GetMatrixDiagonal(const Matrix& A) {
@@ -502,7 +451,6 @@ namespace MueLu {
     // TODO This is the <double,int,int> specialization
     static void MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector,
         bool doFillComplete, bool doOptimizeStorage) {
-  #ifdef HAVE_MUELU_TPETRA
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
       try {
         Tpetra::CrsMatrix<SC,LO,GO,NO>& tpOp = Op2NonConstTpetraCrs(Op);
@@ -579,34 +527,10 @@ namespace MueLu {
 #else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
 #endif
-#else
-      throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-#endif
     }
 
     static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
-#ifdef HAVE_MUELU_EPETRA
-      try {
-        //const Epetra_CrsMatrix& epOp = Utilities<double,int,int>::Op2NonConstEpetraCrs(Op);
-        const Epetra_CrsMatrix& epOp = Op2NonConstEpetraCrs(Op);
-
-        Epetra_Map const &rowMap = epOp.RowMap();
-        int nnz;
-        double *vals;
-        int *cols;
-
-        for (int i = 0; i < rowMap.NumMyElements(); ++i) {
-          epOp.ExtractMyRowView(i, nnz, vals, cols);
-          for (int j = 0; j < nnz; ++j)
-            vals[j] *= scalingVector[i];
-        }
-
-      } catch (...){
-        throw Exceptions::RuntimeError("Only Epetra_CrsMatrix types can be scaled");
-      }
-#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Epetra has not been enabled.");
-#endif // HAVE_MUELU_EPETRA
     }
 
     /*! @brief Transpose a Xpetra::Matrix
@@ -618,7 +542,6 @@ namespace MueLu {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
-#ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
         try {
           const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities::Op2TpetraCrs(Op);
@@ -649,33 +572,13 @@ namespace MueLu {
 #else
         throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
 #endif
-#else
-        throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled!");
-#endif
 #ifndef __NVCC__ //prevent nvcc warning
         break;
 #endif
       }
       case Xpetra::UseEpetra:
       {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-        Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
-        // Epetra case
-        Epetra_CrsMatrix& epetraOp = Utilities::Op2NonConstEpetraCrs(Op);
-        EpetraExt::RowMatrix_Transpose transposer;
-        Epetra_CrsMatrix * A = dynamic_cast<Epetra_CrsMatrix*>(&transposer(epetraOp));
-        transposer.ReleaseTranspose(); // So we can keep A in Muelu...
-
-        RCP<Epetra_CrsMatrix> rcpA(A);
-        RCP<Xpetra::EpetraCrsMatrixT<GO,NO> >  AA   = rcp(new Xpetra::EpetraCrsMatrixT<GO,NO> (rcpA));
-        RCP<CrsMatrix>                         AAA  = rcp_implicit_cast<CrsMatrix>(AA);
-        RCP<CrsMatrixWrap>                     AAAA = rcp( new CrsMatrixWrap(AAA));
-        AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
-
-        return AAAA;
-#else
         throw Exceptions::RuntimeError("Epetra (Err. 2)");
-#endif
 #ifndef __NVCC__ //prevent nvcc warning
         break;
 #endif
@@ -701,7 +604,6 @@ namespace MueLu {
       if(paramList.isParameter ("Coordinates") == false)
         return coordinates;
 
-#if defined(HAVE_MUELU_TPETRA)
 #if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
       (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))
 
@@ -738,18 +640,7 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
       }
 #endif // Tpetra instantiated on GO=int and EpetraNode
-#endif // endif HAVE_TPETRA
 
-#if defined(HAVE_MUELU_EPETRA)
-      RCP<Epetra_MultiVector> doubleEpCoords;
-      if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
-        doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
-        paramList.remove("Coordinates");
-        RCP<Xpetra::EpetraMultiVectorT<GO,NO> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(doubleEpCoords));
-        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >(epCoordinates);
-        TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
-      }
-#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       return coordinates;
     }
