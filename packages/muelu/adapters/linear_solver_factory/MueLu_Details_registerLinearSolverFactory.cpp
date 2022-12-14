@@ -44,14 +44,8 @@
 #include "MueLu_Details_registerLinearSolverFactory.hpp"
 #include "MueLu_Details_LinearSolverFactory.hpp"
 // TODO amk: Does MueLu have a required dependency on Tpetra?
-#ifdef HAVE_MUELU_TPETRA
 #  include "Tpetra_MultiVector.hpp"
 #  include "Tpetra_Operator.hpp"
-#endif // HAVE_MUELU_TPETRA
-#ifdef HAVE_MUELU_EPETRA
-#  include "Epetra_MultiVector.h"
-#  include "Epetra_Operator.h"
-#endif
 #include "TpetraCore_ETIHelperMacros.h"
 
 // Define Tpetra instantiation macros and typedefs that make the
@@ -87,10 +81,6 @@ registerLinearSolverFactory ()
       
   // If Epetra is enabled in MueLu, also register MueLu's
   // LinearSolverFactory for Epetra objects.
-#ifdef HAVE_MUELU_EPETRA
-  ::MueLu::Details::LinearSolverFactory<Epetra_MultiVector,
-    Epetra_Operator, double>::registerLinearSolverFactory ();
-#endif // HAVE_MUELU_EPETRA
 }
 
 } // namespace Details
