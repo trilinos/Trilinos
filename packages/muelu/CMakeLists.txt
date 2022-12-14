@@ -226,16 +226,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   "Enable Boost"
   OFF)
 
-SET(Kokkos_Refactor_On_By_Default ON)
-MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable Xpetra code refactored to use Kokkos."
-  ${Kokkos_Refactor_On_By_Default})
-
-IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
+IF (NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
 ENDIF()
 

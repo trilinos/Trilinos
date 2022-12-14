@@ -47,7 +47,6 @@
 #define MUELU_LOCALLWGRAPH_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
@@ -183,5 +182,4 @@ namespace MueLu {
 }
 
 #define MUELU_LOCALLWGRAPH_KOKKOS_SHORT
-#endif // HAVE_LOCALMUELU_KOKKOS_REFACTOR
 #endif // MUELU_LOCALLWGRAPH_KOKKOS_DECL_HPP

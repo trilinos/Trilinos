@@ -46,8 +46,6 @@
 #ifndef MUELU_REGIONRFACTORY_KOKKOS_DEF_HPP
 #define MUELU_REGIONRFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include "Kokkos_UnorderedMap.hpp"
 
 #include "MueLu_RegionRFactory_kokkos_decl.hpp"
@@ -1200,5 +1198,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_REGIONRFACTORY_KOKKOS_SHORT
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_REGIONRFACTORY_DEF_HPP

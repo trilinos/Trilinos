@@ -74,7 +74,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Maxwell_Utils.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
@@ -85,7 +84,6 @@
 #include "MueLu_Utilities_kokkos.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
@@ -205,9 +203,6 @@ namespace MueLu {
         !precList22_.isParameter("reuse: type"))
       precList22_.set("reuse: type", "full");
 
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos_ = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
@@ -225,7 +220,6 @@ namespace MueLu {
       useKokkos_ = true;
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
-#endif
   }
 
 
@@ -260,9 +254,7 @@ namespace MueLu {
     if (!reuse) {
       magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
       Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                                              useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
-#endif
                                                              BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
                                                              allEdgesBoundary_,allNodesBoundary_);
       if (IsPrint(Statistics2)) {
@@ -287,15 +279,11 @@ namespace MueLu {
       TEUCHOS_ASSERT(Nullspace_->getMap()->isCompatible(*(SM_Matrix_->getRowMap())));
     }
     else if(Nullspace_ == null && Coords_ != null) {
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       RCP<MultiVector> CoordsSC;
       if (useKokkos_)
         CoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(Coords_);
       else
         CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
-#else
-      RCP<MultiVector> CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
-#endif
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
 
@@ -347,14 +335,10 @@ namespace MueLu {
 
     if (!reuse && skipFirstLevel_) {
       // Nuke the BC edges in nullspace
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_)
         Utilities_kokkos::ZeroDirichletRows(Nullspace_,BCrowsKokkos_);
       else
         Utilities::ZeroDirichletRows(Nullspace_,BCrows_);
-#else
-      Utilities::ZeroDirichletRows(Nullspace_,BCrows_);
-#endif
       dump(*Nullspace_, "nullspace.m");
     }
 
@@ -392,11 +376,9 @@ namespace MueLu {
 
         if (applyBCsToAnodal_) {
           // Apply boundary conditions to A_nodal
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
           if (useKokkos_)
             Utilities_kokkos::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomainKokkos_);
           else
-#endif
             Utilities::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomain_);
         }
         dump(*A_nodal_Matrix_, "A_nodal.m");
@@ -606,7 +588,6 @@ namespace MueLu {
         }
 #endif // HAVE_MPI
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         // This should be taken out again as soon as
         // CoalesceDropFactory_kokkos supports BlockSize > 1 and
         // drop tol != 0.0
@@ -615,18 +596,13 @@ namespace MueLu {
                                 << "support BlockSize > 1 and drop tol != 0.0" << std::endl;
           precList11_.set("aggregation: drop tol", 0.0);
         }
-#endif
         dump(*P11_, "P11.m");
 
         if (!implicitTranspose_) {
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
           if (useKokkos_)
             R11_ = Utilities_kokkos::Transpose(*P11_);
           else
             R11_ = Utilities::Transpose(*P11_);
-#else
-          R11_ = Utilities::Transpose(*P11_);
-#endif
           dump(*R11_, "R11.m");
         }
       }
@@ -688,15 +664,11 @@ namespace MueLu {
         replaceWith= Teuchos::ScalarTraits<SC>::eps();
       else
         replaceWith = Teuchos::ScalarTraits<SC>::zero();
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
       } else {
         Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
       }
-#else
-      Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
-#endif
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
     }
 
@@ -870,14 +842,10 @@ namespace MueLu {
       }
 
       if (!implicitTranspose_ && !reuse) {
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_)
           D0_T_Matrix_ = Utilities_kokkos::Transpose(*D0_Matrix_);
         else
           D0_T_Matrix_ = Utilities::Transpose(*D0_Matrix_);
-#else
-        D0_T_Matrix_ = Utilities::Transpose(*D0_Matrix_);
-#endif
       }
 
       VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
@@ -944,15 +912,11 @@ namespace MueLu {
         replaceWith= Teuchos::ScalarTraits<SC>::eps();
       else
         replaceWith = Teuchos::ScalarTraits<SC>::zero();
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
       } else {
         Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
       }
-#else
-      Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
-#endif
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
       dump(*D0_Matrix_, "D0_nuked.m");
     }
@@ -1190,7 +1154,6 @@ namespace MueLu {
     }
   }
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const {
     if (dump_matrices_) {
@@ -1202,7 +1165,6 @@ namespace MueLu {
             out << vH[i] << "\n";
     }
   }
-#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {
@@ -1278,7 +1240,6 @@ namespace MueLu {
         fineLevel.Set("Nullspace",nullSpace);
 
         RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact, SaPFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_) {
           amalgFact = rcp(new AmalgamationFactory_kokkos());
           dropFact = rcp(new CoalesceDropFactory_kokkos());
@@ -1289,7 +1250,6 @@ namespace MueLu {
             SaPFact = rcp(new SaPFactory_kokkos());
           Tfact = rcp(new CoordinatesTransferFactory_kokkos());
         } else
-#endif
           {
             amalgFact = rcp(new AmalgamationFactory());
             dropFact = rcp(new CoalesceDropFactory());
@@ -1380,7 +1340,6 @@ namespace MueLu {
 
     }
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if (useKokkos_) {
 
       using ATS        = Kokkos::ArithTraits<SC>;
@@ -1623,7 +1582,6 @@ namespace MueLu {
 
       }
     } else
-#endif // ifdef(HAVE_MUELU_KOKKOS_REFACTOR)
       {
         // get nullspace vectors
         ArrayRCP<ArrayRCP<const SC> > nullspaceRCP(dim);
@@ -2112,13 +2070,11 @@ namespace MueLu {
       ArrayRCP<bool> AHBCrows;
       AHBCrows.resize(AH_->getRowMap()->getLocalNumElements());
       size_t dim = Nullspace_->getNumVectors();
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_)
         for (size_t i = 0; i < BCdomainKokkos_.size(); i++)
           for (size_t k = 0; k < dim; k++)
             AHBCrows[i*dim+k] = BCdomainKokkos_(i);
       else
-#endif
         for (size_t i = 0; i < static_cast<size_t>(BCdomain_.size()); i++)
           for (size_t k = 0; k < dim; k++)
             AHBCrows[i*dim+k] = BCdomain_[i];
