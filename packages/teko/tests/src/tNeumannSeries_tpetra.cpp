@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -58,9 +58,6 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
-
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
 
 // Test-rig
 #include "Test_Utils.hpp"
@@ -99,20 +96,20 @@ RCP<Thyra::LinearOpBase<ST> > buildExampleOp(int type,RCP<const Teuchos::Comm<in
    case 2:
       values[0] = 5.0; values[1] = 0.0; values[2] = 0.0;
       mat->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
-   
+
       values[0] = 2.0; values[1] = 6.0; values[2] = 0.0;
       mat->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
-   
+
       values[0] = 0.0; values[1] = 3.0; values[2] = 7.0;
       mat->insertGlobalValues(2,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
       break;
    case 1:
       values[0] = 1.0; values[1] = 0.0; values[2] = 0.0;
       mat->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
-   
+
       values[0] = 2.0; values[1] = 1.0; values[2] = 0.0;
       mat->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
-   
+
       values[0] = 0.0; values[1] = 3.0; values[2] = 1.0;
       mat->insertGlobalValues(2,Teuchos::ArrayView<GO>(indices,3),Teuchos::ArrayView<ST>(values,3));
    default:
@@ -138,23 +135,23 @@ int tNeumannSeries_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ost
    failstrm << "tNeumannSeries_tpetra";
 
    status = test_simpleOp(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"test_simpleOp\" ... PASSED","   \"test_simpleOp\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"test_simpleOp\" ... PASSED","   \"test_simpleOp\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_scaledOp(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"test_scaledOp\" ... PASSED","   \"test_scaledOp\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"test_scaledOp\" ... PASSED","   \"test_scaledOp\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tNeumannSeries_tpetra...PASSED","tNeumannSeries_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tNeumannSeries_tpetra...PASSED","tNeumannSeries_tpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tNeumannSeries_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tNeumannSeries_tpetra...FAILED");
    }
 
    return failcount;
@@ -186,7 +183,7 @@ bool tNeumannSeries_tpetra::test_simpleOp(int verbosity,std::ostream & os)
       RCP<Teko::InverseFactory> direct = invLib->getInverseFactory("Ifpack2");
 
       Teko::LinearOp op = buildExampleOp(1,GetComm_tpetra());
-   
+
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
@@ -194,8 +191,8 @@ bool tNeumannSeries_tpetra::test_simpleOp(int verbosity,std::ostream & os)
       TEST_ASSERT(not result,
              std::endl << "   tNeumannSeries_tpetra::test_simpleOp "
              << ": Comparing underresolved factory generated operator to correct operator");
-      if(result || verbosity>=10) 
-         os << ss.str(); 
+      if(result || verbosity>=10)
+         os << ss.str();
    }
 
    {
@@ -212,7 +209,7 @@ bool tNeumannSeries_tpetra::test_simpleOp(int verbosity,std::ostream & os)
       RCP<Teko::InverseFactory> direct = invLib->getInverseFactory("Ifpack2");
 
       Teko::LinearOp op = buildExampleOp(1,GetComm_tpetra());
-   
+
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
@@ -220,10 +217,10 @@ bool tNeumannSeries_tpetra::test_simpleOp(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
              std::endl << "   tNeumannSeries_tpetra::test_simpleOp "
              << ": Comparing factory generated operator to correct operator");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
    }
- 
+
    return allPassed;
 }
 
@@ -252,7 +249,7 @@ bool tNeumannSeries_tpetra::test_scaledOp(int verbosity,std::ostream & os)
       RCP<Teko::InverseFactory> direct = invLib->getInverseFactory("Ifpack2");
 
       Teko::LinearOp op = buildExampleOp(2,GetComm_tpetra());
-   
+
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
@@ -260,10 +257,10 @@ bool tNeumannSeries_tpetra::test_scaledOp(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
              std::endl << "   tNeumannSeries_tpetra::test_scaledOp "
              << ": Comparing factory generated operator to correct operator");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
    }
- 
+
    return allPassed;
 }
 

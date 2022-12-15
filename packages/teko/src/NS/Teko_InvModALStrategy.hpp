@@ -15,8 +15,6 @@
 #include "Teko_InverseFactory.hpp"
 #include "Teko_BlockPreconditionerFactory.hpp"
 
-#include "Teko_ALOperator.hpp"
-
 namespace Teko
 {
 

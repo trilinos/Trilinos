@@ -50,10 +50,14 @@
 // stl includes
 #include <string>
 
+#include "Teko_ConfigDefs.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 // Epetra includes
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
+#endif
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -64,7 +68,6 @@
 #include "Thyra_DefaultSpmdMultiVector.hpp"
 
 // Tpetra
-#include "Teko_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -75,14 +78,14 @@ typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
 namespace TpetraHelpers {
 
-/** \brief Fill a Thyra vector with the contents of an epetra vector. This prevents the
+/** \brief Fill a Thyra vector with the contents of a Tpetra vector. This prevents the
   *
-  * Fill a Thyra vector with the contents of an epetra vector. This prevents the need
+  * Fill a Thyra vector with the contents of a Tpetra vector. This prevents the need
   * to reallocate memory using a create_MultiVector routine. It also allows an aritrary
   * Thyra vector to be filled.
   *
   * \param[in,out] spmdMV   Multi-vector to be filled.
-  * \param[in]     epetraMV Epetra multi-vector to be used in filling the Thyra vector.
+  * \param[in]     tpetraMV Tpetra multi-vector to be used in filling the Thyra vector.
   */
 void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::TpetraMultiVector<ST,LO,GO,NT> > & spmdMV,
                                 Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,NT> > & tpetraMV);
@@ -150,6 +153,7 @@ bool isTpetraLinearOp(const Teko::LinearOp & op);
   */
 Teuchos::RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > getTpetraCrsMatrix(const Teko::LinearOp & op, ST *scalar, bool *transp);
 
+#ifdef TEKO_HAVE_EPETRA
 /** Takes an Epetra_CrsMatrix (from Trilinos_Util::CrsMatrixGallery for example) and converts to a Tpetra::CrsMatrix
   *
   * \param[in]  A_e    An RCP pointer to the Epetra_CrsMatrix
@@ -162,6 +166,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > epetraCrsMatrixToTpetra(cons
 Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > nonConstEpetraCrsMatrixToTpetra(const Teuchos::RCP<Epetra_CrsMatrix> A_e, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
 Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > epetraMapToTpetra(const Epetra_Map eMap, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
+#endif // TEKO_HAVE_EPETRA
 
 /** A class that zeros out chosen rows of a matrix-vector
   * product.
@@ -170,16 +175,16 @@ class ZeroedOperator : public Tpetra::Operator<ST,LO,GO,NT> {
 public:
    /** \brief Constructor for a ZeroedOperator.
      *
-     * Build a ZeroedOperator based on a particular Epetra_Operator and
+     * Build a ZeroedOperator based on a particular Tpetra_Operator and
      * a set of indices to zero out. These indices must be local to this
      * processor as specified by RowMap().
      *
      * \param[in] zeroIndices Set of indices to zero out (must be local).
-     * \param[in] op           Underlying epetra operator to use.
+     * \param[in] op           Underlying Tpetra operator to use.
      */
    ZeroedOperator(const std::vector<GO> & zeroIndices,const Teuchos::RCP<const Tpetra::Operator<ST,LO,GO,NT> > & op);
 
-   //! \name Functions required by Epetra_Operator
+   //! \name Functions required by Tpetra_Operator
    //@{
 
    //! Do nothing destructor

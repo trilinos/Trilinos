@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -147,7 +147,7 @@ void tBlockUpperTriInverseOp_tpetra::initializeTest()
    invA_->setBlock(0,1,blk);
 
    // build 0,2 matrix
-   blk = build2x2op(comm,  0.303571428571429,  -0.271103896103896, 
+   blk = build2x2op(comm,  0.303571428571429,  -0.271103896103896,
                         0.069642857142857,   0.090746753246753);
    invA_->setBlock(0,2,blk);
 
@@ -163,7 +163,7 @@ void tBlockUpperTriInverseOp_tpetra::initializeTest()
    invA_->setBlock(1,2,blk);
 
    // build 2,2 matrix
-   blk = build2x2op(comm, -0.016666666666667,   0.150000000000000, 
+   blk = build2x2op(comm, -0.016666666666667,   0.150000000000000,
                         0.116666666666667,  -0.050000000000000);
    invA_->setBlock(2,2,blk);
    invDiag_.push_back(blk);
@@ -180,23 +180,23 @@ int tBlockUpperTriInverseOp_tpetra::runTest(int verbosity,std::ostream & stdstrm
    failstrm << "tUpperTriInverseOp";
 
    status = test_apply(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_alphabeta(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tUpperTriInverseOp...PASSED","tUpperTriInverseOp...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tUpperTriInverseOp...PASSED","tUpperTriInverseOp...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tUpperTriInverseOp...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tUpperTriInverseOp...FAILED");
    }
 
    return failcount;
@@ -211,9 +211,9 @@ bool tBlockUpperTriInverseOp_tpetra::test_alphabeta(int verbosity,std::ostream &
    BlockedLinearOp U = getUpperTriBlocks(A_);
    LinearOp invTri = createBlockUpperTriInverseOp(U,invDiag_);
 
-   RCP<Thyra::VectorBase<ST> > src = Thyra::createMember(invA_->domain()); 
-   RCP<Thyra::VectorBase<ST> > dste = Thyra::createMember(invA_->range()); 
-   
+   RCP<Thyra::VectorBase<ST> > src = Thyra::createMember(invA_->domain());
+   RCP<Thyra::VectorBase<ST> > dste = Thyra::createMember(invA_->range());
+
    Thyra::randomize<ST>(-10,10,src.ptr());
    Thyra::randomize<ST>(-10,10,dste.ptr());
 
@@ -226,7 +226,7 @@ bool tBlockUpperTriInverseOp_tpetra::test_alphabeta(int verbosity,std::ostream &
 
    MultiVector dste_mv = dste;
    MultiVector dstn_mv = dstn;
-   
+
    applyOp(invA_,src,dste_mv,3.2,-1.9);
    applyOp(invTri,src,dstn_mv,3.2,-1.9);
 
@@ -262,8 +262,8 @@ bool tBlockUpperTriInverseOp_tpetra::test_apply(int verbosity,std::ostream & os)
    TEST_ASSERT(result,
           std::endl << "   tBlockUpperTriInverseOp_tpetra::test_apply "
                     << ": Comparing implicitly generated operator to exact operator");
-     if(not result || verbosity>=10) 
-        os << ss.str(); 
+     if(not result || verbosity>=10)
+        os << ss.str();
 
    return allPassed;
 }

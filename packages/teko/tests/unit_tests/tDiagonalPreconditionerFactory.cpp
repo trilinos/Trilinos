@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -101,7 +101,7 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
       indices[0] = gid+iTemp[0];
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
-      
+
       if(gid==0) {
          vPtr = &values[1];
          iPtr = &indices[1];
@@ -167,18 +167,18 @@ TEUCHOS_UNIT_TEST(tDiagonalPreconditionerFactory, diag_inv_test)
    int numPrec = 3;
 
    RCP<Teuchos::ParameterList> pl = buildLibPL(4);
-   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl); 
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl);
 
    Teko::LinearOp A = buildSystem(Comm,20);
-   
+
    for(int i=0;i<numPrec;i++) {
       RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory(precName[i]);
       Teko::LinearOp idA_fact = Teko::buildInverse(*invFact,A);
-      Teko::LinearOp idA_drct = Teko::getInvDiagonalOp(A,Teko::getDiagonalType(precName[i])); 
-  
+      Teko::LinearOp idA_drct = Teko::getInvDiagonalOp(A,Teko::getDiagonalType(precName[i]));
+
       Thyra::LinearOpTester<double> tester;
       tester.show_all_tests(true);
-   
+
       const bool result = tester.compare( *idA_fact, *idA_drct, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE (\"" << precName[i] << "\")" << std::endl;
@@ -218,15 +218,15 @@ TEUCHOS_UNIT_TEST(tDiagonalPreconditionerFactory, blkdiag_inv_test)
 
    {
       RCP<Teuchos::ParameterList> pl = buildLibPL(1); // test diagonal construction
-      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl); 
-   
+      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl);
+
       RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory(precName);
       Teko::LinearOp idA_fact = Teko::buildInverse(*invFact,A);
 
       // test type
       Teko::LinearOp srcOp = Teko::extractOperatorFromPrecOp(idA_fact);
       TEST_ASSERT(Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(srcOp)!=Teuchos::null);
-   
+
       Teko::LinearOp idA_drct = Teko::getInvDiagonalOp(A,Teko::Diagonal);
 
       Thyra::LinearOpTester<double> tester;
@@ -243,8 +243,8 @@ TEUCHOS_UNIT_TEST(tDiagonalPreconditionerFactory, blkdiag_inv_test)
 
    {
       RCP<Teuchos::ParameterList> pl = buildLibPL(blockSize);
-      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl); 
-   
+      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*pl);
+
       RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory(precName);
       Teko::LinearOp idA_fact = Teko::buildInverse(*invFact,A);
 
