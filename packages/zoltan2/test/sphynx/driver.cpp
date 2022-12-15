@@ -304,12 +304,15 @@ int main(int narg, char *arg[])
 
     // Parameters
     int nparts = 64;     
+    int max_iters = 1000;
+    int block_size = -1;
     std::string matrix_file = "";
     std::string vector_file = "";
+    std::string eigensolve = "LOBPCG"; 
     bool parmetis = false;
     bool pulp = false;
     
-    int verbosity = 0;
+    int verbosity = 1;
     
     std::string ptype = "";
     std::string prec = "";
@@ -330,6 +333,10 @@ int main(int narg, char *arg[])
 		   "Path and filename of the vector to be read.");
     cmdp.setOption("nparts",&nparts,
 		   "Number of global parts desired in the resulting partition.");
+    cmdp.setOption("max_iters",&max_iters,
+		   "Maximum iters (LOBPCG) or mulitplies by A (randomized).");
+    cmdp.setOption("block_size",&block_size,
+		   "Block size (LOBPCG) or number of vectors l (randomized).");
     cmdp.setOption("verbosity", &verbosity,
 		   "Verbosity level");
     cmdp.setOption("parmetis", "sphynx", &parmetis,
@@ -338,8 +345,11 @@ int main(int narg, char *arg[])
 		   "Whether to use pulp.");
     cmdp.setOption("prec", &prec,
 		   "Prec type to use.");
+    cmdp.setOption("eigensolve", &eigensolve,
+		   "Eigensolver to use: LOBPCG or randomized.");
     cmdp.setOption("prob", &ptype,
-		   "Problem type to use.");
+		   "Problem type to use. Options are combinatorial, normalized or generalized.");
+       //Default is combinatorial??  Or different for structured vs unstructured??
     cmdp.setOption("tol", &tol,
 		   "Tolerance to use.");
     cmdp.setOption("init",  &init,
@@ -359,6 +369,7 @@ int main(int narg, char *arg[])
       std::cout << "parmetis = " << parmetis << std::endl;
       std::cout << "pulp = " << pulp << std::endl;
       std::cout << "prec = " << prec << std::endl;
+      std::cout << "eigensolver = " << eigensolve << std::endl;
       std::cout << "prob = " << ptype << std::endl;
       std::cout << "tol = " << tol << std::endl;
       std::cout << "init = " << init << std::endl;
@@ -413,7 +424,7 @@ int main(int narg, char *arg[])
   using MultiVector  = Tpetra::MultiVector<ST>;
   typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
  
-  Teuchos::RCP<MultiVector > V;
+  /*Teuchos::RCP<MultiVector > V;
   if (vector_file ==""){
     V = Teuchos::rcp(new MultiVector(map, 10));
     V->randomize();
@@ -424,7 +435,7 @@ int main(int narg, char *arg[])
     Teuchos::RCP<const Tpetra::Map<> > vector_map = V->getMap();
     if(me == 0)
       std::cout << "Done with reading/creating the eigenvector." << std::endl;
-  }
+  }*/
    // TODO Insert MultiVector Reader 
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
@@ -473,7 +484,12 @@ int main(int narg, char *arg[])
     else {
    
       sphynxParams->set("sphynx_verbosity", verbosity);
+      sphynxParams->set("sphynx_max_iterations", max_iters);
+      if(block_size > 0){
+        sphynxParams->set("sphynx_block_size", block_size);
+      }
       sphynxParams->set("sphynx_skip_preprocessing", true);
+      sphynxParams->set("sphynx_eigensolver", eigensolve);
       if (ptype != "") sphynxParams->set("sphynx_problem_type", ptype);
       if (init != "") sphynxParams->set("sphynx_initial_guess", init);
       if (prec != "") sphynxParams->set("sphynx_preconditioner_type", prec);
@@ -492,11 +508,14 @@ int main(int narg, char *arg[])
     Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
     if (vector_file ==""){
        if(me == 0)
-           std::cout << "LOBPCG will be used to solve the partitioning problem." << std::endl;
+           std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
        problem->solve();
     }
     else{
-       problem->solve(V);
+       std::cout << "Problem to be solved with user-provided vectors." << std::endl;
+       std::cout << "NEVERMIND. That option has beend disabled." << std::endl;
+       return 0;
+       //problem->solve(V);
     }
   }
 	pComm->barrier();

@@ -97,6 +97,8 @@ static void getSphynxValidParameters(ParameterList & pl)
     Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
   pl.set("sphynx_verbosity", 0, "Sphynx verbosity.", sphynx_verbosity_validator);
 
+  pl.set("sphynx_max_iterations", 1000, "Sphynx max iterations");
+  pl.set("sphynx_block_size", 0, "Sphynx block size");
   // bool parameter
   pl.set("sphynx_skip_preprocessing", false, "Sphynx skip preprocessing.", Environment::getBoolValidator());
   pl.set("sphynx_use_full_ortho", true, "Sphynx use full ortho.", Environment::getBoolValidator());
@@ -153,6 +155,8 @@ static void setSphynxValidatorsInList(
           const RCP<const Teuchos::Comm<int> > &comm):
       PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
+        std::cout << "DEBUG: In SphynxProblem constructor." << std::endl;
+        //std::cout << "params_ is " << params_ << std::endl;
         // Validation of SphynxParameter
         ParameterList validParams;
         try{
@@ -162,18 +166,25 @@ static void setSphynxValidatorsInList(
             setSphynxValidatorsInList(*(sphynxParams_.get()), allParameters, validParams);
         }
         Z2_FORWARD_EXCEPTIONS
+        std::cout << "DEBUG: past getSphynxValidParameters." << std::endl;
 
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
         this->env_->convertStringToInt(*sphynxParams_.get());
+        
+        std::cout << "DEBUG: Past validateParameters." << std::endl;
+
+        //std::cout << "params_ is " << params_ << std::endl;
 
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
+        std::cout << "DEBUG: got past getEntryPtr." << std::endl;
         if(pe)
           nparts = pe->getValue<int>(&nparts);
 
         if(nparts == -1)
           throw std::runtime_error("\nUser did not set num_global_parts"
                                    "in the parameter list!n");
+        std::cout << "DEBUG: Exiting SphynxProblem constructor." << std::endl;
     }
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -200,7 +211,7 @@ static void setSphynxValidatorsInList(
     using PartitioningProblem<Adapter>::solve; 
     //^^ Required so can call base class solve() and not two-parameter 
     // version defined here. 
-    void solve(Teuchos::RCP<mvector_t> &userEigenVects);
+    //void solve(Teuchos::RCP<mvector_t> &userEigenVects);
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
                          Environment &env, bool& removeSelfEdges, bool& isGraphType, bool& needConsecutiveGlobalIds) override;
@@ -219,11 +230,11 @@ static void setSphynxValidatorsInList(
     ///////////////////////////////////////////////////////////////////////////
 
   private:
-    Teuchos::RCP<Adapter> inputAdapter_;
-    Teuchos::RCP<Teuchos::ParameterList> params_;
-    Teuchos::RCP<const Teuchos::Comm<int>> comm_;
+    //Teuchos::RCP<Adapter> inputAdapter_;
+    //Teuchos::RCP<Teuchos::ParameterList> params_;
+    //Teuchos::RCP<const Teuchos::Comm<int>> comm_;
     //Teuchos::RCP<Algorithm<Adapter> > algorithm_;
-    Teuchos::RCP<Sphynx<Adapter> > algorithm_;
+    //Teuchos::RCP<Sphynx<Adapter> > algorithm_;
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
     RCP<ParameterList> sphynxParams_;
 
@@ -243,7 +254,7 @@ static void setSphynxValidatorsInList(
     this->algName_ = std::string("sphynx");
   }
 
-  template <typename Adapter>
+ /* template <typename Adapter>
   void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
   {
     // Create the algorithm
@@ -268,7 +279,7 @@ static void setSphynxValidatorsInList(
       this->algorithm_->partition(this->solution_, userEigenVects);
     }
     Z2_FORWARD_EXCEPTIONS;
-  }
+  }*/
 
   template <typename Adapter>
   void SphynxProblem<Adapter>::createAlgorithm()
