@@ -16,6 +16,7 @@ ROL_Elementwise_Reduce.cpp
 ROL_UnaryFunctions.cpp
 ROL_UpdateType.cpp
 Teuchos_DataAccess.cpp
+Teuchos_ScalarTraits.cpp
 Teuchos_ParameterListExceptions.cpp
 Teuchos_iostream_helpers.cpp
 Teuchos_FancyOStream.cpp

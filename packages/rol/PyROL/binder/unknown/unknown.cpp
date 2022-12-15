@@ -92,7 +92,7 @@ struct PyCallBack_ROL_Vector_double_t : public ROL::Vector<double> {
 		pybind11::pybind11_fail("Tried to call pure virtual function \"Vector::norm\"");
 	}
 	class Teuchos::RCP<class ROL::Vector<double> > clone() const override {
-		return customClone<Vector,PyCallBack_ROL_Vector_double_t>(this, "clone");
+		return customClone<Vector,PyCallBack_ROL_Vector_double_t>(this, "ROL::Vector<double>", "clone");
 	}
 	void axpy(const double a0, const class ROL::Vector<double> & a1) override {
 		pybind11::gil_scoped_acquire gil;
