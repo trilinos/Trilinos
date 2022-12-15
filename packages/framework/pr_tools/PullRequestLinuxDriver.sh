@@ -2,12 +2,6 @@
 SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
-# set -x  # echo commands
-
-# Fetch arguments
-on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
-on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
-
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -15,29 +9,12 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules start"
     message_std "PRDriver> " "Job is $JOB_BASE_NAME"
 
-    vortex_regex=".*(vortex).*"
-    if [[ ${NODE_NAME:?} =~ ${vortex_regex} || ${on_ats2} == "1" ]]; then
-        execute_command_checked "module load git/2.20.0"
-        execute_command_checked "module load python/3.7.2"
-        get_python_packages pip3
-        envvar_set_or_create PYTHON_EXE python3
-        # Always create user's tmp dir for nvcc. See https://github.com/trilinos/Trilinos/issues/10428#issuecomment-1109956415.
-        mkdir -p /tmp/trilinos
-    elif [[ ${on_weaver} == "1" ]]; then
-        module unload git
-        module unload python
-        module load git/2.10.1
-        module load python/3.7.3
-        get_python_packages pip3
-        export PYTHON_EXE=python3
-    else
-        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
-        execute_command_checked "module unload sems-archive-git"
-        execute_command_checked "module unload sems-archive-python"
-        execute_command_checked "module load sems-archive-git/2.10.1"
+    source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+    execute_command_checked "module unload sems-archive-git"
+    execute_command_checked "module unload sems-archive-python"
+    execute_command_checked "module load sems-archive-git/2.10.1"
 
-        envvar_set_or_create     PYTHON_EXE $(which python3)
-    fi
+    envvar_set_or_create     PYTHON_EXE $(which python3)
 
     module list
 
@@ -47,21 +24,15 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules complete"
 }
 
-
 print_banner "PullRequestLinuxDriver.sh"
 
 # Set up Sandia PROXY environment vars
 envvar_set_or_create https_proxy 'http://proxy.sandia.gov:80'
 envvar_set_or_create http_proxy  'http://proxy.sandia.gov:80'
 envvar_set_or_create no_proxy    'localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
-#export https_proxy=http://proxy.sandia.gov:80
-#export http_proxy=http://proxy.sandia.gov:80
-#export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
-
 
 # bootstrap the python and git modules for this system
 bootstrap_modules
-
 
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
@@ -89,25 +60,17 @@ merge_cmd_options=(
     )
 merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
-
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
 message_std "PRDriver> " ""
 message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
 message_std "PRDriver> " ""
 execute_command_checked "${merge_cmd:?}"
-#err=$?
-#if [ $err != 0 ]; then
-#    print_banner "An error occurred during merge"
-#    exit $err
-#fi
 print_banner "Merge completed"
-
 
 print_banner "Check for PR Driver Script Modifications"
 
 # Get the md5 checksum of this script:
-#sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
 message_std "PRDriver> " ""
 message_std "PRDriver> " "Script File: ${SCRIPTFILE:?}"
@@ -115,7 +78,6 @@ message_std "PRDriver> " "Old md5sum : ${sig_script_old:?}"
 message_std "PRDriver> " "New md5sum : ${sig_script_new:?}"
 
 # Get the md5 checksum of the Merge script
-#sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 export MERGE_SCRIPT=${SCRIPTPATH:?}/PullRequestLinuxDriverMerge.py
 sig_merge_new=$(get_md5sum ${MERGE_SCRIPT:?})
 message_std "PRDriver> " ""
@@ -142,17 +104,9 @@ if [[ "${JOB_BASE_NAME:?}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testi
     mode="installation"
 fi
 
-
 envvar_set_or_create TRILINOS_BUILD_DIR ${WORKSPACE}/pull_request_test
 
-#message_std "PRDriver> " "Create build directory if it does not exist."
-#message_std "PRDriver> " "Build Dir: ${TRILINOS_BUILD_DIR:?}"
-#mkdir -p ${TRILINOS_BUILD_DIR:?}
-
-
-
 print_banner "Launch the Test Driver"
-
 
 # Prepare the command for the TEST operation
 test_cmd_options=(
@@ -177,10 +131,7 @@ test_cmd_options=(
     --build-dir=${TRILINOS_BUILD_DIR:?}
     --ctest-driver=${WORKSPACE:?}/pr-ctest-framework/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
-    #--dry-run
 )
-
-
 
 # Execute the TEST operation
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
@@ -190,6 +141,3 @@ print_banner "Execute Test Command"
 message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
 execute_command_checked "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
-
-#${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
-#exit $?
