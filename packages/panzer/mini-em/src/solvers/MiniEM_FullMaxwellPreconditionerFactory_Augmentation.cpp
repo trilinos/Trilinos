@@ -17,7 +17,6 @@
 
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Panzer_NodeType.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"

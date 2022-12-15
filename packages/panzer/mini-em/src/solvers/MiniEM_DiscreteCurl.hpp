@@ -6,7 +6,9 @@
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
+#ifdef PANZER_HAVE_EPETRA
 #include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 
 class CurlRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
 private:
@@ -57,7 +59,9 @@ void addDiscreteCurlToRequestHandler(
   typedef panzer::GlobalOrdinal GlobalOrdinal;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
+#ifdef PANZER_HAVE_EPETRA
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinal> epetraBlockedLinObjFactory;
+#endif
   typedef panzer::GlobalIndexer UGI;
   typedef PHX::Device DeviceSpace;
   typedef Kokkos::HostSpace HostSpace;
@@ -70,7 +74,9 @@ void addDiscreteCurlToRequestHandler(
 
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof  = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
+#ifdef PANZER_HAVE_EPETRA
   RCP<const epetraBlockedLinObjFactory > eblof  = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
+#endif
   if (tblof != Teuchos::null) {
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> matrix;
@@ -288,6 +294,7 @@ void addDiscreteCurlToRequestHandler(
     // add curl callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new CurlRequestCallback(thyra_curl)));
 
+#ifdef PANZER_HAVE_EPETRA
   }  else if (eblof != Teuchos::null) {
 
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
@@ -506,7 +513,7 @@ void addDiscreteCurlToRequestHandler(
 
     // add curl callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new CurlRequestCallback(thyra_curl)));
-
+#endif
   } else
     TEUCHOS_ASSERT(false);
 }
