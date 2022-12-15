@@ -39,12 +39,18 @@ REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
 test -d ${REPO_ROOT:?}/.git || REPO_ROOT=`readlink -f ${WORKSPACE:?}/Trilinos`
 message_std "PRDriver> " "REPO_ROOT : ${REPO_ROOT}"
 
+if [[ ${GENCONFIG_BUILD_NAME} == *"cuda"* ]]
+then
+    _trilinos_build_cores='96'
+else
+    _trilinos_build_cores='29'
+fi
+
 # Get the md5 checksum of this script:
 sig_script_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
-
 
 print_banner "Merge Source into Target"
 message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -121,7 +127,7 @@ test_cmd_options=(
     --pullrequest-number=${PULLREQUESTNUM:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
-    --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
+    --max-cores-allowed=${_trilinos_build_cores:?}
     --num-concurrent-tests=4
     --test-mode=${mode}
     --workspace-dir=${WORKSPACE:?}
