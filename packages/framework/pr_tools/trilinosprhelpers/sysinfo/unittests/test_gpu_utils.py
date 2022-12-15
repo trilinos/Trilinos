@@ -4,6 +4,8 @@
 """
 from __future__ import print_function
 
+import os
+
 from unittest import TestCase
 
 try:                                    # pragma: no cover
@@ -27,6 +29,9 @@ def mock_nvidia_smi():
 GPU 1: Tesla V100S-PCIE-32GB (UUID: GPU-somehash2)
 GPU 2: Tesla V100S-PCIE-32GB (UUID: GPU-somehash3)
 GPU 3: Tesla V100S-PCIE-32GB (UUID: GPU-somehash4)"""
+
+def mock_which(thing_to_find):
+    return os.path.join(os.getcwd(), thing_to_find)
 
 
 #==============================================================================
@@ -59,3 +64,12 @@ class GpuUtilsTest(TestCase):
         with patch("trilinosprhelpers.sysinfo.gpu_utils._nvidia_smi", side_effect=mock_nvidia_smi):
             ret = sysinfo.gpu_utils.has_nvidia_gpus()
         self.assertTrue(ret)
+
+    def test_nvidia_smi_output_without_smi(self):
+        """
+        Test that without nvidia-smi available the smi interface returns an empty list of output.
+        """
+        print("")
+        with patch("trilinosprhelpers.sysinfo.gpu_utils.which", side_effect=mock_which):
+            ret = sysinfo.gpu_utils._nvidia_smi()
+        self.assertEqual([], ret)
