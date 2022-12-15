@@ -54,7 +54,7 @@ class GpuUtilsTest(TestCase):
         print("")
         with patch("trilinosprhelpers.sysinfo.gpu_utils._nvidia_smi", side_effect=mock_nvidia_smi):
             ret = sysinfo.gpu_utils.list_nvidia_gpus()
-        self.assertEqual([0, 1, 2, 3], ret)
+        self.assertEqual(["0", "1", "2", "3"], ret)
 
     def test_has_nvidia_gpus(self):
         """
