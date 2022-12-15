@@ -25,10 +25,10 @@ import trilinosprhelpers.sysinfo as sysinfo
 #==============================================================================
 
 def mock_nvidia_smi():
-    return """GPU 0: Tesla V100S-PCIE-32GB (UUID: GPU-somehash1)
-GPU 1: Tesla V100S-PCIE-32GB (UUID: GPU-somehash2)
-GPU 2: Tesla V100S-PCIE-32GB (UUID: GPU-somehash3)
-GPU 3: Tesla V100S-PCIE-32GB (UUID: GPU-somehash4)"""
+    return ["GPU 0: Tesla V100S-PCIE-32GB (UUID: GPU-somehash1)",
+            "GPU 1: Tesla V100S-PCIE-32GB (UUID: GPU-somehash2)",
+            "GPU 2: Tesla V100S-PCIE-32GB (UUID: GPU-somehash3)",
+            "GPU 3: Tesla V100S-PCIE-32GB (UUID: GPU-somehash4)"]
 
 def mock_which(thing_to_find):
     return os.path.join(os.getcwd(), thing_to_find)
