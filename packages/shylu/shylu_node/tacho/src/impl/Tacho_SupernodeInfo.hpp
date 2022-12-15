@@ -31,6 +31,7 @@ struct SuperNodeInfoInitReducer {
   struct ValueType {
     ordinal_type max_nchildren;
     ordinal_type max_supernode_size;
+    ordinal_type max_num_cols;
     ordinal_type max_schur_size;
     size_type nnz;
   };
@@ -48,6 +49,8 @@ struct SuperNodeInfoInitReducer {
     dst.max_nchildren = (src.max_nchildren > dst.max_nchildren ? src.max_nchildren : dst.max_nchildren);
     dst.max_supernode_size =
         (src.max_supernode_size > dst.max_supernode_size ? src.max_supernode_size : dst.max_supernode_size);
+    dst.max_num_cols =
+        (src.max_num_cols > dst.max_num_cols ? src.max_num_cols : dst.max_num_cols);
     dst.max_schur_size = (src.max_schur_size > dst.max_schur_size ? src.max_schur_size : dst.max_schur_size);
     dst.nnz += src.nnz;
   }
@@ -56,6 +59,8 @@ struct SuperNodeInfoInitReducer {
     dst.max_nchildren = (src.max_nchildren > dst.max_nchildren ? src.max_nchildren : dst.max_nchildren);
     dst.max_supernode_size =
         (src.max_supernode_size > dst.max_supernode_size ? src.max_supernode_size : dst.max_supernode_size);
+    dst.max_num_cols =
+        (src.max_num_cols > dst.max_num_cols ? src.max_num_cols : dst.max_num_cols);
     dst.max_schur_size = (src.max_schur_size > dst.max_schur_size ? src.max_schur_size : dst.max_schur_size);
     dst.nnz += src.nnz;
   }
@@ -63,6 +68,7 @@ struct SuperNodeInfoInitReducer {
   KOKKOS_INLINE_FUNCTION void init(value_type &val) const {
     val.max_nchildren = Kokkos::reduction_identity<ordinal_type>::max();
     val.max_supernode_size = Kokkos::reduction_identity<ordinal_type>::max();
+    val.max_num_cols = Kokkos::reduction_identity<ordinal_type>::max();
     val.max_schur_size = Kokkos::reduction_identity<ordinal_type>::max();
     val.nnz = Kokkos::reduction_identity<size_type>::sum();
   }
@@ -153,7 +159,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   ///
   /// max parameter
   ///
-  ordinal_type max_nchildren, max_supernode_size, max_schur_size;
+  ordinal_type max_nchildren, max_supernode_size, max_num_cols, max_schur_size;
 
   ///
   /// frontal matrix subassembly mode and serialization parameter
@@ -166,14 +172,14 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
   KOKKOS_INLINE_FUNCTION
   SupernodeInfo()
-      : supernodes(), gid_colidx(), sid_block_colidx(), max_nchildren(), max_supernode_size(), max_schur_size(),
+      : supernodes(), gid_colidx(), sid_block_colidx(), max_nchildren(), max_supernode_size(), max_num_cols(), max_schur_size(),
         front_update_mode(), serial_thres_size(), x() {}
   //= default;
 
   KOKKOS_INLINE_FUNCTION
   SupernodeInfo(const SupernodeInfo &b)
       : supernodes(b.supernodes), gid_colidx(b.gid_colidx), sid_block_colidx(b.sid_block_colidx),
-        max_nchildren(b.max_nchildren), max_supernode_size(b.max_supernode_size), max_schur_size(b.max_schur_size),
+        max_nchildren(b.max_nchildren), max_supernode_size(b.max_supernode_size), max_num_cols(b.max_num_cols), max_schur_size(b.max_schur_size),
         front_update_mode(b.front_update_mode), serial_thres_size(b.serial_thres_size), x(b.x) {}
   //= default;
 
@@ -204,6 +210,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     /// workspace parameter initialization
     self.max_nchildren = 0;
     self.max_supernode_size = 0;
+    self.max_num_cols = 0;
     self.max_schur_size = 0;
 
     Kokkos::RangePolicy<exec_space> supernodes_range_policy(0, nsupernodes);
@@ -235,6 +242,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
           update.max_nchildren = max(update.max_nchildren, s.nchildren);
           update.max_supernode_size = max(update.max_supernode_size, s.m);
+          update.max_num_cols = max(update.max_num_cols, s.n);
           update.max_schur_size = max(update.max_schur_size, s.n - s.m);
 
           update.nnz += (s.m * s.n);                         /// upper
@@ -265,6 +273,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
     self.max_nchildren = init_reduce_val.max_nchildren;
     self.max_supernode_size = init_reduce_val.max_supernode_size;
+    self.max_num_cols = init_reduce_val.max_num_cols;
     self.max_schur_size = init_reduce_val.max_schur_size;
 
     // supernodal factor array; data is held outside with a managed view
