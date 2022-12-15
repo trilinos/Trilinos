@@ -34,7 +34,7 @@ public:
   StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
                      const Teuchos::RCP<Teko::RequestHandler> & rh);
     
-#ifdef PANZER_HAVE_EPETRA
+#ifdef TEKO_HAVE_EPETRA
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
    *
