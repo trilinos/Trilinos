@@ -44,7 +44,6 @@
 #ifndef ROL_TYPEB_LSecantBALGORITHM_DEF_HPP
 #define ROL_TYPEB_LSecantBALGORITHM_DEF_HPP
 
-#include "unistd.h"
 namespace ROL {
 namespace TypeB {
 
