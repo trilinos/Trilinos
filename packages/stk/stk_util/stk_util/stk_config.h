@@ -74,6 +74,7 @@
 
 // Use macro below to deprecate:
 //   classes (class STK_DEPRECATED Class;), 
+//   structs (struct STK_DEPRECATED Struct;), 
 //   typedefs (STK_DEPRECATED typedef Type 1 Type2;, using Type1 STK_DEPRECATED = Type2;), 
 //   variables (STK_DEPRECATED int variable;), 
 //   non-static data members (union Union { STK_DEPRECATED int variable; }), 

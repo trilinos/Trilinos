@@ -59,6 +59,21 @@ namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor;
 namespace stk {
 namespace mesh {
 
+constexpr
+inline
+bool does_rank_have_valid_permutations(stk::mesh::EntityRank rank)
+{
+    return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
+}
+
+constexpr
+inline
+bool should_store_permutations(EntityRank fromRank, EntityRank toRank)
+{
+    return does_rank_have_valid_permutations(fromRank)
+        && does_rank_have_valid_permutations(toRank);
+}
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
