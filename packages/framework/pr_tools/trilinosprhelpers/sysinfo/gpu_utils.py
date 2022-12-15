@@ -18,7 +18,7 @@ def _nvidia_smi():
 def list_nvidia_gpus():
     gpu_ids = []
     try:
-        gpu_ids = [x for x in range(0, len(_nvidia_smi()))]
+        gpu_ids = [str(x) for x in range(0, len(_nvidia_smi()))]
     except Exception as e:
         raise RuntimeError("Failed to acquire list of gpus: {0}".format(str(e)))
     return gpu_ids
