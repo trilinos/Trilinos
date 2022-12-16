@@ -762,6 +762,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName)
     {
       stk::mesh::impl::set_unique_part_attribute<IossAlternatePartName>(part, altPartName);
+
+      mesh::MetaData & meta = mesh::MetaData::get(part);
+      meta.add_part_alias(part, altPartName);
     }
 
     bool has_alternate_part_name(const stk::mesh::Part& part)
@@ -828,24 +831,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
       else
         return part.name();
-    }
-
-    stk::mesh::Part *getPart(const stk::mesh::MetaData& metaData, const std::string& name)
-    {
-      stk::mesh::Part *part = metaData.get_part(name);
-      if(nullptr != part) {
-        return part;
-      }
-
-      const mesh::PartVector & parts = metaData.get_parts();
-      for (unsigned ii=0; ii < parts.size(); ++ii)
-        {
-          stk::mesh::Part *pp = parts[ii];
-          std::string altName = getPartName(*pp);
-          if (stk::equal_case(altName, name))
-            return pp;
-        }
-      return 0;
     }
 
     Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, const stk::mesh::Part& part)
@@ -3232,7 +3217,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = block->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
@@ -3343,7 +3328,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = ns->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
 
         // If part is null, then it is possible that this nodeset is a "viz nodeset" which
         // means that it is a nodeset containing the nodes of an element block.
@@ -3352,7 +3337,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         if (part == nullptr) {
           if (ns->property_exists(base_stk_part_name)) {
             std::string baseName = ns->get_property(base_stk_part_name).get_string();
-            part = getPart( metaData, baseName);
+            part = metaData.get_part(baseName);
           }
           if (part == nullptr) {
             std::ostringstream msg ;
@@ -3450,7 +3435,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         for (size_t i=0; i < blockCount; i++) {
           Ioss::SideBlock *block = ss->get_block(i);
           if (stk::io::include_entity(block)) {
-            stk::mesh::Part * part = getPart(meta, block->name());
+            stk::mesh::Part * part = meta.get_part(block->name());
             const Ioss::ElementTopology *parent_topology = block->parent_element_topology();
             stk::io::write_side_data_to_ioss<INT>(params, *block, part, parent_topology);
           }
@@ -3463,7 +3448,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = fb->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
@@ -3523,7 +3508,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = eb->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();

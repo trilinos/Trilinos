@@ -122,11 +122,9 @@ void pack_entity_info(const BulkData& mesh,
           ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
-          if (bucket.has_permutation(irank)) {
+          if (should_store_permutations(bucket.entity_rank(),irank)) {
             ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
-          } else {
-            buf.pack<unsigned>(0u);
           }
         }
       }
@@ -168,7 +166,9 @@ void unpack_entity_info(
     unsigned rel_attr = 0 ;
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
-    buf.unpack<unsigned>( rel_attr );
+    if (should_store_permutations(key.rank(), rel_key.rank())) {
+      buf.unpack<unsigned>( rel_attr );
+    }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {
