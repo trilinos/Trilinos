@@ -83,6 +83,7 @@
         <Parameter name="seed" type="unsigned int" value="0"/>
         <Parameter name="range min" type="double" value="0"/>
         <Parameter name="range max" type="double" value="1"/>
+        <Parameter name="DoF Name" type="string" value="E_edge"/>
       </ParameterList>
       <!-- Permittivity -->
       <ParameterList name="epsilon">
