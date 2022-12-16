@@ -79,7 +79,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         if gpu_utils.has_nvidia_gpus():
             self.message("-- REMARK: I see that I am running on a machine that has NVidia GPUs; I will attempt to write a GPU resource file for use by ctest")
             resource_spec_file = os.path.join(self.arg_build_dir, "ctest_resources.json")
-            slots_per_gpu = 2
+            slots_per_gpu = 1
             gpu_indices = gpu_utils.list_nvidia_gpus()
             self.message(f"-- REMARK: Using {slots_per_gpu} slots per GPU")
             self.message(f"-- REMARK: Using GPUs {gpu_indices}")
