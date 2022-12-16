@@ -47,6 +47,8 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_UpdateType.hpp"
+#include <map>
+#include <vector>
 
 namespace ROL {
 

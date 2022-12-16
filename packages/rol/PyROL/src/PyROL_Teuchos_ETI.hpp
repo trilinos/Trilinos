@@ -4,7 +4,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 namespace Teuchos {
-    inline void initiate(ParameterList p) {};
+    inline void initiate(ParameterList p) {}
 
 #  define PARAMETERLIST_MF(T) \
 	template T& ParameterList::get<T>(const std::string&); \
