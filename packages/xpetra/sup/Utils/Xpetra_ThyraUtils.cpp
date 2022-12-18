@@ -55,7 +55,7 @@
 
 namespace Xpetra {
 
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_THYRA_EPETRA
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   // implementation of "toThyra" for full specialization on SC=double, LO=GO=int and NO=EpetraNode
@@ -72,7 +72,7 @@ namespace Xpetra {
 
     bool bTpetra = false;
     bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_THYRA_TPETRA
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
@@ -83,7 +83,7 @@ namespace Xpetra {
 #endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_THYRA_EPETRA
     Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock_wrap->getCrsMatrix());
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
@@ -148,7 +148,7 @@ namespace Xpetra {
 
     bool bTpetra = false;
     bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_THYRA_TPETRA
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)))
@@ -159,7 +159,7 @@ namespace Xpetra {
 #endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_THYRA_EPETRA
     Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock_wrap->getCrsMatrix());
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
