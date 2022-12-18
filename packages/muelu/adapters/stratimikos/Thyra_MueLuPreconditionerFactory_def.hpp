@@ -355,7 +355,7 @@ namespace Thyra {
             xpDiag = Xpetra::toXpetra(tDiag);
         }
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_THYRA_EPETRA
         if (xpDiag.is_null()) {
           RCP<const Epetra_Comm> comm = Thyra::get_Epetra_Comm(*rcp_dynamic_cast<const ThyVSBase>(thyM->range())->getComm());
           RCP<const Epetra_Map> map = Thyra::get_Epetra_Map(*(thyM->range()), comm);
@@ -420,7 +420,7 @@ namespace Thyra {
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_THYRA_EPETRA
       if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
 #endif
 

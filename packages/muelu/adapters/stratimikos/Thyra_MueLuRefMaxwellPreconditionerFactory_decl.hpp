@@ -57,14 +57,6 @@
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
 #include <Thyra_MueLuPreconditionerFactory.hpp>
-#ifdef HAVE_MUELU_TPETRA
-#include "Thyra_TpetraLinearOp.hpp"
-#include "Thyra_TpetraThyraWrappers.hpp"
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#endif
 
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
