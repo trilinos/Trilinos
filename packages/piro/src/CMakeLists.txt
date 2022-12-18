@@ -20,7 +20,7 @@ SET(HEADERS ${HEADERS}
 # B.1) utilities
 #
 APPEND_SET(HEADERS
-  Piro_Helpers.hpp 
+  Piro_Helpers.hpp
   Piro_ValidPiroParameters.hpp
   Piro_Version.hpp
   Piro_InvertMassMatrixDecorator.hpp
@@ -34,7 +34,7 @@ APPEND_SET(HEADERS
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
 APPEND_SET(HEADERS
   Piro_Epetra_MatrixFreeDecorator.hpp
   Piro_Epetra_InvertMassMatrixDecorator.hpp
@@ -46,7 +46,7 @@ APPEND_SET(SOURCES
   Piro_StratimikosUtils.cpp
   Piro_Version.cpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
 APPEND_SET(SOURCES
   Piro_Epetra_MatrixFreeDecorator.cpp
   Piro_Epetra_InvertMassMatrixDecorator.cpp
@@ -84,7 +84,7 @@ IF (Piro_ENABLE_NOX)
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
   APPEND_SET(HEADERS
     Piro_Epetra_NOXSolver.hpp
     Piro_Epetra_LOCASolver.hpp
@@ -102,7 +102,7 @@ ENDIF()
     Piro_LOCAAdaptiveSolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
     )
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
   APPEND_SET(SOURCES
     Piro_Epetra_NOXSolver.cpp
     Piro_Epetra_LOCASolver.cpp
@@ -125,7 +125,7 @@ IF (Piro_ENABLE_Rythmos)
     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp
     )
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
   APPEND_SET(HEADERS
     Piro_Epetra_RythmosSolver.hpp
   )
@@ -135,15 +135,15 @@ ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
-    Piro_TempusSolver_Def.hpp 
+    Piro_TempusSolver_Def.hpp
     Piro_TempusIntegrator.hpp
-    Piro_TempusIntegrator_Def.hpp 
+    Piro_TempusIntegrator_Def.hpp
     Piro_TransientSolver.hpp
-    Piro_TransientSolver_Def.hpp 
+    Piro_TransientSolver_Def.hpp
     Piro_TempusStepperFactory.hpp
     Piro_TempusStepControlFactory.hpp
-    Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
-    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
+    Piro_ObserverToTempusIntegrationObserverAdapter.hpp
+    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp)
 ENDIF()
 
 IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
@@ -189,7 +189,7 @@ APPEND_SET(HEADERS
   )
 APPEND_SET(SOURCES Piro_PerformSolve.cpp)
 
-IF(Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
 APPEND_SET(HEADERS Piro_Epetra_PerformSolve.hpp)
 APPEND_SET(SOURCES Piro_Epetra_PerformSolve.cpp)
 APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)

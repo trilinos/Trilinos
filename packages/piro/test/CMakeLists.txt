@@ -21,7 +21,7 @@ IF (Piro_ENABLE_NOX)
     ADDED_EXE_TARGET_NAME_OUT ThyraSolver_NAME
     ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
   )
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriverTpetra
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
@@ -39,9 +39,9 @@ IF (Piro_ENABLE_NOX)
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 
+    ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME
   )
-  
+
   IF (ThyraSolverTpetra_NAME)
     SET(ThyraSolverTpetra_EXENAME ThyraSolverTpetra)
   ELSE()
@@ -84,7 +84,7 @@ IF (Piro_ENABLE_Tempus)
 ENDIF (Piro_ENABLE_Tempus)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
-  DEST_FILES   
+  DEST_FILES
         input_Solve_NOX_ForwardSensitivities_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
@@ -95,14 +95,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
-        input_Tempus_BackwardEuler_SinCos.xml 
+        input_Tempus_BackwardEuler_SinCos.xml
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
   EXEDEPS ${ThyraSolverTpetra_EXENAME} ${AnalysisDriverTpetra_EXENAME}
 )
 
 
-IF (Piro_ENABLE_Epetra)
+IF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnitTests
@@ -179,7 +179,7 @@ IF (Piro_ENABLE_Epetra)
       ARGS -v
       PASS_REGULAR_EXPRESSION "TEST PASSED"
     )
-  
+
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SecondOrderIntegrator
@@ -292,13 +292,13 @@ IF (Piro_ENABLE_Epetra)
       NUM_MPI_PROCS 4
       STANDARD_PASS_OUTPUT
     )
-    
+
   ENDIF (Piro_ENABLE_Tempus)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyEpetraTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
-                 input_Solve_NOX_3.xml                 
+                 input_Solve_NOX_3.xml
 		         input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml
@@ -325,4 +325,4 @@ IF (Piro_ENABLE_Epetra)
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver UnitTests NOXSolver_UnitTests
   )
 
-ENDIF(Piro_ENABLE_Epetra)
+ENDIF(Piro_ENABLE_Epetra AND Piro_ENABLE_ThyraEpetraAdapters AND Piro_ENABLE_ThyraEpetraExtAdapters)
