@@ -196,7 +196,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 # SupportGraph requires some TPLs and options to be enabled.
 IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Lemon AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Cholmod)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/supportgraph)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
   SET(HEADERS ${HEADERS}
     supportgraph/Ifpack2_SupportGraph_decl.hpp
     supportgraph/Ifpack2_SupportGraph_def.hpp
