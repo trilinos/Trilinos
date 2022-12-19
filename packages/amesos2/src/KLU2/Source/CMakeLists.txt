@@ -61,11 +61,11 @@ SET(SOURCES "")
 
 ASSERT_DEFINED(PROJECT_SOURCE_DIR)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
 # Set headers (for IDEs and installing)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
@@ -74,12 +74,12 @@ APPEND_SET(HEADERS
 # NOTE: Above, we add the XXX_config.h file so that MS Visual Studio
 # will know to include this file in the dependency analysis
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
 
 APPEND_SET(HEADERS
 klu2_analyze_given.hpp
