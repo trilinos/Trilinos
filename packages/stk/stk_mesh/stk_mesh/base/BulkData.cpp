@@ -986,7 +986,7 @@ void BulkData::entity_comm_list_insert(Entity node)
   }
 }
 
-void BulkData::add_node_sharing( Entity node, int sharing_proc )
+void BulkData::add_node_sharing(Entity node, int sharing_proc)
 {
   // Only valid to specify sharing information for non-deleted nodes
   ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
@@ -1004,6 +1004,41 @@ void BulkData::add_node_sharing( Entity node, int sharing_proc )
   entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
   entity_comm_map_erase(entity_key(node), EntityCommInfo(stk::mesh::BulkData::AURA, sharing_proc));
   entity_comm_list_insert(node);
+}
+
+void BulkData::add_node_sharing(const EntityProcVec& nodesAndProcs)
+{
+  EntityCommListInfoVector newCommListEntries;
+  newCommListEntries.reserve(nodesAndProcs.size());
+
+  for(const EntityProc& nodeAndSharingProc : nodesAndProcs) {
+    Entity node = nodeAndSharingProc.first;
+    int sharing_proc = nodeAndSharingProc.second;
+
+    // Only valid to specify sharing information for non-deleted nodes
+    ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
+    ThrowRequire(state(node) != Deleted);
+
+    protect_orphaned_node(node);
+
+    if (state(node) == Unchanged) {
+        mark_entity_and_upward_related_entities_as_modified(node);
+    }
+
+    internal_mark_entity(node, IS_SHARED);
+    std::pair<int,bool> result = entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
+    entity_comm_map_erase(entity_key(node), EntityCommInfo(stk::mesh::BulkData::AURA, sharing_proc));
+ 
+    const bool inserted = result.second;
+    if (inserted) {
+      EntityKey key = entity_key(node);
+      EntityCommListInfo info = {key, node, result.first};
+      newCommListEntries.push_back(info);
+    }
+  }
+
+  internal_add_comm_list_entries(newCommListEntries);
+  m_add_node_sharing_called = true;
 }
 
 EntityId BulkData::get_solo_side_id()
@@ -3408,16 +3443,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
     ThrowErrorMsgIf( error_count, error_msg.str() );
 #endif
 
-    if (!newCommListEntries.empty()) {
-      // Added new ghosting entities to the list,
-      // must now sort and merge.
-
-      stk::util::sort_and_unique(newCommListEntries);
-      if (newCommListEntries.capacity() >= newCommListEntries.size()+m_entity_comm_list.size()) {
-        m_entity_comm_list.swap(newCommListEntries);
-      }
-      stk::util::insert_keep_sorted_and_unique(newCommListEntries, m_entity_comm_list);
-    }
+    internal_add_comm_list_entries(newCommListEntries);
 
     OrdinalVector addParts, scratchOrdinalVec;
     removeParts = {ghosting_part(ghosting).mesh_meta_data_ordinal()};
@@ -4077,6 +4103,18 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
 
     m_entity_comm_list.erase( iter , m_entity_comm_list.end() );
 }
+
+void BulkData::internal_add_comm_list_entries(EntityCommListInfoVector& newCommListEntries)
+{
+  if (!newCommListEntries.empty()) {
+    stk::util::sort_and_unique(newCommListEntries);
+    if (newCommListEntries.capacity() >= newCommListEntries.size()+m_entity_comm_list.size()) {
+      m_entity_comm_list.swap(newCommListEntries);
+    }
+    stk::util::insert_keep_sorted_and_unique(newCommListEntries, m_entity_comm_list);
+  }
+}
+
 //----------------------------------------------------------------------
 
 // Postconditions:
@@ -4589,8 +4627,15 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
             buf.unpack<EntityKey>(key);
             buf.unpack<EntityState>(remoteState);
             Entity entity = get_entity(key);
+            int numSharingProcs = 0;
+            buf.unpack<int>(numSharingProcs);
+            for(int sp=0; sp<numSharingProcs; ++sp) {
+              int sharingProc = -1;
+              buf.unpack<int>(sharingProc);
+              entity_comm_map_insert(entity, EntityCommInfo(SHARED, sharingProc));
+            }
+ 
             const EntityState localState = state(entity);
-
             if (!in_shared(entity,p)) {
               if (localState == Unchanged) {
                 stk::util::insert_keep_sorted_and_unique(EntityProc(entity,p),

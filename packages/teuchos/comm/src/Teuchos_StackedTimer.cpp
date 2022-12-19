@@ -143,6 +143,12 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
     max_.resize(num_names);
     if ( options.output_minmax )
       sum_sq_.resize(num_names);
+    else
+      sum_sq_.resize(0);
+  } else {
+    min_.resize(0);
+    max_.resize(0);
+    sum_sq_.resize(0);
   }
 
   if (options.output_proc_minmax) {

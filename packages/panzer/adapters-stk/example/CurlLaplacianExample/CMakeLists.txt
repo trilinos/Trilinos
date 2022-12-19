@@ -10,19 +10,31 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES}
   )
 
-TRIBITS_ADD_ADVANCED_TEST(
-  CurlLaplacianExample
-  EXCLUDE_IF_NOT_TRUE ${${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS}
-  TEST_0 EXEC CurlLaplacianExample
-    ARGS --use-epetra --output-filename="base-curl-test-"
-    PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
-    NUM_MPI_PROCS 4
-  TEST_1 EXEC CurlLaplacianExample
-    ARGS --use-tpetra --output-filename="base-curl-test-"
-    PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
-    NUM_MPI_PROCS 4
-  COMM mpi
-  )
+IF(PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_ADVANCED_TEST(
+    CurlLaplacianExample
+    EXCLUDE_IF_NOT_TRUE ${${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS}
+    TEST_0 EXEC CurlLaplacianExample
+      ARGS --use-epetra --output-filename="base-curl-test-"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      NUM_MPI_PROCS 4
+    TEST_1 EXEC CurlLaplacianExample
+      ARGS --use-tpetra --output-filename="base-curl-test-"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+      NUM_MPI_PROCS 4
+    COMM mpi
+    )
+ELSE(PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_ADVANCED_TEST(
+    CurlLaplacianExample
+    EXCLUDE_IF_NOT_TRUE ${${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS}
+    TEST_0 EXEC CurlLaplacianExample
+      ARGS --use-tpetra --output-filename="base-curl-test-"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+      NUM_MPI_PROCS 4
+    COMM mpi
+    )
+ENDIF(PANZER_HAVE_EPETRA)
 
 FOREACH( ORDER 1 2 3 4 )
   TRIBITS_ADD_ADVANCED_TEST(

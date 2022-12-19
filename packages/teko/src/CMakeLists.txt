@@ -29,8 +29,12 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/NS)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Epetra)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Tpetra)
+
+IF(TEKO_HAVE_EPETRA)
+   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Epetra)
+ENDIF()
+
 IF (ML_ENABLE_TekoSmoothers)
    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mlutils)
 ENDIF()
@@ -38,16 +42,30 @@ ENDIF()
 APPEND_GLOB(HEADERS
   *.hpp
   NS/*.hpp
-  Epetra/*.hpp
   Tpetra/*.hpp
   )
 
 APPEND_GLOB(SOURCES
   *.cpp
   NS/*.cpp
-  Epetra/*.cpp
   Tpetra/*.cpp
   )
+
+IF(NOT TEKO_HAVE_EPETRA)
+  LIST(REMOVE_ITEM SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerFactory.cpp
+  )
+  LIST(REMOVE_ITEM HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerFactory.hpp
+  )
+ELSE()
+  APPEND_GLOB(HEADERS Epetra/*.hpp)
+  APPEND_GLOB(SOURCES Epetra/*.cpp)
+ENDIF()
 
 IF (ML_ENABLE_TekoSmoothers)
    APPEND_GLOB(HEADERS mlutils/*.hpp)
@@ -61,7 +79,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  teko 
+  teko
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

@@ -549,34 +549,16 @@ Piro::PerformROLAnalysis(
     if(analysisVerbosity > 2)
       *out << "\nPiro::PerformROLAnalysis: Start the computation of H_pp" << std::endl;
     Teko::BlockedLinearOp bH = Teko::createBlockedOp();
-    obj.hessian_22(bH, rol_x, rol_p, hessianResponseIndex);
+    obj.block_diagonal_hessian_22(bH, rol_x, rol_p, hessianResponseIndex);
     if(analysisVerbosity > 2)
       *out << "Piro::PerformROLAnalysis: End of the computation of H_pp" << std::endl;
 
     int numBlocks = bH->productRange()->numBlocks();
-
-    /* Not using defaults to increase user awareness
-    Teuchos::ParameterList defaultParamList;
-    string defaultSolverType = "Belos";
-    defaultParamList.set("Linear Solver Type", "Belos");
-    Teuchos::ParameterList& belosList = defaultParamList.sublist("Linear Solver Types").sublist("Belos");
-    belosList.set("Solver Type", "Pseudo Block CG");
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Maximum Iterations", 1000);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<double>("Convergence Tolerance", 1e-4);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Num Blocks", 1000);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity", 0x7f);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency", 100);
-    belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
-    defaultParamList.set("Preconditioner Type", "None");
-    */
-
-    Teuchos::ParameterList dHess = hessianDotProductList.sublist("Block Diagonal Solver");
     std::vector<Teko::LinearOp> diag(numBlocks);
     for (int i=0; i<numBlocks; ++i) {
-      string blockName = "Block "+std::to_string(i);
-      Teuchos::ParameterList pl = dHess.sublist(blockName);
-      std::string solverType = pl.get<string>("Linear Solver Type");
-      diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, bH));
+      auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
+      Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH)));
+      diag[i] = Thyra::nonconstInverse(linOp);
     }
 
     H = Teko::toLinearOp(bH);

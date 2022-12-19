@@ -32,20 +32,51 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_mesh_Stencils_hpp
-#define stk_mesh_Stencils_hpp
+#include <gtest/gtest.h>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
-#include <stddef.h>                     // for size_t
-#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
+namespace {
 
+TEST(ParallelVectorConcat, Timing)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
 
+  constexpr unsigned numIters = 3;
+  constexpr unsigned numRuns = 5;
 
-namespace stk {
-namespace mesh {
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
 
+  for(unsigned run=0; run<numRuns; ++run) {
+    batchTimer.start_batch_timer();
 
-} // namespace mesh
-} // namespace stk
+    using Item = std::pair<double,double>;
+    const size_t bufSize = size_t(std::numeric_limits<int>::max())/sizeof(Item) + 1000;
+    std::vector<Item> localBuf(bufSize);
+    std::vector<Item>globalBuf;
 
-#endif //  stk_mesh_Stencils_hpp
+    const int myrank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    for (size_t i=0; i < bufSize; ++i) {
+      localBuf[i] = std::make_pair(static_cast<double>(i + myrank),static_cast<double>(i + myrank));
+    }
+
+    for(unsigned iter=0; iter<numIters; ++iter) {
+      stk::parallel_vector_concat(MPI_COMM_WORLD, localBuf, globalBuf);
+      EXPECT_EQ(globalBuf.size(), 2*bufSize);
+
+      for (size_t j=0; j < bufSize; ++j) {
+        EXPECT_EQ(globalBuf[j], Item(double(j), double(j)));
+        EXPECT_EQ(globalBuf[bufSize + j], Item(double(1 + j), double(1 + j)));
+      }
+    }
+
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIters);
+}
+
+}
+

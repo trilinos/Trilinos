@@ -3,20 +3,22 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
-#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_Preconditioner.hpp"
-#include "Teko_InverseFactoryOperator.hpp"
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_BlockedEpetraOperator.hpp"
 #include "Teko_ReorderedLinearOp.hpp"
 
+#ifdef TEKO_HAVE_EPETRA
+#include "Teko_InverseFactoryOperator.hpp" // an epetra specific object
+#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
+#include "Teko_BlockedEpetraOperator.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 #include "EpetraExt_RowMatrixOut.h"
+#endif
 
 namespace Teko {
 
@@ -55,6 +57,8 @@ namespace {
    };
 }
 
+#ifdef TEKO_HAVE_EPETRA
+
 // Constructors/initializers/accessors
 StratimikosFactory::StratimikosFactory()
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd()))
@@ -67,13 +71,18 @@ StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> 
    setRequestHandler(rh);
 }
 
+#endif // TEKO_HAVE_EPETRA
+
 StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
                                        const Teuchos::RCP<Teko::RequestHandler> & rh)
-  :epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())), builder_(builder)
+  :
+#ifdef TEKO_HAVE_EPETRA
+  epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())),
+#endif
+  builder_(builder)
 {
    setRequestHandler(rh);
 }
-
 
 // Overridden from PreconditionerFactoryBase
 bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &/* fwdOpSrc */) const
@@ -133,9 +142,11 @@ void StratimikosFactory::initializePrec(
 {
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 
+#ifdef TEKO_HAVE_EPETRA
   if(epetraFwdOpViewExtractor_->isCompatible(*fwdOp))
      initializePrec_Epetra(fwdOpSrc,prec,supportSolveUse);
   else
+#endif
      initializePrec_Thyra(fwdOpSrc,prec,supportSolveUse);
 }
 
@@ -241,6 +252,7 @@ void StratimikosFactory::initializePrec_Thyra(
     *out << "\nLeaving Teko::StratimikosFactory::initializePrec_Thyra(...) ...\n";
 }
 
+#ifdef TEKO_HAVE_EPETRA
 void StratimikosFactory::initializePrec_Epetra(
   const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
   Thyra::PreconditionerBase<double> *prec,
@@ -402,7 +414,7 @@ void StratimikosFactory::initializePrec_Epetra(
   if(mediumVerbosity)
     *out << "\nLeaving Teko::StratimikosFactory::initializePrec(...) ...\n";
 }
-
+#endif // TEKO_HAVE_EPETRA
 
 void StratimikosFactory::uninitializePrec(
   Thyra::PreconditionerBase<double> * /* prec */,
@@ -501,6 +513,7 @@ StratimikosFactory::getValidParameters() const
   return validPL;
 }
 
+#ifdef TEKO_HAVE_EPETRA
 /** Build the segregated jacobian operator according to
   * the input parameter list.
   */
@@ -569,6 +582,7 @@ Teuchos::RCP<Epetra_Operator> StratimikosFactory::buildWrappedEpetraOperator(
 
    return wrappedOp;
 }
+#endif // TEKO_HAVE_EPETRA
 
 std::string StratimikosFactory::description() const
 {
@@ -577,6 +591,7 @@ std::string StratimikosFactory::description() const
   return oss.str();
 }
 
+#ifdef TEKO_HAVE_EPETRA
 void StratimikosFactory::buildStridedVectors(const Epetra_Operator & Jac,
                                              const std::vector<int> & decomp,
                                              std::vector<std::vector<int> > & vars) const
@@ -606,6 +621,7 @@ void StratimikosFactory::buildStridedVectors(const Epetra_Operator & Jac,
       }
    }
 }
+#endif // TEKO_HAVE_EPETRA
 
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
                                const std::string & stratName)

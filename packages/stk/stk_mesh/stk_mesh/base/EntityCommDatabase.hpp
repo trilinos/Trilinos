@@ -46,13 +46,12 @@
 #include <unordered_map>
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/Ghosting.hpp"
+#include "stk_mesh/base/HashEntityAndEntityKey.hpp"
 #include "stk_util/util/MCSR.hpp"
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
-
-
 
 //----------------------------------------------------------------------
 
@@ -68,7 +67,7 @@ public:
 
 class EntityCommDatabase
 {
-  typedef std::unordered_map<EntityKey, int, stk::mesh::HashValueForEntityKey> map_type;
+  typedef std::unordered_map<EntityKey, int, std::hash<EntityKey>> map_type;
 
 public:
   EntityCommDatabase();

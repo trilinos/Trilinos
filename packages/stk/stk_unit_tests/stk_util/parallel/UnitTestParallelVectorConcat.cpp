@@ -187,28 +187,3 @@ TEST(UnitTestParallel, testParallelVectorConcat) {
   }
 }
 
-TEST(UnitTestParallel, testParallelVectorConcatLargeBuffer)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2)
-  {
-    GTEST_SKIP();
-  }
-
-  using Item = std::pair<double,double>;
-  const size_t bufSize = size_t(std::numeric_limits<int>::max())/sizeof(Item) + 1000;
-  std::vector<Item> localBuf(bufSize);
-
-  const int myrank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  for (size_t i=0; i < bufSize; ++i) {
-    localBuf[i] = std::make_pair(static_cast<double>(i + myrank),static_cast<double>(i + myrank));
-  }
-
-  std::vector<Item>globalBuf;
-  stk::parallel_vector_concat(MPI_COMM_WORLD, localBuf, globalBuf);
-  EXPECT_EQ(globalBuf.size(), 2*bufSize);
-
-  for (size_t j=0; j < bufSize; ++j) {
-    EXPECT_EQ(globalBuf[j], Item(double(j), double(j)));
-    EXPECT_EQ(globalBuf[bufSize + j], Item(double(1 + j), double(1 + j)));
-  }
-}

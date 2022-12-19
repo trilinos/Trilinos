@@ -37,13 +37,14 @@
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Entity.hpp>
-#include "stk_mesh/base/EntityKey.hpp"
+#include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/HashEntityAndEntityKey.hpp>
 
 namespace stk {
 namespace mesh {
 
 class BulkData;
-typedef std::unordered_map<EntityKey, Entity::entity_value_type, stk::mesh::HashValueForEntityKey> GhostReuseMap;
+typedef std::unordered_map<EntityKey, Entity::entity_value_type, std::hash<EntityKey>> GhostReuseMap;
 
 
 namespace impl {

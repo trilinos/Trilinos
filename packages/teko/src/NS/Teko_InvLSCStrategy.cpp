@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -47,17 +47,22 @@
 #include "NS/Teko_InvLSCStrategy.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Teko_ConfigDefs.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_VectorStdOps.hpp"
-
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
-
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_VectorOut.h"
+#include "Teko_EpetraHelpers.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#endif
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -65,8 +70,7 @@
 // Teko includes
 #include "Teko_Utilities.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "Teko_EpetraHelpers.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
+
 #include "Teko_TpetraHelpers.hpp"
 
 #include "Thyra_TpetraLinearOp.hpp"
@@ -217,12 +221,12 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    //    otherwise, there is already an invMass_ matrix that is appropriate
    //       --> use that one
    if(massMatrix_==Teuchos::null) {
-      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <F> type \"" 
+      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <F> type \""
                    << getDiagonalName(scaleType_) << "\"" ,1);
       state->invMass_ = getInvDiagonalOp(F,scaleType_);
    }
    else if(state->invMass_==Teuchos::null) {
-      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <mass> type \"" 
+      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <mass> type \""
                    << getDiagonalName(scaleType_) << "\"" ,1);
       state->invMass_ = getInvDiagonalOp(massMatrix_,scaleType_);
    }
@@ -236,14 +240,14 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    if(wScaling_!=Teuchos::null && hScaling_==Teuchos::null) {
       // from W vector build H operator scaling
       RCP<const Thyra::VectorBase<double> > w = wScaling_->col(0);
-      RCP<const Thyra::VectorBase<double> > iQu 
+      RCP<const Thyra::VectorBase<double> > iQu
             = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(state->invMass_)->getDiag();
       RCP<Thyra::VectorBase<double> > h = Thyra::createMember(iQu->space());
 
       Thyra::put_scalar(0.0,h.ptr());
       Thyra::ele_wise_prod(1.0,*w,*iQu,h.ptr());
       hScaling_ = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(h));
-   } 
+   }
 
    LinearOp H = hScaling_;
    if(H==Teuchos::null && not isSymmetric_)
@@ -276,6 +280,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
    LinearOp modF = F;
    if(!Teko::TpetraHelpers::isTpetraLinearOp(F)){ // Epetra
+#ifdef TEKO_HAVE_EPETRA
      const RCP<const Epetra_Operator> epF = Thyra::get_Epetra_Operator(*F);
      if(epF!=Teuchos::null && rowZeroingNeeded_) {
         // try to get a CRS matrix
@@ -284,7 +289,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
         // if it is a CRS matrix get rows that need to be zeroed
         if(crsF!=Teuchos::null) {
            std::vector<int> zeroIndices;
-          
+
            // get rows in need of zeroing
            Teko::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
 
@@ -292,13 +297,17 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
            modF = Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndices,crsF)));
         }
      }
+#else
+     throw std::logic_error("InvLSCStrategy::initializeState is trying to use "
+                            "Epetra code, but TEKO is not built with Epetra!");
+#endif
    } else { //Tpetra
      ST scalar = 0.0;
      bool transp = false;
      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsF = Teko::TpetraHelpers::getTpetraCrsMatrix(F, &scalar, &transp);
 
      std::vector<GO> zeroIndices;
-          
+
      // get rows in need of zeroing
      Teko::TpetraHelpers::identityRowIndices(*crsF->getRowMap(), *crsF,zeroIndices);
 
@@ -312,14 +321,14 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
    Teko::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
-   state->gamma_ = std::fabs(Teko::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
+   state->gamma_ = std::fabs(Teko::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0;
    Teko_DEBUG_MSG("Calculated gamma",10);
    if(userPresStabMat_!=Teuchos::null) {
       Teko::LinearOp invDGl = Teko::getInvDiagonalOp(userPresStabMat_);
       Teko::LinearOp gammaOp = multiply(invDGl,C);
       state->gamma_ *= std::fabs(Teko::computeSpectralRad(gammaOp,5e-2,false,eigSolveParam_));
       stabMatrix = userPresStabMat_;
-   } else 
+   } else
       stabMatrix = C;
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
@@ -383,7 +392,7 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    InverseLinearOp invF = state->getInverse("invF");
    if(invF==Teuchos::null) {
       invF = buildInverse(*invFactoryF_,F);
-      state->addInverse("invF",invF); 
+      state->addInverse("invF",invF);
    } else {
       rebuildInverse(*invFactoryF_,F,invF);
    }
@@ -392,14 +401,14 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
 
    /////////////////////////////////////////////////////////
 
-   // (re)build the inverse of BQBt 
+   // (re)build the inverse of BQBt
    Teko_DEBUG_MSG("LSC::computeInverses Building inv(BQBtmC)",1);
    Teko_DEBUG_EXPR(invTimer.start(true));
    const LinearOp BQBt = state->getInverse("BQBtmC");
    InverseLinearOp invBQBt = state->getInverse("invBQBtmC");
    if(invBQBt==Teuchos::null) {
       invBQBt = buildInverse(*invFactoryS_,BQBt);
-      state->addInverse("invBQBtmC",invBQBt); 
+      state->addInverse("invBQBtmC",invBQBt);
    } else {
       rebuildInverse(*invFactoryS_,BQBt,invBQBt);
    }
@@ -411,27 +420,27 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    // Compute the inverse of BHBt or just use BQBt
    ModifiableLinearOp invBHBt = state->getInverse("invBHBtmC");
    if(hScaling_!=Teuchos::null || not isSymmetric_) {
-      // (re)build the inverse of BHBt 
+      // (re)build the inverse of BHBt
       Teko_DEBUG_MSG("LSC::computeInverses Building inv(BHBtmC)",1);
       Teko_DEBUG_EXPR(invTimer.start(true));
       const LinearOp BHBt = state->getInverse("BHBtmC");
       if(invBHBt==Teuchos::null) {
          invBHBt = buildInverse(*invFactoryS_,BHBt);
-         state->addInverse("invBHBtmC",invBHBt); 
+         state->addInverse("invBHBtmC",invBHBt);
       } else {
          rebuildInverse(*invFactoryS_,BHBt,invBHBt);
       }
       Teko_DEBUG_EXPR(invTimer.stop());
       Teko_DEBUG_MSG("LSC::computeInverses GetInvBHBt = " << invTimer.totalElapsedTime(),1);
-   } 
+   }
    else if(invBHBt==Teuchos::null) {
       // just use the Q version
-      state->addInverse("invBHBtmC",invBQBt); 
+      state->addInverse("invBHBtmC",invBQBt);
    }
 }
 
 //! Initialize from a parameter list
-void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) 
+void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib)
 {
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
@@ -444,7 +453,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       invStr = pl.get<std::string>("Inverse Type");
    if(pl.isParameter("Inverse Velocity Type"))
       invVStr = pl.get<std::string>("Inverse Velocity Type");
-   if(pl.isParameter("Inverse Pressure Type")) 
+   if(pl.isParameter("Inverse Pressure Type"))
       invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Ignore Boundary Rows"))
       rowZeroing = pl.get<bool>("Ignore Boundary Rows");
@@ -462,7 +471,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
       TEUCHOS_TEST_FOR_EXCEPT(scaleType_==NotDiag);
    }
-   if(pl.isParameter("Assume Stable Discretization")) 
+   if(pl.isParameter("Assume Stable Discretization"))
       assumeStable_ = pl.get<bool>("Assume Stable Discretization");
 
    Teko_DEBUG_MSG_BEGIN(5)
@@ -498,7 +507,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    if(useMass_) {
       Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
       rh->preRequest<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
-      Teko::LinearOp mass 
+      Teko::LinearOp mass
             = rh->request<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
       setMassMatrix(mass);
    }
@@ -506,7 +515,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
 }
 
 //! For assiting in construction of the preconditioner
-Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() const 
+Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() const
 {
    Teuchos::RCP<Teuchos::ParameterList> result;
    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
@@ -539,11 +548,11 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
 }
 
 //! For assiting in construction of the preconditioner
-bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
    Teko_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
    bool result = true;
- 
+
    // update requested parameters in solvers
    result &= invFactoryF_->updateRequestedParameters(pl);
    result &= invFactoryS_->updateRequestedParameters(pl);

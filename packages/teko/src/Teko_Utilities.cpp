@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -52,9 +52,6 @@
 #include "Thyra_ZeroLinearOpBase.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
-#include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
-#include "Thyra_EpetraExtDiagScalingTransformer.hpp"
-#include "Thyra_EpetraExtAddTransformer.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
@@ -63,15 +60,23 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include <utility>
+
+#ifdef TEKO_HAVE_EPETRA
+#include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
+#include "Thyra_EpetraExtDiagScalingTransformer.hpp"
+#include "Thyra_EpetraExtAddTransformer.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#endif
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"
 
 // Epetra includes
+#ifdef TEKO_HAVE_EPETRA
 #include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
@@ -80,6 +85,10 @@
 
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_MatrixMatrix.h"
+
+#include "Teko_EpetraHelpers.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#endif
 
 // Anasazi includes
 #include "AnasaziBasicEigenproblem.hpp"
@@ -94,8 +103,6 @@
 #endif
 
 // Teko includes
-#include "Teko_EpetraHelpers.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_TpetraOperatorWrapper.hpp"
 
@@ -119,10 +126,10 @@ using Isorropia::Epetra::Prober;
 #endif
 
 const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
-{ 
-   Teuchos::RCP<Teuchos::FancyOStream> os = 
-         Teuchos::VerboseObjectBase::getDefaultOStream(); 
-  
+{
+   Teuchos::RCP<Teuchos::FancyOStream> os =
+         Teuchos::VerboseObjectBase::getDefaultOStream();
+
    //os->setShowProcRank(true);
    //os->setOutputToRootOnly(-1);
    return os;
@@ -169,6 +176,7 @@ inline double dist(double * x,double * y,double * z,int stride,int row,int col)
   *
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
+#ifdef TEKO_HAVE_EPETRA
 RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil)
 {
    // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
@@ -188,7 +196,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
 
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,&rowData[0],&rowInd[0]);
- 
+
       // loop over elements of row
       for(int i=0;i<rowSz;i++) {
          int col = rowInd[i];
@@ -203,10 +211,10 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
             rowData[i] = -1.0/d;
             diagValue += rowData[i];
          }
-         else 
+         else
             diagInd = i;
       }
-    
+
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
          rowData[rowSz] = -diagValue;
@@ -226,6 +234,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
 
    return gl;
 }
+#endif
 
 RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil)
 {
@@ -246,7 +255,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
 
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.getGlobalRowCopy(row,rowInd,rowData,rowSz);
- 
+
       // loop over elements of row
       for(size_t i=0;i<rowSz;i++) {
         GO col = rowInd(i);
@@ -261,10 +270,10 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
             rowData[i] = -1.0/d;
             diagValue += rowData(i);
          }
-         else 
+         else
             diagInd = i;
       }
-    
+
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
          rowData(rowSz) = -diagValue;
@@ -307,6 +316,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
   *
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
+#ifdef TEKO_HAVE_EPETRA
 RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil)
 {
    // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
@@ -326,7 +336,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
 
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,&rowData[0],&rowInd[0]);
- 
+
       // loop over elements of row
       for(int i=0;i<rowSz;i++) {
          int col = rowInd[i];
@@ -341,10 +351,10 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
             rowData[i] = -1.0/d;
             diagValue += rowData[i];
          }
-         else 
+         else
             diagInd = i;
       }
-    
+
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
          rowData[rowSz] = -diagValue;
@@ -364,6 +374,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
 
    return gl;
 }
+#endif
 
 RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO stride,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil)
 {
@@ -384,7 +395,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
 
       // extract a copy of this row...put it in rowData, rowIndicies
       stencil.getGlobalRowCopy(row,rowInd,rowData,rowSz);
- 
+
       // loop over elements of row
       for(size_t i=0;i<rowSz;i++) {
          GO col = rowInd(i);
@@ -399,10 +410,10 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
             rowData[i] = -1.0/d;
             diagValue += rowData(i);
          }
-         else 
+         else
             diagInd = i;
       }
-    
+
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
          rowData(rowSz) = -diagValue;
@@ -428,7 +439,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
   *
   * Apply a linear operator to a multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A x + \beta y \f$
   *
   * \param[in]     A
@@ -448,7 +459,7 @@ void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alp
   *
   * Apply a transposed linear operator to a multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A^T x + \beta y \f$
   *
   * \param[in]     A
@@ -490,15 +501,15 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo,bool callEndBlockF
 
    // allocate new operator
    BlockedLinearOp upper = createBlockedOp();
- 
-   // build new operator 
+
+   // build new operator
    upper->beginBlockFill(rows,rows);
 
    for(int i=0;i<rows;i++) {
       // put zero operators on the diagonal
       // this gurantees the vector space of
       // the new operator are fully defined
-      RCP<const Thyra::LinearOpBase<double> > zed 
+      RCP<const Thyra::LinearOpBase<double> > zed
             = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
       upper->setBlock(i,i,zed);
 
@@ -529,15 +540,15 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo,bool callEndBlockF
 
    // allocate new operator
    BlockedLinearOp lower = createBlockedOp();
- 
-   // build new operator 
+
+   // build new operator
    lower->beginBlockFill(rows,rows);
 
    for(int i=0;i<rows;i++) {
       // put zero operators on the diagonal
       // this gurantees the vector space of
       // the new operator are fully defined
-      RCP<const Thyra::LinearOpBase<double> > zed 
+      RCP<const Thyra::LinearOpBase<double> > zed
             = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
       lower->setBlock(i,i,zed);
 
@@ -571,10 +582,10 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo,bool callEndBlockF
   * \returns A zero operator with the same block structure as
   *          the argument <code>blo</code>.
   *
-  * \notes The caller is responsible for calling 
+  * \notes The caller is responsible for calling
   *        <code>endBlockFill</code> on the returned blocked
   *        operator.
-  */ 
+  */
 BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
 {
    int rows = blockRowCount(blo);
@@ -586,15 +597,15 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
 
    // allocate new operator
    BlockedLinearOp zeroOp = createBlockedOp();
- 
-   // build new operator 
+
+   // build new operator
    zeroOp->beginBlockFill(rows,rows);
 
    for(int i=0;i<rows;i++) {
       // put zero operators on the diagonal
       // this gurantees the vector space of
       // the new operator are fully defined
-      RCP<const Thyra::LinearOpBase<double> > zed 
+      RCP<const Thyra::LinearOpBase<double> > zed
             = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
       zeroOp->setBlock(i,i,zed);
    }
@@ -623,6 +634,80 @@ bool isZeroOp(const LinearOp op)
    return test!=Teuchos::null;
 }
 
+std::pair<ModifiableLinearOp, bool> getAbsRowSumMatrixEpetra(const LinearOp &op) {
+#ifndef TEKO_HAVE_EPETRA
+   return std::make_pair(ModifiableLinearOp{}, false);
+#else
+  RCP<const Epetra_CrsMatrix> eCrsOp;
+
+  const auto eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+
+  if(!eOp) {
+    return std::make_pair(ModifiableLinearOp{}, false);
+  }
+
+  eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
+
+
+  // extract diagonal
+  const auto ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+  Epetra_Vector &diag = *ptrDiag;
+
+  // compute absolute value row sum
+  diag.PutScalar(0.0);
+  for (int i = 0; i < eCrsOp->NumMyRows(); i++) {
+    double *values = 0;
+    int numEntries;
+    eCrsOp->ExtractMyRowView(i, numEntries, values);
+
+    // build abs value row sum
+    for (int j = 0; j < numEntries; j++)
+      diag[i] += std::abs(values[j]);
+  }
+
+  // build Thyra diagonal operator
+  return std::make_pair(
+      Teko::Epetra::thyraDiagOp(ptrDiag, eCrsOp->RowMap(),
+                                "absRowSum( " + op->getObjectLabel() + " )"),
+      true);
+#endif
+}
+
+std::pair<ModifiableLinearOp, bool> getAbsRowSumMatrixTpetra(const LinearOp &op) {
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tCrsOp;
+
+  const auto tOp =
+      rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(op);
+
+  tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT>>(
+      tOp->getConstTpetraOperator(), true);
+
+  // extract diagonal
+  const auto ptrDiag =
+      Tpetra::createVector<ST, LO, GO, NT>(tCrsOp->getRowMap());
+  auto &diag = *ptrDiag;
+
+  // compute absolute value row sum
+  diag.putScalar(0.0);
+  for (LO i = 0; i < (LO)tCrsOp->getLocalNumRows(); i++) {
+    auto numEntries = tCrsOp->getNumEntriesInLocalRow(i);
+    typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_inds_host_view_type
+        indices;
+    typename Tpetra::CrsMatrix<ST, LO, GO, NT>::values_host_view_type values;
+    tCrsOp->getLocalRowView(i, indices, values);
+
+    // build abs value row sum
+    for (size_t j = 0; j < numEntries; j++)
+      diag.sumIntoLocalValue(i, std::abs(values(j)));
+  }
+
+  // build Thyra diagonal operator
+  return std::make_pair(Teko::TpetraHelpers::thyraDiagOp(
+                            ptrDiag, *tCrsOp->getRowMap(),
+                            "absRowSum( " + op->getObjectLabel() + " ))"),
+                        true);
+}
+
 /** \brief Compute absolute row sum matrix.
   *
   * Compute the absolute row sum matrix. That is
@@ -633,85 +718,36 @@ bool isZeroOp(const LinearOp op)
   */
 ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
 {
-   bool isTpetra = false;
-   RCP<const Epetra_CrsMatrix> eCrsOp;
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
+  try {
+    auto eResult = getAbsRowSumMatrixEpetra(op);
+    if (eResult.second) {
+      return eResult.first;
+    }
 
-   try {
-      // get Epetra or Tpetra Operator
-      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
-      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+    auto tResult = getAbsRowSumMatrixTpetra(op);
+    if (tResult.second) {
+      return tResult.first;
+    } else {
+      throw std::logic_error("Neither Epetra nor Tpetra");
+    }
+  } catch (std::exception &e) {
+    auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      // cast it to a CrsMatrix
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-      if (!eOp.is_null()){
-        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
-      }   
-      else if (!tOp.is_null()){
-        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
-        isTpetra = true;
-      }
-      else
-        throw std::logic_error("Neither Epetra nor Tpetra");
-   }
-   catch (std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix or a "
+            "Tpetra::CrsMatrix\n";
+    *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator "
+            "from a \""
+         << op->description() << std::endl;
+    *out << "           OR\n";
+    *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or "
+            "a Tpetra_Operator to a Tpetra::CrsMatrix\n";
+    *out << std::endl;
+    *out << "*** THROWN EXCEPTION ***\n";
+    *out << e.what() << std::endl;
+    *out << "************************\n";
 
-      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
-      *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
-      *out << std::endl;
-      *out << "*** THROWN EXCEPTION ***\n";
-      *out << e.what() << std::endl;
-      *out << "************************\n";
-      
-      throw e;
-   }
-
-   if(!isTpetra){
-     // extract diagonal
-     const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-     Epetra_Vector & diag = *ptrDiag;
-
-     // compute absolute value row sum
-     diag.PutScalar(0.0);
-     for(int i=0;i<eCrsOp->NumMyRows();i++) {
-        double * values = 0;
-        int numEntries;
-        eCrsOp->ExtractMyRowView(i,numEntries,values);
-
-        // build abs value row sum
-        for(int j=0;j<numEntries;j++)
-           diag[i] += std::abs(values[j]);
-     }
-
-     // build Thyra diagonal operator
-     return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
-   }
-   else {
-     // extract diagonal
-     const RCP<Tpetra::Vector<ST,LO,GO,NT> > ptrDiag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
-     Tpetra::Vector<ST,LO,GO,NT> & diag = *ptrDiag;
-
-     // compute absolute value row sum
-     diag.putScalar(0.0);
-     for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
-        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
-        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
-        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
-        tCrsOp->getLocalRowView(i,indices,values);
-
-        // build abs value row sum
-        for(LO j=0;j<numEntries;j++)
-           diag.sumIntoLocalValue(i,std::abs(values(j)));
-     }
-
-     // build Thyra diagonal operator
-     return Teko::TpetraHelpers::thyraDiagOp(ptrDiag,*tCrsOp->getRowMap(),"absRowSum( " + op->getObjectLabel() + " ))");
-
-   }
-
+    throw e;
+  }
 }
 
 /** \brief Compute inverse of the absolute row sum matrix.
@@ -773,6 +809,7 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 
    }
    else{
+#ifdef TEKO_HAVE_EPETRA
      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op,true);
      RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
 
@@ -795,6 +832,10 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 
      // build Thyra diagonal operator
      return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
+#else
+     throw std::logic_error("getAbsRowSumInvMatrix is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 
 }
@@ -844,6 +885,54 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
    return rcp(new Thyra::DefaultDiagonalLinearOp<ST>(diag));
 }
 
+const std::pair<ModifiableLinearOp, bool> getDiagonalOpEpetra(const LinearOp &op) {
+#ifndef TEKO_HAVE_EPETRA
+   return std::make_pair(ModifiableLinearOp{}, false);
+#else
+  RCP<const Epetra_CrsMatrix> eCrsOp;
+
+  const auto eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+  if (!eOp) {
+    return std::make_pair(ModifiableLinearOp{}, false);
+  }
+
+  eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
+
+  // extract diagonal
+  const auto diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+  TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+
+  // build Thyra diagonal operator
+  return std::make_pair(
+      Teko::Epetra::thyraDiagOp(diag, eCrsOp->RowMap(),
+                                "inv(diag( " + op->getObjectLabel() + " ))"),
+      true);
+#endif
+}
+
+const std::pair<ModifiableLinearOp, bool> getDiagonalOpTpetra(const LinearOp &op) {
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tCrsOp;
+
+  const auto tOp =
+      rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(op);
+  if (!tOp) {
+    return std::make_pair(ModifiableLinearOp{}, false);
+  }
+
+  tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT>>(
+      tOp->getConstTpetraOperator(), true);
+
+  // extract diagonal
+  const auto diag = Tpetra::createVector<ST, LO, GO, NT>(tCrsOp->getRowMap());
+  tCrsOp->getLocalDiagCopy(*diag);
+
+  // build Thyra diagonal operator
+  return std::make_pair(Teko::TpetraHelpers::thyraDiagOp(
+                            diag, *tCrsOp->getRowMap(),
+                            "inv(diag( " + op->getObjectLabel() + " ))"),
+                        true);
+}
+
 /** \brief Get the diaonal of a linear operator
   *
   * Get the diagonal of a linear operator. Currently
@@ -857,23 +946,17 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
   */
 const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
 {
-   bool isTpetra = false;
-   RCP<const Epetra_CrsMatrix> eCrsOp;
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
-
    try {
       // get Epetra or Tpetra Operator
-      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
-      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+      const auto eDiagOp = getDiagonalOpEpetra(op);
 
-      // cast it to a CrsMatrix
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-      if (!eOp.is_null()){
-        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
-      }   
-      else if (!tOp.is_null()){
-        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
-        isTpetra = true;
+      if (eDiagOp.second) {
+         return eDiagOp.first;
+      }
+
+      const auto tDiagOp = getDiagonalOpTpetra(op);
+      if (tDiagOp.second) {
+         return tDiagOp.first;
       }
       else
         throw std::logic_error("Neither Epetra nor Tpetra");
@@ -889,59 +972,31 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
       *out << "************************\n";
-      
+
       throw e;
-   }
-
-   if(!isTpetra){
-     // extract diagonal
-     const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-     TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
-
-     // build Thyra diagonal operator
-     return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
-   }
-   else {
-     // extract diagonal
-     const RCP<Tpetra::Vector<ST,LO,GO,NT> > diag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
-     tCrsOp->getLocalDiagCopy(*diag);
-
-     // build Thyra diagonal operator
-     return Teko::TpetraHelpers::thyraDiagOp(diag,*tCrsOp->getRowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
-
    }
 }
 
 const MultiVector getDiagonal(const LinearOp & op)
 {
-   bool isTpetra = false;
-   RCP<const Epetra_CrsMatrix> eCrsOp;
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
-
    try {
       // get Epetra or Tpetra Operator
-      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
-      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+      auto diagOp = getDiagonalOpEpetra(op);
 
-      // cast it to a CrsMatrix
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-      if (!eOp.is_null()){
-        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
-      }   
-      else if (!tOp.is_null()){
-        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
-        isTpetra = true;
+      if (!diagOp.second) {
+         diagOp = getDiagonalOpTpetra(op);
+
+         if(!diagOp.second){
+            throw std::logic_error("Neither Epetra nor Tpetra");
+         }
       }
-      else
-        throw std::logic_error("Neither Epetra nor Tpetra");
+
+      Teuchos::RCP<const Thyra::MultiVectorBase<double> > v =
+         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(diagOp.first)->getDiag();
+      return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(v);
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  
-      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
-      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
-      *out << eOp;
-      *out << tOp;
 
       *out << "Teko: getDiagonal requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
@@ -951,25 +1006,8 @@ const MultiVector getDiagonal(const LinearOp & op)
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
       *out << "************************\n";
-      
+
       throw e;
-   }
-
-   if(!isTpetra){
-     // extract diagonal
-     const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-     TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
-
-     return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
-   }
-   else {
-     // extract diagonal
-     const RCP<Tpetra::Vector<ST,LO,GO,NT> > diag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
-     tCrsOp->getLocalDiagCopy(*diag);
-
-     // build Thyra diagonal operator
-     return Thyra::createVector<ST,LO,GO,NT>(diag,Thyra::createVectorSpace<ST,LO,GO,NT>(tCrsOp->getRowMap()));
-
    }
 }
 
@@ -977,8 +1015,8 @@ const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
 {
    LinearOp diagOp = Teko::getDiagonalOp(A,dt);
 
-   Teuchos::RCP<const Thyra::MultiVectorBase<double> > v = 
-         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(diagOp)->getDiag(); 
+   Teuchos::RCP<const Thyra::MultiVectorBase<double> > v =
+         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(diagOp)->getDiag();
    return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(v);
 }
 
@@ -1039,7 +1077,8 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 
    }
    else {
-     RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op,true); 
+#ifdef TEKO_HAVE_EPETRA
+     RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op,true);
      RCP<const Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
 
      // extract diagonal
@@ -1049,10 +1088,14 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 
      // build Thyra diagonal operator
      return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+#else
+      throw std::logic_error("getInvDiagonalOp is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Multiply three linear operators. 
+/** \brief Multiply three linear operators.
   *
   * Multiply three linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1171,7 +1214,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetram = Teko::TpetraHelpers::isTpetraLinearOp(opm);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
- 
+
    if(isTpetral && isTpetram && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
 
       // Get left and right Tpetra crs operators
@@ -1192,12 +1235,12 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm); 
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm);
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarm*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else if (isTpetral && !isTpetram && isTpetrar){ // Assume that the middle operator is diagonal
@@ -1209,7 +1252,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
       ST scalarr = 0.0;
       bool transpr = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
-      
+
       RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr;
 
       // Cast middle operator as DiagonalLinearOp and extract diagonal as Vector
@@ -1224,27 +1267,27 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
       }
       else
         TEUCHOS_ASSERT(false);
-      
+
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
 
       // Do the diagonal scaling
       tCrsOplm->rightScale(*diagPtr);
-      
+
       // Build output operator
       RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
       RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else { // Assume Epetra and we can use transformers
-
+#ifdef TEKO_HAVE_EPETRA
       // build implicit multiply
       const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
 
@@ -1260,11 +1303,14 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
                                         " * " + opr->getObjectLabel() + " )");
 
       return explicitOp;
-
+#else
+      throw std::logic_error("explicitMultiply is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Multiply three linear operators. 
+/** \brief Multiply three linear operators.
   *
   * Multiply three linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1284,7 +1330,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetram = Teko::TpetraHelpers::isTpetraLinearOp(opm);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
- 
+
    if(isTpetral && isTpetram && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
 
       // Get left and right Tpetra crs operators
@@ -1306,12 +1352,12 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm); 
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm);
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarm*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else if (isTpetral && !isTpetram && isTpetrar){ // Assume that the middle operator is diagonal
@@ -1323,7 +1369,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       ST scalarr = 0.0;
       bool transpr = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
-      
+
       // Cast middle operator as DiagonalLinearOp and extract diagonal as Vector
       RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpm = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opm,true);
       RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpm->getDiag(),true);
@@ -1332,22 +1378,22 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
 
       // Do the diagonal scaling
       tCrsOplm->rightScale(*diagPtr);
-      
+
       // Build output operator
       RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
       RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else { // Assume Epetra and we can use transformers
-
+#ifdef TEKO_HAVE_EPETRA
       // build implicit multiply
       const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
 
@@ -1356,7 +1402,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
           Thyra::epetraExtDiagScaledMatProdTransformer();
 
       // build operator destination operator
-      ModifiableLinearOp explicitOp; 
+      ModifiableLinearOp explicitOp;
 
       // if neccessary build a operator to put the explicit multiply into
       if(destOp==Teuchos::null)
@@ -1373,11 +1419,14 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
                                         " * " + opr->getObjectLabel() + " )");
 
       return explicitOp;
-
+#else
+      throw std::logic_error("explicitMultiply is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Multiply two linear operators. 
+/** \brief Multiply two linear operators.
   *
   * Multiply two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1475,7 +1524,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
- 
+
    if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
       // Get left and right Tpetra crs operators
       ST scalarl = 0.0;
@@ -1495,7 +1544,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else if (isTpetral && !isTpetrar){ // Assume that the right operator is diagonal
@@ -1504,18 +1553,18 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
       ST scalarl = 0.0;
       bool transpl = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
-      
+
       // Cast right operator as DiagonalLinearOp and extract diagonal as Vector
       RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpr = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opr,true);
       RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpr->getDiag(),true);
       RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
-      
+
       explicitCrsOp->rightScale(*diagPtr);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl);
       explicitCrsOp->fillComplete(tCrsOpl->getDomainMap(),tCrsOpl->getRangeMap());
-      
+
       return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
 
    } else if (!isTpetral && isTpetrar){ // Assume that the left operator is diagonal
@@ -1524,7 +1573,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
       ST scalarr = 0.0;
       bool transpr = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
-      
+
       RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr;
 
       // Cast left operator as DiagonalLinearOp and extract diagonal as Vector
@@ -1539,26 +1588,26 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
       }
       else
         TEUCHOS_ASSERT(false);
-      
+
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpr, Tpetra::Import<LO,GO,NT>(tCrsOpr->getRowMap(),tCrsOpr->getRowMap()));
-      
+
       explicitCrsOp->leftScale(*diagPtr);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpr->getRangeMap());
-      
+
       return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
 
    } else { // Assume Epetra and we can use transformers
-
+#ifdef TEKO_HAVE_EPETRA
      // build implicit multiply
      const LinearOp implicitOp = Thyra::multiply(opl,opr);
- 
+
      // build a scaling transformer
-     RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+     RCP<Thyra::LinearOpTransformerBase<double> > prodTrans
            = Thyra::epetraExtDiagScalingTransformer();
 
-     // check to see if a scaling transformer works: if not use the 
+     // check to see if a scaling transformer works: if not use the
      // DiagScaledMatrixProduct transformer
      if(not prodTrans->isCompatible(*implicitOp))
          prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
@@ -1570,10 +1619,14 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
                                        " * " + opr->getObjectLabel() + " )");
 
      return explicitOp;
+#else
+      throw std::logic_error("explicitMultiply is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Multiply two linear operators. 
+/** \brief Multiply two linear operators.
   *
   * Multiply two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1676,7 +1729,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
- 
+
    if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix multiply
 
       // Get left and right Tpetra crs operators
@@ -1697,11 +1750,11 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
-      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpr,transpr,*explicitCrsOp); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpr,transpr,*explicitCrsOp);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl*scalarr);
       explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    } else if (isTpetral && !isTpetrar){ // Assume that the right operator is diagonal
@@ -1710,7 +1763,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       ST scalarl = 0.0;
       bool transpl = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
-      
+
       // Cast right operator as DiagonalLinearOp and extract diagonal as Vector
       RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpr = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opr);
       RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpr->getDiag(),true);
@@ -1718,7 +1771,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
 
       // Scale by the diagonal operator
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
-      explicitCrsOp->rightScale(*diagPtr);      
+      explicitCrsOp->rightScale(*diagPtr);
       explicitCrsOp->resumeFill();
       explicitCrsOp->scale(scalarl);
       explicitCrsOp->fillComplete(tCrsOpl->getDomainMap(),tCrsOpl->getRangeMap());
@@ -1730,7 +1783,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       ST scalarr = 0.0;
       bool transpr = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
-      
+
       // Cast leftt operator as DiagonalLinearOp and extract diagonal as Vector
       RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpl = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opl,true);
       RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpl->getDiag(),true);
@@ -1745,22 +1798,22 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
 
    } else { // Assume Epetra and we can use transformers
-
+#ifdef TEKO_HAVE_EPETRA
      // build implicit multiply
      const LinearOp implicitOp = Thyra::multiply(opl,opr);
- 
+
       // build a scaling transformer
-   
-      RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+
+      RCP<Thyra::LinearOpTransformerBase<double> > prodTrans
             = Thyra::epetraExtDiagScalingTransformer();
 
-      // check to see if a scaling transformer works: if not use the 
+      // check to see if a scaling transformer works: if not use the
       // DiagScaledMatrixProduct transformer
       if(not prodTrans->isCompatible(*implicitOp))
           prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
 
       // build operator destination operator
-      ModifiableLinearOp explicitOp; 
+      ModifiableLinearOp explicitOp;
 
       // if neccessary build a operator to put the explicit multiply into
       if(destOp==Teuchos::null)
@@ -1776,10 +1829,14 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
                                      " * " + opr->getObjectLabel() + " )");
 
       return explicitOp;
+#else
+      throw std::logic_error("explicitMultiply is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Add two linear operators. 
+/** \brief Add two linear operators.
   *
   * Add two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1814,7 +1871,7 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
      blocked_sum->endBlockFill();
      return blocked_sum;
    }
-  
+
    // if only one is blocked, it must be 1x1
    LinearOp opl = opl_in;
    LinearOp opr = opr_in;
@@ -1881,14 +1938,15 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
       RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
       // Do explicit matrix-matrix add
-      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr); 
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    }else{//Assume Epetra
+#ifdef TEKO_HAVE_EPETRA
      // build implicit add
      const LinearOp implicitOp = Thyra::add(opl,opr);
- 
+
      // build transformer
      const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
          Thyra::epetraExtAddTransformer();
@@ -1900,10 +1958,14 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
                                      " + " + opr->getObjectLabel() + " )");
 
      return explicitOp;
+#else
+      throw std::logic_error("explicitAdd is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
-/** \brief Add two linear operators. 
+/** \brief Add two linear operators.
   *
   * Add two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -1921,7 +1983,7 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
    // if blocked, add block by block
    if(isPhysicallyBlockedLinearOp(opl)){
      TEUCHOS_ASSERT(isPhysicallyBlockedLinearOp(opr));
- 
+
      double scalarl = 0.0;
      bool transpl = false;
      RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl, &scalarl, &transpl);
@@ -1962,7 +2024,7 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
 
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
- 
+
    if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix add
 
       // Get left and right Tpetra crs operators
@@ -1982,15 +2044,15 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
       RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
       // Do explicit matrix-matrix add
-      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr); 
-      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
    }else{ // Assume Epetra
-
+#ifdef TEKO_HAVE_EPETRA
      // build implicit add
      const LinearOp implicitOp = Thyra::add(opl,opr);
- 
+
      // build transformer
      const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
          Thyra::epetraExtAddTransformer();
@@ -2008,6 +2070,10 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
                                      " + " + opr->getObjectLabel() + " )");
 
      return explicitOp;
+#else
+      throw std::logic_error("explicitAdd is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
@@ -2018,6 +2084,7 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
 const ModifiableLinearOp explicitSum(const LinearOp & op,
                                      const ModifiableLinearOp & destOp)
 {
+#ifdef TEKO_HAVE_EPETRA
    // convert operators to Epetra_CrsMatrix
    const RCP<const Epetra_CrsMatrix> epetraOp =
          rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*op), true);
@@ -2034,6 +2101,10 @@ const ModifiableLinearOp explicitSum(const LinearOp & op,
    EpetraExt::MatrixMatrix::Add(*epetraOp,false,1.0,*epetraDest,1.0);
 
    return destOp;
+#else
+      throw std::logic_error("explicitSum is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
 }
 
 const LinearOp explicitTranspose(const LinearOp & op)
@@ -2051,11 +2122,11 @@ const LinearOp explicitTranspose(const LinearOp & op)
                                                transOp);
 
    } else {
-
+#ifdef TEKO_HAVE_EPETRA
      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
      TEUCHOS_TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
                                "Teko::explicitTranspose Not an Epetra_Operator");
-     RCP<const Epetra_RowMatrix> eRowMatrixOp 
+     RCP<const Epetra_RowMatrix> eRowMatrixOp
            = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
      TEUCHOS_TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
                                "Teko::explicitTranspose Not an Epetra_RowMatrix");
@@ -2064,12 +2135,16 @@ const LinearOp explicitTranspose(const LinearOp & op)
      EpetraExt::RowMatrix_Transpose tranposeOp;
      Epetra_RowMatrix & eMat = tranposeOp(const_cast<Epetra_RowMatrix &>(*eRowMatrixOp));
 
-     // this copy is because of a poor implementation of the EpetraExt::Transform 
+     // this copy is because of a poor implementation of the EpetraExt::Transform
      // implementation
-     Teuchos::RCP<Epetra_CrsMatrix> crsMat 
+     Teuchos::RCP<Epetra_CrsMatrix> crsMat
            = Teuchos::rcp(new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix &>(eMat)));
 
      return Thyra::epetraLinearOp(crsMat);
+#else
+      throw std::logic_error("explicitTranspose is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
    }
 }
 
@@ -2093,9 +2168,14 @@ double frobeniusNorm(const LinearOp & op_in)
     const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
     return crsOp->getFrobeniusNorm();
   } else {
+#ifdef TEKO_HAVE_EPETRA
     const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
     const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
     return crsOp->NormFrobenius();
+#else
+      throw std::logic_error("frobeniusNorm is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
   }
 }
 
@@ -2103,11 +2183,16 @@ double oneNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"One norm not currently implemented for Tpetra matrices");
-    
+
   } else {
+#ifdef TEKO_HAVE_EPETRA
     const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
     const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
     return crsOp->NormOne();
+#else
+      throw std::logic_error("oneNorm is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
   }
 }
 
@@ -2134,27 +2219,32 @@ double infNorm(const LinearOp & op)
        for(LO j=0;j<numEntries;j++)
           diag.sumIntoLocalValue(i,std::abs(values(j)));
     }
-    return diag.normInf()*scalar;    
+    return diag.normInf()*scalar;
 
   } else {
+#ifdef TEKO_HAVE_EPETRA
     const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
     const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
     return crsOp->NormInf();
+#else
+      throw std::logic_error("infNorm is trying to use Epetra "
+                            "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
   }
 }
 
 const LinearOp buildDiagonal(const MultiVector & src,const std::string & lbl)
 {
-   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(src->range()); 
+   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(src->range());
    Thyra::copy(*src->col(0),dst.ptr());
-   
+
    return Thyra::diagonal<double>(dst,lbl);
 }
 
 const LinearOp buildInvDiagonal(const MultiVector & src,const std::string & lbl)
 {
    const RCP<const Thyra::VectorBase<double> > srcV = src->col(0);
-   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(srcV->range()); 
+   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(srcV->range());
    Thyra::reciprocal<double>(*srcV,dst.ptr());
 
    return Thyra::diagonal<double>(dst,lbl);
@@ -2180,7 +2270,7 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvv)
    return Thyra::defaultProductMultiVector<double>(vs,mvA);
 }
 
-/** Construct an indicator vector specified by a vector of indices to 
+/** Construct an indicator vector specified by a vector of indices to
   * be set to ``on''.
   *
   * \param[in] indices Vector of indicies to turn on
@@ -2197,13 +2287,13 @@ Teuchos::RCP<Thyra::VectorBase<double> > indicatorVector(
 
 {
    using Teuchos::RCP;
- 
+
    // create a new vector
    RCP<Thyra::VectorBase<double> > v = Thyra::createMember<double>(vs);
    Thyra::put_scalar<double>(offValue,v.ptr()); // fill it with "off" values
 
    // set on values
-   for(std::size_t i=0;i<indices.size();i++) 
+   for(std::size_t i=0;i<indices.size();i++)
       Thyra::set_ele<double>(indices[i],onValue,v.ptr());
 
    return v;
@@ -2211,7 +2301,7 @@ Teuchos::RCP<Thyra::VectorBase<double> > indicatorVector(
 
 /** \brief Compute the spectral radius of a matrix
   *
-  * Compute the spectral radius of matrix A.  This utilizes the 
+  * Compute the spectral radius of matrix A.  This utilizes the
   * Trilinos-Anasazi BlockKrylovShcur method for computing eigenvalues.
   * It attempts to compute the largest (in magnitude) eigenvalue to a given
   * level of tolerance.
@@ -2244,7 +2334,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    // construct an initial guess
    const RCP<MV> ivec = Thyra::createMember(A->domain());
    Thyra::randomize(-1.0,1.0,ivec.ptr());
-   
+
    RCP<Anasazi::BasicEigenproblem<double,MV,OP> > eigProb
          = rcp(new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec));
    eigProb->setNEV(1);
@@ -2266,7 +2356,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    MyPL.set( "Which", which );
    MyPL.set( "Block Size", startVectors );
    MyPL.set( "Num Blocks", numBlocks );
-   MyPL.set( "Maximum Restarts", restart ); 
+   MyPL.set( "Maximum Restarts", restart );
    MyPL.set( "Convergence Tolerance", tol );
 
    // build status test manager
@@ -2276,7 +2366,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    // Create the Block Krylov Schur solver
    // This takes as inputs the eigenvalue problem and the solver parameters
    Anasazi::BlockKrylovSchurSolMgr<double,MV,OP> MyBlockKrylovSchur(eigProb, MyPL );
- 
+
    // Solve the eigenvalue problem, and save the return code
    Anasazi::ReturnType solverreturn = MyBlockKrylovSchur.solve();
 
@@ -2286,7 +2376,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
 
       return -std::abs(std::sqrt(real*real+comp*comp));
 
-      // cout << "Anasazi::BlockKrylovSchur::solve() did not converge!" << std::endl; 
+      // cout << "Anasazi::BlockKrylovSchur::solve() did not converge!" << std::endl;
       // return -std::abs(MyBlockKrylovSchur.getRitzValues().begin()->realpart);
    }
    else { // solverreturn==Anasazi::Converged
@@ -2302,7 +2392,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
 
 /** \brief Compute the smallest eigenvalue of an operator
   *
-  * Compute the smallest eigenvalue of matrix A.  This utilizes the 
+  * Compute the smallest eigenvalue of matrix A.  This utilizes the
   * Trilinos-Anasazi BlockKrylovShcur method for computing eigenvalues.
   * It attempts to compute the smallest (in magnitude) eigenvalue to a given
   * level of tolerance.
@@ -2334,7 +2424,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
    // construct an initial guess
    const RCP<MV> ivec = Thyra::createMember(A->domain());
    Thyra::randomize(-1.0,1.0,ivec.ptr());
-   
+
    RCP<Anasazi::BasicEigenproblem<double,MV,OP> > eigProb
          = rcp(new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec));
    eigProb->setNEV(1);
@@ -2355,7 +2445,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
    MyPL.set( "Which", which );
    MyPL.set( "Block Size", startVectors );
    MyPL.set( "Num Blocks", numBlocks );
-   MyPL.set( "Maximum Restarts", restart ); 
+   MyPL.set( "Maximum Restarts", restart );
    MyPL.set( "Convergence Tolerance", tol );
 
    // build status test manager
@@ -2365,7 +2455,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
    // Create the Block Krylov Schur solver
    // This takes as inputs the eigenvalue problem and the solver parameters
    Anasazi::BlockKrylovSchurSolMgr<double,MV,OP> MyBlockKrylovSchur(eigProb, MyPL );
- 
+
    // Solve the eigenvalue problem, and save the return code
    Anasazi::ReturnType solverreturn = MyBlockKrylovSchur.solve();
 
@@ -2391,11 +2481,11 @@ ModifiableLinearOp getDiagonalOp(const Teko::LinearOp & A,const DiagonalType & d
 {
    switch(dt) {
    case Diagonal:
-      return getDiagonalOp(A);  
+      return getDiagonalOp(A);
    case Lumped:
-      return getLumpedMatrix(A);  
+      return getLumpedMatrix(A);
    case AbsRowSum:
-      return getAbsRowSumMatrix(A);  
+      return getAbsRowSumMatrix(A);
    case NotDiag:
    default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -2416,11 +2506,11 @@ ModifiableLinearOp getInvDiagonalOp(const Teko::LinearOp & A,const Teko::Diagona
 {
    switch(dt) {
    case Diagonal:
-      return getInvDiagonalOp(A);  
+      return getInvDiagonalOp(A);
    case Lumped:
-      return getInvLumpedMatrix(A);  
+      return getInvLumpedMatrix(A);
    case AbsRowSum:
-      return getAbsRowSumInvMatrix(A);  
+      return getAbsRowSumInvMatrix(A);
    case NotDiag:
    default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -2471,10 +2561,11 @@ DiagonalType getDiagonalType(std::string name)
       return AbsRowSum;
    if(name=="BlkDiag")
       return BlkDiag;
- 
+
    return NotDiag;
 }
 
+#ifdef TEKO_HAVE_EPETRA
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
 #ifdef Teko_ENABLE_Isorropia
   Teuchos::ParameterList probeList;
@@ -2482,13 +2573,14 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
   Teuchos::RCP<Epetra_CrsMatrix> Mat=rcp(new Epetra_CrsMatrix(Copy,*G));
   Teko::Epetra::EpetraOperatorWrapper Mwrap(Op);
   prober.probe(Mwrap,*Mat);
-  return Thyra::epetraLinearOp(Mat);    
+  return Thyra::epetraLinearOp(Mat);
 #else
   (void)G;
   (void)Op;
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
 #endif
 }
+#endif
 
 double norm_1(const MultiVector & v,std::size_t col)
 {
@@ -2506,7 +2598,8 @@ double norm_2(const MultiVector & v,std::size_t col)
    return n[col];
 }
 
-void putScalar(const ModifiableLinearOp & op,double scalar) 
+#ifdef TEKO_HAVE_EPETRA
+void putScalar(const ModifiableLinearOp & op,double scalar)
 {
    try {
       // get Epetra_Operator
@@ -2528,10 +2621,11 @@ void putScalar(const ModifiableLinearOp & op,double scalar)
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
       *out << "************************\n";
-      
+
       throw e;
    }
 }
+#endif
 
 void clipLower(MultiVector & v,double lowerBound)
 {
@@ -2539,13 +2633,13 @@ void clipLower(MultiVector & v,double lowerBound)
    using Teuchos::rcp_dynamic_cast;
 
    // cast so entries are accessible
-   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec
    //    = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
-   
+
    for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
-      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec
          = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
-   
+
       Teuchos::ArrayRCP<double> values;
       // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
       spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));
@@ -2562,12 +2656,12 @@ void clipUpper(MultiVector & v,double upperBound)
    using Teuchos::rcp_dynamic_cast;
 
    // cast so entries are accessible
-   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec
    //   = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
    for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
-      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec
          = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
-   
+
       Teuchos::ArrayRCP<double> values;
       // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
       spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));
@@ -2584,12 +2678,12 @@ void replaceValue(MultiVector & v,double currentValue,double newValue)
    using Teuchos::rcp_dynamic_cast;
 
    // cast so entries are accessible
-   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec
    //    = rcp_dynamic_cast<Thyra::SpmdMultiVectorBase<double> >(v,true);
    for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
-      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec
          = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
-   
+
       Teuchos::ArrayRCP<double> values;
       // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
       spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));

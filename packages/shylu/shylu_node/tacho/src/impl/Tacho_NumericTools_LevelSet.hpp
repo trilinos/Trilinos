@@ -3027,8 +3027,9 @@ public:
       track_alloc(_buf.span() * sizeof(value_type));
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
-      ordinal_type_array P(NULL, _info.max_supernode_size);
+      // NOTE : move this to symbolic with the actual max worksize?
+      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_num_cols);
+      ordinal_type_array P(NULL, std::min(_info.max_supernode_size, _info.max_num_cols));
       const size_type worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
 
       work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -55,7 +55,12 @@
 #ifndef __Teko_Utilities_hpp__
 #define __Teko_Utilities_hpp__
 
+#include "Teko_ConfigDefs.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 #include "Epetra_CrsMatrix.h"
+#endif
+
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teuchos includes
@@ -77,8 +82,6 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
-
-#include "Teko_ConfigDefs.hpp"
 
 #ifdef _MSC_VER
 #ifndef _MSC_EXTENSIONS
@@ -120,7 +123,10 @@ using Thyra::block1x2;
   *
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
+#ifdef TEKO_HAVE_EPETRA
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil);
+#endif
+
 Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil);
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
@@ -145,11 +151,14 @@ Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * c
   *
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
+#ifdef TEKO_HAVE_EPETRA
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil);
+#endif
+
 Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO stride,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil);
 
 /** \brief Function used internally by Teko to find the output stream.
-  * 
+  *
   * Function used internally by Teko to find the output stream.
   *
   * \returns An output stream to use for printing
@@ -179,19 +188,19 @@ const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream();
 //   struct __DebugScope__ {
 //      __DebugScope__(const std::string & str,int level)
 //         : str_(str), level_(level)
-//      { Teko_DEBUG_MSG("BEGIN "+str_,level_); Teko_DEBUG_PUSHTAB(); }      
+//      { Teko_DEBUG_MSG("BEGIN "+str_,level_); Teko_DEBUG_PUSHTAB(); }
 //      ~__DebugScope__()
-//      { Teko_DEBUG_POPTAB(); Teko_DEBUG_MSG("END "+str_,level_); } 
+//      { Teko_DEBUG_POPTAB(); Teko_DEBUG_MSG("END "+str_,level_); }
 //      std::string str_; int level_; };
 //   #define Teko_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
-#else 
+#else
    #define Teko_DEBUG_EXPR(str)
    #define Teko_DEBUG_MSG(str,level)
    #define Teko_DEBUG_MSG_BEGIN(level) if(false) { \
       std::ostream & DEBUG_STREAM = *Teko::getOutputStream();
    #define Teko_DEBUG_MSG_END() }
-   #define Teko_DEBUG_PUSHTAB() 
-   #define Teko_DEBUG_POPTAB() 
+   #define Teko_DEBUG_PUSHTAB()
+   #define Teko_DEBUG_POPTAB()
    #define Teko_DEBUG_SCOPE(str,level)
 #endif
 
@@ -213,7 +222,7 @@ inline MultiVector toMultiVector(BlockedMultiVector & bmv) { return bmv; }
 inline const MultiVector toMultiVector(const BlockedMultiVector & bmv) { return bmv; }
 
 //! Convert to a BlockedMultiVector from a MultiVector
-inline const BlockedMultiVector toBlockedMultiVector(const MultiVector & bmv) 
+inline const BlockedMultiVector toBlockedMultiVector(const MultiVector & bmv)
 { return Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(bmv); }
 
 //! Get the column count in a block linear operator
@@ -250,13 +259,13 @@ inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
   *          is returned. Otherwise a new multivector is returned.
   */
 inline MultiVector datacopy(const MultiVector & src,MultiVector & dst)
-{ 
+{
    if(dst==Teuchos::null)
       return deepcopy(src);
 
    bool rangeCompat = src->range()->isCompatible(*dst->range());
    bool domainCompat = src->domain()->isCompatible(*dst->domain());
- 
+
    if(not (rangeCompat && domainCompat))
       return deepcopy(src);
 
@@ -279,7 +288,7 @@ inline MultiVector datacopy(const MultiVector & src,MultiVector & dst)
   *          is returned. Otherwise a new multivector is returned.
   */
 inline BlockedMultiVector datacopy(const BlockedMultiVector & src,BlockedMultiVector & dst)
-{ 
+{
    if(dst==Teuchos::null)
       return deepcopy(src);
 
@@ -297,7 +306,7 @@ inline BlockedMultiVector datacopy(const BlockedMultiVector & src,BlockedMultiVe
 //! build a BlockedMultiVector from a vector of MultiVectors
 BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs);
 
-/** Construct an indicator vector specified by a vector of indices to 
+/** Construct an indicator vector specified by a vector of indices to
   * be set to ``on''.
   *
   * \param[in] indices Vector of indicies to turn on
@@ -328,7 +337,9 @@ inline LinearOp zero(const VectorSpace & vs)
 { return Thyra::zero<ST>(vs,vs); }
 
 //! Replace nonzeros with a scalar value, used to zero out an operator
+#ifdef TEKO_HAVE_EPETRA
 void putScalar(const ModifiableLinearOp & op,double scalar);
+#endif
 
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp & lo)
@@ -384,10 +395,10 @@ inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 inline BlockedLinearOp createBlockedOp()
 { return rcp(new Thyra::DefaultBlockedLinearOp<double>()); }
 
-/** \brief Let the blocked operator know that you are going to 
+/** \brief Let the blocked operator know that you are going to
   *        set the sub blocks.
   *
-  * Let the blocked operator know that you are going to 
+  * Let the blocked operator know that you are going to
   * set the sub blocks. This is a simple wrapper around the
   * member function of the same name in Thyra.
   *
@@ -398,10 +409,10 @@ inline BlockedLinearOp createBlockedOp()
 inline void beginBlockFill(BlockedLinearOp & blo,int rowCnt,int colCnt)
 { blo->beginBlockFill(rowCnt,colCnt); }
 
-/** \brief Let the blocked operator know that you are going to 
+/** \brief Let the blocked operator know that you are going to
   *        set the sub blocks.
   *
-  * Let the blocked operator know that you are going to 
+  * Let the blocked operator know that you are going to
   * set the sub blocks. This is a simple wrapper around the
   * member function of the same name in Thyra.
   *
@@ -493,7 +504,7 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op);
   *
   * Apply a linear operator to a multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A x + \beta y \f$
   *
   * It is required that the range space of <code>A</code> is compatible with <code>y</code> and the domain space
@@ -514,7 +525,7 @@ void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alp
   *
   * Apply a transposed linear operator to a multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A^T x + \beta y \f$
   *
   * It is required that the domain space of <code>A</code> is compatible with <code>y</code> and the range space
@@ -534,7 +545,7 @@ void applyTransposeOp(const LinearOp & A,const MultiVector & x,MultiVector & y,d
   *
   * Apply a linear operator to a blocked multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A x + \beta y \f$
   *
   * It is required that the range space of <code>A</code> is compatible with <code>y</code> and the domain space
@@ -556,7 +567,7 @@ inline void applyOp(const LinearOp & A,const BlockedMultiVector & x,BlockedMulti
   *
   * Apply a transposed linear operator to a blocked multivector. This also permits arbitrary scaling
   * and addition of the result. This function gives
-  *     
+  *
   *    \f$ y = \alpha A^T x + \beta y \f$
   *
   * It is required that the domain space of <code>A</code> is compatible with <code>y</code> and the range space
@@ -575,11 +586,11 @@ inline void applyTransposeOp(const LinearOp & A,const BlockedMultiVector & x,Blo
 
 /** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
   *
-  * Compute the linear combination \f$y=\alpha x + \beta y\f$. 
+  * Compute the linear combination \f$y=\alpha x + \beta y\f$.
   *
   * \param[in]     alpha
-  * \param[in]     x 
-  * \param[in]     beta 
+  * \param[in]     x
+  * \param[in]     beta
   * \param[in,out] y
   */
 void update(double alpha,const MultiVector & x,double beta,MultiVector & y);
@@ -593,15 +604,15 @@ inline void update(double alpha,const BlockedMultiVector & x,double beta,Blocked
 inline void scale(const double alpha,MultiVector & x) { Thyra::scale<double>(alpha,x.ptr()); }
 
 //! Scale a multivector by a constant
-inline void scale(const double alpha,BlockedMultiVector & x) 
+inline void scale(const double alpha,BlockedMultiVector & x)
 {  MultiVector x_mv = toMultiVector(x); scale(alpha,x_mv); }
 
 //! Scale a modifiable linear op by a constant
-inline LinearOp scale(const double alpha,ModifiableLinearOp & a) 
+inline LinearOp scale(const double alpha,ModifiableLinearOp & a)
 {  return Thyra::nonconstScale(alpha,a); }
 
 //! Construct an implicit adjoint of the linear operators
-inline LinearOp adjoint(ModifiableLinearOp & a) 
+inline LinearOp adjoint(ModifiableLinearOp & a)
 {  return Thyra::nonconstAdjoint(a); }
 
 //@}
@@ -642,7 +653,7 @@ const MultiVector getDiagonal(const LinearOp & op);
   */
 const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op);
 
-/** \brief Multiply three linear operators. 
+/** \brief Multiply three linear operators.
   *
   * Multiply three linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -656,7 +667,7 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op);
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr);
 
-/** \brief Multiply three linear operators. 
+/** \brief Multiply three linear operators.
   *
   * Multiply three linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -673,7 +684,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
 const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr,
                                           const ModifiableLinearOp & destOp);
 
-/** \brief Multiply two linear operators. 
+/** \brief Multiply two linear operators.
   *
   * Multiply two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -685,7 +696,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr);
 
-/** \brief Multiply two linear operators. 
+/** \brief Multiply two linear operators.
   *
   * Multiply two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -701,7 +712,7 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr);
 const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr,
                                           const ModifiableLinearOp & destOp);
 
-/** \brief Add two linear operators. 
+/** \brief Add two linear operators.
   *
   * Add two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -713,7 +724,7 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
   */
 const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
 
-/** \brief Add two linear operators. 
+/** \brief Add two linear operators.
   *
   * Add two linear operators. This currently assumes
   * that the underlying implementation uses Epetra_CrsMatrix.
@@ -758,7 +769,7 @@ const LinearOp buildInvDiagonal(const MultiVector & v,const std::string & lbl="A
 
 /** \brief Compute the spectral radius of a matrix
   *
-  * Compute the spectral radius of matrix A.  This utilizes the 
+  * Compute the spectral radius of matrix A.  This utilizes the
   * Trilinos-Anasazi BlockKrylovShcur method for computing eigenvalues.
   * It attempts to compute the largest (in magnitude) eigenvalue to a given
   * level of tolerance.
@@ -784,7 +795,7 @@ double computeSpectralRad(const Teuchos::RCP<const Thyra::LinearOpBase<double> >
 
 /** \brief Compute the smallest eigenvalue of an operator
   *
-  * Compute the smallest eigenvalue of matrix A.  This utilizes the 
+  * Compute the smallest eigenvalue of matrix A.  This utilizes the
   * Trilinos-Anasazi BlockKrylovShcur method for computing eigenvalues.
   * It attempts to compute the smallest (in magnitude) eigenvalue to a given
   * level of tolerance.
@@ -808,12 +819,12 @@ double computeSpectralRad(const Teuchos::RCP<const Thyra::LinearOpBase<double> >
 double computeSmallestMagEig(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A, double tol,
                           bool isHermitian=false,int numBlocks=5,int restart=0,int verbosity=0);
 
-//! Type describing the type of diagonal to construct. 
+//! Type describing the type of diagonal to construct.
 typedef enum {  Diagonal     //! Specifies that just the diagonal is used
               , Lumped       //! Specifies that row sum is used to form a diagonal
               , AbsRowSum    //! Specifies that the \f$i^{th}\f$ diagonal entry is \f$\sum_j |A_{ij}|\f$
 	      , BlkDiag      //! Specifies that a block diagonal approximation is to be used
-              , NotDiag      //! For user convenience, if Teko recieves this value, exceptions will be thrown	      
+              , NotDiag      //! For user convenience, if Teko recieves this value, exceptions will be thrown
               } DiagonalType;
 
 /** Get a diagonal operator from a matrix. The mechanism for computing
@@ -861,7 +872,9 @@ std::string getDiagonalName(const DiagonalType & dt);
   */
 DiagonalType getDiagonalType(std::string name);
 
+#ifdef TEKO_HAVE_EPETRA
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp & Op);
+#endif
 
 /** Get the one norm of the vector
   */

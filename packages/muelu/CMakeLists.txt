@@ -106,6 +106,18 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
+
+# Print a warning when we might be lacking a coarse solver.
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
+  MESSAGE(WARNING "MueLu's Epetra backend is enabled, but Amesos is disabled. This means only iterative coarse solves are available when using Epetra.")
+ENDIF ()
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
+  MESSAGE(WARNING "MueLu's Tpetra backend is enabled, but Amesos2 is disabled. This means only iterative coarse solves are available when using Tpetra.")
+ENDIF ()
+
+
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -47,10 +47,6 @@
 #include "tLSCIntegrationTest_tpetra.hpp"
 
 #include <string>
-
-// ML includes
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
 
 // Teko-Package includes
 #include "Teko_LSCPreconditionerFactory.hpp"
@@ -79,8 +75,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
 namespace Teko {
 namespace Test {
 
@@ -108,14 +102,6 @@ void tLSCIntegrationTest_tpetra::solveList(Teuchos::ParameterList & paramList,in
    gmresList.set( "Maximum Restarts", 15 );                   // Maximum number of restarts allowed
    gmresList.set( "Convergence Tolerance", 1.0e-9 );         // Relative convergence tolerance requested
    paramList.set("Preconditioner Type","Ifpack2");
-
-   Teuchos::ParameterList & MLList = paramList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
-
-   // set default values for smoothed aggregation in MLList
-   ML_Epetra::SetDefaults("SA",MLList);
-   MLList.set("max levels",6);
-   MLList.set("cycle applications",vcycles);
-   MLList.set("coarse: type","Amesos-KLU");
 }
 
 void tLSCIntegrationTest_tpetra::loadStableSystem()
@@ -142,8 +128,8 @@ void tLSCIntegrationTest_tpetra::loadStableSystem()
    // read in RHS vector
    {
       RCP<Tpetra::Vector<ST,LO,GO,NT> > vfull, temp;
- 
-      // read in rhs file 
+
+      // read in rhs file
       vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_rhs.mm",GetComm_tpetra(),fullMap_);
 
       temp = rcp(new Tpetra::Vector<ST,LO,GO,NT>(sA_->getRangeMap()));
@@ -154,8 +140,8 @@ void tLSCIntegrationTest_tpetra::loadStableSystem()
    // read in solution vector
    {
       RCP<Tpetra::Vector<ST,LO,GO,NT> > vfull, temp;
- 
-      // read in exact solution file 
+
+      // read in exact solution file
       vfull = Tpetra::MatrixMarket::Reader<Tpetra::Vector<ST,LO,GO,NT> >::readVectorFile("./data/lsc_exact_2.mm",GetComm_tpetra(),fullMap_);
 
       temp = rcp(new Tpetra::Vector<ST,LO,GO,NT>(sA_->getRangeMap()));
@@ -173,29 +159,29 @@ int tLSCIntegrationTest_tpetra::runTest(int verbosity,std::ostream & stdstrm,std
    failstrm << "tLSCIntegrationTest_tpetra";
 
    status = test_withmassStable(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_nomassStable(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_plConstruction(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"plConstruction\" ... PASSED","   \"plConstruction\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"plConstruction\" ... PASSED","   \"plConstruction\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLSCIntegrationTest_tpetra...PASSED","tLSCIntegrationTest_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLSCIntegrationTest_tpetra...PASSED","tLSCIntegrationTest_tpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCIntegrationTest_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLSCIntegrationTest_tpetra...FAILED");
    }
 
    return failcount;
@@ -220,7 +206,7 @@ bool tLSCIntegrationTest_tpetra::test_withmassStable(int verbosity,std::ostream 
 
    // if you get here you automatically pass the first test
    if(verbosity>=10 ) {
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable: loading system ... " 
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable: loading system ... "
          << toString(true) << std::endl;
    }
 
@@ -252,20 +238,20 @@ bool tLSCIntegrationTest_tpetra::test_withmassStable(int verbosity,std::ostream 
    // check iteration count
    int numIters = solver->getNumIters();
    status = (numIters<=18);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable " << toString(status) 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable " << toString(status)
                       << ": # of iterations = " << numIters << " (should be 18)" << std::endl;
    }
    allPassed &= status;
- 
+
    // check exact answer (versus IFISS solution)
    x.update(-1.0,*sExact_,1.0); // x = x - x*
    ST errnorm,exactnorm,relerr;
    errnorm = x.norm2();
    exactnorm = sExact_->norm2();
    status = ((relerr = errnorm/exactnorm) <= tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable " << toString(status) 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_withmassStable " << toString(status)
                       << ": error in solution = " << std::scientific << relerr << " <= " << tolerance_ << std::endl;
    }
    allPassed &= status;
@@ -294,7 +280,7 @@ bool tLSCIntegrationTest_tpetra::test_nomassStable(int verbosity,std::ostream & 
 
    // if you get here you automatically pass!
    if(verbosity>=10 ) {
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable: loading system ... " 
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable: loading system ... "
          << toString(true) << std::endl;
    }
 
@@ -325,20 +311,20 @@ bool tLSCIntegrationTest_tpetra::test_nomassStable(int verbosity,std::ostream & 
    // check iteration count
    int numIters = solver->getNumIters();
    status = (numIters<=30);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable " << toString(status) 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable " << toString(status)
                       << ": # of iterations = " << numIters << " (should be 30)" << std::endl;
    }
    allPassed &= status;
- 
+
    // check exact answer (versus IFISS solution)
    x.update(-1.0,*sExact_,1.0); // x = x - x*
    ST errnorm,exactnorm,relerr;
    errnorm = x.norm2();
    exactnorm = sExact_->norm2();
    status = ((relerr = errnorm/exactnorm) <= tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable " << toString(status) 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCIntegrationTest_tpetra::test_nomassStable " << toString(status)
                       << ": error in solution = " << std::scientific << relerr << " <= " << tolerance_ << std::endl;
    }
    allPassed &= status;
@@ -358,7 +344,7 @@ bool tLSCIntegrationTest_tpetra::test_plConstruction(int verbosity,std::ostream 
 
    /////////////////////////////////////////////////////////////////////////////
 
-   ParameterList pl; 
+   ParameterList pl;
    pl.set("Inverse Type", "Amesos");
    pl.set("Inverse Velocity Type", "Ifpack");
    pl.set("Inverse Pressure Type", "Ifpack");

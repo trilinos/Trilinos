@@ -5,17 +5,8 @@
  */
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp_def.hpp"
 #include "Thyra_DefaultIdentityLinearOp_decl.hpp"
-
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
 
 #include "Teuchos_Time.hpp"
 
