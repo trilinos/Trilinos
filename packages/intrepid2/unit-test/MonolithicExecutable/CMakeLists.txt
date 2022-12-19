@@ -4,7 +4,7 @@
 #FILE(GLOB TEST_SOURCES "*.cpp" ${ETI_SOURCES} )
 FILE(GLOB TEST_SOURCES "*.cpp")
 
-INCLUDE_DIRECTORIES("../../assembly-examples")
+TRIBITS_INCLUDE_DIRECTORIES("../../assembly-examples")
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Intrepid2_Tests
