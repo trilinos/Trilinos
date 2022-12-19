@@ -148,7 +148,7 @@ SET(Tpetra_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
 SET(KokkosClassic_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
 
 CONFIGURE_FILE(cmake/KokkosClassic_DefaultNode_config.h.in  KokkosClassic_DefaultNode_config.h)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 APPEND_SET(HEADERS  ${CMAKE_CURRENT_BINARY_DIR}/KokkosClassic_DefaultNode_config.h)
 
 
