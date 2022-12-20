@@ -225,6 +225,12 @@ def parse_args():
                                "based on number_of_available_cores / max_test_parallelism" + \
                                " Default = %(default)s")
 
+    optional.add_argument("--enable-ccache",
+                          dest="ccache_enable",
+                          action="store_true",
+                          default=False,
+                          help="Enable ccache object caching to improve build times. Default = %(default)s")
+
     optional.add_argument("--dry-run",
                           dest="dry_run",
                           action="store_true",
@@ -257,6 +263,7 @@ def parse_args():
     print("| - [R] ctest-drop-site             : {ctest_drop_site}".format(**vars(arguments)))
     print("|")
     print("| - [O] dry-run                     : {dry_run}".format(**vars(arguments)))
+    print("| - [O] enable-ccache               : {ccache_enable}".format(**vars(arguments)))
     print("| - [O] filename-packageenables     : {filename_packageenables}".format(**vars(arguments)))
     print("| - [O] max-cores-allowed           : {max_cores_allowed}".format(**vars(arguments)))
     print("| - [O] num-concurrent-tests        : {num_concurrent_tests}".format(**vars(arguments)))
