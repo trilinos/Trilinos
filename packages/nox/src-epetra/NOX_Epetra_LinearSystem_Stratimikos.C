@@ -50,7 +50,7 @@
 
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"    // class definition
 
-#ifdef HAVE_NOX_STRATIMIKOS
+#ifdef NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
 
 // NOX includes
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -859,4 +859,4 @@ double NOX::Epetra::LinearSystemStratimikos::
 getAchievedTol() {return linearSolveAchievedTol;}
 //***********************************************************************
 
-#endif //HAVE_NOX_STRATIMIKOS
+#endif // NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
