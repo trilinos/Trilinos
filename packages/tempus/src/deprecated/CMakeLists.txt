@@ -1,7 +1,7 @@
 set(HEADERS "")
 set(SOURCES "")
 
-set_and_inc_dirs(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+tribits_set_and_inc_dirs(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 append_glob(HEADERS ${DIR}/*.hpp)
 append_glob(SOURCES ${DIR}/*.cpp)
 
