@@ -49,7 +49,7 @@ include(RemoveGlobalDuplicates)
 include(TribitsGeneralMacros)
 include(TribitsReportInvalidTribitsUsage)
 include(TribitsDeprecatedHelpers)
-include(SetAndIncDirs)
+include(TribitsSetAndIncDirs)
 
 
 # @FUNCTION: tribits_add_library()

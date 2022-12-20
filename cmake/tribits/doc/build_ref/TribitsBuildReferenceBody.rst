@@ -2089,6 +2089,26 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
+Adjusting CMake DEPRECATION warnings
+------------------------------------
+
+By default, deprecated TriBITS features being used in the project's CMake
+files will result in CMake deprecation warning messages (issued by calling
+``message(DEPRECATION ...)`` internally).  The handling of these deprecation
+warnings can be changed by setting the CMake cache variable
+``TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE``.  For example, to remove all
+deprecation warnings, set::
+
+  -D TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE
+
+Other valid values include:
+
+* ``DEPRECATION``: Issue a CMake ``DEPRECATION`` message and continue (default).
+* ``AUTHOR_WARNING``: Issue a CMake ``AUTHOR_WARNING`` message and continue.
+* ``SEND_ERROR``: Issue a CMake ``SEND_ERROR`` message and continue.
+* ``FATAL_ERROR``: Issue a CMake ``FATAL_ERROR`` message and exit.
+
+
 Disabling deprecated code
 -------------------------
 

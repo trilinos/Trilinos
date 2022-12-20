@@ -42,33 +42,32 @@ include(TribitsParseArgumentsHelpers)
 
 
 set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_CALL_MESSAGE
-  DEPRECATION  AUTHOR_WARNING  SEND_ERROR  FATAL_ERROR
-  )
+  DEPRECATION  AUTHOR_WARNING  SEND_ERROR  FATAL_ERROR )
 set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_DONT_CALL_MESSAGE
-  IGNORE
-  )
+  IGNORE )
 set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_ALL_VALID_VALUES
   ${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_CALL_MESSAGE}
-  ${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_CALL_MESSAGE}
-  )
+  ${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_DONT_CALL_MESSAGE} )
 
 
 # @FUNCTION: tribits_deprecated()
 #
-# Notify the user that some TriBITS functionality is deprecated. Depending on
-# the value of TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE, this can do one of
-# several things:
-#
-# - ``DEPRECATION`` or empty string: issue a CMake ``DEPRECATION`` message and
-#   continue.
-# - ``AUTHOR_WARNING``: issue a CMake ``AUTHOR_WARNING`` message and continue.
-# - ``SEND_ERROR``: issue a CMake ``SEND_ERROR`` message and continue.
-# - ``FATAL_ERROR``: issue a CMake ``FATAL_ERROR`` message and exit.
-# - ``IGNORE``: issue no message and continue.
+# Notify the user that some TriBITS functionality is deprecated.
 #
 # Usage::
 #
 #   tribits_deprecated(<message>)
+#
+# Depending on the value of the cache variable
+# `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE`_, this can do one of several
+# things:
+#
+# - ``DEPRECATION`` or empty string (or variable not defined): Issue a CMake
+#    ``DEPRECATION`` message and continue.
+# - ``AUTHOR_WARNING``: Issue a CMake ``AUTHOR_WARNING`` message and continue.
+# - ``SEND_ERROR``: Issue a CMake ``SEND_ERROR`` message and continue.
+# - ``FATAL_ERROR``: Issue a CMake ``FATAL_ERROR`` message and exit.
+# - ``IGNORE``: Issue no message and continue.
 #
 function(tribits_deprecated)
   cmake_parse_arguments(PARSE_ARGV 0 FWD "" "" "")
@@ -78,9 +77,16 @@ function(tribits_deprecated)
   endif()
 
   if ("${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}"  IN_LIST  TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_VALUES_THAT_CALL_MESSAGE)
-    message_wrapper("${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}" ${FWD_UNPARSED_ARGUMENTS})
-  elseif (NOT "${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}"  IN_LIST  TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_ALL_VALID_VALUES)
-    message_wrapper(FATAL_ERROR "Invalid value for TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE: '${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}'")
+    message_wrapper("${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}"
+      ${FWD_UNPARSED_ARGUMENTS}
+      "\n\nNOTE: To Make these warnings go away, set -D"
+      " TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE (see the build reference guide).")
+  elseif (NOT "${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}"  IN_LIST
+      TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_ALL_VALID_VALUES
+    )
+    message_wrapper(FATAL_ERROR "Invalid value for"
+      " TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE="
+      "'${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE}'")
   endif()
 endfunction()
 
