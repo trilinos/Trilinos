@@ -50,12 +50,12 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
 #include "ml_rbm.h"
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -277,6 +277,7 @@ namespace {
           }
 
           if(writeCoordinates) {
+#ifdef PANZER_HAVE_EPETRA_STACK
              // force parameterlistcallback to build coordinates
              callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
@@ -286,7 +287,6 @@ namespace {
              const std::vector<double> & zcoords = callback->getZCoordsVector();
 
              // use epetra to write coordinates to matrix market files
-#ifdef PANZER_HAVE_EPETRA
              Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
                                                                  // and all users of this object are on the stack (within scope of mpi_comm
              Epetra_Map map(-1,xcoords.size(),0,ep_comm);
@@ -382,7 +382,7 @@ namespace {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
        if(writeCoordinates) {
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
           RCP<const panzer::BlockedDOFManager> blkDofs =
              rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer);
 

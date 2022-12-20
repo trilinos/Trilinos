@@ -7,7 +7,7 @@
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Thyra_EpetraThyraWrappers.hpp"
 #endif
 #include "MiniEM_Utils.hpp"
@@ -33,7 +33,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   using OT  = Teuchos::OrdinalTraits<GlobalOrdinal>;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinal> epetraBlockedLinObjFactory;
 #endif
   typedef panzer::GlobalIndexer UGI;
@@ -46,13 +46,13 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   RCP<const epetraBlockedLinObjFactory > eblof = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
 #endif
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> tp_map;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef typename panzer::BlockedEpetraLinearObjContainer ep_linObjContainer;
   typedef Epetra_CrsMatrix ep_matrix;
   typedef Epetra_Map ep_map;
@@ -61,7 +61,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
   if (tblof != Teuchos::null) {
     blockedDOFMngr = tblof->getGlobalIndexer();
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   } else if (eblof != Teuchos::null) {
     TEUCHOS_ASSERT(false);
     // The Epetra code path works, expect for the fact that Epetra
@@ -101,7 +101,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   // The operator maps from LO (domain) to HO (range)
   RCP<const tp_map> tp_rangemap, tp_domainmap, tp_rowmap, tp_colmap;
   RCP<tp_matrix> tp_interp_matrix;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   RCP<const ep_map> ep_rangemap, ep_domainmap, ep_rowmap, ep_colmap;
   RCP<ep_matrix> ep_interp_matrix;
 #endif
@@ -157,7 +157,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap),
                                                                                                           tp_interp_matrix);
   }
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   else if (eblof != Teuchos::null) {
     RCP<panzer::GlobalEvaluationData> dataObject
       = rcp(new panzer::LOCPair_GlobalEvaluationData(eblof,panzer::LinearObjContainer::Mat));
@@ -324,7 +324,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
         for(size_t hoIter = 0; hoIter < hoLIDs_h.size(); ++hoIter) {
           LocalOrdinal ho_row = hoLIDs_h(hoIter);
           bool isOwned;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
           if (tblof != Teuchos::null)
             isOwned = tp_rowmap->isNodeLocalElement(ho_row);
           else
@@ -345,7 +345,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
               }
             }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
             if (tblof != Teuchos::null)
               tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
             else
@@ -415,7 +415,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 #endif
 
   }
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   else
     ep_interp_matrix->FillComplete(*ep_domainmap, *ep_rangemap);
 #endif

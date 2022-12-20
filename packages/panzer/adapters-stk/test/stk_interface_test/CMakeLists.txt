@@ -140,7 +140,7 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES SquareMeshGen.cpp
   )
 
-IF (PANZER_HAVE_EPETRA)
+IF (PANZER_HAVE_EPETRA_STACK)
   TRIBITS_ADD_EXECUTABLE(
     ScatterSpeed_Epetra
     SOURCES   tScatterSpeed_Epetra.cpp
