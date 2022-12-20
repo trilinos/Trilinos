@@ -12,7 +12,7 @@ if(TPL_ENABLE_MATLAB)
   TRIBITS_INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})
 
   # Must glob the binary dir last to get all of the auto-generated headers
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
   # Force the code into R2017b compatibility mode
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMX_COMPAT_64 -fPIC -DMATLAB_MEXCMD_RELEASE=R2017b") 
