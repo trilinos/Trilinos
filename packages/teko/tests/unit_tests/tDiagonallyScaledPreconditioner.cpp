@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -52,6 +52,9 @@
 #include <string>
 #include <iostream>
 
+#include "Teko_Config.h"
+
+#ifdef TEKO_HAVE_EPETRA
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
 #else
@@ -60,6 +63,9 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
+
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -70,7 +76,6 @@
 #include "Teko_PreconditionerInverseFactory.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
@@ -85,8 +90,9 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
 
+#ifdef TEKO_HAVE_EPETRA
+using Thyra::epetraLinearOp;
 const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int size)
 {
    Epetra_Map map(size,0,comm);
@@ -108,7 +114,7 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
       indices[0] = gid+iTemp[0];
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
-      
+
       if(gid==0) {
          vPtr = &values[1];
          iPtr = &indices[1];
@@ -124,6 +130,7 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
 
    return Thyra::nonconstEpetraLinearOp(mat);
 }
+#endif
 
 const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos::Comm<int> > comm,GO size)
 {
@@ -145,7 +152,7 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
       indices[0] = gid+iTemp[0];
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
-      
+
       if(gid==0) {
          vPtr = &values[1];
          iPtr = &indices[1];
@@ -162,6 +169,7 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
    return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getDomainMap()),mat);
 }
 
+#ifdef TEKO_HAVE_EPETRA
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 {
    // build global (or serial communicator)
@@ -177,8 +185,8 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    diagList.set<std::string>("Inverse Factory","Amesos");
 
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
-   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("DiagScal"); 
-   RCP<Teko::InverseFactory> dirFact = invLib->getInverseFactory("Amesos"); 
+   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("DiagScal");
+   RCP<Teko::InverseFactory> dirFact = invLib->getInverseFactory("Amesos");
 
    RCP<Thyra::LinearOpBase<double> > A =  buildSystem(Comm,50);
 
@@ -197,6 +205,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
 {
@@ -209,8 +218,8 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
    diagList.set<std::string>("Inverse Factory","Belos");
 
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
-   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("DiagScal"); 
-   RCP<Teko::InverseFactory> dirFact = invLib->getInverseFactory("Ifpack2"); 
+   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("DiagScal");
+   RCP<Teko::InverseFactory> dirFact = invLib->getInverseFactory("Ifpack2");
 
    RCP<Thyra::LinearOpBase<ST> > A =  buildSystem(Comm,50);
 
@@ -230,6 +239,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
       out << "Apply 0: SUCCESS" << std::endl;
 }
 
+#ifdef TEKO_HAVE_EPETRA
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
 {
    // build global (or serial communicator)
@@ -284,6 +294,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
 {
@@ -336,6 +347,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
       out << "Apply 0: SUCCESS" << std::endl;
 }
 
+#ifdef TEKO_HAVE_EPETRA
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
 {
    // build global (or serial communicator)
@@ -388,6 +400,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetra)
 {
@@ -438,6 +451,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetr
       out << "Apply 0: SUCCESS" << std::endl;
 }
 
+#ifdef TEKO_HAVE_EPETRA
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
 {
    #ifdef HAVE_MPI
@@ -452,6 +466,7 @@ TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
    Teko::replaceValue(diag,0.0,1.0);
    Teko::LinearOp invDiagOp = Teko::buildInvDiagonal(diag);
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues_tpetra)
 {

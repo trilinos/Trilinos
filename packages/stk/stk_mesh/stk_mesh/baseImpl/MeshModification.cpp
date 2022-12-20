@@ -133,16 +133,6 @@ bool MeshModification::modification_end(modification_optimization opt)
 
 bool MeshModification::resolve_node_sharing()
 {
-    return this->internal_resolve_node_sharing( MOD_END_SORT );
-}
-
-bool MeshModification::modification_end_after_node_sharing_resolution()
-{
-    return this->internal_modification_end_after_node_sharing_resolution( MOD_END_SORT );
-}
-
-bool MeshModification::internal_resolve_node_sharing(modification_optimization opt)
-{
     if(this->in_synchronized_state())
     {
         return false;
@@ -169,7 +159,7 @@ bool MeshModification::internal_resolve_node_sharing(modification_optimization o
     return true;
 }
 
-bool MeshModification::internal_modification_end_after_node_sharing_resolution(modification_optimization opt)
+bool MeshModification::modification_end_after_node_sharing_resolution()
 {
     if(this->in_synchronized_state())
     {
@@ -215,7 +205,7 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
         }
     }
 
-    m_bulkData.internal_finish_modification_end(opt);
+    m_bulkData.internal_finish_modification_end(MOD_END_SORT);
 
     return true;
 }
@@ -507,11 +497,11 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
         }
       }    
       else {
-        if (!m_bulkData.in_ghost(m_bulkData.aura_ghosting(), entity) && m_bulkData.state(entity)==Unchanged) {
+        const bool shouldPromoteToShared = !isAlreadyDestroyed && i->remote_owned_closure==1 && key.rank() < stk::topology::ELEM_RANK;
+        if ((shouldPromoteToShared || !m_bulkData.in_ghost(m_bulkData.aura_ghosting(), entity)) && m_bulkData.state(entity)==Unchanged) {
           m_bulkData.set_state(entity, Modified);
         }
 
-        const bool shouldPromoteToShared = !isAlreadyDestroyed && i->remote_owned_closure==1 && key.rank() < stk::topology::ELEM_RANK;
         if (shouldPromoteToShared) {
           m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(BulkData::SHARED, remote_proc));
           promotingToShared.push_back(entity);

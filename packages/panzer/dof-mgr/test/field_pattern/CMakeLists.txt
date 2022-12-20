@@ -26,3 +26,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES tFieldAggPattern_DG.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tEntityFieldPattern
+  SOURCES tEntityFieldPattern.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )

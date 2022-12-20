@@ -387,10 +387,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   const int p_size = stk::parallel_machine_size( pm );
   const int p_rank = stk::parallel_machine_rank( pm );
 
-  if (p_size != 2) {
-    return;
-  }
-
+  if (p_size != 2) { GTEST_SKIP(); }
 
   const unsigned id_total = nPerProc * p_size ;
   const unsigned id_begin = nPerProc * p_rank ;
@@ -434,18 +431,23 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   {
     ASSERT_TRUE( bulk.modification_begin() );
 
+    int otherProc = 1 - p_rank;
+    stk::mesh::EntityProcVec sharedNodesAndProcs;
+
     if (0 == p_rank) {
       Entity n10 = bulk.get_entity( stk::topology::NODE_RANK , 10 );
+      sharedNodesAndProcs.push_back(EntityProc(n10, otherProc));
       Entity n11 = bulk.declare_node(11, no_parts);
-      bulk.add_node_sharing(n10, 1);
-      bulk.add_node_sharing(n11, 1);
+      sharedNodesAndProcs.push_back(EntityProc(n11, otherProc));
     }
     else if ( 1 == p_rank ) {
       Entity n10 = bulk.declare_node(10, no_parts);
+      sharedNodesAndProcs.push_back(EntityProc(n10, otherProc));
       Entity n11 = bulk.get_entity( stk::topology::NODE_RANK , 11 );
-      bulk.add_node_sharing(n10, 0);
-      bulk.add_node_sharing(n11, 0);
+      sharedNodesAndProcs.push_back(EntityProc(n11, otherProc));
     }
+
+    bulk.add_node_sharing(sharedNodesAndProcs);
 
     ASSERT_TRUE(bulk.modification_end());
 
@@ -462,13 +464,16 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   {
     ASSERT_TRUE(bulk.modification_begin());
 
+    int otherProc = 1 - p_rank;
+    stk::mesh::EntityProcVec sharedNodesAndProcs;
+
     if ( 0 == p_rank ) {
 
       Entity n8 = bulk.get_entity( stk::topology::NODE_RANK , 8 );
       Entity n9 = bulk.get_entity( stk::topology::NODE_RANK , 9 );
+      sharedNodesAndProcs.push_back(EntityProc(n9, otherProc));
       Entity n20 = bulk.declare_node(20, no_parts);
-      bulk.add_node_sharing(n9, 1);
-      bulk.add_node_sharing(n20, 1);
+      sharedNodesAndProcs.push_back(EntityProc(n20, otherProc));
 
       Entity e_9_20 = bulk.declare_edge(1, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_9_20 , n9 , 0 );
@@ -485,9 +490,9 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
 
       Entity n18 = bulk.get_entity( stk::topology::NODE_RANK , 18 );
       Entity n9 = bulk.declare_node(9, no_parts);
+      sharedNodesAndProcs.push_back(EntityProc(n9, otherProc));
       Entity n20 = bulk.get_entity( stk::topology::NODE_RANK , 20 );
-      bulk.add_node_sharing(n9, 0);
-      bulk.add_node_sharing(n20, 0);
+      sharedNodesAndProcs.push_back(EntityProc(n20, otherProc));
 
       Entity e_9_20 = bulk.declare_edge(1, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_9_20 , n9 , 0 );
@@ -500,6 +505,8 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.declare_relation( tri_shell , e_9_20, 1 );
       bulk.declare_element_side( tri_shell, 0, stk::mesh::ConstPartVector{tri_part} );
     }
+
+    bulk.add_node_sharing(sharedNodesAndProcs);
 
     ASSERT_TRUE(bulk.modification_end());
 

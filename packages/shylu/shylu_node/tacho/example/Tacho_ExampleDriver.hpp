@@ -61,6 +61,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
   opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
   const bool r_parse = opts.parse(argc, argv);

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -56,23 +56,24 @@
 #include "Teuchos_RCP.hpp"
 
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
+#include "Teko_Utilities.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 #include "Thyra_MLPreconditionerFactory.hpp"
 #include "Thyra_IfpackPreconditionerFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-
-#include "Teko_Utilities.hpp"
+#endif
 
 // Tpetra includes
 #include "Tpetra_Map.hpp"
@@ -83,7 +84,7 @@
 #include <vector>
 
 // This whole test rig is based on inverting the matrix
-// 
+//
 //      [  1  2  1 -1 ]
 //  A = [  2  1 -3  1 ]
 //      [  1 -3  0  0 ]
@@ -122,32 +123,32 @@ void tJacobi2x2PreconditionerFactory_tpetra::initializeTest()
    indices[1] = 1;
 
    // build F matrix
-   row0[0] = 1.0; row0[1] = 2.0; 
-   row1[0] = 2.0; row1[1] = 1.0; 
+   row0[0] = 1.0; row0[1] = 2.0;
+   row1[0] = 2.0; row1[1] = 1.0;
    ptrF->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row0));
    ptrF->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row1));
    ptrF->fillComplete();
    F_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrF->getRangeMap()),ptrF);
 
    // build D matrix
-   row0[0] =  1.0; row0[1] = -3.0; 
-   row1[0] = -1.0; row1[1] =  1.0; 
+   row0[0] =  1.0; row0[1] = -3.0;
+   row1[0] = -1.0; row1[1] =  1.0;
    ptrD->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row0));
    ptrD->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row1));
    ptrD->fillComplete();
    D_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrD->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrD->getRangeMap()),ptrD);
-   
+
    // build G matrix
-   row0[0] =  1.0; row0[1] = -1.0; 
-   row1[0] = -3.0; row1[1] =  1.0; 
+   row0[0] =  1.0; row0[1] = -1.0;
+   row1[0] = -3.0; row1[1] =  1.0;
    ptrG->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row0));
    ptrG->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row1));
    ptrG->fillComplete();
    G_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrG->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrG->getRangeMap()),ptrG);
 
    // build C matrix
-   row0[0] =  9.0; row0[1] =  2.0; 
-   row1[0] =  6.0; row1[1] =  5.0; 
+   row0[0] =  9.0; row0[1] =  2.0;
+   row1[0] =  6.0; row1[1] =  5.0;
    ptrC->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row0));
    ptrC->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row1));
    ptrC->fillComplete();
@@ -181,59 +182,59 @@ int tJacobi2x2PreconditionerFactory_tpetra::runTest(int verbosity,std::ostream &
    failstrm << "tJacobi2x2PreconditionerFactory_tpetra";
 
    status = test_createPrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatable(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_identity(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_diagonal(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_result(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializeFromParameterList(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"initializeFromParameterList\" ... PASSED","   \"initializeFromParameterList\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"initializeFromParameterList\" ... PASSED","   \"initializeFromParameterList\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tJacobi2x2PreconditionedFactory...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tJacobi2x2PreconditionedFactory...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
    }
 
    return failcount;
@@ -264,7 +265,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializePrec(int verbosity,s
    bool allPassed = true;
 
    // Build block2x2 preconditioner
-   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new JacobiPreconditionerFactory(invF_,invC_));
    RCP<Thyra::PreconditionerBase<ST> > prec = precFactory->createPrec();
 
@@ -325,7 +326,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    LinearOp C = Thyra::identity<ST>(invC_->range());
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
-   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new JacobiPreconditionerFactory(F,C));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
@@ -336,7 +337,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    // construct a couple of vectors
    Tpetra::Vector<ST,LO,GO,NT> ea(map),eb(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // test vector [0 1 1 3]
    ea.replaceGlobalValue(0,0.0);
@@ -345,8 +346,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    eb.replaceGlobalValue(1,3.0);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x->col(0)))<tolerance_);
-   if(not status || verbosity>=10) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -360,8 +361,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    eb.replaceGlobalValue(1,9.0);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x->col(0)))<tolerance_);
-   if(not status || verbosity>=10) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -375,8 +376,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    eb.replaceGlobalValue(1,-5.0);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x->col(0)))<tolerance_);
-   if(not status || verbosity>=10) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -390,8 +391,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    eb.replaceGlobalValue(1,12.0);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x->col(0)))<tolerance_);
-   if(not status || verbosity>=10) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -438,7 +439,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    LinearOp iC = Teko::Test::DiagMatrix_tpetra(2,vec);
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
-   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new JacobiPreconditionerFactory(iF,iC));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
@@ -451,7 +452,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -467,8 +468,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    eg.replaceGlobalValue(1,0.75);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -487,8 +488,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    eg.replaceGlobalValue(1,2.250000000000000);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -507,8 +508,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    eg.replaceGlobalValue(1,-1.250000000000000);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -527,8 +528,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    eg.replaceGlobalValue(1,3.000000000000000);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -544,9 +545,9 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    bool status = false;
    bool allPassed = true;
    ST diff;
- 
+
    // Build block2x2 preconditioner
-   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   RCP<Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new JacobiPreconditionerFactory(invF_,invC_));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A_);
 
@@ -557,10 +558,10 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    // construct a couple of vectors
    Tpetra::Vector<ST,LO,GO,NT> ea(map),eb(map);
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
-   
+
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A_->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A_->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A_->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A_->range(),1);
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
 
@@ -578,8 +579,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    eg.replaceGlobalValue(1,6.3636363636363635e-01);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -598,8 +599,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    eg.replaceGlobalValue(1,1.1818181818181817e+00);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -618,8 +619,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    eg.replaceGlobalValue(1,-1.3636363636363635e+00);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -638,8 +639,8 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    eg.replaceGlobalValue(1,2.1818181818181817e+00);
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tJacobi2x2PreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -651,14 +652,14 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
 }
 
 template <typename T>
-Teuchos::RCP<const T> getLowsFactory(const RCP<const InverseFactory> & invFact) 
+Teuchos::RCP<const T> getLowsFactory(const RCP<const InverseFactory> & invFact)
 {
    return rcp_dynamic_cast<const T>(
       rcp_dynamic_cast<const SolveInverseFactory>(invFact)->getLowsFactory());
 }
 
 template <typename T>
-Teuchos::RCP<const T> getPrecFactory(const RCP<const InverseFactory> & invFact) 
+Teuchos::RCP<const T> getPrecFactory(const RCP<const InverseFactory> & invFact)
 {
    return rcp_dynamic_cast<const T>(
       rcp_dynamic_cast<const PreconditionerInverseFactory>(invFact)->getPrecFactory());
@@ -676,7 +677,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
 
       RCP<PreconditionerFactory> fact = PreconditionerFactory::buildPreconditionerFactory("Block Jacobi",p,invLib);
       RCP<JacobiPreconditionerFactory> jFact = rcp_dynamic_cast<JacobiPreconditionerFactory>(fact);
-      
+
       // check we have the right factory
       status = (jFact!=Teuchos::null);
       if(status)
@@ -690,13 +691,14 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
       if(!status)
          os << "Dynnamic to InvFactoryDiagStrategy cast failed" << std::endl;
       allPassed &= status;
-       
+
       const std::vector<Teuchos::RCP<InverseFactory> > & facts = diagStrat->getFactories();
       status = (facts.size()==1);
       allPassed &= status;
    }
 
    {
+#ifdef TEKO_HAVE_EPETRA
       Teuchos::ParameterList p;
       p.set("Inverse Type","ML");
       p.set("Inverse Type 1","Amesos");
@@ -718,15 +720,18 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
          os << "Checking if Amesos inverse factory was consctructed" << std::endl;
       allPassed &= status;
 
+
       status = (getPrecFactory<Thyra::MLPreconditionerFactory>(facts[1])!=Teuchos::null);
       if(!status)
          os << "Checking if ML inverse factory was consctructed" << std::endl;
       allPassed &= status;
 
+
       status = (getPrecFactory<Thyra::IfpackPreconditionerFactory>(facts[2])!=Teuchos::null);
       if(!status)
          os << "Checking if ML inverse factory was consctructed" << std::endl;
       allPassed &= status;
+#endif
    }
 
    return allPassed;

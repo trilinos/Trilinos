@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -67,9 +67,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
 #include "tBlockingTpetra.hpp"
 
 #include "Teko_BlockingTpetra.hpp"
@@ -88,7 +85,7 @@ using Thyra::LinearOpBase;
 using Thyra::createMember;
 using Thyra::LinearOpTester;
 
-void tBlockingTpetra::initializeTest() 
+void tBlockingTpetra::initializeTest()
 {
    tolerance_ = 1e-14;
 }
@@ -97,7 +94,7 @@ void buildGIDs(std::vector<std::vector<GO> > & gids,const Tpetra::Map<LO,GO,NT> 
 {
    LO numLocal = map.getLocalNumElements();
    LO numHalf = numLocal/2;
-   numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
+   numHalf += ((numHalf % 2 == 0) ? 0 : 1);
 
    gids.clear();
    gids.resize(3);
@@ -105,7 +102,7 @@ void buildGIDs(std::vector<std::vector<GO> > & gids,const Tpetra::Map<LO,GO,NT> 
    std::vector<GO> & blk0 = gids[0];
    std::vector<GO> & blk1 = gids[1];
    std::vector<GO> & blk2 = gids[2];
-   
+
    // loop over global IDs: treat first block as strided
    GO gid = -1;
    for(LO i=0;i<numHalf;i+=2) {
@@ -132,35 +129,35 @@ int tBlockingTpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failstrm << "tBlockingTpetra";
 
    status = test_buildMaps(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_one2many(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_many2one(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildSubBlock(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"buildSubBlock\" ... PASSED","   \"buildSubBlock\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"buildSubBlock\" ... PASSED","   \"buildSubBlock\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tBlockingTpetra...PASSED","tBlockingTpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tBlockingTpetra...PASSED","tBlockingTpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tBlockingTpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tBlockingTpetra...FAILED");
    }
 
    return failcount;
@@ -193,17 +190,17 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
 
    TEST_ASSERT(map0.first->getLocalNumElements()==gid0.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map0.first->getLocalNumElements() 
+      << " Checking map size: first=" << map0.first->getLocalNumElements()
       << ", second="<< map0.second->getLocalNumElements()
       << ", gid="<< gid0.size());
    TEST_ASSERT(map1.first->getLocalNumElements()==gid1.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map1.first->getLocalNumElements() 
+      << " Checking map size: first=" << map1.first->getLocalNumElements()
       << ", second="<< map1.second->getLocalNumElements()
       << ", gid="<< gid1.size());
    TEST_ASSERT(map2.first->getLocalNumElements()==gid2.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map2.first->getLocalNumElements() 
+      << " Checking map size: first=" << map2.first->getLocalNumElements()
       << ", second="<< map2.second->getLocalNumElements()
       << ", gid="<< gid2.size());
 
@@ -233,37 +230,37 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
    // check contiguous and global maps
    test = true;
    for(size_t i=0;i<globalMaps[0]->getLocalNumElements();i++) {
-      GO gid = globalMaps[0]->getGlobalElement(i); 
-      GO cid = contigMaps[0]->getGlobalElement(i); 
- 
+      GO gid = globalMaps[0]->getGlobalElement(i);
+      GO cid = contigMaps[0]->getGlobalElement(i);
+
       test &= gid==gid0[i];
       test &= cid==(GO)(i+contigMaps[0]->getMinGlobalIndex());
    }
-   TEST_ASSERT(test, 
+   TEST_ASSERT(test,
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
    for(size_t i=0;i<globalMaps[1]->getLocalNumElements();i++) {
-      GO gid = globalMaps[1]->getGlobalElement(i); 
-      GO cid = contigMaps[1]->getGlobalElement(i); 
- 
+      GO gid = globalMaps[1]->getGlobalElement(i);
+      GO cid = contigMaps[1]->getGlobalElement(i);
+
       test &= gid==gid1[i];
       test &= cid==(GO)(i+contigMaps[1]->getMinGlobalIndex());
    }
-   TEST_ASSERT(test, 
+   TEST_ASSERT(test,
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
    for(size_t i=0;i<globalMaps[2]->getLocalNumElements();i++) {
-      GO gid = globalMaps[2]->getGlobalElement(i); 
-      GO cid = contigMaps[2]->getGlobalElement(i); 
- 
+      GO gid = globalMaps[2]->getGlobalElement(i);
+      GO cid = contigMaps[2]->getGlobalElement(i);
+
       test &= gid==gid2[i];
       test &= cid==(GO)(i+contigMaps[2]->getMinGlobalIndex());
    }
-   TEST_ASSERT(test, 
+   TEST_ASSERT(test,
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
@@ -299,8 +296,8 @@ bool tBlockingTpetra::test_one2many(int verbosity,std::ostream & os)
    std::vector<RCP<Tpetra::Export<LO,GO,NT> > > subExport(3);
    for(int i=0;i<3;i++) {
       Blocking::ImExPair imex = Blocking::buildExportImport(*map,maps[i]);
-      subImport[i] = imex.first; 
-      subExport[i] = imex.second; 
+      subImport[i] = imex.first;
+      subExport[i] = imex.second;
    }
 
    TEST_MSG("\n   tBlockingTpetra::test_one2many: Building sub vectors");
@@ -309,7 +306,7 @@ bool tBlockingTpetra::test_one2many(int verbosity,std::ostream & os)
 
    TEST_MSG("\n   tBlockingTpetra::test_one2many: Performing data copy");
    Blocking::one2many(subVectors,*v,subImport);
-   
+
    // just assume it works! :)
 
    return allPassed;
@@ -345,8 +342,8 @@ bool tBlockingTpetra::test_many2one(int verbosity,std::ostream & os)
    std::vector<RCP<Tpetra::Export<LO,GO,NT> > > subExport(3);
    for(int i=0;i<3;i++) {
       Blocking::ImExPair imex = Blocking::buildExportImport(*map,maps[i]);
-      subImport[i] = imex.first; 
-      subExport[i] = imex.second; 
+      subImport[i] = imex.first;
+      subExport[i] = imex.second;
    }
 
    TEST_MSG("\n   tBlockingTpetra::test_many2one: Building sub vectors");
@@ -369,7 +366,7 @@ bool tBlockingTpetra::test_many2one(int verbosity,std::ostream & os)
    one->norm2(Teuchos::ArrayView<ST>(norm2,4));
 
    one->update(1.0,*v,-1.0);
- 
+
    ST diff[4] = {0,0,0,0};
    ST max=-1.0,maxn=-1,maxn2=-1;
    ST norm[4] = {0,0,0,0};
@@ -383,9 +380,9 @@ bool tBlockingTpetra::test_many2one(int verbosity,std::ostream & os)
    TEST_ASSERT(maxn>0.0,"   tBlockingTpetra::test_many2one maxn>0? maxn = " << maxn);
    TEST_ASSERT(max<=tolerance_,
             "   tBlockingTpetra::test_many2one (" << Teko::Test::toString(status) << "): "
-         << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ 
+         << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_
          << " maxn = " << maxn << ", maxn2 = " << maxn2 << " )");
-   
+
    return allPassed;
 }
 
@@ -404,15 +401,15 @@ bool tBlockingTpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    std::vector<GO> indices(numProc*2);
    std::vector<ST> values(numProc*2);
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > A = Tpetra::createCrsMatrix<ST,LO,GO,NT> (rcpFromRef(map),numProc*2);
-   for(std::size_t i=0;i<indices.size();i++) 
+   for(std::size_t i=0;i<indices.size();i++)
       indices[i] = i;
- 
+
    // build local row 0
    for(std::size_t i=0;i<indices.size()/2;i++) {
       values[2*i+0] = (mypid+1.0)*1.0+i;
       values[2*i+1] = (mypid+1.0)*2.0+i;
    }
-   grid = A->getRowMap()->getGlobalElement(0); 
+   grid = A->getRowMap()->getGlobalElement(0);
    A->replaceGlobalValues(grid,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(values));
 
    // build local row 1
@@ -420,7 +417,7 @@ bool tBlockingTpetra::test_buildSubBlock(int verbosity,std::ostream & os)
       values[2*i+0] = (mypid+1.0)*3.0+i;
       values[2*i+1] = (mypid+1.0)*4.0+i;
    }
-   grid = A->getRowMap()->getGlobalElement(1); 
+   grid = A->getRowMap()->getGlobalElement(1);
    A->replaceGlobalValues(grid,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(values));
    A->fillComplete();
 
