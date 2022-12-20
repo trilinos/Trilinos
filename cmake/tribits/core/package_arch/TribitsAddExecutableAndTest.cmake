@@ -106,6 +106,7 @@ endmacro()
 #     [COMM [serial] [mpi]]
 #     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
 #     [NUM_MPI_PROCS <numProcs>]
+#     [RUN_SERIAL]
 #     [LINKER_LANGUAGE (C|CXX|Fortran)]
 #     [STANDARD_PASS_OUTPUT
 #       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
@@ -167,7 +168,7 @@ function(tribits_add_executable_and_test EXE_NAME)
      #prefix
      PARSE
      #options
-     "STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
+     "RUN_SERIAL;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
      #one_value_keywords
      "DISABLED"
      #mulit_value_keywords
@@ -249,6 +250,7 @@ function(tribits_add_executable_and_test EXE_NAME)
   tribits_fwd_parse_arg(CALL_ARGS FAIL_REGULAR_EXPRESSION)
   tribits_fwd_parse_arg(CALL_ARGS ENVIRONMENT)
   tribits_fwd_parse_arg(CALL_ARGS DISABLED)
+  tribits_fwd_parse_opt(CALL_ARGS RUN_SERIAL)
   tribits_fwd_parse_opt(CALL_ARGS STANDARD_PASS_OUTPUT)
   tribits_fwd_parse_opt(CALL_ARGS WILL_FAIL)
   tribits_fwd_parse_arg(CALL_ARGS TIMEOUT)
