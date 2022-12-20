@@ -98,6 +98,7 @@ a given TriBITS project are:
 * `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
+* `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE`_
 
 These options are described below.
 
@@ -861,6 +862,19 @@ These options are described below.
   Python by configuring with, for example::
 
     -D PythonInterp_FIND_VERSION="3.6.2"
+
+.. _TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE:
+
+**TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE**
+
+  Determines how the function `tribits_deprecated()`_ behaves.  To change the
+  default behavor, such as call ``message(FATAL_ERROR ...)``, set::
+
+    set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT  FATAL_ERROR)
+
+  in the project's `<projectDir>/ProjectName.cmake`_ file, or
+  `<projectDir>/CMakeLists.txt`_ file, or on the individual package basis in
+  its `<packageDir>/CMakeLists.txt`_ file.
 
 
 TriBITS Macros and Functions

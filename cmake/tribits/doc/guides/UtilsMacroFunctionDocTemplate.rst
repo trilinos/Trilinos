@@ -31,7 +31,6 @@
 @FUNCTION: print_var() +
 @FUNCTION: print_var_with_spaces() +
 @FUNCTION: remove_global_duplicates() +
-@MACRO: set_and_inc_dirs() +
 @FUNCTION: set_cache_on_off_empty() +
 @MACRO: set_default() +
 @MACRO: set_default_and_from_env() +

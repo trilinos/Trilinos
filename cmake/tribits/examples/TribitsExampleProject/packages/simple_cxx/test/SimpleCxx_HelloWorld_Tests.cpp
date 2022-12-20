@@ -1,9 +1,4 @@
-
-#include <iostream>
-#include <sstream>
-#include <cstdlib>
-#include "SimpleCxx_HelloWorld.hpp"
-#include "HeaderOnlyTpl_stuff.hpp"
+#include "SimpleCxx_HelloWorld_Tests.hpp"
 
 
 #define TEST_FIND_SUBSTR_IN_STR(SUBSTR, STR) \

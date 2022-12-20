@@ -959,8 +959,12 @@ macro(tribits_define_global_options_and_define_extra_repos)
     CACHE BOOL
     "Set to 'ON' to see the machine load for advanced tests." )
 
+  if ("${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT}" STREQUAL "")
+    set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT  "DEPRECATION")
+  endif()
+
   tribits_add_enum_cache_var(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE
-    DEFAULT_VAL "DEPRECATION"
+    DEFAULT_VAL "${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT}"
     DOC_STRING "Mode for dealing with usage of TriBITS deprecated functionality"
     ALLOWED_STRINGS_LIST ${TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_ALL_VALID_VALUES}
     IS_ADVANCED
