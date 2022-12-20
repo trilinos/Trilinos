@@ -53,7 +53,7 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
 #    function/ROL_MiniTensor_InequalityConstraint.hpp
 #    function/ROL_MiniTensor_InequalityConstraint_Def.hpp
 #  )
-  SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/function )
+  TRIBITS_SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/function )
   TRIBITS_INCLUDE_DIRECTORIES( ${DIR} )
   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
@@ -70,7 +70,7 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
 #    sol/ROL_MiniTensor_MiniSolver_Def.hpp
 #  )
 
-  SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol )
+  TRIBITS_SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol )
   TRIBITS_INCLUDE_DIRECTORIES( ${DIR} )
   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 

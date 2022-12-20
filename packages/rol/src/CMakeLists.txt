@@ -81,7 +81,7 @@ APPEND_GLOB( HEADERS ${BLAS_DIR}/*.hpp )
 # vector headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/vector)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/vector)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
@@ -89,7 +89,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 # function headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/dynamic
                     ${DIR}/boundconstraint
@@ -117,7 +117,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 #
 # step headers
 #
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/step)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/step)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/linesearch
                     ${DIR}/trustregion
@@ -147,7 +147,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 # algorithm headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeB
                     ${DIR}/TypeE
@@ -183,7 +183,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 # parameterlist headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/parameterlist)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/parameterlist)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
@@ -191,14 +191,14 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 # status test headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/status)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/status)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # sol headers
 #
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
                     ${DIR}/function/expectationquad
@@ -249,7 +249,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
 # elementwise function headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
@@ -257,7 +257,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 # utils headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/function_bindings)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
@@ -267,7 +267,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 # zoo headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/zoo)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/zoo)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/testproblems)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
@@ -276,7 +276,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 # oed headers
 #
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/oed)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/oed)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/constraint
                     ${DIR}/factors
