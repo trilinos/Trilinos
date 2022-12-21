@@ -115,9 +115,9 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
     Real snew = sobj.value(px,ftol); 
     sobj.update(x,UpdateType::Revert);
     state_->nsval++;
-    Real gs   = state_->gradientVec->apply(*state_->stepVec);
-    alpha0_   = (state_->snorm * state_->snorm) / std::abs(snew - state_->svalue - gs);
-    alpha0_   = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
+    Real gs = state_->gradientVec->apply(*state_->stepVec);
+    alpha0_ = (state_->snorm * state_->snorm) / std::abs(snew - state_->svalue - gs);
+    alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
     if (flag) maxAlpha_ = alpha0_;
   }
   // Normalize initial CP step length
