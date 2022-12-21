@@ -31,8 +31,8 @@ COMBINED_OPTION( TEKO_HAVE_EPETRA
                     Teko_ENABLE_Amesos
                     Teko_ENABLE_ML
   DOCSTR "Enabled support for Epetra stack in Teko."
-         " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters and ThyraEpetraExtAdapters are"
-         " enabled, otherwise defaults to OFF."
+         " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters, ThyraEpetraExtAdapters,"
+         " AztecOO, Ifpack, Amesos and ML are enabled, otherwise defaults to OFF."
   )
 MESSAGE(STATUS "TEKO_HAVE_EPETRA = ${TEKO_HAVE_EPETRA}")
 
