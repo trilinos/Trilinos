@@ -218,7 +218,7 @@ void SpectralGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
     hist << std::string(109,'-') << std::endl;
-    hist << "Spectral proximal gradient algorithm";
+    hist << "Spectral proximal gradient with nonmonotone line search";
     hist << " status output definitions" << std::endl << std::endl;
     hist << "  iter     - Number of iterates (steps taken)" << std::endl;
     hist << "  value    - Objective function value" << std::endl;
@@ -251,7 +251,7 @@ void SpectralGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
 template<typename Real>
 void SpectralGradientAlgorithm<Real>::writeName( std::ostream& os ) const {
   std::stringstream hist;
-  hist << std::endl << "Spectral Proximal Gradient Algorithm (Type P)" << std::endl;
+  hist << std::endl << "Spectral Proximal Gradient with Nonmonotone Line Search (Type P)" << std::endl;
   os << hist.str();
 }
 
