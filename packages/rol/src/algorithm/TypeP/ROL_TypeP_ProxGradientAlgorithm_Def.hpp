@@ -104,26 +104,23 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   dg.set(state_->gradientVec->dual());
   // Evaluate proximal gradient
   pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);
-  // Compute initial step size
-  Real fnew = state_->svalue;
+  state_->snorm = state_->stepVec->norm();
+  state_->gnorm = state_->snorm / t0_;
+  // Compute initial step size as 2/L
+  // where L = 2|f(x+s) - f(x) - f'(x)s|/||s||^2
+  // is a lower estimate of the Lipschitz constant of f
   if (!useralpha_) {
+    const Real two(2);
     // Evaluate objective at Prox(x - t0 dg)
     sobj.update(px,UpdateType::Trial);
-    fnew = sobj.value(px,ftol); 
+    Real snew = sobj.value(px,ftol); 
     sobj.update(x,UpdateType::Revert);
     state_->nsval++;
-  }
-  state_->gnorm = state_->stepVec->norm() / t0_;
-  state_->snorm = ROL_INF<Real>();
-  if (!useralpha_) {
-    const Real half(0.5);
-    // Minimize quadratic interpolate to compute new alpha
-    //Real gs    = state_->stepVec->dot(state_->gradientVec->dual());
-    Real gs    = state_->stepVec->apply(*state_->gradientVec);
-    Real denom = (fnew - state_->svalue - gs);
-    bool flag  = maxAlpha_ == alpha0_;
-    alpha0_ = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : alpha0bnd_);
-    alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
+    bool flag = maxAlpha_ == alpha0_;
+    Real gs   = state_->gradientVec->apply(*state_->stepVec);
+    Real L    = two * std::abs(snew - state_->svalue - gs) / (state_->snorm * state_->snorm);
+    alpha0_   = two / L;
+    alpha0_   = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
     if (flag) maxAlpha_ = alpha0_;
   }
   // Normalize initial CP step length

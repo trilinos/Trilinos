@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").set("Type","Line Search");
     list.sublist("Step").sublist("Line Search").set("Initial Step Size",1e0);
     list.sublist("Step").sublist("Line Search").set("Maximum Step Size",1e8);
-    list.sublist("Step").sublist("Line Search").set("User Defined Initial Step Size",true);
     list.sublist("Step").sublist("Line Search").set("Use Adaptive Step Size Selection",true);
     list.sublist("Status Test").set("Gradient Tolerance",1e-7);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
