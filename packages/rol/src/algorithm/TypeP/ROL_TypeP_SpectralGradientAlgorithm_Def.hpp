@@ -183,6 +183,9 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
     state_->svalue     = strial;
     state_->nvalue     = ntrial;
     state_->searchSize = alpha;
+    state_->gnorm      = state_->stepVec->norm();
+    state_->snorm      = alpha * state_->gnorm;
+    state_->gnorm     /= lambda_;
     state_->stepVec->scale(alpha);
     x.set(*state_->iterateVec);
     sobj.update(x,UpdateType::Accept,state_->iter);
@@ -201,13 +204,8 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
     dg->set(state_->gradientVec->dual());
     y->plus(*state_->gradientVec);
     ys            = y->apply(*state_->stepVec);
-    ss            = state_->stepVec->dot(*state_->stepVec);
-    state_->snorm = std::sqrt(ss);
+    ss            = state_->snorm * state_->snorm;
     lambda_       = (ys<=eps*state_->snorm ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/ys,lambdaMax_)));
-
-    // Compute projected gradient norm
-    pgstep(*px,*s,nobj,x,*dg,t0_,tol);
-    state_->gnorm = s->norm() / t0_;
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
@@ -226,7 +224,7 @@ void SpectralGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
     hist << " status output definitions" << std::endl << std::endl;
     hist << "  iter     - Number of iterates (steps taken)" << std::endl;
     hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the proximal gradient" << std::endl;
+    hist << "  gnorm    - Norm of the proximal gradient with parameter lambda" << std::endl;
     hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
     hist << "  alpha    - Line search step length" << std::endl;
     hist << "  lambda   - Spectral step length" << std::endl;

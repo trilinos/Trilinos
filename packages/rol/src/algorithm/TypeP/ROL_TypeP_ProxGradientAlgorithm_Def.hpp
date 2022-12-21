@@ -135,7 +135,7 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
                                        Objective<Real>    &sobj,
                                        Objective<Real>    &nobj,
                                        std::ostream       &outStream ) {
-  const Real one(1);
+  const Real one(1), alphaMin(1e-12*t0_), alphaMax(1e12*t0_);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   // Initialize trust-region data
   Ptr<Vector<Real>> px = x.clone(), pxP = x.clone(), dg = x.clone();
@@ -282,9 +282,14 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
     state_->ngrad++;
     dg->set(state_->gradientVec->dual());
 
-    // Compute projected gradient norm
-    pgstep(*pxP, *px, nobj, x, *dg, t0_, tol);
-    state_->gnorm = px->norm() / t0_;
+    // Compute projected gradient norm, ensuring that t is in [alphaMin*t0,alphaMax*t0]
+    if (state_->searchSize >= alphaMin && state_->searchSize <= alphaMax) {
+      state_->gnorm = state_->snorm / state_->searchSize;
+    }
+    else {
+      pgstep(*pxP, *px, nobj, x, *dg, t0_, tol);
+      state_->gnorm = px->norm() / t0_;
+    }
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
@@ -301,7 +306,7 @@ void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
     hist << " status output definitions" << std::endl << std::endl;
     hist << "  iter     - Number of iterates (steps taken)" << std::endl;
     hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the proximal gradient" << std::endl;
+    hist << "  gnorm    - Norm of the proximal gradient with parameter alpha" << std::endl;
     hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
     hist << "  alpha    - Line search step length" << std::endl;
     hist << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
