@@ -107,7 +107,7 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
   // Initialize trust-region data
   Ptr<Vector<Real>> s = x.clone(), px = x.clone(), dg = x.clone(), y = g.clone(), xmin = x.clone();
   initialize(x,g,sobj,nobj,*s,*dg,outStream);
-  Real strial(0), ntrial(0), Ftrial(0), Fmin(0), Fmax(0), Qk(0), alpha(1), alphaTmp(1);
+  Real strial(0), ntrial(0), Ftrial(0), Fmin(0), Fmax(0), Qk(0), alpha(1), rhoTmp(1);
   Real gs(0), ys(0), ss(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
   std::deque<Real> Fqueue; Fqueue.push_back(state_->value);
@@ -146,10 +146,14 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
       outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
     }
     while (Ftrial > Fmax + gamma_*Qk && ls_nfval < maxit_) {
-      alphaTmp = (-half*Qk/(strial-state_->svalue-alpha*gs))*alpha;
-      alpha    = (sigma1_*alpha <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
+      // Compute reduction factor by minimizing 1D quadratic model
+      rhoTmp = std::min(one,-half*Qk/(strial-state_->svalue-alpha*gs));
+      // Safeguard step size selection with back tracking
+      alpha  = ((sigma1_ <= rhoTmp && rhoTmp <= sigma2_) ? rhoTmp : rhodec_)*alpha;
+      // Update iterate vector
       state_->iterateVec->set(x);
       state_->iterateVec->axpy(alpha,*state_->stepVec);
+      // Recompute objective function values
       sobj.update(*state_->iterateVec,UpdateType::Trial);
       strial = sobj.value(*state_->iterateVec,tol);
       nobj.update(*state_->iterateVec,UpdateType::Trial);
@@ -175,14 +179,14 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
 
     // Update state
     state_->iter++;
-    state_->value = Ftrial;
-    state_->svalue = strial;
-    state_->nvalue = ntrial;
+    state_->value      = Ftrial;
+    state_->svalue     = strial;
+    state_->nvalue     = ntrial;
     state_->searchSize = alpha;
+    state_->stepVec->scale(alpha);
     x.set(*state_->iterateVec);
     sobj.update(x,UpdateType::Accept,state_->iter);
     nobj.update(x,UpdateType::Accept,state_->iter);
-    state_->stepVec->scale(alpha);
 
     // Store the best iterate
     if (state_->value <= Fmin) {
