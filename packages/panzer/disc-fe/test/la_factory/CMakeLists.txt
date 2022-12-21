@@ -43,7 +43,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 
 SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp)
-IF(PANZER_HAVE_EPETRA)
+IF(PANZER_HAVE_EPETRA_STACK)
   APPEND_SET(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
              tEpetra_GlbEvalData.cpp)
 
@@ -60,7 +60,7 @@ IF(PANZER_HAVE_EPETRA)
     COMM mpi
     NUM_MPI_PROCS 2
   )
-ENDIF(PANZER_HAVE_EPETRA)
+ENDIF(PANZER_HAVE_EPETRA_STACK)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LinearObjFactory_Tests

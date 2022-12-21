@@ -62,7 +62,7 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 
@@ -101,13 +101,13 @@ namespace panzer_stk {
                           Teuchos::ParameterList & closure_models,
                           Teuchos::ParameterList & user_data);
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   std::pair<RCP<panzer::ResponseLibrary<panzer::Traits> >,RCP<panzer::LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                            panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                                            Teuchos::ParameterList & closure_models,
                                                            Teuchos::ParameterList & user_data);
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK
 
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
@@ -271,7 +271,7 @@ namespace panzer_stk {
     }
   }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_eval)
   {
 
@@ -358,7 +358,7 @@ namespace panzer_stk {
     //    is computed. Essentially each element is included three times
     //    in the workset.
   }
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
@@ -508,7 +508,7 @@ namespace panzer_stk {
     }
   }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   std::pair<RCP<panzer::ResponseLibrary<panzer::Traits> >,RCP<panzer::LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                            panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -628,6 +628,6 @@ namespace panzer_stk {
 
     return std::make_pair(rLibrary,lof);
   }
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK
 
 }
