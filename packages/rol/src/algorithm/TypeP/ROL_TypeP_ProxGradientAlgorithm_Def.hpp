@@ -57,7 +57,7 @@ ProxGradientAlgorithm<Real>::ProxGradientAlgorithm(ParameterList &list) {
   ParameterList &lslist = list.sublist("Step").sublist("Line Search");
   maxit_        = lslist.get("Function Evaluation Limit",                        20);
   alpha0_       = lslist.get("Initial Step Size",                               1.0);
-  normAlpha_    = lslist.get("Normalize Initial Step Size",                   false); 
+  normAlpha_    = lslist.get("Normalize Initial Step Size",                   false);
   alpha0bnd_    = lslist.get("Lower Bound for Initial Step Size",              1e-4);
   useralpha_    = lslist.get("User Defined Initial Step Size",                false);
   usePrevAlpha_ = lslist.get("Use Previous Step Length as Initial Guess",     false);
@@ -66,45 +66,51 @@ ProxGradientAlgorithm<Real>::ProxGradientAlgorithm(ParameterList &list) {
   useAdapt_     = lslist.get("Use Adaptive Step Size Selection",               true);
   rhodec_       = lslist.sublist("Line-Search Method").get("Backtracking Rate", 0.5);
   rhoinc_       = lslist.sublist("Line-Search Method").get("Increase Rate"    , 2.0);
-	t0_           = list.sublist("Status Test").get("Gradient Scale"            , 1.0); 
+  t0_           = list.sublist("Status Test").get("Gradient Scale"            , 1.0);
   verbosity_    = list.sublist("General").get("Output Level",                     0);
   writeHeader_  = verbosity_ > 2;
 }
 
 template<typename Real>
-void ProxGradientAlgorithm<Real>::initialize(Vector<Real>          &x,
-                                             const Vector<Real>    &g,
-                                             Objective<Real>       &sobj,
-                                             Objective<Real>       &nobj,
-																						 Vector<Real>          &px,
-                                             std::ostream &outStream) {
+void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
+                                             const Vector<Real> &g,
+                                             Objective<Real>    &sobj,
+                                             Objective<Real>    &nobj,
+                                             Vector<Real>       &px,
+                                             std::ostream       &outStream) {
   const Real one(1);
   // Initialize data
   TypeP::Algorithm<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   nobj.prox(px,x,state_->searchSize,ftol);
-	x.set(px); //revisit with option to do initial prox or not
+  state_->nprox++;
+  x.set(px); //revisit with option to do initial prox or not
+  // Evaluate objective function
   sobj.update(x,UpdateType::Initial,state_->iter);
+  state_->svalue = sobj.value(x,ftol); 
+  state_->nsval++;
   nobj.update(x,UpdateType::Initial,state_->iter); 
-	state_->value  = sobj.value(x,ftol); 
-  state_->phival = nobj.value(x,ftol); 
-  state_->nfval++;
-	state_->nphi++; 
+  state_->nvalue = nobj.value(x,ftol); 
+  state_->nnval++; 
+  state_->value  = state_->svalue + state_->nvalue;
+  // Evaluate gradient of smooth part
   sobj.gradient(*state_->gradientVec,x,ftol);
   state_->ngrad++;
+  // Evaluate proximal gradient
   state_->stepVec->set(x);
   state_->stepVec->axpy(-t0_,state_->gradientVec->dual());
-
   nobj.prox(px,*state_->stepVec,t0_,ftol);
-	state_->stepVec->set(px); 
-  Real fnew = state_->value;
+  state_->nprox++;
+  state_->stepVec->set(px);
+  // Compute initial step size
+  Real fnew = state_->svalue;
   if (!useralpha_) {
     // Evaluate objective at P(x - g)
     sobj.update(*state_->stepVec,UpdateType::Trial);
-		fnew = sobj.value(*state_->stepVec,ftol); 
+    fnew = sobj.value(*state_->stepVec,ftol); 
     sobj.update(x,UpdateType::Revert);
-    state_->nfval++;
+    state_->nsval++;
   }
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm()/t0_;
@@ -114,31 +120,30 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>          &x,
     // Minimize quadratic interpolate to compute new alpha
     //Real gs    = state_->stepVec->dot(state_->gradientVec->dual());
     Real gs    = state_->stepVec->apply(*state_->gradientVec);
-    Real denom = (fnew - state_->value - gs);
+    Real denom = (fnew - state_->svalue - gs);
     bool flag  = maxAlpha_ == alpha0_;
     alpha0_ = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : alpha0bnd_);
     alpha0_ = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
     if (flag) maxAlpha_ = alpha0_;
   }
   // Normalize initial CP step length
-  if (normAlpha_) {
+  if (normAlpha_)
     alpha0_ /= state_->gradientVec->norm();
-  }
   state_->searchSize = alpha0_;
 }
 
 template<typename Real>
-void ProxGradientAlgorithm<Real>::run( Vector<Real>          &x,
-                                       const Vector<Real>    &g, 
-                                       Objective<Real>       &sobj,
-                                       Objective<Real>       &nobj,
-                                       std::ostream          &outStream ) {
+void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
+                                       const Vector<Real> &g, 
+                                       Objective<Real>    &sobj,
+                                       Objective<Real>    &nobj,
+                                       std::ostream       &outStream ) {
   const Real one(1);
   // Initialize trust-region data
-	Ptr<Vector<Real>> px = x.clone(); 
-  Ptr<Vector<Real>> s  = x.clone();
-	initialize(x,g,sobj,nobj,*px,outStream);
-  Real ftrial(0), phitrial(0), Qk(0), ftrialP(0),phitrialP(0), alphaP(0), tol(std::sqrt(ROL_EPSILON<Real>()));
+  Ptr<Vector<Real>> px = x.clone(), s = x.clone();
+  initialize(x,g,sobj,nobj,*px,outStream);
+  Real strial(0), ntrial(0), Ftrial(0), strialP(0), ntrialP(0), FtrialP(0);
+  Real Qk(0), alphaP(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
   bool incAlpha = false, accept = true;
 
@@ -151,107 +156,128 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>          &x,
     accept = true;
     // Perform backtracking line search 
     if (!usePrevAlpha_ && !useAdapt_) state_->searchSize = alpha0_;
+    // Compute proximal gradient step with initial search size
     px->set(x);
     px->axpy(-state_->searchSize,*state_->stepVec);
     nobj.prox(*state_->iterateVec,*px,state_->searchSize,tol);
-    nobj.update(*state_->iterateVec,UpdateType::Trial);
-    sobj.update(*state_->iterateVec,UpdateType::Trial);
-    ftrial = sobj.value(*state_->iterateVec,tol);
-		phitrial = nobj.value(*state_->iterateVec,tol); 
-    ls_nfval = 1;
+    state_->nprox++;
     s->set(*state_->iterateVec);
     s->axpy(-one,x);
-    Qk = s->dot(*state_->stepVec) + phitrial - state_->phival;
-    incAlpha = (state_->value + state_->phival - ftrial - phitrial >= -c1_*Qk);
+    // Compute objective function values
+    sobj.update(*state_->iterateVec,UpdateType::Trial);
+    strial = sobj.value(*state_->iterateVec,tol);
+    nobj.update(*state_->iterateVec,UpdateType::Trial);
+    ntrial = nobj.value(*state_->iterateVec,tol); 
+    Ftrial = strial + ntrial;
+    ls_nfval = 1;
+    // Compute decrease indicator
+    Qk = s->dot(*state_->stepVec) + ntrial - state_->nvalue;
+    incAlpha = (Ftrial - state_->value <= c1_*Qk);
     if (verbosity_ > 1) {
       outStream << "  In TypeP::GradientAlgorithm: Line Search"  << std::endl;
       outStream << "    Step size:                        " << state_->searchSize   << std::endl;
-      outStream << "    Trial sobj value:                 " << ftrial               << std::endl;
-      outStream << "    Trial nobj value:                 " << phitrial             << std::endl; 
-			outStream << "    Computed reduction:               " << state_->value + state_->phival - phitrial -ftrial << std::endl;
+      outStream << "    Trial smooth value:               " << strial               << std::endl;
+      outStream << "    Trial nonsmooth value:            " << ntrial               << std::endl; 
+      outStream << "    Computed reduction:               " << state_->value-Ftrial << std::endl;
       outStream << "    Dot product of gradient and step: " << Qk                   << std::endl;
       outStream << "    Sufficient decrease bound:        " << -Qk*c1_              << std::endl;
       outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
       outStream << "    Increase alpha?:                  " << incAlpha             << std::endl;
     }
     if (incAlpha && useAdapt_) {
-      ftrialP = ROL_INF<Real>();
-			phitrialP = ROL_INF<Real>(); 
-      while ( state_->value + state_->phival - ftrial - phitrial >= -c1_*Qk
-           && ftrial+phitrial <= ftrialP + phitrialP
+      ntrialP = ROL_INF<Real>();
+      strialP = ROL_INF<Real>(); 
+      FtrialP = ntrialP + strialP;
+      while ( Ftrial - state_->value <= c1_*Qk
+           && Ftrial <= FtrialP
            && state_->searchSize < maxAlpha_
            && ls_nfval < maxit_ ) {
         // Previous value was acceptable
         sobj.update(*state_->iterateVec,UpdateType::Accept);
         nobj.update(*state_->iterateVec,UpdateType::Accept); 
-				alphaP  = state_->searchSize;
-        ftrialP = ftrial;
-				phitrialP = phitrial; 
+        // Increase search size
+        alphaP  = state_->searchSize;
+        strialP = strial;
+        ntrialP = ntrial; 
+        FtrialP = Ftrial;
         state_->searchSize *= rhoinc_;
         state_->searchSize  = std::min(state_->searchSize,maxAlpha_);
+        // Compute proximal gradient step with new search size
         px->set(x);
         px->axpy(-state_->searchSize,*state_->stepVec);
         nobj.prox(*state_->iterateVec,*px,state_->searchSize,tol);
-        sobj.update(*state_->iterateVec,UpdateType::Trial);
-        nobj.update(*state_->iterateVec,UpdateType::Trial);
-        ftrial = sobj.value(*state_->iterateVec,tol);
-        phitrial = nobj.value(*state_->iterateVec,tol); 
-				ls_nfval++;
+        state_->nprox++;
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
-        Qk = s->dot(*state_->stepVec) + phitrial - state_->phival;
+        // Compute objective function values
+        sobj.update(*state_->iterateVec,UpdateType::Trial);
+        strial = sobj.value(*state_->iterateVec,tol);
+        nobj.update(*state_->iterateVec,UpdateType::Trial);
+        ntrial = nobj.value(*state_->iterateVec,tol); 
+        Ftrial = strial + ntrial;
+        ls_nfval++;
+        // Compute decrease indicator
+        Qk = s->dot(*state_->stepVec) + ntrial - state_->nvalue;
         if (verbosity_ > 1) {
           outStream << std::endl;
           outStream << "    Step size:                        " << state_->searchSize   << std::endl;
-          outStream << "    Trial sobj value:            			" << ftrial               << std::endl;
-          outStream << "    Trial nobj value:            			" << phitrial             << std::endl;
-          outStream << "    Computed reduction:               " << state_->value + state_->phival - phitrial -ftrial << std::endl;
+          outStream << "    Trial smooth value:               " << strial               << std::endl;
+          outStream << "    Trial nonsmooth value:            " << ntrial               << std::endl; 
+          outStream << "    Computed reduction:               " << state_->value-Ftrial << std::endl;
           outStream << "    Dot product of gradient and step: " << Qk                   << std::endl;
           outStream << "    Sufficient decrease bound:        " << -Qk*c1_              << std::endl;
           outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
         }
       }
-      if (state_->value + state_->phival - ftrial - phitrial < -c1_*Qk || phitrial + ftrial > phitrialP + ftrialP) {
-        ftrial = ftrialP;
-				phitrial = phitrialP; 
+      if (Ftrial - state_->value > c1_*Qk || Ftrial > FtrialP) {
+        strial = strialP;
+        ntrial = ntrialP; 
+        Ftrial = FtrialP;
         state_->searchSize = alphaP;
+        // Recompute proximal gradient step
         px->set(x);
         px->axpy(-state_->searchSize,*state_->stepVec);
         nobj.prox(*state_->iterateVec,*px,state_->searchSize,tol);
+        state_->nprox++;
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
         accept = false;
       }
     }
     else {
-      while ( state_->value + state_->phival - phitrial - ftrial < -c1_*Qk && ls_nfval < maxit_ ) {
+      while ( Ftrial - state_->value > c1_*Qk && ls_nfval < maxit_ ) {
+        // Decrease search size
         state_->searchSize *= rhodec_;
+        // Compute proximal gradient step with new search size
         px->set(x);
         px->axpy(-state_->searchSize,*state_->stepVec);
         nobj.prox(*state_->iterateVec,*px,state_->searchSize,tol);
-				state_->nprox++;
-        sobj.update(*state_->iterateVec,UpdateType::Trial);
-        nobj.update(*state_->iterateVec,UpdateType::Trial);
-        ftrial = sobj.value(*state_->iterateVec,tol);
-				phitrial = nobj.value(*state_->iterateVec,tol); 
-        ls_nfval++;
+        state_->nprox++;
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
-        Qk = s->dot(*state_->stepVec) + phitrial - state_->phival;
+        // Compute objective function values
+        sobj.update(*state_->iterateVec,UpdateType::Trial);
+        strial = sobj.value(*state_->iterateVec,tol);
+        nobj.update(*state_->iterateVec,UpdateType::Trial);
+        ntrial = nobj.value(*state_->iterateVec,tol); 
+        Ftrial = strial + ntrial;
+        ls_nfval++;
+        // Compute decrease indicator
+        Qk = s->dot(*state_->stepVec) + ntrial - state_->nvalue;
         if (verbosity_ > 1) {
           outStream << std::endl;
           outStream << "    Step size:                        " << state_->searchSize   << std::endl;
-          outStream << "    Trial sobj value:            			" << ftrial               << std::endl;
-          outStream << "    Trial nobj value:            			" << phitrial             << std::endl;
-          outStream << "    Computed reduction:               " << state_->value + state_->phival - phitrial -ftrial << std::endl;
+          outStream << "    Trial smooth value:               " << strial               << std::endl;
+          outStream << "    Trial nonsmooth value:            " << ntrial               << std::endl; 
+          outStream << "    Computed reduction:               " << state_->value-Ftrial << std::endl;
           outStream << "    Dot product of gradient and step: " << Qk                   << std::endl;
           outStream << "    Sufficient decrease bound:        " << -Qk*c1_              << std::endl;
           outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
         }
       }
     }
-    state_->nfval += ls_nfval;
-    state_->nphi  += ls_nfval; 
+    state_->nsval += ls_nfval;
+    state_->nnval += ls_nfval;
     // Compute norm of step
     state_->stepVec->set(*s);
     state_->snorm = state_->stepVec->norm();
@@ -261,16 +287,17 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>          &x,
 
     // Compute new value and gradient
     state_->iter++;
-    state_->value = ftrial;
-		state_->phival = phitrial; 
+    state_->svalue = strial;
+    state_->nvalue = ntrial;
+    state_->value  = Ftrial;
     if (accept) {
-			sobj.update(x,UpdateType::Accept,state_->iter);
-			nobj.update(x,UpdateType::Accept,state_->iter);
-		}
+      sobj.update(x,UpdateType::Accept,state_->iter);
+      nobj.update(x,UpdateType::Accept,state_->iter);
+    }
     else {       
-			sobj.update(x,UpdateType::Revert,state_->iter);
+      sobj.update(x,UpdateType::Revert,state_->iter);
       nobj.update(x,UpdateType::Revert,state_->iter); 
-		}
+    }
     sobj.gradient(*state_->gradientVec,x,tol);
     state_->ngrad++;
 
@@ -278,10 +305,11 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>          &x,
     state_->stepVec->set(state_->gradientVec->dual());
 
     // Compute projected gradient norm
-    s->set(x); s->axpy(-one,*state_->stepVec);
-    nobj.prox(*px,*s,state_->searchSize,tol);
+    s->set(x); s->axpy(-t0_,*state_->stepVec);
+    nobj.prox(*px,*s,t0_,tol);
+    state_->nprox++;
     s->axpy(-one,x);
-    state_->gnorm = s->norm();
+    state_->gnorm = s->norm() / t0_;
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
@@ -294,17 +322,17 @@ void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
     hist << std::string(109,'-') << std::endl;
-    hist << "Projected gradient descent";
+    hist << "Proximal gradient descent";
     hist << " status output definitions" << std::endl << std::endl;
     hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  sobj     - Smooth Objective function value" << std::endl;
-    hist << "  nobj     - Nonsmooth Objective function value" << std::endl; 
-		hist << "  gnorm    - Norm of the gradient" << std::endl;
+    hist << "  obj      - Objective function value" << std::endl;
+    hist << "  gnorm    - Norm of the proximal gradient" << std::endl;
     hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
     hist << "  alpha    - Line search step length" << std::endl;
-    hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
+    hist << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
+    hist << "  #nval    - Cumulative number of times the nonsmooth objective function was evaluated" << std::endl;
     hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
-		hist << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
+    hist << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
     hist << std::string(109,'-') << std::endl;
   }
 
@@ -314,9 +342,10 @@ void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   hist << std::setw(15) << std::left << "gnorm";
   hist << std::setw(15) << std::left << "snorm";
   hist << std::setw(15) << std::left << "alpha";
-  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#sval";
+  hist << std::setw(10) << std::left << "#nval";
   hist << std::setw(10) << std::left << "#grad";
-	hist << std::setw(10) << std::left << "#nprox"; 
+  hist << std::setw(10) << std::left << "#nprox"; 
   hist << std::endl;
   os << hist.str();
 }
@@ -324,7 +353,7 @@ void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
 template<typename Real>
 void ProxGradientAlgorithm<Real>::writeName( std::ostream& os ) const {
   std::stringstream hist;
-  hist << std::endl << "Proximal Gradient Descent with Backtracking Line Search (Type P)" << std::endl;
+  hist << std::endl << "Proximal Gradient Descent with Bidirectional Line Search (Type P)" << std::endl;
   os << hist.str();
 }
 
@@ -341,9 +370,10 @@ void ProxGradientAlgorithm<Real>::writeOutput( std::ostream& os, bool write_head
     hist << std::setw(15) << std::left << state_->gnorm;
     hist << std::setw(15) << std::left << "---";
     hist << std::setw(15) << std::left << "---";
-    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->nsval;
+    hist << std::setw(10) << std::left << state_->nnval;
     hist << std::setw(10) << std::left << state_->ngrad;
-		hist << std::setw(10) << std::left << state_->nprox; 
+    hist << std::setw(10) << std::left << state_->nprox; 
     hist << std::endl;
   }
   else {
@@ -353,9 +383,10 @@ void ProxGradientAlgorithm<Real>::writeOutput( std::ostream& os, bool write_head
     hist << std::setw(15) << std::left << state_->gnorm;
     hist << std::setw(15) << std::left << state_->snorm;
     hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->nsval;
+    hist << std::setw(10) << std::left << state_->nnval;
     hist << std::setw(10) << std::left << state_->ngrad;
-		hist << std::setw(10) << std::left << state_->nprox; 
+    hist << std::setw(10) << std::left << state_->nprox; 
     hist << std::endl;
   }
   os << hist.str();

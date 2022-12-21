@@ -57,32 +57,32 @@ namespace TypeP {
 
 template<typename Real>
 struct AlgorithmState : public ROL::AlgorithmState<Real> {
-  Real searchSize, phival;
-  Ptr<Vector<Real>> stepVec;
-  Ptr<Vector<Real>> gradientVec;
-	int nprox;
-	int nphi; 
+  Real searchSize, svalue, nvalue;
+  Ptr<Vector<Real>> stepVec, gradientVec;
+  int nprox, nsval, nnval;
 
   AlgorithmState()
     : searchSize(1),
-		  phival(ROL_INF<Real>()),
+      svalue(ROL_INF<Real>()),
+      nvalue(ROL_INF<Real>()),
       stepVec(nullPtr),
       gradientVec(nullPtr),
-			nprox(0),
-			nphi(0) {}
+      nprox(0),
+      nsval(0),
+      nnval(0) {}
 
   void reset() {
     ROL::AlgorithmState<Real>::reset();
     searchSize = static_cast<Real>(1);
-		phival     = ROL_INF<Real>(); 
-    if (stepVec != nullPtr) {
+    svalue     = ROL_INF<Real>(); 
+    nvalue     = ROL_INF<Real>(); 
+    if (stepVec != nullPtr)
       stepVec->zero();
-    }
-    if (gradientVec != nullPtr) {
+    if (gradientVec != nullPtr)
       gradientVec->zero();
-    }
-		nprox = 0;
-		nphi  = 0; 
+    nprox = 0;
+    nsval = 0; 
+    nnval = 0; 
   }
 };
 
@@ -90,7 +90,7 @@ template<typename Real>
 class Algorithm {
 protected:
   const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState<Real>>   state_;
+  const Ptr<AlgorithmState<Real>>     state_;
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 
 
@@ -109,7 +109,7 @@ public:
              This is the primary Type-U interface.
   */
   virtual void run( Problem<Real> &problem,
-                    std::ostream &outStream = std::cout );
+                    std::ostream  &outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.

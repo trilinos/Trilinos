@@ -60,21 +60,17 @@ Algorithm<Real>::Algorithm()
 
 template<typename Real>
 void Algorithm<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
-  if (state_->iterateVec == nullPtr) {
+  if (state_->iterateVec == nullPtr)
     state_->iterateVec = x.clone();
-  }
   state_->iterateVec->set(x);
-  if (state_->stepVec == nullPtr) {
+  if (state_->stepVec == nullPtr)
     state_->stepVec = x.clone();
-  }
   state_->stepVec->zero();
-  if (state_->gradientVec == nullPtr) {
+  if (state_->gradientVec == nullPtr)
     state_->gradientVec = g.clone();
-  }
   state_->gradientVec->set(g);
-  if (state_->minIterVec == nullPtr) {
+  if (state_->minIterVec == nullPtr)
     state_->minIterVec = x.clone();
-  }
   state_->minIterVec->set(x);
   state_->minIter = state_->iter;
   state_->minValue = state_->value;
@@ -82,10 +78,9 @@ void Algorithm<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
 
 template<typename Real>
 void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
-                                      bool combineStatus) {
-  if (!combineStatus) { // Do not combine status tests
+                                    bool combineStatus) {
+  if (!combineStatus) // Do not combine status tests
     status_->reset();
-  }
   status_->add(status); // Add user-defined StatusTest
 }
 
@@ -102,6 +97,7 @@ void Algorithm<Real>::run( Problem<Real> &problem,
   else {
     throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not Type P!");
   }*/
+  throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not available for Type P problems!");
 }
 
 template<typename Real>
@@ -122,7 +118,7 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
   hist << std::setw(15) << std::left << "snorm";
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
-	hist << std::setw(10) << std::left << "#prox";
+  hist << std::setw(10) << std::left << "#prox";
   hist << std::endl;
   os << hist.str();
 }
@@ -153,7 +149,7 @@ void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
     hist << std::setw(10) << std::left << state_->nfval;              
     hist << std::setw(10) << std::left << state_->ngrad;              
     hist << std::setw(10) << std::left << state_->nprox; 
-		hist << std::endl;
+    hist << std::endl;
   }
   os << hist.str();
 }
@@ -168,7 +164,6 @@ void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
 }
 
 template<typename Real>
-//Ptr<const AlgorithmState<Real>>& Algorithm<Real>::getState() const {
 Ptr<const AlgorithmState<Real>> Algorithm<Real>::getState() const {
   return state_;
 }
