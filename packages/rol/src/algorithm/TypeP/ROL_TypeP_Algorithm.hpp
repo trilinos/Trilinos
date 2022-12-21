@@ -93,6 +93,13 @@ protected:
   const Ptr<AlgorithmState<Real>>     state_;
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 
+  void pgstep(Vector<Real>       &pgiter, // pgiter = Prox(x - t dg)
+              Vector<Real>       &pgstep, // pgstep = pgiter - x
+              Objective<Real>    &nobj,   // nobj   = nonsmooth objective
+              const Vector<Real> &x,      // x      = current iterate
+              const Vector<Real> &dg,     // dg     = dual of current gradient
+              Real                t,      // t      = prox parameter
+              Real               &tol) const;
 
 public:
 

@@ -293,22 +293,6 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
 }
 
 template<typename Real>
-void ProxGradientAlgorithm<Real>::pgstep(Vector<Real>       &pgiter,
-                                         Vector<Real>       &pgstep,
-                                         Objective<Real>    &nobj,
-                                         const Vector<Real> &x,
-                                         const Vector<Real> &dg,
-                                         Real                t,
-                                         Real               &tol) const {
-  pgstep.set(x);
-  pgstep.axpy(-t,dg);
-  nobj.prox(pgiter,pgstep,t,tol);
-  state_->nprox++;
-  pgstep.set(pgiter);
-  pgstep.axpy(static_cast<Real>(-1),x);
-}
-
-template<typename Real>
 void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   std::stringstream hist;
   if (verbosity_ > 1) {
@@ -316,7 +300,7 @@ void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
     hist << "Proximal gradient descent";
     hist << " status output definitions" << std::endl << std::endl;
     hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  obj      - Objective function value" << std::endl;
+    hist << "  value    - Objective function value" << std::endl;
     hist << "  gnorm    - Norm of the proximal gradient" << std::endl;
     hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
     hist << "  alpha    - Line search step length" << std::endl;

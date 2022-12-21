@@ -41,12 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TYPEP_PROXGRADIENTALGORITHM_HPP
-#define ROL_TYPEP_PROXGRADIENTALGORITHM_HPP
+#ifndef ROL_TYPEP_SPECTRALGRADIENTALGORITHM_HPP
+#define ROL_TYPEP_SPECTRALGRADIENTALGORITHM_HPP
 
 #include "ROL_TypeP_Algorithm.hpp"
 
-/** \class ROL::TypeP::ProxGradientAlgorithm
+/** \class ROL::TypeP::SpectralGradientAlgorithm
     \brief Provides an interface to run the proximal gradient algorithm.
 */
 
@@ -54,11 +54,10 @@ namespace ROL {
 namespace TypeP {
 
 template<typename Real>
-class ProxGradientAlgorithm : public TypeP::Algorithm<Real> {
+class SpectralGradientAlgorithm : public TypeP::Algorithm<Real> {
 private:
-  int maxit_;
-  Real alpha0_, alpha0bnd_, rhodec_, rhoinc_, c1_, maxAlpha_, t0_;
-  bool useralpha_, usePrevAlpha_, useAdapt_, normAlpha_;
+  int maxit_, maxSize_;
+  Real lambda_, lambdaMin_, lambdaMax_, sigma1_, sigma2_, rhodec_, gamma_, t0_;
   int verbosity_;
   bool writeHeader_;
 
@@ -75,7 +74,7 @@ private:
                   std::ostream &outStream = std::cout); 
 public:
 
-  ProxGradientAlgorithm(ParameterList &list);
+  SpectralGradientAlgorithm(ParameterList &list);
 
   using TypeP::Algorithm<Real>::run;
   void run( Vector<Real>          &x,
@@ -90,11 +89,11 @@ public:
 
   void writeOutput( std::ostream& os, bool write_header = false ) const override;
 
-}; // class ROL::TypeP::GradientAlgorithm
+}; // class ROL::TypeP::SpectralGradientAlgorithm
 
 } // namespace TypeP
 } // namespace ROL
 
-#include "ROL_TypeP_ProxGradientAlgorithm_Def.hpp"
+#include "ROL_TypeP_SpectralGradientAlgorithm_Def.hpp"
 
 #endif

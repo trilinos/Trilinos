@@ -77,6 +77,22 @@ void Algorithm<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
 }
 
 template<typename Real>
+void Algorithm<Real>::pgstep(Vector<Real>       &pgiter,
+                             Vector<Real>       &pgstep,
+                             Objective<Real>    &nobj,
+                             const Vector<Real> &x,
+                             const Vector<Real> &dg,
+                             Real                t,
+                             Real               &tol) const {
+  pgstep.set(x);
+  pgstep.axpy(-t,dg);
+  nobj.prox(pgiter,pgstep,t,tol);
+  state_->nprox++;
+  pgstep.set(pgiter);
+  pgstep.axpy(static_cast<Real>(-1),x);
+}
+
+template<typename Real>
 void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
                                     bool combineStatus) {
   if (!combineStatus) // Do not combine status tests
