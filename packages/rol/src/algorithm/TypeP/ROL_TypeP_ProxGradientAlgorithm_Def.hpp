@@ -308,8 +308,8 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
     s->set(x); s->axpy(-t0_,*state_->stepVec);
     nobj.prox(*px,*s,t0_,tol);
     state_->nprox++;
-    s->axpy(-one,x);
-    state_->gnorm = s->norm() / t0_;
+    px->axpy(-one,x);
+    state_->gnorm = px->norm() / t0_;
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
