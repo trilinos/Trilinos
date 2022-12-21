@@ -155,7 +155,7 @@ static void setSphynxValidatorsInList(
           const RCP<const Teuchos::Comm<int> > &comm):
       PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
-        std::cout << "DEBUG: In SphynxProblem constructor." << std::endl;
+        //std::cout << "DEBUG: In SphynxProblem constructor." << std::endl;
         //std::cout << "params_ is " << params_ << std::endl;
         // Validation of SphynxParameter
         ParameterList validParams;
@@ -166,25 +166,25 @@ static void setSphynxValidatorsInList(
             setSphynxValidatorsInList(*(sphynxParams_.get()), allParameters, validParams);
         }
         Z2_FORWARD_EXCEPTIONS
-        std::cout << "DEBUG: past getSphynxValidParameters." << std::endl;
+        //std::cout << "DEBUG: past getSphynxValidParameters." << std::endl;
 
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
         this->env_->convertStringToInt(*sphynxParams_.get());
         
-        std::cout << "DEBUG: Past validateParameters." << std::endl;
+        //std::cout << "DEBUG: Past validateParameters." << std::endl;
 
         //std::cout << "params_ is " << params_ << std::endl;
 
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
-        std::cout << "DEBUG: got past getEntryPtr." << std::endl;
+        //std::cout << "DEBUG: got past getEntryPtr." << std::endl;
         if(pe)
           nparts = pe->getValue<int>(&nparts);
 
         if(nparts == -1)
           throw std::runtime_error("\nUser did not set num_global_parts"
                                    "in the parameter list!n");
-        std::cout << "DEBUG: Exiting SphynxProblem constructor." << std::endl;
+        //std::cout << "DEBUG: Exiting SphynxProblem constructor." << std::endl;
     }
 
 #ifdef HAVE_ZOLTAN2_MPI

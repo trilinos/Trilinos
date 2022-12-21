@@ -236,7 +236,7 @@ RandomizedSolMgr<ScalarType,MV,OP>::RandomizedSolMgr(
 template<class ScalarType, class MV, class OP>
 ReturnType
 RandomizedSolMgr<ScalarType,MV,OP>::solve() {
-std::cout << "DEBUG: In the solve function." << std::endl;
+//std::cout << "DEBUG: In the solve function." << std::endl;
 
   // sort manager
   Teuchos::RCP<BasicSort<MT> > sorter = Teuchos::rcp( new BasicSort<MT> );
@@ -250,7 +250,7 @@ std::cout << "DEBUG: In the solve function." << std::endl;
     // because we would like to clear the storage associated with V_ so we have room for the new V_
   TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument,
     "Anasazi::Randomized: eigenproblem did not specify initial vectors to clone from.");
-  std::cout << "DEBUG: past teuchos check for getInitVec." << std::endl;
+  //std::cout << "DEBUG: past teuchos check for getInitVec." << std::endl;
     //TODO: number of vecs here should = blockSize, yes?
   randVecs = MVT::CloneCopy(*(problem_->getInitVec()));
   //TEUCHOS_TEST_FOR_EXCEPTION(problem_->getA() == Teuchos::null,std::invalid_argument,
@@ -331,7 +331,7 @@ std::cout << "DEBUG: In the solve function." << std::endl;
   if(info != 0){
   printer->stream(IterationDetails) << "Warning!! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
   }
-  std::cout << "DEBUG: Past small eval probl." << std::endl;
+  //std::cout << "DEBUG: Past small eval probl." << std::endl;
   // Compute the eigenvalues and eigenvectors from the original eigenproblem
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = blockSize_;
@@ -339,12 +339,12 @@ std::cout << "DEBUG: In the solve function." << std::endl;
   // sort the eigenvalues and permute the eigenvectors appropriately
   std::vector<int> order(sol.numVecs);
   sorter->sort(evals_real,evals_imag,Teuchos::rcpFromRef(order),sol.numVecs);
-  std::cout << "DEBUG: past sort statement." << std::endl;
+  //std::cout << "DEBUG: past sort statement." << std::endl;
   for( int i = 0; i < blockSize_; i++){
     sol.Evals[i].realpart = evals_real[i];
     sol.Evals[i].imagpart = evals_imag[i];
   }
-  std::cout << "DEBUG: finished sorting evals." << std::endl;
+  //std::cout << "DEBUG: finished sorting evals." << std::endl;
   // Project Evects back up to large problem. 
   MVT::MvTimesMatAddMv(ONE,*randVecs,evects,0.0,*TmpVecs);
   sol.Evecs = TmpVecs;
@@ -355,6 +355,7 @@ std::cout << "DEBUG: In the solve function." << std::endl;
   SolverUtils<ScalarType,MV,OP> msutils;
   msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
 
+  //std::cout << "DEBUG: Past permuting eigenvectors. " << std::endl;
   // print final summary
   //lobpcg_solver->currentStatus(printer->stream(FinalSummary));
 
@@ -364,10 +365,11 @@ std::cout << "DEBUG: In the solve function." << std::endl;
     Teuchos::TimeMonitor::summarize( printer->stream( TimingDetails ) );
   }
 #endif
-
+  //std::cout << "DEBUG: In eigensolver; setting solution." << std::endl;
   // send the solution to the eigenproblem
   problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
+  //std::cout << "DEBUG: Set solution successfully. Returning from eigensolver." << std::endl;
 
   // return from SolMgr::solve()
   //if (sol.numVecs < nev) return Unconverged;

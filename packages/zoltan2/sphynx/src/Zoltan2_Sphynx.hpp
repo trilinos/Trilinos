@@ -292,7 +292,7 @@ namespace Zoltan2 {
       }
 
     solverType_ = sphynxParams_->get("sphynx_eigensolver","LOBPCG");
-    std::cout << "DEBUG: SolverType is: " << solverType_ << std::endl;
+    //std::cout << "DEBUG: SolverType is: " << solverType_ << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!(solverType_ == "LOBPCG" || solverType_ == "randomized"), 
       std::invalid_argument, "Sphynx: sphynx_eigensolver must be set to LOBPCG or randomized.");
 
@@ -591,7 +591,7 @@ namespace Zoltan2 {
 			   "               Increase either max iters or tolerance.\n");
 
     }
-    std::cout << "DEBUG: going to call eigenvecsToCoords." << std::endl;
+    //std::cout << "DEBUG: going to call eigenvecsToCoords." << std::endl;
 
     // Transform the eigenvectors into coordinates 
     Teuchos::RCP<mvector_t> coordinates;
@@ -751,20 +751,20 @@ namespace Zoltan2 {
     if(solverType_ == "LOBPCG"){
 
     // Set preconditioner
-    std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
+    //std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
     Sphynx::setPreconditioner(problem);
 
     if(problemType_ == Sphynx::GENERALIZED)
       problem->setM(degMatrix_);
     }
-    std::cout << "DEBUG: Past set preconditioner. Setting problem. " << std::endl;
+    //std::cout << "DEBUG: Past set preconditioner. Setting problem. " << std::endl;
 
     // Inform the eigenproblem that you are finished passing it information
     bool boolret = problem->setProblem();
     if (boolret != true) {
       throw std::runtime_error("\nAnasazi::BasicEigenproblem::setProblem() returned with error.\n");
     }
-    std::cout << "DEBUG: Past set problem." << std::endl;
+    //std::cout << "DEBUG: Past set problem." << std::endl;
     // Set Eigensolver
     Teuchos::RCP<Anasazi::SolverManager<scalar_t, mvector_t, op_t>> solver;
 
@@ -787,15 +787,15 @@ namespace Zoltan2 {
     if (returnCode != Anasazi::Converged) {
       ++numfailed;
     }
-    std::cout << "DEBUG: calling getNumIters." << std::endl;
+    //std::cout << "DEBUG: calling getNumIters." << std::endl;
     iter = solver->getNumIters();
-    std::cout << "DEBUG: calling getTimers." << std::endl;
+    //std::cout << "DEBUG: calling getTimers." << std::endl;
     //solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
 
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
-    std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
+    //std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
     solution_t sol = problem->getSolution();
     eigenVectors_ = sol.Evecs;
     int numev = sol.numVecs;
