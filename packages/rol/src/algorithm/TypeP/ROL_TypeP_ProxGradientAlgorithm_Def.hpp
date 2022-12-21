@@ -88,7 +88,7 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   if (initProx_) {
     nobj.prox(*state_->iterateVec,x,state_->searchSize,ftol);
     state_->nprox++;
-    x.set(*state_->iterateVec); //revisit with option to do initial prox or not
+    x.set(*state_->iterateVec);
   }
   // Evaluate objective function
   sobj.update(x,UpdateType::Initial,state_->iter);
