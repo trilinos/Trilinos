@@ -140,7 +140,7 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
                                        std::ostream       &outStream ) {
   const Real one(1);
   // Initialize trust-region data
-  Ptr<Vector<Real>> px = x.clone(), s = x.clone();
+  Ptr<Vector<Real>> px = x.clone(), s = x.clone(), pxP = x.clone();
   initialize(x,g,sobj,nobj,*px,outStream);
   Real strial(0), ntrial(0), Ftrial(0), strialP(0), ntrialP(0), FtrialP(0);
   Real Qk(0), alphaP(0), tol(std::sqrt(ROL_EPSILON<Real>()));
@@ -195,11 +195,13 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
         // Previous value was acceptable
         sobj.update(*state_->iterateVec,UpdateType::Accept);
         nobj.update(*state_->iterateVec,UpdateType::Accept); 
-        // Increase search size
+        // Backup previous values to avoid recomputation
+        pxP->set(*state_->iterateVec);
         alphaP  = state_->searchSize;
         strialP = strial;
         ntrialP = ntrial; 
         FtrialP = Ftrial;
+        // Increase search size
         state_->searchSize *= rhoinc_;
         state_->searchSize  = std::min(state_->searchSize,maxAlpha_);
         // Compute proximal gradient step with new search size
@@ -230,15 +232,11 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
         }
       }
       if (Ftrial - state_->value > c1_*Qk || Ftrial > FtrialP) {
+        state_->iterateVec->set(*pxP);
         strial = strialP;
         ntrial = ntrialP; 
         Ftrial = FtrialP;
         state_->searchSize = alphaP;
-        // Recompute proximal gradient step
-        px->set(x);
-        px->axpy(-state_->searchSize,*state_->stepVec);
-        nobj.prox(*state_->iterateVec,*px,state_->searchSize,tol);
-        state_->nprox++;
         s->set(*state_->iterateVec);
         s->axpy(-one,x);
         accept = false;

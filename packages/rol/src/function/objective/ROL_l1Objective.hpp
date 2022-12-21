@@ -69,7 +69,7 @@ private:
 public:
 
   l1Objective(const Ptr<Vector<Real>> &weights)
-    : weights_(weights), shift_(weights->clone()) {
+    : weights_(weights), shift_(weights->dual().clone()) {
     shift_->zero();
     tmp_ = shift_->clone();
   }
@@ -83,8 +83,7 @@ public:
     tmp_->set(x);
     tmp_->axpy(static_cast<Real>(-1),*shift_);
     tmp_->applyUnary(Elementwise::AbsoluteValue<Real>());
-    Real val = weights_->apply(*tmp_);
-    return val;
+    return weights_->apply(*tmp_);
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {

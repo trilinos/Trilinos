@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     RealT tol = 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
-    list.sublist("General").set("Output Level",iprint);
+    list.sublist("General").set("Output Level",iprint+10);
     list.sublist("Step").set("Type","Line Search");
     list.sublist("Step").sublist("Line Search").set("Initial Step Size",1e0);
     list.sublist("Step").sublist("Line Search").set("Maximum Step Size",1e8);
