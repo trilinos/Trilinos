@@ -58,7 +58,7 @@ class ProxGradientAlgorithm : public TypeP::Algorithm<Real> {
 private:
   int maxit_;
   Real alpha0_, alpha0bnd_, rhodec_, rhoinc_, c1_, maxAlpha_, t0_;
-  bool useralpha_, usePrevAlpha_, useAdapt_, normAlpha_;
+  bool useralpha_, usePrevAlpha_, useAdapt_, normAlpha_, initProx_;
   int verbosity_;
   bool writeHeader_;
 

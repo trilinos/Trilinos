@@ -64,6 +64,7 @@ SpectralGradientAlgorithm<Real>::SpectralGradientAlgorithm(ParameterList &list) 
   rhodec_       = lslist.get("Backtracking Rate",                              1e-1);
   gamma_        = lslist.get("Sufficient Decrease Tolerance",                  1e-4);
   maxSize_      = lslist.get("Maximum Storage Size",                             10);
+  initProx_     = lslist.get("Apply Prox to Initial Guess",                   false);
   t0_           = list.sublist("Status Test").get("Gradient Scale"            , 1.0);
   verbosity_    = list.sublist("General").get("Output Level",                     0);
   writeHeader_  = verbosity_ > 2;
@@ -82,12 +83,15 @@ void SpectralGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   // Initialize data
   TypeP::Algorithm<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
-  nobj.prox(*state_->iterateVec,x,t0_,ftol); state_->nprox++;
-  x.set(*state_->iterateVec);
+  if (initProx_) {
+    nobj.prox(*state_->iterateVec,x,t0_,ftol); state_->nprox++;
+    x.set(*state_->iterateVec);
+  }
   sobj.update(x,UpdateType::Initial,state_->iter);
   state_->svalue = sobj.value(x,ftol); state_->nsval++;
   nobj.update(x,UpdateType::Initial,state_->iter);
   state_->nvalue = nobj.value(x,ftol); state_->nnval++;
+  state_->value  = state_->svalue + state_->nvalue;
   sobj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   dg.set(state_->gradientVec->dual());
   pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);

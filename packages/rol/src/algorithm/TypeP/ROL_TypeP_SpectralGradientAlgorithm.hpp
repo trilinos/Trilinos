@@ -58,6 +58,7 @@ class SpectralGradientAlgorithm : public TypeP::Algorithm<Real> {
 private:
   int maxit_, maxSize_;
   Real lambda_, lambdaMin_, lambdaMax_, sigma1_, sigma2_, rhodec_, gamma_, t0_;
+  bool initProx_;
   int verbosity_;
   bool writeHeader_;
 

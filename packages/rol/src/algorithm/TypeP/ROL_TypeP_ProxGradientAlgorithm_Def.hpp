@@ -64,6 +64,7 @@ ProxGradientAlgorithm<Real>::ProxGradientAlgorithm(ParameterList &list) {
   c1_           = lslist.get("Sufficient Decrease Tolerance",                  1e-4);
   maxAlpha_     = lslist.get("Maximum Step Size",                           alpha0_);
   useAdapt_     = lslist.get("Use Adaptive Step Size Selection",               true);
+  initProx_     = lslist.get("Apply Prox to Initial Guess",                   false);
   rhodec_       = lslist.sublist("Line-Search Method").get("Backtracking Rate", 0.5);
   rhoinc_       = lslist.sublist("Line-Search Method").get("Increase Rate"    , 2.0);
   t0_           = list.sublist("Status Test").get("Gradient Scale"            , 1.0);
@@ -84,9 +85,11 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   TypeP::Algorithm<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  nobj.prox(*state_->iterateVec,x,state_->searchSize,ftol);
-  state_->nprox++;
-  x.set(*state_->iterateVec); //revisit with option to do initial prox or not
+  if (initProx_) {
+    nobj.prox(*state_->iterateVec,x,state_->searchSize,ftol);
+    state_->nprox++;
+    x.set(*state_->iterateVec); //revisit with option to do initial prox or not
+  }
   // Evaluate objective function
   sobj.update(x,UpdateType::Initial,state_->iter);
   state_->svalue = sobj.value(x,ftol); 
