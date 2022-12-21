@@ -106,20 +106,17 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);
   state_->snorm = state_->stepVec->norm();
   state_->gnorm = state_->snorm / t0_;
-  // Compute initial step size as 2/L
-  // where L = 2|f(x+s) - f(x) - f'(x)s|/||s||^2
+  // Compute initial step size as 2/L, where L = 2|f(x+s)-f(x)-f'(x)s|/||s||^2
   // is a lower estimate of the Lipschitz constant of f
   if (!useralpha_) {
-    const Real two(2);
+    bool flag = maxAlpha_ == alpha0_;
     // Evaluate objective at Prox(x - t0 dg)
     sobj.update(px,UpdateType::Trial);
     Real snew = sobj.value(px,ftol); 
     sobj.update(x,UpdateType::Revert);
     state_->nsval++;
-    bool flag = maxAlpha_ == alpha0_;
     Real gs   = state_->gradientVec->apply(*state_->stepVec);
-    Real L    = two * std::abs(snew - state_->svalue - gs) / (state_->snorm * state_->snorm);
-    alpha0_   = two / L;
+    alpha0_   = (state_->snorm * state_->snorm) / std::abs(snew - state_->svalue - gs);
     alpha0_   = ((alpha0_ > alpha0bnd_) ? alpha0_ : one);
     if (flag) maxAlpha_ = alpha0_;
   }
