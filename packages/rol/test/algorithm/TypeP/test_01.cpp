@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     RealT tol = 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
-    list.sublist("General").set("Output Level",iprint+10);
+    list.sublist("General").set("Output Level",iprint);
     list.sublist("Step").set("Type","Line Search");
     list.sublist("Step").sublist("Line Search").set("Initial Step Size",1e0);
     list.sublist("Step").sublist("Line Search").set("Maximum Step Size",1e8);
@@ -143,6 +143,17 @@ int main(int argc, char *argv[]) {
 
     nobj = ROL::makePtr<ROL::l1Objective<RealT>>(wts,y);
     sobj = ROL::makePtr<QuadraticTypeP_Test01<RealT>>(dim);
+
+    // Check derivatives of smooth function
+    ROL::Ptr<ROL::Vector<RealT>> xd = sol->clone();
+    xd->randomize(-1.0,1.0);
+    ROL::Ptr<ROL::Vector<RealT>> yd = sol->clone();
+    yd->randomize(-1.0,1.0);
+    ROL::Ptr<ROL::Vector<RealT>> zd = sol->clone();
+    zd->randomize(-1.0,1.0);
+    sobj->checkGradient(*xd,*yd,true,*outStream);
+    sobj->checkHessVec(*xd,*yd,true,*outStream);
+    sobj->checkHessSym(*xd,*yd,*zd,true,*outStream);
 
     algo = ROL::makePtr<ROL::TypeP::ProxGradientAlgorithm<RealT>>(list);
     algo->run(*sol,*sobj,*nobj,*outStream);

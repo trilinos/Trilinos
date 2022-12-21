@@ -100,7 +100,8 @@ public:
 
   void prox( Vector<Real> &Pv, const Vector<Real> &v, Real t, Real &tol){
     Pv.set(*shift_);
-    Pv.axpy(static_cast<Real>(-1)/t, v);
+    Pv.axpy(static_cast<Real>(-1), v);
+    Pv.scale(static_cast<Real>(1) / t);
     Pv.applyBinary(psb_, *weights_);
     Pv.scale(t);
     Pv.plus(v);

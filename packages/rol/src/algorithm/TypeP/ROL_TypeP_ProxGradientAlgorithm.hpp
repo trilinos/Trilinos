@@ -69,7 +69,8 @@ private:
                   const Vector<Real>    &g,
                   Objective<Real>       &sobj,
                   Objective<Real>       &nobj,
-									Vector<Real>          &px,
+                  Vector<Real>          &px,
+                  Vector<Real>          &dg,
                   std::ostream &outStream = std::cout); 
 public:
 
@@ -79,7 +80,7 @@ public:
   void run( Vector<Real>          &x,
             const Vector<Real>    &g, 
             Objective<Real>       &sobj,
-						Objective<Real>       &nobj,
+            Objective<Real>       &nobj,
             std::ostream          &outStream = std::cout) override;
 
   void writeHeader( std::ostream& os ) const override;
@@ -87,6 +88,16 @@ public:
   void writeName( std::ostream& os ) const override;
 
   void writeOutput( std::ostream& os, bool write_header = false ) const override;
+
+private:
+
+  void pgstep(Vector<Real>       &pgiter, // pgiter = Prox(x - t dg)
+              Vector<Real>       &pgstep, // pgstep = pgiter - x
+              Objective<Real>    &nobj,   // nobj   = nonsmooth objective
+              const Vector<Real> &x,      // x      = current iterate
+              const Vector<Real> &dg,     // dg     = dual of current gradient
+              Real                t,      // t      = prox parameter
+              Real               &tol) const;
 
 }; // class ROL::TypeP::GradientAlgorithm
 
