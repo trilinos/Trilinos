@@ -62,7 +62,7 @@ class StkCompatibleVersion
 
     int get_global_max_version() const { return m_globalMaxVersion; }
 
-    void set_version(unsigned int version)
+    void set_version_for_testing(unsigned int version)
     {
       set_version_impl(MPI_COMM_WORLD, version);
     }
@@ -242,7 +242,7 @@ namespace impl {
 void set_coupling_version(int version)
 {
 #ifdef STK_HAS_MPI
-  get_stk_coupling_version().set_version(static_cast<unsigned int>(version));
+  get_stk_coupling_version().set_version_for_testing(static_cast<unsigned int>(version));
 #endif
 }
 

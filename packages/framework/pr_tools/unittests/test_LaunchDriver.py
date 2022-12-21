@@ -27,34 +27,19 @@ class Test_LaunchDriver(unittest.TestCase):
 
     ## Test LaunchDriver methods
     def testUnitGetLaunchEnv(self):
-      env = ld.get_launch_env(self.build_name, "weaver")
-      self.assertEqual(env, "env Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE ")
-
-      env = ld.get_launch_env(self.build_name, "ats2")
-      self.assertEqual(env, "env Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE ")
-
-      env = ld.get_launch_env(self.build_name+"_rdc", "weaver")
-      self.assertEqual(env, "env TRILINOS_MAX_CORES=10 Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE ")
+      env = ld.get_launch_env(self.build_name+"_rdc", "dne")
+      self.assertEqual(env, "env TRILINOS_MAX_CORES=96 ")
 
       env = ld.get_launch_env(self.build_name, "dne")
       self.assertEqual(env, "")
 
 
     def testUnitGetLaunchCmd(self):
-      cmd = ld.get_launch_cmd(self.build_name, "weaver")
-      self.assertEqual(cmd, "bsub -Is -J " + self.build_name + " -W 12:00 ")
-
-      cmd = ld.get_launch_cmd(self.build_name, "ats2")
-      self.assertEqual(cmd, "bsub -Is -J " + self.build_name + " -W 12:00 ")
-
       cmd = ld.get_launch_cmd(self.build_name, "dne")
       self.assertEqual(cmd, " ")
 
 
     def testUnitGetDriverArgs(self):
-      args = ld.get_driver_args("ats2")
-      self.assertEqual(args, " --on_ats2")
-
       args = ld.get_driver_args("dne1")
       self.assertEqual(args, " --on_dne1")
 

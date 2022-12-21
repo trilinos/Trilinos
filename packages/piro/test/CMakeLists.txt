@@ -13,6 +13,8 @@ IF (Piro_ENABLE_NOX)
     Main_ThyraSolver_Tpetra.cpp
     MockModelEval_A_Tpetra.cpp
     MockModelEval_A_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -32,6 +34,8 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A_Tpetra.hpp
     MockModelEval_B_Tpetra.cpp
     MockModelEval_B_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -98,7 +102,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
 )
 
 
-IF (Piro_ENABLE_Epetra)
+IF (PIRO_HAVE_EPETRA_STACK)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnitTests
@@ -321,4 +325,4 @@ IF (Piro_ENABLE_Epetra)
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver UnitTests NOXSolver_UnitTests
   )
 
-ENDIF(Piro_ENABLE_Epetra)
+ENDIF(PIRO_HAVE_EPETRA_STACK)

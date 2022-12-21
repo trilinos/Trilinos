@@ -136,9 +136,6 @@ private:
     void reset_undeleted_entity_states_to_unchanged();
     void ensure_meta_data_is_committed();
 
-    bool internal_resolve_node_sharing(modification_optimization opt);
-    bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
-
     stk::mesh::BulkData &m_bulkData;
     std::vector<stk::mesh::EntityState> m_entity_states;
     DeletedEntityCache m_deleted_entity_cache;

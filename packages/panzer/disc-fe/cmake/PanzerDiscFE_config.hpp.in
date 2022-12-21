@@ -4,6 +4,7 @@
 #include "PanzerCore_config.hpp"
 #include "PanzerDofMgr_config.hpp"
 
+#cmakedefine PANZER_HAVE_EPETRA_STACK
 #cmakedefine Panzer_BUILD_PAPI_SUPPORT
 #cmakedefine Panzer_BUILD_HESSIAN_SUPPORT
 #cmakedefine PANZER_HAVE_CAMAL

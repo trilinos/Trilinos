@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -50,16 +50,12 @@
 #include "Teko_InverseFactory.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
 #include "Teko_BlockUpperTriInverseOp.hpp"
+#include <stdexcept>
+#ifdef TEKO_HAVE_EPETRA
 #include "Teko_DiagonalPreconditionerFactory.hpp"
+#endif
 
 #include "Teuchos_Time.hpp"
-#include "Epetra_FECrsGraph.h"
-#include "Epetra_FECrsMatrix.h"
-#include "EpetraExt_PointToBlockDiagPermute.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "Thyra_EpetraOperatorWrapper.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-
 
 using Teuchos::RCP;
 
@@ -94,7 +90,7 @@ LinearOp SIMPLEPreconditionerFactory
 
    int rows = blockRowCount(blockOp);
    int cols = blockColCount(blockOp);
- 
+
    TEUCHOS_ASSERT(rows==2); // sanity checks
    TEUCHOS_ASSERT(cols==2);
 
@@ -123,11 +119,12 @@ LinearOp SIMPLEPreconditionerFactory
       buildExplicitSchurComplement = false;
    }
    else if(fInverseType_==BlkDiag) {
+#ifdef TEKO_HAVE_EPETRA
      // Block diagonal approximation for H
      DiagonalPreconditionerFactory Hfact;
      DiagonalPrecondState Hstate;
-     Hfact.initializeFromParameterList(BlkDiagList_);           
-     H = Hfact.buildPreconditionerOperator(matF,Hstate); 
+     Hfact.initializeFromParameterList(BlkDiagList_);
+     H = Hfact.buildPreconditionerOperator(matF,Hstate);
 
 /*
      // Get a FECrsMarix out of the BDP
@@ -135,8 +132,13 @@ LinearOp SIMPLEPreconditionerFactory
      H=Thyra::epetraLinearOp(Hcrs);
 */
 
-     buildExplicitSchurComplement = true; // NTS: Do I need this? 
+     buildExplicitSchurComplement = true; // NTS: Do I need this?
                                           // Answer - no, but it is documenting whats going on here.
+#else
+     throw std::logic_error("SIMPLEPreconditionerFactory fInverseType_ == "
+                            "BlkDiag but EPETRA is turned off!");
+#endif
+
    }
    else {
       // get generic diagonal
@@ -180,15 +182,15 @@ LinearOp SIMPLEPreconditionerFactory
    else {
       // build an implicit Schur complement
       HBt = multiply(H,Bt);
-      
+
       hatS = add(C,scale(-1.0,multiply(B,HBt)));
    }
 
-   // build the inverse for F 
+   // build the inverse for F
    ModifiableLinearOp & invF = state.getModifiableOp("invF");
    if(invF==Teuchos::null)
       invF = buildInverse(*invVelFactory_,F);
-   else 
+   else
       rebuildInverse(*invVelFactory_,F,invF);
 
    // build the approximate Schur complement
@@ -231,7 +233,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    useMass_ = false;
    customHFactory_ = Teuchos::null;
    fInverseType_ = Diagonal;
-  
+
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
    alpha_ = 1.0;
@@ -241,7 +243,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       invStr = pl.get<std::string>("Inverse Type");
    if(pl.isParameter("Inverse Velocity Type"))
      invVStr = pl.get<std::string>("Inverse Velocity Type");
-   if(pl.isParameter("Inverse Pressure Type")) 
+   if(pl.isParameter("Inverse Pressure Type"))
      invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Alpha"))
      alpha_ = pl.get<double>("Alpha");
@@ -255,7 +257,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 
       // Grab the sublist if we're using the block diagonal
       if(fInverseType_==BlkDiag)
-	BlkDiagList_=pl.sublist("H options");      
+	BlkDiagList_=pl.sublist("H options");
    }
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
@@ -287,20 +289,20 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       invPFact = invLib->getInverseFactory(invPStr);
 
    // based on parameter type build a strategy
-   invVelFactory_ = invVFact; 
+   invVelFactory_ = invVFact;
    invPrsFactory_ = invPFact;
 
    if(useMass_) {
       Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
       rh->preRequest<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
-      Teko::LinearOp mass 
+      Teko::LinearOp mass
             = rh->request<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
       setMassMatrix(mass);
    }
 }
 
 //! For assiting in construction of the preconditioner
-Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedParameters() const 
+Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedParameters() const
 {
    Teuchos::RCP<Teuchos::ParameterList> result;
    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
@@ -338,11 +340,11 @@ Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedPa
 }
 
 //! For assiting in construction of the preconditioner
-bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
    Teko_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
    bool result = true;
- 
+
    // update requested parameters in solvers
    result &= invVelFactory_->updateRequestedParameters(pl);
    result &= invPrsFactory_->updateRequestedParameters(pl);

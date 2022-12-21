@@ -17,7 +17,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -26,6 +26,8 @@ struct CmdLineArgs {
   int blockSize;
   int numIters;
   double tol;
+  int nx;
+  int lpp;
 };
 
 // Read in values of command-line arguments.
@@ -44,6 +46,8 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("blockSize", &args.blockSize, "Size of block to use");
   cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
+  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
+  cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
   auto result = cmdp.parse (argc, argv);
   return result == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL;
 }
@@ -78,13 +82,12 @@ static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > BuildMatrix(Teuchos::Parameter
   using CrsMatrixWrap = Xpetra::CrsMatrixWrap<SC,LO,GO,NO>;
   using MapFactory = Xpetra::MapFactory<LO,GO,NO>;
   using MultiVector = Xpetra::MultiVector<SC,LO,GO,NO>;
-
-
+  
   GO nx,ny,nz;
   nx = ny = nz = 5;
-  nx = matrixList.get("nx",nx);
-  ny = matrixList.get("ny",ny);
-  nz = matrixList.get("nz",nz);
+  nx = matrixList.get("nx", nx);
+  ny = matrixList.get("ny", ny);
+  nz = matrixList.get("nz", nz);
   
   std::string matrixType = matrixList.get("matrixType","Laplace1D");
   GO numGlobalElements; //global_size_t
@@ -191,6 +194,7 @@ main (int argc, char* argv[])
   using LO = typename MV::local_ordinal_type;
   using GO = typename MV::global_ordinal_type;
   using NO = typename MV::node_type;
+  using MT = Teuchos::ScalarTraits<SC>::magnitudeType; 
 
   typedef Tpetra::Vector<LO,LO,GO,NO> IV;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
@@ -206,12 +210,14 @@ main (int argc, char* argv[])
 
   Teuchos::TimeMonitor totalTimeMon (*totalTime);
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+  bool rank0 = comm->getRank() == 0;
+
 
   // Get command-line arguments.
   CmdLineArgs args;
   const bool gotCmdLineArgs = getCmdLineArgs (args, argc, argv);
   if (! gotCmdLineArgs) {
-    if(comm->getRank () == 0) cerr << "Failed to get command-line arguments!" << endl;
+    if(rank0) cerr << "Failed to get command-line arguments!" << endl;
     return EXIT_FAILURE;
   }
 
@@ -230,23 +236,23 @@ main (int argc, char* argv[])
 #endif
   if(inline_matrix == false) {
     if (args.mapFilename == "") {
-      if (comm->getRank () == 0) cerr << "Must specify filename for loading the map of the right-hand side(s)!" << endl;
+      if (rank0) cerr << "Must specify filename for loading the map of the right-hand side(s)!" << endl;
       return EXIT_FAILURE;
     }
     if (args.matrixFilename == "") {
-      if (comm->getRank () == 0) cerr << "Must specify sparse matrix filename!" << endl;
+      if (rank0) cerr << "Must specify sparse matrix filename!" << endl;
       return EXIT_FAILURE;
     }
     if (args.rhsFilename == "") {
-      if (comm->getRank () == 0) cerr << "Must specify filename for loading right-hand side(s)!" << endl;
+      if (rank0) cerr << "Must specify filename for loading right-hand side(s)!" << endl;
       return EXIT_FAILURE;
     }
     if (args.lineFilename == "") {
-      if (comm->getRank () == 0) cerr << "Must specify filename for loading line information!" << endl;
+      if (rank0) cerr << "Must specify filename for loading line information!" << endl;
       return EXIT_FAILURE;    
     }
     if (args.blockSize <= 0) {
-      if (comm->getRank () == 0) cerr << "Must specify block size!" << endl;
+      if (rank0) cerr << "Must specify block size!" << endl;
       return EXIT_FAILURE;    
     }
   }
@@ -261,26 +267,31 @@ main (int argc, char* argv[])
     // matrix
     Teuchos::ParameterList plist;
     plist.set("matrixType","Laplace1D");    
-    plist.set("nx",(GO)172);
+    plist.set("nx", (GO)args.nx*comm->getSize());
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
 
     //rhs 
     B = rcp(new MV(Ablock->getRangeMap(),1));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    // line info (random lines of length basically 4 nodes)
-    line_info = rcp(new IV(Ablock->getRangeMap()));
+    // line info (lpp lines per proc)
+    int line_length = std::max(1, args.nx  / args.lpp);
+    line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
     for(LO i=0; i<(LO)line_ids.size(); i++)
-      line_ids[i] = i / 12;     
+      line_ids[i] = i / line_length;     
+
+    if(rank0)
+      std::cout<<"Using block_size = "<<args.blockSize<<" # lines per proc= "<<args.lpp<<" and average line length = "<<line_length<<std::endl;
   }
   else
 #endif 
     {
       // Read map
+      if(rank0) std::cout<<"Reading map file..."<<std::endl;
       RCP<const map_type> point_map = reader_type::readMapFile(args.mapFilename, comm);
       if(point_map.is_null()) {
-        if (comm->getRank () == 0) {
+        if (rank0) {
           cerr << "Failed to load row map from file "
             "\"" << args.mapFilename << "\"!" << endl;
         }
@@ -288,10 +299,11 @@ main (int argc, char* argv[])
       }
 
       // Read matrix
+      if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
       A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
       if (A.is_null()) {
-        if (comm->getRank () == 0) {
+        if (rank0) {
           cerr << "Failed to load sparse matrix A from file "
             "\"" << args.matrixFilename << "\"!" << endl;
         }
@@ -299,41 +311,65 @@ main (int argc, char* argv[])
       }
 
       // Read right-hand side vector(s) B from Matrix Market file.
-      RCP<MV> B = reader_type::readDenseFile(args.rhsFilename, comm, point_map);
+      if(rank0) std::cout<<"Reading rhs file..."<<std::endl;
+      B = reader_type::readDenseFile(args.rhsFilename, comm, point_map);
       if (B.is_null()) {
-        if (comm->getRank () == 0) {
+        if (rank0) {
           cerr << "Failed to load right-hand side vector(s) from file \""
                << args.rhsFilename << "\"!" << endl;
         }
         return EXIT_FAILURE;
       }
       
+      // Convert Matrix to Block
+      if(rank0) std::cout<<"Converting A from point to block..."<<std::endl;
+      Ablock = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*A, args.blockSize);
+
+
       // Read line information vector
-      // We assume the vector contains the local line ids for each dof.  
-      RCP<IV> line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, point_map);
+      // We assume the vector contains the local line ids for each node
+      if(rank0) std::cout<<"Reading line info file..."<<std::endl;
+      RCP<const map_type> block_map = Ablock->getRowMap();
+      line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, block_map);
       if (line_info.is_null ()) {
-        if (comm->getRank () == 0) {
+        if (rank0) {
           cerr << "Failed to load line_info from file \""
                << args.lineFilename << "\"!" << endl;
         }
         return EXIT_FAILURE;
       }
-      
-      // Convert Matrix to Block
-      Ablock = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*A, args.blockSize);
+
     }
 
 
-    // Initial Guess
-    X = rcp(new MV(Ablock->getRangeMap(),1));
-    X->putScalar(Teuchos::ScalarTraits<SC>::zero());
+  
+  if(rank0) {
+    size_t numDomains = Ablock->getDomainMap()->getGlobalNumElements();
+    size_t numRows = Ablock->getRowMap()->getGlobalNumElements();
+    std::cout<<"Block Matrix has "<<numDomains<<" domains and "<<numRows
+             << " rows with an implied block size of "<< ((double)numDomains / (double)numRows)<<std::endl;
+  }
 
 
+  // Initial Guess
+  if(rank0) std::cout<<"Allocating initial guess..."<<std::endl;
+  X = rcp(new MV(Ablock->getRangeMap(),1));
+  X->putScalar(Teuchos::ScalarTraits<SC>::zero());
+    
+  // Initial diagnostics
+  Teuchos::Array<MT> normx(1),normb(1); 
+  X->norm2(normx);
+  B->norm2(normb);
+  if(rank0) {
+    std::cout<<"Initial norm X = "<<normx[0]<<" norm B = "<<normb[0]<<std::endl;
+  }
 
-  // Convert line_info vector to parts arrays, taking into account that the line_info vector numbers dofs, not 
-  // nodes
+
+  // Convert line_info vector to parts arrays
+  // NOTE: Both of these needs to be nodes-leve guys, not parts-level.
   Teuchos::Array<Teuchos::Array<LO> > parts;
   {
+    if(rank0) std::cout<<"Converting line info to parts..."<<std::endl;
     // Number of lines will vary per proc, so we need to count these
     auto line_ids = line_info->get1dView();
     LO max_line_id = 0;
@@ -347,21 +383,32 @@ main (int argc, char* argv[])
 
 
     // Assume contiguous blocks here
-    for(LO i=0; i<(LO)line_ids.size(); i+=args.blockSize) {
-      LO block_lid = i / args.blockSize;
+    for(LO i=0; i<(LO)line_ids.size(); i++) {
+      LO block_lid = i;
       LO block_num = line_ids[i];
       parts[block_num].push_back(block_lid);     
     }      
+    //    std::cout<<"On "<<line_ids.size()<<" local DOFs, detected "<<num_local_lines<<" lines"<<std::endl;
   }
 
+  // Preposition the matrix on device by letting a matvec ensure a transfer
+  {
+    RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(),1));
+    Ablock->apply(*X,*temp);
+  }
 
   // Create Ifpack2 preconditioner.
+  if(rank0) std::cout<<"Creating preconditioner..."<<std::endl;
   RCP<BTDC> precond;
 
   {
     Teuchos::TimeMonitor precSetupTimeMon (*precSetupTime);
     precond = rcp(new BTDC(Ablock,parts));
+
+    if(rank0) std::cout<<"Initializing preconditioner..."<<std::endl;
     precond->initialize ();
+
+    if(rank0) std::cout<<"Computing preconditioner..."<<std::endl;
     precond->compute ();
   }
 
@@ -373,7 +420,8 @@ main (int argc, char* argv[])
   ap.checkToleranceEvery  = 1;
  
 
-  // Solver
+  // Solve
+  if(rank0) std::cout<<"Running solve..."<<std::endl;
   int nits;
   {
     Teuchos::TimeMonitor solveTimeMon (*solveTime);
@@ -383,8 +431,17 @@ main (int argc, char* argv[])
   auto norm0 = precond->getNorms0();
   auto normF = precond->getNormsFinal();
 
-  if(!comm->getRank())
+  if(rank0) {
     std::cout<<"Solver run for "<<nits<<" iterations (asked for "<<args.numIters<<") with residual reduction "<<normF/norm0<<std::endl;
+    std::cout<<"  Norm0 = "<<norm0<<" NormF = "<<normF<<std::endl;
+  }
+
+
+  X->norm2(normx);
+  B->norm2(normb);
+  if(rank0) {
+    std::cout<<"Final norm X = "<<normx[0]<<" norm B = "<<normb[0]<<std::endl;
+  }
 
 
   // Report timings.

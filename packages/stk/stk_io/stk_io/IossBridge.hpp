@@ -137,8 +137,6 @@ struct FieldNameToPartLess
 
 typedef std::vector<FieldNameToPart> FieldNameToPartVector;
 
-stk::mesh::Part *getPart(const stk::mesh::MetaData& meta_data, const std::string& name);
-
 bool is_valid_for_output(stk::io::OutputParams &params, const stk::mesh::Part &part);
 void get_selected_nodes(OutputParams &params,
                         const stk::mesh::Selector &selector,

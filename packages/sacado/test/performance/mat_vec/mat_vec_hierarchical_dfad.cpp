@@ -167,7 +167,7 @@ do_time_fad_hierarchical_dfad(const size_t m, const size_t n, const size_t p,
 #else
   const bool is_cuda = false;
 #endif
-  const size_t concurrency = execution_space::concurrency();
+  const size_t concurrency = execution_space().concurrency();
   const size_t warp_dim = is_cuda ? 32 : 1;
   const size_t block_size = p*sizeof(double);
   const size_t nkernels = concurrency / warp_dim;

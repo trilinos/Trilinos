@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
       typedef Kokkos::Threads Device;
 
       std::cout << std::endl
-                << "Threads performance with " << Kokkos::Threads::concurrency()
+                << "Threads performance with " << Kokkos::Threads().concurrency()
                 << " threads:" << std::endl;
 
       performance_test_driver<Device>(
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
       typedef Kokkos::OpenMP Device;
 
       std::cout << std::endl
-                << "OpenMP performance with " << Kokkos::OpenMP::concurrency()
+                << "OpenMP performance with " << Kokkos::OpenMP().concurrency()
                 << " threads:" << std::endl;
 
       performance_test_driver<Device>(

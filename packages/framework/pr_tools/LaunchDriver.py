@@ -29,16 +29,13 @@ def get_launch_env(build_name : str, system : str):
   """
   Gets the launch environment based on the detected system.
   This is an early environment that's required for running the driver.
-  
+
   Returns:
       str: The environment used to launch the driver.
   """
   env = ""
   if "_rdc" in build_name:
-      env += " TRILINOS_MAX_CORES=10"
-
-  if system == "weaver" or system == "ats2":
-      env += " Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE"
+      env += " TRILINOS_MAX_CORES=96"
 
   if env == "":
       return ""
@@ -49,14 +46,11 @@ def get_launch_env(build_name : str, system : str):
 def get_launch_cmd(build_name : str, system : str):
   """
   Gets the launch command based on the detected system.
-  
+
   Returns:
       str: The command used to launch the driver.
   """
-  if system == "weaver" or system == "ats2":
-    cmd = "bsub -Is -J " + build_name + " -W 12:00"
-  else:
-    cmd = ""  
+  cmd = ""
 
   return cmd + " "
 
@@ -64,10 +58,10 @@ def get_launch_cmd(build_name : str, system : str):
 def get_driver_args(system : str):
   """
   Gets the driver arguments based on the detected system.
-  
+
   Returns:
       str: The arguments passed to the driver.
-  """  
+  """
   return " " + "--on_" + system
 
 
@@ -112,4 +106,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1 :])
-

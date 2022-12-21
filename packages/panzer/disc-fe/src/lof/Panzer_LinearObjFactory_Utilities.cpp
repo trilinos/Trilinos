@@ -7,7 +7,7 @@
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 
@@ -46,7 +46,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   typedef BlockedDOFManager<int,panzer::GlobalOrdinal>   BlockedTpetraUGI;
 */
   typedef TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>        TpetraLOF;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef BlockedEpetraLinearObjFactory<panzer::Traits,int>                  BlockedEpetraLOF;
 #endif
   typedef BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> BlockedTpetraLOF;
@@ -74,7 +74,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
     return rcp(new TpetraLOF(mpiComm,rangeUGI,domainUGI));
   }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   Ptr<const BlockedEpetraLOF> blk_epetra_lof = ptr_dynamic_cast<const BlockedEpetraLOF>(ptrFromRef(lof));
   if(blk_epetra_lof!=null) {
     auto rangeUGI  = (rUgi==null ? blk_epetra_lof->getRangeGlobalIndexer() : rUgi);

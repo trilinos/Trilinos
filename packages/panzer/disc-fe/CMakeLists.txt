@@ -1,5 +1,18 @@
 TRIBITS_SUBPACKAGE(DiscFE)
 
+# Optional Epetra Stack dependency
+###############################
+COMBINED_OPTION( PANZER_HAVE_EPETRA_STACK
+  DEP_OPTIONS_NAMES PanzerDiscFE_ENABLE_ThyraEpetraAdapters
+                    PanzerDiscFE_ENABLE_ThyraEpetraExtAdapters
+                    PanzerDiscFE_ENABLE_Epetra
+                    PanzerDiscFE_ENABLE_EpetraExt
+  DOCSTR "Enabled support for Epetra in PanzerDiscFE and downstream panzer subpackages."
+         " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters and ThyraEpetraExtAdapters are"
+         " enabled, otherwise defaults to OFF."
+  )
+MESSAGE(STATUS "Enable Epetra Support in DiscFE: ${PANZER_HAVE_EPETRA_STACK}")
+
 # Optional CAMAL TPL dependency
 ###############################
 SET(PANZER_HAVE_CAMAL ${${PARENT_PACKAGE_NAME}_ENABLE_CAMAL} )
@@ -24,9 +37,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
-   MESSAGE("-- Hessian support On")
+   MESSAGE("-- Hessian support ON")
 ELSE()
-   MESSAGE("-- Hessian support Off")
+   MESSAGE("-- Hessian support OFF")
 ENDIF()
 
 ADD_SUBDIRECTORY(src)

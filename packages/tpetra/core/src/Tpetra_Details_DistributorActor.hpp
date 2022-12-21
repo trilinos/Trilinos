@@ -334,6 +334,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
             exports, plan.getStartsTo()[p]*numPackets, plan.getLengthsTo()[p]*numPackets);
 
         if (sendType == Details::DISTRIBUTOR_ISEND) {
+          // NOTE: This looks very similar to the tmpSend above, but removing
+          // tmpSendBuf and uses tmpSend leads to a performance hit on Arm
+          // SerialNode builds
           exports_view_type tmpSendBuf =
             subview_offset (exports, plan.getStartsTo()[p] * numPackets,
                 plan.getLengthsTo()[p] * numPackets);

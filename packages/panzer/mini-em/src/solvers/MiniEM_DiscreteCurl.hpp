@@ -6,7 +6,9 @@
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 
 class CurlRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
 private:
@@ -57,7 +59,9 @@ void addDiscreteCurlToRequestHandler(
   typedef panzer::GlobalOrdinal GlobalOrdinal;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinal> epetraBlockedLinObjFactory;
+#endif
   typedef panzer::GlobalIndexer UGI;
   typedef PHX::Device DeviceSpace;
   typedef Kokkos::HostSpace HostSpace;
@@ -70,7 +74,9 @@ void addDiscreteCurlToRequestHandler(
 
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof  = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
+#ifdef PANZER_HAVE_EPETRA_STACK
   RCP<const epetraBlockedLinObjFactory > eblof  = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
+#endif
   if (tblof != Teuchos::null) {
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> matrix;
@@ -165,15 +171,14 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
-      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    shards::CellTopology sub_topologies[hdivCardinality];
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
         dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
-        sub_topologies(iface) = sub_topology;
+        sub_topologies[iface] = sub_topology;
       }
     }
 
@@ -217,7 +222,7 @@ void addDiscreteCurlToRequestHandler(
         if(dim==3){
           elemOrts(0).getFaceOrientation(fOrt.data(),hdivCardinality);
           for(int iface = 0; iface < hdivCardinality; iface++){
-            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
+            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies[iface], fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
               dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
@@ -289,6 +294,7 @@ void addDiscreteCurlToRequestHandler(
     // add curl callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new CurlRequestCallback(thyra_curl)));
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   }  else if (eblof != Teuchos::null) {
 
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
@@ -384,15 +390,14 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
-      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    shards::CellTopology sub_topologies[hdivCardinality];
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
         dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
-        sub_topologies(iface) = sub_topology;
+        sub_topologies[iface] = sub_topology;
       }
     }
 
@@ -424,7 +429,7 @@ void addDiscreteCurlToRequestHandler(
         if(dim==3){
           elemOrts(0).getFaceOrientation(fOrt.data(),hdivCardinality);
           for(int iface = 0; iface < hdivCardinality; iface++){
-            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
+            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies[iface], fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
               dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
@@ -508,7 +513,7 @@ void addDiscreteCurlToRequestHandler(
 
     // add curl callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new CurlRequestCallback(thyra_curl)));
-
+#endif
   } else
     TEUCHOS_ASSERT(false);
 }

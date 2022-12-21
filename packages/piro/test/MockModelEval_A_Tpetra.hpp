@@ -49,6 +49,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "MatrixBased_LOWS.hpp"
 
 
 using LO = Tpetra::Map<>::local_ordinal_type;
@@ -84,7 +85,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null);
 
   //@}
 
@@ -184,6 +185,9 @@ class MockModelEval_A_Tpetra
 
    //whether to compute the adjoint model
    bool adjointModel;
+
+   //Problem parameter list
+   Teuchos::RCP<Teuchos::ParameterList> probList_;
 
 };
 

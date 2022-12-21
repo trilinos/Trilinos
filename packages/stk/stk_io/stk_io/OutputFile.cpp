@@ -199,8 +199,10 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
 
     std::vector<stk::mesh::Entity> entities;
 
-    stk::io::OutputParams params(*m_region, bulk_data);
-    setup_output_params(params);
+    if (m_outputParams == nullptr){
+      m_outputParams = std::make_shared<stk::io::OutputParams>(*m_region, bulk_data);
+      setup_output_params(*m_outputParams);
+    }
 
     Ioss::GroupingEntity *ge = m_region->get_entity(name);
     ThrowErrorMsgIf (ge == nullptr,
@@ -213,7 +215,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
     } else if(type == Ioss::NODESET) {
         part_type = stk::topology::NODE_RANK;
     } else if(type == Ioss::ELEMENTBLOCK) {
-        part_type = params.has_skin_mesh_selector() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
+        part_type = m_outputParams->has_skin_mesh_selector() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
     } else if(type == Ioss::SIDESET) {
         part = meta.get_part(name);
         ThrowRequireMsg(nullptr != part, "Could not find a sideset with name: " + name);
@@ -231,15 +233,15 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
     }
 
     if(type == Ioss::SIDEBLOCK) {
-        Ioss::Region &io_region = params.io_region();
+        Ioss::Region &io_region = m_outputParams->io_region();
         bool ints64bit = db_api_int_size(&io_region) == 8;
         if (ints64bit) {
-            internal_fill_output_entities_for_sideblock<int64_t>(params, ge, part, entities);
+            internal_fill_output_entities_for_sideblock<int64_t>(*m_outputParams, ge, part, entities);
         } else {
-            internal_fill_output_entities_for_sideblock<int>(params, ge, part, entities);
+            internal_fill_output_entities_for_sideblock<int>(*m_outputParams, ge, part, entities);
         }
     } else {
-        get_output_entity_list(ge, part_type, params, entities);
+        get_output_entity_list(ge, part_type, *m_outputParams, entities);
     }
 
     return entities;

@@ -305,7 +305,7 @@ using ConnectivityOrdinal = uint32_t;
 constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = ~0U;
 #endif
 
-enum Permutation
+enum Permutation : unsigned char
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128

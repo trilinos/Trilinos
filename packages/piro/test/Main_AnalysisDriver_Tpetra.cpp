@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
         const RCP<Teuchos::ParameterList> appParams = rcp(new Teuchos::ParameterList("Application Parameters"));
         Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(appParams.get()));
 
+        const RCP<Teuchos::ParameterList>  probParams = Teuchos::sublist(appParams,"Problem");
         const RCP<Teuchos::ParameterList>  piroParams = Teuchos::sublist(appParams,"Piro");
  
         bool boundConstrained = piroParams->sublist("Analysis").sublist("ROL").get<bool>("Bound Constrained");
@@ -135,7 +136,7 @@ int main(int argc, char *argv[]) {
         RCP<Thyra::ModelEvaluator<double>> model, adjointModel(Teuchos::null);
         if (mockModel=="MockModelEval_A_Tpetra") {
           if(boundConstrained) {
-            model = rcp(new MockModelEval_A_Tpetra(appComm));
+            model = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams));
             if(explicitAdjointME)
               adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
             modelName = "A";
@@ -143,7 +144,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
         else {//if (mockModel=="MockModelEval_B_Tpetra") 
-          model = rcp(new MockModelEval_B_Tpetra(appComm));
+          model = rcp(new MockModelEval_B_Tpetra(appComm,false,probParams));
           if(explicitAdjointME)
             adjointModel = rcp(new MockModelEval_B_Tpetra(appComm,true));
           modelName = "B";

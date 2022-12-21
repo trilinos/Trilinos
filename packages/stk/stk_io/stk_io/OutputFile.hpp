@@ -97,6 +97,7 @@ public:
       m_enableEdgeIO(false),
       m_dbPurpose(db_type),
       m_inputRegion(input_region),
+      m_outputParams(nullptr),
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
       m_skinMeshSelector(nullptr),
@@ -127,6 +128,7 @@ public:
       m_enableEdgeIO(false),
       m_dbPurpose(db_type),
       m_inputRegion(input_region),
+      m_outputParams(nullptr),
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
       m_skinMeshSelector(nullptr),
@@ -255,6 +257,7 @@ private:
     bool m_enableEdgeIO;
     DatabasePurpose m_dbPurpose;
     const Ioss::Region* m_inputRegion;
+    std::shared_ptr<stk::io::OutputParams> m_outputParams;
     Teuchos::RCP<stk::mesh::Selector> m_subsetSelector;
     Teuchos::RCP<stk::mesh::Selector> m_sharedSelector;
     Teuchos::RCP<stk::mesh::Selector> m_outputSelector[stk::topology::ELEM_RANK+1];
