@@ -164,7 +164,6 @@ void runGeneralSolveCriteriaBelosStatusTestCase(
   using Teuchos::toString;
 
   typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
 
   // A) Set up the linear system
   
