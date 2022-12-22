@@ -679,7 +679,7 @@ CreateReducedProblem(
     mv_type singletonUpdates(A_unfiltered_->getRowMap(), numVecs, false);
     A_unfiltered_->apply(OverlappingY, singletonUpdates);
     auto updatesView = singletonUpdates.getLocalViewDevice(Tpetra::Access::ReadOnly);
-    auto revperm = reverseperm_.view_device();
+    // auto revperm = reverseperm_.view_device();
     Kokkos::parallel_for(policy_2d_type({0, 0}, {(local_ordinal_type) reducedB.extent(0), numVecs}),
       KOKKOS_LAMBDA(local_ordinal_type row, local_ordinal_type col)
       {

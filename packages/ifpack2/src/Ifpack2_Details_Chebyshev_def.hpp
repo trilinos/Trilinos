@@ -1141,8 +1141,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
-      typedef Kokkos::Details::ArithTraits<IST> STS;
-      typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+      typedef Kokkos::Details::ArithTraits<IST> ATS;
+      typedef Kokkos::Details::ArithTraits<typename ATS::mag_type> STM;
 
       const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
       for (LO i = 0; i < lclNumRows; ++i) {
@@ -1439,7 +1439,6 @@ cgMethodWithInitGuess (const op_type& A,
                           V& r)
 {
   using std::endl;
-  using STS = Teuchos::ScalarTraits<ST>;
   using MagnitudeType = typename STS::magnitudeType;
   if (debug_) {
     *out_ << " cgMethodWithInitGuess:" << endl;
