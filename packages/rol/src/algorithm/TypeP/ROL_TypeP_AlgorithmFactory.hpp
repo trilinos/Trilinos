@@ -46,6 +46,7 @@
 
 #include "ROL_TypeP_ProxGradientAlgorithm.hpp"
 #include "ROL_TypeP_SpectralGradientAlgorithm.hpp"
+#include "ROL_TypeP_iPianoAlgorithm.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -56,10 +57,12 @@ namespace TypeP {
 
     \arg    ALGORITHM_P_PROXIMALGRADIENT    describe
     \arg    ALGORITHM_P_SPECTRALGRADIENT    describe
+    \arg    ALGORITHM_P_IPIANO              describe
  */
 enum EAlgorithmP{
   ALGORITHM_P_PROXIMALGRADIENT = 0,
   ALGORITHM_P_SPECTRALGRADIENT,
+  ALGORITHM_P_IPIANO,
   ALGORITHM_P_LAST
 };
 
@@ -68,6 +71,7 @@ inline std::string EAlgorithmPToString(EAlgorithmP alg) {
   switch(alg) {
     case ALGORITHM_P_PROXIMALGRADIENT:    retString = "Proximal Gradient";      break;
     case ALGORITHM_P_SPECTRALGRADIENT:    retString = "Spectral Gradient";      break;
+    case ALGORITHM_P_IPIANO:              retString = "iPiano";                 break;
     case ALGORITHM_P_LAST:                retString = "Last Type (Dummy)";      break;
     default:                              retString = "INVALID EAlgorithmP";
   }
@@ -82,6 +86,7 @@ inline std::string EAlgorithmPToString(EAlgorithmP alg) {
 inline int isValidAlgorithmP(EAlgorithmP alg){
   return( (alg == ALGORITHM_P_PROXIMALGRADIENT)    ||
           (alg == ALGORITHM_P_SPECTRALGRADIENT)    ||
+          (alg == ALGORITHM_P_IPIANO)              ||
           (alg == ALGORITHM_P_LAST)
         );
 }
@@ -122,6 +127,7 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
   switch(ealg) {
     case ALGORITHM_P_PROXIMALGRADIENT:    return makePtr<ProxGradientAlgorithm<Real>>(parlist);
     case ALGORITHM_P_SPECTRALGRADIENT:    return makePtr<SpectralGradientAlgorithm<Real>>(parlist);
+    case ALGORITHM_P_IPIANO:              return makePtr<iPianoAlgorithm<Real>>(parlist);
     default:                              return nullPtr;
   }
 }
