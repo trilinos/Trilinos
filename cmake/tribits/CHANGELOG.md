@@ -2,6 +2,82 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2022-12-20:
+
+* **Deprecated:** The macro `set_and_inc_dirs()` is deprecated and replaced by
+  `tribits_set_and_inc_dirs()`.  Use the script
+  `TriBITS/refactoring/replace_set_and_inc_dirs_r.sh` to update
+  `CMakeLists.txt` files.
+
+## 2022-11-03:
+
+* **Deprecated:** The long-deprecated TriBITS function override
+  `include_directories()` now emits a deprecated warning.  To replace all
+  usages of `include_directories()` that should be
+  `tribits_include_directories()`, use the script
+  `TriBITS/refactoring/replace_include_directories_r.sh` (see documentation in
+  that script).
+
+* **Deprecated:** Many previously deprecated TriBITS features now will trigger
+  a CMake DEPRECATION warning message by default (by calling
+  `message(DEPRECATION ...)`).  The message printed to the CMake output will
+  typically describe how to remove the usage of the deprecated feature.  To
+  remove deprecation warnings, change to use the non-deprecated features
+  mentioned in the deprecation warning message.  To temporarily disable
+  deprecation warnings, configure with `-D
+  TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE` (see build reference entry
+  for `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE` for more details).
+
+## 2022-10-20:
+
+* **Changed:** Disabling an external package/TPL will now disable any
+  downstream external packages/TPLs that list a dependency on that external
+  package/TPL through its
+  [`FindTPL<tplName>Dependencies.cmake`](https://tribitspub.github.io/TriBITS/users_guide/index.html#findtpl-tplname-dependencies-cmake)
+  file.  Prior to this, disabling an external package/TPL would not disable
+  dependent downstream external packages/TPLs (it would only disable
+  downstream dependent required internal packages).  To avoid this, simply
+  leave the enable status of the upstream external package/TPL empty "" and no
+  downstream propagation of disables will take place.
+
+## 2022-10-16:
+
+* **Removed:** Removed the variables `<Project>_LIBRARY_DIRS`,
+  `<Project>_TPL_LIST` and `<Project>_TPL_LIBRARIES` from the installed
+  `<Project>Config.cmake` file.  These are not needed after the change to
+  modern CMake targets `<Package>::all_libs` (see `<Package>::all_libs`
+  below).  To determine if a TPL is enabled, check `if (TARGET
+  <tplName>::all_libs)`.  To get the libraries and include dirs for a TPL,
+  link against the IMPORTED target `<tplName>::all_libs` (see the updated
+  TriBITS example APP projects for details).
+
+* **Removed:** Removed the variables `<Package>_PACKAGE_LIST`,
+  `<Package>_TPL_LIST`, `<Package>_INCLUDE_DIR`, `<Package>_LIBRARY_DIRS`,
+  `<Package>_TPL_INCLUDE_DIRS`, `<Package>_TPL_LIBRARIES` and
+  `<Package>_TPL_LIBRARY_DIRS` from the generated `<Package>Config.cmake`
+  files.  These are not needed with the move to modern CMake targets (see
+  `<Package>::all_libs` below).
+
+* **Changed:** Changed `<Package>_LIBRARIES` in generated
+  `<Package>Config.cmake` files from the full list of the package's library
+  targets to just `<Package>::all_libs`.  (There is no need to list the
+  individual libraries after the move to modern CMake targets.)
+
+## 2022-10-11:
+
+* **Changed:** Added option `<Project>_ASSERT_DEFINED_DEPENDENCIES` to
+  determine if listed external package/TPL and internal package dependencies
+  are defined within the project or not.  The initial default is `FATAL_ERROR`
+  for development mode and `IGNORE` for release mode.  (Previously, undefined
+  external package/TPL dependencies where ignore.)  To set a different
+  default, set `<Project>_ASSERT_DEFINED_DEPENDENCIES_DEFAULT` to `WARNING`,
+  for example, in the project's `ProjectName.cmake` file.
+
+* **Removed:** `<Project>_ASSERT_MISSING_PACKAGES` has been removed and setting
+  it will result in a `FATAL_ERROR`.  Instead, use
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` (and make sure all of your project's
+  listed TPL dependencies are all defined within the project).
+
 ## 2022-10-02:
 
 * **Changed:** The TriBITS FindTPLCUDA.cmake module changed
@@ -10,7 +86,6 @@ ChangeLog for TriBITS
   conflicts with downstream CMake projects that call
   `find_package(CUDAToolkit)` (see [Trilinos
   #10954](https://github.com/trilinos/Trilinos/issues/10954)).
-
 
 ## 2022-09-16:
 

@@ -48,7 +48,8 @@ include(PrependGlobalSet)
 include(RemoveGlobalDuplicates)
 include(TribitsGeneralMacros)
 include(TribitsReportInvalidTribitsUsage)
-include(SetAndIncDirs)
+include(TribitsDeprecatedHelpers)
+include(TribitsSetAndIncDirs)
 
 
 # @FUNCTION: tribits_add_library()
@@ -670,7 +671,7 @@ function(tribits_add_library_assert_deplibs)
       # dependency on the upstream package that owns this upstream TESTONLY
       # library if it comes from an upstream package.
     elseif (NOT PARSE_TESTONLY AND depLibIsTestOnlyLib) # any depLibAlreadyInPkgLibs
-      message(WARNING "WARNING: '${depLib}' in DEPLIBS is a TESTONLY lib"
+      tribits_deprecated("'${depLib}' in DEPLIBS is a TESTONLY lib"
         " and it is illegal to link to this non-TESTONLY library '${LIBRARY_NAME}'."
         "  Such usage is deprecated (and this warning will soon become an error)!"
         "  If this is a regular library in this package or in an dependent upstream"
@@ -680,7 +681,7 @@ function(tribits_add_library_assert_deplibs)
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
       # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
     elseif (NOT depLibAlreadyInPkgLibs AND TARGET ${prefixedDepLib}) # any PARSE_TESTONLY
-      message(WARNING "WARNING: '${depLib}' in DEPLIBS is not"
+      tribits_deprecated("'${depLib}' in DEPLIBS is not"
         " a lib in this package but is a library defined in the current"
         " cmake project!  Such usage is deprecated (and"
         " will result in a configure error soon).  If this is a library in"
@@ -691,7 +692,7 @@ function(tribits_add_library_assert_deplibs)
         " this package's dependencies file"
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake.")
     elseif (NOT depLibAlreadyInPkgLibs AND NOT TARGET ${prefixedDepLib} )
-      message(WARNING "WARNING: '${depLib}' in DEPLIBS is not"
+      tribits_deprecated("'${depLib}' in DEPLIBS is not"
         " a lib defined in the current cmake project!  Such usage is deprecated (and"
         " will result in a configure error soon).  If this is an external"
         " lib you are trying to link in, it should likely be handled as a TriBITS"
@@ -725,7 +726,7 @@ function(tribits_add_library_assert_importedlibs)
       FOUND_IMPORTEDLIB_IN_LIBRARIES_IDX)
     tribits_lib_is_testonly(${prefixedImportedLib}  importedLibIsTestOnlyLib)
     if (importedLibIsTestOnlyLib)
-      message(WARNING "WARNING: '${importedLib}' in IMPORTEDLIBS is a TESTONLY lib"
+      tribits_deprecated("'${importedLib}' in IMPORTEDLIBS is a TESTONLY lib"
         " and it is illegal to pass in through IMPORTEDLIBS!"
         "  Such usage is deprecated (and this warning will soon become an error)!"
         "  Should '${importedLib}' instead be passed through DEPLIBS?")
