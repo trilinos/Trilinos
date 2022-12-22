@@ -135,6 +135,7 @@ void iPianoAlgorithm<Real>::run( Vector<Real>       &x,
     state_->snorm = state_->stepVec->norm();
     // Compute smooth objective value
     sobj.update(*state_->iterateVec,UpdateType::Trial);
+    nobj.update(*state_->iterateVec,UpdateType::Trial);
     strial = sobj.value(*state_->iterateVec,tol); state_->nsval++;
     gs     = state_->gradientVec->apply(*state_->stepVec);
     // Estimate Lipschitz constant of sobj
@@ -143,6 +144,7 @@ void iPianoAlgorithm<Real>::run( Vector<Real>       &x,
       for (int i = 0; i < maxit_; ++i) {
         // Store previously computed information
         sobj.update(*state_->iterateVec,UpdateType::Accept);
+        nobj.update(*state_->iterateVec,UpdateType::Accept);
         LP      = L_;
         alphaP  = alpha_;
         betaP   = beta_;
