@@ -87,7 +87,6 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 template <class Scalar>
 int
 main_(int argc, char *argv[], Teuchos::CommandLineProcessor& clp) {
-  typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Tpetra::Map<> map_type;
   typedef map_type::local_ordinal_type LocalOrdinal;
   typedef map_type::global_ordinal_type GlobalOrdinal;
