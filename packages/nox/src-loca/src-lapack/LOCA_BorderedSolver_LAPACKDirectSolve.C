@@ -533,18 +533,18 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
     NOX::Abstract::MultiVector& X,
     NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  bool isZeroF = (F == NULL);
-  bool isZeroG = (G == NULL);
+  bool isZeroF2 = (F == NULL);
+  bool isZeroG2 = (G == NULL);
 
   // If F & G are zero, the solution is zero
-  if (isZeroF && isZeroG) {
+  if (isZeroF2 && isZeroG2) {
     X.init(0.0);
     Y.putScalar(0.0);
     return NOX::Abstract::Group::Ok;
   }
 
   int numColsRHS;
-  if (!isZeroF)
+  if (!isZeroF2)
     numColsRHS = F->numVectors();
   else
     numColsRHS = G->numCols();
@@ -556,7 +556,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
 
     // Concatenate F & G into a single matrix
     NOX::LAPACK::Matrix<double> RHS(N,numColsRHS);
-    if (isZeroF) {
+    if (isZeroF2) {
       for (int j=0; j<numColsRHS; j++)
         for (int i=0; i<n; i++)
           RHS(i,j) = 0.0;
@@ -569,7 +569,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
           RHS(i,j) = (*v)(i);
       }
     }
-    if (isZeroG) {
+    if (isZeroG2) {
       for (int j=0; j<numColsRHS; j++)
         for (int i=0; i<m; i++)
           RHS(i+n,j) = 0.0;
@@ -605,7 +605,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
     const NOX::LAPACK::Vector *v1, *v2;
     NOX::LAPACK::Vector *w1, *w2;
 
-    if (!isZeroF) {
+    if (!isZeroF2) {
       cF = dynamic_cast<const LOCA::Hopf::ComplexMultiVector*>(F);
       TEUCHOS_ASSERT(cF != NULL);
       F_real = cF->getRealMultiVec();
@@ -618,7 +618,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
 
     // Concatenate F & G into a single matrix
     NOX::LAPACK::Matrix< std::complex<double> > RHS(N,numColsRHS);
-    if (isZeroF) {
+    if (isZeroF2) {
       for (int j=0; j<numColsRHS; j++)
         for (int i=0; i<n; i++)
           RHS(i,j) = 0.0;
@@ -633,7 +633,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
           RHS(i,j) = std::complex<double>((*v1)(i), (*v2)(i));
       }
     }
-    if (isZeroG) {
+    if (isZeroG2) {
       for (int j=0; j<numColsRHS; j++)
         for (int i=0; i<m; i++)
           RHS(i+n,j) = 0.0;

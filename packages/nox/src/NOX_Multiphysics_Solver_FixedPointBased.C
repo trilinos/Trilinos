@@ -223,14 +223,14 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   NOX::Abstract::Group& soln = *solnPtr;
   NOX::StatusTest::Generic& test = *testPtr;
 
-  NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
+  NOX::StatusTest::StatusType status2 = NOX::StatusTest::Unconverged;
 
   std::vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = (*solversVecPtr).begin();
   std::vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter_end = (*solversVecPtr).end();
 
   for( int i = 0; iter_end != iter; ++iter, ++i )
   {
-    status = NOX::StatusTest::Unconverged;
+    status2 = NOX::StatusTest::Unconverged;
 
     // Conditionally bring all data needed from other problems to the current one
     if( SEIDEL == solveType )
@@ -244,7 +244,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 
     (*iter)->reset( sameGrp->getX() );
 
-    status = (*iter)->solve();
+    status2 = (*iter)->solve();
 
     // Check return status
   }
@@ -254,9 +254,9 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   if (rtype != NOX::Abstract::Group::Ok)
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - unable to compute F" << std::endl;
-    status = NOX::StatusTest::Failed;
+    status2 = NOX::StatusTest::Failed;
     observer->runPostIterate(*this);
-    return status;
+    return status2;
   }
 
   // Update iteration count.
@@ -276,12 +276,12 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   }
 
   // Evaluate the current status.
-  status = test.checkStatus(*this, checkType);
+  status2 = test.checkStatus(*this, checkType);
 
   observer->runPostIterate(*this);
 
   // Return status.
-  return status;
+  return status2;
 }
 
 NOX::StatusTest::StatusType

@@ -676,10 +676,10 @@ getInitialVectors(NOX::Abstract::Vector& aVec,
        std::string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
        std::string(" to compute initial left null vector"));
 
-      Teuchos::RCP<Teuchos::ParameterList> lsParams =
+      Teuchos::RCP<Teuchos::ParameterList> lsParams2 =
     parsedParams->getSublist("Linear Solver");
       status =
-    ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], aVec);
+    ts_grp->applyJacobianTransposeInverse(*lsParams2, (*fdfdp)[1], aVec);
       finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(
                                  status,
