@@ -275,10 +275,10 @@ TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface)
       // investigate the parameter list to see if it has bee correctly updated!
       RCP<Teko::PreconditionerInverseFactory> pInvFact
             = Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact);
-      Teuchos::RCP<const Teuchos::ParameterList> pl = pInvFact->getPrecFactory()->getParameterList();
+      Teuchos::RCP<const Teuchos::ParameterList> pl2 = pInvFact->getPrecFactory()->getParameterList();
 
-      TEST_ASSERT(pl->sublist("ML Settings").isParameter("cat"));
-      TEST_EQUALITY(pl->sublist("ML Settings").get<int>("cat"),7);
+      TEST_ASSERT(pl2->sublist("ML Settings").isParameter("cat"));
+      TEST_EQUALITY(pl2->sublist("ML Settings").get<int>("cat"),7);
    }
 #endif
 }

@@ -140,9 +140,9 @@ ALOperator::BuildALOperator()
    }
 
    // Build the AL operator.
-   Teuchos::RCP<Thyra::DefaultBlockedLinearOp<double> > alOperator_
+   Teuchos::RCP<Thyra::DefaultBlockedLinearOp<double> > alOperator
       = Thyra::defaultBlockedLinearOp<double>();
-   alOperator_->beginBlockFill(dim_ + 1, dim_ + 1);
+   alOperator->beginBlockFill(dim_ + 1, dim_ + 1);
 
    // Set blocks for the velocity parts and gradient.
    for(int i = 0; i < dim_; i++)
@@ -150,7 +150,7 @@ ALOperator::BuildALOperator()
       for(int j = 0; j < dim_; j++)
       {
          // build the blocks and place it the right location
-         alOperator_->setBlock(i, j,
+         alOperator->setBlock(i, j,
                Thyra::add(blockedOpBlocks[i][j],
                Thyra::scale(gamma_,
                Thyra::multiply(blockedOpBlocks[i][dim_],
@@ -161,23 +161,23 @@ ALOperator::BuildALOperator()
    // Last row. Divergence and (possible) stabilization matrix.
    for(int j = 0; j <= dim_; j++)
    {
-      alOperator_->setBlock(dim_, j, blockedOpBlocks[dim_][j]);
+      alOperator->setBlock(dim_, j, blockedOpBlocks[dim_][j]);
    }
 
    // Last column. Gradient.
    for(int i = 0; i < dim_; i++)
    {
-      alOperator_->setBlock(i, dim_,
+      alOperator->setBlock(i, dim_,
             Thyra::add(blockedOpBlocks[i][dim_],
             Thyra::scale(gamma_,
             Thyra::multiply(blockedOpBlocks[i][dim_],
             invPressureMassMatrix_,blockedOpBlocks[dim_][dim_]))));
    }
 
-   alOperator_->endBlockFill();
+   alOperator->endBlockFill();
 
    // Set whatever is returned.
-   SetOperator(alOperator_, false);
+   SetOperator(alOperator, false);
 
    // Set operator for augmenting the right-hand side.
    Teuchos::RCP<Thyra::DefaultBlockedLinearOp<double> > alOpRhs_

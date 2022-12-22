@@ -126,6 +126,7 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    TEST_MSG("\n   tTpetraOperatorWrapper::test_functionality: "
          << "Running on " << comm_epetra.NumProc() << " processors");
