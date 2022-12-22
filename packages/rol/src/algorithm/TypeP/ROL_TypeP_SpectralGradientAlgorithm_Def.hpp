@@ -94,11 +94,11 @@ void SpectralGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   state_->value  = state_->svalue + state_->nvalue;
   sobj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   dg.set(state_->gradientVec->dual());
-  pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);
-  state_->gnorm = state_->stepVec->norm() / t0_;
-  state_->snorm = ROL_INF<Real>();
   if (lambda_ <= zero && state_->gnorm != zero)
     lambda_ = std::max(lambdaMin_,std::min(t0_,lambdaMax_));
+  pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, dg, lambda_, ftol);
+  state_->snorm = state_->stepVec->norm();
+  state_->gnorm = state_->snorm / lambda_;
 }
 
 template<typename Real>
@@ -112,7 +112,7 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
   Ptr<Vector<Real>> s = x.clone(), px = x.clone(), dg = x.clone(), y = g.clone(), xmin = x.clone();
   initialize(x,g,sobj,nobj,*s,*dg,outStream);
   Real strial(0), ntrial(0), Ftrial(0), Fmin(0), Fmax(0), Qk(0), alpha(1), rhoTmp(1);
-  Real gs(0), ys(0), ss(0), tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real gs(0), ys(0), snorm(state_->snorm), ss(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
   std::deque<Real> Fqueue; Fqueue.push_back(state_->value);
 
@@ -124,9 +124,6 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
 
   // Iterate spectral projected gradient
   while (status_->check(*state_)) {
-    // Compute spectral proximal gradient step
-    pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, *dg, lambda_, tol);
-
     // Nonmonotone Linesearch
     ls_nfval = 0;
     sobj.update(*state_->iterateVec,UpdateType::Trial);
@@ -187,9 +184,7 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
     state_->svalue     = strial;
     state_->nvalue     = ntrial;
     state_->searchSize = alpha;
-    state_->gnorm      = state_->stepVec->norm();
-    state_->snorm      = alpha * state_->gnorm;
-    state_->gnorm     /= lambda_;
+    state_->snorm      = alpha * snorm;
     state_->stepVec->scale(alpha);
     x.set(*state_->iterateVec);
     sobj.update(x,UpdateType::Accept,state_->iter);
@@ -210,6 +205,11 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>       &x,
     ys            = y->apply(*state_->stepVec);
     ss            = state_->snorm * state_->snorm;
     lambda_       = (ys<=eps*state_->snorm ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/ys,lambdaMax_)));
+
+    // Compute spectral proximal gradient step
+    pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, *dg, lambda_, tol);
+    snorm         = state_->stepVec->norm();
+    state_->gnorm = snorm / lambda_; 
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);

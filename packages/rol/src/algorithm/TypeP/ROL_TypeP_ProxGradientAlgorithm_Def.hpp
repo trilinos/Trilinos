@@ -92,25 +92,20 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   }
   // Evaluate objective function
   sobj.update(x,UpdateType::Initial,state_->iter);
-  state_->svalue = sobj.value(x,ftol); 
-  state_->nsval++;
   nobj.update(x,UpdateType::Initial,state_->iter); 
-  state_->nvalue = nobj.value(x,ftol); 
-  state_->nnval++; 
+  state_->svalue = sobj.value(x,ftol); state_->nsval++;
+  state_->nvalue = nobj.value(x,ftol); state_->nnval++; 
   state_->value  = state_->svalue + state_->nvalue;
   // Evaluate gradient of smooth part
-  sobj.gradient(*state_->gradientVec,x,ftol);
-  state_->ngrad++;
+  sobj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   dg.set(state_->gradientVec->dual());
-  // Evaluate proximal gradient
-  pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);
-  state_->snorm = state_->stepVec->norm();
-  state_->gnorm = state_->snorm / t0_;
   // Compute initial step size as 2/L, where L = 2|f(x+s)-f(x)-f'(x)s|/||s||^2
   // is a lower estimate of the Lipschitz constant of f
   if (!useralpha_) {
     bool flag = maxAlpha_ == alpha0_;
     // Evaluate objective at Prox(x - t0 dg)
+    pgstep(px, *state_->stepVec, nobj, x, dg, t0_, ftol);
+    state_->snorm = state_->stepVec->norm();
     sobj.update(px,UpdateType::Trial);
     Real snew = sobj.value(px,ftol); 
     sobj.update(x,UpdateType::Revert);
@@ -124,6 +119,10 @@ void ProxGradientAlgorithm<Real>::initialize(Vector<Real>       &x,
   if (normAlpha_)
     alpha0_ /= state_->gradientVec->norm();
   state_->searchSize = alpha0_;
+  // Evaluate proximal gradient
+  pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, dg, state_->searchSize, ftol);
+  state_->snorm = state_->stepVec->norm();
+  state_->gnorm = state_->snorm / state_->searchSize;
 }
 
 template<typename Real>
@@ -132,13 +131,14 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
                                        Objective<Real>    &sobj,
                                        Objective<Real>    &nobj,
                                        std::ostream       &outStream ) {
-  const Real one(1), alphaMin(1e-12*t0_), alphaMax(1e12*t0_);
+  const Real one(1);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   // Initialize trust-region data
   Ptr<Vector<Real>> px = x.clone(), pxP = x.clone(), dg = x.clone();
   initialize(x,g,sobj,nobj,*px,*dg,outStream);
   Real strial(0), ntrial(0), Ftrial(0), Qk(0);
   Real strialP(0), ntrialP(0), FtrialP(0), alphaP(0);
+  Real snorm(state_->snorm), searchSize(state_->searchSize);
   int ls_nfval = 0;
   bool incAlpha = false, accept = true;
 
@@ -149,9 +149,7 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
   while (status_->check(*state_)) {
     accept = true;
     // Perform backtracking line search 
-    if (!usePrevAlpha_ && !useAdapt_) state_->searchSize = alpha0_;
-    // Compute proximal gradient step with initial search size
-    pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, *dg, state_->searchSize, tol);
+    state_->searchSize = searchSize;
     // Compute objective function values
     sobj.update(*state_->iterateVec,UpdateType::Trial);
     strial = sobj.value(*state_->iterateVec,tol);
@@ -279,14 +277,12 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
     state_->ngrad++;
     dg->set(state_->gradientVec->dual());
 
-    // Compute projected gradient norm, ensuring that t is in [alphaMin*t0,alphaMax*t0]
-    if (state_->searchSize >= alphaMin && state_->searchSize <= alphaMax) {
-      state_->gnorm = state_->snorm / state_->searchSize;
-    }
-    else {
-      pgstep(*pxP, *px, nobj, x, *dg, t0_, tol);
-      state_->gnorm = px->norm() / t0_;
-    }
+    // Compute proximal gradient step with initial search size
+    searchSize = state_->searchSize;
+    if (!usePrevAlpha_ && !useAdapt_) searchSize = alpha0_;
+    pgstep(*state_->iterateVec, *state_->stepVec, nobj, x, *dg, searchSize, tol);
+    snorm = state_->stepVec->norm();
+    state_->gnorm = snorm / searchSize;
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
