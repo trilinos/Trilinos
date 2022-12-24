@@ -11,13 +11,13 @@ bob_config_header(${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.h ${PACKAGE
 set(HEADERS "")
 set(SOURCES "")
 
-tribits_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.h
   )
 
-tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 append_glob(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 list(REMOVE_ITEM HEADERS

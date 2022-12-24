@@ -1,6 +1,6 @@
 
 # Define the include dirs for the TESTONLY lib.
-tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
 # Create a test-only b_mixed_lang lib which uses the optional test dependent

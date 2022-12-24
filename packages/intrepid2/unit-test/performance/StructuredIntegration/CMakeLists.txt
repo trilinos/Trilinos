@@ -2,7 +2,7 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_INCLUDE_DIRECTORIES("../../../assembly-examples")
+INCLUDE_DIRECTORIES("../../../assembly-examples")
 
 SET(LIBRARIES intrepid2)
 

@@ -42,7 +42,7 @@
 # ***********************************************************************
 # @HEADER
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Create the ValidParameters executable
 TRIBITS_ADD_EXECUTABLE(

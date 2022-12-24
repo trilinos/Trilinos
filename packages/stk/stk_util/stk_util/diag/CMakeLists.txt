@@ -51,7 +51,7 @@ SET(SOURCES "")
 # Core headers
 #
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
 FILE(GLOB HEADERS *.hpp *.h)
 #removing references to mpih which is not available in Trilinos
