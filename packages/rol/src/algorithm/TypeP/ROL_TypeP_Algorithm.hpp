@@ -101,6 +101,11 @@ protected:
               Real                t,      // t      = prox parameter
               Real               &tol) const;
 
+  /*Real optimalityCriterion(const Vector<Real> &x, 
+													 const Vector<Real> &g, 
+													 Vector<Real> &primal,
+                           std::ostream &outStream = std::cout) const;
+*/
 public:
 
   virtual ~Algorithm() {}

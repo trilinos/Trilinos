@@ -77,12 +77,12 @@ void Algorithm<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
 }
 
 template<typename Real>
-void Algorithm<Real>::pgstep(Vector<Real>       &pgiter,
-                             Vector<Real>       &pgstep,
-                             Objective<Real>    &nobj,
-                             const Vector<Real> &x,
-                             const Vector<Real> &dg,
-                             Real                t,
+void Algorithm<Real>::pgstep(Vector<Real>       &pgiter, //solution of proximal operator
+                             Vector<Real>       &pgstep, //proximal step pgiter - x
+                             Objective<Real>    &nobj,   //nonsmooth objective function
+                             const Vector<Real> &x,      //anchor vector
+                             const Vector<Real> &dg,     //direction
+                             Real                t,      //Moreau Envelop constant
                              Real               &tol) const {
   pgstep.set(x);
   pgstep.axpy(-t,dg);
@@ -91,6 +91,18 @@ void Algorithm<Real>::pgstep(Vector<Real>       &pgiter,
   pgstep.set(pgiter);
   pgstep.axpy(static_cast<Real>(-1),x);
 }
+
+/*template<typename Real>
+Real Algorithm<Real>::optimalityCriterion( Vector<Real>       &pgiter,
+																					 Vector<Real>       &pgstep,
+																					 Objective<Real>    &nobj,
+		 																			 const Vector<Real> &x,
+                                           const Vector<Real> &g,
+																					 Real               t, 
+                                           Real               &tol) const {
+	pgstep(pgiter, *pgstep, nobj, x, g, t, tol)
+  return pgstep.norm()/t;
+}*/
 
 template<typename Real>
 void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
