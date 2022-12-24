@@ -38,12 +38,11 @@
 # @HEADER
 
 include(TribitsTplFindIncludeDirsAndLibraries)
-include(TribitsDeprecatedHelpers)
 
 function(tribits_tpl_declare_libraries TPL_NAME)
-  tribits_deprecated_command(tribits_tpl_declare_libraries
-    MESSAGE
-    "Use tribits_tpl_find_include_dirs_and_libraries() instead."
+  message(WARNING
+    "WARNING: tribits_tpl_declare_libraries() is deprecated, instead use"
+    " tribits_tpl_find_include_dirs_and_libraries()!"
     "  Make this change in the file:\n"
     "  ${${TPL_NAME}_FINDMOD}\n"
     "which is pointed to by the file:\n"

@@ -1,5 +1,5 @@
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
@@ -38,7 +38,7 @@ SET(UNIT_TEST_DRIVER
 # If this assumption is incorrect, or the build system is changed this might
 # have to be fixed!
 ###############################################################################
-TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 

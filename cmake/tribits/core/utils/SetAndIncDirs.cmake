@@ -38,15 +38,19 @@
 # @HEADER
 
 
-# @MACRO: tribits_create_reverse_list()
+# @MACRO: set_and_inc_dirs()
 #
-# Create a reverse list var in one shot.
+# Set a variable to an include directory and call ``include_directories()``
+# (removes boiler-plate code).
 #
-# Usage::
+# Usage:
 #
-#   tribits_create_reverse_list(<oldListName> <newListName>)
+#   set_and_inc_dirs(<dirVarName> <includeDir>)
 #
-macro(tribits_create_reverse_list  oldListName  newListName)
-  set(${newListName} ${${oldListName}})
-  list(REVERSE ${newListName})
+# On output, this sets ``<dirVarName>`` to ``<includeDir>`` in the local scope
+# and calls ``include_directories(<includeDir>)``.
+#
+macro(set_and_inc_dirs  DIR_VAR_NAME  INCLUDE_DIR)
+  set(${DIR_VAR_NAME} ${INCLUDE_DIR})
+  include_directories(${${DIR_VAR_NAME}})
 endmacro()

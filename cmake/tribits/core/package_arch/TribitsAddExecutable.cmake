@@ -44,7 +44,6 @@ include(TribitsAddTestHelpers)
 include(TribitsGeneralMacros)
 include(TribitsLibIsTestOnly)
 include(TribitsReportInvalidTribitsUsage)
-include(TribitsDeprecatedHelpers)
 
 include(PrintVar)
 include(AppendSet)
@@ -375,7 +374,7 @@ function(tribits_add_executable EXE_NAME)
   endif()
 
   if (PARSE_DEFINES)
-    tribits_deprecated("Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
+    message(WARNING "WARNING: Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
       " is deprecated.  Instead, pass them through 'TARGET_DEFINES'.  The 'DEFINES'"
       " argument was incorrectly implemented by calling add_definitions() which has"
       " directory scope and not function scope as was documented.  This resulted in"
@@ -658,12 +657,12 @@ macro(tribits_add_executable_convert_from_deplibs)
     set(prefixedDepLib "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${depLib}")
     tribits_lib_is_testonly(${prefixedDepLib} depLibIsTestOnlyLib)
     if (depLibIsTestOnlyLib)
-      tribits_deprecated("Passing TESTONLY lib '${depLib}' through DEPLIBS"
+      message(WARNING "WARNING: Passing TESTONLY lib '${depLib}' through DEPLIBS"
         " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
         "  DEPLIBS is deprecated!")
       list(APPEND PARSE_TESTONLYLIBS ${depLib})
     elseif (TARGET ${prefixedDepLib})
-      tribits_deprecated("Passing non-TESTONLY lib '${depLib}' through DEPLIBS"
+      message(WARNING "WARNING: Passing non-TESTONLY lib '${depLib}' through DEPLIBS"
       " is deprecated!  The library '${depLib}' appears to be a"
       " library defined in this CMake project."
       "  TriBITS takes care of linking against libraries in dependent upstream"
