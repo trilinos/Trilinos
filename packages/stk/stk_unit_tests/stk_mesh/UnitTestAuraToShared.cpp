@@ -116,5 +116,130 @@ TEST_F(AuraToSharedToAura, makeAuraNodeSharedThenDelete)
   create_elem3_p1_and_delete_elem1_p0();
 }
 
+class Aura2DTri4Procs : public TestTextMeshAura2d
+{
+public:
+  Aura2DTri4Procs() {}
+
+  void p1_starts_sharing_node2()
+  {
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 1) {
+      stk::mesh::Entity elem4 = get_bulk().get_entity(stk::topology::ELEM_RANK, 4);
+      stk::mesh::Entity node8 = get_bulk().get_entity(stk::topology::NODE_RANK, 8);
+      stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+      stk::mesh::ConnectivityOrdinal ord = 2;
+      get_bulk().destroy_relation(elem4, node8, ord);
+      get_bulk().declare_relation(elem4, node2, ord);
+    }
+
+    get_bulk().modification_end();
+  }
+
+  void p2_starts_sharing_node2()
+  {
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 2) {
+      stk::mesh::Entity elem4 = get_bulk().get_entity(stk::topology::ELEM_RANK, 4);
+      stk::mesh::Entity node10 = get_bulk().get_entity(stk::topology::NODE_RANK, 10);
+      stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+      stk::mesh::ConnectivityOrdinal ord = 2;
+      get_bulk().destroy_relation(elem4, node10, ord);
+      get_bulk().declare_relation(elem4, node2, ord);
+    }
+
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(Aura2DTri4Procs, addSharerToAlreadySharedAuraNode)
+{
+  if (get_parallel_size() != 4) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, TRI_3_2D, 1,2,3\n"
+                         "1, 3, TRI_3_2D, 1,6,7\n"
+                         "1, 4, TRI_3_2D, 1,7,8\n"
+                         "2, 5, TRI_3_2D, 9,10,4\n"
+                         "3, 2, TRI_3_2D, 2,4,5\n";
+  setup_text_mesh(meshDesc);
+
+  stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+  EXPECT_TRUE(get_bulk().is_valid(node2));
+  const int proc = get_bulk().parallel_rank();
+  EXPECT_EQ(0, get_bulk().parallel_owner_rank(node2));
+  if (proc == 1 || proc == 2) {
+    EXPECT_TRUE(get_bulk().bucket(node2).in_aura());
+    EXPECT_FALSE(get_bulk().bucket(node2).shared());
+  }
+  else {
+    EXPECT_TRUE(get_bulk().bucket(node2).shared());
+    EXPECT_FALSE(get_bulk().bucket(node2).in_aura());
+  }
+
+  p1_starts_sharing_node2();
+
+  node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+  EXPECT_TRUE(get_bulk().is_valid(node2));
+  EXPECT_EQ(0, get_bulk().parallel_owner_rank(node2));
+
+  if (proc == 2) {
+    EXPECT_TRUE(get_bulk().bucket(node2).in_aura());
+    EXPECT_FALSE(get_bulk().bucket(node2).shared());
+  }
+  else {
+    EXPECT_TRUE(get_bulk().bucket(node2).shared());
+    EXPECT_FALSE(get_bulk().bucket(node2).in_aura());
+  }
+
+  if (proc == 1 || proc == 3) {
+    int ownerProc = 0;
+    int otherSharingProc = proc==1 ? 3 : 1;
+    EXPECT_TRUE(get_bulk().in_shared(node2, ownerProc));
+    EXPECT_TRUE(get_bulk().in_shared(node2, otherSharingProc));
+  }
+}
+
+TEST_F(Aura2DTri4Procs, addSharerToAlreadySharedAuraNode_addsRemoteGhostingRequestForAlreadyShared)
+{
+  if (get_parallel_size() != 3) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, TRI_3_2D, 1,2,3\n"
+                         "1, 2, TRI_3_2D, 2,4,5\n"
+                         "2, 4, TRI_3_2D, 8,9,10\n"
+                         "2, 3, TRI_3_2D, 6,7,4\n";
+  setup_text_mesh(meshDesc);
+
+  stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+  EXPECT_TRUE(get_bulk().is_valid(node2));
+  const int proc = get_bulk().parallel_rank();
+  EXPECT_EQ(0, get_bulk().parallel_owner_rank(node2));
+  if (proc == 2) {
+    EXPECT_TRUE(get_bulk().bucket(node2).in_aura());
+    EXPECT_FALSE(get_bulk().bucket(node2).shared());
+  }
+  else {
+    EXPECT_TRUE(get_bulk().bucket(node2).shared());
+    EXPECT_FALSE(get_bulk().bucket(node2).in_aura());
+  }
+
+  p2_starts_sharing_node2();
+
+  node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2);
+  EXPECT_TRUE(get_bulk().is_valid(node2));
+  EXPECT_EQ(0, get_bulk().parallel_owner_rank(node2));
+
+  EXPECT_TRUE(get_bulk().bucket(node2).shared());
+  EXPECT_FALSE(get_bulk().bucket(node2).in_aura());
+
+  if (proc == 1 || proc == 2) {
+    int ownerProc = 0;
+    int otherSharingProc = proc==1 ? 2 : 1;
+    EXPECT_TRUE(get_bulk().in_shared(node2, ownerProc));
+    EXPECT_TRUE(get_bulk().in_shared(node2, otherSharingProc));
+  }
+}
+
 } // empty namespace
 

@@ -31,12 +31,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-
 #ifndef stk_mesh_BulkData_hpp
 #define stk_mesh_BulkData_hpp
 
 //----------------------------------------------------------------------
-
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
@@ -415,7 +413,8 @@ public:
    * on all sharing processors. Otherwise, the nodes will remain unique
    * on different processors.
    */
-  void add_node_sharing( Entity node, int sharing_proc );
+  void add_node_sharing(Entity node, int sharing_proc );
+  void add_node_sharing(const EntityProcVec& nodesAndProcs);
 
   /** \brief Change an entity's EntityId, for Framework implementation.
    *         Only intended for use in supporting Framework implementation.
@@ -1128,6 +1127,7 @@ protected: //functions
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
+  void internal_add_comm_list_entries(EntityCommListInfoVector& newCommListEntries);
 
   std::pair<int,bool> entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {

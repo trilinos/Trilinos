@@ -26,6 +26,8 @@
 
 #cmakedefine HAVE_NOX_THYRA
 
+#cmakedefine NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
+
 /* template qualifier required for calling template methods from non-template
    code */
 #cmakedefine INVALID_TEMPLATE_QUALIFIER

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -67,9 +67,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
 #include "tInterlacedTpetra.hpp"
 
 #include "Teko_InterlacedTpetra.hpp"
@@ -88,7 +85,7 @@ using Thyra::LinearOpBase;
 using Thyra::createMember;
 using Thyra::LinearOpTester;
 
-void tInterlacedTpetra::initializeTest() 
+void tInterlacedTpetra::initializeTest()
 {
    tolerance_ = 1e-14;
 }
@@ -102,41 +99,41 @@ int tInterlacedTpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream
    failstrm << "tInterlacedTpetra";
 
    status = test_buildSubMaps_num(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"buildSubMaps_num\" ... PASSED","   \"buildSubMaps_num\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"buildSubMaps_num\" ... PASSED","   \"buildSubMaps_num\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildSubMaps_vec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"buildSubMaps_vec\" ... PASSED","   \"buildSubMaps_vec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"buildSubMaps_vec\" ... PASSED","   \"buildSubMaps_vec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildMaps(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_one2many(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_many2one(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tInterlacedTpetra...PASSED","tInterlacedTpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tInterlacedTpetra...PASSED","tInterlacedTpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tInterlacedTpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tInterlacedTpetra...FAILED");
    }
 
    return failcount;
@@ -155,13 +152,13 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
       int numVars = 3;
 
       // build a set of submaps: this should fail
-      Strided::buildSubMaps(globals,numVars,comm,subMaps); 
+      Strided::buildSubMaps(globals,numVars,comm,subMaps);
 
       TEST_ASSERT(false,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
             "buildSubMaps(int,vector<pair<int,RCP<Tpetra::Map> > >) did not throw "
             "with incorrect parameters");
-   } 
+   }
    catch(...) {
       TEST_MSG(
             "\n   tInterlacedTpetra::test_buildSubMaps_num: "
@@ -174,7 +171,7 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
       int numVars = 3;
 
       // build a set of submaps: this should fail
-      Strided::buildSubMaps(globals,numVars,comm,subMaps); 
+      Strided::buildSubMaps(globals,numVars,comm,subMaps);
 
       TEST_EQUALITY(subMaps.size(),3,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -221,7 +218,7 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
          << "testing that third map is created correctly");
-   } 
+   }
    catch(...) {
       TEST_ASSERT(false,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -244,18 +241,18 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
       GO globals = 15;
 
       std::vector<int> vars(3);
-      vars[0] = 2;    
-      vars[1] = 1;    
-      vars[2] = 3;    
+      vars[0] = 2;
+      vars[1] = 1;
+      vars[2] = 3;
 
       // build a set of submaps: this should fail
-      Strided::buildSubMaps(globals,vars,comm,subMaps); 
+      Strided::buildSubMaps(globals,vars,comm,subMaps);
 
       TEST_ASSERT(false,
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
             "buildSubMaps(int,vector<pair<int,RCP<Tpetra::Map> > >) did not throw "
             "with incorrect parameters");
-   } 
+   }
    catch(...) {
       TEST_MSG(
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: "
@@ -267,12 +264,12 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
       GO globals = 18;
 
       std::vector<int> vars(3);
-      vars[0] = 2;    
-      vars[1] = 1;    
-      vars[2] = 3;    
+      vars[0] = 2;
+      vars[1] = 1;
+      vars[2] = 3;
 
       // build a set of submaps: this should fail
-      Strided::buildSubMaps(globals,vars,comm,subMaps); 
+      Strided::buildSubMaps(globals,vars,comm,subMaps);
 
       TEST_EQUALITY(subMaps.size(),3,
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
@@ -293,7 +290,7 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
          << "testing that first map has correct number of global elements ( "
          << subMaps[0].second->getGlobalNumElements() << " == " << 6 << " ?)");
       gids = subMaps[0].second->getLocalElementList();
-      cur = (gids[0] == 0 && gids[1] == 1 
+      cur = (gids[0] == 0 && gids[1] == 1
           && gids[2] == 6 && gids[3] == 7
           && gids[4] ==12 && gids[5] ==13);
       TEST_ASSERT(cur,
@@ -323,7 +320,7 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
          << "testing that third map is created correctly");
-   } 
+   }
    catch(...) {
       TEST_ASSERT(false,
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
@@ -400,32 +397,32 @@ bool tInterlacedTpetra::test_buildMaps(int verbosity,std::ostream & os)
    test = true;
    for(size_t i=0;i<globalMaps[0]->getLocalNumElements();i+=2) {
       int block;
-      GO gid = globalMaps[0]->getGlobalElement(i); 
-      GO cid = contigMaps[0]->getGlobalElement(i); 
- 
+      GO gid = globalMaps[0]->getGlobalElement(i);
+      GO cid = contigMaps[0]->getGlobalElement(i);
+
       block = gid/3;
       test &= cid==2*block;
 
-      GO gidp1 = globalMaps[0]->getGlobalElement(i+1); 
-      GO cidp1 = contigMaps[0]->getGlobalElement(i+1); 
+      GO gidp1 = globalMaps[0]->getGlobalElement(i+1);
+      GO cidp1 = contigMaps[0]->getGlobalElement(i+1);
 
       block = (gidp1-1)/3;
       test &= cidp1==2*block+1;
    }
-   TEST_ASSERT(test, 
+   TEST_ASSERT(test,
          "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
    for(size_t i=0;i<globalMaps[1]->getLocalNumElements();i++) {
       int block;
-      GO gid = globalMaps[1]->getGlobalElement(i); 
-      GO cid = contigMaps[1]->getGlobalElement(i); 
- 
+      GO gid = globalMaps[1]->getGlobalElement(i);
+      GO cid = contigMaps[1]->getGlobalElement(i);
+
       block = (gid-2)/3;
       test &= cid==block;
    }
-   TEST_ASSERT(test, 
+   TEST_ASSERT(test,
          "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
@@ -467,7 +464,7 @@ bool tInterlacedTpetra::test_one2many(int verbosity,std::ostream & os)
 
    TEST_MSG("\n   tInterlacedTpetra::test_one2many: Performing data copy");
    Strided::one2many(subVectors,*v,subImport);
-   
+
    // just assume it works! :)
 
    return allPassed;
@@ -518,7 +515,7 @@ bool tInterlacedTpetra::test_many2one(int verbosity,std::ostream & os)
    Strided::many2one(*one,cSubVectors,subExport);
 
    one->update(1.0,*v,-1.0);
- 
+
    ST diff[4] = {0,0,0,0};
    ST max=0.0,maxn=0;
    ST norm[4] = {0,0,0,0};
@@ -531,7 +528,7 @@ bool tInterlacedTpetra::test_many2one(int verbosity,std::ostream & os)
    TEST_ASSERT(max<=tolerance_,
             "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
          << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ << " maxn = " << maxn << " )");
-   
+
    return allPassed;
 }
 

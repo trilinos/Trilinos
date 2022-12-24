@@ -74,33 +74,33 @@ protected:
                const SolverInput<SC>& input) override
   {
     using std::endl;
-    using device_type = typename MV::device_type;
-    using STS = Teuchos::ScalarTraits<SC>;
-    using mag_type = typename STS::magnitudeType;
-    using STM = Teuchos::ScalarTraits<mag_type>;
+    using dev_type = typename MV::device_type;
+    using ATS = Kokkos::ArithTraits<SC>;
+    using magnitude_type = typename ATS::mag_type;
+    using ATM = Kokkos::ArithTraits<magnitude_type>;
     using dot_type = typename MV::dot_type;
     
-    const SC ONE = STS::one ();
+    const SC ONE = ATS::one ();
     SolverOutput<SC> output {};
 
     // compute initial residual
     vec_type MR (B.getMap ());
-    mag_type beta_old = STM::zero ();
+    magnitude_type beta_old = ATM::zero ();
     if (input.precoSide == "none") {
-      beta_old = STS::real (B.dot (B));
+      beta_old = ATS::real (B.dot (B));
     }
     else {
       M.apply (B, MR);
-      beta_old = STS::real (B.dot (MR));
+      beta_old = ATS::real (B.dot (MR));
     }
-    mag_type r_norm = std::sqrt (beta_old);
-    mag_type r_norm_orig = r_norm;
+    magnitude_type r_norm = std::sqrt (beta_old);
+    magnitude_type r_norm_orig = r_norm;
 
     // quick return
-    mag_type metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
+    magnitude_type metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
     if (metric <= input.tol) {
       output.absResid = r_norm;
-      output.relResid = STM::one ();
+      output.relResid = ATM::one ();
       output.numIters = 0;
       output.converged = true;
       // R doesn't exist yet, so we don't have to copy R back to B
@@ -115,18 +115,18 @@ protected:
     vec_type AR =  * (R_AR.getVectorNonConst (1));
     Tpetra::deep_copy (R, B);
     // results of [R AR]'*R
-    mag_type RAR;
-    Kokkos::View<dot_type*, device_type> RR_RAR ("results[numVecs]", 2);
+    magnitude_type RAR;
+    Kokkos::View<dot_type*, dev_type> RR_RAR ("results[numVecs]", 2);
     auto RR_RAR_host = Kokkos::create_mirror_view (RR_RAR);
     vec_type P (R, Teuchos::Copy);
     vec_type AP (P.getMap ());
 
     // Initial step
     // AR = A*R
-    mag_type PAP;
+    magnitude_type PAP;
     if (input.precoSide == "none") {
       A.apply (R, AR);
-      PAP = STS::real (R.dot (AR));
+      PAP = ATS::real (R.dot (AR));
     }
     else {
       M.apply (R, MR);
@@ -140,14 +140,14 @@ protected:
       req->wait ();
 
       Kokkos::deep_copy (RR_RAR_host, RR_RAR);
-      beta_old = STS::real (RR_RAR_host(0));
-      PAP = STS::real (RR_RAR_host(1));
+      beta_old = ATS::real (RR_RAR_host(0));
+      PAP = ATS::real (RR_RAR_host(1));
 
       r_norm = std::sqrt (beta_old);
     }
-    mag_type alpha      = beta_old / PAP;
-    mag_type beta       = STM::zero ();
-    mag_type beta_new   = STM::zero ();
+    magnitude_type alpha      = beta_old / PAP;
+    magnitude_type beta       = ATM::zero ();
+    magnitude_type beta_new   = ATM::zero ();
     // main loop
     for (int iter = 0; iter < input.maxNumIters; ++iter) {
       if (outPtr != nullptr) {
@@ -191,8 +191,8 @@ protected:
       }
       // * all-reduce *
       Kokkos::deep_copy (RR_RAR_host, RR_RAR);
-      beta_new = STS::real (RR_RAR_host(0));
-      RAR = STS::real (RR_RAR_host(1));
+      beta_new = ATS::real (RR_RAR_host(0));
+      RAR = ATS::real (RR_RAR_host(1));
 
       // convergence check
       r_norm = std::sqrt( beta_new );
@@ -221,7 +221,7 @@ protected:
         // PAP
         PAP = RAR - beta_new * (beta /alpha);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (RAR <= STM::zero (), std::runtime_error, "At iteration " << (iter+1)
+          (RAR <= ATM::zero (), std::runtime_error, "At iteration " << (iter+1)
            << " out of " << input.maxNumIters << ", R.dot(AR) = " << RAR <<
            " <= 0.  This usually means that the matrix A is not symmetric "
            "(Hermitian) positive definite.");

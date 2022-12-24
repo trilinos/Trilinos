@@ -7,7 +7,7 @@ tribits_add_executable( c_util
 
 include(${CMAKE_CURRENT_LIST_DIR}/ShowLibErrors.cmake)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 tribits_add_library(pws_c
   SOURCES C.cpp
   HEADERS wsp_c/C.hpp

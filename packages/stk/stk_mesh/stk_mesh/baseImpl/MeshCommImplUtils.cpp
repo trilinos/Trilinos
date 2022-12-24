@@ -232,12 +232,24 @@ bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
                  for (int sharingProc : sharingProcs) {
                    comm.send_buffer(sharingProc).pack<EntityKey>(info.key)
                                                 .pack<EntityState>(state);
+                   //if I'm the owner, and the shared entity is modified, send the current list of
+                   //other sharers also, to make sure all sharers know about each other.
+                   int numOtherSharingProcs = bulk.bucket(info.entity).owned() ? sharingProcs.size()-1 : 0;
+                   comm.send_buffer(sharingProc).pack<int>(numOtherSharingProcs);
+                   if (numOtherSharingProcs > 0) {
+                     for(int sp : sharingProcs) {
+                       if (sp != sharingProc) {
+                         comm.send_buffer(sharingProc).pack<int>(sp);
+                       }
+                     }
+                   }
                  }
                  if (sharingProcs.empty() && state == Modified) {
                    const int owner = bulk.parallel_owner_rank(info.entity);
                    if (owner != bulk.parallel_rank() && bulk.bucket(info.entity).in_aura()) {
                      comm.send_buffer(owner).pack<EntityKey>(info.key)
-                                            .pack<EntityState>(state);
+                                            .pack<EntityState>(state)
+                                            .pack<int>(0);
                    }
                  }
                }

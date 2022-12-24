@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -47,10 +47,6 @@
 #include "tLSCHIntegrationTest_tpetra.hpp"
 
 #include <string>
-
-// ML includes
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
 
 // Teko-Package includes
 #include "Teko_LSCPreconditionerFactory.hpp"
@@ -92,7 +88,6 @@ namespace Test {
 
 using Teuchos::rcp;
 using Teuchos::RCP;
-using Thyra::epetraLinearOp;
 
 void tLSCHIntegrationTest_tpetra::initializeTest()
 {
@@ -108,17 +103,17 @@ int tLSCHIntegrationTest_tpetra::runTest(int verbosity,std::ostream & stdstrm,st
    failstrm << "tLSCHIntegrationTest_tpetra";
 
    status = test_hScaling(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"hScaling\" ... PASSED","   \"hScaling\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"hScaling\" ... PASSED","   \"hScaling\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLSCHIntegrationTest_tpetra...PASSED","tLSCHIntegrationTest_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLSCHIntegrationTest_tpetra...PASSED","tLSCHIntegrationTest_tpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCHIntegrationTest_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLSCHIntegrationTest_tpetra...FAILED");
    }
 
    return failcount;
@@ -128,7 +123,7 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
 {
    bool status = false;
    bool allPassed = true;
-   
+
    RCP<const Teuchos::Comm<int> > comm = GetComm_tpetra();
 
    // build some operators
@@ -137,7 +132,7 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
    Teko::LinearOp D = Teko::Test::build2x2(comm,1,-3,-1,1);
 
    ST diag[2];
- 
+
    diag[0] = 1.0/3.0; diag[1] = 1.0/2.0;
    Teko::LinearOp M = Teko::Test::DiagMatrix_tpetra(2,diag,"M");
 
@@ -152,7 +147,7 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
       Teko::LinearOp D0 = Teko::Test::build2x2(comm,-1.0/3.0,2.0/3.0,2.0/3.0,-1.0/3.0);
       Teko::LinearOp D1 = Teko::Test::build2x2(comm,-1.5,-3.0,-3.0,-5.5);
       Teko::LinearOp U  = Teko::Test::build2x2(comm,-0.5,-1.5,-0.5,-0.5);
-      
+
       exact = Thyra::block2x2<ST>(D0,U,Teuchos::null,D1);
    }
 
@@ -179,7 +174,7 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
    const RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(2,0,GetComm_tpetra()));
    Tpetra::Vector<ST,LO,GO,NT> ea(map),eb(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,prec->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(prec->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(prec->range(),1);
    ea.replaceGlobalValue(0,1.0);
    ea.replaceGlobalValue(1,0.0);
    eb.replaceGlobalValue(0,0.0);
@@ -204,7 +199,7 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
    eb.replaceGlobalValue(1,1.0);
    Thyra::apply(*prec,Thyra::NOTRANS,*x,y.ptr());
    ss << "prec = " << Teuchos::describe(*y,Teuchos::VERB_EXTREME) << std::endl;
-  
+
    Thyra::LinearOpTester<ST> tester;
    tester.show_all_tests(true);
    Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"|||");
@@ -230,8 +225,8 @@ bool tLSCHIntegrationTest_tpetra::test_hScaling(int verbosity,std::ostream & os)
           std::endl << "   tLSCHIntegration::test_hScaling "
                     << ": Comparing inv(BHBt) operator");
 
-   if(not allPassed || verbosity>=10) 
-      os << ss.str(); 
+   if(not allPassed || verbosity>=10)
+      os << ss.str();
 
    return allPassed;
 }

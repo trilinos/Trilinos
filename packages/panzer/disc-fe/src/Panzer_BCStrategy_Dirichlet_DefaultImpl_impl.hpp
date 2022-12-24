@@ -61,7 +61,7 @@
 #include "Panzer_Dirichlet_Residual_EdgeBasis.hpp"
 #include "Panzer_Dirichlet_Residual_FaceBasis.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 #endif

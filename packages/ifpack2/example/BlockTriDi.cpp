@@ -17,7 +17,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -26,6 +26,8 @@ struct CmdLineArgs {
   int blockSize;
   int numIters;
   double tol;
+  int nx;
+  int lpp;
 };
 
 // Read in values of command-line arguments.
@@ -44,6 +46,8 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("blockSize", &args.blockSize, "Size of block to use");
   cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
+  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
+  cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
   auto result = cmdp.parse (argc, argv);
   return result == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL;
 }
@@ -81,9 +85,9 @@ static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > BuildMatrix(Teuchos::Parameter
   
   GO nx,ny,nz;
   nx = ny = nz = 5;
-  nx = matrixList.get("nx",nx);
-  ny = matrixList.get("ny",ny);
-  nz = matrixList.get("nz",nz);
+  nx = matrixList.get("nx", nx);
+  ny = matrixList.get("ny", ny);
+  nz = matrixList.get("nz", nz);
   
   std::string matrixType = matrixList.get("matrixType","Laplace1D");
   GO numGlobalElements; //global_size_t
@@ -263,18 +267,22 @@ main (int argc, char* argv[])
     // matrix
     Teuchos::ParameterList plist;
     plist.set("matrixType","Laplace1D");    
-    plist.set("nx",(GO)172);
+    plist.set("nx", (GO)args.nx*comm->getSize());
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
 
     //rhs 
     B = rcp(new MV(Ablock->getRangeMap(),1));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    // line info (random lines of length basically 4 nodes)
+    // line info (lpp lines per proc)
+    int line_length = std::max(1, args.nx  / args.lpp);
     line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
     for(LO i=0; i<(LO)line_ids.size(); i++)
-      line_ids[i] = i / 4;     
+      line_ids[i] = i / line_length;     
+
+    if(rank0)
+      std::cout<<"Using block_size = "<<args.blockSize<<" # lines per proc= "<<args.lpp<<" and average line length = "<<line_length<<std::endl;
   }
   else
 #endif 
@@ -383,8 +391,11 @@ main (int argc, char* argv[])
     //    std::cout<<"On "<<line_ids.size()<<" local DOFs, detected "<<num_local_lines<<" lines"<<std::endl;
   }
 
-
-
+  // Preposition the matrix on device by letting a matvec ensure a transfer
+  {
+    RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(),1));
+    Ablock->apply(*X,*temp);
+  }
 
   // Create Ifpack2 preconditioner.
   if(rank0) std::cout<<"Creating preconditioner..."<<std::endl;

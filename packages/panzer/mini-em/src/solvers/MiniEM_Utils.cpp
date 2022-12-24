@@ -13,7 +13,10 @@ namespace mini_em {
     using Teuchos::rcp_dynamic_cast;
     using NT = panzer::TpetraNodeType;
     const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> >(Teuchos::rcpFromRef(op));
+#ifdef PANZER_HAVE_EPETRA_STACK
     const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
+#endif
+
     if(tOp != Teuchos::null) {
       *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
       const RCP<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >(tOp->getConstTpetraOperator());
@@ -33,6 +36,7 @@ namespace mini_em {
         }
         *Teko::getOutputStream() << "Cannot dump operator \'" << s << "\'" << std::endl;
       }
+#ifdef PANZER_HAVE_EPETRA_STACK
     } else if (eOp != Teuchos::null) {
       *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
       const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
@@ -41,6 +45,7 @@ namespace mini_em {
       EpetraExt::BlockMapToMatrixMarketFile(("domainmap_"+s).c_str(), crsOp->DomainMap());
       EpetraExt::BlockMapToMatrixMarketFile(("rangemap_"+s).c_str(), crsOp->RangeMap());
       EpetraExt::RowMatrixToMatrixMarketFile(s.c_str(), *crsOp);
+#endif
     } else
       TEUCHOS_ASSERT(false);
   }
@@ -53,15 +58,19 @@ namespace mini_em {
     using NT = Tpetra::Map<>::node_type;
     if (out!=Teuchos::null) {
       const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> >(Teuchos::rcpFromRef(op));
+#ifdef PANZER_HAVE_EPETRA_STACK
       const RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
+#endif
       if(tOp != Teuchos::null) {
         const RCP<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >(tOp->getConstTpetraOperator(),true);
         *out << "\nDebug: " << s << std::endl;
         crsOp->describe(*out,Teuchos::VERB_MEDIUM);
+#ifdef PANZER_HAVE_EPETRA_STACK
       } else if (eOp != Teuchos::null) {
         const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
         *out << "\nDebug: " << s << std::endl;
         // crsOp->describe(*out,Teuchos::VERB_MEDIUM);
+#endif
       } else
         TEUCHOS_ASSERT(false);
     }
@@ -83,7 +92,7 @@ namespace mini_em {
     return crsOp;
   }
 
-
+#ifdef PANZER_HAVE_EPETRA_STACK
   Teuchos::RCP<const Epetra_CrsMatrix> get_Epetra_CrsMatrix(const Thyra::LinearOpBase<double> & op) {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -113,6 +122,7 @@ namespace mini_em {
     crsMatrix->FillComplete();
     return crsMatrix;
   }
+#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
@@ -132,6 +142,7 @@ namespace mini_em {
     return identityMatrix;
   }
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   Teuchos::RCP<const Epetra_CrsMatrix>
   getIdentityMatrixEpetra (const Epetra_Map& rowMap,
                            double scaling)
@@ -146,6 +157,7 @@ namespace mini_em {
     identityMatrix->FillComplete();
     return identityMatrix;
   }
+#endif
 
   Teko::LinearOp getIdentityMatrix(const Teko::LinearOp& op, double scaling)
   {
@@ -154,7 +166,9 @@ namespace mini_em {
     using Node = panzer::TpetraNodeType;
 
     const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> >(op);
+#ifdef PANZER_HAVE_EPETRA_STACK
     const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+#endif
     if(tOp != Teuchos::null) {
       using Scalar = double;
       using LocalOrdinal = int;
@@ -167,6 +181,7 @@ namespace mini_em {
                                                                                            Teko::domainSpace(op),
                                                                                            tpId);
       return thyId;
+#ifdef PANZER_HAVE_EPETRA_STACK
     } else if (eOp != Teuchos::null) {
       const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
       auto epMap = crsOp->RowMap();
@@ -180,6 +195,7 @@ namespace mini_em {
                                                                                    Teko::domainSpace(op));
       // return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(thyConst);
       return thyConst;
+#endif
     } else
       TEUCHOS_ASSERT(false);
   }

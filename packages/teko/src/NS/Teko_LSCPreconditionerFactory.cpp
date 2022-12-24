@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -50,7 +50,6 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
 
 #include "Teko_LU2x2InverseOp.hpp"
 #include "Teko_Utilities.hpp"
@@ -59,8 +58,6 @@
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_PresLaplaceLSCStrategy.hpp"
 #include "Teko_LSCSIMPLECStrategy.hpp"
-
-#include "EpetraExt_RowMatrixOut.h"
 
 #include "Teuchos_Time.hpp"
 
@@ -106,7 +103,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    Teko_DEBUG_EXPR(Teuchos::Time totalTimer(""));
    Teko_DEBUG_EXPR(totalTimer.start());
 
-   // extract sub-matrices from source operator 
+   // extract sub-matrices from source operator
    LinearOp F  = blockOp->getBlock(0,0);
    LinearOp B  = blockOp->getBlock(1,0);
    LinearOp Bt = blockOp->getBlock(0,1);
@@ -139,21 +136,21 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // need to build Schur complement,  inv(P) = inv(B*Bt)*(B*F*Bt)*inv(B*Bt)
 
    // first construct middle operator: M = B * inv(Mass) * F * inv(Mass) * Bt
-   LinearOp M = 
+   LinearOp M =
       //          (B * inv(Mass) ) * F * (inv(Mass) * Bt)
       multiply( multiply(B,invMass), F , multiply(HScaling,Bt));
    if(innerStab!=Teuchos::null) // deal with inner stabilization
       M = add(M, innerStab);
-      
+
    // now construct a linear operator schur complement
-   LinearOp invPschur; 
+   LinearOp invPschur;
    if(outerStab!=Teuchos::null)
       invPschur = add(multiply(invBQBtmC, M , invBHBtmC), outerStab);
    else
       invPschur = multiply(invBQBtmC, M , invBHBtmC);
 
    // build the preconditioner operator: Use LDU or upper triangular approximation
-   if(invOpsStrategy_->useFullLDU()) { 
+   if(invOpsStrategy_->useFullLDU()) {
       Teko_DEBUG_EXPR(totalTimer.stop());
       Teko_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
 
@@ -166,7 +163,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       invDiag[1] = Thyra::scale(-1.0,invPschur);
 
       // get upper triangular matrix
-      BlockedLinearOp U = getUpperTriBlocks(blockOp); 
+      BlockedLinearOp U = getUpperTriBlocks(blockOp);
 
       Teko_DEBUG_EXPR(totalTimer.stop());
       Teko_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
@@ -206,7 +203,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    // build the strategy object
    RCP<LSCStrategy> strategy = buildStrategy(name,*stratPL,invLib,getRequestHandler());
- 
+
    // strategy could not be built
    if(strategy==Teuchos::null) {
       RCP<Teuchos::FancyOStream> out = getOutputStream();
@@ -241,7 +238,7 @@ CloneFactory<LSCStrategy> LSCPreconditionerFactory::strategyBuilder_;
 /** \brief Builder function for creating strategies.
   *
   * Builder function for creating strategies.
-  * 
+  *
   * \param[in] name     String name of strategy to build
   * \param[in] settings Parameter list describing the parameters for the
   *                     strategy to build
@@ -250,7 +247,7 @@ CloneFactory<LSCStrategy> LSCPreconditionerFactory::strategyBuilder_;
   * \returns If the name is associated with a strategy
   *          a pointer is returned, otherwise Teuchos::null is returned.
   */
-RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & name, 
+RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & name,
                                                          const Teuchos::ParameterList & settings,
                                                          const RCP<const InverseLibrary> & invLib,
                                                          const RCP<RequestHandler> & rh)
@@ -275,7 +272,7 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
 }
 
 /** \brief Add a strategy to the builder. This is done using the
-  *        clone pattern. 
+  *        clone pattern.
   *
   * Add a strategy to the builder. This is done using the
   * clone pattern. If your class does not support the Cloneable interface then
@@ -293,7 +290,7 @@ void LSCPreconditionerFactory::addStrategy(const std::string & name,const RCP<Cl
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
    // add clone to builder
-   strategyBuilder_.addClone(name,clone); 
+   strategyBuilder_.addClone(name,clone);
 }
 
 //! This is where the default objects are put into the strategyBuilder_

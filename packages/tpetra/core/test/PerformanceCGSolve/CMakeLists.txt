@@ -1,4 +1,4 @@
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # The performance test currently depends on KokkosCore for its timers.
 # Otherwise, it does not use anything else in KokkosCore directly.

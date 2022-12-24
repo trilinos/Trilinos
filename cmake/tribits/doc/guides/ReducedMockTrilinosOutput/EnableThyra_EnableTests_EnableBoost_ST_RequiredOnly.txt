@@ -47,25 +47,37 @@ Enabling all required upstream packages for current set of \
  dependence on Teuchos
 -- Setting Trilinos_ENABLE_RTOp=ON because ThyraCoreLibs has a required \
  dependence on RTOp
+-- Setting TPL_ENABLE_BLAS=ON because Epetra has a required dependence on BLAS
+-- Setting TPL_ENABLE_LAPACK=ON because Epetra has a required dependence on LAPACK
 
 Enabling all optional intra-package enables <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE> \
  that are not currently disabled if both sets of packages are enabled ...
 
--- Setting Thyra_ENABLE_ThyraGoodStuff=ON since Trilinos_ENABLE_Thyra=ON \
- AND Trilinos_ENABLE_ThyraGoodStuff=ON
--- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON \
- AND Trilinos_ENABLE_ThyraEpetra=ON
--- Setting Thyra_ENABLE_ThyraEpetraExt=ON since Trilinos_ENABLE_Thyra=ON \
- AND Trilinos_ENABLE_ThyraEpetraExt=ON
-
-Enabling all remaining required TPLs for current set of enabled packages ...
-
--- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
--- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
-
-Enabling all optional package TPL support <TRIBITS_PACKAGE>_ENABLE_<DEPTPL> not currently disabled for enabled TPLs ...
-
--- Setting Teuchos_ENABLE_Boost=ON since TPL_ENABLE_Boost=ON
+-- Setting Teuchos_ENABLE_BLAS=ON since Trilinos_ENABLE_Teuchos=ON AND TPL_ENABLE_BLAS=ON
+-- Setting Teuchos_ENABLE_LAPACK=ON since Trilinos_ENABLE_Teuchos=ON AND TPL_ENABLE_LAPACK=ON
+-- Setting Teuchos_ENABLE_Boost=ON since Trilinos_ENABLE_Teuchos=ON AND TPL_ENABLE_Boost=ON
+-- NOT setting Teuchos_ENABLE_MPI=ON since MPI is NOT enabled at this point!
+-- Setting RTOp_ENABLE_Teuchos=ON since Trilinos_ENABLE_RTOp=ON AND Trilinos_ENABLE_Teuchos=ON
+-- Setting Epetra_ENABLE_BLAS=ON since Trilinos_ENABLE_Epetra=ON AND TPL_ENABLE_BLAS=ON
+-- Setting Epetra_ENABLE_LAPACK=ON since Trilinos_ENABLE_Epetra=ON AND TPL_ENABLE_LAPACK=ON
+-- NOT setting Epetra_ENABLE_MPI=ON since MPI is NOT enabled at this point!
+-- Setting EpetraExt_ENABLE_Teuchos=ON since Trilinos_ENABLE_EpetraExt=ON AND Trilinos_ENABLE_Teuchos=ON
+-- Setting EpetraExt_ENABLE_Epetra=ON since Trilinos_ENABLE_EpetraExt=ON AND Trilinos_ENABLE_Epetra=ON
+-- NOT setting EpetraExt_ENABLE_Triutils=ON since Triutils is NOT enabled at this point!
+-- NOT setting EpetraExt_ENABLE_UMFPACK=ON since UMFPACK is NOT enabled at this point!
+-- NOT setting EpetraExt_ENABLE_AMD=ON since AMD is NOT enabled at this point!
+-- NOT setting EpetraExt_ENABLE_PETSC=ON since PETSC is NOT enabled at this point!
+-- Setting ThyraCoreLibs_ENABLE_Teuchos=ON since Trilinos_ENABLE_ThyraCoreLibs=ON AND Trilinos_ENABLE_Teuchos=ON
+-- Setting ThyraCoreLibs_ENABLE_RTOp=ON since Trilinos_ENABLE_ThyraCoreLibs=ON AND Trilinos_ENABLE_RTOp=ON
+-- Setting ThyraGoodStuff_ENABLE_ThyraCoreLibs=ON since Trilinos_ENABLE_ThyraGoodStuff=ON AND Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting ThyraEpetra_ENABLE_Epetra=ON since Trilinos_ENABLE_ThyraEpetra=ON AND Trilinos_ENABLE_Epetra=ON
+-- Setting ThyraEpetra_ENABLE_ThyraCoreLibs=ON since Trilinos_ENABLE_ThyraEpetra=ON AND Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting ThyraEpetraExt_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_ThyraEpetraExt=ON AND Trilinos_ENABLE_ThyraEpetra=ON
+-- Setting ThyraEpetraExt_ENABLE_EpetraExt=ON since Trilinos_ENABLE_ThyraEpetraExt=ON AND Trilinos_ENABLE_EpetraExt=ON
+-- Setting Thyra_ENABLE_ThyraCoreLibs=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting Thyra_ENABLE_ThyraGoodStuff=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraGoodStuff=ON
+-- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetra=ON
+-- Setting Thyra_ENABLE_ThyraEpetraExt=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetraExt=ON
 
 Final set of enabled top-level packages:  Teuchos RTOp Epetra EpetraExt Thyra 5
 Final set of enabled packages:  Teuchos RTOp Epetra EpetraExt ThyraCoreLibs ThyraGoodStuff ThyraEpetra ThyraEpetraExt Thyra 9

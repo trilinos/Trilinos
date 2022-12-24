@@ -23,8 +23,10 @@
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#endif
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedDOFManagerFactory.hpp"
@@ -1055,10 +1057,12 @@ int main(int argc,char * argv[]){
       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
       retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
 //    }
+#ifdef PANZER_HAVE_EPETRA_STACK
   } else if (linAlgebra == linAlgEpetra) {
     // TEUCHOS_ASSERT(!useComplex);
     typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
     retVal = main_<double,int,int,blockedLinObjFactory,false>(clp, argc, argv);
+#endif
   } else
     TEUCHOS_ASSERT(false);
 

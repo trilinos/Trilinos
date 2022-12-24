@@ -806,8 +806,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   using Teuchos::RCP;
   typedef Tpetra::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> BMV;
-  typedef Tpetra::MultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_block_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::apply: The matrix is "

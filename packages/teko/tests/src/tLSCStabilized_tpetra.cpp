@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -53,20 +53,13 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// Epetra includes
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
@@ -84,7 +77,7 @@
 #include <vector>
 
 // This whole test rig is based on inverting the matrix
-// 
+//
 //      [  1  2  1 -1 ]
 //  A = [  2  1 -3  1 ]
 //      [  1 -3  0  0 ]
@@ -115,19 +108,19 @@ int tLSCStabilized_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ost
    failstrm << "tLSCStabilized_tpetra";
 
    status = test_diagonal(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 /*
    status = test_diagonalNotSym(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"diagonalNotSym\" ... PASSED","   \"diagonalNotSym\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"diagonalNotSym\" ... PASSED","   \"diagonalNotSym\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_strategy(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"strategy\" ... PASSED","   \"strategy\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"strategy\" ... PASSED","   \"strategy\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -135,10 +128,10 @@ int tLSCStabilized_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ost
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLSCStabilized_tpetra...PASSED","tLSCStabilized_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLSCStabilized_tpetra...PASSED","tLSCStabilized_tpetra...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCStabilized_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLSCStabilized_tpetra...FAILED");
    }
 
    return failcount;
@@ -184,13 +177,13 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    LinearOp aiD = Teko::Test::DiagMatrix_tpetra(2,vec);
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
- 
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(iF,iBBt,aiD,Teuchos::null));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
    // build linear operator
-   RCP<const Thyra::LinearOpBase<ST> > precOp = prec->getUnspecifiedPrecOp(); 
+   RCP<const Thyra::LinearOpBase<ST> > precOp = prec->getUnspecifiedPrecOp();
 
    const RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(2,0,comm));
    // construct a couple of vectors
@@ -198,7 +191,7 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -218,8 +211,8 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [-2 4 7 9]
@@ -237,8 +230,8 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [1 0 0 -5]
@@ -256,8 +249,8 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [4 -4 6 12]
@@ -275,8 +268,8 @@ bool tLSCStabilized_tpetra::test_diagonal(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    return allPassed;
@@ -325,15 +318,15 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
 
    RCP<InverseLibrary> invLib = InverseLibrary::buildFromStratimikos();
    RCP<InverseFactory> invFact = invLib->getInverseFactory("Ifpack2");
- 
+
    RCP<InvLSCStrategy> lscStrat = rcp(new InvLSCStrategy(invFact));
    // lscStrat->setSymmetric(false);
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(lscStrat));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
    // build linear operator
-   RCP<const Thyra::LinearOpBase<ST> > precOp = prec->getUnspecifiedPrecOp(); 
+   RCP<const Thyra::LinearOpBase<ST> > precOp = prec->getUnspecifiedPrecOp();
 
    const RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(2,0,comm));
    // construct a couple of vectors
@@ -341,7 +334,7 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -361,8 +354,8 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [-2 4 7 9]
@@ -380,8 +373,8 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [1 0 0 -5]
@@ -399,8 +392,8 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    // test vector [4 -4 6 12]
@@ -418,8 +411,8 @@ bool tLSCStabilized_tpetra::test_diagonalNotSym(int verbosity,std::ostream & os)
    TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized_tpetra::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
-            << "      " << Print("x",x) 
-            << "      " << Print("y",y) 
+            << "      " << Print("x",x)
+            << "      " << Print("y",y)
             << "      " << Print("z",z));
 
    return allPassed;
@@ -471,7 +464,7 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
 
    Tpetra::Vector<ST,LO,GO,NT> ea(map),eb(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    RCP<InverseLibrary> invLib = InverseLibrary::buildFromStratimikos();
    RCP<InverseFactory> invFact = invLib->getInverseFactory("Ifpack2");
@@ -512,13 +505,13 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
    vec[4] = -0.115405114603879;
    LinearOp p11 = Teko::Test::DiagMatrix_tpetra(sz,vec);
    LinearOp P = Thyra::block2x2(p00,p01,p10,p11);
-  
+
    // Kluge to get around problem with Anasazi
    // Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
    // Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
-             
+
    // build inverse strategy
-   { 
+   {
       bool result;
       Teko::NS::LSCPrecondState state;
       Teko::NS::InvLSCStrategy iStrat(invFact,mass,false);
@@ -532,8 +525,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing mass operators");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
 
       // test inverse F
       ss.str("");
@@ -541,8 +534,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing F operators");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
 
       // test inverse B*Q*Bt-gamma*C
       ss.str("");
@@ -550,8 +543,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing B*Q*Bt-C operators");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
 
       // test alpha*inv(D)
       ss.str("");
@@ -563,8 +556,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing alpha*inv(D) operators");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
 
 #endif
 
@@ -574,8 +567,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing full op");
-      if(not result || verbosity>=10) 
-         os << ss.str(); 
+      if(not result || verbosity>=10)
+         os << ss.str();
    }
 
    return allPassed;
