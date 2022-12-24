@@ -120,7 +120,6 @@ void QuasiNewtonAlgorithm<Real>::initialize(Vector<Real>          &x,
   pgstep(*state_->iterateVec,*state_->stepVec,nobj,x,dg,t0_,tol);
   state_->gnorm = state_->stepVec->norm() / t0_;
   state_->snorm = ROL_INF<Real>();
-  state_->iterateVec->set(x);
 }
 
 template<typename Real>
@@ -144,10 +143,11 @@ void QuasiNewtonAlgorithm<Real>::run( Vector<Real>          &x,
   if (verbosity_ > 0) writeOutput(outStream,true);
 
   // Compute steepest descent step
+  xs->set(*state_->iterateVec);
+  state_->iterateVec->set(x);
   while (status_->check(*state_)) {
     // Compute step
     qobj->setAnchor(x,*state_->gradientVec);
-    pgstep(*xs,*s,nobj,x,*gp,one,tol);
     gtol = std::max(sp_tol_min_,std::min(sp_tol1_,sp_tol2_*state_->gnorm));
     list_.sublist("Status Test").set("Gradient Tolerance",gtol);
     if (algoName_ == "Line Search") algo = makePtr<TypeP::ProxGradientAlgorithm<Real>>(list_);
