@@ -264,6 +264,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
       auxParams.set("hierarchy label", "Auxiliary");
       auxParams.sublist("user data").set("Coordinates", coords);
+      // No rebalancing yet.
+      auxParams.set("coarse: max size", std::max(auxParams.get("coarse: max size", 2*comm->getSize()),
+                                                 2*comm->getSize()));
 
       auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
     }
