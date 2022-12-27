@@ -141,7 +141,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(problemParams.get<std::string>("coordinates"), map);
 
     // Auxiliary matrix used for multigrid construction
-    auxOp = MueLu::constructAuxiliaryOperator(op, problemParams);
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary operator")));
+
+      auxOp = MueLu::constructAuxiliaryOperator(op, problemParams);
+    }
 
     // Mass matrix for L2 error computation
     {
