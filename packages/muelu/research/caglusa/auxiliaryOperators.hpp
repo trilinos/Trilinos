@@ -73,19 +73,24 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  constructAuxiliaryOperator(RCP<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op,
+  constructAuxiliaryOperator(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op,
                              Teuchos::ParameterList& problemParams) {
     #include "MueLu_UseShortNames.hpp"
 
     using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using IOhelpers = MueLu::IOhelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
+    RCP<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > hop = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(op);
+
     RCP<Matrix> auxOp;
 
     const std::string auxOpStr = problemParams.get<std::string>("auxiliary operator");
 
     if ((auxOpStr == "near") || (auxOpStr == "distanceLaplacian")) {
-      auxOp = op->nearFieldMatrix();
+      if (hop.is_null())
+        auxOp = rcp_dynamic_cast<Matrix>(op, true);
+      else
+        auxOp = hop->nearFieldMatrix();
 #ifdef MUELU_HIERARCHICAL_DEBUG
       // CoalesceDropFactory_kokkos assumes fitted row and column maps
       Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkLocalRowMapMatchesColMap(*auxOp);
@@ -161,7 +166,9 @@ namespace MueLu {
 
     const bool implicitTranspose = params.get("transpose: use implicit", MueLu::MasterList::getDefault<bool>("transpose: use implicit"));
 
-    op->describe(out, Teuchos::VERB_EXTREME);
+    auto hop = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(op);
+    if (!hop.is_null())
+      op->describe(out, Teuchos::VERB_EXTREME);
 
     RCP<Hierarchy> H = rcp(new Hierarchy());
     RCP<Level> lvl = H->GetLevel(0);

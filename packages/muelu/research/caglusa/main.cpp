@@ -99,6 +99,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
   using HOp = Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using op_type = Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   using blocked_matrix_type = typename HOp::blocked_matrix_type;
   using blocked_map_type = typename blocked_matrix_type::blocked_map_type;
   using matrix_type = typename HOp::matrix_type;
@@ -118,14 +119,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
-  RCP<HOp> op;
+  RCP<op_type> op;
+  RCP<HOp> hop;
   {
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read hierarchical matrix")));
 
     op = IOhelpers::Read(xmlHierarchical, comm);
+    hop = Teuchos::rcp_dynamic_cast<HOp>(op);
   }
 
-  out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
+  if (!hop.is_null())
+    out << "Compression: " << hop->getCompression() << " of dense matrix."<< std::endl;
 
   Teuchos::ParameterList problemParams;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlProblem, Teuchos::Ptr<Teuchos::ParameterList>(&problemParams), *comm);
