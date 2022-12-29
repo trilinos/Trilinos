@@ -122,7 +122,7 @@ namespace MueLu {
 
       RCP<Teuchos::ParameterList> params;
       if (hierarchicalParams.isSublist("params")) {
-        params = Teuchos::rcpFromRef(hierarchicalParams.sublist("params"));
+        params = rcp(new Teuchos::ParameterList(hierarchicalParams.sublist("params")));
       }
 
       if (hierarchicalParams.isType<std::string>("coefficient map")) {
