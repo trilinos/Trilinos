@@ -329,7 +329,7 @@ public:
   /// \tparam ScalarType The type of entries in the multivector; the
   ///   template parameter of MultiVec.
   template<class ScalarType>
-  class MultiVecTraits<ScalarType,MultiVec<ScalarType> > {
+  class MultiVecTraits<ScalarType,MultiVec<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> > {
   public:
     //! @name Creation methods
     //@{ 
