@@ -81,7 +81,7 @@ namespace Belos {
   ///   multivector to clone.)
   ///
   /// \return Test result: true if all tests passed, else false.
-  template< class ScalarType, class MV >
+  template< class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   bool
   TestMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
