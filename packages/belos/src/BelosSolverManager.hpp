@@ -35,7 +35,7 @@ template <class ScalarType, class MV, class OP>
 class StatusTest;
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
 class SolverManager : virtual public Teuchos::Describable {
 
   public:
