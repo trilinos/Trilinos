@@ -35,6 +35,7 @@ APPEND_SET(HEADERS
   BelosCGIter.hpp
   BelosCGSingleRedIter.hpp
   BelosConfigDefs.hpp
+  BelosDenseMatTraits.hpp
   BelosDGKSOrthoManager.hpp
   BelosFixedPointIter.hpp
   BelosFixedPointIteration.hpp

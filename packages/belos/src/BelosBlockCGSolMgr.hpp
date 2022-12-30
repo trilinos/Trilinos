@@ -29,14 +29,9 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_RCPDecl.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
-#if defined(HAVE_TEUCHOSCORE_CXX11)
-#  include <type_traits>
-#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 #include <algorithm>
 
 /** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
@@ -73,15 +68,15 @@ namespace Belos {
     BlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  template<class ScalarType, class MV, class OP,
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class BlockCGSolMgr :
-    public Details::SolverManagerRequiresLapack<ScalarType,MV,OP>
+    public Details::SolverManagerRequiresLapack<ScalarType,MV,OP,DM>
   {
     static const bool requiresLapack =
       Belos::Details::LapackSupportsScalar<ScalarType>::value;
-    using base_type = Details::SolverManagerRequiresLapack<ScalarType, MV, OP, requiresLapack>;
+    using base_type = Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM, requiresLapack>;
 
   public:
     BlockCGSolMgr () :
@@ -98,32 +93,12 @@ namespace Belos {
   // Partial specialization for ScalarType types for which
   // Teuchos::LAPACK has a valid implementation.  This contains the
   // actual working implementation of BlockCGSolMgr.
-  template<class ScalarType, class MV, class OP>
-  class BlockCGSolMgr<ScalarType, MV, OP, true> :
-    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
+  template<class ScalarType, class MV, class OP, class DM>
+  class BlockCGSolMgr<ScalarType, MV, OP, DM, true> :
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true>
   {
-    // This partial specialization is already chosen for those scalar types
-    // that support lapack, so we don't need to have an additional compile-time
-    // check that the scalar type is float/double/complex.
-// #if defined(HAVE_TEUCHOSCORE_CXX11)
-// #  if defined(HAVE_TEUCHOS_COMPLEX)
-//     static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
-//                    std::is_same<ScalarType, std::complex<double> >::value ||
-//                    std::is_same<ScalarType, float>::value ||
-//                    std::is_same<ScalarType, double>::value,
-//                    "Belos::GCRODRSolMgr: ScalarType must be one of the four "
-//                    "types (S,D,C,Z) supported by LAPACK.");
-// #  else
-//     static_assert (std::is_same<ScalarType, float>::value ||
-//                    std::is_same<ScalarType, double>::value,
-//                    "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
-//                    "Complex arithmetic support is currently disabled.  To "
-//                    "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
-// #  endif // defined(HAVE_TEUCHOS_COMPLEX)
-// #endif // defined(HAVE_TEUCHOSCORE_CXX11)
-
   private:
-    using MVT = MultiVecTraits<ScalarType, MV>;
+    using MVT = MultiVecTraits<ScalarType, MV, DM>;
     using OPT = OperatorTraits<ScalarType, MV, OP>;
     using SCT = Teuchos::ScalarTraits<ScalarType>;
     using MagnitudeType = typename Teuchos::ScalarTraits<ScalarType>::magnitudeType;
@@ -184,8 +159,8 @@ namespace Belos {
     virtual ~BlockCGSolMgr() = default;
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new BlockCGSolMgr<ScalarType,MV,OP>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new BlockCGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -299,19 +274,19 @@ namespace Belos {
     ///
     /// This is an OR combination of the maximum iteration count test
     /// (\c maxIterTest_) and convergence test (\c convTest_).
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
 
     //! Maximum iteration count stopping criterion.
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
 
     //! Convergence stopping criterion.
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
 
     //! Output "status test" that controls all the other status tests.
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     //! Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
     //! Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -378,8 +353,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+BlockCGSolMgr<ScalarType,MV,OP,DM,true>::BlockCGSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -403,8 +378,8 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
 
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-BlockCGSolMgr<ScalarType,MV,OP,true>::
+template<class ScalarType, class MV, class OP, class DM>
+BlockCGSolMgr<ScalarType,MV,OP,DM,true>::
 BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
               const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
@@ -439,9 +414,9 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   }
 }
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 void
-BlockCGSolMgr<ScalarType,MV,OP,true>::
+BlockCGSolMgr<ScalarType,MV,OP,DM,true>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   // Create the internal parameter list if one doesn't already exist.
@@ -588,15 +563,15 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP,DM> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
   }
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;
+    Belos::OrthoManagerFactory<ScalarType, MV, OP, DM> factory;
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
       paramsOrtho->set ("depTol", orthoKappa_ );
@@ -606,8 +581,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   }
 
   // Convergence
-  using StatusTestCombo_t = Belos::StatusTestCombo<ScalarType, MV, OP>;
-  using StatusTestResNorm_t = Belos::StatusTestGenResNorm<ScalarType, MV, OP>;
+  using StatusTestCombo_t = Belos::StatusTestCombo<ScalarType, MV, OP, DM>;
+  using StatusTestResNorm_t = Belos::StatusTestGenResNorm<ScalarType, MV, OP, DM>;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -674,7 +649,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_.is_null () || newResTest) {
@@ -698,7 +673,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
@@ -726,9 +701,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
+BlockCGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
 
@@ -786,8 +761,8 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
@@ -800,8 +775,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   if (!isSet_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
-
-  Teuchos::LAPACK<int,ScalarType> lapack;
 
   TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
     BlockCGSolMgrLinearProblemFailure,
@@ -855,7 +828,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
 
   plist.set("Assert Positive Definiteness", assertPositiveDefiniteness_);
 
-  RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  RCP<CGIteration<ScalarType,MV,OP,DM> > block_cg_iter;
   if (blockSize_ == 1) {
     // Standard (nonblock) CG is faster for the special case of a
     // block size of 1.  A single reduction iteration can also be used
@@ -864,7 +837,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
               foldConvergenceDetectionIntoAllreduce_);
     if (useSingleReduction_) {
       block_cg_iter =
-        rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
+        rcp (new CGSingleRedIter<ScalarType,MV,OP,DM> (problem_, printer_,
                                                     outputTest_, convTest_, plist));
       if (state_.is_null() || Teuchos::rcp_dynamic_cast<CGSingleRedIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new CGSingleRedIterationState<ScalarType, MV>());
@@ -872,14 +845,14 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     }
     else {
       block_cg_iter =
-        rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
+        rcp (new CGIter<ScalarType,MV,OP,DM> (problem_, printer_,
                                            outputTest_, convTest_, plist));
       if (state_.is_null() || Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new CGIterationState<ScalarType, MV>());
     }
   } else {
     block_cg_iter =
-      rcp (new BlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_,
+      rcp (new BlockCGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_,
                                               ortho_, plist));
     if (state_.is_null() || Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new BlockCGIterationState<ScalarType, MV>());
@@ -923,7 +896,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
             // At least one of the linear system(s) converged.
             //
             // Get the column indices of the linear systems that converged.
-            using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP>;
+            using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP, DM>;
             std::vector<int> convIdx =
               rcp_dynamic_cast<conv_test_type>(convTest_)->convIndices();
 
@@ -1068,7 +1041,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
 
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
-    using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP>;
+    using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP, DM>;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
@@ -1095,8 +1068,8 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
-template<class ScalarType, class MV, class OP>
-std::string BlockCGSolMgr<ScalarType,MV,OP,true>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string BlockCGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::BlockCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";

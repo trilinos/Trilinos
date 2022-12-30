@@ -19,3 +19,11 @@ IF(Teuchos_ENABLE_COMPLEX)
     )
 
 ENDIF(Teuchos_ENABLE_COMPLEX)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TeuchosSDMTester
+  SOURCES cxx_main_dense.cpp
+  ARGS "-v"
+  COMM serial 
+  STANDARD_PASS_OUTPUT
+)

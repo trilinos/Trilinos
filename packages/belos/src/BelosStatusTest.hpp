@@ -46,7 +46,7 @@ namespace Belos {
 
   //@}
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
 class StatusTest : public Teuchos::Describable {
 
  public:
@@ -71,7 +71,7 @@ class StatusTest : public Teuchos::Describable {
 
     \return Belos::StatusType: Unconverged, Converged or Failed.
   */
-  virtual StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver ) = 0;
+  virtual StatusType checkStatus( Iteration<ScalarType,MV,OP,DM>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
   virtual StatusType getStatus() const = 0;

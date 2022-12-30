@@ -20,8 +20,6 @@
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>

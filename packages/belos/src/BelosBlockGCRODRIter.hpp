@@ -131,8 +131,8 @@ namespace Belos{
   	//@}
 
 
-    template<class ScalarType, class MV, class OP>
-    class BlockGCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
+    template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType> >
+    class BlockGCRODRIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     	public:
 
   	//
@@ -293,9 +293,6 @@ namespace Belos{
 	//! Get the maximum dimension allocated for the search subspace.
        int getMaxSubspaceDim() const { return numBlocks_*blockSize_; };
 
-	//! \brief Set the maximum number of recycled blocks used by the iterative solver.
-       int getRecycledBlocks() const { return recycledBlocks_; };
-
 	//@}
 
 
@@ -307,9 +304,6 @@ namespace Belos{
        //! \brief Set the blocksize.
        void setBlockSize(int blockSize){ blockSize_ = blockSize; }
 
-       //! \brief Set the maximum number of recycled blocks used by the iterative solver.
-       void setRecycledBlocks(int recycledBlocks) { setSize( recycledBlocks, numBlocks_ ); };
-
        //! \brief Set the maximum number of blocks used by the iterative solver.
        void setNumBlocks(int numBlocks) { setSize( recycledBlocks_, numBlocks ); };
 
@@ -319,8 +313,8 @@ namespace Belos{
        if ( (recycledBlocks_ != recycledBlocks) || (numBlocks_ != numBlocks) ) {
       	recycledBlocks_ = recycledBlocks;
        	numBlocks_ = numBlocks;
-        cs_.sizeUninitialized( numBlocks_ );
-        sn_.sizeUninitialized( numBlocks_ );
+        cs_.resize( numBlocks_ );
+        sn_.resize( numBlocks_ );
         Z_.shapeUninitialized( numBlocks_*blockSize_, blockSize_ );
       }
     }
@@ -358,9 +352,9 @@ namespace Belos{
       // recycledBlocks_ is the size of the allocated space for the recycled subspace, in vectors.
       int recycledBlocks_;    
 
-      //Storage for QR factorization of the least squares system if using plane rotations.
-      SDV sn_;
-      Teuchos::SerialDenseVector<int,MagnitudeType> cs_;
+      // Storage for QR factorization of the least squares system.
+      std::vector<ScalarType> sn_;
+      std::vector<MagnitudeType> cs_;
 
       //Storage for QR factorization of the least squares system if using Householder reflections
       //Per block Krylov vector, we actually construct a 2*blockSize_ by 2*blockSize_ matrix which
@@ -368,7 +362,6 @@ namespace Belos{
       //speed ups without losing accuracy because we can apply previous Householder transformations
       //with BLAS3 operations.
       std::vector< SDM >House_;
-      SDV beta_;
 
       //
       //Current Solver State
@@ -427,8 +420,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Constructor.
-   template<class ScalarType, class MV, class OP>
-   BlockGCRODRIter<ScalarType,MV,OP>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+   template<class ScalarType, class MV, class OP, class DM>
+   BlockGCRODRIter<ScalarType,MV,OP,DM>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
                                             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -477,8 +470,8 @@ namespace Belos{
 
         //THIS MAKES SPACE FOR GIVENS ROTATIONS BUT IN REALITY WE NEED TO DO TESTING ON BLOCK SIZE
         //AND CHOOSE BETWEEN GIVENS ROTATIONS AND HOUSEHOLDER TRANSFORMATIONS.        
-        cs_.sizeUninitialized( numBlocks_+1 );
-    	sn_.sizeUninitialized( numBlocks_+1 );
+        cs_.resize( numBlocks_+1 );
+    	sn_.resize( numBlocks_+1 );
     	Z_.shapeUninitialized( (numBlocks_+1)*blockSize_,blockSize_ );
 
 	House_.resize(numBlocks_);
@@ -490,8 +483,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    // Iterate until the status test informs us we should stop.
-   template <class ScalarType, class MV, class OP>
-   void BlockGCRODRIter<ScalarType,MV,OP>::iterate() {
+   template <class ScalarType, class MV, class OP, class DM>
+   void BlockGCRODRIter<ScalarType,MV,OP,DM>::iterate() {
 	TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
 
 // MLP
@@ -615,8 +608,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Initialize this iteration object.
-   template <class ScalarType, class MV, class OP>
-   void BlockGCRODRIter<ScalarType,MV,OP>::initialize(BlockGCRODRIterState<ScalarType,MV>& newstate) {
+   template <class ScalarType, class MV, class OP, class DM>
+   void BlockGCRODRIter<ScalarType,MV,OP,DM>::initialize(BlockGCRODRIterState<ScalarType,MV>& newstate) {
 	if (newstate.V != Teuchos::null &&  newstate.H != Teuchos::null) {
       		curDim_ = newstate.curDim;
       		V_      = newstate.V;
@@ -651,9 +644,9 @@ namespace Belos{
    //right-hand sides we are interested in, as dictated by 
    //std::vector<int> trueRHSIndices_ (THIS IS NOT YET IMPLEMENTED.  JUST GETS ALL RESIDUALS)
    //A norm of -1 is entered for all residuals about which we do not care.
-   template <class ScalarType, class MV, class OP>
+   template <class ScalarType, class MV, class OP, class DM>
    Teuchos::RCP<const MV> 
-   BlockGCRODRIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const
+   BlockGCRODRIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const
    {
 	//
 	// NOTE: Make sure the incoming std::vector is the correct size!
@@ -680,8 +673,8 @@ namespace Belos{
 
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Get the current update from this subspace.
-   template <class ScalarType, class MV, class OP>
-   Teuchos::RCP<MV> BlockGCRODRIter<ScalarType,MV,OP>::getCurrentUpdate() const {
+   template <class ScalarType, class MV, class OP, class DM>
+   Teuchos::RCP<MV> BlockGCRODRIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const {
 	//
 	// If this is the first iteration of the Arnoldi factorization,
 	// there is no update, so return Teuchos::null.
@@ -751,8 +744,8 @@ namespace Belos{
     	return currentUpdate;
     }//end getCurrentUpdate() definition
 
-    template<class ScalarType, class MV, class OP>
-    void BlockGCRODRIter<ScalarType,MV,OP>::updateLSQR( int dim ) {
+    template<class ScalarType, class MV, class OP, class DM>
+    void BlockGCRODRIter<ScalarType,MV,OP,DM>::updateLSQR( int dim ) {
 	
 	int i;
 	const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();

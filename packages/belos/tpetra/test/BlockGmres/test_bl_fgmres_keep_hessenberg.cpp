@@ -47,27 +47,28 @@ using Teuchos::rcp;
 // StatusTest that snapshots H and R from BlockFGmresIter after each
 // iteration.  Returns Undefined so it never affects convergence decisions.
 // -----------------------------------------------------------------------
-template <class SC, class MV, class OP>
-class HessenbergCapture : public Belos::StatusTest<SC, MV, OP> {
+template <class SC, class MV, class OP, class DM>
+class HessenbergCapture : public Belos::StatusTest<SC, MV, OP, DM> {
  public:
-  using State = Belos::GmresIterationState<SC, MV>;
+  using DMT   = Belos::DenseMatTraits<SC,DM>;
+  using State = Belos::GmresIterationState<SC, MV, DM>;
 
-  int                                     curDim = 0;
-  bool                                    sawFGmresIter = false;
-  RCP<Teuchos::SerialDenseMatrix<int,SC>> H;   // deep copy of raw Hessenberg
-  RCP<Teuchos::SerialDenseMatrix<int,SC>> R;   // deep copy of QR-rotated R
+  int     curDim = 0;
+  bool    sawFGmresIter = false;
+  RCP<DM> H;   // deep copy of raw Hessenberg
+  RCP<DM> R;   // deep copy of QR-rotated R
 
-  Belos::StatusType checkStatus(Belos::Iteration<SC, MV, OP>* it) override {
-    auto* fg = dynamic_cast<Belos::BlockFGmresIter<SC, MV, OP>*>(it);
+  Belos::StatusType checkStatus(Belos::Iteration<SC, MV, OP, DM>* it) override {
+    auto* fg = dynamic_cast<Belos::BlockFGmresIter<SC, MV, OP, DM>*>(it);
     if (fg) {
       sawFGmresIter = true;
       State s = fg->getState();
       if (s.curDim > 0) {
         curDim = s.curDim;
         if (s.H)
-          H = rcp(new Teuchos::SerialDenseMatrix<int,SC>(*s.H));
+          H = DMT::CreateCopy( *s.H );
         if (s.R)
-          R = rcp(new Teuchos::SerialDenseMatrix<int,SC>(*s.R));
+          R = DMT::CreateCopy( *s.R );
       }
     }
     return Belos::Undefined;
@@ -158,8 +159,8 @@ bool runCase(bool keepHessenberg, int numBlocks, bool verbose)
   params->set("Keep Hessenberg",       keepHessenberg);
   params->set("Verbosity",             Belos::Errors);
 
-  auto capture = rcp(new HessenbergCapture<SC,MV,OP>());
-  Belos::BlockGmresSolMgr<SC,MV,OP> solver(problem, params);
+  auto capture = rcp(new HessenbergCapture<SC,MV,OP,SDM>());
+  Belos::BlockGmresSolMgr<SC,MV,OP,SDM> solver(problem, params);
   solver.setDebugStatusTest(capture);
 
   Belos::ReturnType ret = solver.solve();

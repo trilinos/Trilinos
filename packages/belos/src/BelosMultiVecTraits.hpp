@@ -25,7 +25,11 @@
 #include "BelosStubTsqrAdapter.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
+
+// This is included for backwards compatibility
+// for all codes using the default template parameter
+// DM = Teuchos::SerialDenseMatrix<int,ScalarType>
+#include "BelosDenseMatTraits.hpp" 
 
 namespace Belos {
 
@@ -35,7 +39,7 @@ namespace Belos {
   /// MultiVecTraits<ScalarType, MV> uses this struct to produce a
   /// compile-time error when no specialization exists for the scalar
   /// type ScalarType and multivector type MV.
-  template<class ScalarType, class MV>
+  template<class ScalarType, class MV, class DM>
   struct UndefinedMultiVecTraits
   {
     /// \brief Any attempt to compile this method will result in a compile-time error.
@@ -54,6 +58,7 @@ namespace Belos {
   ///
   /// \tparam ScalarType The type of the entries in the multivectors.
   /// \tparam MV The type of the multivectors themselves.
+  /// \tparam DM Type of Dense Matrix (default= Teuchos::SerialDenseMatrix)
   ///
   /// This traits class tells Belos' solvers how to perform
   /// multivector operations for the multivector type MV.  These
@@ -93,7 +98,7 @@ namespace Belos {
   ///   Epetra and Tpetra multivector types, and Stratimikos provides
   ///   a specialization for the Thyra type.  Just relax and enjoy
   ///   using the solvers!
-  template<class ScalarType, class MV>
+  template<class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
   class MultiVecTraits {
   public:
     //! @name Creation methods
@@ -104,14 +109,14 @@ namespace Belos {
     \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /*! \brief Creates a new \c MV and copies contents of \c mv into the new vector (deep copy).
 
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> CloneCopy( const MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /*! \brief Creates a new \c MV and copies the selected contents of \c mv into the new vector (deep copy).
 
@@ -119,7 +124,7 @@ namespace Belos {
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /// \brief Deep copy of specified columns of mv
     ///
@@ -131,7 +136,7 @@ namespace Belos {
     /// \param index [in] Inclusive index range of columns of mv
     /// \return Reference-counted pointer to the new multivector of type \c MV.
     static Teuchos::RCP<MV> CloneCopy( const MV& mv, const Teuchos::Range1D& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /*! \brief Creates a new \c MV that shares the selected contents of \c mv (shallow copy).
 
@@ -139,7 +144,7 @@ namespace Belos {
     \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, const std::vector<int>& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /// \brief Non-const view of specified columns of mv
     ///
@@ -150,7 +155,7 @@ namespace Belos {
     /// \param index [in] Inclusive index range of columns of mv
     /// \return Reference-counted pointer to the non-const view of specified columns of mv
     static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, const Teuchos::Range1D& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /*! \brief Creates a new const \c MV that shares the selected contents of \c mv (shallow copy).
 
@@ -158,7 +163,7 @@ namespace Belos {
     \return Reference-counted pointer to the new const multivector of type \c MV.
     */
     static Teuchos::RCP<const MV> CloneView( const MV& mv, const std::vector<int>& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     /// \brief Const view of specified columns of mv
     ///
@@ -169,7 +174,7 @@ namespace Belos {
     /// \param index [in] Inclusive index range of columns of mv
     /// \return Reference-counted pointer to the const view of specified columns of mv
     static Teuchos::RCP<MV> CloneView( MV& mv, const Teuchos::Range1D& index )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return Teuchos::null; }
 
     //@}
 
@@ -180,11 +185,11 @@ namespace Belos {
     ///
     //! Obtain the vector length of \c mv.
     static ptrdiff_t GetGlobalLength( const MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return 0; }
 
     //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return 0; }
 
     /// Whether the given multivector \c mv has constant stride
     ///
@@ -209,7 +214,7 @@ namespace Belos {
     ///   performance penalty for cache blocks, and doesn't require
     ///   an extra cache block's worth of storage.
     static bool HasConstantStride( const MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return false; }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); return false; }
 
     //@}
 
@@ -217,36 +222,41 @@ namespace Belos {
     //@{
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
+     *  \note User is responsible for calling any necessary 
+     *  host-device or device-host syncs within this function.
+     *  Belos will NOT call any syncs before calling MvTimesMatAddMv. 
      */
     static void MvTimesMatAddMv( const ScalarType alpha, const MV& A,
-                                 const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
+                                 const DM& B,
                                  const ScalarType beta, MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
     static void MvAddMv( const ScalarType alpha, const MV& A, const ScalarType beta, const MV& B, MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
     static void MvScale ( MV& mv, const ScalarType alpha )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
      */
     static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
+     *  \note Belos solver algorithms are responsible for calling any needed device-to-host syncs after MvTransMv.
+     *  Please do not include extra syncs in the function implementation. 
     */
-    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B)
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, DM& B)
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Hmv[i]\f$.
      */
     static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType> &b)
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     //@}
     //! @name Norm method
@@ -260,7 +270,7 @@ namespace Belos {
       @param NormType: norm type (default: two-norm)
     */
     static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     //@}
 
@@ -272,7 +282,7 @@ namespace Belos {
     i.e.<tt> mv[index[i]] = A[i]</tt>.
     */
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /// \brief Deep copy of A into specified columns of mv
     ///
@@ -287,23 +297,23 @@ namespace Belos {
     ///   index set of the target
     /// \param mv [out] Target multivector
     static void SetBlock( const MV& A, const Teuchos::Range1D& index, MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /// \brief mv := A
     ///
     /// Assign (deep copy) A into mv.
     static void Assign( const MV& A, MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Replace the vectors in \c mv with random vectors.
      */
     static void MvRandom( MV& mv )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
      */
     static void MvInit( MV& mv, const ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     //@}
 
@@ -313,7 +323,7 @@ namespace Belos {
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */
     static void MvPrint( const MV& mv, std::ostream& os )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     //@}
 
@@ -330,7 +340,7 @@ namespace Belos {
     /// adapter.  Please refer to Epetra::TsqrAdapter (for
     /// Epetra_MultiVector) or Tpetra::TsqrAdaptor (for
     /// Tpetra::MultiVector) for examples.
-    typedef Belos::details::StubTsqrAdapter<MV> tsqr_adaptor_type;
+    typedef Belos::details::StubTsqrAdapter<MV, DM> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 

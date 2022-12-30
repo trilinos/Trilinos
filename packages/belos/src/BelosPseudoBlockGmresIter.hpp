@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
+#include "BelosGmresIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosMatOrthoManager.hpp"
@@ -24,10 +25,9 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -46,73 +46,18 @@
 */
 
 namespace Belos {
-  
-  //! @name PseudoBlockGmresIter Structures 
-  //@{ 
-  
-  /** \brief Structure to contain pointers to PseudoBlockGmresIter state variables.
-   *
-   * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
-   */
-  template <class ScalarType, class MV>
-  struct PseudoBlockGmresIterState {
 
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename SCT::magnitudeType MagnitudeType;
-
-    /*! \brief The current dimension of the reduction.
-     *
-     * This should always be equal to PseudoBlockGmresIter::getCurSubspaceDim()
-     */
-    int curDim;
-    /*! \brief The current Krylov basis. */
-    std::vector<Teuchos::RCP<const MV> > V;
-    /*! \brief The current Hessenberg matrix. 
-     *
-     * The \c curDim by \c curDim leading submatrix of H is the 
-     * projection of problem->getOperator() by the first \c curDim vectors in V. 
-     */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > H;
-    /*! \brief The current upper-triangular matrix from the QR reduction of H. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > R;
-    /*! \brief The current right-hand side of the least squares system RY = Z. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > Z;
-    /*! \brief The current Given's rotation coefficients. */    
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > sn;
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,MagnitudeType> > > cs;
-
-    PseudoBlockGmresIterState() : curDim(0), V(0),
-				  H(0), R(0), Z(0),
-                                  sn(0), cs(0)
-    {}
-  };
-  
-  //! @name PseudoBlockGmresIter Exceptions
-  //@{ 
-  
-  /** \brief PseudoBlockGmresIterOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the new basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockGmresIter::iterate() method.
-   *
-   */
-  class PseudoBlockGmresIterOrthoFailure : public BelosError {public:
-    PseudoBlockGmresIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-  
-  
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>  
+  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     
   public:
     
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
@@ -129,8 +74,8 @@ namespace Belos {
      */
     PseudoBlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 			  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 			  Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -185,14 +130,14 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(const PseudoBlockGmresIterState<ScalarType,MV> & newstate);
+    void initialize(const PseudoBlockGmresIterState<ScalarType,MV,DM> & newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
      */
     void initialize()
     {
-      PseudoBlockGmresIterState<ScalarType,MV> empty;
+      PseudoBlockGmresIterState<ScalarType,MV,DM> empty;
       initialize(empty);
     }
     
@@ -203,8 +148,8 @@ namespace Belos {
      * \returns A PseudoBlockGmresIterState object containing const pointers to the current
      * solver state.
      */
-    PseudoBlockGmresIterState<ScalarType,MV> getState() const {
-      PseudoBlockGmresIterState<ScalarType,MV> state;
+    PseudoBlockGmresIterState<ScalarType,MV,DM> getState() const {
+      PseudoBlockGmresIterState<ScalarType,MV,DM> state;
       state.curDim = curDim_;
       state.V.resize(numRHS_);
       state.H.resize(numRHS_);
@@ -309,10 +254,10 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >       lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >             om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
+    const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
     
     //
     // Algorithmic parameters
@@ -323,8 +268,8 @@ namespace Belos {
     int numBlocks_; 
     
     // Storage for QR factorization of the least squares system.
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > sn_;
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
+    std::vector<Teuchos::RCP<std::vector<ScalarType> > > sn_;
+    std::vector<Teuchos::RCP<std::vector<MagnitudeType> > > cs_;
     
     // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
@@ -351,22 +296,22 @@ namespace Belos {
     // Projected matrices
     // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
     //
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > H_;
+    std::vector<Teuchos::RCP<DM> > H_;
     // 
     // QR decomposition of Projected matrices for solving the least squares system HY = B.
     // R_: Upper triangular reduction of H
     // Z_: Q applied to right-hand side of the least squares system
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > R_;
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > Z_;  
+    std::vector<Teuchos::RCP<DM> > R_;
+    std::vector<Teuchos::RCP<DM> > Z_;  
   };
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PseudoBlockGmresIter<ScalarType,MV,OP>::PseudoBlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::PseudoBlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 							       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 							       Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -388,8 +333,8 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::setNumBlocks (int numBlocks)
+  template <class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::setNumBlocks (int numBlocks)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -404,8 +349,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current update from this subspace.
-  template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<MV> PseudoBlockGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> PseudoBlockGmresIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   {
     //
     // If this is the first iteration of the Arnoldi factorization, 
@@ -430,16 +375,21 @@ namespace Belos {
         //
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
-        Teuchos::SerialDenseVector<int,ScalarType> y( Teuchos::Copy, Z_[i]->values(), curDim_ );
+        Teuchos::RCP<DM> y = DMT::SubviewCopy(*Z_[i], curDim_, 1);
+        DMT::SyncDeviceToHost( *y );
+        DMT::SyncDeviceToHost( *H_[i] );
         //
         //  Solve the least squares problem and compute current solutions.
         //
         blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 	           Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		   H_[i]->values(), H_[i]->stride(), y.values(), y.stride() );
-	
+		   DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]), 
+                   DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+
+        DMT::SyncHostToDevice( *y ); 	
+        DMT::SyncHostToDevice( *H_[i] ); 	
 	Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
-	MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *cur_block_copy_vec );
+	MVT::MvTimesMatAddMv( one, *Vjp1, *y, zero, *cur_block_copy_vec );
       }
     }
     return currentUpdate;
@@ -449,13 +399,11 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
   // Note:  No residual vector will be returned by Gmres.
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV> 
-  PseudoBlockGmresIter<ScalarType,MV,OP>::
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
-    typedef typename Teuchos::ScalarTraits<ScalarType> STS;
-
     if (norms)
       { // Resize the incoming std::vector if necessary.  The type
 	// cast avoids the compiler warning resulting from a signed /
@@ -463,21 +411,21 @@ namespace Belos {
 	if (static_cast<int> (norms->size()) < numRHS_)
 	  norms->resize (numRHS_); 
 
-	Teuchos::BLAS<int, ScalarType> blas;
 	for (int j = 0; j < numRHS_; ++j) 
 	  {
-	    const ScalarType curNativeResid = (*Z_[j])(curDim_);
-	    (*norms)[j] = STS::magnitude (curNativeResid);
+            DMT::SyncDeviceToHost( *Z_[j] );
+	    const ScalarType curNativeResid = DMT::ValueConst(*Z_[j],curDim_,0);
+	    (*norms)[j] = SCT::magnitude (curNativeResid);
 	  }
     }
     return Teuchos::null;
   }
 
   
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   void 
-  PseudoBlockGmresIter<ScalarType,MV,OP>::
-  initialize (const PseudoBlockGmresIterState<ScalarType,MV> & newstate)
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::
+  initialize (const PseudoBlockGmresIterState<ScalarType,MV,DM> & newstate)
   {
     using Teuchos::RCP;
 
@@ -572,9 +520,7 @@ namespace Belos {
 
         RCP<const MV> newV = MVT::CloneView (*newstate.V[i], nevind);
         RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
-        const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-        const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-        MVT::MvAddMv (one, *newV, zero, *newV, *lclV);
+        MVT::Assign(*newV, *lclV);
 
         // Done with local pointers
         lclV = Teuchos::null;
@@ -587,24 +533,23 @@ namespace Belos {
     for (int i=0; i<numRHS_; ++i) {
       // Create a vector if we need to.
       if (Z_[i] == Teuchos::null) {
-	Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
+	Z_[i] = DMT::Create();
       }
-      if (Z_[i]->length() < numBlocks_+1) {
-	Z_[i]->shapeUninitialized(numBlocks_+1, 1); 
+      if (DMT::GetNumRows(*Z_[i]) < numBlocks_+1) {
+	DMT::Reshape(*Z_[i], numBlocks_+1, 1, false); 
       }
       
       // Check that the newstate vector is consistent.
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(DMT::GetNumRows(*newstate.Z[i]) < curDim_, std::invalid_argument, errstr);
       
       // Put data into Z_, make sure old information is not still hanging around.
       if (newstate.Z[i] != Z_[i]) {
 	if (curDim_==0)
-	  Z_[i]->putScalar();
+	  DMT::PutScalar(*Z_[i]);
 	
-        Teuchos::SerialDenseVector<int,ScalarType> newZ(Teuchos::View,newstate.Z[i]->values(),curDim_+1);
-        Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > lclZ;
-        lclZ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,Z_[i]->values(),curDim_+1) );
-        lclZ->assign(newZ);
+        Teuchos::RCP<const DM> newZ = DMT::SubviewConst(*newstate.Z[i],curDim_+1,1);
+        Teuchos::RCP<DM> lclZ = DMT::Subview(*Z_[i],curDim_+1,1);
+        DMT::Assign(*lclZ,*newZ);
 	
         // Done with local pointers
 	lclZ = Teuchos::null;
@@ -617,26 +562,24 @@ namespace Belos {
     for (int i=0; i<numRHS_; ++i) {
       // Create a matrix if we need to.
       if (H_[i] == Teuchos::null) {
-	H_[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+	H_[i] = DMT::Create();
       }
-      if (H_[i]->numRows() < numBlocks_+1 || H_[i]->numCols() < numBlocks_) {
-	H_[i]->shapeUninitialized(numBlocks_+1, numBlocks_);
+      if (DMT::GetNumRows(*H_[i]) < numBlocks_+1 || DMT::GetNumCols(*H_[i]) < numBlocks_) {
+	DMT::Reshape(*H_[i], numBlocks_+1, numBlocks_, false);
       }
       
       // Put data into H_ if it exists, make sure old information is not still hanging around.
       if ((int)newstate.H.size() == numRHS_) {
 	
 	// Check that the newstate matrix is consistent.
-	TEUCHOS_TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION((DMT::GetNumRows(*newstate.H[i]) < curDim_ || DMT::GetNumCols(*newstate.H[i]) < curDim_), std::invalid_argument, 
 			   "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
 	
 	if (newstate.H[i] != H_[i]) {
-	  // H_[i]->putScalar();
 	  
-	  Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H[i],curDim_+1, curDim_);
-	  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
-	  lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_[i],curDim_+1, curDim_) );
-	  lclH->assign(newH);
+	  Teuchos::RCP<const DM> newH = DMT::SubviewConst(*newstate.H[i],curDim_+1, curDim_);
+	  Teuchos::RCP<DM> lclH = DMT::Subview(*H_[i],curDim_+1, curDim_);
+	  DMT::Assign(*lclH,*newH);
 	  
 	  // Done with local pointers
 	  lclH = Teuchos::null;
@@ -654,20 +597,20 @@ namespace Belos {
     if ((int)newstate.cs.size() == numRHS_ && (int)newstate.sn.size() == numRHS_) {
       for (int i=0; i<numRHS_; ++i) {
         if (cs_[i] != newstate.cs[i])
-          cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(*newstate.cs[i]) );
+          cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(*newstate.cs[i]) );
         if (sn_[i] != newstate.sn[i])
-          sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(*newstate.sn[i]) );
+          sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(*newstate.sn[i]) );
       }
     } 
       
     // Resize or create the vectors as necessary
     for (int i=0; i<numRHS_; ++i) {
       if (cs_[i] == Teuchos::null) 
-        cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(numBlocks_+1) );
+        cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(numBlocks_+1) );
       else
         cs_[i]->resize(numBlocks_+1);
       if (sn_[i] == Teuchos::null)
-        sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(numBlocks_+1) );
+        sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(numBlocks_+1) );
       else
         sn_[i]->resize(numBlocks_+1);
     }
@@ -680,8 +623,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -690,9 +633,6 @@ namespace Belos {
       initialize();
     }
 
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    
     // Compute the current search dimension. 
     int searchDim = numBlocks_;
     //
@@ -711,7 +651,7 @@ namespace Belos {
       index2[0] = i;
       Teuchos::RCP<const MV> tmp_vec = MVT::CloneView( *V_[i], index );
       Teuchos::RCP<MV> U_vec_view = MVT::CloneViewNonConst( *U_vec, index2 );
-      MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *U_vec_view );
+      MVT::Assign( *tmp_vec, *U_vec_view );
     }
     
     ////////////////////////////////////////////////////////////////
@@ -752,14 +692,10 @@ namespace Belos {
 	//
 	// Get a view of the current part of the upper-hessenberg matrix.
 	//
-	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > h_new 
-	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-			  ( Teuchos::View, *H_[i], num_prev, 1, 0, curDim_ ) );
-	Teuchos::Array< Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > h_array( 1, h_new );
+	Teuchos::RCP<DM> h_new = DMT::Subview(*H_[i], num_prev, 1, 0, curDim_); 
+	Teuchos::Array< Teuchos::RCP<DM> > h_array( 1, h_new );
 	
-	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > r_new
-	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-			  ( Teuchos::View, *H_[i], 1, 1, num_prev, curDim_ ) );
+	Teuchos::RCP<DM> r_new = DMT::Subview(*H_[i], 1, 1, num_prev, curDim_);
 	//
 	// Orthonormalize the new block of the Krylov expansion
 	// NOTE:  Rank deficiencies are not checked because this is a single-std::vector Krylov method.
@@ -771,7 +707,7 @@ namespace Belos {
 	//
 	index2[0] = curDim_+1;
 	Teuchos::RCP<MV> tmp_vec = MVT::CloneViewNonConst( *V_[i], index2 );
-	MVT::MvAddMv( one, *V_new, zero, *V_new, *tmp_vec );
+	MVT::Assign( *V_new, *tmp_vec );
       }
       // 
       // Now _AU_vec is the new _U_vec, so swap these two vectors.
@@ -797,8 +733,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Update the least squares solution for each right-hand side.
-  template<class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::updateLSQR( int dim )
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::updateLSQR( int dim )
   {
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
@@ -819,21 +755,31 @@ namespace Belos {
       //
       // QR factorization of Least-Squares system with Givens rotations
       //
+      DMT::SyncDeviceToHost(*H_[i]);
+      DMT::SyncDeviceToHost(*Z_[i]);
+      // 
       for (j=0; j<curDim; j++) {
 	//
 	// Apply previous Givens rotations to new column of Hessenberg matrix
 	//
-	blas.ROT( 1, &(*H_[i])(j,curDim), 1, &(*H_[i])(j+1, curDim), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
+	blas.ROT( 1, &(DMT::Value(*H_[i],j,curDim)), 1, &(DMT::Value(*H_[i],j+1, curDim)), 
+                  1, &(*cs_[i])[j], &(*sn_[i])[j] );
       }
       //
       // Calculate new Givens rotation
       //
-      blas.ROTG( &(*H_[i])(curDim,curDim), &(*H_[i])(curDim+1,curDim), &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      (*H_[i])(curDim+1,curDim) = zero;
+      blas.ROTG( &(DMT::Value(*H_[i],curDim,curDim)), &(DMT::Value(*H_[i],curDim+1,curDim)), 
+                 &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      DMT::Value(*H_[i],curDim+1,curDim) = zero;
       //
       // Update RHS w/ new transformation
       //
-      blas.ROT( 1, &(*Z_[i])(curDim), 1, &(*Z_[i])(curDim+1), 1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      blas.ROT( 1, &(DMT::Value(*Z_[i],curDim,0)), 1, &(DMT::Value(*Z_[i],curDim+1,0)), 
+                1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      //
+      DMT::SyncHostToDevice(*H_[i]);
+      DMT::SyncHostToDevice(*Z_[i]);
+      // 
     }
 
   } // end updateLSQR()
