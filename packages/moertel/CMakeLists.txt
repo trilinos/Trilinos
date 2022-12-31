@@ -180,7 +180,7 @@ IF(HAVE_MOERTEL_SEACAS)
 
     # Make sure SEACAS is available (we use the exodus support in SEACAS for this option)
 
-    TRIBITS_INCLUDE_DIRECTORIES(${SEACAS_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${SEACAS_INCLUDE_DIRS})
 
 ENDIF()
 

@@ -37,12 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-if (SHOW_INVALID_TPL_NAME_ERROR)
-  set(Zlib_str Zlib)
-else()
-  set(Zlib_str "")
-endif()
-
 tribits_package_define_dependencies(
-  LIB_OPTIONAL_TPLS MPI ParMETIS Scotch ${Zlib_str}
+  LIB_OPTIONAL_TPLS MPI ParMETIS Scotch Zlib
   )

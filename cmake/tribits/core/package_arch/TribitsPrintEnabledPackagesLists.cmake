@@ -37,8 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-include(TribitsGetEnabledSublists)
-
 
 # @FUNCTION: tribits_print_enables_before_adjust_package_enables()
 #
@@ -109,20 +107,20 @@ function(tribits_print_internal_package_list_enable_status
     DOCSTRING  ENABLED_FLAG  INCLUDE_EMPTY
   )
   if (ENABLED_FLAG  AND  NOT  INCLUDE_EMPTY)
-    tribits_get_sublist_enabled(
-      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
+    tribits_get_enabled_list(
+      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
       internalPackagesEnableStatusList  "")
   elseif (ENABLED_FLAG  AND  INCLUDE_EMPTY)
-    tribits_get_sublist_nondisabled(
+    tribits_get_nondisabled_list(
       ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
       internalPackagesEnableStatusList  "")
   elseif (NOT  ENABLED_FLAG  AND  NOT  INCLUDE_EMPTY)
-    tribits_get_sublist_disabled(
-      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
+    tribits_get_disabled_list(
+      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
       internalPackagesEnableStatusList  "")
   else() # NOT  ENABLED_FLAG  AND  INCLUDE_EMPTY
-    tribits_get_sublist_nonenabled(
-      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
+    tribits_get_nonenabled_list(
+      ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
       internalPackagesEnableStatusList  "")
   endif()
   tribits_print_prefix_string_and_list("${DOCSTRING}"
@@ -134,16 +132,16 @@ endfunction()
 #
 function(tribits_print_tpl_list_enable_status  DOCSTRING  ENABLED_FLAG  INCLUDE_EMPTY)
   if (ENABLED_FLAG AND NOT INCLUDE_EMPTY)
-    tribits_get_sublist_enabled( ${PROJECT_NAME}_DEFINED_TPLS
+    tribits_get_enabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
       tplsEnableStatusList  "")
   elseif (ENABLED_FLAG AND INCLUDE_EMPTY)
-    tribits_get_sublist_nondisabled( ${PROJECT_NAME}_DEFINED_TPLS
+    tribits_get_nondisabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
       tplsEnableStatusList  "")
   elseif (NOT ENABLED_FLAG AND NOT INCLUDE_EMPTY)
-    tribits_get_sublist_disabled( ${PROJECT_NAME}_DEFINED_TPLS
+    tribits_get_disabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
       tplsEnableStatusList  "")
   else() # NOT ENABLED_FLAG AND INCLUDE_EMPTY
-    tribits_get_sublist_nonenabled( ${PROJECT_NAME}_DEFINED_TPLS
+    tribits_get_nonenabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
        tplsEnableStatusList  "")
   endif()
   tribits_print_prefix_string_and_list("${DOCSTRING}"  "${tplsEnableStatusList}")
@@ -157,15 +155,16 @@ function(tribits_print_packages_list_enable_status_from_var  PACKAGES_LIST_VAR
   DOCSTRING  ENABLED_FLAG  INCLUDE_EMPTY
   )
   if (ENABLED_FLAG  AND  NOT  INCLUDE_EMPTY)
-    tribits_get_sublist_enabled(${PACKAGES_LIST_VAR}
+    tribits_get_enabled_list(${PACKAGES_LIST_VAR}  ${PROJECT_NAME}
       enableStatusList  "")
   elseif (ENABLED_FLAG  AND  INCLUDE_EMPTY)
-    tribits_get_sublist_nondisabled(${PACKAGES_LIST_VAR}  enableStatusList  "")
+    tribits_get_nondisabled_list(${PACKAGES_LIST_VAR}  ${PROJECT_NAME}
+      enableStatusList  "")
   elseif (NOT  ENABLED_FLAG  AND  NOT  INCLUDE_EMPTY)
-    tribits_get_sublist_disabled(${PACKAGES_LIST_VAR}
+    tribits_get_disabled_list(${PACKAGES_LIST_VAR}  ${PROJECT_NAME}
       enableStatusList  "")
   else() # NOT  ENABLED_FLAG  AND  INCLUDE_EMPTY
-    tribits_get_sublist_nonenabled(${PACKAGES_LIST_VAR}
+    tribits_get_nonenabled_list(${PACKAGES_LIST_VAR}  ${PROJECT_NAME}
       enableStatusList  "")
   endif()
   tribits_print_prefix_string_and_list("${DOCSTRING}"  "${enableStatusList}")

@@ -27,8 +27,6 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
 # not in an include file :-(
 project(${PROJECT_NAME} NONE)
 
-set(TRIBITS_HIDE_DEPRECATED_INCLUDE_DIRECTORIES_OVERRIDE  TRUE)
-
 #
 # B) Pull in the TriBITS system and execute
 #

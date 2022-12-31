@@ -1,6 +1,3 @@
-tribits_include_directories( REQUIRED_DURING_INSTALLATION_TESTING
-  ${CMAKE_CURRENT_SOURCE_DIR}/inc )
-
 tribits_add_executable_and_test(
   HelloWorldTests
   SOURCES

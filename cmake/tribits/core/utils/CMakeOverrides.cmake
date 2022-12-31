@@ -39,12 +39,13 @@
 
 include(CMakeParseArguments)
 
+#
+# FUNCTION: tribits_include_directories()
+#
 
-# @MACRO: tribits_include_directories()
-#
-# This function is to override the standard behavior of the built-in CMake
-# ``include_directories()`` command.
-#
+# This function is to override the standard behavior of include_directories
+# for a TriBITS package.
+
 # Usage::
 #
 #   tribits_include_directories(
@@ -54,59 +55,63 @@ include(CMakeParseArguments)
 # If specified, ``REQUIRED_DURING_INSTALLATION_TESTING`` can appear anywhere
 # in the argument list.
 #
-# This function allows overriding the default behavior of
-# ``include_directories()`` for installation testing, to ensure that include
-# directories will not be inadvertently added to the build lines for tests
-# during installation testing (see `Installation and Backward Compatibility
-# Testing`_). Normally we want the include directories to be handled as cmake
-# usually does.  However during TriBITS installation testing we do not want
-# most of the include directories to be used as the majority of the files
-# should come from the installation we are building against.  There is an
-# exception to this and that is when there are test only headers that are
-# needed.  For that case ``REQUIRED_DURING_INSTALLATION_TESTING`` must be
-# passed in to ensure the include paths are added for installation testing.
+# This function allows overriding the default behavior for installation
+# testing, to ensure that include directories will not be inadvertently added
+# to the build lines for tests during installation testing. Normally we want
+# the include directories to be handled as cmake usually does.  However during
+# TriBITS installation testing we do not want most of the include directories
+# to be used as the majority of the files should come from the installation we
+# are building against.  There is an exception to this and that is when there
+# are test only headers that are needed.  For that case we allow people to set
+# ``REQUIRED_DURING_INSTALLATION_TESTING`` to tell us that this include
+# directory does need to be set for instaltion testing.
 #
-macro(tribits_include_directories)
-
+function(tribits_include_directories)
   cmake_parse_arguments(
     #prefix
     PARSE
-    #options
+    #Options
     "REQUIRED_DURING_INSTALLATION_TESTING"
     #one_value_keywords
     ""
-    #mulit_value_keywords
+    #multi_value_keywords
     ""
     ${ARGN}
     )
 
+  tribits_check_for_unparsed_arguments()
+
   if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
-    _include_directories(${PARSE_UNPARSED_ARGUMENTS})
+    _include_directories(${PARSE_DEFAULT_ARGS})
   endif()
-endmacro()
+endfunction()
 
-
-# Deprecated.  Use tribits_include_directories() instead!
-macro(include_directories)
-
- cmake_parse_arguments(
+#This function is to override the standard behavior of include_directories.
+#  We are overriding the default behavior for installation testing, this allows
+#us to ensure that include directories will not be inadvertently added to the
+#build lines for tests during installation testing. Normally we want the include
+#directories to be handled as cmake usually does.However during installation
+#testing we do not want most of the include directories to be used as the majority
+#of the files should come from the installation we are building against. There is
+#an exception to this and that is when there are test only headers that are needed.
+#For that case we allow people to set "REQUIRED_DURING_INSTALLATION_TESTING" to
+#tell us that this include directory does need to be set for instaltion testing.
+function(include_directories)
+  cmake_parse_arguments(
     #prefix
     PARSE
-    #options
+    #Options
     "REQUIRED_DURING_INSTALLATION_TESTING"
     #one_value_keywords
     ""
-    #mulit_value_keywords
+    #multi_value_keywords
     ""
     ${ARGN}
     )
 
-#  if (PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
-#    message(WARNING "Warning: the override include_directories() is deprecated,"
-#    " use tribits_include_directories() instead!")
-#  endif()
+  tribits_check_for_unparsed_arguments()
 
   if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_REQUIRED_DURING_INSTALLATION_TESTING)
-    _include_directories(${PARSE_UNPARSED_ARGUMENTS})
+    _include_directories(${PARSE_DEFAULT_ARGS})
   endif()
-endmacro()
+endfunction()
