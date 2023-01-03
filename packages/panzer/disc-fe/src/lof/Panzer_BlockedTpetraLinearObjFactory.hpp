@@ -152,7 +152,7 @@ public:
      */
    virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildReadOnlyDomainContainer() const;
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    /** Build a GlobalEvaluationDataContainer that handles all domain communication.
      * This is used primarily for gather operations and hides the allocation and usage
      * of the ghosted vector from the user.

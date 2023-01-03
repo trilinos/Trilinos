@@ -102,7 +102,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
 )
 
 
-IF (Piro_ENABLE_Epetra)
+IF (PIRO_HAVE_EPETRA_STACK)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnitTests
@@ -325,4 +325,4 @@ IF (Piro_ENABLE_Epetra)
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver UnitTests NOXSolver_UnitTests
   )
 
-ENDIF(Piro_ENABLE_Epetra)
+ENDIF(PIRO_HAVE_EPETRA_STACK)

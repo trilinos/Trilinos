@@ -18,7 +18,7 @@
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
@@ -127,7 +127,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef panzer::Traits::Jacobian EvalT;
 
    typedef double Scalar;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    typedef int LocalOrdinalEpetra;
 #endif
    typedef int LocalOrdinalTpetra;
@@ -135,7 +135,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> blockedTpetraLinObjFactory;
    typedef typename panzer::TpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraLinObjFactory;
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> blockedEpetraLinObjFactory;
    typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraLinObjFactory;
 #endif
@@ -155,7 +155,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    // must be able to cast to a block linear object factory
    Teuchos::RCP<const blockedTpetraLinObjFactory> tblof
       = Teuchos::rcp_dynamic_cast<const blockedTpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    Teuchos::RCP<const blockedEpetraLinObjFactory> eblof
       = Teuchos::rcp_dynamic_cast<const blockedEpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
 #endif
@@ -199,7 +199,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
        fm.registerEvaluator<EvalT>(op);
      }
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    } else if(eblof != Teuchos::null) {
      Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
      Teuchos::RCP<panzer::GlobalIndexer> rowUgi;

@@ -76,7 +76,6 @@ bool success = true;
   typedef Teuchos::ScalarTraits<ST>        SCT;
   typedef SCT::magnitudeType                MT;
   typedef Belos::KokkosMultiVec<ST, EXSP>         MV;
-  typedef Belos::KokkosCrsOperator<ST, OT, EXSP>       OP;
   typedef Belos::MultiVec<ST> KMV;
   typedef Belos::Operator<ST> KOP; 
   typedef Belos::MultiVecTraits<ST,KMV>     MVT;

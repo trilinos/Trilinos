@@ -22,12 +22,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #  "Enable ml block smoothers."
 #  OFF )
 
-IF(${PROJECT_NAME}_ENABLE_Epetra AND DEFINED Teko_ENABLE_Epetra)
-   GLOBAL_SET(TEKO_HAVE_EPETRA ${Teko_ENABLE_Epetra})
-ELSE()
-   GLOBAL_SET(TEKO_HAVE_EPETRA ${${PROJECT_NAME}_ENABLE_Epetra})
-ENDIF()
-
+COMBINED_OPTION( TEKO_HAVE_EPETRA
+  DEP_OPTIONS_NAMES Teko_ENABLE_Epetra
+                    Teko_ENABLE_ThyraEpetraAdapters
+                    Teko_ENABLE_ThyraEpetraExtAdapters
+                    Teko_ENABLE_AztecOO
+                    Teko_ENABLE_Ifpack
+                    Teko_ENABLE_Amesos
+                    Teko_ENABLE_ML
+  DOCSTR "Enabled support for Epetra stack in Teko."
+         " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters, ThyraEpetraExtAdapters,"
+         " AztecOO, Ifpack, Amesos and ML are enabled, otherwise defaults to OFF."
+  )
 MESSAGE(STATUS "TEKO_HAVE_EPETRA = ${TEKO_HAVE_EPETRA}")
 
 IF(${PACKAGE_NAME}_ENABLE_MueLu)
