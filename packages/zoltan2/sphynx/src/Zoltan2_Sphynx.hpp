@@ -703,7 +703,7 @@ namespace Zoltan2 {
     anasaziParams.set("Which", which);
     anasaziParams.set("Convergence Tolerance", tolerance_);
     anasaziParams.set("Maximum Iterations", maxIterations);
-    anasaziParams.set("Block Size", numEigenVectors);
+    anasaziParams.set("Block Size", blockSize);
     anasaziParams.set("Relative Convergence Tolerance", relConvTol);
     anasaziParams.set("Orthogonalization", ortho);
     anasaziParams.set("Use Locking", lock);

@@ -249,6 +249,10 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
   // output manager
   Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verb_,osp_) );
   { //Timer 
+  if(blockSize_ < problem_->getNEV()){ //TODO: Fix couts to proper ostream.
+    std::cout << "Block size smaller than number evals. Increasing Block Size to num evals." << std::endl;
+    blockSize_ = problem_->getNEV();
+  }
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
@@ -261,8 +265,13 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument,
     "Anasazi::Randomized: eigenproblem did not specify initial vectors to clone from.");
   //std::cout << "DEBUG: past teuchos check for getInitVec." << std::endl;
-    //TODO: number of vecs here should = blockSize, yes?
-  randVecs = MVT::CloneCopy(*(problem_->getInitVec()));
+  if(MVT::GetNumberVecs(*(problem_->getInitVec()))==blockSize_){
+    randVecs = MVT::CloneCopy(*(problem_->getInitVec()));
+  }
+  else{
+    randVecs = MVT::Clone(*(problem_->getInitVec()),blockSize_);
+    MVT::MvRandom(*randVecs);
+  }
   //TEUCHOS_TEST_FOR_EXCEPTION(problem_->getA() == Teuchos::null,std::invalid_argument,
     //"Anasazi::Randomized: There is no A to get.");
   //std::cout << "DEBUG: got past check of getA." << std::endl;
@@ -355,26 +364,27 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
   //std::cout << "DEBUG: Past small eval probl." << std::endl;
   // Compute the eigenvalues and eigenvectors from the original eigenproblem
   Eigensolution<ScalarType,MV> sol;
-  sol.numVecs = blockSize_;
+  sol.numVecs = problem_->getNEV();
   sol.Evals.resize(sol.numVecs);
   // sort the eigenvalues and permute the eigenvectors appropriately
-  std::vector<int> order(sol.numVecs);
-  sorter->sort(evals_real,evals_imag,Teuchos::rcpFromRef(order),sol.numVecs);
+  std::vector<int> order(blockSize_);
+  sorter->sort(evals_real,evals_imag,Teuchos::rcpFromRef(order),blockSize_);
   //std::cout << "DEBUG: past sort statement." << std::endl;
-  for( int i = 0; i < blockSize_; i++){
+  for( int i = 0; i < sol.numVecs; i++){
     sol.Evals[i].realpart = evals_real[i];
     sol.Evals[i].imagpart = evals_imag[i];
   }
   //std::cout << "DEBUG: finished sorting evals." << std::endl;
   // Project Evects back up to large problem. 
   MVT::MvTimesMatAddMv(ONE,*randVecs,evects,0.0,*TmpVecs);
-  sol.Evecs = TmpVecs;
   //std::cout << "DEBUG: Past computing full evects. " << std::endl;
 
 //------Post-Solve Processing----------------------------
   // now permute the eigenvectors according to order
   SolverUtils<ScalarType,MV,OP> msutils;
-  msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
+  msutils.permuteVectors(blockSize_,order,*TmpVecs);
+  //Copy only the eigenvectors we asked for to soln. 
+  sol.Evecs = MVT::CloneCopy(*TmpVecs, Teuchos::Range1D(0,sol.numVecs-1));
 
   //std::cout << "DEBUG: Past permuting eigenvectors. " << std::endl;
   // print final summary
