@@ -8,6 +8,21 @@ source ${SCRIPTPATH:?}/common.bash
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
 
+# Configure ccache via environment variables
+function configure_ccache() {
+    print_banner "Configuring ccache"
+
+    # Identify the path to the trilinos repository root
+    REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
+    test -d ${REPO_ROOT:?}/.git || REPO_ROOT=`readlink -f ${WORKSPACE:?}/Trilinos`
+
+    envvar_set_or_create CCACHE_NODISABLE true
+    envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
+    envvar_set_or_create CCACHE_BASEDIR "$REPO_ROOT"
+    envvar_set_or_create CCACHE_NOHARDLINK true
+    envvar_set_or_create CCACHE_UMASK 077
+    envvar_set_or_create CCACHE_MAXSIZE 100G
+}
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -36,6 +51,7 @@ function bootstrap_modules() {
         execute_command_checked "module unload sems-archive-python"
         execute_command_checked "module load sems-archive-git/2.10.1"
         execute_command_checked "module load ccache"
+        configure_ccache
 
         envvar_set_or_create     PYTHON_EXE $(which python3)
     fi
