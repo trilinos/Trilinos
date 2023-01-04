@@ -306,6 +306,8 @@ ProductModelEvaluator<Real>::evalModelImpl(
     Thyra::ModelEvaluatorBase::InArgsSetup<Real> internal_inArgs;
     Thyra::ModelEvaluatorBase::OutArgsSetup<Real> internal_outArgs;
 
+    internal_outArgs.setModelEvalDescription(outArgs.modelEvalDescription()+"_internal");
+
     internal_inArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
     internal_outArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
 

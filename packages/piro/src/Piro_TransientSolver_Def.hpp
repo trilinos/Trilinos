@@ -321,7 +321,7 @@ template <typename Scalar>
 const Thyra::ModelEvaluator<Scalar> &
 Piro::TransientSolver<Scalar>::getModel() const 
 {
-  return model_; 
+  return *model_;
 }
 
 template <typename Scalar>
