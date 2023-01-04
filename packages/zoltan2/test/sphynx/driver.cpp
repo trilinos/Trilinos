@@ -306,6 +306,7 @@ int main(int narg, char *arg[])
     int nparts = 64;     
     int max_iters = 1000;
     int block_size = -1;
+    int rand_seed =1;
     std::string matrix_file = "";
     std::string vector_file = "";
     std::string eigensolve = "LOBPCG"; 
@@ -333,6 +334,8 @@ int main(int narg, char *arg[])
 		   "Path and filename of the vector to be read.");
     cmdp.setOption("nparts",&nparts,
 		   "Number of global parts desired in the resulting partition.");
+    cmdp.setOption("rand_seed",&rand_seed,
+		   "Seed for the random multivector."); //TODO: Final randomized solver maybe should have param??  Or notes in the docs?
     cmdp.setOption("max_iters",&max_iters,
 		   "Maximum iters (LOBPCG) or mulitplies by A (randomized).");
     cmdp.setOption("block_size",&block_size,
@@ -353,7 +356,7 @@ int main(int narg, char *arg[])
     cmdp.setOption("tol", &tol,
 		   "Tolerance to use.");
     cmdp.setOption("init",  &init,
-		   "Initial guess.");
+		   "Sphynx Initial guess. Options: random or constants. Default: random if randomized solver is used.");
 
     if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
@@ -393,7 +396,8 @@ int main(int narg, char *arg[])
     Teuchos::RCP<adapter_type> adapter;
     Teuchos::RCP<crs_matrix_type> tmatrix;
 
-
+    // Set the random seed and hope it goes through to Tpetra.
+    std::srand(rand_seed);
 
     std::string mtx = ".mtx", lc = ".largestComp";
     if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {

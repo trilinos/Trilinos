@@ -272,6 +272,8 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
     randVecs = MVT::Clone(*(problem_->getInitVec()),blockSize_);
     MVT::MvRandom(*randVecs);
   }
+  //std::cout << "Here are the (random?) vectors!" << std::endl;
+ // MVT::MvPrint(*randVecs, std::cout);
   //TEUCHOS_TEST_FOR_EXCEPTION(problem_->getA() == Teuchos::null,std::invalid_argument,
     //"Anasazi::Randomized: There is no A to get.");
   //std::cout << "DEBUG: got past check of getA." << std::endl;
