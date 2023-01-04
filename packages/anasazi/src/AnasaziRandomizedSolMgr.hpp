@@ -164,6 +164,7 @@ class RandomizedSolMgr : public SolverManager<ScalarType,MV,OP> {
   int maxIters_;
   int numIters_;
   bool trackResNorms_;
+  Teuchos::RCP<Teuchos::Time> timerOp_, timerOrtho_, timerSolve_;
 };
 
 
@@ -177,6 +178,11 @@ RandomizedSolMgr<ScalarType,MV,OP>::RandomizedSolMgr(
   tol_(1e-6),
   osProc_(0),
   verb_(Anasazi::Errors),
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::Operation Op*x")),
+    timerOrtho_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::Orthogonalization")),
+    timerSolve_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::solve()")),
+#endif
   ortho_("SVQB"),
   blockSize_(0),
   maxIters_(5),
@@ -242,6 +248,10 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RCP<BasicSort<MT> > sorter = Teuchos::rcp( new BasicSort<MT> );
   // output manager
   Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verb_,osp_) );
+  { //Timer 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor slvtimer(*timerSolve_);
+#endif
   Teuchos::RCP<MV> randVecs;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
@@ -259,7 +269,12 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
 
   // Perform multiplies by A and Rayleigh-Ritz
   for( int i = 0; i < maxIters_; i++ ){
+    {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
     OPT::Apply( *(problem_->getOperator()), *randVecs, *randVecs );
+    }
   }
   //std::cout  << "DEBUG: Past A multiply." << std::endl;
   // Set up Orthomanager and orthonormalize random vecs. 
@@ -278,12 +293,18 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
     TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS"&&ortho_!="ICGS",std::logic_error,"Anasazi::RandomSolver Invalid orthogonalization type.");
   }
   //Orthogonalize the vectors
-  int rank = orthoMgr->normalize(*randVecs);
+  int rank;
+  {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
+  rank = orthoMgr->normalize(*randVecs);
+  }
   if( rank < blockSize_ ){
     std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
   }
 
-  std::cout  << "DEBUG: Past orthog." << std::endl;
+  //std::cout  << "DEBUG: Past orthog." << std::endl;
   //Compute H = Q^TAQ. (RR projection) 
   Teuchos::RCP<MV> TmpVecs = MVT::Clone(*randVecs,blockSize_);
   Teuchos::SerialDenseMatrix<OT,ScalarType> H (blockSize_, blockSize_);
@@ -373,6 +394,7 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
 
   // return from SolMgr::solve()
   //if (sol.numVecs < nev) return Unconverged;
+  } //End solve timer
   return Converged;
 }
 
