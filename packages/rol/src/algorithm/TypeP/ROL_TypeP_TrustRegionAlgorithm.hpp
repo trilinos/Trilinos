@@ -130,6 +130,7 @@ private:
 
 	void initialize(Vector<Real>		    &x,
 									const Vector<Real>  &g,
+									Real                ftol,
 									Objective<Real>     &sobj,
 									Objective<Real>     &nobj,
 									Vector<Real>        &px, 
@@ -153,12 +154,14 @@ public:
   void writeOutput( std::ostream& os, bool write_header = false ) const override;
 
 private:
-  void initialize(Vector<Real>          &x,
+  /*void initialize(Vector<Real>          &x,
                   const Vector<Real>    &g,
                   Real                  ftol,
                   Objective<Real>       &sobj,
                   Objective<Real>       &nobj,
-                  std::ostream &outStream = std::cout);
+									Vector<Real>          &px,
+									Vector<Real>          &dg,
+                  std::ostream &outStream = std::cout);*/
 
   Real computeValue(Real inTol,
                     Real &outTol,
@@ -167,11 +170,12 @@ private:
                     int iter,
                     const Vector<Real> &x,
                     const Vector<Real> &xold,
-                    Objective<Real> &sobj,
-										Objective<Real> &nobj);
+										Objective<Real> &obj);
 
   Real computeGradient(const Vector<Real> &x,
                        Vector<Real> &g,
+											 Vector<Real> &px,
+											 Vector<Real> &dg,
                        Vector<Real> &pwa,
                        Real del,
                        Objective<Real> &sobj,
@@ -199,30 +203,47 @@ private:
   //   dwa   -- Dual working array, stores Hessian applied to step
   //   dwa1  -- Dual working array
   Real dcauchy(Vector<Real> &s, 
-							 Real &alpha, Real &q,
+							 Real &alpha, 
+							 Real &sval,
+							 Real &nval,
+							 Real &pRed,
                const Vector<Real> &x, 
 							 const Vector<Real> &g,
+							 Vector<Real> &px,
                const Real del, 
 							 TrustRegionModel_U<Real> &model,
+							 Objective<Real> &nobj,
                Vector<Real> &dwa, 
 							 Vector<Real> &dwa1,
                std::ostream &outStream = std::cout);
 
   void dpsg_simple(Vector<Real> &y, 
-									 Real &q, Vector<Real> &gmod, 
+									 Real &sval,
+									 Real &nval,
+									 Real &pRed,
+									 Vector<Real> &gmod, 
 									 const Vector<Real> &x,
+									 Vector<Real> &px,
+									 Vector<Real> &dg,
                    Real del, 
 									 TrustRegionModel_U<Real> &model, 
+									 Objective<Real> &nobj,
 									 Vector<Real> &pwa,
                    Vector<Real> &pwa1, 
 									 Vector<Real> &dwa, 
 									 std::ostream &outStream = std::cout);
 
   void dpsg(Vector<Real> &y, 
-			      Real &q, Vector<Real> &gmod, 
+			      Real &sval,
+						Real &nval, 
+						Real &pRed,
+						Vector<Real> &gmod,
+						Vector<Real> &px, 
+						Vector<Real> &dg,
 						const Vector<Real> &x,
             Real del, 
 						TrustRegionModel_U<Real> &model, 
+						Objective<Real> &nobj,
 						Vector<Real> &ymin,
             Vector<Real> &pwa, 
 						Vector<Real> &pwa1, 
@@ -236,6 +257,7 @@ private:
   void dproj(Vector<Real> &x, 
 			      const Vector<Real> &x0, 
 						Real del,
+						Objective<Real> &nobj,
             Vector<Real> &y0, 
 						Vector<Real> &y1, 
 						Vector<Real> &yc,

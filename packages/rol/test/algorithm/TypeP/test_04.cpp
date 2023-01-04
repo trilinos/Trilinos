@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  test_03.cpp
-    \brief Validate iPiano algorithm.
+    \brief Validate Trust Region algorithm.
 */
 
 #include "ROL_TypeP_TrustRegionAlgorithm.hpp"
@@ -113,17 +113,17 @@ int main(int argc, char *argv[]) {
 
     ROL::ParameterList list;
     list.sublist("General").set("Output Level",iprint);
-    list.sublist("Step").set("Type","iPiano");
+    list.sublist("Step").set("Type","Trust Region");
     list.sublist("Status Test").set("Gradient Tolerance",1e-7);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
-    list.sublist("Status Test").set("Iteration Limit", 10000);
+    list.sublist("Status Test").set("Iteration Limit", 1000);
  
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;
     ROL::Ptr<ROL::l1Objective<RealT>>      nobj;
-    ROL::Ptr<ROL::TypeP::iPianoAlgorithm<RealT>> algo;
+    ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT err(0);
 
