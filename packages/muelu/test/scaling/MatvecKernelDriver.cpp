@@ -90,17 +90,10 @@
 #include "petscksp.h"
 #endif
 
+
 // =========================================================================
 // Support Routines
 // =========================================================================
-
-// Report bandwidth in GB / sec
-double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_per_call_bytes) {
-  const double GB = 1024.0 * 1024.0 * 1024.0;
-  double time_per_call = time / num_calls;
-
-  return memory_per_call_bytes / GB / time_per_call;
-}
 
 
 template<class View1, class View2>
@@ -127,6 +120,111 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
     printf(" %d",(int)colind[i]);
   printf("\n");
 }
+
+// =========================================================================
+// Performance Routines
+// =========================================================================
+// Report bandwidth in GB / sec
+double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_per_call_bytes) {
+  const double GB = 1024.0 * 1024.0 * 1024.0;
+  double time_per_call = time / num_calls;
+
+  return memory_per_call_bytes / GB / time_per_call;
+}
+
+
+template<class Matrix>
+void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat) {
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm = A->getMap()->getComm();
+  using SC = typename Matrix::scalar_type;
+  using LO = typename Matrix::local_ordinal_type;
+  using GO = typename Matrix::global_ordinal_type;
+  using NO = typename Matrix::node_type;
+
+  // NOTE: We've hardwired this to size_t for the rowptr.  This really should really get read out of a typedef,
+  // if Tpetra actually had one
+  using rowptr_type = size_t;
+  MueLu::PerfModels<SC,LO,GO,NO> PM;
+  int rank = comm->getRank(); int nproc = comm->getSize();
+  int m   = static_cast<int>(A->getLocalNumRows());
+  int nnz = static_cast<int>(A->getLocalMatrixHost().graph.entries.extent(0));
+  
+  //Ping Pong
+  if(nproc > 1) {
+    std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
+    
+    if(rank == 0) {
+      // pingpong
+      std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
+        "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
+      
+      for(auto it = pingpong.cbegin(); it != pingpong.cend(); ++it) {
+        std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
+      }
+      std::cout << "========================================================"
+                << std::endl;
+    }
+    
+    std::map<int, double> pingpong_device = PM.pingpong_test_device(nrepeat,15, comm);
+    
+    if(rank == 0) {
+      // pingpong
+      std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
+        "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
+      
+      for(auto it = pingpong_device.cbegin(); it != pingpong_device.cend(); ++it) {
+        std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
+      }
+      std::cout << "========================================================"
+                << std::endl;
+    }
+    
+  }
+  
+  // Slightly cleaner
+  std::string SPMV_test_names[4] = {"colind","rowptr","vals","x"};
+  std::vector<int> SPMV_num_objects(4), SPMV_object_size(4);
+  SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
+  SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
+  SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
+  SPMV_num_objects[3] = m;       SPMV_object_size[3] = sizeof(SC);  // x
+  
+  
+  for(int i = 0; i < 4; i++) {
+    std::vector<double> vda_times;
+    if(i == 0) 
+      vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_num_objects[i]);
+    else if (i==1) 
+      vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_num_objects[i]);
+    else 
+      vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_num_objects[i]);
+    
+    double vectordoubleadd_totalavg = std::accumulate(vda_times.begin(), vda_times.end(), 0.0);
+    double vectordoubleadd_avg_time = vectordoubleadd_totalavg / vda_times.size();
+    double vectordoubleadd_avg_distributed = vectordoubleadd_avg_time;
+
+    if(nproc > 1) {
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &vectordoubleadd_avg_time, &vectordoubleadd_avg_distributed);
+      vectordoubleadd_avg_distributed /= nproc;
+    }
+    
+    // Stream add involves two reads and a write, so the "3" below
+    double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
+    double gb_sec = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
+    
+    if(rank == 0) {
+      // VDA
+      std::cout << "\n========================================================\nVector Addition Benchmark: ran "
+                << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
+                << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
+                << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
+                << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us.\n"
+                << "GB/sec = "<<gb_sec<<std::endl;
+      
+    }
+  }
+}
+  
 
 #if defined(HAVE_MUELU_TPETRA)
 //==============================================================================
@@ -1268,88 +1366,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // ==========================================
     // Performance Models
     // ==========================================
-    // NOTE: We've hardwired this to size_t for the rowptr.  This really should really get read out of a typedef,
-    // if Tpetra actually had one
-    using rowptr_type = size_t;
-    MueLu::PerfModels<SC,LO,GO,NO> PM;
-    int rank = comm->getRank(); int nproc = comm->getSize();
-    int m   = static_cast<int>(Att.getLocalNumRows());
-    int nnz = static_cast<int>(Att.getLocalMatrixHost().graph.entries.extent(0));
-
-    //Ping Pong
-    if(nproc > 1) {
-      std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
-      
-      if(rank == 0) {
-        // pingpong
-        std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
-          "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
-        
-        for(auto it = pingpong.cbegin(); it != pingpong.cend(); ++it) {
-          std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
-        }
-        std::cout << "========================================================"
-                  << std::endl;
-      }
-
-      std::map<int, double> pingpong_device = PM.pingpong_test_device(nrepeat,15, comm);
-      
-      if(rank == 0) {
-        // pingpong
-        std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
-          "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
-        
-        for(auto it = pingpong_device.cbegin(); it != pingpong_device.cend(); ++it) {
-          std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
-        }
-        std::cout << "========================================================"
-                  << std::endl;
-      }
-
-    }
-
-    // Slightly cleaner
-    std::string SPMV_test_names[4] = {"colind","rowptr","vals","x"};
-    std::vector<int> SPMV_num_objects(4), SPMV_object_size(4);
-    SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
-    SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
-    SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
-    SPMV_num_objects[3] = m;       SPMV_object_size[3] = sizeof(SC);  // x
-
-    
-    for(int i = 0; i < 4; i++) {
-      std::vector<double> vda_times;
-      if(i == 0) 
-        vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_num_objects[i]);
-      else if (i==1) 
-        vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_num_objects[i]);
-      else 
-        vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_num_objects[i]);
-
-      double vectordoubleadd_totalavg = std::accumulate(vda_times.begin(), vda_times.end(), 0.0);
-      double vectordoubleadd_avg_time = vectordoubleadd_totalavg / vda_times.size();
-      double vectordoubleadd_avg_distributed = vectordoubleadd_avg_time;
-
-      if(nproc > 1) {
-        Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &vectordoubleadd_avg_time, &vectordoubleadd_avg_distributed);
-        vectordoubleadd_avg_distributed /= nproc;
-      }
-
-      // Stream add involves two reads and a write, so the "3" below
-      double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-      double gb_sec = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
-      
-      if(rank == 0) {
-        // VDA
-        std::cout << "\n========================================================\nVector Addition Benchmark: ran "
-                  << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
-                  << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
-                  << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
-                  << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us.\n"
-                  << "GB/sec = "<<gb_sec<<std::endl;
-        
-      }
-    }
+    report_performance_models<Matrix>(A,nrepeat);
 
     success = true;
   }
