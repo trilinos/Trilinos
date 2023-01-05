@@ -69,9 +69,9 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
-  verbosity_ = trlist.sublist("General").get("Output Level",   0);
-  initProx_  = trlist.get("Apply Prox to Initial Guess", false);
-  t0_        = list.sublist("Status Test").get("Proximal Gradient Parameter",         1.0);
+  verbosity_ = trlist.sublist("General").get("Output Level",      0);
+  initProx_  = trlist.get("Apply Prox to Initial Guess",          false);
+  t0_        = list.sublist("Status Test").get("Proximal Gradient Parameter", 1.0);
   // Nonmonotone Parameters
   storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
   useNM_     = (storageNM_ <= 0 ? false : true);
@@ -88,16 +88,16 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
   // Subsolver (spectral projected gradient) parameters
-  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8);
-  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8);
-  gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance",       1e-4);
-  maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",                10);
-  maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
-  tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
-  tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
-  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
-  useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
-  useSimpleSPG_ = !lmlist.sublist("Solver").get("Compute Cauchy Point",            true);
+  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",    1e-8);
+  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",    1e8);
+  gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance", 1e-4);
+  maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",          10);
+  maxit_     = lmlist.sublist("Solver").get("Iteration Limit",               25);
+  tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",            1e-4);
+  tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",            1e-2);
+  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",    true);
+  useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",        false);
+  useSimpleSPG_ = !lmlist.sublist("Solver").get("Compute Cauchy Point",      true);
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -520,7 +520,7 @@ void TrustRegionAlgorithm<Real>::dspg_simple(Vector<Real> &y,
 
     // Evaluate nonsmooth term
     nobj.update(pwa2,UpdateType::Trial);
-    nval  = nobj.value(pwa2,tol);
+    nval = nobj.value(pwa2,tol);
 
     // Perform line search
     alphaMax = 1;
@@ -565,7 +565,7 @@ void TrustRegionAlgorithm<Real>::dspg_simple(Vector<Real> &y,
     if (snorm >= del - safeguard) { SPflag_ = 2; break; }
 
     // Compute new spectral step
-    lambdaTmp = (sHs <= safeguard ? one/gmod.norm() : ss/sHs);
+    lambdaTmp = (sHs <= safeguard) ? one/gmod.norm() : ss/sHs;
     lambda    = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
     
     pgstep(pwa2, pwa, nobj, y, gmod.dual(), alpha, tol); // pass pwa by reference? *pwa?
@@ -806,180 +806,6 @@ void TrustRegionAlgorithm<Real>::dprox(Vector<Real> &x,
     outStream << std::endl;
   }
 }
-
-// BRACKETING AND BRENTS FOR UNTRANSFORMED MULTIPLIER
-//template<typename Real>
-//void TrustRegionSPGAlgorithm<Real>::dprox(Vector<Real> &x,
-//                                          const Vector<Real> &x0,
-//                                          Real del,
-//                                          Vector<Real> &y0,
-//                                          Vector<Real> &y1,
-//                                          Vector<Real> &yc,
-//                                          Vector<Real> &pwa,
-//                                          std::ostream &outStream) const {
-//  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Brent's method
-//  const Real zero(0), half(0.5), one(1), two(2), three(3);
-//  const Real eps(ROL_EPSILON<Real>()), tol0(1e1*eps), fudge(1.0-1e-2*sqrt(eps));
-//  Real f0(0), f1(0), fc(0), u0(0), u1(0), uc(0), t0(1), t1(0), tc(0), d1(1), d2(1), tol(1);
-//  Real p(0), q(0), r(0), s(0), m(0);
-//  int cnt(state_->nproj);
-//  y0.set(x);
-//  proj_->project(y0,outStream); state_->nproj++;
-//  pwa.set(y0); pwa.axpy(-one,x0);
-//  f0 = pwa.norm();
-//  if (f0 <= del) {
-//    x.set(y0);
-//    return;
-//  }
-//
-//  // Bracketing
-//  t1 = static_cast<Real>(1e-1);
-//  f1 = one+del;
-//  while (f1 >= del) {
-//    t1 *= static_cast<Real>(5e-2);
-//    y1.set(x); y1.scale(t1); y1.axpy(one-t1,x0);
-//    proj_->project(y1,outStream); state_->nproj++;
-//    pwa.set(y1); pwa.axpy(-one,x0);
-//    f1 = pwa.norm();
-//  }
-//  u1 = (one-t1)/t1;
-//
-//  // Brents
-//  uc = u0; tc = t0; fc = f0; yc.set(y0);
-//  d1 = u1-u0; d2 = d1;
-//  int code = 0;
-//  while (true) {
-//    if (std::abs(fc-del) < std::abs(f1-del)) {
-//      u0 = u1; u1 = uc; uc = u0;
-//      t0 = t1; t1 = tc; tc = t0;
-//      f0 = f1; f1 = fc; fc = f0;
-//      y0.set(y1); y1.set(yc); yc.set(y0);
-//    }
-//    tol = two*eps*abs(u1) + half*tol0;
-//    m   = half*(uc - u1);
-//    if (std::abs(m) <= tol) { code = 1; break; }
-//    if ((f1 >= fudge*del && f1 <= del)) break;
-//    if (std::abs(d1) < tol || std::abs(f0-del) <= std::abs(f1-del)) {
-//      d1 = m; d2 = d1;
-//    }
-//    else {
-//      s = (f1-del)/(f0-del);
-//      if (u0 == uc) {
-//        p = two*m*s;
-//        q = one-s;
-//      }
-//      else {
-//        q = (f0-del)/(fc-del);
-//        r = (f1-del)/(fc-del);
-//        p = s*(two*m*q*(q-r)-(u1-u0)*(r-one));
-//        q = (q-one)*(r-one)*(s-one);
-//      }
-//      if (p > zero) q = -q;
-//      else          p = -p;
-//      s  = d1;
-//      d1 = d2;
-//      if (two*p < three*m*q-std::abs(tol*q) && p < std::abs(half*s*q)) {
-//        d2 = p/q;
-//      }
-//      else {
-//        d1 = m; d2 = d1;
-//      }
-//    }
-//    u0 = u1; t0 = t1; f0 = f1; y0.set(y1);
-//    if (std::abs(d2) > tol) u1 += d2;
-//    else if (m > zero)      u1 += tol;
-//    else                    u1 -= tol;
-//    t1 = one/(one+u1);
-//    y1.set(x); y1.scale(t1); y1.axpy(one-t1,x0);
-//    proj_->project(y1,outStream); state_->nproj++;
-//    pwa.set(y1); pwa.axpy(-one,x0);
-//    f1 = pwa.norm();
-//    if ((f1 > del && fc > del) || (f1 <= del && fc <= del)) {
-//      uc = u0; tc = t0; fc = f0; yc.set(y0);
-//      d1 = u1-u0; d2 = d1;
-//    }
-//  }
-//  if (code==1 && f1>del) x.set(yc);
-//  else                   x.set(y1);
-//  if (verbosity_ > 1) {
-//    outStream << std::endl;
-//    outStream << "  Trust-Region Subproblem Projection" << std::endl;
-//    outStream << "    Number of polyhedral projections: " << state_->nproj-cnt << std::endl;
-//    if (code == 1 && f1 > del) {
-//      outStream << "    Multiplier:                       " << uc << std::endl;
-//      outStream << "    Transformed Multiplier:           " << tc << std::endl;
-//      outStream << "    Dual Residual:                    " << fc-del << std::endl;
-//    }
-//    else {
-//      outStream << "    Multiplier:                       " << u1 << std::endl;
-//      outStream << "    Transformed Multiplier:           " << t1 << std::endl;
-//      outStream << "    Dual Residual:                    " << f1-del << std::endl;
-//    }
-//    outStream << "    Exit Code:                        " << code << std::endl;
-//    outStream << std::endl;
-//  }
-//}
-
-// RIDDERS' METHOD FOR TRUST-REGION PROJECTION
-//template<typename Real>
-//void TrustRegionSPGAlgorithm<Real>::dprox(Vector<Real> &x,
-//                                          const Vector<Real> &x0,
-//                                          Real del,
-//                                          Vector<Real> &y,
-//                                          Vector<Real> &y1,
-//                                          Vector<Real> &yc,
-//                                          Vector<Real> &p,
-//                                          std::ostream &outStream) const {
-//  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Ridder's method
-//  const Real half(0.5), one(1), tol(1e1*ROL_EPSILON<Real>());
-//  const Real fudge(1.0-1e-2*std::sqrt(ROL_EPSILON<Real>()));
-//  Real e0(0), e1(0), e2(0), e(0), a0(0), a1(0.5), a2(1), a(0);
-//  int cnt(state_->nproj);
-//  y.set(x);
-//  proj_->project(y,outStream); state_->nproj++;
-//  p.set(y); p.axpy(-one,x0);
-//  e2 = p.norm();
-//  if (e2 <= del) {
-//    x.set(y);
-//    return;
-//  }
-//  bool code = 1;
-//  while (a2-a0 > tol) {
-//    a1 = half*(a0+a2);
-//    y.set(x); y.scale(a1); y.axpy(one-a1,x0);
-//    proj_->project(y,outStream); state_->nproj++;
-//    p.set(y); p.axpy(-one,x0);
-//    e1 = p.norm();
-//    if (e1 >= fudge*del && e1 <= del) break;
-//    a = a1-(a1-a0)*(e1-del)/std::sqrt((e1-del)*(e1-del)-(e0-del)*(e2-del));
-//    y.set(x); y.scale(a); y.axpy(one-a,x0);
-//    proj_->project(y,outStream); state_->nproj++;
-//    p.set(y); p.axpy(-one,x0);
-//    e = p.norm();
-//    if (e < fudge*del) {
-//      if (e1 < fudge*del) { e0 = (a < a1 ? e1 : e); a0 = (a < a1 ? a1 : a); }
-//      else                { e0 = e; a0 = a; e2 = e1; a2 = a1; };
-//    }
-//    else if (e > del) {
-//      if (e1 < fudge*del) { e0 = e1; a0 = a1; e2 = e; a2 = a; }
-//      else                { e2 = (a < a1 ? e : e1); a2 = (a < a1 ? a : a1); }
-//    }
-//    else {
-//      code = 0;
-//      break; // Exit if fudge*del <= snorm <= del
-//    }
-//  }
-//  x.set(y);
-//  if (verbosity_ > 1) {
-//    outStream << std::endl;
-//    outStream << "  Trust-Region Subproblem Projection" << std::endl;
-//    outStream << "    Number of polyhedral projections: " << state_->nproj-cnt << std::endl;
-//    outStream << "    Transformed Multiplier:           " << a1 << std::endl;
-//    outStream << "    Dual Residual:                    " << e1-del << std::endl;
-//    outStream << "    Exit Code:                        " << code << std::endl;
-//    outStream << std::endl;
-//  }
-//}
 
 template<typename Real>
 void TrustRegionAlgorithm<Real>::writeHeader( std::ostream& os ) const {
