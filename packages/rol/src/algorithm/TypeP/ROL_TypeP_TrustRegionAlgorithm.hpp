@@ -208,19 +208,18 @@ private:
                Vector<Real>             &dwa1,
                std::ostream             &outStream = std::cout);
 
-  void dpsg_simple(Vector<Real> &y, 
+  void dspg_simple(Vector<Real> &y, 
                    Real &sval,
                    Real &nval,
                    Real &pRed,
                    Vector<Real> &gmod, 
                    const Vector<Real> &x,
-                   Vector<Real> &px,
-                   Vector<Real> &dg,
                    Real del, 
                    TrustRegionModel_U<Real> &model, 
                    Objective<Real> &nobj,
                    Vector<Real> &pwa,
                    Vector<Real> &pwa1, 
+                   Vector<Real> &pwa2, 
                    Vector<Real> &dwa, 
                    std::ostream &outStream = std::cout);
 

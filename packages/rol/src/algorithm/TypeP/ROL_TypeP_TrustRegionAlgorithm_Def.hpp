@@ -262,13 +262,14 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     //q = state_->svalue + state_->nvalue;//q is no longer used
     gmod->set(*state_->gradientVec);
+    smodel = state_->svalue;
+    ntrial = state_->nvalue;
     if (useSimpleSPG_)
-      dpsg_simple(x,state_->svalue, state_->nvalue,pRed,*gmod,*state_->iterateVec,*px, *dg, state_->searchSize,*model_,nobj,
-                  *pwa1,*pwa2,*dwa1,outStream);
+      dspg_simple(x,smodel, ntrial, pRed, *gmod, *state_->iterateVec,
+                  state_->searchSize, *model_, nobj,
+                  *pwa1, *pwa2, *px, *dwa1, outStream);
     else {
       // Compute Cauchy point (TRON notation: x = x[1])
-      smodel = state_->svalue;
-      ntrial = state_->nvalue;
       dcauchy(*state_->stepVec,alpha_, smodel, ntrial,
               *state_->iterateVec, *dg, state_->searchSize,
               *model_, nobj, *px, *dwa1, *dwa2, outStream); // Solve 1D optimization problem for alpha
@@ -463,19 +464,18 @@ Real TrustRegionAlgorithm<Real>::dcauchy(Vector<Real> &s,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::dpsg_simple(Vector<Real> &y,     //x
+void TrustRegionAlgorithm<Real>::dspg_simple(Vector<Real> &y,
                                              Real         &sval,
                                              Real         &nval,
-                                             Real         &pRed,  //predicted reduction
-                                             Vector<Real> &gmod,  // state_->gradientVec
-                                             const Vector<Real> &x, //iterateVect
-                                             Vector<Real> &px,    // px
-                                             Vector<Real> &dg,    // gradient dual? 
+                                             Real         &pRed,
+                                             Vector<Real> &gmod,
+                                             const Vector<Real> &x,
                                              Real del,
                                              TrustRegionModel_U<Real> &model,
                                              Objective<Real> &nobj,
                                              Vector<Real> &pwa,
                                              Vector<Real> &pwa1,
+                                             Vector<Real> &pwa2,
                                              Vector<Real> &dwa,
                                              std::ostream &outStream) {
   // Use SPG to approximately solve TR subproblem:
@@ -486,23 +486,23 @@ void TrustRegionAlgorithm<Real>::dpsg_simple(Vector<Real> &y,     //x
   //       x = Current iterate
   //       g = Current gradient
   const Real half(0.5), one(1), safeguard(1e2*ROL_EPSILON<Real>());
+  const Real mprev(sval+nval);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
-  Real alpha(1), alphaMax(1), s0s0(0), ss0(0), sHs(0), lambdaTmp(1), snorm(0), mold(sval+nval), mnew(mold);
+  Real coeff(1), alpha(1), alphaMax(1), lambda(1), lambdaTmp(1);
+  Real gs(0), ss(0), gnorm(0), s0s0(0), ss0(0), sHs(0), snorm(0), nold(nval);
   pwa1.zero();
 
   // Set y = x
   y.set(x);
 
   // Compute initial step
-  Real coeff  = one/gmod.norm();
-  Real lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
-  pgstep(px, pwa, nobj, y, gmod.dual(), alpha, tol); // pass pwa by reference? *pwa?
-  //pwa.set(y); pwa.axpy(-lambda,gmod.dual());      // pwa = x - lambda gmod.dual()
-  //proj_->project(pwa,outStream); state_->nproj++; // pwa = P(x - lambda gmod.dual())
-  //pwa.axpy(-one,y);                               // pwa = P(x - lambda gmod.dual()) - x = step
-  Real gs = gmod.apply(pwa);                      // gs  = <step, model gradient>
-  Real ss = pwa.dot(pwa);                         // Norm squared of step
-  Real gnorm = std::sqrt(ss);
+  coeff  = one / gmod.norm();
+  lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
+  pgstep(pwa2, pwa, nobj, y, gmod.dual(), lambda, tol);
+  gs     = gmod.apply(pwa);                      // gs  = <step, model gradient>
+  ss     = pwa.dot(pwa);                         // Norm squared of step
+  snorm  = std::sqrt(ss);                        // norm(step)
+  gnorm  = snorm / lambda;                       // norm(step) / lambda
 
   // Compute initial projected gradient norm
   const Real gtol = std::min(tol1_,tol2_*gnorm);
@@ -518,25 +518,33 @@ void TrustRegionAlgorithm<Real>::dpsg_simple(Vector<Real> &y,     //x
     model.hessVec(dwa,pwa,x,tol); nhess_++; // dwa = H step
     sHs = dwa.apply(pwa);                   // sHs = <step, H step>
 
+    // Evaluate nonsmooth term
+    nobj.update(pwa2,UpdateType::Trial);
+    nval  = nobj.value(pwa2,tol);
+
     // Perform line search
     alphaMax = 1;
-    if (gnorm >= del-safeguard) { // Trust-region constraint is violated
+    if (snorm >= del-safeguard) { // Trust-region constraint is violated
       ss0      = pwa1.dot(pwa);
       alphaMax = std::min(one, (-ss0 + std::sqrt(ss0*ss0 - ss*(s0s0-del*del)))/ss);
     }
-    if (sHs <= safeguard)
-      alpha = alphaMax;
-    else
-      alpha = std::min(alphaMax, -gs/sHs);
+    alpha = (sHs <= safeguard) ? alphaMax : std::min(alphaMax, -(gs + nval - nold)/sHs);
 
     // Update model quantities
-    y.axpy(alpha,pwa); // New iterate
-		nval   = nobj.value(y, tol); 
-		sval += alpha * (gs + half * alpha * sHs); // Update model value - is this correct? 
-    mnew  = sval + nval; 
-		gmod.axpy(alpha,dwa);                   // Update model gradient
-
-		pRed = mold - mnew; 
+    if (alpha == one) {
+      y.set(pwa2);
+      sval += gs + half * sHs;
+      gmod.plus(dwa);
+    }
+    else {
+      y.axpy(alpha,pwa); // New iterate
+      nobj.update(y,UpdateType::Trial);
+      nval  = nobj.value(y, tol); 
+      sval += alpha * (gs + half * alpha * sHs);
+      gmod.axpy(alpha,dwa);
+    }
+    nold = nval;
+    pRed = mprev - (sval+nval);
 
     // Check trust-region constraint violation
     pwa1.set(y); pwa1.axpy(-one,x);
@@ -558,15 +566,12 @@ void TrustRegionAlgorithm<Real>::dpsg_simple(Vector<Real> &y,     //x
 
     // Compute new spectral step
     lambdaTmp = (sHs <= safeguard ? one/gmod.norm() : ss/sHs);
-    lambda = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
+    lambda    = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
     
-    pgstep(px, pwa, nobj, y, gmod.dual(), alpha, tol); // pass pwa by reference? *pwa?
-    //pwa.set(y); pwa.axpy(-lambda,gmod.dual());
-    //proj_->project(pwa,outStream); state_->nproj++;
-    //pwa.axpy(-one,y);
-    gs = gmod.apply(pwa);
-    ss = pwa.dot(pwa);
-    gnorm = std::sqrt(ss);
+    pgstep(pwa2, pwa, nobj, y, gmod.dual(), alpha, tol); // pass pwa by reference? *pwa?
+    gs    = gmod.apply(pwa);
+    ss    = pwa.dot(pwa);
+    gnorm = std::sqrt(ss) / lambda;
 
     if (gnorm <= gtol) { SPflag_ = 0; break; }
   }
