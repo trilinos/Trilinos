@@ -43,54 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_PERFMODELS_HPP
-#define MUELU_PERFMODELS_HPP
+#ifndef MUELU_PERFMODELS_FWD_HPP
+#define MUELU_PERFMODELS_FWD_HPP
 
-#include <vector>
-#include <Teuchos_DefaultComm.hpp>
+
 
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class PerfModels;
+}
 
-  template <class Scalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class PerfModels {
-  public:
-    /* Single Node tests based upon the STREAM benchmark for measuring memory
-     * bandwith and computation rate. These processes compute either the addition
-     * of two vectors or the multiplication of dense matrices of any given size.
-     * Many iterations occur which then return a vector containing the individual
-     * lengths of time per iteration.
-     *
-     * See further here:
-     *    - https://www.cs.virginia.edu/stream/ref.html
-     *    - https://github.com/UoB-HPC/BabelStream
-     */
-    double stream_vector_add_SC(int KERNEL_REPEATS, int VECTOR_SIZE);
-    double stream_vector_add_LO(int KERNEL_REPEATS, int VECTOR_SIZE);
-    double stream_vector_add_size_t(int KERNEL_REPEATS, int VECTOR_SIZE);
-
-    std::vector<double> stream_vector_add_SC_all(int KERNEL_REPEATS, int VECTOR_SIZE);
-    std::vector<double> stream_vector_add_LO_all(int KERNEL_REPEATS, int VECTOR_SIZE);
-    std::vector<double> stream_vector_add_size_t_all(int KERNEL_REPEATS, int VECTOR_SIZE);
-
-    /* A latency test between two processes based upon the MVAPICH OSU Micro-Benchmarks.
-     * The sender process sends a message and then waits for confirmation of reception.
-     * Many iterations occur with various message sizes and the average latency values
-     * are returned within a map. Utilizes blocking send and recieve.
-     *
-     * See further: https://mvapich.cse.ohio-state.edu/benchmarks/
-     */
-    std::map<int,double> pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    std::map<int,double> pingpong_test_device(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    //  private:
-    
+#ifndef MUELU_PERFMODELS_SHORT
+#define MUELU_PERFMODELS_SHORT
+#endif
 
 
-  }; //class PerfModels
 
-} //namespace MueLu
-
-#endif //ifndef MUELU_PERFMODELS_HPP
+#endif // MUELU_PERFMODELS_FWD_HPP

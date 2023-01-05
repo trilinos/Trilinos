@@ -44,145 +44,239 @@
 //
 // @HEADER
 #include <cstdio>
-#include <mpi.h>
 #include <cmath>
 #include <numeric>
-#include <stdexcept>
-#include <ctime>
+#include <utility>
 #include <chrono>
 #include <Teuchos_StackedTimer.hpp>
+#include "MueLu_PerfModels_decl.hpp"
 
-#include "MueLu_PerfModels.hpp"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 namespace MueLu {
-  namespace PerfModels {
 
-    int MTRX_MAX_SIZE = 800;
-    int MTRX_MAX = pow(2,15);
-    int MTRX_MIN = 1;
+  namespace PerfDetails {
+    template<class Scalar,class Node>
+    std::vector<double> stream_vector_add_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+      using exec_space   = typename Node::execution_space;
+      using memory_space = typename Node::memory_space;
+      using range_policy = Kokkos::RangePolicy<exec_space>;
 
+      Kokkos::View<Scalar*,memory_space> a("a", VECTOR_SIZE);
+      Kokkos::View<Scalar*,memory_space> b("b", VECTOR_SIZE);
+      Kokkos::View<Scalar*,memory_space> c("c", VECTOR_SIZE);
+      std::vector<double> test_times(KERNEL_REPEATS);
 
-    std::vector<double> singleNodeDenseMatrixMultiplicationTest(int& KERNEL_REPEATS, int row1, int col1, int col2) {
+      Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
-      double **a, **b, **c;
-      int i,j;
-      std::vector<double> times(KERNEL_REPEATS); // Modify number of tests ran
+      Kokkos::parallel_for("stream/fill",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t i) {
+          a(i) = ONE * i;
+          b(i) = a(i);
+        });
+      exec_space().fence();
 
-      a = new double*[row1];
-      b = new double*[col1];
-      c = new double*[row1];
+      using clock = std::chrono::high_resolution_clock;
 
-      // Create random seeds based on the smallest tick period of the node.
-      long long t1 = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-      srand((size_t) t1); //updates the random number quicker then every second, used to rely on srand(time(nullptr)).
+      clock::time_point start, stop;
 
-      // Populate the matrices with random values
-        for(i = 0; i < row1; i++) {
-          a[i] = new double[col1];
-          c[i] = new double[col2];
+      for(int i = 0; i < KERNEL_REPEATS; i++) {       
+        start = clock::now();
+        Kokkos::parallel_for("stream/add",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t j) { //Vector Addition
+            c(j) = a(j) + b(j);
+        });
 
-          for(j = 0; j < col1; j++) {
-            a[i][j] = rand() % MTRX_MAX + MTRX_MIN;
-          }
-        }
-
-        for(i = 0; i < col1; i++) {
-          b[i] = new double[col2];
-          for(j = 0; j < col2; j++) {
-            b[i][j] = rand() % MTRX_MAX + MTRX_MIN;
-          }
-        }
-
-      // TIMED BENCHMARK BEGINS
-      for(size_t t = 0; t < times.size(); t++) {
-        clock_t start = clock();
-
-        for(i = 0; i < row1; ++i) {
-          for(j = 0; j < col2; ++j) {
-            for(int k = 0; k < col1; ++k) {
-                c[i][j] += a[i][k] * b[k][j];
-            }
-          }
-        }
-
-        clock_t end = clock();
-        double diffs = (end - start)/(double)CLOCKS_PER_SEC;
-        times[t] = diffs;
+        exec_space().fence();
+        stop = clock::now();
+        test_times[i] = std::chrono::duration<double>(stop - start).count();
       }
 
-  //    double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
-
-      return times;
-
-
+      return test_times;
     }
 
 
-    std::map<int,double> pingpong_test(int& KERNEL_REPEATS, int& MAX_SIZE, RCP<const Teuchos::Comm<int>> comm) {
-      using Teuchos::BaseTimer;
-      int rank, nproc, msg_length, i, j;
-      std::vector<int> msg_arr((int)pow(2,MAX_SIZE)); // values from 0,1,2... to 2^15. Sizes of each buffer send
-      char  *s_buf, *r_buf;  // Send & recieve buffers
-      double t_avg;
-      std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+    template<class Scalar,class Node>
+    double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {  
+      std::vector<double> v = stream_vector_add_all<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+      return std::accumulate(v.begin(),v.end(),0.0);
+    }
+  }
 
-      RCP<CommRequest<Ordinal>> request;
-      RCP<CommStatus<Ordinal>> status;
-      BaseTimer timer;
+    
 
-      std::map<int, double> time_map;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<double>
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_SC_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add_all<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-      rank = comm->getRank();
-      nproc = comm->getSize();
 
-      msg_arr[0] = 0;
-      for(i = 0; i < MAX_SIZE; i++) {
-        msg_arr[i+1] = (int) pow(2,i);
-      }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<double>
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_LO_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add_all<LocalOrdinal,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-      if (nproc < 2) {
-        if (rank == 0) printf("This benchmark should be run on at least two processes");
-        exit(EXIT_FAILURE);
-      }
 
-      //Allocating memory for the buffers.
-      MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &r_buf);
-      MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &s_buf);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<double>
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_size_t_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add_all<size_t,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-      // Populate send buffer
-      for(i = 0; i < (int) pow(2,MAX_SIZE); i++)
-        s_buf[i] = 1;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_SC(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-      //Send and recieve.
-      for(msg_length = 0; msg_length < MAX_SIZE + 1 ; msg_length++) {
-        comm->barrier();
 
-        for(j = 0; j < KERNEL_REPEATS; j++) {
-          timer.start();
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_LO(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add<LocalOrdinal,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-          if(rank == 1) {
-            comm->send(msg_arr[msg_length], s_buf, 0);
-          }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_size_t(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_add<size_t,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
 
-          else if(rank == 0){
-            comm->receive(1, msg_arr[msg_length],r_buf);
-          }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::map<int,double> 
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
+    std::map<int, double> time_map;
 
-          timer.stop();
-          time_array[j] = timer.accumulatedTime() * 1.0e6; // Formmated in microseconds (us)
-          timer.reset();
+#ifdef HAVE_MPI
+    using Teuchos::BaseTimer;
+    int msg_length, i, j;
+    std::vector<int> msg_arr(MAX_SIZE+1); // values from 0,1,2... to 2^15. Sizes of each buffer send
+    char  *s_buf, *r_buf;  // Send & recieve buffers
+    double t_avg;
+    std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+    
+    BaseTimer timer;   
+    RCP<Teuchos::CommRequest<int> > request;
+    RCP<Teuchos::CommStatus<int> > status;    
+    int rank = comm->getRank();
+    int nproc = comm->getSize();
+
+    if(nproc < 2)
+      return time_map;
+
+    msg_arr[0] = 0;
+    for(i = 0; i < MAX_SIZE; i++) {
+      msg_arr[i+1] = (int) pow(2,i);
+    }
+    
+    //Allocating memory for the buffers.
+    MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &r_buf);
+    MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &s_buf);
+    
+    // Populate send buffer
+    for(i = 0; i < (int) pow(2,MAX_SIZE); i++)
+      s_buf[i] = 1;
+    
+    //Send and recieve.
+    for(msg_length = 0; msg_length < MAX_SIZE + 1 ; msg_length++) {
+      comm->barrier();
+      
+      for(j = 0; j < KERNEL_REPEATS; j++) {
+        timer.start();
+        
+        if(rank == 1) {
+          comm->send(msg_arr[msg_length], s_buf, 0);
         }
-
-        t_avg = accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
-
-        time_map.insert(std::pair<int, double>(msg_arr[msg_length],t_avg));
-
+        
+        else if(rank == 0){
+          comm->receive(1, msg_arr[msg_length],r_buf);
+        }
+        
+        timer.stop();
+        time_array[j] = timer.accumulatedTime() * 1.0e6; // Formmated in microseconds (us)
+        timer.reset();
       }
-
+      
+      t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
+      
+      time_map.insert(std::pair<int, double>(msg_arr[msg_length],t_avg));
+      
+    }
+#endif
     return time_map;
+  }
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::map<int,double> 
+PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int KERNEL_REPEATS, int MAX_SIZE,const RCP<const Teuchos::Comm<int> > &comm) {
+    std::map<int, double> time_map;
+#ifdef HAVE_MPI
+    using exec_space   = typename Node::execution_space;
+    using memory_space = typename Node::memory_space;
+    using range_policy = Kokkos::RangePolicy<exec_space>;
+    using Teuchos::BaseTimer;
+    int msg_length, i, j;
+    const int buff_size = (int) pow(2,MAX_SIZE);
+
+    double t_avg;
+    std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+    
+    BaseTimer timer;   
+    RCP<Teuchos::CommRequest<int> > request;
+    RCP<Teuchos::CommStatus<int> > status;    
+    int rank  = comm->getRank();
+    int nproc = comm->getSize();
+
+    if(nproc < 2)
+      return time_map;
+    
+    // Precompute message sizes
+    std::vector<int> msg_arr(MAX_SIZE+1);
+    msg_arr[0]=0;
+    for(i = 0; i < MAX_SIZE; i++) {
+      msg_arr[i+1] = (int) pow(2,i);
     }
+        
+    // Allocate memory for the buffers (and fill send)
+    Kokkos::View<char*,memory_space> r_buf("recv",buff_size), s_buf("send",buff_size);
+    Kokkos::deep_copy(s_buf,1);
 
 
-  } //namespace PerfModels
+    //Send and recieve.   
+
+    // NOTE:  Do consectutive pair buddies here for simplicity.  We should be smart later
+    int odd = rank % 2;
+    int buddy = odd ? rank - 1 : rank + 1;
+   
+    for(msg_length = 0; msg_length < MAX_SIZE + 1 ; msg_length++) {
+      comm->barrier();
+      
+      for(j = 0; j < KERNEL_REPEATS; j++) {
+        timer.start();
+
+        if (buddy < nproc) {
+          if (odd)
+            comm->send(msg_arr[msg_length], (char*)s_buf.data(), buddy);
+          else
+            comm->receive(buddy, msg_arr[msg_length],(char*)r_buf.data());
+        }
+
+        timer.stop();
+        time_array[j] = timer.accumulatedTime() * 1.0e6; // Formmated in microseconds (us)
+        timer.reset();
+      }
+      
+      t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
+      
+      time_map.insert(std::pair<int, double>(msg_arr[msg_length],t_avg));
+      
+    }
+#endif
+    return time_map;
+  }
+
 
 } //namespace MueLu

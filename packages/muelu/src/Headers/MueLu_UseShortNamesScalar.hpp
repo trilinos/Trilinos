@@ -212,6 +212,9 @@ using PatternFactory [[maybe_unused]] = MueLu::PatternFactory<Scalar,LocalOrdina
 #ifdef MUELU_PERFUTILS_SHORT
 using PerfUtils [[maybe_unused]] = MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
+#ifdef MUELU_PERFMODELS_SHORT
+typedef MueLu::PerfModels<Scalar,LocalOrdinal,GlobalOrdinal,Node> PerfModels;
+#endif
 #ifdef MUELU_PERMUTATIONFACTORY_SHORT
 using PermutationFactory [[maybe_unused]] = MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
