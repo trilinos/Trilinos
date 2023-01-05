@@ -291,8 +291,6 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
 
     // Compute trial objective value
     strial = computeValue(inTol,outTol,pRed,state_->svalue,state_->iter,x,*state_->iterateVec,sobj);
-    nobj.update(x, UpdateType::Trial);
-    ntrial = nobj.value(x,outTol); state_->nnval++; 
     Ftrial = strial + ntrial; 
 
     // Compute ratio of acutal and predicted reduction
@@ -707,6 +705,9 @@ void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
   }
   if (useNMSP_ && useMin_) {
     sval = sval_min; nval = nval_min; y.set(ymin);
+  }
+  else {
+    sval = sold; nval = nold;
   }
   SPflag_ = (SPiter_==maxit_) ? 1 : 0;
 }
