@@ -465,15 +465,15 @@ Real TrustRegionAlgorithm<Real>::dcauchy(Vector<Real> &s,
 template<typename Real>
 void TrustRegionAlgorithm<Real>::dpsg_simple(Vector<Real> &y,     //x
                                              Real         &sval,
-																						 Real         &nval,
-																						 Real         &pRed,  //predicted reduction
+                                             Real         &nval,
+                                             Real         &pRed,  //predicted reduction
                                              Vector<Real> &gmod,  // state_->gradientVec
                                              const Vector<Real> &x, //iterateVect
-																						 Vector<Real> &px,    // px
-																						 Vector<Real> &dg,    // gradient dual? 
+                                             Vector<Real> &px,    // px
+                                             Vector<Real> &dg,    // gradient dual? 
                                              Real del,
                                              TrustRegionModel_U<Real> &model,
-																						 Objective<Real> &nobj,
+                                             Objective<Real> &nobj,
                                              Vector<Real> &pwa,
                                              Vector<Real> &pwa1,
                                              Vector<Real> &dwa,
