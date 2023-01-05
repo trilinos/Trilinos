@@ -93,6 +93,16 @@
 // =========================================================================
 // Support Routines
 // =========================================================================
+
+// Report bandwidth in GB / sec
+double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_per_call_bytes) {
+  const double GB = 1024.0 * 1024.0 * 1024.0;
+  double time_per_call = time / num_calls;
+
+  return memory_per_call_bytes / GB / time_per_call;
+}
+
+
 template<class View1, class View2>
 inline void copy_view_n(const int n, const View1 x1, View2 x2) {
   Kokkos::parallel_for(n,KOKKOS_LAMBDA(const size_t i) {
@@ -759,8 +769,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
-  std::cout<<"Beginning main_()"<<std::endl;
-
 #if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
   PetscInitialize(0,NULL,NULL,NULL);
 #endif
@@ -1302,21 +1310,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Slightly cleaner
     std::string SPMV_test_names[4] = {"colind","rowptr","vals","x"};
-    std::map<int,int> SPMV_test_values;
-    SPMV_test_values[0] = nnz;// colind
-    SPMV_test_values[1] = (m + 1); // rowptr 
-    SPMV_test_values[2] = nnz; // vals
-    SPMV_test_values[3] = m; // x
+    std::vector<int> SPMV_num_objects(4), SPMV_object_size(4);
+    SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
+    SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
+    SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
+    SPMV_num_objects[3] = m;       SPMV_object_size[3] = sizeof(SC);  // x
 
     
     for(int i = 0; i < 4; i++) {
       std::vector<double> vda_times;
       if(i == 0) 
-        vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_test_values[i]);
+        vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_num_objects[i]);
       else if (i==1) 
-        vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_test_values[i]);
+        vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_num_objects[i]);
       else 
-        vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_test_values[i]);
+        vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_num_objects[i]);
 
       double vectordoubleadd_totalavg = std::accumulate(vda_times.begin(), vda_times.end(), 0.0);
       double vectordoubleadd_avg_time = vectordoubleadd_totalavg / vda_times.size();
@@ -1326,14 +1334,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &vectordoubleadd_avg_time, &vectordoubleadd_avg_distributed);
         vectordoubleadd_avg_distributed /= nproc;
       }
+
+      // Stream add involves two reads and a write, so the "3" below
+      double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
+      double gb_sec = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
       
       if(rank == 0) {
         // VDA
         std::cout << "\n========================================================\nVector Addition Benchmark: ran "
                   << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
-                  << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_test_values[i]
+                  << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
                   << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
-                  << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us." << std::endl;
+                  << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us.\n"
+                  << "GB/sec = "<<gb_sec<<std::endl;
+        
       }
     }
 
