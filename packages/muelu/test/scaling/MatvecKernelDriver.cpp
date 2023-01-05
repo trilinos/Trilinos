@@ -63,6 +63,7 @@
 // MueLu
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_PerfModels.hpp"
 #include <MatrixLoad.hpp>
 
 #if defined(HAVE_MUELU_TPETRA)
@@ -758,6 +759,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
+  std::cout<<"Beginning main_()"<<std::endl;
+
 #if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
   PetscInitialize(0,NULL,NULL,NULL);
 #endif
@@ -1253,6 +1256,86 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined(HAVE_MUELU_MKL)
     mkl_sparse_destroy(mkl_A);
 #endif
+
+    // ==========================================
+    // Performance Models
+    // ==========================================
+    // NOTE: We've hardwired this to size_t for the rowptr.  This really should really get read out of a typedef,
+    // if Tpetra actually had one
+    using rowptr_type = size_t;
+    MueLu::PerfModels<SC,LO,GO,NO> PM;
+    int rank = comm->getRank(); int nproc = comm->getSize();
+    int m   = static_cast<int>(Att.getLocalNumRows());
+    int nnz = static_cast<int>(Att.getLocalMatrixHost().graph.entries.extent(0));
+
+    //Ping Pong
+    if(nproc > 1) {
+      std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
+      
+      if(rank == 0) {
+        // pingpong
+        std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
+          "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
+        
+        for(auto it = pingpong.cbegin(); it != pingpong.cend(); ++it) {
+          std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
+        }
+        std::cout << "========================================================"
+                  << std::endl;
+      }
+
+      std::map<int, double> pingpong_device = PM.pingpong_test_device(nrepeat,15, comm);
+      
+      if(rank == 0) {
+        // pingpong
+        std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
+          "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
+        
+        for(auto it = pingpong_device.cbegin(); it != pingpong_device.cend(); ++it) {
+          std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
+        }
+        std::cout << "========================================================"
+                  << std::endl;
+      }
+
+    }
+
+    // Slightly cleaner
+    std::string SPMV_test_names[4] = {"colind","rowptr","vals","x"};
+    std::map<int,int> SPMV_test_values;
+    SPMV_test_values[0] = nnz;// colind
+    SPMV_test_values[1] = (m + 1); // rowptr 
+    SPMV_test_values[2] = nnz; // vals
+    SPMV_test_values[3] = m; // x
+
+    
+    for(int i = 0; i < 4; i++) {
+      std::vector<double> vda_times;
+      if(i == 0) 
+        vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_test_values[i]);
+      else if (i==1) 
+        vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_test_values[i]);
+      else 
+        vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_test_values[i]);
+
+      double vectordoubleadd_totalavg = std::accumulate(vda_times.begin(), vda_times.end(), 0.0);
+      double vectordoubleadd_avg_time = vectordoubleadd_totalavg / vda_times.size();
+      double vectordoubleadd_avg_distributed = vectordoubleadd_avg_time;
+
+      if(nproc > 1) {
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &vectordoubleadd_avg_time, &vectordoubleadd_avg_distributed);
+        vectordoubleadd_avg_distributed /= nproc;
+      }
+      
+      if(rank == 0) {
+        // VDA
+        std::cout << "\n========================================================\nVector Addition Benchmark: ran "
+                  << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
+                  << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_test_values[i]
+                  << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
+                  << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us." << std::endl;
+      }
+    }
 
     success = true;
   }
