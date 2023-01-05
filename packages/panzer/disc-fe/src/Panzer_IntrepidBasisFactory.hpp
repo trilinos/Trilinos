@@ -250,7 +250,6 @@ namespace panzer {
                                "Failed to create the requestedbasis with basis_type=\"" << basis_type << 
                                "\", basis_order=\"" << basis_order << "\", and cell_type=\"" << cell_type << "\"!\n");
 
-    // TODO BWR playing around... FIX
     // TODO BWR changed this in two respects...
     // TODO BWR first, we compare that the base topologies are the same
     // TODO BWR second, we do so using the NAME. This avoids the ugly task of getting the

@@ -135,6 +135,9 @@ namespace panzer {
   {
     // TODO BWR Probably should change the name of this call...
     // TODO BWR We DO rely on the intrepid2 fp using the base topo downstream so need to be careful here
+    // TODO BWR However this is a virtual function
+    // TODO BWR The other field patterns (edge,face,etc.) DO NOT use the base topo
+    // TODO BWR ASK!
     return intrepidBasis_->getBaseCellTopology();
   }
 

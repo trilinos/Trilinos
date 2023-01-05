@@ -94,8 +94,6 @@ namespace panzer {
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
   Teuchos::RCP<panzer::IntegrationRule> buildIR(std::size_t worksetSize,int cubature_degree);
 
-  // TODO BWR vertex -> node switch here
-
   TEUCHOS_UNIT_TEST(point_values_evaluator, eval)
   {
 

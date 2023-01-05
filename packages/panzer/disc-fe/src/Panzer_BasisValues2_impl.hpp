@@ -454,7 +454,7 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   int numcells = basisDesc->numCells();
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
   cell_topology_ = basisDesc->getCellTopology();
-  std::cout << " MY CELL TOPO IN BV2 " << *(cell_topology_) << std::endl;
+  // TODO BWR this cell topo is the correct mesh cell topo. remove this note later
 
   intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
 
@@ -674,16 +674,6 @@ setOrientations(const std::vector<Intrepid2::Orientation> & orientations,
     resetArrays();
   }
 }
-
-///////////// TO BE DEPRECATED...
-template <typename Scalar>
-void
-BasisValues2<Scalar>::
-setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates)
-{
-  cell_vertex_coordinates_ = vertex_coordinates;
-}
-///////////// END TO BE DEPRECATED
 
 template <typename Scalar>
 void

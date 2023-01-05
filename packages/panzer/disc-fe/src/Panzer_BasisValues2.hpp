@@ -282,8 +282,7 @@ namespace panzer {
     PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_inverse_;
     PHX::MDField<const Scalar,Cell,IP>          cubature_weights_;
 
-    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_vertex_coordinates_; ///// TO BE DEPRECATED...
-    // TODO BWR Change the name to refer to mesh
+    // Coordinates of the mesh nodes
     PHX::MDField<const Scalar,Cell,NODE,Dim> cell_node_coordinates_;
 
     // Cell topology from the mesh

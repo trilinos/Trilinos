@@ -273,7 +273,6 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description,
   } else {
 
     iv = Teuchos::rcp(new IntegrationValues2<double>("",true));
-    // TODO BWR Does this ir have the correct mesh cell topo?
     iv->setupArrays(ir);
     iv->evaluateValues(getCellNodes(), numCells(), face_connectivity_, numVirtualCells());
 

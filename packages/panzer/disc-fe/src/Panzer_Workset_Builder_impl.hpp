@@ -162,7 +162,6 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     Kokkos::deep_copy(cell_local_ids_k, cell_local_ids_k_h);
     wkst->cell_local_ids_k = cell_local_ids_k;
 
-    // TODO BWR this change means cell_vertex_coordinates is not populated... should be just remove?
     wkst->cell_node_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cnc",workset_size,
 					 node_coordinates.extent(1),
 					 node_coordinates.extent(2));

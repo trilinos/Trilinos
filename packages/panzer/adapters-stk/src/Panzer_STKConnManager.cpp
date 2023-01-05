@@ -166,14 +166,12 @@ STKConnManager::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp,
                                         GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const
 {
    // get the global counts for all the nodes, faces, edges and cells
-   // TODO BWR THIS COULD BE PROBLEMATIC
    GlobalOrdinal maxNodeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
    GlobalOrdinal maxEdgeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getEdgeRank());
    GlobalOrdinal maxFaceId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getFaceRank());
    // TODO BWR This also mashes information from the mesh with information from the field pattern
    // If the field pattern is always based on the low order topology (which MUST match the mesh topology),
    // are we going to clash here?
-   // TODO fp might the agg geom fp
 
    // compute ID counts for each sub cell type
    int patternDim = fp.getDimension();
@@ -225,10 +223,6 @@ STKConnManager::addSubcellConnectivities(stk::mesh::Entity element,
      stk::mesh::Entity subcell = relations[sc];
 
      // add connectivities: adjust for STK indexing craziness
-     // TODO ask eric about indexing
-     // TODO BWR is this meant to match the GIDs coming from STK?
-     // TODO If so, the idCounts are coming from the field pattern which
-     // only uses the base topology... this may not be an issue if I understand what the idCnt means (DOFs per entity??)
      for(LocalOrdinal i=0;i<idCnt;i++) {
        connectivity_.push_back(offset+idCnt*(bulkData.identifier(subcell)-1)+i);
      }
@@ -244,7 +238,7 @@ STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk
                                             GlobalOrdinal offset)
 {
   // TODO BWR THIS NEEDS TO BE LOOKED AT
-  // TODO BWR we should have a periodic test, too?
+  // TODO BWR we should have a periodic test, too? Or does that ever make sense for curved meshes? I think it could be possible.
    LocalOrdinal elmtLID = stkMeshDB_->elementLocalId(element);
    auto * conn = this->getConnectivity(elmtLID);
    const std::vector<int> & subCellIndices = fp.getSubcellIndices(subcellRank,subcellId);
@@ -262,13 +256,11 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
   RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::buildConnectivity"))));
 #endif
 
-   fp.print(std::cout);
-   std::cout << fp.getCellTopology() << std::endl;
+   // TODO BUILD CONN IS CORRECT
 
    // TODO BWR the intrepidfieldpattern ALWAYS returns the base cell topology (and I assume uses it).
-   // Would this build connectivity routine ever get called where that is NOT the case?
-   // That is that fp is some aggregate field pattern of fps using the base cell topo?
-   // Perhaps... is it better to pass the fp cell topo "size" to the subcellconnectivities routines
+   // TODO BWR This routine gets called with edge, face, nodal field patterns, too
+   // TODO BWR Will our subselection of nodes be appropriate for those other patterns?
 
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
@@ -280,27 +272,21 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
    //    ID counts = How many IDs belong on each subcell (number of mesh DOF used)
    //    Offset = What is starting index for subcell ID type?
    //             Global numbering goes like [node ids, edge ids, face ids, cell ids]
-   // TODO BWR Maybe it is possible to have IDCnt > 1 if it is a higher order edge or face?
-   // But that doesn't really make sense to me.
    LocalOrdinal nodeIdCnt=0, edgeIdCnt=0, faceIdCnt=0, cellIdCnt=0;
    GlobalOrdinal nodeOffset=0, edgeOffset=0, faceOffset=0, cellOffset=0;
-   // TODO BWR see notes in this call to why I'm worried...
    buildOffsetsAndIdCounts(fp, nodeIdCnt,  edgeIdCnt,  faceIdCnt,  cellIdCnt,
                                nodeOffset, edgeOffset, faceOffset, cellOffset);
 
-     std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
-     std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
-     std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
-     std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
-
-    // TODO BWR where should we nab the subcell topology?
-    // TODO BWR exodusreaderfactor has elemBlockUniqueBLAHTopologies...
-    // TODO BWR I don't think we are currently supporting multiple topologies (per basis type) though
+    // std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
+    // std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
+    // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
+    // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
 
    // Connectivity only requires lowest order mesh node information
    // With the notion of extended topologies used by shards, it is 
    // sufficient to take the first num_vertices nodes for connectivity purposes.
    // TODO BWR This mapping is more complex for cn and will need to be modified
+   // TODO BWR see note above on intrepid field patterns
    const unsigned num_vertices = fp.getCellTopology().getVertexCount();
 
    // loop over elements and build global connectivity
@@ -382,7 +368,6 @@ void STKConnManager::applyPeriodicBCs(const panzer::FieldPattern & fp, GlobalOrd
       if((*matchTypes)[m] == 0)
         offset1 = nodeOffset-offset0;
       else if((*matchTypes)[m] == 1){
-        // TODO BWR HERE this also will be affected. I think this is used later downstream, as well.
         offset0 = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
         offset1 = edgeOffset-offset0;
       } else if((*matchTypes)[m] == 2){

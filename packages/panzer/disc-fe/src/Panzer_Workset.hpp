@@ -124,11 +124,6 @@ namespace panzer {
     // DEPRECATED - use: getLocalCellIDs()
     std::vector<size_t> cell_local_ids;
 
-    /// TO BE DEPRECATED...
-    /// DEPRECATED - use: getCellVertices()
-    CellCoordArray cell_vertex_coordinates;
-    /// END TO BE DEPRECATED
-
     /// DEPRECATED - use: getCellNodes()
     CellCoordArray cell_node_coordinates;
 
@@ -188,13 +183,6 @@ namespace panzer {
     int
     getSubcellDimension() const
     {return subcell_dim;}
-
-    ////////// TO BE DEPRECATED...
-    /// Get the vertices for the cells
-    CellCoordArray
-    getCellVertices() const
-    {return cell_vertex_coordinates;}
-    ///////// END TO BE DEPRECATED
 
     /// Get the node coordinates for the cells
     CellCoordArray

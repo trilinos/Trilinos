@@ -72,13 +72,12 @@ namespace panzer {
 
     // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
     const auto cellTopo = elementBlockTopologies.at(0);
-    std::cout << " CELL TOPO HERE " << cellTopo << std::endl;
     // TODO BWR Will setting orientations need higher order mesh nodes if we have a curvilinear mesh?
     // TODO BWR Or are vertices sufficient?
     const int numNodesPerCell = cellTopo.getNodeCount();
-    std::cout << " NUM NODES PER CELL HERE " << numNodesPerCell << std::endl;
 
     const auto fp = NodalFieldPattern(cellTopo);
+    // TODO BWR This is full mesh topo
     connMgr.buildConnectivity(fp);
 
     // Count and pre-alloc orientations

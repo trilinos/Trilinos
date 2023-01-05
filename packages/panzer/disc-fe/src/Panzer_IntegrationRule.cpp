@@ -146,6 +146,7 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
      return;
   }
 
+  // TODO BWR this seems to be the correct topo
   const shards::CellTopology & topo = *cell_data.getCellTopology();
   Teuchos::RCP<shards::CellTopology> sideTopo = getSideTopology(cell_data);
 

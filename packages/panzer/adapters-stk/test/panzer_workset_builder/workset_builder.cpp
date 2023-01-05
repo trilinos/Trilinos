@@ -124,11 +124,6 @@ namespace panzer {
 				 physicsBlocks);
     }
 
-    // TODO BWR changed this to reflect the change from vertex -> node
-    // TODO BWR this also highlights a potential issue... if one does
-    // TODO BWR buildWorksets in this manner and then tries to access .cell_vertex_coordinates,
-    // TODO BWR it wont be populated
-
     std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
 
     for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); ++i) {
@@ -249,8 +244,6 @@ namespace panzer {
       local_side_ids_a.push_back(1);
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
-
-      // TODO BWR see note above
 
       Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates_a, cell_node_coordinates_b;
       mesh->getElementNodes(local_cell_ids_a,cell_node_coordinates_a);
@@ -405,8 +398,6 @@ namespace panzer {
       local_side_ids_a.push_back(1);
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
-
-      // TODO BWR see note above
 
       Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates_a, cell_node_coordinates_b;
       mesh->getElementNodes(local_cell_ids_a,cell_node_coordinates_a);

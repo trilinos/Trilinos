@@ -463,6 +463,7 @@ void DOFManager::buildGlobalUnknowns()
 
   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(tmp));
 
+  aggFieldPattern->print(std::cout);
   connMngr_->buildConnectivity(*aggFieldPattern);
 
   // using new geometric pattern, build global unknowns
@@ -940,8 +941,7 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
       for (size_t l = 0; l < myElements.size(); ++l) {
         auto connSize = connMngr_->getConnectivitySize(myElements[l]);
         const auto * elmtConn = connMngr_->getConnectivity(myElements[l]);
-        int offset=0; // TODO BWR this is ultimately what gives the segfault
-        // TODO BWR the fieldIds size is too small compared to connsize
+        int offset=0;
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
           for(std::size_t i=0;i<working.size();i++)
