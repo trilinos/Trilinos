@@ -294,6 +294,12 @@ namespace MueLu {
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_lookup(int SIZE_IN_BYTES) {
     return PerfDetails::table_lookup(stream_sizes_,stream_add_times_,SIZE_IN_BYTES/sizeof(Scalar));
   }
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_lookup(int SIZE_IN_BYTES) {
+   return std::min(stream_vector_copy_lookup(SIZE_IN_BYTES),stream_vector_add_lookup(SIZE_IN_BYTES));
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

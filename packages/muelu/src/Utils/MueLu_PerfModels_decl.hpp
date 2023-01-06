@@ -69,12 +69,6 @@ namespace MueLu {
      *    - https://www.cs.virginia.edu/stream/ref.html
      *    - https://github.com/UoB-HPC/BabelStream
      */
-    double stream_vector_add_SC(int KERNEL_REPEATS, int VECTOR_SIZE);
-    double stream_vector_add_LO(int KERNEL_REPEATS, int VECTOR_SIZE);
-    double stream_vector_add_size_t(int KERNEL_REPEATS, int VECTOR_SIZE);
-
-    double stream_vector_copy_SC(int KERNEL_REPEATS, int SIZE_IN_BYTES);
-
 
     /* This version is for table interpolation and works on chars, so the LOG_MAX_SIZE is for bytes */
     void stream_vector_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
@@ -82,6 +76,10 @@ namespace MueLu {
     /* Lookup in the stream_vector table */
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
     double stream_vector_add_lookup(int SIZE_IN_BYTES);
+
+    // Uses the faster of the tables
+    double stream_vector_lookup(int SIZE_IN_BYTES);
+    
 
     /* Print table */
     void print_stream_vector_table(std::ostream & out);
