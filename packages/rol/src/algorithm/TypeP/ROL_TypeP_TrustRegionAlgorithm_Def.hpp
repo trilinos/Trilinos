@@ -87,7 +87,7 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   interpf_   = lmlist.sublist("Cauchy Point").get("Reduction Rate",                    0.1);
   extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
-  // Subsolver (spectral projected gradient) parameters
+  // Subsolver (general) parameters
   lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8);
   lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8);
   gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance",       1e-4);
@@ -95,10 +95,15 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
   tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
-  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
+	// Subsolver (spectral projected gradient) parameters
+	useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
   useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
-  useSimpleSPG_ = !lmlist.sublist("Solver").get("Compute Cauchy Point",            true);
-  // Inexactness Information
+  algSelect_ = lmlist.sublist("Solver").get("Select Subproblem Solver",                3);
+  // Subsolver (nonlinear conjugate gradient) parameters)
+	ncgType_   = lmlist.sublist("Solver").get("Nonlinear CG Type",                   1); 
+	etaNCG_    = lmlist.sublist("Solver").get("Truncation Parameter for HZ CG",      1e-2); 
+	desPar_   = lmlist.sublist("Solver").get("Descent parameter for Nonlinear CG",  0.2); 
+	// Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
   useInexact_.push_back(glist.get("Inexact Objective Function",     false));
@@ -264,11 +269,7 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
     gmod->set(*state_->gradientVec);
     smodel = state_->svalue;
     ntrial = state_->nvalue;
-    if (useSimpleSPG_)
-      dspg_simple(x,smodel, ntrial, pRed, *gmod, *state_->iterateVec,
-                  state_->searchSize, *model_, nobj,
-                  *pwa1, *pwa2, *px, *dwa1, outStream);
-    else {
+    if (algSelect_==1){
       // Compute Cauchy point (TRON notation: x = x[1])
       dcauchy(*state_->stepVec,alpha_, smodel, ntrial,
               *state_->iterateVec, *dg, state_->searchSize,
@@ -283,6 +284,18 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
            outStream);
       pRed = state_->value - (smodel+ntrial);
     }
+		else if (algSelect_==2) {// SPG2
+		dspg2(x,smodel, ntrial, pRed, *gmod, *state_->iterateVec,
+                  state_->searchSize, *model_, nobj,
+                  *pwa1, *pwa2, *px, *dwa1, outStream);
+		}
+	  else if (algSelect_==3){//NCG
+			dncg(x,smodel,ntrial,*gmod,*state_->iterateVec,state_->searchSize,
+           *model_,nobj,*px,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,
+           outStream);//doesn't output pRed
+      pRed = state_->value - (smodel+ntrial);//compute pRed here
+
+		}
 
     // Update storage and compute predicted reduction
     //pRed = -q; // now updated in dcauchy/dspg
@@ -295,7 +308,7 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
     ntrial = nobj.value(x,outTol); state_->nnval++; 
     Ftrial = strial + ntrial; 
 
-    // Compute ratio of acutal and predicted reduction
+    // Compute ratio of actual and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,Ftrial,pRed,eps_,outStream,verbosity_>1);
     if (useNM_) {
@@ -464,7 +477,7 @@ Real TrustRegionAlgorithm<Real>::dcauchy(Vector<Real> &s,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::dspg_simple(Vector<Real> &y,
+void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
                                              Real         &sval,
                                              Real         &nval,
                                              Real         &pRed,
@@ -523,7 +536,7 @@ void TrustRegionAlgorithm<Real>::dspg_simple(Vector<Real> &y,
     nval  = nobj.value(pwa2,tol);
 
     // Perform line search
-    alphaMax = 1;
+    alphaMax = one;
     if (snorm >= del-safeguard) { // Trust-region constraint is violated
       ss0      = pwa1.dot(pwa);
       alphaMax = std::min(one, (-ss0 + std::sqrt(ss0*ss0 - ss*(s0s0-del*del)))/ss);
@@ -807,6 +820,195 @@ void TrustRegionAlgorithm<Real>::dprox(Vector<Real> &x,
   }
 }
 
+// NCG Subsolver
+template<typename Real>
+void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
+                                      Real         &sval,//smodel
+                                      Real         &nval, //ntrial
+                                      Vector<Real> &gmod, // gradient
+                                      const Vector<Real> &x,//iterateVec
+                                      Real del,
+                                      TrustRegionModel_U<Real> &model,
+                                      Objective<Real> &nobj,
+                                      Vector<Real> &px,
+                                      Vector<Real> &s,
+                                      Vector<Real> &dx,
+                                      Vector<Real> &pwa2,
+                                      Vector<Real> &pwa3,
+                                      Vector<Real> &dx0,
+                                      Vector<Real> &pwa5,
+                                      Vector<Real> &dwa,
+                                      std::ostream &outStream) {
+  // Use NCG to approximately solve TR subproblem:
+  //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)> + phi(y)  subject to  ||y|| \le del
+  //
+  //   Inpute:
+  //       y = Cauchy step
+  //       x = Current iterate
+  //       g = Current gradient
+  const Real half(0.5), one(1),zero(0);
+	const Real inf = ROL_INF<Real>(); 
+	int NCGiter_(0); 
+  Real mval(sval+nval);
+  Real tol(std::sqrt(ROL_EPSILON<Real>())), safeguard(tol);
+  Real hk(0),Qk(0), snorm(0), snorm0(0),gnorm(0),gnorm0(0),gnorm02(0),gnorm2(0), sHs(0), gs(0), ds(0), ss(0), nold(nval), sold(sval), mold(mval); 
+  Real alphamax(1),sy(0),gg(0),eta_(0), alpha(alphamax), lambdaTmp(1), t0ncg(1);
+  Real beta(0), coeff(0); 
+  bool reset(true);
+
+  // Set y = x
+  y.set(x);
+	
+  // Compute initial step
+  coeff  = t0_ / gmod.norm();
+  t0ncg  = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
+  pgstep(px, dx, nobj, y, gmod.dual(), t0ncg, tol);//solves from y, solution in px, step is pwa
+  s.set(dx); 
+	gs     = gmod.apply(s);                      // gs  = <step, model gradient>
+  ss     = s.dot(s);                         // Norm squared of step
+  snorm  = std::sqrt(ss);                        // norm(step)
+  gnorm  = snorm/t0_;                       // norm(step) / lambda
+  nval   = nobj.value(px, tol); state_->nnval++; 
+
+
+  // Compute initial projected gradient norm
+  const Real gtol = std::min(tol1_,tol2_*gnorm);
+
+	if (verbosity_ > 1)
+    outStream << "  Nonlinear Conjugate Gradient"          << std::endl;
+
+  NCGiter_ = 0;
+  while (NCGiter_ < maxit_) {
+    NCGiter_++;
+    snorm0 = snorm; 
+		pwa3.set(y);
+		pwa3.axpy(one,s);
+		pwa3.axpy(-one,s);
+		snorm  = pwa3.norm(); // y + s - x
+    alphamax = one; 
+
+		if (snorm >= (one - safeguard*del)){
+			pwa3.set(y);
+			pwa3.axpy(-one,x);// here is y - x 
+			ds = s.dot(pwa3); 
+			ss = s.dot(s); 
+			alphamax = std::min(one, (-ds + std::sqrt(ds*ds + ss*(del*del - snorm0*snorm0)))/ss); 
+		}
+
+		// Update quantities to evaluate quadratic model value and gradient
+    model.hessVec(dwa,s,x,tol); nhess_++; // dwa = H step
+    sHs = dwa.apply(s);                   // sHs = <step, H step>
+    if (sHs <= safeguard){
+			alpha = alphamax;
+		}
+		else{
+			alpha = std::min(alphamax, -(gs + nval - nold)/sHs); 
+		}
+
+		// Check compute alpha as the minimizer of an upper quadratic model
+		y.axpy(alpha, s); 
+		gmod.axpy(alpha, dwa.dual()); // need dual here? 
+		sold = sold + alpha*gs + half*alpha*alpha*sHs; 
+    // Evaluate nonsmooth term
+    nobj.update(y,UpdateType::Trial);
+    nold  = nobj.value(y,tol); state_->nnval++; 
+
+		// Check step size
+		pwa3.set(y);//temporary storage
+		pwa3.axpy(-one,x); 
+		snorm = pwa3.norm(); 
+		if (snorm>= (one-safeguard)*del){
+			break;
+		}
+
+		// Update spectral step length
+		if (sHs <= safeguard){
+			lambdaTmp = t0_/gmod.norm(); 
+		}
+		else {
+			lambdaTmp = s.dot(s); 
+		}
+
+		// Get steepest descent direction
+		dx0.set(dx); // solution of proximal step dx0. pwa2 = dx. pwa = s
+		gnorm0 = gnorm; 
+		t0ncg = std::max(lambdaMin_, std::min(lambdaMax_, lambdaTmp)); 
+    pgstep(px, dx, nobj, y, gmod.dual(), t0ncg, tol);//solves from y, solution in pwa2, step is pwa
+		gnorm = dx.norm(); 
+		hk = gnorm/t0ncg; 
+
+		if (hk <= gtol){
+			break;
+		}
+		gnorm2 = gnorm*gnorm; 
+		gnorm02 = gnorm0*gnorm0; 
+	  //use pwa5 for dx - dx0 storage
+		pwa5.set(dx);
+		pwa5.axpy(-one, dx0); 
+		if (ncgType_ == 0) {// FR
+			beta = gnorm2/gnorm02; 
+		}
+		else if (ncgType_ == 1) {// PR+
+			beta = std::max(zero, pwa5.dot(dx)/gnorm02); 
+		}
+		else if (ncgType_ == 2) {// HZ
+	    sy = s.dot(pwa5); 
+			gg = dx.dot(dx0); 
+			eta_ = -one/(s.norm()*std::min(etaNCG_, gnorm0));
+			beta = std::max(eta_, (gnorm2 - gg - 2*s.dot(dx)*(gnorm2 - 2*gg+gnorm02)/sy)/sy);
+		}
+		else if (ncgType_ == 3){ // HS+
+			beta = std::max(zero, -pwa5.dot(dx)/s.dot(pwa5)); 
+		}
+		else if (ncgType_ == 4){// DY +
+			beta = std::max(zero, gnorm2/s.dot(pwa5)); 
+		}
+		else if (ncgType_ == 5){//FRPR
+			beta = std::min(gnorm2, std::max(gnorm2, pwa5.dot(dx)))/gnorm02; 
+		}
+		else{ //DYHS
+			beta = std::max(zero, std::min(-pwa5.dot(dx), gnorm2)/s.dot(pwa5));
+		}
+		
+		reset = true; 
+
+		if (beta != zero && beta<inf){
+			pwa5.set(dx);//set pwa3 = dx (s0 in matlab)
+			pwa5.axpy(beta, s); // dx + beta*s
+			gs = gmod.dot(pwa5);
+			pwa3.set(y);//y + s0 for output
+			pwa3.axpy(one, pwa5); 
+			nval = nobj.value(pwa3,tol); state_->nnval++; //is this right?
+			Qk = gs + nval - nold; 
+			if (Qk <= -(one - desPar_)*gnorm2/t0ncg){
+				s.set(pwa5);//s = s0
+				reset = false;
+			}
+		}
+		if (reset){// you don't take the NCG step
+			beta = zero; 
+			s.set(dx); 
+			nval = nobj.value(px,tol); state_->nnval++; 
+			gs = gmod.dot(s); 
+		}
+
+
+	if (verbosity_ > 1) {
+      outStream << std::endl;
+      outStream << "    Iterate:                          " << SPiter_   << std::endl;
+      outStream << "    Spectral step length (lambda):    " << t0ncg    << std::endl;
+      outStream << "    Step length (alpha):              " << alpha     << std::endl;
+      outStream << "    Model decrease (pRed):            " << mval-mold << std::endl;
+      outStream << "    Optimality criterion:             " << gnorm     << std::endl;
+      outStream << std::endl;
+    }
+    if (gnorm < gtol) break;
+
+  }
+	s.set(y); 
+	s.axpy(-one,x); 
+	nval = nold; 
+}
 // BRACKETING AND BRENTS FOR UNTRANSFORMED MULTIPLIER
 //template<typename Real>
 //void TrustRegionSPGAlgorithm<Real>::dprox(Vector<Real> &x,

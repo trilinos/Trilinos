@@ -105,7 +105,10 @@ private:
   int maxSize_;
   bool useMin_;
   bool useNMSP_;
-  bool useSimpleSPG_;
+  Real algSelect_;
+  int ncgType_; 
+	Real etaNCG_; 
+	Real desPar_;
 
   // Inexactness Parameters
   std::vector<bool> useInexact_;
@@ -208,7 +211,7 @@ private:
                Vector<Real>             &dwa1,
                std::ostream             &outStream = std::cout);
 
-  void dspg_simple(Vector<Real> &y, 
+  void dspg2(Vector<Real> &y, 
                    Real &sval,
                    Real &nval,
                    Real &pRed,
@@ -240,6 +243,25 @@ private:
             Vector<Real> &pwa5,
             Vector<Real> &dwa, 
             std::ostream &outStream = std::cout);
+   
+	void dncg(Vector<Real> &y, 
+            Real &sval,
+            Real &nval, 
+            Vector<Real> &gmod,
+            const Vector<Real> &x,
+            Real del, 
+            TrustRegionModel_U<Real> &model, 
+            Objective<Real> &nobj,
+            Vector<Real> &px,
+            Vector<Real> &pwa, 
+            Vector<Real> &pwa1, 
+            Vector<Real> &pwa2,
+            Vector<Real> &pwa3, 
+            Vector<Real> &pwa4, 
+            Vector<Real> &pwa5,
+            Vector<Real> &dwa, 
+            std::ostream &outStream = std::cout);
+
 
   void dprox(Vector<Real> &x, 
              const Vector<Real> &x0, 
