@@ -187,6 +187,11 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     
   }
   
+  // Generate Lookup Tables  
+  int log_max = ceil(log(nnz) / log(2))+1;
+  PM.stream_vector_make_table(nrepeat,log_max);
+
+
   // Slightly cleaner
   const int NUM_TIMERS = 5;
   std::string SPMV_test_names[NUM_TIMERS] = {"colind","rowptr","vals","x","y"};
@@ -200,53 +205,44 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
   for(int i = 0; i < NUM_TIMERS; i++) {
-    double vectordoubleadd_avg_time;
-    if(i==0)      vectordoubleadd_avg_time = PM.stream_vector_add_LO(nrepeat,SPMV_num_objects[i]);
-    else if(i==1) vectordoubleadd_avg_time = PM.stream_vector_add_size_t(nrepeat,SPMV_num_objects[i]);
-    else          vectordoubleadd_avg_time = PM.stream_vector_add_SC(nrepeat,SPMV_num_objects[i]);
+    double avg_time;
 
-    double vectordoubleadd_totalavg = vectordoubleadd_avg_time * nrepeat;
-    double vectordoubleadd_avg_distributed = vectordoubleadd_avg_time;
+#ifdef OLD_PATH
+    // Vector-size specific lookups
+    if(i==0)      avg_time = PM.stream_vector_add_LO(nrepeat,SPMV_num_objects[i]);
+    else if(i==1) avg_time = PM.stream_vector_add_size_t(nrepeat,SPMV_num_objects[i]);
+    else          avg_time = PM.stream_vector_add_SC(nrepeat,SPMV_num_objects[i]);
+#else
+    // Table interpolation - Take the faster of the 
+    int size_in_bytes = SPMV_object_size[i] *SPMV_num_objects[i];
+    double c_time = PM.stream_vector_copy_lookup(size_in_bytes);
+    double a_time = PM.stream_vector_add_lookup(size_in_bytes);
+    avg_time = std::min(c_time,a_time);
+#endif
+
+
+    double totalavg = avg_time * nrepeat;
+    double avg_distributed = avg_time;
 
     if(nproc > 1) {
-      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &vectordoubleadd_avg_time, &vectordoubleadd_avg_distributed);
-      vectordoubleadd_avg_distributed /= nproc;
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_time, &avg_distributed);
+      avg_distributed /= nproc;
     }
     
     // Stream add involves two reads and a write, so the "3" below
     double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-    gb_per_sec[i] = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
+    gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_distributed,1,memory_traffic);
     
     if(verbose && rank == 0) {
       std::cout << "\n========================================================\nVector Addition Benchmark: ran "
                 << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
                 << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
-                << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
-                << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us.\n"
+                << "\tTotal Elapsed Time: " << totalavg
+                << " seconds \tAverage Elapsed Time per test: " << avg_distributed*1e6 << " us.\n"
                 << "GB/sec = "<<gb_per_sec[i]<<std::endl;
       
     }
   }
-
-  // Compare GB/sec with lookup table
-  if(verbose && rank == 0) {
-    int log_max = ceil(log(nnz*sizeof(SC)) / log(2))+1;
-    PM.stream_vector_copy_make_table(nrepeat,log_max);
-    std::cout << "\n========================================================\nTable Comparison "<<std::endl;
-    for(int i = 0; i < NUM_TIMERS; i++) {
-      int size_in_bytes =  SPMV_num_objects[i] * SPMV_object_size[i];
-      // Stream add involves one read and one write, so the "2" below
-      double memory_traffic = 2.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-      double time = PM.stream_vector_copy_lookup(size_in_bytes);
-      double speed = convert_time_to_bandwidth_gbs(time,1,memory_traffic);
-      std::cout<<"Table = "<<speed<<" Precise  = "<<gb_per_sec[i]<<std::endl;
-
-      // HAQ use Table
-      gb_per_sec[i] = speed;
-
-    }
-  }
-  
 
 
   // *** Report SPMV minimum time (local) ***

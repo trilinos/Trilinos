@@ -214,26 +214,27 @@ namespace MueLu {
  
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
     if(LOG_MAX_SIZE < 2)
       LOG_MAX_SIZE=20;
 
-    stream_copy_sizes_.resize(LOG_MAX_SIZE+1);    
+    stream_sizes_.resize(LOG_MAX_SIZE+1);    
     stream_copy_times_.resize(LOG_MAX_SIZE+1);    
+    stream_add_times_.resize(LOG_MAX_SIZE+1);    
         
     for(int i=0; i<LOG_MAX_SIZE+1; i++) {
       int size = (int) pow(2,i);
-      double time = PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,size);
+      double c_time = PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,size);
 
-      double time2 = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
+      double a_time = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
 
-      printf("Timer per call: %8d %10.4f %10.4f us    %10.4f %10.4f GB/sec\n",size,time*1e6,time2*1e6,
-             PerfDetails::convert_time_to_bandwidth_gbs(time,1,2*size*sizeof(Scalar)),
-             PerfDetails::convert_time_to_bandwidth_gbs(time2,1,3*size*sizeof(Scalar)));
+      printf("Timer per call: %8d %10.4f %10.4f us    %10.4f %10.4f GB/sec\n",size,c_time*1e6,a_time*1e6,
+             PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,2*size*sizeof(Scalar)),
+             PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,3*size*sizeof(Scalar)));
 
-      stream_copy_sizes_[i] = size;
-
-      stream_copy_times_[i] = time;
+      stream_sizes_[i] = size;
+      stream_copy_times_[i] = c_time;
+      stream_add_times_[i] = a_time;
     }
 
   }
@@ -241,8 +242,15 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_lookup(int SIZE_IN_BYTES) {
-    return PerfDetails::table_lookup(stream_copy_sizes_,stream_copy_times_,SIZE_IN_BYTES/sizeof(Scalar));
+    return PerfDetails::table_lookup(stream_sizes_,stream_copy_times_,SIZE_IN_BYTES/sizeof(Scalar));
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(stream_sizes_,stream_add_times_,SIZE_IN_BYTES/sizeof(Scalar));
+  }
+
 
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

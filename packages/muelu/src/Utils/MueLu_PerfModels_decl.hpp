@@ -76,10 +76,11 @@ namespace MueLu {
 
 
     /* This version is for table interpolation and works on chars, so the LOG_MAX_SIZE is for bytes */
-    void stream_vector_copy_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
+    void stream_vector_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
 
     /* Lookup in the stream_vector_copy table */
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
+    double stream_vector_add_lookup(int SIZE_IN_BYTES);
 
 
     /* A latency test between two processes based upon the MVAPICH OSU Micro-Benchmarks.
@@ -94,8 +95,9 @@ namespace MueLu {
     
 
   private:
-    std::vector<int>    stream_copy_sizes_;
+    std::vector<int>    stream_sizes_;
     std::vector<double> stream_copy_times_;
+    std::vector<double> stream_add_times_;
 
 
   }; //class PerfModels
