@@ -77,9 +77,9 @@ namespace MueLu {
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
     double stream_vector_add_lookup(int SIZE_IN_BYTES);
 
-    // Uses the faster of the tables
-    double stream_vector_lookup(int SIZE_IN_BYTES);
-    
+    // Uses the faster of the tables.  The time is then divided by the number of memory transactions
+    // per element in the kernel (e.g. 2 for COPY and 3 for ADD).
+    double stream_vector_lookup(int SIZE_IN_BYTES);   
 
     /* Print table */
     void print_stream_vector_table(std::ostream & out);

@@ -234,33 +234,6 @@ namespace MueLu {
 
   }// end namespace PerfDetails
 
- 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  double
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_SC(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  double
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_LO(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add<LocalOrdinal,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  double
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_size_t(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add<size_t,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
-
-  
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  double
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_SC(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
- 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
@@ -277,10 +250,10 @@ namespace MueLu {
       double a_time = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
 
       stream_sizes_[i] = size;
-      stream_copy_times_[i] = c_time;
-      stream_add_times_[i] = a_time;
+      // Correct for the difference in memory transactions per element
+      stream_copy_times_[i] = c_time / 2.0;
+      stream_add_times_[i] = a_time / 3.0;
     }
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -298,8 +271,8 @@ namespace MueLu {
   double
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_lookup(int SIZE_IN_BYTES) {
    return std::min(stream_vector_copy_lookup(SIZE_IN_BYTES),stream_vector_add_lookup(SIZE_IN_BYTES));
-  }
-
+ }
+ 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -325,8 +298,9 @@ namespace MueLu {
       int size = stream_sizes_[i];
       double c_time = stream_copy_times_[i];
       double a_time = stream_add_times_[i];
-      double c_bw = PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,2*size*sizeof(Scalar));
-      double a_bw = PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,3*size*sizeof(Scalar));
+      // We've already corrected for the transactions per element difference
+      double c_bw = PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,size*sizeof(Scalar));
+      double a_bw = PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,size*sizeof(Scalar));
 
 
       out << setw(20) << size << setw(1) << " "
