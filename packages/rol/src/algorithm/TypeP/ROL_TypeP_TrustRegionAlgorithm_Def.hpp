@@ -69,9 +69,9 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
-  verbosity_ = trlist.sublist("General").get("Output Level",   0);
-  initProx_  = trlist.get("Apply Prox to Initial Guess", false);
-  t0_        = list.sublist("Status Test").get("Proximal Gradient Parameter",         1.0);
+  verbosity_ = trlist.sublist("General").get("Output Level",      0);
+  initProx_  = trlist.get("Apply Prox to Initial Guess",          false);
+  t0_        = list.sublist("Status Test").get("Proximal Gradient Parameter", 1.0);
   // Nonmonotone Parameters
   storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
   useNM_     = (storageNM_ <= 0 ? false : true);
@@ -304,8 +304,6 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
 
     // Compute trial objective value
     strial = computeValue(inTol,outTol,pRed,state_->svalue,state_->iter,x,*state_->iterateVec,sobj);
-    nobj.update(x, UpdateType::Trial);
-    ntrial = nobj.value(x,outTol); state_->nnval++; 
     Ftrial = strial + ntrial; 
 
     // Compute ratio of actual and predicted reduction
@@ -533,7 +531,7 @@ void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
 
     // Evaluate nonsmooth term
     nobj.update(pwa2,UpdateType::Trial);
-    nval  = nobj.value(pwa2,tol);
+    nval = nobj.value(pwa2,tol);
 
     // Perform line search
     alphaMax = one;
@@ -578,7 +576,7 @@ void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
     if (snorm >= del - safeguard) { SPflag_ = 2; break; }
 
     // Compute new spectral step
-    lambdaTmp = (sHs <= safeguard ? one/gmod.norm() : ss/sHs);
+    lambdaTmp = (sHs <= safeguard) ? one/gmod.norm() : ss/sHs;
     lambda    = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
     
     pgstep(pwa2, pwa, nobj, y, gmod.dual(), alpha, tol); // pass pwa by reference? *pwa?
@@ -721,6 +719,9 @@ void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
   if (useNMSP_ && useMin_) {
     sval = sval_min; nval = nval_min; y.set(ymin);
   }
+  else {
+    sval = sold; nval = nold;
+  }
   SPflag_ = (SPiter_==maxit_) ? 1 : 0;
 }
 
@@ -820,6 +821,7 @@ void TrustRegionAlgorithm<Real>::dprox(Vector<Real> &x,
   }
 }
 
+<<<<<<< HEAD
 // NCG Subsolver
 template<typename Real>
 void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
