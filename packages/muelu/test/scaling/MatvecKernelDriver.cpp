@@ -91,6 +91,9 @@
 #endif
 
 
+Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+Teuchos::RCP<Teuchos::TimeMonitor> globalTimeMonitor;
+
 // =========================================================================
 // Support Routines
 // =========================================================================
@@ -125,8 +128,10 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
 // Performance Routines
 // =========================================================================
 // Report bandwidth in GB / sec
+const double GB = 1024.0 * 1024.0 * 1024.0;
+
 double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_per_call_bytes) {
-  const double GB = 1024.0 * 1024.0 * 1024.0;
+
   double time_per_call = time / num_calls;
 
   return memory_per_call_bytes / GB / time_per_call;
@@ -134,7 +139,7 @@ double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_p
 
 
 template<class Matrix>
-void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat) {
+void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat, bool verbose) {
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = A->getMap()->getComm();
   using SC = typename Matrix::scalar_type;
   using LO = typename Matrix::local_ordinal_type;
@@ -147,13 +152,14 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   MueLu::PerfModels<SC,LO,GO,NO> PM;
   int rank = comm->getRank(); int nproc = comm->getSize();
   int m   = static_cast<int>(A->getLocalNumRows());
+  int n   = static_cast<int>(A->getColMap()->getLocalNumElements());
   int nnz = static_cast<int>(A->getLocalMatrixHost().graph.entries.extent(0));
   
   //Ping Pong
   if(nproc > 1) {
     std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
     
-    if(rank == 0) {
+    if(verbose && rank == 0) {
       // pingpong
       std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
         "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
@@ -167,9 +173,9 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     
     std::map<int, double> pingpong_device = PM.pingpong_test_device(nrepeat,15, comm);
     
-    if(rank == 0) {
+    if(verbose && rank == 0) {
       // pingpong
-      std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
+      std::cout << "\nPing-Pong Benchmark (Device): ran " << nrepeat << " times.\n" <<
         "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
       
       for(auto it = pingpong_device.cbegin(); it != pingpong_device.cend(); ++it) {
@@ -182,15 +188,18 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   }
   
   // Slightly cleaner
-  std::string SPMV_test_names[4] = {"colind","rowptr","vals","x"};
-  std::vector<int> SPMV_num_objects(4), SPMV_object_size(4);
+  const int NUM_TIMERS = 5;
+  std::string SPMV_test_names[NUM_TIMERS] = {"colind","rowptr","vals","x","y"};
+  std::vector<int> SPMV_num_objects(NUM_TIMERS), SPMV_object_size(NUM_TIMERS);
   SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
   SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
   SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
-  SPMV_num_objects[3] = m;       SPMV_object_size[3] = sizeof(SC);  // x
+  SPMV_num_objects[3] = n;       SPMV_object_size[3] = sizeof(SC);  // x
+  SPMV_num_objects[4] = m;       SPMV_object_size[4] = sizeof(SC);  // y
   
-  
-  for(int i = 0; i < 4; i++) {
+
+  std::vector<double> gb_per_sec(NUM_TIMERS);
+  for(int i = 0; i < NUM_TIMERS; i++) {
     std::vector<double> vda_times;
     if(i == 0) 
       vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_num_objects[i]);
@@ -210,19 +219,76 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     
     // Stream add involves two reads and a write, so the "3" below
     double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-    double gb_sec = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
+    gb_per_sec[i] = convert_time_to_bandwidth_gbs(vectordoubleadd_avg_distributed,1,memory_traffic);
     
-    if(rank == 0) {
-      // VDA
+    if(verbose && rank == 0) {
       std::cout << "\n========================================================\nVector Addition Benchmark: ran "
                 << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
                 << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
                 << "\tTotal Elapsed Time: " << vectordoubleadd_totalavg
                 << " seconds \tAverage Elapsed Time per test: " << vectordoubleadd_avg_distributed*1e6 << " us.\n"
-                << "GB/sec = "<<gb_sec<<std::endl;
+                << "GB/sec = "<<gb_per_sec[i]<<std::endl;
       
     }
   }
+
+
+  // *** Report SPMV minimum time (local) ***
+  // Model: 
+  // rowptr = One read per row
+  // colind = One read per entry
+  // values = One read per entry
+  // x      = One read per entry in values array
+  // y      = One write per row
+ 
+  long unsigned int spmv_memory_bytes[NUM_TIMERS] = {
+     (m+1) * sizeof(rowptr_type), //rowptr
+     nnz * sizeof(LO), //colind
+     nnz * sizeof(SC), // values
+     nnz * sizeof(SC), //x
+     m * sizeof(SC) // y
+    };
+
+  double minimum_local_time = 0.0;
+  for(int i=0; i<NUM_TIMERS; i++)
+    minimum_local_time +=  spmv_memory_bytes[i] / (GB * gb_per_sec[i]);
+
+
+  if(rank == 0)
+    std::cout << "\n\n========================================================\n"
+              << "Minimum time model (local only): "<< minimum_local_time<<std::endl;
+  
+
+
+  // Iterate through all of the "MV" timers
+  // NOTE: This is a hack since TimeMonitor does not give you a way to
+  // iterate through the timers
+  std::vector<const char *> timer_names = {"MV MKL: Total",
+                                           "MV KK: Total",
+                                           "MV Tpetra: Total",
+                                           "MV CuSparse: Total",
+                                           "MV MagmaSparse: Total",
+                                           "MV HYPRE: Total",
+                                           "MV Petsc: Total"};
+
+  if(rank == 0) {
+    if(!globalTimeMonitor.is_null()) {
+      printf("%-60s %10s\n","Timer","Speedup relative to model");
+      printf("%-60s %10s\n","-----","-------------------------");
+      for(int i=0; i<(int)timer_names.size(); i++) {
+        Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
+        if(!t.is_null()) {
+          double time_per_call = t->totalElapsedTime() / t->numCalls();
+          double perf = minimum_local_time / time_per_call;
+          printf("%-60s %6.2f\n",timer_names[i],perf);     
+        }
+      }
+    }
+    else {
+      std::cout<<"Note: Minimum time model individual timers only work with stacked timers off."<<std::endl;
+    }
+  }
+
 }
   
 
@@ -906,6 +972,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     bool describeMatrix = true; clp.setOption("showmatrix", "noshowmatrix",  &describeMatrix, "describe matrix");
     bool useStackedTimer = false; clp.setOption("stackedtimer", "nostackedtimer",  &useStackedTimer, "use stacked timer");
+    bool verboseModel  = false; clp.setOption("verbosemodel", "noverbosemodel",  &verboseModel, "use stacked verbose performance model");
+
     // the kernels
     bool do_mkl      = true;
     bool do_tpetra   = true;
@@ -1072,8 +1140,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Problem construction
     // =========================================================================
-    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
-    RCP<TimeMonitor> globalTimeMonitor;
     if (useStackedTimer)
       stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_MatvecKernelDriver"));
     else
@@ -1176,7 +1242,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 
 
-    globalTimeMonitor = Teuchos::null;
+    //    globalTimeMonitor = Teuchos::null;
     comm->barrier();
 
     out << "Matrix Read complete." << endl;
@@ -1350,6 +1416,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // restore the IO stream
     std::cout.copyfmt(cout_default_fmt_flags);
 
+
     if (useStackedTimer) {
       stacked_timer->stop("MueLu_MatvecKernelDriver");
       Teuchos::StackedTimer::OutputOptions options;
@@ -1366,7 +1433,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // ==========================================
     // Performance Models
     // ==========================================
-    report_performance_models<Matrix>(A,nrepeat);
+    report_performance_models<Matrix>(A,nrepeat,verboseModel);
+    globalTimeMonitor = Teuchos::null;
 
     success = true;
   }
