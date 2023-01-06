@@ -72,9 +72,15 @@ namespace MueLu {
     double stream_vector_add_LO(int KERNEL_REPEATS, int VECTOR_SIZE);
     double stream_vector_add_size_t(int KERNEL_REPEATS, int VECTOR_SIZE);
 
-    std::vector<double> stream_vector_add_SC_all(int KERNEL_REPEATS, int VECTOR_SIZE);
-    std::vector<double> stream_vector_add_LO_all(int KERNEL_REPEATS, int VECTOR_SIZE);
-    std::vector<double> stream_vector_add_size_t_all(int KERNEL_REPEATS, int VECTOR_SIZE);
+    double stream_vector_copy_SC(int KERNEL_REPEATS, int SIZE_IN_BYTES);
+
+
+    /* This version is for table interpolation and works on chars, so the LOG_MAX_SIZE is for bytes */
+    void stream_vector_copy_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
+
+    /* Lookup in the stream_vector_copy table */
+    double stream_vector_copy_lookup(int SIZE_IN_BYTES);
+
 
     /* A latency test between two processes based upon the MVAPICH OSU Micro-Benchmarks.
      * The sender process sends a message and then waits for confirmation of reception.
@@ -85,8 +91,11 @@ namespace MueLu {
      */
     std::map<int,double> pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
     std::map<int,double> pingpong_test_device(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    //  private:
     
+
+  private:
+    std::vector<int>    stream_copy_sizes_;
+    std::vector<double> stream_copy_times_;
 
 
   }; //class PerfModels

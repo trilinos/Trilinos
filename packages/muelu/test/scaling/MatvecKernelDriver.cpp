@@ -200,16 +200,12 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
   for(int i = 0; i < NUM_TIMERS; i++) {
-    std::vector<double> vda_times;
-    if(i == 0) 
-      vda_times = PM.stream_vector_add_LO_all(nrepeat,SPMV_num_objects[i]);
-    else if (i==1) 
-      vda_times = PM.stream_vector_add_size_t_all(nrepeat,SPMV_num_objects[i]);
-    else 
-      vda_times = PM.stream_vector_add_SC_all(nrepeat,SPMV_num_objects[i]);
-    
-    double vectordoubleadd_totalavg = std::accumulate(vda_times.begin(), vda_times.end(), 0.0);
-    double vectordoubleadd_avg_time = vectordoubleadd_totalavg / vda_times.size();
+    double vectordoubleadd_avg_time;
+    if(i==0)      vectordoubleadd_avg_time = PM.stream_vector_add_LO(nrepeat,SPMV_num_objects[i]);
+    else if(i==1) vectordoubleadd_avg_time = PM.stream_vector_add_size_t(nrepeat,SPMV_num_objects[i]);
+    else          vectordoubleadd_avg_time = PM.stream_vector_add_SC(nrepeat,SPMV_num_objects[i]);
+
+    double vectordoubleadd_totalavg = vectordoubleadd_avg_time * nrepeat;
     double vectordoubleadd_avg_distributed = vectordoubleadd_avg_time;
 
     if(nproc > 1) {
@@ -231,6 +227,26 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       
     }
   }
+
+  // Compare GB/sec with lookup table
+  if(verbose && rank == 0) {
+    int log_max = ceil(log(nnz*sizeof(SC)) / log(2))+1;
+    PM.stream_vector_copy_make_table(nrepeat,log_max);
+    std::cout << "\n========================================================\nTable Comparison "<<std::endl;
+    for(int i = 0; i < NUM_TIMERS; i++) {
+      int size_in_bytes =  SPMV_num_objects[i] * SPMV_object_size[i];
+      // Stream add involves one read and one write, so the "2" below
+      double memory_traffic = 2.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
+      double time = PM.stream_vector_copy_lookup(size_in_bytes);
+      double speed = convert_time_to_bandwidth_gbs(time,1,memory_traffic);
+      std::cout<<"Table = "<<speed<<" Precise  = "<<gb_per_sec[i]<<std::endl;
+
+      // HAQ use Table
+      gb_per_sec[i] = speed;
+
+    }
+  }
+  
 
 
   // *** Report SPMV minimum time (local) ***
@@ -968,7 +984,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::string rangeMapFile;   clp.setOption("rangemap",         &rangeMapFile,   "rangemap data file");
 
     bool printTimings = true;   clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
-    int  nrepeat      = 100;    clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+    int  nrepeat      = 1000;   clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
 
     bool describeMatrix = true; clp.setOption("showmatrix", "noshowmatrix",  &describeMatrix, "describe matrix");
     bool useStackedTimer = false; clp.setOption("stackedtimer", "nostackedtimer",  &useStackedTimer, "use stacked timer");

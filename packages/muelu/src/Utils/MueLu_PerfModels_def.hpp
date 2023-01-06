@@ -49,6 +49,7 @@
 #include <utility>
 #include <chrono>
 #include <Teuchos_StackedTimer.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "MueLu_PerfModels_decl.hpp"
 
 #ifdef HAVE_MPI
@@ -59,7 +60,7 @@ namespace MueLu {
 
   namespace PerfDetails {
     template<class Scalar,class Node>
-    std::vector<double> stream_vector_add_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {      
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
       using range_policy = Kokkos::RangePolicy<exec_space>;
@@ -67,7 +68,7 @@ namespace MueLu {
       Kokkos::View<Scalar*,memory_space> a("a", VECTOR_SIZE);
       Kokkos::View<Scalar*,memory_space> b("b", VECTOR_SIZE);
       Kokkos::View<Scalar*,memory_space> c("c", VECTOR_SIZE);
-      std::vector<double> test_times(KERNEL_REPEATS);
+      double total_test_time = 0.0;
 
       Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -89,42 +90,102 @@ namespace MueLu {
 
         exec_space().fence();
         stop = clock::now();
-        test_times[i] = std::chrono::duration<double>(stop - start).count();
+        double my_test_time = std::chrono::duration<double>(stop - start).count();
+        total_test_time += my_test_time;
       }
 
-      return test_times;
+      return total_test_time / KERNEL_REPEATS;
     }
-
 
     template<class Scalar,class Node>
-    double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {  
-      std::vector<double> v = stream_vector_add_all<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-      return std::accumulate(v.begin(),v.end(),0.0);
+    double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+      using exec_space   = typename Node::execution_space;
+      using memory_space = typename Node::memory_space;
+      using range_policy = Kokkos::RangePolicy<exec_space>;
+
+      Kokkos::View<Scalar*,memory_space> a("a", VECTOR_SIZE);
+      Kokkos::View<Scalar*,memory_space> b("b", VECTOR_SIZE);
+      double total_test_time = 0.0;
+
+      Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+
+      Kokkos::parallel_for("stream/fill",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t i) {
+          a(i) = ONE;
+        });
+      exec_space().fence();
+
+      using clock = std::chrono::high_resolution_clock;
+      clock::time_point start, stop;
+
+      for(int i = 0; i < KERNEL_REPEATS; i++) {       
+        start = clock::now();
+        Kokkos::parallel_for("stream/copy",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t j) { //Vector Addition
+            b(j) = a(j);
+        });
+
+        exec_space().fence();
+        stop = clock::now();
+        double my_test_time = std::chrono::duration<double>(stop - start).count();
+        total_test_time += my_test_time;
+      }
+
+      return total_test_time / KERNEL_REPEATS;
     }
-  }
-
-    
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<double>
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_SC_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add_all<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<double>
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_LO_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add_all<LocalOrdinal,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
+ 
+    double table_lookup(const std::vector<int> & x, const std::vector<double> & y, int value) {
+      // If there's no table, nan
+      if(x.size() == 0) return Teuchos::ScalarTraits<double>::nan();
+      
+      // NOTE:  This should probably be a binary search, but this isn't performance sensitive, so we'll go simple
+      int N = (int) x.size();
+      int hi = 0;
+      for(  ; hi < N; hi++) {
+        if (x[hi] > value) 
+          break;
+      }
+      
+      if(hi == 0) {
+        // Lower end (return the min time)
+        //printf("Lower end: %d < %d\n",value,x[0]);
+        return y[0];
+      }
+      else if (hi == N) {
+        // Higher end (extrapolate from the last two points)
+        //printf("Upper end: %d > %d\n",value,x[N-1]);
+        hi = N-1;
+        int run     = x[hi] - x[hi-1];
+        double rise = y[hi] - y[hi-1];
+        double slope = rise / run;     
+        int diff = value - x[hi-1];
+        
+        return y[hi-1] + slope * diff;
+      }
+      else {
+        // Interpolate
+        //printf("Middle: %d < %d < %d\n",x[hi-1],value,x[hi]);
+        int run     = x[hi] - x[hi-1];
+        double rise = y[hi] - y[hi-1];
+        double slope = rise / run;     
+        int diff = value - x[hi-1];
+        
+        return y[hi-1] + slope * diff;
+      }
+    }
+
+    // Report bandwidth in GB / sec
+    const double GB = 1024.0 * 1024.0 * 1024.0;
+    double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_per_call_bytes) {
+      double time_per_call = time / num_calls;      
+      return memory_per_call_bytes / GB / time_per_call;
+    }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<double>
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_size_t_all(int KERNEL_REPEATS, int VECTOR_SIZE) {      
-    return PerfDetails::stream_vector_add_all<size_t,Node>(KERNEL_REPEATS,VECTOR_SIZE);
-  }
 
+  }// end namespace PerfDetails
+
+ 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_SC(int KERNEL_REPEATS, int VECTOR_SIZE) {      
@@ -144,7 +205,47 @@ namespace MueLu {
     return PerfDetails::stream_vector_add<size_t,Node>(KERNEL_REPEATS,VECTOR_SIZE);
   }
 
+  
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_SC(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+    return PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,VECTOR_SIZE);
+  }
+ 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
+    if(LOG_MAX_SIZE < 2)
+      LOG_MAX_SIZE=20;
+
+    stream_copy_sizes_.resize(LOG_MAX_SIZE+1);    
+    stream_copy_times_.resize(LOG_MAX_SIZE+1);    
+        
+    for(int i=0; i<LOG_MAX_SIZE+1; i++) {
+      int size = (int) pow(2,i);
+      double time = PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,size);
+
+      double time2 = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
+
+      printf("Timer per call: %8d %10.4f %10.4f us    %10.4f %10.4f GB/sec\n",size,time*1e6,time2*1e6,
+             PerfDetails::convert_time_to_bandwidth_gbs(time,1,2*size*sizeof(Scalar)),
+             PerfDetails::convert_time_to_bandwidth_gbs(time2,1,3*size*sizeof(Scalar)));
+
+      stream_copy_sizes_[i] = size;
+
+      stream_copy_times_[i] = time;
+    }
+
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_copy_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(stream_copy_sizes_,stream_copy_times_,SIZE_IN_BYTES/sizeof(Scalar));
+  }
+
+
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::map<int,double> 
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
     std::map<int, double> time_map;
@@ -277,6 +378,9 @@ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int 
 #endif
     return time_map;
   }
+
+
+
 
 
 } //namespace MueLu
