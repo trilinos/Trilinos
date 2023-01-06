@@ -48,6 +48,7 @@
 #include <numeric>
 #include <utility>
 #include <chrono>
+#include <iomanip>
 #include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include "MueLu_PerfModels_decl.hpp"
@@ -225,12 +226,7 @@ namespace MueLu {
     for(int i=0; i<LOG_MAX_SIZE+1; i++) {
       int size = (int) pow(2,i);
       double c_time = PerfDetails::stream_vector_copy<Scalar,Node>(KERNEL_REPEATS,size);
-
       double a_time = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
-
-      printf("Timer per call: %8d %10.4f %10.4f us    %10.4f %10.4f GB/sec\n",size,c_time*1e6,a_time*1e6,
-             PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,2*size*sizeof(Scalar)),
-             PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,3*size*sizeof(Scalar)));
 
       stream_sizes_[i] = size;
       stream_copy_times_[i] = c_time;
@@ -251,12 +247,48 @@ namespace MueLu {
     return PerfDetails::table_lookup(stream_sizes_,stream_add_times_,SIZE_IN_BYTES/sizeof(Scalar));
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table(std::ostream & out) {
+    using namespace std;
+    std::ios old_format(NULL);
+    old_format.copyfmt(out);
+
+    out << setw(20) << "Length in Scalars" << setw(1) << " "
+        << setw(20) << "COPY (us)" << setw(1) << " "
+        << setw(20) << "ADD (us)" << setw(1) << " "
+        << setw(20) << "COPY (GB/s)" << setw(1) << " "
+        << setw(20) << "ADD (BG/s)" << setw(1) <<std::endl;
+
+    out << setw(20) << "-----------------" << setw(1) << " "
+        << setw(20) << "---------" << setw(1) << " "
+        << setw(20) << "--------" << setw(1) << " "
+        << setw(20) << "-----------" << setw(1) << " "
+        << setw(20) << "----------" << setw(1) <<std::endl;
+    
+
+    for(int i=0; i<(int)stream_sizes_.size(); i++) {
+      int size = stream_sizes_[i];
+      double c_time = stream_copy_times_[i];
+      double a_time = stream_add_times_[i];
+      double c_bw = PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,2*size*sizeof(Scalar));
+      double a_bw = PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,3*size*sizeof(Scalar));
+
+
+      out << setw(20) << size << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (c_time*1e6) << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (a_time*1e6) << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << c_bw << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << a_bw << setw(1) << " " << std::endl;        
+    }
+
+    out.copyfmt(old_format);
+  }
 
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::map<int,double> 
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
-    std::map<int, double> time_map;
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
 
 #ifdef HAVE_MPI
     using Teuchos::BaseTimer;
@@ -265,6 +297,9 @@ namespace MueLu {
     char  *s_buf, *r_buf;  // Send & recieve buffers
     double t_avg;
     std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+
+    pingpong_sizes_.resize(MAX_SIZE+1);
+    pingpong_host_times_.resize(MAX_SIZE+1);
     
     BaseTimer timer;   
     RCP<Teuchos::CommRequest<int> > request;
@@ -272,8 +307,7 @@ namespace MueLu {
     int rank = comm->getRank();
     int nproc = comm->getSize();
 
-    if(nproc < 2)
-      return time_map;
+    if(nproc < 2) return;
 
     msg_arr[0] = 0;
     for(i = 0; i < MAX_SIZE; i++) {
@@ -310,18 +344,18 @@ namespace MueLu {
       
       t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
       
-      time_map.insert(std::pair<int, double>(msg_arr[msg_length],t_avg));
+      pingpong_sizes_[i] = msg_arr[msg_length];
+      pingpong_host_times_[i] = t_avg;
       
     }
 #endif
-    return time_map;
+
   }
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::map<int,double> 
-PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int KERNEL_REPEATS, int MAX_SIZE,const RCP<const Teuchos::Comm<int> > &comm) {
-    std::map<int, double> time_map;
+void
+PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_device(int KERNEL_REPEATS, int MAX_SIZE,const RCP<const Teuchos::Comm<int> > &comm) {
 #ifdef HAVE_MPI
     using exec_space   = typename Node::execution_space;
     using memory_space = typename Node::memory_space;
@@ -329,6 +363,10 @@ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int 
     using Teuchos::BaseTimer;
     int msg_length, i, j;
     const int buff_size = (int) pow(2,MAX_SIZE);
+
+    pingpong_sizes_.resize(MAX_SIZE+1);
+    pingpong_host_times_.resize(MAX_SIZE+1);
+
 
     double t_avg;
     std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
@@ -339,8 +377,7 @@ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int 
     int rank  = comm->getRank();
     int nproc = comm->getSize();
 
-    if(nproc < 2)
-      return time_map;
+    if(nproc < 2) return;
     
     // Precompute message sizes
     std::vector<int> msg_arr(MAX_SIZE+1);
@@ -379,12 +416,12 @@ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_test_device(int 
       }
       
       t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
-      
-      time_map.insert(std::pair<int, double>(msg_arr[msg_length],t_avg));
+
+      pingpong_sizes_[i] = msg_arr[msg_length];
+      pingpong_device_times_[i] = t_avg;     
       
     }
 #endif
-    return time_map;
   }
 
 

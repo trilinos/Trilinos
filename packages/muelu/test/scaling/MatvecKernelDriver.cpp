@@ -157,6 +157,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   
   //Ping Pong
   if(nproc > 1) {
+#ifdef OLD
     std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
     
     if(verbose && rank == 0) {
@@ -184,13 +185,14 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       std::cout << "========================================================"
                 << std::endl;
     }
-    
+    #endif
   }
   
   // Generate Lookup Tables  
   int log_max = ceil(log(nnz) / log(2))+1;
   PM.stream_vector_make_table(nrepeat,log_max);
-
+  if(rank == 0)
+    PM.print_stream_vector_table(std::cout);
 
   // Slightly cleaner
   const int NUM_TIMERS = 5;
@@ -207,19 +209,11 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   for(int i = 0; i < NUM_TIMERS; i++) {
     double avg_time;
 
-#ifdef OLD_PATH
-    // Vector-size specific lookups
-    if(i==0)      avg_time = PM.stream_vector_add_LO(nrepeat,SPMV_num_objects[i]);
-    else if(i==1) avg_time = PM.stream_vector_add_size_t(nrepeat,SPMV_num_objects[i]);
-    else          avg_time = PM.stream_vector_add_SC(nrepeat,SPMV_num_objects[i]);
-#else
-    // Table interpolation - Take the faster of the 
+    // Table interpolation - Take the faster of the two
     int size_in_bytes = SPMV_object_size[i] *SPMV_num_objects[i];
     double c_time = PM.stream_vector_copy_lookup(size_in_bytes);
     double a_time = PM.stream_vector_add_lookup(size_in_bytes);
     avg_time = std::min(c_time,a_time);
-#endif
-
 
     double totalavg = avg_time * nrepeat;
     double avg_distributed = avg_time;

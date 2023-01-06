@@ -47,6 +47,7 @@
 #define MUELU_PERFMODELS_HPP
 
 #include <vector>
+#include <ostream>
 #include <Teuchos_DefaultComm.hpp>
 
 
@@ -78,10 +79,13 @@ namespace MueLu {
     /* This version is for table interpolation and works on chars, so the LOG_MAX_SIZE is for bytes */
     void stream_vector_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
 
-    /* Lookup in the stream_vector_copy table */
+    /* Lookup in the stream_vector table */
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
     double stream_vector_add_lookup(int SIZE_IN_BYTES);
 
+
+    /* Print table */
+    void print_stream_vector_table(std::ostream & out);
 
     /* A latency test between two processes based upon the MVAPICH OSU Micro-Benchmarks.
      * The sender process sends a message and then waits for confirmation of reception.
@@ -89,15 +93,32 @@ namespace MueLu {
      * are returned within a map. Utilizes blocking send and recieve.
      *
      * See further: https://mvapich.cse.ohio-state.edu/benchmarks/
-     */
-    std::map<int,double> pingpong_test_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    std::map<int,double> pingpong_test_device(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    
+     */    
+#ifdef OLD
+    void pingpong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
 
+    /* Lookup in the stream_vector table */
+    double ping_pong_lookup_host(int SIZE_IN_BYTES);
+    double ping_pong_lookup_device(int SIZE_IN_BYTES);
+
+
+
+    /* Print table */
+    void print_pingpong_table(std::ostream & out);
+#endif
   private:
+    void pingpong_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
+    void pingpong_device(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
+
+
+
     std::vector<int>    stream_sizes_;
     std::vector<double> stream_copy_times_;
     std::vector<double> stream_add_times_;
+
+    std::vector<int>     pingpong_sizes_;
+    std::vector<double>  pingpong_host_times_;
+    std::vector<double>  pingpong_device_times_;
 
 
   }; //class PerfModels
