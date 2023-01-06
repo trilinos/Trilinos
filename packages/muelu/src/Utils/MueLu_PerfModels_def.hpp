@@ -49,7 +49,6 @@
 #include <utility>
 #include <chrono>
 #include <iomanip>
-#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include "MueLu_PerfModels_decl.hpp"
 
@@ -183,6 +182,55 @@ namespace MueLu {
     }
 
 
+    template <class exec_space, class memory_space>
+    void pingpong_basic(int KERNEL_REPEATS, int MAX_SIZE,const Teuchos::Comm<int> &comm, std::vector<int> & sizes, std::vector<double> & times) {
+      int rank = comm.getRank();
+      int nproc = comm.getSize();
+      
+      if(nproc < 2) return;
+      
+#ifdef HAVE_MPI
+      using range_policy = Kokkos::RangePolicy<exec_space>;
+      const int buff_size = (int) pow(2,MAX_SIZE);
+      
+      sizes.resize(MAX_SIZE+1);
+      times.resize(MAX_SIZE+1);
+            
+      // Allocate memory for the buffers (and fill send)
+      Kokkos::View<char*,memory_space> r_buf("recv",buff_size), s_buf("send",buff_size);
+      Kokkos::deep_copy(s_buf,1);
+      
+      //Send and recieve.   
+      // NOTE:  Do consectutive pair buddies here for simplicity.  We should be smart later
+      int odd = rank % 2;
+      int buddy = odd ? rank - 1 : rank + 1;
+      
+      for(int i = 0; i < MAX_SIZE + 1 ;i ++) {
+        int msg_size = (int) pow(2,i);
+        comm.barrier();
+
+        double t0 = MPI_Wtime();      
+        for(int j = 0; j < KERNEL_REPEATS; j++) {
+          if (buddy < nproc) {
+            if (odd) {
+              comm.send(msg_size, (char*)s_buf.data(), buddy);
+              comm.receive(buddy, msg_size, (char*)r_buf.data());
+            }
+            else {
+              comm.receive(buddy, msg_size,(char*)r_buf.data());
+              comm.send(msg_size, (char*)s_buf.data(), buddy);
+            }
+          }
+        }
+
+        double time_per_call = (MPI_Wtime() - t0) / (2.0 * KERNEL_REPEATS);
+        sizes[i] = msg_size;
+        times[i] = time_per_call;
+      }
+#endif
+    }
+
+
 
   }// end namespace PerfDetails
 
@@ -258,13 +306,13 @@ namespace MueLu {
         << setw(20) << "COPY (us)" << setw(1) << " "
         << setw(20) << "ADD (us)" << setw(1) << " "
         << setw(20) << "COPY (GB/s)" << setw(1) << " "
-        << setw(20) << "ADD (BG/s)" << setw(1) <<std::endl;
+        << setw(20) << "ADD (BG/s)" << std::endl;
 
     out << setw(20) << "-----------------" << setw(1) << " "
         << setw(20) << "---------" << setw(1) << " "
         << setw(20) << "--------" << setw(1) << " "
         << setw(20) << "-----------" << setw(1) << " "
-        << setw(20) << "----------" << setw(1) <<std::endl;
+        << setw(20) << "----------" << std::endl;
     
 
     for(int i=0; i<(int)stream_sizes_.size(); i++) {
@@ -279,153 +327,69 @@ namespace MueLu {
           << setw(20) << fixed << setprecision(4) << (c_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (a_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << c_bw << setw(1) << " "
-          << setw(20) << fixed << setprecision(4) << a_bw << setw(1) << " " << std::endl;        
+          << setw(20) << fixed << setprecision(4) << a_bw << std::endl;        
     }
 
     out.copyfmt(old_format);
   }
 
 
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
+ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm) {
 
-#ifdef HAVE_MPI
-    using Teuchos::BaseTimer;
-    int msg_length, i, j;
-    std::vector<int> msg_arr(MAX_SIZE+1); // values from 0,1,2... to 2^15. Sizes of each buffer send
-    char  *s_buf, *r_buf;  // Send & recieve buffers
-    double t_avg;
-    std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+    PerfDetails::pingpong_basic<Kokkos::HostSpace::execution_space,Kokkos::HostSpace::memory_space>(KERNEL_REPEATS,LOG_MAX_SIZE,*comm,pingpong_sizes_,pingpong_host_times_);
 
-    pingpong_sizes_.resize(MAX_SIZE+1);
-    pingpong_host_times_.resize(MAX_SIZE+1);
-    
-    BaseTimer timer;   
-    RCP<Teuchos::CommRequest<int> > request;
-    RCP<Teuchos::CommStatus<int> > status;    
-    int rank = comm->getRank();
-    int nproc = comm->getSize();
+    PerfDetails::pingpong_basic<typename Node::execution_space,typename Node::memory_space>(KERNEL_REPEATS,LOG_MAX_SIZE,*comm,pingpong_sizes_,pingpong_device_times_);
 
-    if(nproc < 2) return;
+ }
 
-    msg_arr[0] = 0;
-    for(i = 0; i < MAX_SIZE; i++) {
-      msg_arr[i+1] = (int) pow(2,i);
-    }
-    
-    //Allocating memory for the buffers.
-    MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &r_buf);
-    MPI_Alloc_mem( (int) pow(2,MAX_SIZE), MPI_INFO_NULL, &s_buf);
-    
-    // Populate send buffer
-    for(i = 0; i < (int) pow(2,MAX_SIZE); i++)
-      s_buf[i] = 1;
-    
-    //Send and recieve.
-    for(msg_length = 0; msg_length < MAX_SIZE + 1 ; msg_length++) {
-      comm->barrier();
-      
-      for(j = 0; j < KERNEL_REPEATS; j++) {
-        timer.start();
-        
-        if(rank == 1) {
-          comm->send(msg_arr[msg_length], s_buf, 0);
-        }
-        
-        else if(rank == 0){
-          comm->receive(1, msg_arr[msg_length],r_buf);
-        }
-        
-        timer.stop();
-        time_array[j] = timer.accumulatedTime() * 1.0e6; // Formmated in microseconds (us)
-        timer.reset();
-      }
-      
-      t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
-      
-      pingpong_sizes_[i] = msg_arr[msg_length];
-      pingpong_host_times_[i] = t_avg;
-      
-    }
-#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_host_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(pingpong_sizes_,pingpong_host_times_,SIZE_IN_BYTES);
+  }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_device_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(pingpong_sizes_,pingpong_device_times_,SIZE_IN_BYTES);
   }
 
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pingpong_device(int KERNEL_REPEATS, int MAX_SIZE,const RCP<const Teuchos::Comm<int> > &comm) {
-#ifdef HAVE_MPI
-    using exec_space   = typename Node::execution_space;
-    using memory_space = typename Node::memory_space;
-    using range_policy = Kokkos::RangePolicy<exec_space>;
-    using Teuchos::BaseTimer;
-    int msg_length, i, j;
-    const int buff_size = (int) pow(2,MAX_SIZE);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_pingpong_table(std::ostream & out) {
+    if(pingpong_sizes_.size() == 0) return;
 
-    pingpong_sizes_.resize(MAX_SIZE+1);
-    pingpong_host_times_.resize(MAX_SIZE+1);
+    using namespace std;
+    std::ios old_format(NULL);
+    old_format.copyfmt(out);
 
+    out << setw(20) << "Message Size" << setw(1) << " "
+        << setw(20) << "Host (us)" << setw(1) << " "
+        << setw(20) << "Device (us)" << std::endl;
 
-    double t_avg;
-    std::vector<double> time_array(KERNEL_REPEATS); //Stores the times for every single kernel repetition. Reset with each repeat.
+    out << setw(20) << "------------" << setw(1) << " "
+        << setw(20) << "---------" << setw(1) << " "
+        << setw(20) << "-----------" << std::endl;
     
-    BaseTimer timer;   
-    RCP<Teuchos::CommRequest<int> > request;
-    RCP<Teuchos::CommStatus<int> > status;    
-    int rank  = comm->getRank();
-    int nproc = comm->getSize();
 
-    if(nproc < 2) return;
-    
-    // Precompute message sizes
-    std::vector<int> msg_arr(MAX_SIZE+1);
-    msg_arr[0]=0;
-    for(i = 0; i < MAX_SIZE; i++) {
-      msg_arr[i+1] = (int) pow(2,i);
+    for(int i=0; i<(int)pingpong_sizes_.size(); i++) {
+      int size = pingpong_sizes_[i];
+      double h_time = pingpong_host_times_[i];
+      double d_time = pingpong_device_times_[i];
+
+
+      out << setw(20) << size << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (h_time*1e6) << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (d_time*1e6) << setw(1) << std::endl;
     }
-        
-    // Allocate memory for the buffers (and fill send)
-    Kokkos::View<char*,memory_space> r_buf("recv",buff_size), s_buf("send",buff_size);
-    Kokkos::deep_copy(s_buf,1);
 
-
-    //Send and recieve.   
-
-    // NOTE:  Do consectutive pair buddies here for simplicity.  We should be smart later
-    int odd = rank % 2;
-    int buddy = odd ? rank - 1 : rank + 1;
-   
-    for(msg_length = 0; msg_length < MAX_SIZE + 1 ; msg_length++) {
-      comm->barrier();
-      
-      for(j = 0; j < KERNEL_REPEATS; j++) {
-        timer.start();
-
-        if (buddy < nproc) {
-          if (odd)
-            comm->send(msg_arr[msg_length], (char*)s_buf.data(), buddy);
-          else
-            comm->receive(buddy, msg_arr[msg_length],(char*)r_buf.data());
-        }
-
-        timer.stop();
-        time_array[j] = timer.accumulatedTime() * 1.0e6; // Formmated in microseconds (us)
-        timer.reset();
-      }
-      
-      t_avg = std::accumulate(time_array.begin(), time_array.end(), 0.0) / KERNEL_REPEATS;
-
-      pingpong_sizes_[i] = msg_arr[msg_length];
-      pingpong_device_times_[i] = t_avg;     
-      
-    }
-#endif
+    out.copyfmt(old_format);
   }
-
-
-
 
 
 } //namespace MueLu

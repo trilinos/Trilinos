@@ -155,44 +155,15 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   int n   = static_cast<int>(A->getColMap()->getLocalNumElements());
   int nnz = static_cast<int>(A->getLocalMatrixHost().graph.entries.extent(0));
   
-  //Ping Pong
-  if(nproc > 1) {
-#ifdef OLD
-    std::map<int, double> pingpong = PM.pingpong_test_host(nrepeat,15, comm);
-    
-    if(verbose && rank == 0) {
-      // pingpong
-      std::cout << "\nPing-Pong Benchmark (Host): ran " << nrepeat << " times.\n" <<
-        "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
-      
-      for(auto it = pingpong.cbegin(); it != pingpong.cend(); ++it) {
-        std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
-      }
-      std::cout << "========================================================"
-                << std::endl;
-    }
-    
-    std::map<int, double> pingpong_device = PM.pingpong_test_device(nrepeat,15, comm);
-    
-    if(verbose && rank == 0) {
-      // pingpong
-      std::cout << "\nPing-Pong Benchmark (Device): ran " << nrepeat << " times.\n" <<
-        "========================================================\nMessage Size\t | Average Time (us)" << std::endl;
-      
-      for(auto it = pingpong_device.cbegin(); it != pingpong_device.cend(); ++it) {
-        std::cout << it->first << " bytes \t | " << it->second << " us" << std::endl;
-      }
-      std::cout << "========================================================"
-                << std::endl;
-    }
-    #endif
-  }
-  
   // Generate Lookup Tables  
-  int log_max = ceil(log(nnz) / log(2))+1;
-  PM.stream_vector_make_table(nrepeat,log_max);
-  if(rank == 0)
+  int v_log_max = ceil(log(nnz) / log(2))+1;
+  PM.stream_vector_make_table(nrepeat,v_log_max);
+  int m_log_max = 15;
+  PM.pingpong_make_table(nrepeat,m_log_max,comm);
+  if(verbose && rank == 0) {
     PM.print_stream_vector_table(std::cout);
+    PM.print_pingpong_table(std::cout);
+  }
 
   // Slightly cleaner
   const int NUM_TIMERS = 5;

@@ -83,7 +83,6 @@ namespace MueLu {
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
     double stream_vector_add_lookup(int SIZE_IN_BYTES);
 
-
     /* Print table */
     void print_stream_vector_table(std::ostream & out);
 
@@ -94,24 +93,16 @@ namespace MueLu {
      *
      * See further: https://mvapich.cse.ohio-state.edu/benchmarks/
      */    
-#ifdef OLD
-    void pingpong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE=20);
+    void pingpong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
 
     /* Lookup in the stream_vector table */
-    double ping_pong_lookup_host(int SIZE_IN_BYTES);
-    double ping_pong_lookup_device(int SIZE_IN_BYTES);
-
-
+    double pingpong_host_lookup(int SIZE_IN_BYTES);
+    double pingpong_device_lookup(int SIZE_IN_BYTES);
 
     /* Print table */
     void print_pingpong_table(std::ostream & out);
-#endif
+
   private:
-    void pingpong_host(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-    void pingpong_device(int KERNEL_REPEATS, int MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
-
-
-
     std::vector<int>    stream_sizes_;
     std::vector<double> stream_copy_times_;
     std::vector<double> stream_add_times_;
