@@ -274,7 +274,7 @@ SubcellConnectivity::
 subcellForCellHost(const int cell, const int local_subcell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(cell >= 0 and cell < numCell());
+  KOKKOS_ASSERT(cell >= 0 and cell < numCells());
   KOKKOS_ASSERT(local_subcell_index < numSubcellsOnCellHost(cell));
 #endif
   const int index = _cell_to_subcells_adj_host(cell)+local_subcell_index;
