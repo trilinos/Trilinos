@@ -152,7 +152,7 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
         = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<NewtonKrylovAlgorithm<Real>>(parlist);
-      else if (desc=="Quasi-Newton Method") {
+      else if (desc=="Quasi-Newton Method" || desc=="Quasi-Newton") {
         std::string method
           = parlist.sublist("Step").sublist("Line Search").sublist("Quasi-Newton").get("Method","L-Secant-B");
         if (method == "L-Secant-B")
