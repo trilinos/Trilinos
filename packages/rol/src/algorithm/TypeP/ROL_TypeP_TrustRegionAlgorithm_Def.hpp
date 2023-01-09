@@ -98,7 +98,7 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
 	// Subsolver (spectral projected gradient) parameters
 	useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
   useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
-  algSelect_ = lmlist.sublist("Solver").get("Select Subproblem Solver",                3);
+  algSelect_ = lmlist.sublist("Solver").get("Select Subproblem Solver",                1);
   // Subsolver (nonlinear conjugate gradient) parameters)
 	ncgType_   = lmlist.sublist("Solver").get("Nonlinear CG Type",                   1); 
 	etaNCG_    = lmlist.sublist("Solver").get("Truncation Parameter for HZ CG",      1e-2); 
@@ -821,7 +821,6 @@ void TrustRegionAlgorithm<Real>::dprox(Vector<Real> &x,
   }
 }
 
-<<<<<<< HEAD
 // NCG Subsolver
 template<typename Real>
 void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
@@ -853,7 +852,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
 	int NCGiter_(0); 
   Real mval(sval+nval);
   Real tol(std::sqrt(ROL_EPSILON<Real>())), safeguard(tol);
-  Real hk(0),Qk(0), snorm(0), snorm0(0),gnorm(0),gnorm0(0),gnorm02(0),gnorm2(0), sHs(0), gs(0), ds(0), ss(0), nold(nval), sold(sval), mold(mval); 
+  Real hk(0),Qk(0), snorm(0), snorm0(0),gnorm(0),gnorm0(0),gnorm02(0),gnorm2(0), sHs(0), gs(0), ds(0), ss(0), nold(nval), mold(mval); 
   Real alphamax(1),sy(0),gg(0),eta_(0), alpha(alphamax), lambdaTmp(1), t0ncg(1);
   Real beta(0), coeff(0); 
   bool reset(true);
@@ -864,8 +863,8 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
   // Compute initial step
   coeff  = t0_ / gmod.norm();
   t0ncg  = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
-  pgstep(px, dx, nobj, y, gmod.dual(), t0ncg, tol);//solves from y, solution in px, step is pwa
-  s.set(dx); 
+  pgstep(px, dx, nobj, y, gmod.dual(), t0ncg, tol);//solves from y, solution in px, step is dx
+  s.set(dx); // set s to dx 
 	gs     = gmod.apply(s);                      // gs  = <step, model gradient>
   ss     = s.dot(s);                         // Norm squared of step
   snorm  = std::sqrt(ss);                        // norm(step)
@@ -883,18 +882,17 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
   while (NCGiter_ < maxit_) {
     NCGiter_++;
     snorm0 = snorm; 
-		pwa3.set(y);
-		pwa3.axpy(one,s);
-		pwa3.axpy(-one,s);
-		snorm  = pwa3.norm(); // y + s - x
+		pwa3.set(y);// y
+		pwa3.axpy(one,s); // = y + s
+		pwa3.axpy(-one,x); // = y + s - x
+		snorm = pwa3.norm(); 
     alphamax = one; 
 
-		if (snorm >= (one - safeguard*del)){
-			pwa3.set(y);
-			pwa3.axpy(-one,x);// here is y - x 
+		if (snorm >= (one - safeguard)*del){
+			pwa3.axpy(-one,s); 
 			ds = s.dot(pwa3); 
 			ss = s.dot(s); 
-			alphamax = std::min(one, (-ds + std::sqrt(ds*ds + ss*(del*del - snorm0*snorm0)))/ss); 
+			alphamax = std::min(one, (-ds + std::sqrt(ds*ds + ss*(del*del - snorm0*snorm0)))/ss);
 		}
 
 		// Update quantities to evaluate quadratic model value and gradient
@@ -906,11 +904,10 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
 		else{
 			alpha = std::min(alphamax, -(gs + nval - nold)/sHs); 
 		}
-
 		// Check compute alpha as the minimizer of an upper quadratic model
 		y.axpy(alpha, s); 
 		gmod.axpy(alpha, dwa.dual()); // need dual here? 
-		sold = sold + alpha*gs + half*alpha*alpha*sHs; 
+		sval = sval + alpha*gs + half*alpha*alpha*sHs; 
     // Evaluate nonsmooth term
     nobj.update(y,UpdateType::Trial);
     nold  = nobj.value(y,tol); state_->nnval++; 
@@ -928,7 +925,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
 			lambdaTmp = t0_/gmod.norm(); 
 		}
 		else {
-			lambdaTmp = s.dot(s); 
+			lambdaTmp = s.dot(s)/sHs; 
 		}
 
 		// Get steepest descent direction
@@ -963,19 +960,19 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
 			beta = std::max(zero, -pwa5.dot(dx)/s.dot(pwa5)); 
 		}
 		else if (ncgType_ == 4){// DY +
-			beta = std::max(zero, gnorm2/s.dot(pwa5)); 
+			beta = std::max(zero, -gnorm2/s.dot(pwa5)); 
 		}
 		else if (ncgType_ == 5){//FRPR
 			beta = std::min(gnorm2, std::max(gnorm2, pwa5.dot(dx)))/gnorm02; 
 		}
 		else{ //DYHS
-			beta = std::max(zero, std::min(-pwa5.dot(dx), gnorm2)/s.dot(pwa5));
+			beta = std::max(zero, -std::min(pwa5.dot(dx), gnorm2)/s.dot(pwa5));
 		}
 		
 		reset = true; 
 
 		if (beta != zero && beta<inf){
-			pwa5.set(dx);//set pwa3 = dx (s0 in matlab)
+			pwa5.set(dx);//set pwa5 = dx (s0 in matlab)
 			pwa5.axpy(beta, s); // dx + beta*s
 			gs = gmod.dot(pwa5);
 			pwa3.set(y);//y + s0 for output
@@ -993,11 +990,11 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
 			nval = nobj.value(px,tol); state_->nnval++; 
 			gs = gmod.dot(s); 
 		}
-
+	  //mval = sval + nval;
 
 	if (verbosity_ > 1) {
       outStream << std::endl;
-      outStream << "    Iterate:                          " << SPiter_   << std::endl;
+      outStream << "    Iterate:                          " << NCGiter_   << std::endl;
       outStream << "    Spectral step length (lambda):    " << t0ncg    << std::endl;
       outStream << "    Step length (alpha):              " << alpha     << std::endl;
       outStream << "    Model decrease (pRed):            " << mval-mold << std::endl;
@@ -1007,9 +1004,8 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,// x
     if (gnorm < gtol) break;
 
   }
-	s.set(y); 
-	s.axpy(-one,x); 
 	nval = nold; 
+	 
 }
 // BRACKETING AND BRENTS FOR UNTRANSFORMED MULTIPLIER
 //template<typename Real>
