@@ -350,11 +350,6 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef std::conditional< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
   template< class AllocationProperties >
   explicit inline
   View( const AllocationProperties & prop ,
