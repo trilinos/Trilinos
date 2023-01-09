@@ -68,6 +68,7 @@
 
 #if defined(HAVE_MUELU_TPETRA)
 #include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_TpetraImport.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -138,9 +139,11 @@ double convert_time_to_bandwidth_gbs(double time, int num_calls, double memory_p
 }
 
 
+
 template<class Matrix>
-void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat, bool verbose) {
-  const Teuchos::RCP<const Teuchos::Comm<int> > comm = A->getMap()->getComm();
+void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat, bool verbose) {  
+  using Teuchos::RCP;
+  const RCP<const Teuchos::Comm<int> > comm = A->getMap()->getComm();
   using SC = typename Matrix::scalar_type;
   using LO = typename Matrix::local_ordinal_type;
   using GO = typename Matrix::global_ordinal_type;
@@ -161,7 +164,9 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
   if(verbose && rank == 0) {
+    std::cout<<"****** Stream Table ******"<<std::endl;
     PM.print_stream_vector_table(std::cout);
+    std::cout<<"****** Pingpong Table ******"<<std::endl;
     PM.print_pingpong_table(std::cout);
   }
 
@@ -177,16 +182,14 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
+  if(verbose && rank == 0)
+    std::cout<<"****** Local Time Model Results ******"<<std::endl;
   for(int i = 0; i < NUM_TIMERS; i++) {
     double avg_time;
 
     // Table interpolation - Take the faster of the two
     int size_in_bytes = SPMV_object_size[i] *SPMV_num_objects[i];
-    double c_time = PM.stream_vector_copy_lookup(size_in_bytes);
-    double a_time = PM.stream_vector_add_lookup(size_in_bytes);
-    avg_time = std::min(c_time,a_time);
-
-    double totalavg = avg_time * nrepeat;
+    avg_time = PM.stream_vector_lookup(size_in_bytes);
     double avg_distributed = avg_time;
 
     if(nproc > 1) {
@@ -194,23 +197,18 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       avg_distributed /= nproc;
     }
     
-    // Stream add involves two reads and a write, so the "3" below
-    double memory_traffic = 3.0*(double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
+    // The lookup divides by transactions-per-element already
+    double memory_traffic = (double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
     gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_distributed,1,memory_traffic);
     
     if(verbose && rank == 0) {
-      std::cout << "\n========================================================\nVector Addition Benchmark: ran "
-                << nrepeat << " times on " << nproc << " processes.\nRan with SPMV value of variable "
-                << SPMV_test_names[i] <<  ".\nVector size = " << SPMV_num_objects[i]
-                << "\tTotal Elapsed Time: " << totalavg
-                << " seconds \tAverage Elapsed Time per test: " << avg_distributed*1e6 << " us.\n"
-                << "GB/sec = "<<gb_per_sec[i]<<std::endl;
-      
+
+      std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_distributed*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
     }
   }
 
-
-  // *** Report SPMV minimum time (local) ***
+  /***************************************************************************/
+  // *** Calculate SPMV minimum time (local) ***
   // Model: 
   // rowptr = One read per row
   // colind = One read per entry
@@ -231,11 +229,92 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     minimum_local_time +=  spmv_memory_bytes[i] / (GB * gb_per_sec[i]);
 
 
+  /***************************************************************************/
+  // *** Calculate Remote part of the SPMV ***
+  double time_pack_unpack_outofplace = 0.0;
+  double time_pack_unpack_inplace    = 0.0;
+  double time_communicate            = 0.0;
+  // Note: We'll assume that each of the permutes, remotes and exports is a unified
+  // memory transaction, even though that's not strictly speaking correct.
+  if(A->hasCrsGraph()) {
+    auto importer = A->getCrsGraph()->getImporter();
+    if(! importer.is_null()) {
+      // Sames [pack] - 1 read SC, 1 write SC 
+      // NOTE: Only if you're out-of-place
+      size_t num_sames = importer->getNumSameIDs();
+      double same_time = (num_sames == 0) ? 0.0 : 
+        2.0 * PM.stream_vector_lookup(num_sames*sizeof(SC));
+
+      // Permutes [pack] - 2 reads LO [to, from] , 1 read SC [values], 1 write SC [values]
+      size_t num_permutes = importer->getNumPermuteIDs();
+      double permute_time = (num_permutes == 0) ? 0.0 : 
+        2.0 * PM.stream_vector_lookup(num_permutes*sizeof(LO)) + 
+        2.0 * PM.stream_vector_lookup(num_permutes*sizeof(SC));
+
+      // Exports [pack] - 1 read LO [exportLIDs], 1 read SC [values], 1 write SC [buffer]
+      // This is what Epetra does at least      
+      size_t num_exports = importer->getNumExportIDs();
+      double export_time = (num_exports == 0) ? 0.0 :
+        PM.stream_vector_lookup(num_exports*sizeof(LO)) + 
+        2.0 * PM.stream_vector_lookup(num_exports*sizeof(SC));
+
+      // Remotes [unpack] - 1 read LO [remoteLIDs],  1 read SC [buffer], 1 write SC [values]
+      // NOTE: Only if you're out of place
+      size_t num_remotes = importer->getNumRemoteIDs();
+      double remote_time = (num_remotes == 0) ? 0.0 :
+        PM.stream_vector_lookup(num_remotes*sizeof(LO)) + 
+        2.0 * PM.stream_vector_lookup(num_remotes*sizeof(SC));
+
+
+      // Total pack / unpack time
+      time_pack_unpack_outofplace = same_time + permute_time + export_time + remote_time;
+      time_pack_unpack_inplace    = permute_time + export_time;
+
+      // We now need to get the size of each message for the ping-pong costs.
+      double send_time = 0.0;
+      double recv_time = 0.0;
+#if defined(HAVE_MUELU_TPETRA)
+      RCP<const Xpetra::TpetraImport<LO,GO,NO> > t_importer = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraImport<LO,GO,NO> >(importer);
+      if(!t_importer.is_null()) {
+        RCP<const Tpetra::Import<LO,GO,NO> > tt_i  = t_importer->getTpetra_Import();
+        Tpetra::Distributor & distor = tt_i->getDistributor();
+        Teuchos::ArrayView<const size_t> recv_lengths = distor.getLengthsFrom();
+        Teuchos::ArrayView<const size_t> send_lengths = distor.getLengthsTo();
+        
+        for (int i=0; i<(int) send_lengths.size(); i++) 
+          send_time += PM.pingpong_device_lookup(send_lengths[i] * sizeof(SC));
+        
+        for (int i=0; i<(int) recv_lengths.size(); i++) 
+          recv_time += PM.pingpong_device_lookup(recv_lengths[i] * sizeof(SC));                  
+      }
+#endif
+
+
+      if(verbose && rank == 0)
+        std::cout << "Remote: same     = "<<same_time*1e6<<" us.\n"
+                  << "Remote: permutes = "<<permute_time*1e6<<" us.\n"
+                  << "Remote: exports  = "<<export_time*1e6<<" us.\n"
+                  << "Remote: remotes  = "<<remote_time*1e6<<" us.\n"
+                  << "Remote: sends    = "<<send_time*1e6<<" us.\n"
+                  << "Remote: recvs    = "<<recv_time*1e6<<" us."<<std::endl;
+
+      // NOTE: For now we'll do comm time as the larger of send/recv.  Not sure this is
+      // really the optimal thing to do, but we'll start here.
+      time_communicate = std::max(send_time,recv_time);
+    }
+  }
+  double minimum_time_in_place     = minimum_local_time + time_communicate + time_pack_unpack_inplace;
+  double minimum_time_out_of_place = minimum_local_time + time_communicate + time_pack_unpack_outofplace;
+
+
+  /***************************************************************************/
   if(rank == 0)
     std::cout << "\n\n========================================================\n"
-              << "Minimum time model (local only): "<< minimum_local_time<<std::endl;
+              << "Minimum time model (local only): " << minimum_local_time << std::endl
+              << "Pack/unpack in-place           : " << time_pack_unpack_inplace << std::endl
+              << "Pack/unpack out-of-place       : " << time_pack_unpack_outofplace << std::endl
+              << "Communication time             : " << time_communicate << std::endl;
   
-
 
   // Iterate through all of the "MV" timers
   // NOTE: This is a hack since TimeMonitor does not give you a way to
@@ -250,14 +329,16 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(rank == 0) {
     if(!globalTimeMonitor.is_null()) {
-      printf("%-60s %10s\n","Timer","Speedup relative to model");
-      printf("%-60s %10s\n","-----","-------------------------");
+      printf("%-60s %30s %30s %30s\n","Timer","Speedup vs. local model","Speedup vs. comm (in place)","Speedup vs. comm (oo place)");
+      printf("%-60s %30s %30s %30s\n","-----","-----------------------","---------------------------","---------------------------");
       for(int i=0; i<(int)timer_names.size(); i++) {
         Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
         if(!t.is_null()) {
           double time_per_call = t->totalElapsedTime() / t->numCalls();
-          double perf = minimum_local_time / time_per_call;
-          printf("%-60s %6.2f\n",timer_names[i],perf);     
+          double p_local = minimum_local_time / time_per_call;
+          double p_inplace = minimum_time_in_place / time_per_call;
+          double p_ooplace = minimum_time_out_of_place / time_per_call;
+          printf("%-60s %30.2f %30.2f %30.2f\n",timer_names[i],p_local,p_inplace,p_ooplace);
         }
       }
     }
