@@ -91,7 +91,7 @@ copy (const XMV& X, const YMV& Y)
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
+    typename std::conditional<
       YMV::rank == 1,
       typename YMV::non_const_value_type*,
       typename YMV::non_const_value_type** >::type,
@@ -99,7 +99,7 @@ copy (const XMV& X, const YMV& Y)
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
+    typename std::conditional<
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
