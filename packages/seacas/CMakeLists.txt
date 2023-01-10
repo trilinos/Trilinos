@@ -31,6 +31,15 @@ ENDIF ()
 set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
 set(SEACASExodus_ENABLE_SHARED_DEFAULT "OFF")
 
+# Certain environments require either C or CXX linkers for these C unit tests
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  SEACASExodus_UNIT_TEST_LINKER_LANGUAGE
+  Exodus_UNIT_TEST_LINKER_LANGUAGE
+  "Linker language used to link C unit tests."
+  CXX
+  )
+
+
 # On windows (and probably other systems), we only want a single
 # exodus library and not both static and shared.
 if (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
