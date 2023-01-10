@@ -16,6 +16,10 @@
 #include <string>
 #include <type_traits>
 
+#ifndef FMT_HEADER_ONLY
+#define FMT_HEADER_ONLY
+#endif
+
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 90100
 
