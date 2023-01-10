@@ -188,23 +188,23 @@ namespace BaskerNS
         idx_t  metis_nnz = M.col_ptr(M.nrow);
 
         using METIS_1DARRAY = Kokkos::View<idx_t*,  BASKER_EXE_SPACE>;
-        METIS_1DARRAY metis_part   (KOKKOS_NOINIT("metis_part"),   metis_size);
-        METIS_1DARRAY metis_rowptr (KOKKOS_NOINIT("metis_rowptr"), metis_size+1);
-        METIS_1DARRAY metis_colidx (KOKKOS_NOINIT("metis_colidx"), metis_nnz);
+        METIS_1DARRAY metis_part   (BASKER_KOKKOS_NOINIT("metis_part"),   metis_size);
+        METIS_1DARRAY metis_rowptr (BASKER_KOKKOS_NOINIT("metis_rowptr"), metis_size+1);
+        METIS_1DARRAY metis_colidx (BASKER_KOKKOS_NOINIT("metis_colidx"), metis_nnz);
 
-        METIS_1DARRAY metis_part_k  (KOKKOS_NOINIT("metis_part_k"),  metis_size);
-        METIS_1DARRAY metis_perm_k  (KOKKOS_NOINIT("metis_perm_k"),  metis_size);
-        METIS_1DARRAY metis_iperm_k (KOKKOS_NOINIT("metis_iperm_k"), metis_size);
+        METIS_1DARRAY metis_part_k  (BASKER_KOKKOS_NOINIT("metis_part_k"),  metis_size);
+        METIS_1DARRAY metis_perm_k  (BASKER_KOKKOS_NOINIT("metis_perm_k"),  metis_size);
+        METIS_1DARRAY metis_iperm_k (BASKER_KOKKOS_NOINIT("metis_iperm_k"), metis_size);
 
         // for calling AMD on leaves
-        INT_1DARRAY amd_rowptr (KOKKOS_NOINIT("amd_rowptr"), (run_amd_on_leaves ? metis_size+1 : 0));
-        INT_1DARRAY amd_colidx (KOKKOS_NOINIT("amd_colidx"), (run_amd_on_leaves ? metis_nnz : 0));
-        INT_1DARRAY amd_perm_k (KOKKOS_NOINIT("amd_perm_k"), (run_amd_on_leaves ? metis_size : 0));
+        INT_1DARRAY amd_rowptr (BASKER_KOKKOS_NOINIT("amd_rowptr"), (run_amd_on_leaves ? metis_size+1 : 0));
+        INT_1DARRAY amd_colidx (BASKER_KOKKOS_NOINIT("amd_colidx"), (run_amd_on_leaves ? metis_nnz : 0));
+        INT_1DARRAY amd_perm_k (BASKER_KOKKOS_NOINIT("amd_perm_k"), (run_amd_on_leaves ? metis_size : 0));
 
         // to find vertex cover/separator
         using METIS_2DARRAY = Kokkos::View<idx_t**, BASKER_EXE_SPACE>;
-        METIS_2DARRAY metis_vc (KOKKOS_NOINIT("metis_vc"), metis_nnz, 3);
-        METIS_1DARRAY metis_vc_score (KOKKOS_NOINIT("metis_vc_score"),  metis_nnz);
+        METIS_2DARRAY metis_vc (BASKER_KOKKOS_NOINIT("metis_vc"), metis_nnz, 3);
+        METIS_1DARRAY metis_vc_score (BASKER_KOKKOS_NOINIT("metis_vc_score"),  metis_nnz);
 
         int info = 0;
         idx_t sepsize = 0;
@@ -319,7 +319,7 @@ namespace BaskerNS
           }
           idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
           Int num_leaves = pow(2.0, (double)(num_levels));
-          METIS_1DARRAY metis_sep_sizes (KOKKOS_NOINIT("metis_isizes_k"), 2*num_doms-1);
+          METIS_1DARRAY metis_sep_sizes (BASKER_KOKKOS_NOINIT("metis_isizes_k"), 2*num_doms-1);
           if (Options.verbose == BASKER_TRUE) {
             std::cout << std::endl << " > calling METIS_NodeNDP ( n = " << metis_size
                       << ", num_leaves = " << num_leaves << " ) << " << std::endl;
