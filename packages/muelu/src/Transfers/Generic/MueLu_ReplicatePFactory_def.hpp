@@ -99,12 +99,8 @@ namespace MueLu {
 
     RCP<Matrix>      Psubblock             = coarseLevel.Get< RCP<Matrix> >("Psubblock", NoFactory::get());
     const ParameterList& pL = GetParameterList();
-printf("before p print\n");
-std::cout << pL << std::endl;
-printf("after p print\n");
     const LO dofPerNode = as<LO>(pL.get<int>   ("replicate: npdes"));
 
-printf("dofPerNode is %d\n",(int) dofPerNode);
     Teuchos::ArrayRCP<const size_t> amalgRowPtr(Psubblock->getLocalNumRows());
     Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(Psubblock->getLocalNumEntries());
     Teuchos::ArrayRCP<const Scalar> amalgVals(Psubblock->getLocalNumEntries());
