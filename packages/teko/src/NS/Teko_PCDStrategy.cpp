@@ -173,7 +173,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    /////////////////////////////////////////////
    ModifiableLinearOp & invLaplace = state.getModifiableOp("invLaplace");
    {
-      Teuchos::TimeMonitor timer(*invSTimer_,true);
+      Teuchos::TimeMonitor timerInvS(*invSTimer_,true);
 
       // LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(presLapStr);
       LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(RequestMesg(lapParams_));
@@ -188,7 +188,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    /////////////////////////////////////////////
    {
       Teko_DEBUG_SCOPE("Building S",10);
-      Teuchos::TimeMonitor timer(*opsTimer_,true);
+      Teuchos::TimeMonitor timerS(*opsTimer_,true);
 
       // build Schur-complement
       // LinearOp pcd = getRequestHandler()->request<Teko::LinearOp>(pcdStr);
@@ -209,7 +209,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    /////////////////////////////////////////////
    {
       Teko_DEBUG_SCOPE("Building inv(F)",10);
-      Teuchos::TimeMonitor timer(*invFTimer_,true);
+      Teuchos::TimeMonitor timerInvF(*invFTimer_,true);
 
       ModifiableLinearOp & invF = state.getModifiableOp("invF"); 
       if(invF==Teuchos::null)

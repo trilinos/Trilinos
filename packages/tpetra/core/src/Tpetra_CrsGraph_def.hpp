@@ -378,7 +378,6 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    using execution_space = typename nc_view_type::execution_space;
     Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -513,7 +512,6 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    using execution_space = typename nc_view_type::execution_space;
     Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -1277,7 +1275,6 @@ namespace Tpetra {
       }
       row_ent_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
       // DEEP_COPY REVIEW - VALUE-TO-HOSTMIRROR
-      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (execution_space(), numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
       Kokkos::fence(); // TODO: Need to understand downstream failure points and move this fence.
       this->k_numRowEntries_ = numRowEnt; // "commit" our allocation
@@ -2797,7 +2794,6 @@ namespace Tpetra {
       // ...> unless size_t == row_offset_type.
       input_view_type ptr_decoy (rowPointers.getRawPtr (), size); // never used
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (execution_space(),
                          Kokkos::Impl::if_c<same,
                            nc_row_map_type,
@@ -4734,7 +4730,7 @@ namespace Tpetra {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    using this_type = CrsGraph<LO, GO, node_type>;
+    using this_CRS_type = CrsGraph<LO, GO, node_type>;
     const char tfecfFuncName[] = "copyAndPermute: ";
     const bool verbose = verbose_;
 
@@ -4769,8 +4765,8 @@ namespace Tpetra {
     // If the source object is actually a CrsGraph, we can use view
     // mode instead of copy mode to access the entries in each row,
     // if the graph is not fill complete.
-    const this_type* srcCrsGraph =
-      dynamic_cast<const this_type*> (&source);
+    const this_CRS_type* srcCrsGraph =
+      dynamic_cast<const this_CRS_type*> (&source);
 
     const map_type& srcRowMap = *(srcRowGraph.getRowMap());
     const map_type& tgtRowMap = *(getRowMap());
@@ -5061,8 +5057,8 @@ namespace Tpetra {
 
     const map_type& srcRowMap = *(source.getRowMap());
     const map_type& tgtRowMap = *rowMap_;
-    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
+    using this_CRS_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    const this_CRS_type* srcCrs = dynamic_cast<const this_CRS_type*>(&source);
     const bool src_is_unique =
       srcCrs == nullptr ? false : srcCrs->isMerged();
     const bool tgt_is_unique = this->isMerged();
@@ -5126,8 +5122,8 @@ namespace Tpetra {
 
     const map_type& srcRowMap = *(source.getRowMap());
     const map_type& tgtRowMap = *rowMap_;
-    using this_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-    const this_type* srcCrs = dynamic_cast<const this_type*>(&source);
+    using this_CRS_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    const this_CRS_type* srcCrs = dynamic_cast<const this_CRS_type*>(&source);
     const bool src_is_unique =
       srcCrs == nullptr ? false : srcCrs->isMerged();
     const bool tgt_is_unique = this->isMerged();
@@ -6615,7 +6611,7 @@ namespace Tpetra {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     using NT = node_type;
-    using this_type = CrsGraph<LO, GO, NT>;
+    using this_CRS_type = CrsGraph<LO, GO, NT>;
     using ivector_type = Vector<int, LO, GO, NT>;
 
     const char* prefix = "Tpetra::CrsGraph::transferAndFillComplete: ";
@@ -6815,7 +6811,7 @@ namespace Tpetra {
     // If the user gave us a null destGraph, then construct the new
     // destination graph.  We will replace its column Map later.
     if (destGraph.is_null()) {
-      destGraph = rcp(new this_type(MyRowMap, 0, graphparams));
+      destGraph = rcp(new this_CRS_type(MyRowMap, 0, graphparams));
     }
 
     /***************************************************/

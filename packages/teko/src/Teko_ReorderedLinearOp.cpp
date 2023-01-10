@@ -56,12 +56,12 @@ void ReorderedLinearOp::describe(Teuchos::FancyOStream & out_arg,
                 << ",domainDim=" << this->domain()->dim()
                 << "}\n";
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[Blocked Op] = ";
               *out << Teuchos::describe(*blockedOp_,verbLevel);
            }
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[Blocked Manager] = ";
               *out << mgr_->toString() << std::endl;
            }

@@ -910,7 +910,7 @@ public:
          Scalar alpha,
          Scalar beta) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
     TEUCHOS_TEST_FOR_EXCEPTION(
       mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS && mode != Teuchos::CONJ_TRANS,
       std::invalid_argument, "Tpetra::BlockCrsMatrix::apply: "
@@ -938,7 +938,7 @@ public:
       // either that or mark fields of this class as 'mutable'.  The
       // problem is that applyBlock wants to do lazy initialization of
       // temporary block multivectors.
-      const_cast<this_type&> (*this).applyBlock (X_view, Y_view, mode, alpha, beta);
+      const_cast<this_BCRS_type&> (*this).applyBlock (X_view, Y_view, mode, alpha, beta);
     } catch (std::invalid_argument& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
@@ -1002,7 +1002,7 @@ public:
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
@@ -1017,7 +1017,7 @@ public:
 
 
     // Final step, create and import the destMatrix.
-    destMatrix = rcp (new this_type (*destGraph, getBlockSize()));
+    destMatrix = rcp (new this_BCRS_type (*destGraph, getBlockSize()));
     destMatrix->doImport(*this, importer, Tpetra::INSERT);
   }
 
@@ -1030,7 +1030,7 @@ public:
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
@@ -1045,7 +1045,7 @@ public:
 
 
     // Final step, create and import the destMatrix.
-    destMatrix = rcp (new this_type (*destGraph, getBlockSize()));
+    destMatrix = rcp (new this_BCRS_type (*destGraph, getBlockSize()));
     destMatrix->doExport(*this, exporter, Tpetra::INSERT);
   }
 
@@ -1227,8 +1227,8 @@ public:
       return static_cast<LO> (0);
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    auto val_out = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1303,8 +1303,8 @@ public:
     }
     const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
+    auto val_out = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1688,13 +1688,13 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
+      auto vals = const_cast<this_BCRS_type&>(*this).getValuesDeviceNonConst();
       auto r_val = getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);      
       return r_val; 
     }
@@ -1708,13 +1708,13 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalBlockHostNonConst (const LO localRowInd, const LO localColInd) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesHostNonConst();
+      auto vals = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst();
       auto r_val = getNonConstLocalBlockFromInputHost (vals.data(), absBlockOffset);      
       return r_val; 
     }
@@ -1730,8 +1730,8 @@ public:
   checkSizes (const ::Tpetra::SrcDistObject& source)
   {
     using std::endl;
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
 
     if (src == NULL) {
       std::ostream& err = markLocalErrorAndGetStream ();
@@ -1794,7 +1794,7 @@ public:
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
     using std::endl;
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermute");
     const bool debug = Behavior::debug();
@@ -1848,7 +1848,7 @@ public:
       return;
     }
 
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
     if (src == NULL) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
@@ -2426,7 +2426,7 @@ public:
 
     typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
 
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::packAndPrepare");
 
@@ -2480,7 +2480,7 @@ public:
       return;
     }
 
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
     if (src == NULL) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
@@ -3438,8 +3438,8 @@ public:
       const size_t numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
       colInds = local_inds_host_view_type(indHost_.data()+absBlockOffsetStart, numInds);
 
-      using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-      vals = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+      using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+      vals = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     }
   }
 
@@ -3456,7 +3456,6 @@ public:
     // The code below works on host, so use a host View.
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    using execution_space = typename device_type::execution_space;
     Kokkos::deep_copy (execution_space(), diagOffsetsHost, diagOffsets);
 
     auto vals_host_out = val_.getHostView(Access::ReadOnly);
