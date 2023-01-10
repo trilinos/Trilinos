@@ -34,6 +34,8 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A_Tpetra.hpp
     MockModelEval_B_Tpetra.cpp
     MockModelEval_B_Tpetra.hpp
+    MockModelEval_B_Tpetra_2_parameters.cpp
+    MockModelEval_B_Tpetra_2_parameters.hpp
     MatrixBased_LOWS.cpp
     MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
@@ -92,6 +94,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
