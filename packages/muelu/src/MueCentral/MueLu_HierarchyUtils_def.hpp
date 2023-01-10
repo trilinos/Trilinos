@@ -64,6 +64,40 @@
 
 namespace MueLu {
 
+  // Copy object from one hierarchy to another calling AddNewLevel as appropriate.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenHierarchies(Hierarchy& fromHierarchy, Hierarchy& toHierarchy, const std::string fromLabel, const std::string toLabel, const std::string dataType) {
+
+    // add any necessary levels
+    for (int i = toHierarchy.GetNumLevels(); i < fromHierarchy.GetNumLevels(); i++)
+      toHierarchy.AddNewLevel();
+   
+    for (int i = 0; i < fromHierarchy.GetNumLevels(); i++) {
+      RCP<Level> fromLevel = fromHierarchy.GetLevel(i);
+      RCP<Level> toLevel   = toHierarchy.GetLevel(i);
+  
+      TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>"  && dataType != "RCP<const Import>"
+                                 , Exceptions::InvalidArgument,
+                                 std::string("MueLu::Utils::CopyBetweenHierarchies: unknown data type(") + dataType + ")");
+      if (fromLevel->IsAvailable(fromLabel)) {
+        if (dataType == "RCP<Matrix>" ) {
+          // Normally, we should only do 
+          //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
+          // The logic below is meant to handle a special case when we 
+          // repartition a processor away, leaving behind a RCP<Operator> on 
+          // on the level instead of an RCP<Matrix>
+
+          auto tempOp = fromLevel->Get<RCP<Operator> >(fromLabel);
+          auto tempMatrix  = rcp_dynamic_cast<Matrix>(tempOp);
+          if(!tempMatrix.is_null()) toLevel->Set(toLabel,tempMatrix);
+          else                      toLevel->Set(toLabel,tempOp);
+        }
+        if (dataType == "RCP<const Import>") {
+          toLevel->Set(toLabel,fromLevel->Get<RCP<const Import> >(fromLabel));
+        }
+      }
+    }
+  }
 
   // Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
   // calling AddNewLevel as appropriate.

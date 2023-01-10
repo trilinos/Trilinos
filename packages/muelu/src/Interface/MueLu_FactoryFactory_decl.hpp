@@ -96,6 +96,7 @@
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
+#include "MueLu_ReplicatePFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_GeometricInterpolationPFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
@@ -261,6 +262,7 @@ namespace MueLu {
       if (factoryName == "FilteredAFactory")                      return Build2<FilteredAFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "FineLevelInputDataFactory")             return Build2<FineLevelInputDataFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")              return Build2<GeneralGeometricPFactory>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ReplicatePFactory")                     return Build2<ReplicatePFactory>                     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                       return Build2<GenericRFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory")        return Build2<GeometricInterpolationPFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "HybridAggregationFactory")              return Build2<HybridAggregationFactory>              (paramList, factoryMapIn, factoryManagersIn);

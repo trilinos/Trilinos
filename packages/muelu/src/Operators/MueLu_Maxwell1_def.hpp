@@ -153,11 +153,13 @@ namespace MueLu {
     VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosity));
 
     // Check the validity of the run mode
-    if(mode_string == "standard")          mode_ = MODE_STANDARD;
-    else if(mode_string == "refmaxwell")   mode_ = MODE_REFMAXWELL;
-    else if(mode_string == "edge only")    mode_ = MODE_EDGE_ONLY;
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only'.");
+    if(mode_ != MODE_GMHD_STANDARD) {
+      if(mode_string == "standard")          mode_ = MODE_STANDARD;
+      else if(mode_string == "refmaxwell")   mode_ = MODE_REFMAXWELL;
+      else if(mode_string == "edge only")    mode_ = MODE_EDGE_ONLY;
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell', 'edge only', or use the GMHD constructor.");
+      }
     }
 
     // If we're in edge only or standard modes, then the (2,2) hierarchy gets built without smoothers.
@@ -166,7 +168,7 @@ namespace MueLu {
       precList22_     =  list.sublist("maxwell1: 22list");
     else if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
-    if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_STANDARD)
+    if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_STANDARD || mode_ == MODE_GMHD_STANDARD)
       precList22_.set("smoother: pre or post","none");
     else if(!precList22_.isType<std::string>("Preconditioner Type") &&
        !precList22_.isType<std::string>("smoother: type") &&
@@ -175,6 +177,7 @@ namespace MueLu {
       precList22_ = defaultSmootherList;
     }
     precList22_.set("verbosity",precList22_.get("verbosity",verbosity));
+
     
 
     // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chebyshev (EDGE_ONLY / REFMAXWELL) if
@@ -183,6 +186,11 @@ namespace MueLu {
       precList11_     =  list.sublist("maxwell1: 11list");
     else if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
+
+    if(mode_ == MODE_GMHD_STANDARD) {
+      precList11_.set("smoother: pre or post","none");
+      precList11_.set("smoother: type", "none");
+    }
     if(!precList11_.isType<std::string>("Preconditioner Type") &&
        !precList11_.isType<std::string>("smoother: type") &&
        !precList11_.isType<std::string>("smoother: pre type") &&
@@ -190,7 +198,7 @@ namespace MueLu {
       if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_REFMAXWELL) {
         precList11_ = defaultSmootherList;
       }
-      else {
+      if (mode_ == MODE_STANDARD)  {
         precList11_.set("smoother: type", "HIPTMAIR");
         precList11_.sublist("hiptmair: smoother type 1","CHEBYSHEV");
         precList11_.sublist("hiptmair: smoother type 2","CHEBYSHEV");
@@ -234,6 +242,24 @@ namespace MueLu {
 
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GMHDSetupHierarchy(Teuchos::ParameterList& List) const {
+    Teuchos::ParameterList precListGmhd;
+
+    MueLu::HierarchyUtils<SC,LO,GO,NO>::CopyBetweenHierarchies(*Hierarchy11_,*HierarchyGmhd_, "P",  "Psubblock", "RCP<Matrix>");
+
+    HierarchyGmhd_->GetLevel(0)->Set("A", GmhdA_Matrix_);
+    GmhdA_Matrix_->setObjectLabel("GmhdA");
+
+    TEUCHOS_TEST_FOR_EXCEPTION( !List.isSublist("maxwell1: Gmhdlist"), Exceptions::RuntimeError, "Must provide maxwell1: Gmhdlist for GMHD setup");    
+    precListGmhd     =  List.sublist("maxwell1: Gmhdlist");
+    precListGmhd.set("coarse: max size",1);
+    precListGmhd.set("max levels",HierarchyGmhd_->GetNumLevels());
+    RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precListGmhd,GmhdA_Matrix_->getDomainMap()->getComm()));
+    HierarchyGmhd_->setlib(GmhdA_Matrix_->getDomainMap()->lib());
+    HierarchyGmhd_->SetProcRankVerbose(GmhdA_Matrix_->getDomainMap()->getComm()->getRank());
+    mueLuFactory->SetupHierarchy(*HierarchyGmhd_);
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
@@ -687,12 +713,14 @@ namespace MueLu {
                                                                   Scalar /* alpha */,
                                                                   Scalar /* beta */) const {
     RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu Maxwell1: solve");
-    if(mode_ == MODE_STANDARD || mode_ == MODE_EDGE_ONLY)
+    if(mode_ == MODE_GMHD_STANDARD)
+      HierarchyGmhd_->Iterate(RHS,X,1,true);
+    else if(mode_ == MODE_STANDARD || mode_ == MODE_EDGE_ONLY)
       applyInverseStandard(RHS,X);
     else if(mode_ == MODE_REFMAXWELL)
       applyInverseRefMaxwellAdditive(RHS,X);
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only'.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only' when not doing GMHD.");
   }
 
 
@@ -726,7 +754,8 @@ namespace MueLu {
 
     Hierarchy11_   = Teuchos::null;
     Hierarchy22_   = Teuchos::null;
-    mode_          = MODE_STANDARD;
+    HierarchyGmhd_  = Teuchos::null;
+    if (mode_ != MODE_GMHD_STANDARD) mode_ = MODE_STANDARD;
 
     // Default settings
     useKokkos_=false;
@@ -859,6 +888,9 @@ namespace MueLu {
 
     if (!Hierarchy22_.is_null())
       Hierarchy22_->describe(out, GetVerbLevel());
+
+    if (!HierarchyGmhd_.is_null())
+      HierarchyGmhd_->describe(out, GetVerbLevel());
 
     if (IsPrint(Statistics2)) {
       // Print the grid of processors
