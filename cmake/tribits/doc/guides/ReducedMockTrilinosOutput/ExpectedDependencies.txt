@@ -17,9 +17,9 @@ Package dependencies information:
 
 -- MPI_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[O] Epetra[O]
 
--- BLAS_FORWARD_LIB_DEFINED_DEPENDENCIES: LAPACK[R] Teuchos[R] Epetra[R]
+-- BLAS_FORWARD_LIB_DEFINED_DEPENDENCIES: LAPACK[O] Teuchos[R] Epetra[R]
 
--- LAPACK_LIB_DEFINED_DEPENDENCIES: BLAS[R]
+-- LAPACK_LIB_DEFINED_DEPENDENCIES: BLAS[O]
 -- LAPACK_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[R] Epetra[R]
 
 -- Boost_FORWARD_LIB_DEFINED_DEPENDENCIES: Teuchos[O]
@@ -68,7 +68,7 @@ Dumping direct enabled dependencies for each package ...
 
 -- BLAS: No enabled dependencies!
 
--- LAPACK_LIB_ENABLED_DEPENDENCIES: BLAS[R]
+-- LAPACK_LIB_ENABLED_DEPENDENCIES: BLAS[O]
 
 -- Boost: No enabled dependencies!
 

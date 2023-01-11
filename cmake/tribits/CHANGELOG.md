@@ -2,6 +2,23 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2023-01-10:
+
+* **Added:** Added back support for deprecated variable
+  `<Project>_ASSERT_MISSING_PACKAGES` that was removed
+  [2022-10-11](#2022-10-11).  When `<Project>_ASSERT_MISSING_PACKAGES` is set
+  to a non-null value, it overrides the default value for
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` (but setting
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` in the cache takes precedence).
+
+## 2023-01-06:
+
+* **Changed:** Changed all TPL dependencies back to 'Optional' so that
+  disabling an external package/TPL will **not** disable any downstream
+  external packages/TPLs that list a dependency on that external package/TPL.
+  This undoes the change on [2022-10-20](#2022-10-20) and restores backward
+  compatibility to the behavior before that change.
+
 ## 2022-12-20:
 
 * **Deprecated:** The macro `set_and_inc_dirs()` is deprecated and replaced by

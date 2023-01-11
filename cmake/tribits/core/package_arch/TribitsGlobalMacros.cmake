@@ -720,6 +720,18 @@ macro(tribits_define_global_options_and_define_extra_repos)
     "Determines if a variety of development mode checks are turned on by default or not."
     )
 
+  if (NOT "${${PROJECT_NAME}_ASSERT_MISSING_PACKAGES}" STREQUAL "")
+    tribits_deprecated("Warning, ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES="
+      "'${${PROJECT_NAME}_ASSERT_MISSING_PACKAGES}' is set and is no"
+      " longer supported!  Please set"
+      " ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES instead (see build ref)!" )
+    if (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
+      set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  FATAL_ERROR)
+    else()
+     set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  IGNORE)
+    endif()
+  endif()
+
   if ("${${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT}" STREQUAL "")
     if (${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
       set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  FATAL_ERROR)
@@ -727,6 +739,7 @@ macro(tribits_define_global_options_and_define_extra_repos)
       set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  IGNORE)
     endif()
   endif()
+
   set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
     "FATAL_ERROR" "SEND_ERROR" )
   set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_VALUES_LIST
@@ -739,13 +752,6 @@ macro(tribits_define_global_options_and_define_extra_repos)
     ALLOWED_STRINGS_LIST
       ${${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_VALUES_LIST}
     IS_ADVANCED )
-
-  if (NOT "${${PROJECT_NAME}_ASSERT_MISSING_PACKAGES}" STREQUAL "")
-    message(FATAL_ERROR "Error, ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES="
-      " '${${PROJECT_NAME}_ASSERT_MISSING_PACKAGES}' is set and is no"
-      " longer supported!  Please set"
-      " ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES=FATAL_ERROR instead!" )
-  endif()
 
   if ("${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT}" STREQUAL "")
     if (${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
