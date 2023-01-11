@@ -235,7 +235,7 @@ namespace { // (anonymous)
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
     //
-    typedef typename Kokkos::Impl::if_c<
+    typedef typename std::conditional<
       Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,

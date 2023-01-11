@@ -2788,6 +2788,15 @@ namespace Tpetra {
 
     nc_row_map_type ptr_rot ("Tpetra::CrsGraph::ptr", size);
 
+    // FIXME get rid of the else-clause when the minimum CXX standard required is bumped to C++17
+#ifdef KOKKOS_ENABLE_CXX17
+    if constexpr (same) { // size_t == row_offset_type
+      using execution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (execution_space(),
+                         ptr_rot,
+                         ptr_in);
+    }
+#else
     if (same) { // size_t == row_offset_type
       // This compile-time logic ensures that the compiler never sees
       // an assignment of View<row_offset_type*, ...> to View<size_t*,
@@ -2800,6 +2809,7 @@ namespace Tpetra {
                            input_view_type>::select (ptr_rot, ptr_decoy),
                          ptr_in);
     }
+#endif
     else { // size_t != row_offset_type
       // CudaUvmSpace != HostSpace, so this will be false in that case.
       constexpr bool inHostMemory =

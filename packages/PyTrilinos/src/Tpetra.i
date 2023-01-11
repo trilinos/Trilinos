@@ -1144,7 +1144,7 @@ public:
   template<class TargetDeviceType>
   void modify();
   template<class TargetDeviceType>
-  typename Kokkos::Impl::if_c<
+  typename std::conditional<
     std::is_same<
       typename execution_space::memory_space,
       typename TargetDeviceType::memory_space>::value,
