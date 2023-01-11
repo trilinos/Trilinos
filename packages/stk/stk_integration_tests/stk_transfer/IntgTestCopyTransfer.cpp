@@ -493,7 +493,10 @@ public:
 
   void add_shared_nodes_to_receiver() { receiverIncludesSharedNodes = true; }
 
-  virtual ~CopyTransferFixture() = default;
+  virtual ~CopyTransferFixture()
+  {
+    MPI_Comm_free(&pmSub);
+  }
 
 protected:
   stk::ParallelMachine pm;
@@ -714,6 +717,7 @@ TYPED_TEST(CopyTransferFixture, copy1T0_MPMD)
 
   this->check_target_fields();
 }
+
 namespace {
 stk::transfer::SearchById::KeyToTargetProcessor get_01T10_key_to_target_processor_gold(stk::ParallelMachine pm)
 {

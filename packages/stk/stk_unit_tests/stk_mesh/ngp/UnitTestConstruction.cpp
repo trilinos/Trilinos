@@ -50,21 +50,82 @@ void test_device_field_default_constructor()
   EXPECT_EQ(1, constructionFinished);
 }
 
-TEST(DefaultConstruct, deviceField)
+TEST(NgpDeviceConstruction, deviceField)
 {
   test_device_field_default_constructor();
 }
 
-TEST(DefaultConstruct, deviceField_onHost)
+TEST(NgpDeviceConstruction, deviceField_onHost)
 {
   stk::mesh::DeviceField<double> deviceField;
   EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
 }
 
-TEST(DefaultConstruct, hostField)
+TEST(NgpDeviceConstruction, hostField)
 {
   stk::mesh::HostField<double> hostField;
   EXPECT_EQ(stk::topology::INVALID_RANK, hostField.get_rank());
 }
 
+struct MimicNaluWindKernelBase
+{
+  KOKKOS_DEFAULTED_FUNCTION MimicNaluWindKernelBase() = default;
+  KOKKOS_DEFAULTED_FUNCTION MimicNaluWindKernelBase(const MimicNaluWindKernelBase&) = default;
+  KOKKOS_FUNCTION virtual ~MimicNaluWindKernelBase()
+  {
+  }
+
+  KOKKOS_FUNCTION virtual unsigned get_num() const { return 0; }
+};
+
+struct MimicNaluWindKernel : public MimicNaluWindKernelBase
+{
+  KOKKOS_FUNCTION MimicNaluWindKernel()
+  : ngpField(), num(0)
+  {
+  }
+
+  KOKKOS_FUNCTION MimicNaluWindKernel(const MimicNaluWindKernel& src)
+  : ngpField(src.ngpField), num(src.num)
+  {
+  }
+
+  KOKKOS_FUNCTION ~MimicNaluWindKernel()
+  {
+  }
+
+  KOKKOS_FUNCTION unsigned get_num() const override { return num; }
+
+  stk::mesh::NgpField<double> ngpField;
+  unsigned num = 0;
+};
+
+void test_ngp_field_placement_new()
+{
+  MimicNaluWindKernel hostObj;
+  hostObj.num = 42;
+
+  std::string debugName("MimicNaluWindKernel");
+  MimicNaluWindKernel* devicePtr = static_cast<MimicNaluWindKernel*>(Kokkos::kokkos_malloc<stk::ngp::MemSpace>(debugName, sizeof(MimicNaluWindKernel)));
+
+  int constructionFinished = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+    new (devicePtr) MimicNaluWindKernel(hostObj);
+    localFinished = 1;
+  }, constructionFinished);
+  EXPECT_EQ(1, constructionFinished);
+
+  int numFromDevice = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localNum) {
+    localNum = devicePtr->get_num();
+  }, numFromDevice);
+  EXPECT_EQ(42, numFromDevice);
 }
+
+TEST(NgpDeviceConstruction, structWithNgpField)
+{
+  test_ngp_field_placement_new();
+}
+
+}
+

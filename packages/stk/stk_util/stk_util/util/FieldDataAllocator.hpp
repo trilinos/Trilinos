@@ -231,7 +231,8 @@ public:
 
   static void deallocate(Pointer p, SizeType)
   {
-    hipHostFree(p);
+    hipError_t status = hipHostFree(p);
+    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
   }
 
 };

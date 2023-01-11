@@ -39,14 +39,13 @@
 #include <Ioss_Field.h>                     // for Field, Field::TRANSIENT
 #include <Teuchos_RCP.hpp>                  // for RCP::~RCP<T>, RCP::RCP<T>
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
-#include <stk_util/util/ParameterList.hpp>  // for STK_ANY_NAMESPACE, Type
+#include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                           // for string
 #include <vector>                           // for vector
 #include "Teuchos_RCPDecl.hpp"              // for RCP
 #include "mpi.h"                            // for MPI_Comm
 namespace Ioss { class PropertyManager; }
 namespace Ioss { class Region; }
-namespace Teuchos { class any; }
 namespace Ioss { class Property; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -121,13 +120,13 @@ public:
 
 private:
     void internal_define_global_ref(const std::string &variableName,
-                           const STK_ANY_NAMESPACE::any *value,
+                           const std::any *value,
                            stk::util::ParameterType::Type type,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void internal_define_global_ref(const std::string &name,
-                           const STK_ANY_NAMESPACE::any *value,
+                           const std::any *value,
                            const std::string &storage,
                            Ioss::Field::BasicType dataType,
                            int copies = 1,
