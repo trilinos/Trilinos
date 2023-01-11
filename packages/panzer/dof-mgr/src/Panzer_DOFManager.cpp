@@ -463,7 +463,6 @@ void DOFManager::buildGlobalUnknowns()
 
   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(tmp));
 
-  aggFieldPattern->print(std::cout);
   connMngr_->buildConnectivity(*aggFieldPattern);
 
   // using new geometric pattern, build global unknowns
