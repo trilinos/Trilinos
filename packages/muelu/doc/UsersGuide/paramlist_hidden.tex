@@ -296,6 +296,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{sa: rowsumabs replace single entry row with zero}{bool}{true}{If a row has a single entry, set the inverse of the diagonal entry to be zero.}
         
+\cbb{replicate: npdes}{int}{1}{ Used with multigrid algorithm 'replicate' to transform scalar prolongator to one  for PDE systems with npdes dofs per node. }
+        
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}

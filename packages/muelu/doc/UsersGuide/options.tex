@@ -253,6 +253,7 @@ Table \ref{t:coloring_algs} lists the available values for \verb!aggregation: co
       \verb!emin!        & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011} \\
       \verb!interp!      & Interpolation based grid transfer operator, using piece-wise constant or linear interpolation from coarse nodes to fine nodes. This requires the use of structured aggregation.\\
       \verb!semicoarsen! & Semicoarsening grid transfer operator used to reduce a n-dimensional problem into a (n-1)-dimensional problem by coarsening fully in one of the spacial dimensions~\cite{TPSTP2015}.\\
+      \verb!replicate!      & Transforms existing scalar prolongator to one  for PDE systems with multiple dofs per node.\\
       \verb!pcoarsen!    & \\
       \bottomrule
     \end{tabular}

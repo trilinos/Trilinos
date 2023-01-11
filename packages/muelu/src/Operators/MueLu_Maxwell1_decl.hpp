@@ -98,14 +98,16 @@ namespace MueLu {
     //! Constructor
     Maxwell1() :
       Hierarchy11_(Teuchos::null),
-      Hierarchy22_(Teuchos::null)
+      Hierarchy22_(Teuchos::null),
+      HierarchyGmhd_(Teuchos::null)
     {
     }
 
     //! Constructor with Hierarchies
     Maxwell1(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
       Hierarchy11_(H11),
-      Hierarchy22_(H22)
+      Hierarchy22_(H22),
+      HierarchyGmhd_(Teuchos::null)
     {
     }
 
@@ -151,6 +153,32 @@ namespace MueLu {
       resetMatrix(SM_Matrix,ComputePrec);
     }
 
+    /** Gmhd GMHD Constructor with Jacobian and nodal matrix AND Gmhd matrix
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Kn_Matrix Nodal Laplacian
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
+     * \param[in] GmhdA_Matrix Gmhd matrix including generalized Ohms law equations
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
+    Maxwell1(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & Kn_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
+               Teuchos::ParameterList& List, const Teuchos::RCP<Matrix> & GmhdA_Matrix,
+               bool ComputePrec = true)
+    {
+
+      mode_ = MODE_GMHD_STANDARD;
+      initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
+      GmhdA_Matrix_ = GmhdA_Matrix;
+      HierarchyGmhd_ = rcp(new Hierarchy("HierarchyGmhd"));
+      GMHDSetupHierarchy(List);
+    }
    
     /** Constructor with parameter list
      *
@@ -227,6 +255,9 @@ namespace MueLu {
     Teuchos::RCP<Matrix> generate_kn() const;
 
 
+    //! Sets up hiearchy for GMHD matrices that include generalized Ohms law equations
+    void GMHDSetupHierarchy(Teuchos::ParameterList& List) const;
+               
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
      * \param[in] D0_Matrix Discrete Gradient
@@ -275,10 +306,10 @@ namespace MueLu {
     mutable Teuchos::ParameterList parameterList_, precList11_, precList22_;
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
-    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_;
+    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_, HierarchyGmhd_;
 
     //! Various matrices
-    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_;
+    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_, GmhdA_Matrix_;
 
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
@@ -295,7 +326,7 @@ namespace MueLu {
     bool applyBCsTo22_;
     
     //! Execution modes
-    typedef enum {MODE_STANDARD=0, MODE_REFMAXWELL, MODE_EDGE_ONLY} mode_type;
+    typedef enum {MODE_STANDARD=0, MODE_REFMAXWELL, MODE_EDGE_ONLY, MODE_GMHD_STANDARD} mode_type;
     mode_type mode_;
 
     //! Temporary memory (cached vectors for RefMaxwell-style)

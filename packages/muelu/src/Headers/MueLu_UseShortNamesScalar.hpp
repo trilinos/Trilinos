@@ -275,6 +275,9 @@ typedef MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
 #endif
+#ifdef MUELU_REPLICATEPFACTORY_SHORT
+typedef MueLu::ReplicatePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReplicatePFactory;
+#endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
 typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RigidBodyModeFactory;
 #endif
