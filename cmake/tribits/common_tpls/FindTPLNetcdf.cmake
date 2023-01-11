@@ -37,9 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-if (${CMAKE_VERSION} GREATER "3.13")
-     cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_policy(SET CMP0074 NEW)
 
 set(Netcdf_ALLOW_MODERN FALSE CACHE BOOL "Allow finding Netcdf as a modern CMake config file with exported targets (and only this way)")
 

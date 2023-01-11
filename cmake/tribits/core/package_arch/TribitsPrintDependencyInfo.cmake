@@ -114,7 +114,7 @@ function(tribits_dump_package_dependencies_info)
 
   if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
     message("")
-    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES})
+    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_PACKAGES})
       tribits_print_package_dependencies(${TRIBITS_PACKAGE})
       message("")
     endforeach()
@@ -123,12 +123,112 @@ function(tribits_dump_package_dependencies_info)
 endfunction()
 
 
+# Optionally print out a global project list var with spaces and
+# unconditionally print out the number of items in that list
+#
 function(tribits_print_project_list_var_and_num  listVarSuffix)
   message("")
   if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
     print_nonempty_var_with_spaces(${PROJECT_NAME}_${listVarSuffix}  wasPrinted)
   endif()
   print_var(${PROJECT_NAME}_NUM_${listVarSuffix})
+endfunction()
+
+
+# Print out dependencies for a package
+#
+function(tribits_print_package_dependencies  packageName)
+
+  set(printedVar "")
+
+  # Print deps vars
+
+  if (printedVar)
+    message("")
+  endif()
+
+  tribits_print_nonempty_package_deps_list(${packageName}  LIB  DEFINED  printedVar)
+  tribits_print_nonempty_package_deps_list(${packageName}  TEST  DEFINED  printedVar)
+
+  if (${PROJECT_NAME}_DUMP_FORWARD_PACKAGE_DEPENDENCIES)
+    tribits_print_nonempty_package_forward_defined_deps_list(${packageName}  LIB
+      printedVar)
+    tribits_print_nonempty_package_forward_defined_deps_list(${packageName}  TEST
+      printedVar)
+  endif()
+
+  if (NOT printedVar)
+    message("-- ${packageName}: No defined dependencies!")
+  endif()
+
+endfunction()
+
+
+# Print out a dependency list including if each item is optional or required
+# ('R' or 'O')
+#
+# Usage::
+#
+#   tribits_print_nonempty_package_deps_list(<packageName> <libOrTest>
+#     <printedListOut>)
+#
+# which prints out the list::
+#
+#   <packageName>_<libOrTest>_DEFINED_DEPENDENCIES
+#
+# if it is non-empty.
+#
+function(tribits_print_nonempty_package_deps_list  packageName
+    libOrTest  definedOrEnabled  printedListOut
+  )
+  set(depsListName ${packageName}_${libOrTest}_${definedOrEnabled}_DEPENDENCIES)
+  if (NOT "${${depsListName}}" STREQUAL "")
+    set(lineStr "-- ${depsListName}:")
+    foreach (depPkg IN LISTS ${depsListName})
+      string(APPEND lineStr " ${depPkg}")
+      if (${packageName}_${libOrTest}_DEP_REQUIRED_${depPkg})
+        string(APPEND lineStr "[R]")
+      else()
+        string(APPEND lineStr "[O]")
+      endif()
+    endforeach()
+    message("${lineStr}")
+    set(${printedListOut}  TRUE  PARENT_SCOPE)
+  endif()
+endfunction()
+
+
+# Print out a forward dependency list including if each item is optional or
+# required ('R' or 'O')
+#
+# Usage::
+#
+#   tribits_print_nonempty_package_forward_defined_deps_list(<packageName> <libOrTest>
+#     <printedListOut>)
+#
+# which prints out the list::
+#
+#   <packageName>_FORWARD_<libOrTest>_DEFINED_DEPENDENCIES
+#
+# if it is non-empty.
+#
+function(tribits_print_nonempty_package_forward_defined_deps_list  packageName
+    libOrTest  printedListOut
+  )
+  set(fwdDepsListName ${packageName}_FORWARD_${libOrTest}_DEFINED_DEPENDENCIES)
+  if (NOT "${${fwdDepsListName}}" STREQUAL "")
+    set(lineStr "-- ${fwdDepsListName}:")
+    foreach (fwdDepPkg IN LISTS ${fwdDepsListName})
+      string(APPEND lineStr " ${fwdDepPkg}")
+      if (${fwdDepPkg}_${libOrTest}_DEP_REQUIRED_${packageName})
+        string(APPEND lineStr "[R]")
+       else()
+        string(APPEND lineStr "[O]")
+      endif()
+    endforeach()
+    message("${lineStr}")
+    set(${printedListOut}  TRUE  PARENT_SCOPE)
+  endif()
 endfunction()
 
 

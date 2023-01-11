@@ -39,7 +39,7 @@ target_link_libraries(app PRIVATE TribitsExProj::all_selected_libs)
 
 enable_testing()
 
-if ("SimpleTpl" IN_LIST TribitsExProj_TPL_LIST)
+if (TARGET SimpleTpl::all_libs)
   set(simpleCxxDeps "simpletpl headeronlytpl")
 else()
   set(simpleCxxDeps "headeronlytpl")

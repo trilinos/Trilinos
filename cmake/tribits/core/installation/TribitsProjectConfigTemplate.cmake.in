@@ -123,7 +123,6 @@ foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
     include(${PDOLLAR}{compPkgConfigFile})
     # Add variables to lists.
     list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-    list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
     list(APPEND selectedComponentsFound ${PDOLLAR}{comp})
   else()
     set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
@@ -138,18 +137,8 @@ endforeach()
 # Deprecated (see #299)!
 set(${PROJECT_NAME}_INCLUDE_DIRS "${TRIBITS_PROJECT_INSTALL_INCLUDE_DIR}")
 
-# Deprecated (see #299)!
-set(${PROJECT_NAME}_LIBRARY_DIRS "")
-
 # Remove duplicates in ${PROJECT_NAME}_LIBRARIES
-list(REVERSE ${PROJECT_NAME}_LIBRARIES)
 list(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
-list(REVERSE ${PROJECT_NAME}_LIBRARIES)
-
-# Remove duplicates in ${PROJECT_NAME}_TPL_LIBRARIES
-list(REVERSE ${PROJECT_NAME}_TPL_LIBRARIES)
-list(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_LIBRARIES)
-list(REVERSE ${PROJECT_NAME}_TPL_LIBRARIES)
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -185,9 +174,6 @@ set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The selected packages for this project
 set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{selectedComponentsFound}")
-
-## The TPLs enabled for this project
-set(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
 
 ## ---------------------------------------------------------------------------
 ## Modern CMake (IMPORTED) targets

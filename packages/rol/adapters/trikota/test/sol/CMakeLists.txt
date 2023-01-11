@@ -1,7 +1,7 @@
 
 IF(${PROJECT_NAME}_ENABLE_TriKota)
 
-  INCLUDE_DIRECTORIES(${ROL_SOURCE_DIR}/adapters/teuchos/src/sol)
+  TRIBITS_INCLUDE_DIRECTORIES(${ROL_SOURCE_DIR}/adapters/teuchos/src/sol)
 
   #TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #  SparseGridBurgersControl

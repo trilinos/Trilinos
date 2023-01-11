@@ -44,6 +44,7 @@
 @MACRO:    tribits_project_enable_all() +
 @MACRO:    tribits_repository_define_packages() +
 @MACRO:    tribits_repository_define_tpls() +
+@MACRO:    tribits_set_and_inc_dirs() +
 @FUNCTION: tribits_set_st_for_dev_mode() +
 @MACRO:    tribits_subpackage() +
 @MACRO:    tribits_subpackage_postprocess() +

@@ -295,14 +295,9 @@ the dependencies for each external package/TPL and internal package:
 
     The list of all **defined direct** required and optional upstream external
     package/TPL and internal package dependencies, regardless if they are
-    enabled or not.  (Note, this is currently the concatenation of the lists
-    `${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES`_,
-    `${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES`_,
-    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS``, and
-    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS``.  With the completion of #63,
-    the ``XXX_TPLS`` lists will be removed.)  To determine if a given direct
-    upstream package ``<depPkg>`` in this list is enabled or not for this
-    package ``${PACKAGE_NAME}``, check the value of
+    enabled or not.  To determine if a given direct upstream package
+    ``<depPkg>`` in this list is enabled or not for this package
+    ``${PACKAGE_NAME}``, check the value of
     ``${PACKAGE_NAME}_ENABLE_<depPkg>``.  NOTE: The variables
     ``${PACKAGE_NAME}_ENABLE_<depPkg>`` will be set even for required upstream
     packages to allow for uniform loops involving required and optional
@@ -338,13 +333,8 @@ the dependencies for each external package/TPL and internal package:
 
     This list of all **define direct** extra package test required and
     optional upstream external package/TPL and internal package dependencies.
-    (Currently, this is a concatenation of the lists
-    `${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`_,
-    `${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES`_,
-    ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_TPLS``, and
-    ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS``.  With the completion of #63,
-    the ``XXX_TPLS`` lists will be removed.)  This list is set regardless if
-    the package ``${PACKAGE_NAME}`` is enabled or not.
+    This list is set regardless if the package ``${PACKAGE_NAME}`` is enabled
+    or not.
 
   .. _${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES:
 
@@ -390,17 +380,17 @@ Given the above upstream dependency list variables, the following derived list
 variables are then constructed which provide navigation from a package to its
 downstream/forward dependent packages:
 
-  .. _${PACKAGE_NAME}_FORWARD_LIB_DEP_PACKAGES:
+  .. _${PACKAGE_NAME}_FORWARD_LIB_DEFINED_DEPENDENCIES:
 
-  ``${PACKAGE_NAME}_FORWARD_LIB_DEP_PACKAGES``
+  ``${PACKAGE_NAME}_FORWARD_LIB_DEFINED_DEPENDENCIES``
 
     For a given package ``${PACKAGE_NAME}``, lists the names of all of the
     forward packages ``<fwdDepPkg>`` that list this package in their
     ``<fwdDepPkg>_LIB_DEFINED_PACKAGES`` variables.
 
-  .. _${PACKAGE_NAME}_FORWARD_TEST_DEP_PACKAGES:
+  .. _${PACKAGE_NAME}_FORWARD_TEST_DEFINED_DEPENDENCIES:
 
-  ``${PACKAGE_NAME}_FORWARD_TEST_DEP_PACKAGES``
+  ``${PACKAGE_NAME}_FORWARD_TEST_DEFINED_DEPENDENCIES``
 
     For a given package ``${PACKAGE_NAME}``, lists the names of all of the
     forward packages ``<fwdDepPkg>`` that list this package in their
@@ -452,6 +442,7 @@ or::
   -D <PackageTreatedAsExternal>_ROOT=<path>
 
 .. _${PACKAGE_NAME}_PACKAGE_BUILD_STATUS:
+.. _${TPL_NAME}_PACKAGE_BUILD_STATUS:
 
 The final status of whether a package is treated as an internal package or an
 external package is provided by the variable::
@@ -520,86 +511,6 @@ information about a given internal package:
     or executables) this this will have the dependency only on
     ${PARENT_PACKAGE_NAME}_libs.  Note that subpackages don't have this
     variable defined for them.
-
-
-Legacy list variables defining the package dependencies graph
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The following top-level non-cache variables are defined after reading in each
-top-level package and subpackage ``Dependencies.cmake`` files and they are
-used to define the basic dependencies that exist between packages in a project
-to support the enable and disable logic described in section `Package
-Dependencies and Enable/Disable Logic`_.  These variables taken together
-constitute a bidirectional acyclic graph (DAG) data-structure for package
-dependencies.
-
-The following lists variables define the **direct** dependencies from a
-package ``${PACKAGE_NAME}`` to its upstream packages which are directly set in
-a package's `<packageDir>/cmake/Dependencies.cmake`_ file.  (These lists
-should **not** contain any *indirect* dependencies as the dependency system
-already handles these automatically.)
-
-  .. _${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``
-
-    List of *direct* package dependencies that are required for the libraries
-    and non-test executables built by ``${PACKAGE_NAME}``.
-
-  .. _${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``
-
-    List of *direct* package dependencies that are only optional for the
-    libraries and non-test executables built by ``${PACKAGE_NAME}``.
-
-  .. _${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``
-
-    List of *direct* package dependencies that are required for the
-    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
-    contain any of the packages already listed in
-    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``.
-
-  .. _${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES```
-
-    List of *direct* package dependencies that are optional for the
-    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
-    contain any of the packages listed in
-    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``,
-    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``, or
-    ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``.
-
-Given the above upstream dependency list variables, the following derived list
-variables are then constructed which provide navigation from a package to its
-downstream/forward dependent packages:
-
-  ``${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES``
-
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES`` variables.
-
-  ``${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES``
-
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES`` variables.
-
-  ``${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES``
-
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`` variables.
-
-  ``${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES``
-
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES`` variables.
 
 
 Function call tree for constructing package dependency graph

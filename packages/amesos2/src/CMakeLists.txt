@@ -60,7 +60,7 @@ SET(SOURCES "")
 
 ASSERT_DEFINED(PROJECT_SOURCE_DIR)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
 # If we use Trilinos_version then "make install" will fail.
 #APPEND_SET(HEADERS
@@ -69,7 +69,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
 # Set headers (for IDEs and installing)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
@@ -78,14 +78,14 @@ APPEND_SET(HEADERS
 # NOTE: Above, we add the XXX_config.h file so that MS Visual Studio
 # will know to include this file in the dependency analysis
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Source)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
-INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Source)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
+TRIBITS_INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp
@@ -258,7 +258,7 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Amesos2_Basker.cpp
       )
 
-   	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
+   	TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
    	APPEND_SET(HEADERS				
       basker/basker.hpp
       basker/basker_decl.hpp
