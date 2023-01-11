@@ -44,6 +44,11 @@
 
 // This header file only exists for backwards compatibility.
 // It may be removed in the next Tpetra release.
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_MultiVectorKernelOps.hpp is deprecated."
+#endif
+
+
 
 #endif // KOKKOS_MULTIVECTOR_KERNELOPS_HPP
 

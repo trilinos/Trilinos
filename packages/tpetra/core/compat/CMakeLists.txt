@@ -12,9 +12,18 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.h)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+  APPEND_SET(HEADERS KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  APPEND_SET(HEADERS Kokkos_DefaultNode.hpp)
+  APPEND_SET(HEADERS Kokkos_ConfigDefs.hpp)  # FIXME: This needs to go too
+  APPEND_SET(SOURCES KokkosCompat_ClassicNodeAPI_Wrapper.cpp)
+ELSE()
+  APPEND_GLOB(HEADERS ${DIR}/*.h)
+  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
