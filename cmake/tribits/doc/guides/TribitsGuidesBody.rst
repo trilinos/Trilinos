@@ -2269,6 +2269,11 @@ This defines all of the TPLs that ``<tplName>`` could directly depends on but
 only dependencies for enabled upstream TPLs will be added to the IMPORTED
 targets.
 
+NOTE: TPL-to-TPL dependencies are optional.  Therefore, in the above example,
+enabling the TPL ``<tplName>`` will not auto-enable a dependent upstream TPL
+``<upstreamTpl_i>``.  Likewise, disabling an upstream TPL ``<upstreamTpl_i>``
+will not auto-disable a dependent downstream TPL ``<tplName>``.
+
 
 TriBITS External Package/TPL Core Variables
 ...........................................
@@ -3676,19 +3681,24 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests:
 
-17) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests**:
-    Setting the user cache-variable
+17) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream
+    packages/tests**: Setting the user cache-variable
     ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_PACKAGES=ON`` will result in the
-    `downstream`_ ``PT`` packages and tests to be enabled (and all ``PT``
-    and ``ST`` packages and tests when
+    `downstream`_ ``PT`` internal packages and tests to be enabled (and all
+    ``PT`` and ``ST`` packages and tests when
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON``) for all explicitly enabled
-    packages.  For example, configuring with ``Trilinos_ENABLE_Epetra=ON``,
-    ``Trilinos_ENABLE_TESTS=ON``, and
+    internal packages.  For example, in the mock Trilinos project, configuring
+    with ``Trilinos_ENABLE_Epetra=ON``, ``Trilinos_ENABLE_TESTS=ON``, and
     ``Trilinos_ENABLE_ALL_FORWARD_PACKAGES=ON`` will result the package
-    enables (and test and example enables) for the packages ``Triutils``,
-    ``EpetraExt``, ``ThyraCoreLibs``, ``ThyraEpetra`` and ``Thyra``.  For an
-    example, see `Explicit enable of a package and downstream packages and
-    tests`_.
+    enables (and test and example enables) for the downstream packages
+    ``Triutils``, ``EpetraExt``, ``ThyraCoreLibs``, ``ThyraEpetra`` and
+    ``Thyra``.  For an example, see `Explicit enable of a package and
+    downstream packages and tests`_.  Note that when setting this option, the
+    enable of an external package/TPL will **not** result in the auto-enable
+    of downstream internal packages.  For example, setting
+    ``Trilinos_ENABLE_BLAS=ON`` will not result in the auto-enable of any
+    internal packages that depend on ``BLAS`` like ``Teuchos`` (in the mock
+    Trilinos project).
 
 .. _${PROJECT_NAME}_ENABLE_ALL_PACKAGES:
 
