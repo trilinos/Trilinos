@@ -97,7 +97,7 @@ typedef LO ...;
 // e.g., int, long, ptrdif_t, int64_t, ...
 typedef GO ...; 
 // The Node type.  e.g., Kokkos::DefaultNode::DefaultNodeType, 
-// defined in Kokkos_DefaultNode.hpp.
+// defined in KokkosCompat_DefaultNode.hpp.
 typedef NT ...; 
 \endcode
 

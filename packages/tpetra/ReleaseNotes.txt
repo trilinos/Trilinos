@@ -963,7 +963,7 @@ following:
 
   2. Set the CMake option Tpetra_ENABLE_Kokkos_Refactor to ON.
 
-  3. Include either Kokkos_DefaultNode.hpp or
+  3. Include either KokkosCompat_DefaultNode.hpp or
      KokkosCompat_ClassicNodeAPI_Wrapper.hpp, if they are not already
      included by the relevant Tpetra header files.
 

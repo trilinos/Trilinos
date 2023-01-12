@@ -50,7 +50,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include <Teuchos_StackedTimer.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"

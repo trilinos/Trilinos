@@ -2,7 +2,7 @@
 #define __IFPACK2_BASKERILU_HPP__
 //Include needed Trilinos
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 

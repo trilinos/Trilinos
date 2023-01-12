@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 
 namespace KokkosClassic {
 

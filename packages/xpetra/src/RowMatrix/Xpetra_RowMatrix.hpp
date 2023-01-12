@@ -51,7 +51,7 @@
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
 #include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Vector.hpp"

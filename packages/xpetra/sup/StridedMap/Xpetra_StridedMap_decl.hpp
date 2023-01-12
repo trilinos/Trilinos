@@ -49,7 +49,7 @@
 #ifndef XPETRA_STRIDEDMAP_DECL_HPP
 #define XPETRA_STRIDEDMAP_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"

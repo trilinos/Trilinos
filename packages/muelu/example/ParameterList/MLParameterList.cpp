@@ -47,7 +47,7 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+#include <KokkosCompat_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 
 #include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
 
