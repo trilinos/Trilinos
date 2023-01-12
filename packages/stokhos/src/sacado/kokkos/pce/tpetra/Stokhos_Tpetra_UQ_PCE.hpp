@@ -54,7 +54,6 @@
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"

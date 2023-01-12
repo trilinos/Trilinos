@@ -45,6 +45,10 @@
 #define KOKKOS_LINALG_VERSION_HPP_
 
 // This header file only exists for backwards compatibility.
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_LinAlgVersion.hpp is deprecated."
+#endif
+
 
 #endif // KOKKOS_LINALG_VERSION_HPP_
 
