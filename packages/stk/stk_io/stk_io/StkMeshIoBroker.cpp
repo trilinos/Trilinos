@@ -574,13 +574,17 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
             properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
         }
     }
-
     auto output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
                                                          properties, input_region, type, openFileImmediately));
     m_outputFiles.push_back(output_file);
-
     size_t index_of_output_file = m_outputFiles.size()-1;
     return index_of_output_file;
+}
+
+void StkMeshIoBroker::close_output_mesh(size_t output_file_index) {
+    if(!is_index_valid(m_outputFiles, output_file_index)) return;
+    m_outputFiles[output_file_index]->flush_output();
+    m_outputFiles[output_file_index].reset();
 }
 
 void StkMeshIoBroker::update_sidesets() {
@@ -611,7 +615,7 @@ void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 void StkMeshIoBroker::flush_output() const
 {
     for (const auto& out_file : m_outputFiles) {
-        out_file->flush_output();
+      if(out_file) out_file->flush_output();
     }
     for (const auto& hb : m_heartbeat) {
         hb->flush_output();

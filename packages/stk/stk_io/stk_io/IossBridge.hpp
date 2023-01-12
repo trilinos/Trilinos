@@ -55,13 +55,12 @@
 #include "stk_mesh/base/FieldState.hpp"     // for FieldState
 #include "stk_mesh/base/Part.hpp"           // for Part
 #include "stk_topology/topology.hpp"        // for topology
-#include "stk_util/util/ParameterList.hpp"  // for STK_ANY_NAMESPACE, Type
+#include "stk_util/util/ParameterList.hpp"  // for Type
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 namespace Ioss { class DatabaseIO; }
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
 namespace Ioss { class Region; }
-namespace Teuchos { class any; }
 namespace stk { namespace io { struct FieldAndName; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
@@ -102,12 +101,12 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta);
 
 struct GlobalAnyVariable {
-  GlobalAnyVariable(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
+  GlobalAnyVariable(const std::string &name, const std::any *value, stk::util::ParameterType::Type type)
     : m_name(name), m_value(value), m_type(type)
   {}
 
   std::string m_name;
-  const STK_ANY_NAMESPACE::any *m_value;
+  const std::any *m_value;
   stk::util::ParameterType::Type m_type;
 };
 

@@ -47,9 +47,7 @@
 #include <iterator>
 #include <type_traits>
 
-namespace stk
-{
-namespace mesh
+namespace stk::mesh
 {
 
 namespace
@@ -563,27 +561,23 @@ stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh:
     return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, sideRank);
 }
 
-template<class IterType,
-         typename std::enable_if<std::is_same<std::vector<std::pair<EntityKey,Entity>>::const_iterator, IterType>::value,bool>::type = true>
+template<class IterType>
 EntityId get_max_id(IterType begin, IterType end)
 {
   EntityId maxId = 0;
-  if (begin != end) {
-    IterType lastEntityKeyEntityPair = --end;
-    maxId = lastEntityKeyEntityPair->first.id();
+  if constexpr (std::is_same_v<std::vector<std::pair<EntityKey,Entity>>::const_iterator, IterType>)
+  {
+    if (begin != end) {
+      IterType lastEntityKeyEntityPair = --end;
+      maxId = lastEntityKeyEntityPair->first.id();
+    }
   }
-  return maxId;
-}
-
-template<class IterType,
-         typename std::enable_if<!std::is_same<std::vector<std::pair<EntityKey,Entity>>::const_iterator, IterType>::value,bool>::type = true>
-EntityId get_max_id(IterType begin, IterType end)
-{
-  EntityId maxId = 0;
-  for(IterType iter = begin; iter != end; ++iter) {
-    maxId = std::max(maxId, iter->first.id());
+  else
+  {
+    for(IterType iter = begin; iter != end; ++iter) {
+      maxId = std::max(maxId, iter->first.id());
+    } 
   }
-
   return maxId;
 }
 
@@ -592,5 +586,4 @@ EntityId get_max_id_on_local_proc(const BulkData& bulk, EntityRank rank)
   return get_max_id(bulk.begin_entities(rank), bulk.end_entities(rank));
 }
 
-}
 }

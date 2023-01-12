@@ -44,12 +44,11 @@
 #include <stk_io/IOHelpers.hpp>             // for internal_add_global
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
 #include <stk_mesh/base/Selector.hpp>       // for Selector
-#include <stk_util/util/ParameterList.hpp>  // for STK_ANY_NAMESPACE, Type
+#include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                           // for string
 #include <utility>                          // for pair, swap
 #include <vector>                           // for vector
 #include "Teuchos_RCPDecl.hpp"              // for RCP
-#include "Teuchos_any.hpp"                  // for any
 #include "mpi.h"                            // for MPI_Comm, ompi_communicat...
 #include "stk_io/FieldAndName.hpp"          // for FieldAndName, UserDataAnd...
 #include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
@@ -165,7 +164,7 @@ public:
     template<typename T>
     void add_global(const std::string &variableName, const T& value, stk::util::ParameterType::Type type)
     {
-      STK_ANY_NAMESPACE::any anyValue(value);
+      std::any anyValue(value);
       std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, anyValue);
       m_anyGlobalVariablesDefined = true;
       internal_add_global(m_region, variableName, parameter_type.first, parameter_type.second);

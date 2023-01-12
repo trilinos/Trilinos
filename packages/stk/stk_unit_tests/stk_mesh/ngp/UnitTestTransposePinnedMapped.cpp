@@ -128,7 +128,7 @@ public:
     Kokkos::deep_copy(hostBucketComponentsPerEntity, numPerEntity);
     Kokkos::deep_copy(deviceBucketComponentsPerEntity, hostBucketComponentsPerEntity);
 
-    deviceBucketsMarkedModified = stk::mesh::BoolViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numAlloc);
+    deviceBucketsMarkedModified = stk::mesh::UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numAlloc);
     hostBucketsMarkedModified = Kokkos::create_mirror_view(deviceBucketsMarkedModified);
     Kokkos::deep_copy(hostBucketsMarkedModified, true);
     Kokkos::deep_copy(deviceBucketsMarkedModified, hostBucketsMarkedModified);
@@ -176,8 +176,8 @@ protected:
   stk::mesh::UnsignedViewType::HostMirror  hostBucketSizes;
   stk::mesh::UnsignedViewType  deviceBucketComponentsPerEntity;
   stk::mesh::UnsignedViewType::HostMirror  hostBucketComponentsPerEntity;
-  stk::mesh::BoolViewType  deviceBucketsMarkedModified;
-  stk::mesh::BoolViewType::HostMirror  hostBucketsMarkedModified;
+  stk::mesh::UnsignedViewType  deviceBucketsMarkedModified;
+  stk::mesh::UnsignedViewType::HostMirror  hostBucketsMarkedModified;
 };
 
 TEST_F(TestTranspose, no_overallocation_transpose_from)

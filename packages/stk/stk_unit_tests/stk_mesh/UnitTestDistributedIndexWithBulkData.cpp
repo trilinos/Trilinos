@@ -132,12 +132,6 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
       requests[0] = 4;
     }
 
-    size_t totalCount = 0;
-    for(size_t i = 0; i < requests.size(); i++)
-    {
-      totalCount += requests[i];
-    }
-
     distributedIndex.generate_new_keys(requests, requested_key_types);
 
     size_t numNodesInMesh = 27;

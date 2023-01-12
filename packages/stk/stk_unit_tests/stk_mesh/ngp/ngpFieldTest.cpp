@@ -1795,4 +1795,11 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
   check_field_data_on_device<int>(ngpFieldByRef, stkField);
 }
 
+TEST(NgpField, checkSizeof)
+{
+  size_t expectedNumBytes = 400;
+  std::cout << "sizeof(stk::mesh::NgpField<double>): " << sizeof(stk::mesh::NgpField<double>) << std::endl;
+  EXPECT_TRUE(expectedNumBytes >= sizeof(stk::mesh::NgpField<double>));
+}
+
 }
