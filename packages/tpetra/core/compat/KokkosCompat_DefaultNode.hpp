@@ -42,7 +42,7 @@
 #ifndef KOKKOSCOMPAT_DEFAULTNODE_HPP
 #define KOKKOSCOMPAT_DEFAULTNODE_HPP
 
-#include "KokkosCompat_ConfigDefs.hpp"
+#include "TpetraCore_config.h"
 #include "KokkosClassic_DefaultNode_config.h"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Teuchos_RCP.hpp"
