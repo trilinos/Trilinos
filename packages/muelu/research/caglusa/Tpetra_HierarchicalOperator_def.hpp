@@ -150,6 +150,8 @@ namespace Tpetra {
       defaultParams.set("Coarsening criterion", "transferLevels");
       defaultParams.set("debugOutput", false);
       defaultParams.set("keepTransfers", -1);
+      defaultParams.set("treeCoarseningFactor", 2.0);
+      defaultParams.set("leftOverFactor", 1.0);
       if (params_.is_null())
         params_ = Teuchos::rcp(new Teuchos::ParameterList(""));
       params_->validateParametersAndSetDefaults(defaultParams);
@@ -643,6 +645,19 @@ namespace Tpetra {
         RCP<vec_type> tempV = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
         RCP<vec_type> tempV2 = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
         int keepTransfers = params_->get<int>("keepTransfers",-1);
+        if (keepTransfers == -1) {
+          double leftOverFactor = params_->get<double>("leftOverFactor");
+          keepTransfers = transferMatrices_.size();
+          double temp = (1.0 / coarseningRate) * leftOverFactor;
+          const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
+          while (temp >= 2.0) {
+            --keepTransfers;
+            temp /= treeCoarseningFactor;
+          }
+          keepTransfers = std::max(keepTransfers, 0);
+          params_->set("leftOverFactor", temp);
+        }
+
         for (int k = Teuchos::as<int>(transferMatrices_.size())-1; k>=0; --k) {
 
           size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();

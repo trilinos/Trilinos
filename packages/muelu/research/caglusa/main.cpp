@@ -117,7 +117,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = true;
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
+  const MagnitudeType tol = 100000*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
   RCP<op_type> op;
   RCP<HOp> hop;
