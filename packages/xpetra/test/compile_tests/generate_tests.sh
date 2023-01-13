@@ -25,7 +25,6 @@ $not_a_templated_class
 
 TpetraCore_config.h
 KokkosCompat_DefaultNode.hpp
-KokkosCompat_DefaultNode.hpp
 Xpetra_ConfigDefs.hpp
 Xpetra_Exceptions.hpp
 Xpetra_UseDefaultTypes.hpp
