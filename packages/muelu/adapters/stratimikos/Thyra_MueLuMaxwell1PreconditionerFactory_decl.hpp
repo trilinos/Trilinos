@@ -51,7 +51,7 @@
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"

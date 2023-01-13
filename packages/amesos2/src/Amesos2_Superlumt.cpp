@@ -129,7 +129,7 @@ namespace Amesos2 {
 #endif
 
 
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_SUPERLUMT_LOCAL_INSTANT(S,LO,GO,N)                        \

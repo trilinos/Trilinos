@@ -49,7 +49,7 @@
 #define Moertel_ExplicitTemplateInstantiation_hpp
 
 #include "Moertel_config.h"
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #ifdef HAVE_MOERTEL_TPETRA
 //typedef DefaultNodeType KokkosNode;

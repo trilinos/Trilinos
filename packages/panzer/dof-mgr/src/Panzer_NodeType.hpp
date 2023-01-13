@@ -43,7 +43,7 @@
 #ifndef PANZER_KOKKOS_NODE_TYPE_HPP
 #define PANZER_KOKKOS_NODE_TYPE_HPP
 
-//#include "Kokkos_DefaultNode.hpp"
+//#include "KokkosCompat_DefaultNode.hpp"
 //#include "Tpetra_Map.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"

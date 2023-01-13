@@ -54,7 +54,7 @@ namespace Amesos2 {
 #endif
 }
 
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 
 #define AMESOS2_MUMPS_LOCAL_INSTANT(SC,LO,GO,N)                        \

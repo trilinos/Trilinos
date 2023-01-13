@@ -48,7 +48,7 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 

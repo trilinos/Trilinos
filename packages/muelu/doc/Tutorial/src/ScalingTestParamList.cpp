@@ -49,7 +49,7 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+#include <KokkosCompat_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 
 #include "Xpetra_ConfigDefs.hpp"
 #include <Xpetra_MultiVectorFactory.hpp>

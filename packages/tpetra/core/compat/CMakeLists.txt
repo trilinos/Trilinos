@@ -14,19 +14,34 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 
+APPEND_GLOB(HEADERS ${DIR}/*.h)
+
+# NOTE: Once the deprecated code is removed this entire block should be replaced with
+# APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+# APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
   APPEND_SET(HEADERS KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  APPEND_SET(HEADERS KokkosCompat_DefaultNode.hpp)
 
-  # TODO: Kokkos_DefaultNode.hpp needs to be renamed and downstream code changed
-  APPEND_SET(HEADERS Kokkos_DefaultNode.hpp)
-  # TODO: Kokkos_ConfigDefs.hpp needs to be removed from the downstream code that calls it so
-  # this can be deleted
-  APPEND_SET(HEADERS Kokkos_ConfigDefs.hpp)
   APPEND_SET(SOURCES KokkosCompat_ClassicNodeAPI_Wrapper.cpp)
 ELSE()
-  APPEND_GLOB(HEADERS ${DIR}/*.h)
-  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+
+  APPEND_SET(HEADERS Kokkos_BufferMacros.hpp 
+    KokkosCompat_ClassicNodeAPI_Wrapper.hpp 
+    Kokkos_ConfigDefs.hpp
+    Kokkos_DefaultNode.hpp
+    Kokkos_LinAlgVersion.hpp
+    Kokkos_MultiVectorKernelOps.hpp
+    Kokkos_NodeAPIConfigDefs.hpp
+    Kokkos_Version.hpp
+    )
+  APPEND_SET(HEADERS 
+    KokkosCompat_ClassicNodeAPI_Wrapper.cpp
+    Kokkos_DefaultNode.cpp
+    Kokkos_Version.cpp
+    )
+
 ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
