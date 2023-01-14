@@ -428,7 +428,7 @@ int main(int narg, char *arg[])
   using MultiVector  = Tpetra::MultiVector<ST>;
   typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
  
-  /*Teuchos::RCP<MultiVector > V;
+  Teuchos::RCP<MultiVector > V;
   if (vector_file ==""){
     V = Teuchos::rcp(new MultiVector(map, 10));
     V->randomize();
@@ -439,7 +439,7 @@ int main(int narg, char *arg[])
     Teuchos::RCP<const Tpetra::Map<> > vector_map = V->getMap();
     if(me == 0)
       std::cout << "Done with reading/creating the eigenvector." << std::endl;
-  }*/
+  }
    // TODO Insert MultiVector Reader 
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
@@ -517,9 +517,10 @@ int main(int narg, char *arg[])
     }
     else{
        std::cout << "Problem to be solved with user-provided vectors." << std::endl;
-       std::cout << "NEVERMIND. That option has beend disabled." << std::endl;
-       return 0;
-       //problem->solve(V);
+       //std::cout << "NEVERMIND. That option has been disabled." << std::endl;
+       std::cout << "DANGER!!! Use this option at your own risk!" << std::endl;
+       //return 0;
+       problem->solve(V);
     }
   }
 	pComm->barrier();

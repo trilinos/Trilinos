@@ -211,7 +211,7 @@ static void setSphynxValidatorsInList(
     using PartitioningProblem<Adapter>::solve; 
     //^^ Required so can call base class solve() and not two-parameter 
     // version defined here. 
-    //void solve(Teuchos::RCP<mvector_t> &userEigenVects);
+    void solve(Teuchos::RCP<mvector_t> &userEigenVects);
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
                          Environment &env, bool& removeSelfEdges, bool& isGraphType, bool& needConsecutiveGlobalIds) override;
@@ -254,9 +254,11 @@ static void setSphynxValidatorsInList(
     this->algName_ = std::string("sphynx");
   }
 
- /* template <typename Adapter>
+  template <typename Adapter>
   void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
   {
+
+    this->createPartitioningProblem(true);
     // Create the algorithm
     try {
       this->createAlgorithm();
@@ -279,7 +281,7 @@ static void setSphynxValidatorsInList(
       this->algorithm_->partition(this->solution_, userEigenVects);
     }
     Z2_FORWARD_EXCEPTIONS;
-  }*/
+  }
 
   template <typename Adapter>
   void SphynxProblem<Adapter>::createAlgorithm()
