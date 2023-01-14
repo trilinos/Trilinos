@@ -1342,9 +1342,8 @@ fourthKindApplyImpl (const op_type& A,
   }
 
   for (int i = 0; i < numIters; ++i) {
-    const auto index = i+1;
-    const ST zScale = (2 * index - 3) / (2 * index + 1);
-    const ST rScale = (8 * index - 4.0) / (2 * index + 1) / lambdaMax;
+    const ST zScale = (2.0 * i - 1.0) / (2.0 * i + 3.0);
+    const ST rScale = (8.0 * i + 4.0) / (2.0 * i + 3.0) / lambdaMax;
 
     solve (P, D_inv, R); // P = D_inv * R, that is, D \ R.
 

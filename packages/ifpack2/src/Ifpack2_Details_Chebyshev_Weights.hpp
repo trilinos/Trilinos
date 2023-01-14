@@ -65,32 +65,32 @@ namespace Details {
   ///    https://arxiv.org/pdf/2202.08830.pdf
   ///   for details.
   ///
-  /// \pre 0 < numIters <= 16 -- this is an arbitrary distinction,
+  /// \pre 0 < chebyOrder <= 16 -- this is an arbitrary distinction,
   ///      but the weights are currently hard-coded from the
   ///      MATLAB scripts from https://arxiv.org/pdf/2202.08830.pdf.
   ///
-  /// \param numIters [in] Number of Chebyshev iterations.
+  /// \param chebyOrder [in] Number of Chebyshev iterations.
   template<typename ScalarType>
   std::vector<ScalarType>
-  optimalWeightsImpl (const int numIters)
+  optimalWeightsImpl (const int chebyOrder)
   {
-    if (numIters == 0){
+    if (chebyOrder == 0){
       return {};
     }
-    if (numIters == 1){
+    if (chebyOrder == 1){
       return {
           1.12500000000000,
       };
     }
 
-    if (numIters == 2){
+    if (chebyOrder == 2){
       return {
           1.02387287570313,
           1.26408905371085,
       };
     }
 
-    if (numIters == 3){
+    if (chebyOrder == 3){
       return {
           1.00842544782028,
           1.08867839208730,
@@ -98,7 +98,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 4){
+    if (chebyOrder == 4){
       return {
           1.00391310427285,
           1.04035811188593,
@@ -107,7 +107,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 5){
+    if (chebyOrder == 5){
       return {
           1.00212930146164,
           1.02173711549260,
@@ -117,7 +117,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 6){
+    if (chebyOrder == 6){
       return {
           1.00128517255940,
           1.01304293035233,
@@ -128,7 +128,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 7){
+    if (chebyOrder == 7){
       return {
           1.00083464397912,
           1.00843949430122,
@@ -140,7 +140,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 8){
+    if (chebyOrder == 8){
       return {
           1.00057246631197,
           1.00577427662415,
@@ -153,7 +153,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 9){
+    if (chebyOrder == 9){
       return {
           1.00040960072832,
           1.00412439506106,
@@ -167,7 +167,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 10){
+    if (chebyOrder == 10){
       return {
           1.00030312229652,
           1.00304840660796,
@@ -182,7 +182,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 11){
+    if (chebyOrder == 11){
       return {
           1.00023058595209,
           1.00231675024028,
@@ -198,7 +198,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 12){
+    if (chebyOrder == 12){
       return {
           1.00017947200828,
           1.00180189139619,
@@ -215,7 +215,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 13){
+    if (chebyOrder == 13){
       return {
           1.00014241921559,
           1.00142906932629,
@@ -233,7 +233,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 14){
+    if (chebyOrder == 14){
       return {
           1.00011490538261,
           1.00115246376914,
@@ -252,7 +252,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 15){
+    if (chebyOrder == 15){
       return {
           1.00009404750752,
           1.00094291696343,
@@ -272,7 +272,7 @@ namespace Details {
       };
     }
 
-    if (numIters == 16){
+    if (chebyOrder == 16){
       return {
           1.00007794828179,
           1.00078126847253,
@@ -295,7 +295,7 @@ namespace Details {
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, "Ifpack2::Details::optimalWeightsImpl::"
-        "Requested Chebyshev iterations exceeds maximum of 16."
+        "Requested Chebyshev order exceeds maximum of 16."
       );
   }
 
