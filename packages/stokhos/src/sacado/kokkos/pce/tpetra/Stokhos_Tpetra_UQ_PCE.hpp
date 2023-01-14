@@ -54,7 +54,6 @@
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
@@ -68,7 +67,7 @@ namespace Kokkos {
     Kokkos::View<Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView< Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
@@ -86,7 +85,7 @@ namespace Kokkos {
     Kokkos::View<const Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;

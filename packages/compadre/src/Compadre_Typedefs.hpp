@@ -102,14 +102,14 @@ typedef typename pool_type::generator_type generator_type;
 // KOKKOS_VERSION / 100 % 100 is the minor version
 // KOKKOS_VERSION / 10000 is the major version
 #ifdef KOKKOS_VERSION
-  #define KOKKOS_VERSION_MAJOR KOKKOS_VERSION / 10000
-  #define KOKKOS_VERSION_MINOR KOKKOS_VERSION / 100 % 100 
-  #if KOKKOS_VERSION_MAJOR  < 4
-    #if KOKKOS_VERSION_MINOR >= 7
+  #define COMPADRE_KOKKOS_VERSION_MAJOR KOKKOS_VERSION / 10000
+  #define COMPADRE_KOKKOS_VERSION_MINOR KOKKOS_VERSION / 100 % 100
+  #if COMPADRE_KOKKOS_VERSION_MAJOR < 4
+    #if COMPADRE_KOKKOS_VERSION_MINOR >= 7
         using KokkosInitArguments = Kokkos::InitializationSettings;
-        #define KOKKOS_GREATEREQUAL_3_7
+        #define COMPADRE_KOKKOS_GREATEREQUAL_3_7
         constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-num-threads";
-    #elif KOKKOS_VERSION_MINOR < 7
+    #elif COMPADRE_KOKKOS_VERSION_MINOR < 7
         using KokkosInitArguments = Kokkos::InitArguments;
         constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-threads";
     #endif

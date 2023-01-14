@@ -39,54 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_DEFAULTNODE_HPP
-#define KOKKOS_DEFAULTNODE_HPP
 
-#include "Kokkos_ConfigDefs.hpp"
-#include "KokkosClassic_DefaultNode_config.h"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Teuchos_RCP.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Teuchos {
-  // Dear users: This is just a forward declaration.
-  // Please skip over it.
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-namespace KokkosClassic {
-
-
-  /// \brief Specify Tpetra's default Node type.
-  ///
-  /// Tpetra::Map uses this class to get Tpetra's default Node type.
-  /// <i>This is an implementation detail of Tpetra</i>.  If you want
-  /// to know the default Node type, just ask Tpetra::Map, like this:
-  /// \code
-  /// typedef Tpetra::Map<>::node_type default_node_type;
-  /// \endcode
-  class DefaultNode {
-  public:
-#if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosSYCLWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosHIPWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-#else
-#    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
+// This header file only exists for backwards compatibility.
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated.  Use KokkosCompat_DefaultNode.hpp instead."
 #endif
-
-  };
-
-} // namespace KokkosClassic
-
-#endif // KOKKOS_DEFAULTNODE_HPP
-

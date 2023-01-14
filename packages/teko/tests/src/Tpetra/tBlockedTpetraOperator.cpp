@@ -175,6 +175,7 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    TEST_MSG("\n   tBlockedTpetraOperator::test_vector_constr: "
          << "Running on " << comm_epetra.NumProc() << " processors");
@@ -284,6 +285,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
 

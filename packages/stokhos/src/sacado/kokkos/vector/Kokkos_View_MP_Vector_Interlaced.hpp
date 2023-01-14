@@ -350,11 +350,6 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
   template< class AllocationProperties >
   explicit inline
   View( const AllocationProperties & prop ,
@@ -434,7 +429,7 @@ public:
   //------------------------------------
   // Scalar operator on traits::rank == 1
 
-  typedef Impl::if_c< ( traits::rank == 1 ),
+  typedef std::conditional< ( traits::rank == 1 ),
                       reference_type ,
                       Impl::ViewError::scalar_operator_called_from_non_scalar_view >
     if_scalar_operator ;
@@ -902,13 +897,13 @@ public:
   // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
   // However, the compiler will still generate this type declaration and it must not have a zero length.
   typedef typename
-    if_c< StorageType::is_static
+    std::conditional< StorageType::is_static
         , typename nested::array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
         , typename nested::array_intrinsic_type *
         >::type array_intrinsic_type ;
 
   typedef typename
-    if_c< StorageType::is_static
+    std::conditional< StorageType::is_static
         , typename nested::const_array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
         , typename nested::const_array_intrinsic_type *
         >::type const_array_intrinsic_type ;

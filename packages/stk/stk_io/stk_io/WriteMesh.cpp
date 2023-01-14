@@ -6,8 +6,6 @@
 #include "Ioss_Field.h"                // for Field, Field::RoleType, Field:...
 #include "Ioss_Property.h"             // for Property
 #include "Ioss_Region.h"               // for Region
-#include "Teuchos_RCP.hpp"             // for RCP::operator->
-#include "Teuchos_RCPDecl.hpp"         // for RCP
 #include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose
 #include "stk_io/IossBridge.hpp"       // for get_field_role
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker

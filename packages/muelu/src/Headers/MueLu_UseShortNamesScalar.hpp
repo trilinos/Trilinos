@@ -3,421 +3,424 @@
 #include <Xpetra_UseShortNamesScalar.hpp>
 
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregationExportFactory;
+using AggregationExportFactory [[maybe_unused]] = MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
-typedef MueLu::AggregateQualityEstimateFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregateQualityEstimateFactory;
+using AggregateQualityEstimateFactory [[maybe_unused]] = MueLu::AggregateQualityEstimateFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
-typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory;
+using AmalgamationFactory [[maybe_unused]] = MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_AMALGAMATIONFACTORY_KOKKOS_SHORT
-typedef MueLu::AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> AmalgamationFactory_kokkos;
+using AmalgamationFactory_kokkos [[maybe_unused]] = MueLu::AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_AMESOS2SMOOTHER_SHORT
-typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amesos2Smoother;
+using Amesos2Smoother [[maybe_unused]] = MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_AMGXOPERATOR_SHORT
-typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator;
+using AMGXOperator [[maybe_unused]] = MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
-typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
+using AlgebraicPermutationStrategy [[maybe_unused]] = MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BELOSSMOOTHER_SHORT
-typedef MueLu::BelosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BelosSmoother;
+using BelosSmoother [[maybe_unused]] = MueLu::BelosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLACKBOXPFACTORY_SHORT
-typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBoxPFactory;
+using BlackBoxPFactory [[maybe_unused]] = MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
-typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoarseMapFactory;
+using BlockedCoarseMapFactory [[maybe_unused]] = MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
-typedef MueLu::BlockedCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoordinatesTransferFactory;
+using BlockedCoordinatesTransferFactory [[maybe_unused]] = MueLu::BlockedCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
-typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
+using BlockedDirectSolver [[maybe_unused]] = MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
-typedef MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedGaussSeidelSmoother;
+using BlockedGaussSeidelSmoother [[maybe_unused]] = MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDJACOBISMOOTHER_SHORT
-typedef MueLu::BlockedJacobiSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedJacobiSmoother;
+using BlockedJacobiSmoother [[maybe_unused]] = MueLu::BlockedJacobiSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDPFACTORY_SHORT
-typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedPFactory;
+using BlockedPFactory [[maybe_unused]] = MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BLOCKEDRAPFACTORY_SHORT
-typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedRAPFactory;
+using BlockedRAPFactory [[maybe_unused]] = MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BRICKAGGREGATIONFACTORY_SHORT
-typedef MueLu::BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BrickAggregationFactory;
+using BrickAggregationFactory [[maybe_unused]] = MueLu::BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_BRAESSSARAZINSMOOTHER_SHORT
-typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BraessSarazinSmoother;
+using BraessSarazinSmoother [[maybe_unused]] = MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CGSOLVER_SHORT
-typedef MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> CGSolver;
+using CGSolver [[maybe_unused]] = MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CLASSICALMAPFACTORY_SHORT
-typedef MueLu::ClassicalMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ClassicalMapFactory;
+using ClassicalMapFactory [[maybe_unused]] = MueLu::ClassicalMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CLASSICALPFACTORY_SHORT
-typedef MueLu::ClassicalPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ClassicalPFactory;
+using ClassicalPFactory [[maybe_unused]] = MueLu::ClassicalPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CLONEREPARTITIONINTERFACE_SHORT
-typedef MueLu::CloneRepartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> CloneRepartitionInterface;
+using CloneRepartitionInterface [[maybe_unused]] = MueLu::CloneRepartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COALESCEDROPFACTORY_SHORT
-typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoalesceDropFactory;
+using CoalesceDropFactory [[maybe_unused]] = MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
-typedef MueLu::CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoalesceDropFactory_kokkos;
+using CoalesceDropFactory_kokkos [[maybe_unused]] = MueLu::CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
-typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory;
+using CoarseMapFactory [[maybe_unused]] = MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COARSEMAPFACTORY_KOKKOS_SHORT
-typedef MueLu::CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory_kokkos;
+using CoarseMapFactory_kokkos [[maybe_unused]] = MueLu::CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
-typedef MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseningVisualizationFactory;
+using CoarseningVisualizationFactory [[maybe_unused]] = MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CONSTRAINT_SHORT
-typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node> Constraint;
+using Constraint [[maybe_unused]] = MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_CONSTRAINTFACTORY_SHORT
-typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ConstraintFactory;
+using ConstraintFactory [[maybe_unused]] = MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
-typedef MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory;
+using CoordinatesTransferFactory [[maybe_unused]] = MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_KOKKOS_SHORT
-typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory_kokkos;
+using CoordinatesTransferFactory_kokkos [[maybe_unused]] = MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
-typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
+using CoupledRBMFactory [[maybe_unused]] = MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_DEMOFACTORY_SHORT
-typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
+using DemoFactory [[maybe_unused]] = MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_DIRECTSOLVER_SHORT
-typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> DirectSolver;
+using DirectSolver [[maybe_unused]] = MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
-typedef MueLu::DropNegativeEntriesFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DropNegativeEntriesFactory;
+using DropNegativeEntriesFactory [[maybe_unused]] = MueLu::DropNegativeEntriesFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_EMINPFACTORY_SHORT
-typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> EminPFactory;
+using EminPFactory [[maybe_unused]] = MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FACADECLASSFACTORY_SHORT
-typedef MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FacadeClassFactory;
+using FacadeClassFactory [[maybe_unused]] = MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FACTORYMANAGER_SHORT
-typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> FactoryManager;
+using FactoryManager [[maybe_unused]] = MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FAKESMOOTHERPROTOTYPE_SHORT
-typedef MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> FakeSmootherPrototype;
+using FakeSmootherPrototype [[maybe_unused]] = MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FILTEREDAFACTORY_SHORT
-typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory;
+using FilteredAFactory [[maybe_unused]] = MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
-typedef MueLu::FineLevelInputDataFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FineLevelInputDataFactory;
+using FineLevelInputDataFactory [[maybe_unused]] = MueLu::FineLevelInputDataFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GENERALGEOMETRICPFACTORY_SHORT
-typedef MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeneralGeometricPFactory;
+using GeneralGeometricPFactory [[maybe_unused]] = MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GENERICRFACTORY_SHORT
-typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
+using GenericRFactory [[maybe_unused]] = MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
-typedef MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory;
+using GeometricInterpolationPFactory [[maybe_unused]] = MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
-typedef MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory_kokkos;
+using GeometricInterpolationPFactory_kokkos [[maybe_unused]] = MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GMRESSOLVER_SHORT
-typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
+using GMRESSolver [[maybe_unused]] = MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_HIERARCHY_SHORT
-typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
+using Hierarchy [[maybe_unused]] = MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_HIERARCHYMANAGER_SHORT
-typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
+using HierarchyManager [[maybe_unused]] = MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_HIERARCHYFACTORY_SHORT
-typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyFactory;
+using HierarchyFactory [[maybe_unused]] = MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_HIERARCHYUTILS_SHORT
-typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+using HierarchyUtils [[maybe_unused]] = MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
-typedef MueLu::InterfaceAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationFactory;
+using InterfaceAggregationFactory [[maybe_unused]] = MueLu::InterfaceAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
-typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Smoother;
+using Ifpack2Smoother [[maybe_unused]] = MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
-typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
+using IndefBlockedDiagonalSmoother [[maybe_unused]] = MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_INITIALBLOCKNUMBERFACTORY_SHORT
-typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InitialBlockNumberFactory;
+using InitialBlockNumberFactory [[maybe_unused]] = MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
-typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
+using IntrepidPCoarsenFactory [[maybe_unused]] = MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
-typedef MueLu::InverseApproximationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InverseApproximationFactory;
+using InverseApproximationFactory [[maybe_unused]] = MueLu::InverseApproximationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
-typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
+using LineDetectionFactory [[maybe_unused]] = MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
-typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> LocalPermutationStrategy;
+using LocalPermutationStrategy [[maybe_unused]] = MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_LOWPRECISIONFACTORY_SHORT
-typedef MueLu::LowPrecisionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LowPrecisionFactory;
+using LowPrecisionFactory [[maybe_unused]] = MueLu::LowPrecisionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
-typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapTransferFactory;
+using MapTransferFactory [[maybe_unused]] = MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MATRIXANALYSISFACTORY_SHORT
-typedef MueLu::MatrixAnalysisFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixAnalysisFactory;
+using MatrixAnalysisFactory [[maybe_unused]] = MueLu::MatrixAnalysisFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
-typedef MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedBlockedMatrixFactory;
+using MergedBlockedMatrixFactory [[maybe_unused]] = MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
-typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedSmoother;
+using MergedSmoother [[maybe_unused]] = MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
-typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorTransferFactory;
+using MultiVectorTransferFactory [[maybe_unused]] = MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
-typedef MueLu::NotayAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NotayAggregationFactory;
+using NotayAggregationFactory [[maybe_unused]] = MueLu::NotayAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
-typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory;
+using NullspaceFactory [[maybe_unused]] = MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
-typedef MueLu::NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory_kokkos;
+using NullspaceFactory_kokkos [[maybe_unused]] = MueLu::NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
-typedef MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspacePresmoothFactory;
+using NullspacePresmoothFactory [[maybe_unused]] = MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PATTERNFACTORY_SHORT
-typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PatternFactory;
+using PatternFactory [[maybe_unused]] = MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PERFUTILS_SHORT
-typedef MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> PerfUtils;
+using PerfUtils [[maybe_unused]] = MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PERMUTATIONFACTORY_SHORT
-typedef MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PermutationFactory;
+using PermutationFactory [[maybe_unused]] = MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PERMUTINGSMOOTHER_SHORT
-typedef MueLu::PermutingSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> PermutingSmoother;
+using PermutingSmoother [[maybe_unused]] = MueLu::PermutingSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PGPFACTORY_SHORT
-typedef MueLu::PgPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PgPFactory;
+using PgPFactory [[maybe_unused]] = MueLu::PgPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
-typedef MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node> PreDropFunctionBaseClass;
+using PreDropFunctionBaseClass [[maybe_unused]] = MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
-typedef MueLu::PreDropFunctionConstVal<Scalar,LocalOrdinal,GlobalOrdinal,Node> PreDropFunctionConstVal;
+using PreDropFunctionConstVal [[maybe_unused]] = MueLu::PreDropFunctionConstVal<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PROJECTORSMOOTHER_SHORT
-typedef MueLu::ProjectorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> ProjectorSmoother;
+using ProjectorSmoother [[maybe_unused]] = MueLu::ProjectorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_RAPFACTORY_SHORT
-typedef MueLu::RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RAPFactory;
+using RAPFactory [[maybe_unused]] = MueLu::RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_RAPSHIFTFACTORY_SHORT
-typedef MueLu::RAPShiftFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RAPShiftFactory;
+using RAPShiftFactory [[maybe_unused]] = MueLu::RAPShiftFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REBALANCEACFACTORY_SHORT
-typedef MueLu::RebalanceAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceAcFactory;
+using RebalanceAcFactory [[maybe_unused]] = MueLu::RebalanceAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REBALANCEBLOCKACFACTORY_SHORT
-typedef MueLu::RebalanceBlockAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceBlockAcFactory;
+using RebalanceBlockAcFactory [[maybe_unused]] = MueLu::RebalanceBlockAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_SHORT
-typedef MueLu::RebalanceBlockInterpolationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceBlockInterpolationFactory;
+using RebalanceBlockInterpolationFactory [[maybe_unused]] = MueLu::RebalanceBlockInterpolationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
-typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceBlockRestrictionFactory;
+using RebalanceBlockRestrictionFactory [[maybe_unused]] = MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
-typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceTransferFactory;
+using RebalanceTransferFactory [[maybe_unused]] = MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REFMAXWELLSMOOTHER_SHORT
 typedef MueLu::RefMaxwellSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwellSmoother;
 #endif
 #ifdef MUELU_REGIONRFACTORY_SHORT
-typedef MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory;
+using RegionRFactory [[maybe_unused]] = MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REGIONRFACTORY_KOKKOS_SHORT
-typedef MueLu::RegionRFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory_kokkos;
+using RegionRFactory_kokkos [[maybe_unused]] = MueLu::RegionRFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REITZINGERPFACTORY_SHORT
-typedef MueLu::ReitzingerPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReitzingerPFactory;
+using ReitzingerPFactory [[maybe_unused]] = MueLu::ReitzingerPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REORDERBLOCKAFACTORY_SHORT
-typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReorderBlockAFactory;
+using ReorderBlockAFactory [[maybe_unused]] = MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
-typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
+using RepartitionFactory [[maybe_unused]] = MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_SHORT
-typedef MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionBlockDiagonalFactory;
+using RepartitionBlockDiagonalFactory [[maybe_unused]] = MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
-typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
+using RepartitionHeuristicFactory [[maybe_unused]] = MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#endif
+#ifdef MUELU_REPLICATEPFACTORY_SHORT
+typedef MueLu::ReplicatePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReplicatePFactory;
 #endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
-typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RigidBodyModeFactory;
+using RigidBodyModeFactory [[maybe_unused]] = MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SAPFACTORY_SHORT
-typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
+using SaPFactory [[maybe_unused]] = MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SAPFACTORY_KOKKOS_SHORT
-typedef MueLu::SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory_kokkos;
+using SaPFactory_kokkos [[maybe_unused]] = MueLu::SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SCALEDNULLSPACEFACTORY_SHORT
-typedef MueLu::ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ScaledNullspaceFactory;
+using ScaledNullspaceFactory [[maybe_unused]] = MueLu::ScaledNullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
-typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
+using SchurComplementFactory [[maybe_unused]] = MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SEGREGATEDAFACTORY_SHORT
-typedef MueLu::SegregatedAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SegregatedAFactory;
+using SegregatedAFactory [[maybe_unused]] = MueLu::SegregatedAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SHIFTEDLAPLACIAN_SHORT
-typedef MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node> ShiftedLaplacian;
+using ShiftedLaplacian [[maybe_unused]] = MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SHIFTEDLAPLACIANOPERATOR_SHORT
-typedef MueLu::ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> ShiftedLaplacianOperator;
+using ShiftedLaplacianOperator [[maybe_unused]] = MueLu::ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SIMPLESMOOTHER_SHORT
-typedef MueLu::SimpleSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> SimpleSmoother;
+using SimpleSmoother [[maybe_unused]] = MueLu::SimpleSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SMOOTHER_SHORT
-typedef MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Smoother;
+using Smoother [[maybe_unused]] = MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SMOOTHERBASE_SHORT
-typedef MueLu::SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherBase;
+using SmootherBase [[maybe_unused]] = MueLu::SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SMOOTHERFACTORY_SHORT
-typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherFactory;
+using SmootherFactory [[maybe_unused]] = MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
-typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherPrototype;
+using SmootherPrototype [[maybe_unused]] = MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
-typedef MueLu::SmooVecCoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmooVecCoalesceDropFactory;
+using SmooVecCoalesceDropFactory [[maybe_unused]] = MueLu::SmooVecCoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SOLVERBASE_SHORT
-typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
+using SolverBase [[maybe_unused]] = MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
-typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
+using SteepestDescentSolver [[maybe_unused]] = MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
-typedef MueLu::StratimikosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> StratimikosSmoother;
+using StratimikosSmoother [[maybe_unused]] = MueLu::StratimikosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
-typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;
+using StructuredAggregationFactory [[maybe_unused]] = MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
-typedef MueLu::StructuredLineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredLineDetectionFactory;
+using StructuredLineDetectionFactory [[maybe_unused]] = MueLu::StructuredLineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SUBBLOCKAFACTORY_SHORT
-typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SubBlockAFactory;
+using SubBlockAFactory [[maybe_unused]] = MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TEKOSMOOTHER_SHORT
-typedef MueLu::TekoSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TekoSmoother;
+using TekoSmoother [[maybe_unused]] = MueLu::TekoSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TENTATIVEPFACTORY_SHORT
-typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory;
+using TentativePFactory [[maybe_unused]] = MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
-typedef MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory_kokkos;
+using TentativePFactory_kokkos [[maybe_unused]] = MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-typedef MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativeP_kokkos;
+using MatrixFreeTentativeP_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
-typedef MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativePFactory_kokkos;
+using MatrixFreeTentativePFactory_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
-typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
+using ThresholdAFilterFactory [[maybe_unused]] = MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TOGGLECOORDINATESTRANSFERFACTORY_SHORT
-typedef MueLu::ToggleCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ToggleCoordinatesTransferFactory;
+using ToggleCoordinatesTransferFactory [[maybe_unused]] = MueLu::ToggleCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TOGGLEPFACTORY_SHORT
-typedef MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TogglePFactory;
+using TogglePFactory [[maybe_unused]] = MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TOPRAPFACTORY_SHORT
-typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopRAPFactory;
+using TopRAPFactory [[maybe_unused]] = MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TOPSMOOTHERFACTORY_SHORT
-typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
+using TopSmootherFactory [[maybe_unused]] = MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TPETRAOPERATOR_SHORT
-typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOperator;
+using TpetraOperator [[maybe_unused]] = MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TRANSPFACTORY_SHORT
-typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TransPFactory;
+using TransPFactory [[maybe_unused]] = MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_RFROMP_OR_TRANSP_SHORT
-typedef MueLu::RfromP_Or_TransP<Scalar,LocalOrdinal,GlobalOrdinal,Node> RfromP_Or_TransP;
+using RfromP_Or_TransP [[maybe_unused]] = MueLu::RfromP_Or_TransP<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
-typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TrilinosSmoother;
+using TrilinosSmoother [[maybe_unused]] = MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_UNSMOOSHFACTORY_SHORT
-typedef MueLu::UnsmooshFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UnsmooshFactory;
+using UnsmooshFactory [[maybe_unused]] = MueLu::UnsmooshFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_USERPFACTORY_SHORT
-typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UserPFactory;
+using UserPFactory [[maybe_unused]] = MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_UTILITIES_SHORT
-typedef MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utilities;
+using Utilities [[maybe_unused]] = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_UTILITIESBASE_SHORT
-typedef MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilitiesBase;
+using UtilitiesBase [[maybe_unused]] = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_UTILITIES_KOKKOS_SHORT
-typedef MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utilities_kokkos;
+using Utilities_kokkos [[maybe_unused]] = MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
-typedef MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> VariableDofLaplacianFactory;
+using VariableDofLaplacianFactory [[maybe_unused]] = MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SEMICOARSENPFACTORY_SHORT
-typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory;
+using SemiCoarsenPFactory [[maybe_unused]] = MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
-typedef MueLu::SemiCoarsenPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory_kokkos;
+using SemiCoarsenPFactory_kokkos [[maybe_unused]] = MueLu::SemiCoarsenPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_UZAWASMOOTHER_SHORT
-typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmoother;
+using UzawaSmoother [[maybe_unused]] = MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_VISUALIZATIONHELPERS_SHORT
-typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> VisualizationHelpers;
+using VisualizationHelpers [[maybe_unused]] = MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_ZEROSUBBLOCKAFACTORY_SHORT
-typedef MueLu::ZeroSubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZeroSubBlockAFactory;
+using ZeroSubBlockAFactory [[maybe_unused]] = MueLu::ZeroSubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_ZOLTANINTERFACE_SHORT
-typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;
+using ZoltanInterface [[maybe_unused]] = MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
-typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
+using Zoltan2Interface [[maybe_unused]] = MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_NODEPARTITIONINTERFACE_SHORT
-typedef MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> NodePartitionInterface;
+using NodePartitionInterface [[maybe_unused]] = MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_XPETRAOPERATOR_SHORT
 typedef MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraOperator;

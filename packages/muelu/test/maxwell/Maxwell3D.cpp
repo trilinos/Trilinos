@@ -260,6 +260,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
 
   RCP<Matrix>            SM_Matrix       = *static_cast<RCP<Matrix>*>(inputs["SM"]);
+  RCP<Matrix>            GmhdA_Matrix     = *static_cast<RCP<Matrix>*>(inputs["GmhdA"]);
   RCP<Matrix>            D0_Matrix       = *static_cast<RCP<Matrix>*>(inputs["D0"]);
   RCP<Matrix>            M1_Matrix       = *static_cast<RCP<Matrix>*>(inputs["M1"]);
   RCP<Matrix>            Ms_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Ms"]);
@@ -298,7 +299,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
                                                                M1_Matrix,nullspace,coords,params) );
     }
     else if (precType=="MueLu-Maxwell1" || precType=="MueLu-Reitzinger") {
-      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params) );
+      if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+        preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params) );
+      else 
+        preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params,GmhdA_Matrix) );
 
     }
 
@@ -327,7 +331,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     // Belos linear problem
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
-    RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+    RCP<OP> belosOp;
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+           belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+    else   belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(GmhdA_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
 
     RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
     problem -> setOperator( belosOp );
@@ -380,7 +387,9 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         else
           X = X0;
         problem -> setProblem( X, B );
-        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+          Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        else Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(GmhdA_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
         success = (iters<50 && status == Belos::Converged);
@@ -451,7 +460,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     }
 
     // Build Thyra linear algebra objects
-    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA;
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+         thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
+    else thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(GmhdA_Matrix)->getCrsMatrix());
     RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(X->getVectorNonConst(0)));
     // TODO: Why do we loose a reference when running this with Epetra?
     RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B->getVector(0));
@@ -566,6 +578,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   std::string rhs_file          = "";                 clp.setOption("rhs",                   &rhs_file);
   std::string x0_file           = "";                 clp.setOption("x0",                    &x0_file);
+  std::string GmhdA_file         = "";                 clp.setOption("GmhdA",                  &GmhdA_file);
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -604,11 +617,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
   // Read matrices in from files
-  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix;
+  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
 
   // maps for nodal and edge matrices
   RCP<const Map> node_map;
   RCP<const Map> edge_map;
+  RCP<const Map> Gmhd_map;
+  RCP<const Map> edgeOrGmhdMap;
 
   // gradient matrix
   try {
@@ -642,6 +657,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (M1_file != "")
       M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
   }
+  if (GmhdA_file != "") {
+    Teuchos::ArrayView<const GO> edgeMapEleList = edge_map->getLocalElementList();
+    Teuchos::Array<GO> elementList(edgeMapEleList.size()*2);
+    for (int i = 0; i < edgeMapEleList.size(); i++) {
+       elementList[2*i  ] = 2*edgeMapEleList[i];
+       elementList[2*i+1] = 2*edgeMapEleList[i] + 1;
+    }
+    edgeOrGmhdMap = MapFactory::Build(edge_map->lib(), edge_map->getGlobalNumElements()*2, elementList, edge_map->getIndexBase(), edge_map->getComm());
+    GmhdA_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(GmhdA_file, edgeOrGmhdMap);
+  }
+  else edgeOrGmhdMap = edge_map;
+
   if (Ms_file != "")
     Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
   else
@@ -697,23 +724,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // setup LHS, RHS
   RCP<MultiVector> X, X0, B;
   if (rhs_file == "") {
-    B = MultiVectorFactory::Build(edge_map,1);
-    RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
+    B = MultiVectorFactory::Build(edgeOrGmhdMap,1);
+    RCP<MultiVector> vec = MultiVectorFactory::Build(edgeOrGmhdMap,1);
     vec -> putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    SM_Matrix->apply(*vec,*B);
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+         SM_Matrix->apply(*vec,*B);
+    else GmhdA_Matrix->apply(*vec,*B);
   } else
-    B = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(rhs_file, edge_map);
+    B = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(rhs_file, edgeOrGmhdMap);
 
-  X = MultiVectorFactory::Build(edge_map,1);
+  X = MultiVectorFactory::Build(edgeOrGmhdMap,1);
   X -> putScalar(Teuchos::ScalarTraits<Scalar>::zero());
   if (x0_file != "")
-    X0 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(x0_file, edge_map);
+    X0 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(x0_file, edgeOrGmhdMap);
 
   comm->barrier();
   tm = Teuchos::null;
 
   std::map<std::string, void*> inputs;
   inputs["SM"]              = &SM_Matrix;
+  inputs["GmhdA"]           = &GmhdA_Matrix;
   inputs["D0"]              = &D0_Matrix;
   inputs["M1"]              = &M1_Matrix;
   inputs["Ms"]              = &Ms_Matrix;

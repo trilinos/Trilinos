@@ -605,7 +605,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
   // DEEP_COPY REVIEW - HOST-TO_DEVICE
-  using execution_space = typename device_type::execution_space;
   Kokkos::deep_copy (execution_space(), keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -910,7 +909,6 @@ init (const keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
-    using execution_space = typename counts_type::execution_space;
     using range_type = Kokkos::RangePolicy<execution_space, offset_type>;
     const char kernelLabel[] = "Tpetra::Details::FixedHashTable CountBuckets";
     if (debug) {

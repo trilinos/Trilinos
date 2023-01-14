@@ -51,7 +51,7 @@
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include <KokkosSparse_spmv.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>

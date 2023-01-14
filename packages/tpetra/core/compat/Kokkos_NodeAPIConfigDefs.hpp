@@ -44,4 +44,9 @@
 
 // We retain this header file only for backwards compatibility.
 
+
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_NodeApiConfigDefs.hpp is deprecated."
+#endif
+
 #endif // KOKKOS_NODEAPICONFIGDEFS_HPP

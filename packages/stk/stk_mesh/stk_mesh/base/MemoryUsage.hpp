@@ -37,6 +37,7 @@
 
 //----------------------------------------------------------------------
 
+#include <stk_util/stk_config.h>
 #include <stddef.h>                     // for size_t
 #include <iosfwd>                       // for ostream
 #include <string>                       // for string
@@ -51,8 +52,8 @@ namespace mesh {
 /** \addtogroup stk_mesh_module
  *  \{
  */
-
-struct MemoryUsage {
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2023
+struct STK_DEPRECATED MemoryUsage {
   unsigned num_fields;
   unsigned field_bytes;
   unsigned num_parts;
@@ -68,9 +69,10 @@ struct MemoryUsage {
   size_t total_bytes;
 };
 
-void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage);
+STK_DEPRECATED void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage);
 
-void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os);
+STK_DEPRECATED void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os);
+#endif
 
 //----------------------------------------------------------------------
 

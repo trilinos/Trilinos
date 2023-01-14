@@ -43,8 +43,7 @@
 #include <vector>                           // for vector
 #include "Ioss_Field.h"                     // for Field, Field::BasicType
 #include "stk_mesh/base/Types.hpp"          // for EntityRank, EntityVector
-#include "stk_util/util/ParameterList.hpp"  // for Type, STK_ANY_NAMESPACE
-namespace Teuchos { class any; }
+#include "stk_util/util/ParameterList.hpp"  // for Type
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace io { struct OutputParams; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -118,7 +117,7 @@ get_parameter_type_from_field_representation(const std::string &storage,
 
 std::pair<size_t, Ioss::Field::BasicType>
 get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
-                               const STK_ANY_NAMESPACE::any &value);
+                               const std::any &value);
 
 void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts);
 

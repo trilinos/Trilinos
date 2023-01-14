@@ -47,7 +47,7 @@
 #ifndef MUELU_USEDEFAULTTYPES_HPP
 #define MUELU_USEDEFAULTTYPES_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include "MueLu_config.hpp"
 
 #ifdef HAVE_MUELU_TPETRA

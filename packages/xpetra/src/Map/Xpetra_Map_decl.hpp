@@ -48,7 +48,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 #ifdef HAVE_XPETRA_EPETRA

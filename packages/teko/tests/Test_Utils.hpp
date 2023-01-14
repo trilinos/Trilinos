@@ -145,9 +145,9 @@ public:
 protected:
    static std::list<std::pair<Teuchos::RCP<UnitTest>,std::string> > testList;
 #ifdef TEKO_HAVE_EPETRA
-   static Teuchos::RCP<const Epetra_Comm > comm;
+   static Teuchos::RCP<const Epetra_Comm > comm_;
 #endif
-   static Teuchos::RCP<const Teuchos::Comm<int> > comm_tpetra;
+   static Teuchos::RCP<const Teuchos::Comm<int> > comm_tpetra_;
 
 #ifdef TEKO_HAVE_EPETRA
    static bool CheckParallelBools(bool myBool,int & failPID);

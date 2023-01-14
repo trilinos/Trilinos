@@ -9,8 +9,8 @@
 #ifndef STK_COUPLING_IMPL_VALUE_HPP
 #define STK_COUPLING_IMPL_VALUE_HPP
 
+#include <any>
 #include <stk_util/util/ReportHandler.hpp>
-#include <Teuchos_any.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -59,10 +59,31 @@ struct Value
 
   bool operator==(const Value& rhs) const
   {
-    return type == rhs.type && value == rhs.value;
+    if (type == rhs.type) {
+      switch(type) {
+        case BOOL: return (std::any_cast<bool>(value) == std::any_cast<bool>(rhs.value));
+        case INT: return (std::any_cast<int>(value) == std::any_cast<int>(rhs.value));
+        case FLOAT: return (std::any_cast<float>(value) == std::any_cast<float>(rhs.value));
+        case DOUBLE: return (std::any_cast<double>(value) == std::any_cast<double>(rhs.value));
+        case STRING: return (std::any_cast<std::string>(value) == std::any_cast<std::string>(rhs.value));
+        case VECTOR_INT: return (std::any_cast<std::vector<int>>(value) == std::any_cast<std::vector<int>>(rhs.value));
+        case VECTOR_FLOAT: return (std::any_cast<std::vector<float>>(value) == std::any_cast<std::vector<float>>(rhs.value));
+        case VECTOR_DOUBLE: return (std::any_cast<std::vector<double>>(value) == std::any_cast<std::vector<double>>(rhs.value));
+        case VECTOR_STRING: return (std::any_cast<std::vector<std::string>>(value) == std::any_cast<std::vector<std::string>>(rhs.value));
+        case VECTOR_PAIR_STRING_INT: return (std::any_cast<std::vector<std::pair<std::string, int>>>(value) ==
+                                                                  std::any_cast<std::vector<std::pair<std::string, int>>>(rhs.value));
+        case VECTOR_PAIR_STRING_DOUBLE: return (std::any_cast<std::vector<std::pair<std::string, double>>>(value) ==
+                                                                  std::any_cast<std::vector<std::pair<std::string, double>>>(rhs.value));
+        default: ThrowErrorMsg("Found unsupported type: " << type << " while determining Value equality."); return false;
+      }
+
+    }
+    else {
+      return false;
+    }
   }
 
-  Teuchos::any value;
+  std::any value;
   ValueTypes type;
 };
 

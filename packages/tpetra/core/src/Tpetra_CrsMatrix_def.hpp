@@ -3427,7 +3427,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       // DEEP_COPY REVIEW - VALUE-TO-DEVICE
-      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
@@ -3544,7 +3543,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // The input ArrayRCP must always be a host pointer.  Thus, if
     // device_type::memory_space is Kokkos::HostSpace, it's OK for us
     // to write to that allocation directly as a Kokkos::View.
-    typedef typename device_type::memory_space memory_space;
     if (std::is_same<memory_space, Kokkos::HostSpace>::value) {
       // It is always syntactically correct to assign a raw host
       // pointer to a device View, so this code will compile correctly
@@ -7671,7 +7669,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef node_type NT;
-    typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
+    typedef CrsMatrix<Scalar, LO, GO, NT> this_CRS_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
     using Teuchos::as;
 
@@ -7918,7 +7916,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // If the user gave us a null destMat, then construct the new
     // destination matrix.  We will replace its column Map later.
     if (destMat.is_null ()) {
-      destMat = rcp (new this_type (MyRowMap, 0, matrixparams));
+      destMat = rcp (new this_CRS_type (MyRowMap, 0, matrixparams));
     }
 
     /***************************************************/

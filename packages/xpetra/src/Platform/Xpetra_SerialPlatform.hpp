@@ -50,7 +50,7 @@
 #include <Teuchos_Describable.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 namespace Xpetra {
 
