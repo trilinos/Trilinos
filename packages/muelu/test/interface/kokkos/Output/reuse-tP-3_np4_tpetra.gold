@@ -237,6 +237,8 @@ Smoother (level 2) post : no smoother
 
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
@@ -269,3 +271,5 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Replacing maps with a subcommunicator
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]

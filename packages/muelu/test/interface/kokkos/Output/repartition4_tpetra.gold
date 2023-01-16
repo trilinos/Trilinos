@@ -110,6 +110,8 @@ repartition: use subcommunicators = 0   [unused]
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
