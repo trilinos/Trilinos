@@ -53,8 +53,7 @@
 #include "StkIoUtils.hpp"                   // for get_io_parameter_size_and...
 #include "Teuchos_RCP.hpp"                  // for RCP::operator->, RCP::RCP<T>
 #include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank
-#include "stk_util/util/ParameterList.hpp"  // for Parameter, Type, STK_ANY_...
-namespace Teuchos { class any; }
+#include "stk_util/util/ParameterList.hpp"  // for Parameter, Type, ...
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -154,7 +153,7 @@ bool impl::Heartbeat::has_global(const std::string &name)
 }
 
 void impl::Heartbeat::internal_define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
+                                        const std::any *value,
                                         stk::util::ParameterType::Type type,
                                         int copies,
                                         Ioss::Field::RoleType role)
@@ -199,7 +198,7 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
 }
 
 void impl::Heartbeat::internal_define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
+                                        const std::any *value,
                                         const std::string &storage,
                                         Ioss::Field::BasicType dataType,
                                         int copies,

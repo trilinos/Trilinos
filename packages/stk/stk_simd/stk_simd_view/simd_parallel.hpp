@@ -43,18 +43,34 @@
 namespace stk {
 namespace simd {
 
+namespace internal {
+template <class T>
+using ExecutionSpaceArchetypeAlias = typename T::execution_space;
+
+template <class T>
+using DeviceTypeArchetypeAlias = typename T::device_type;
+
+template <class Functor>
+struct DeduceFunctorExecutionSpace {
+  using execution_space = Kokkos::detected_or_t<
+      std::conditional_t<
+          Kokkos::is_detected<DeviceTypeArchetypeAlias, Functor>::value,
+          Kokkos::detected_t<ExecutionSpaceArchetypeAlias, Kokkos::detected_t<DeviceTypeArchetypeAlias, Functor>>,
+          Kokkos::DefaultExecutionSpace>,
+      ExecutionSpaceArchetypeAlias, Functor>;
+};
+} // namespace internal
+
 template <typename Func>
 KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
-  typedef typename
-    Kokkos::Impl::FunctorPolicyExecutionSpace<Func, void>::execution_space execution_space;
+using execution_space = typename internal::DeduceFunctorExecutionSpace<Func>::execution_space;
 #ifdef KOKKOS_ENABLE_CUDA
   return std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   return false;
 #endif
 }
-
 
 template <typename T, typename Func>
 KOKKOS_INLINE_FUNCTION

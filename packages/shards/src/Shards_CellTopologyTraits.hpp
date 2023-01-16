@@ -112,6 +112,7 @@ template< class ListType > struct TypeListHomogeneous ;
 //----------------------------------------------------------------------
 // Self-subcell reference
 
+// Node
 template<>
 struct SubcellTopologyTraits<0,0,0,0,0,0,TypeListEnd,TypeListEnd,
                                          TypeListEnd,TypeListEnd,
@@ -123,6 +124,19 @@ struct SubcellTopologyTraits<0,0,0,0,0,0,TypeListEnd,TypeListEnd,
   enum { homogeneity = true };
 };
 
+// Particle
+template<>
+struct SubcellTopologyTraits<0,0,0,0,1,1,TypeListEnd,TypeListEnd,
+                                         TypeListEnd,TypeListEnd,
+                                         TypeListEnd,IndexList<> >
+{
+  typedef CellTopologyTraits<0,1,1> topology ;
+  enum { count = 1 };
+  enum { node = 0 };  // A Particle has 1 node, and NodeIndex (3rd tmpl arg) is 0, so it's valid
+  enum { homogeneity = true };
+};
+
+// Line
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,
@@ -136,6 +150,7 @@ struct SubcellTopologyTraits<1,0,NodeIndex, 1,NV,NN,EList,EMaps,FList,FMaps,PMap
   enum { homogeneity = true };
 };
 
+// Face
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,
@@ -149,6 +164,7 @@ struct SubcellTopologyTraits<2,0,NodeIndex, 2,NV,NN,EList,EMaps,FList,FMaps,PMap
   enum { homogeneity = true };
 };
 
+// Volume
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,

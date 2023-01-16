@@ -47,7 +47,7 @@
 #ifndef XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 #define XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 

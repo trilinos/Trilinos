@@ -45,4 +45,9 @@
 #include "TpetraCore_config.h"
 
 
+// This header file only exists for backwards compatibility.
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_ConfigDefs.hpp is deprecated."
+#endif
+
 #endif /* KOKKOS_CONFIGDEFS_HPP */

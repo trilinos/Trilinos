@@ -47,7 +47,7 @@
 #include <random>
 #include <vector>
 #include <algorithm>
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Kokkos_ArithTraits.hpp"

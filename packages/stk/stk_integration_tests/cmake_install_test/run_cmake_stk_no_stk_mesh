@@ -20,8 +20,8 @@ rm -rf CMakeFiles CMakeCache.txt
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DTrilinos_ENABLE_CXX11=ON \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_CXX_STANDARD:STRING=17 \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \

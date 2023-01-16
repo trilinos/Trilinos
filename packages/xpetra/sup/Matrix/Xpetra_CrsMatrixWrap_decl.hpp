@@ -49,7 +49,7 @@
 #ifndef XPETRA_CRSMATRIXWRAP_DECL_HPP
 #define XPETRA_CRSMATRIXWRAP_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"

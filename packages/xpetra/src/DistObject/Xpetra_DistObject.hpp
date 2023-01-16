@@ -52,7 +52,7 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Export.hpp"
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 namespace Xpetra {

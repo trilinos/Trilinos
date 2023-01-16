@@ -92,12 +92,12 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
       const std::string paramName = (*i).first;
       //+ NOTE: Need a reference to the parameter.
       stk::util::Parameter &param = params.get_param(paramName);
-      stkIo.add_global_ref(idx, paramName, param);
+      stkIo.add_global_ref(idx, paramName, param);/*@\label{io:global:autoparam}*/
     }
 
     //+ All writing of the values is handled automatically,
     //+ do not need to call write_global
-    stkIo.process_output_request(idx, 0.0);
+    stkIo.process_output_request(idx, 0.0);/*@\label{io:global:autowrite}*/
   }
   // ... Reading is the same as in previous example
   //-END

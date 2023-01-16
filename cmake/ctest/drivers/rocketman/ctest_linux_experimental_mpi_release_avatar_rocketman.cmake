@@ -79,6 +79,10 @@ SET(Trilinos_PACKAGES TrilinosCouplings MueLu )
 # If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
 SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
 
+# GH 20230111: changing Rocketman to pull from the sandialabs Avatar repo, https://github.com/sandialabs/avatar.git
+# GH         : since Avatar depends on gsl version 1.16, pull the gsl source from https://ftp.gnu.org/gnu/gsl/gsl-1.16.tar.gz
+# GH         : it doesn't seem like Avatar actually need gsl, despite listing it as required in the cmake configure script...
+
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
@@ -90,9 +94,9 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Boost=ON"
   "-DTPL_ENABLE_BoostLib=ON"
   "-DTPL_ENABLE_X11=OFF"
-  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src"
-  "-DAvatar_LIBRARY_DIRS=/home/csiefer/avatar/build/src"
-  "-DTPL_Avatar_LIBRARIES=/home/csiefer/avatar/build/src/libavatar.a"
+  "-DAvatar_INCLUDE_DIRS=/home/gbharpe/Programming/cpp/avatar/avatar-source/src"
+  "-DAvatar_LIBRARY_DIRS=/home/gbharpe/Programming/cpp/avatar/avatar-build/src"
+  "-DTPL_Avatar_LIBRARIES=/home/gbharpe/Programming/cpp/avatar/avatar-build/src/libavatar.a"
 )
 
 #

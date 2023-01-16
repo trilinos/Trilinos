@@ -46,7 +46,7 @@
 #ifndef XPETRA_REORDEREDBLOCKEDCRSMATRIX_HPP
 #define XPETRA_REORDEREDBLOCKEDCRSMATRIX_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"

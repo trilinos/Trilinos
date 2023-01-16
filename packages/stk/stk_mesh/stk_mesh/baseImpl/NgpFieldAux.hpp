@@ -102,13 +102,13 @@ void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
                        });
 }
 
-template <typename DeviceViewType, typename DeviceUnsignedViewType, typename DeviceBoolViewType, typename ExecSpaceType>
+template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
 void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
                                                   FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
                                                   DeviceViewType & deviceView,
                                                   DeviceUnsignedViewType & bucketSizes,
                                                   DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity,
-                                                  DeviceBoolViewType & bucketsMarkedModified)
+                                                  DeviceUnsignedViewType & bucketsMarkedModified)
 {
   using ValueType = typename DeviceViewType::value_type;
   using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
@@ -122,7 +122,7 @@ void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
                          const unsigned bucketSize = bucketSizes(bucketIndex);
                          const unsigned numComponentsPerEntity = fieldBucketNumComponentsPerEntity(bucketIndex);
 
-                         if(!bucketsMarkedModified(bucketIndex)) { return; }
+                         if(bucketsMarkedModified(bucketIndex) == 0) { return; }
 
                          bool isScalar = (numComponentsPerEntity == 1);
 

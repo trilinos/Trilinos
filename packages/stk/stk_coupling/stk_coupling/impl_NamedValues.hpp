@@ -47,7 +47,7 @@ ValueType get_value(const std::string & name) const
 {
   MapType::const_iterator iter = m_values.find(name);
   ThrowRequireMsg(iter != m_values.end(), "get_value: name='" << name << "' not found.");
-  return Teuchos::any_cast<ValueType>((iter->second).value);
+  return std::any_cast<ValueType>((iter->second).value);
 }
 
 bool operator==(const NamedValues& rhs) const

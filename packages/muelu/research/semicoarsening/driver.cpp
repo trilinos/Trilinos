@@ -62,7 +62,7 @@ this directory.
 #include <iostream>
 
 // Define default data types
-//#include <Kokkos_DefaultNode.hpp>
+//#include <KokkosCompat_DefaultNode.hpp>
 
 //typedef double                                                              Scalar;
 //typedef int                                                                 LocalOrdinal;

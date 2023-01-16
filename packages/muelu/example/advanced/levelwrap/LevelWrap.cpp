@@ -55,7 +55,7 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
-#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+#include <KokkosCompat_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 
 #include "Xpetra_ConfigDefs.hpp"
 #include <Xpetra_Map.hpp>

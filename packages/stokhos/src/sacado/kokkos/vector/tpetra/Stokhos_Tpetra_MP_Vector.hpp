@@ -52,7 +52,6 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-#include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"

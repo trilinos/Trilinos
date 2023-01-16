@@ -232,25 +232,31 @@ protected:
     MeshFixtureNoTest()
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(3),
-      m_entityRankNames(),
-      metaData(), bulkData()
+      m_entityRankNames()
     {
     }
 
     MeshFixtureNoTest(unsigned spatial_dim)
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
-      m_entityRankNames(),
-      metaData(), bulkData()
+      m_entityRankNames()
     {
     }
 
     MeshFixtureNoTest(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
-      m_entityRankNames(entityRankNames),
-      metaData(), bulkData()
+      m_entityRankNames(entityRankNames)
     {
+    }
+
+    MeshFixtureNoTest(unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                      MPI_Comm comm = MPI_COMM_WORLD)
+      : communicator(comm),
+        m_spatialDim(spatial_dim),
+        m_entityRankNames()
+    {
+      setup_empty_mesh(auraOption);
     }
 
     virtual ~MeshFixtureNoTest()

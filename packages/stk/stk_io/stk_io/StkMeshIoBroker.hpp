@@ -464,6 +464,9 @@ namespace stk {
 				Ioss::PropertyManager &properties,
                                 double time,
                                 char const* type = "exodus", bool openFileImmediately = true);
+ 
+      // Free up memory by removing resouces associated with output files that will no longer be used by the run
+      void close_output_mesh(size_t output_file_index);
 
       void write_output_mesh(size_t output_file_index);
 
