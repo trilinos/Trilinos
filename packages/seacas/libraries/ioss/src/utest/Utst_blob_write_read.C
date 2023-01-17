@@ -58,7 +58,7 @@ namespace {
   }
 } // namespace
 
-int main(int argc, char *argv[])
+int main(IOSS_MAYBE_UNUSED int argc, IOSS_MAYBE_UNUSED char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);

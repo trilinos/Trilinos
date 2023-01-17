@@ -11,6 +11,7 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <Ioss_CodeTypes.h>
 #include <exodus/Ioex_ParallelDatabaseIO.h>
 #if defined PARALLEL_AWARE_EXODUS
 #include <algorithm>
@@ -35,8 +36,6 @@
 #endif
 #include <utility>
 #include <vector>
-
-#include <Ioss_CodeTypes.h>
 
 #include <exodus/Ioex_DecompositionData.h>
 #include <exodus/Ioex_Internals.h>
@@ -2407,7 +2406,7 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
 
   // Find corresponding set in file decomp class...
   if (role == Ioss::Field::MESH) {
-    int64_t        id   = Ioex::get_id(ns, &ids_);
+    int64_t id = Ioex::get_id(ns, &ids_);
 
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       if (field.get_type() == Ioss::Field::INTEGER) {
@@ -3870,7 +3869,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
         int *comp32 = reinterpret_cast<int *>(component.data());
 
         int index = comp;
-        for (int64_t i = 0; i < my_element_count; i++) {
+        for (size_t i = 0; i < my_element_count; i++) {
           comp32[i] = data32[index];
           index += comp_count;
         }
@@ -3880,13 +3879,16 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
         int64_t *comp64 = reinterpret_cast<int64_t *>(component.data());
 
         int index = comp;
-        for (int64_t i = 0; i < my_element_count; i++) {
+        for (size_t i = 0; i < my_element_count; i++) {
           comp64[i] = data64[index];
           index += comp_count;
         }
       }
       auto eb_offset =
           eb->get_offset(); // Offset of beginning of the element block elements for this block
+      auto proc_offset = eb->get_optional_property(
+          "_processor_offset", 0); // Offset of this processors elements within that block.
+      auto file_count = eb->get_optional_property("locally_owned_count", my_element_count);
       int  index =
           -1 * (field.get_index() + comp); // Negative since specifying index, not id to exodus API.
 
@@ -4903,5 +4905,5 @@ void ParallelDatabaseIO::check_valid_values() const
 }
 } // namespace Ioex
 #else
-const char ioss_exodus_parallel_database_unused_symbol_dummy = '\0';
+IOSS_MAYBE_UNUSED const char ioss_exodus_parallel_database_unused_symbol_dummy = '\0';
 #endif

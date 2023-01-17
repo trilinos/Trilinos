@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -26,18 +26,18 @@ namespace Iovs_cgns {
     Iovs::Utils::DatabaseInfo dbinfo;
     dbinfo.databaseFilename   = this->DBFilename;
     dbinfo.separatorCharacter = std::string(1, this->get_field_separator());
-    dbinfo.parallelUtils = &this->util();
+    dbinfo.parallelUtils      = &this->util();
 
     Iovs::Utils::getInstance().checkDbUsage(db_usage);
     Iovs::Utils::getInstance().createDatabaseOutputFile(dbinfo);
-    dbState           = Ioss::STATE_UNKNOWN;
+    dbState = Ioss::STATE_UNKNOWN;
     Iovs::Utils::getInstance().writeToCatalystLogFile(dbinfo, props);
     this->catCGNSMesh = Iovs::Utils::getInstance().createCatalystCGNSMesh(dbinfo, props);
   }
 
   DatabaseIO::~DatabaseIO() { this->catCGNSMesh->Delete(); }
 
-  bool DatabaseIO::begin__(Ioss::State state) { return true; }
+  bool DatabaseIO::begin__(Ioss::State) { return true; }
 
   bool DatabaseIO::end__(Ioss::State state)
   {
@@ -58,7 +58,7 @@ namespace Iovs_cgns {
     return true;
   }
 
-  bool DatabaseIO::end_state__(int state, double time)
+  bool DatabaseIO::end_state__(int, double)
   {
     std::vector<int>         error_codes;
     std::vector<std::string> error_messages;
@@ -162,8 +162,8 @@ namespace Iovs_cgns {
     return num_to_get;
   }
 
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *, const Ioss::Field &field,
+                                         void *, size_t data_size) const
   {
 
     size_t num_to_get = field.verify(data_size);

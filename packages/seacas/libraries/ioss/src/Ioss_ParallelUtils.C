@@ -95,9 +95,9 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
-                                          bool sync_parallel) const
+                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
 {
-  PAR_UNUSED(sync_parallel);
+  IOSS_PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char             *result_string = nullptr;
   std::vector<char> broadcast_string;
@@ -150,7 +150,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
-                                          bool sync_parallel) const
+                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
 {
   std::string str_value;
   bool        success = get_environment(name, str_value, sync_parallel);
@@ -160,11 +160,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
   return success;
 }
 
-bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_parallel) const
+bool Ioss::ParallelUtils::get_environment(const std::string     &name,
+                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
 {
   // Return true if 'name' defined, no matter what the value.
   // Return false if 'name' not defined.
-  PAR_UNUSED(sync_parallel);
+  IOSS_PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char *result_string = nullptr;
   int   string_length = 0;
@@ -259,9 +260,9 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 // Generate a "globally unique id" which is unique over all entities
 // of a specific type over all processors.
 // Used by some applications for uniquely identifying an entity.
-int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
+int64_t Ioss::ParallelUtils::generate_guid(size_t id, IOSS_MAYBE_UNUSED int rank) const
 {
-  PAR_UNUSED(rank);
+  IOSS_PAR_UNUSED(rank);
 #ifdef SEACAS_HAVE_MPI
   static size_t lpow2 = 0;
   if (lpow2 == 0) {
@@ -276,10 +277,11 @@ int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 #endif
 }
 
-void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) const
+void Ioss::ParallelUtils::attribute_reduction(IOSS_MAYBE_UNUSED const int length,
+                                              IOSS_MAYBE_UNUSED char      buffer[]) const
 {
-  PAR_UNUSED(length);
-  PAR_UNUSED(buffer);
+  IOSS_PAR_UNUSED(length);
+  IOSS_PAR_UNUSED(buffer);
 #ifdef SEACAS_HAVE_MPI
   if (1 < parallel_size()) {
     static_assert(sizeof(char) == 1, "");
@@ -373,17 +375,20 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
 #endif
 }
 
-template IOSS_EXPORT int Ioss::ParallelUtils::global_minmax(int, Ioss::ParallelUtils::MinMax which) const;
-template IOSS_EXPORT unsigned int Ioss::ParallelUtils::global_minmax(unsigned int,
-                                                         Ioss::ParallelUtils::MinMax which) const;
-template IOSS_EXPORT int64_t      Ioss::ParallelUtils::global_minmax(int64_t,
-                                                         Ioss::ParallelUtils::MinMax which) const;
-template IOSS_EXPORT double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT int
+Ioss::ParallelUtils::global_minmax(int, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT unsigned int
+Ioss::ParallelUtils::global_minmax(unsigned int, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT int64_t
+Ioss::ParallelUtils::global_minmax(int64_t, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT double
+Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) const;
 
 template <typename T>
-T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax which) const
+T Ioss::ParallelUtils::global_minmax(T                 local_minmax,
+                                     IOSS_MAYBE_UNUSED Ioss::ParallelUtils::MinMax which) const
 {
-  PAR_UNUSED(which);
+  IOSS_PAR_UNUSED(which);
   T minmax = local_minmax;
 
 #ifdef SEACAS_HAVE_MPI
@@ -419,10 +424,13 @@ template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int &value, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
 template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int64_t &value, int) const;
 
-template <> void Ioss::ParallelUtils::broadcast(std::string &my_str, int root) const
+namespace Ioss {
+template <>
+void ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::string &my_str,
+                              IOSS_MAYBE_UNUSED int          root) const
 {
-  PAR_UNUSED(my_str);
-  PAR_UNUSED(root);
+  IOSS_PAR_UNUSED(my_str);
+  IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
@@ -435,11 +443,14 @@ template <> void Ioss::ParallelUtils::broadcast(std::string &my_str, int root) c
   }
 #endif
 }
+} // namespace Ioss
 
-template <typename T> void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
+
+template <typename T>
+void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED T &my_value, IOSS_MAYBE_UNUSED int root) const
 {
-  PAR_UNUSED(my_value);
-  PAR_UNUSED(root);
+  IOSS_PAR_UNUSED(my_value);
+  IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Bcast((void *)&my_value, 1, mpi_type(T()), root, communicator_);
@@ -463,11 +474,14 @@ template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<long long> 
 /// \relates Ioss::ParallelUtils::broadcast
 template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<char> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
+namespace Ioss {
 template <>
-IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value, int root) const
+IOSS_EXPORT void
+ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<std::pair<int, int>> &my_value,
+                         IOSS_MAYBE_UNUSED int                               root) const
 {
-  PAR_UNUSED(my_value);
-  PAR_UNUSED(root);
+  IOSS_PAR_UNUSED(my_value);
+  IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
@@ -480,11 +494,14 @@ IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>>
   }
 #endif
 }
+} // namespace Ioss
 
-template <typename T> void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value, int root) const
+template <typename T>
+void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<T> &my_value,
+                                    IOSS_MAYBE_UNUSED int             root) const
 {
-  PAR_UNUSED(my_value);
-  PAR_UNUSED(root);
+  IOSS_PAR_UNUSED(my_value);
+  IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
@@ -509,9 +526,11 @@ template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(int, std::vector<int> 
 /// \relates Ioss::ParallelUtils::all_gather
 template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int> &,
+                                                          std::vector<int> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &, std::vector<int64_t> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &,
+                                                          std::vector<int64_t> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
 {
@@ -597,10 +616,10 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
 
 /// \relates Ioss::ParallelUtils::gather
 template IOSS_EXPORT void Ioss::ParallelUtils::gather(std::vector<int> &my_values,
-                                          std::vector<int> &result) const;
+                                                      std::vector<int> &result) const;
 /// \relates Ioss::ParallelUtils::gather
 template IOSS_EXPORT void Ioss::ParallelUtils::gather(std::vector<int64_t> &my_values,
-                                          std::vector<int64_t> &result) const;
+                                                      std::vector<int64_t> &result) const;
 template <typename T>
 void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &result) const
 {
@@ -628,17 +647,17 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
 
 /// \relates Ioss::ParallelUtils::gather
 template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
-                                         std::vector<int> &my_values,
-                                         std::vector<int> &result) const;
+                                                     std::vector<int> &my_values,
+                                                     std::vector<int> &result) const;
 /// \relates Ioss::ParallelUtils::gather
 template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
-                                         std::vector<char> &my_values,
-                                         std::vector<char> &result) const;
+                                                     std::vector<char> &my_values,
+                                                     std::vector<char> &result) const;
 template <typename T>
-int Ioss::ParallelUtils::gather(int num_vals, int size_per_val, std::vector<T> &my_values,
-                                std::vector<T> &result) const
+int Ioss::ParallelUtils::gather(int num_vals, IOSS_MAYBE_UNUSED int size_per_val,
+                                std::vector<T> &my_values, std::vector<T> &result) const
 {
-  PAR_UNUSED(size_per_val);
+  IOSS_PAR_UNUSED(size_per_val);
 #ifdef SEACAS_HAVE_MPI
   std::vector<int> vals_per_proc;
   gather(num_vals, vals_per_proc);

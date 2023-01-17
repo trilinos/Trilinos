@@ -759,11 +759,13 @@ namespace Iocgns {
 
   int64_t DatabaseIO::element_global_to_local__(int64_t global) const { return global; }
 
-  void DatabaseIO::create_structured_block_fpp(int base, int num_zones, size_t & /* num_node */)
+  void DatabaseIO::create_structured_block_fpp(IOSS_MAYBE_UNUSED int base,
+                                               IOSS_MAYBE_UNUSED int num_zones,
+                                               size_t & /* num_node */)
   {
     SMART_ASSERT(isParallel);
-    PAR_UNUSED(base);
-    PAR_UNUSED(num_zones);
+    IOSS_PAR_UNUSED(base);
+    IOSS_PAR_UNUSED(num_zones);
 #if CG_BUILD_PARALLEL
     // Each processor may have a different set of zones.  This routine
     // will sync the information such that at return, each procesosr
@@ -1333,7 +1335,8 @@ namespace Iocgns {
                      "ERROR: CGNS: Zone {} adjacency data is not correct type. Require "
                      "Abutting1to1 and PointList."
                      " {}\t{}\t{}",
-                     zone, static_cast<int>(connect_type), static_cast<int>(ptset_type), static_cast<int>(donor_ptset_type));
+                     zone, static_cast<int>(connect_type), static_cast<int>(ptset_type),
+                     static_cast<int>(donor_ptset_type));
           IOSS_ERROR(errmsg);
         }
 
@@ -1763,9 +1766,7 @@ namespace Iocgns {
     if (!is_input()) {
       m_timesteps.push_back(time);
       SMART_ASSERT(m_timesteps.size() == (size_t)state);
-    }
 
-    if (!is_input()) {
       bool do_flush = true;
       if (m_flushInterval != 1) {
         if (m_flushInterval == 0 || state % m_flushInterval != 0) {
@@ -1817,8 +1818,8 @@ namespace Iocgns {
     cgsize_t              first      = 1;
 
     // Create a lambda to eliminate some duplicate code in coordinate outputs...
-    auto coord_lambda = [&data, &first,
-                         base, this](const char *ordinate, int cgns_file_ptr,
+    auto coord_lambda = [&data, &first, base,
+                         this](const char *ordinate, int cgns_file_ptr,
                                const std::vector<CGNSIntVector> &block_local_node_map) {
       auto *rdata = static_cast<double *>(data);
 
@@ -1873,7 +1874,8 @@ namespace Iocgns {
           // ========================================================================
           // Repetitive code for each coordinate direction; use a lambda to consolidate...
           auto blk_coord_lambda = [block_map, base, zone, &coord, first, num_coord, phys_dimension,
-                                   &rdata, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
+                                   &rdata,
+                                   this](const char *ord_name, int ordinate, int cgns_file_ptr) {
             CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble),
                                   &first, &num_coord, coord.data()));
 
@@ -2264,8 +2266,8 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
-                             &rdata, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
+        auto coord_lambda = [base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get, &rdata,
+                             this](const char *ord_name, int ordinate, int cgns_file_ptr) {
           CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble), rmin,
                                 rmax, coord.data()));
 
@@ -2577,8 +2579,8 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [&coord, num_to_get, phys_dimension, &rdata, base,
-                             zone, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
+        auto coord_lambda = [&coord, num_to_get, phys_dimension, &rdata, base, zone,
+                             this](const char *ord_name, int ordinate, int cgns_file_ptr) {
           int crd_index = 0;
 
           // Map to global coordinate position...
