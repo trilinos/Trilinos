@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _ELB_INP_CONST_H_
-#define _ELB_INP_CONST_H_
+#pragma once
 
 #include <string> // for string
 struct Machine_Description;
@@ -71,5 +69,3 @@ int check_inp_specs(std::string         &exoII_inp_file, /* The ExodusII input F
 
 /* Various defines used by the input routines */
 #define NS_NONE -1
-
-#endif /* _ELB_INP_CONST_H_ */

@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "GetLongOpt.h" // for GetLongOption
 #include "Tolerance.h"  // for Tolerance, etc
@@ -145,4 +144,3 @@ private:
 };
 
 extern SystemInterface interFace;
-#endif

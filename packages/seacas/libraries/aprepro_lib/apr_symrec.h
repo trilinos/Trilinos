@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
+// Copyright(C) 1999-, 20212021,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,9 +7,7 @@
 // Might be good to add a callback function which would be called
 // when there was output -- In LexerOutput for example.  Default
 // could be to just write to std::cout or to resultsOutput stringstream...
-
-#ifndef APREPRO_SYMREC_H
-#define APREPRO_SYMREC_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -90,4 +88,3 @@ namespace SEAMS {
     }
   };
 } // namespace SEAMS
-#endif

@@ -11,9 +11,7 @@
  * exodusII_int.h - ExodusII header file for internal Exodus call use only
  *
  */
-
-#ifndef EXODUSII_INT_H
-#define EXODUSII_INT_H
+#pragma once
 
 #include <stdbool.h>
 
@@ -890,6 +888,4 @@ EXODUS_EXPORT int ex__default_max_name_length;
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -19,9 +19,7 @@
 /*      type and constant declarations                                        */
 /*                                                                            */
 /******************************************************************************/
-
-#ifndef CGI_H
-#define CGI_H
+#pragma once
 
 #include "fortyp.h"
 #include "stdtyp.h"
@@ -160,4 +158,3 @@ typedef enum csm_enum { dc_csm, ic_csm } csm_enum;
 void cgi_def_ini(void);
 
 /* end cgi.h */
-#endif

@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef SEACAS_CodeTypes_H
-#define SEACAS_CodeTypes_H
+#pragma once
 
 #include <Ioss_Region.h>
 #include <set>
@@ -20,4 +19,3 @@ using StringIdVector = std::vector<std::pair<std::string, size_t>>;
 using StringVector   = std::vector<std::string>;
 using RegionVector   = std::vector<Ioss::Region *>;
 using Omissions      = std::vector<StringVector>;
-#endif

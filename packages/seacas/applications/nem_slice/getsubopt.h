@@ -6,5 +6,5 @@
  * See packages/seacas/LICENSE for details
  */
 #pragma once
-
-void *array_alloc(int numdim, ...);
+int
+getsubopt (char **optionp, char *const *tokens, char **valuep)

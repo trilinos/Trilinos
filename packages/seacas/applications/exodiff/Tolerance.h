@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef TOLERANCE_H
-#define TOLERANCE_H
+#pragma once
 
 #include "map.h"
 #include <cmath>
@@ -131,5 +130,3 @@ inline double Tolerance::Delta(double v1, double v2) const
   }
   return 0.0;
 }
-
-#endif

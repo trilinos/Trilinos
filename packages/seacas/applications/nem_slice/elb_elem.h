@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _ELB_ELM_CONST_H
-#define _ELB_ELM_CONST_H
+#pragma once
 
 /* Define element types */
 enum E_Type {
@@ -109,5 +107,3 @@ int is_tet(E_Type etype);
 int is_wedge(E_Type etype);
 int is_pyramid(E_Type etype);
 int is_3d_element(E_Type etype);
-
-#endif /* _ELB_ELM_CONST_H */

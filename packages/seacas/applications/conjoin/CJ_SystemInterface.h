@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "CJ_CodeTypes.h"
 #include "GetLongOpt.h" // for GetLongOption
@@ -88,4 +87,3 @@ namespace Excn {
     StringIdVector ssetVarNames_{};
   };
 } // namespace Excn
-#endif

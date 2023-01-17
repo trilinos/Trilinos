@@ -11,9 +11,7 @@
 // damage or loss of business that this software may cause.
 //
 ///////////////////////////////////////////////////////////////////////////////
-
-#ifndef XGETOPT_H
-#define XGETOPT_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,5 +25,3 @@ int getopt(int argc, char *const argv[], const char *optstring);
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
 #endif
-
-#endif // XGETOPT_H
