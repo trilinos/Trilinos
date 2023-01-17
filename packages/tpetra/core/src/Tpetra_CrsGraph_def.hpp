@@ -378,7 +378,8 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
+    using exec_space = typename nc_view_type::execution_space;
+    Kokkos::deep_copy (exec_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
@@ -512,7 +513,8 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
+    using exec_space = typename nc_view_type::execution_space;
+    Kokkos::deep_copy (exec_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
