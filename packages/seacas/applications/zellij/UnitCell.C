@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -76,9 +76,13 @@ namespace {
   void sort_face_nodes(std::vector<INT> &face_nodes, const std::vector<double> &coord_j,
                        const std::vector<double> &coord_i)
   {
-    Ioss::sort(face_nodes.begin(), face_nodes.end(), [&coord_j, &coord_i](size_t a, size_t b) {
-      return float(coord_i[a]) < float(coord_i[b]) ||
-             (approx_equal(coord_i[a], coord_i[b]) && float(coord_j[a]) < float(coord_j[b]));
+    // NOTE: The `!approx_equal(coord_j[a], coord_j[b])` portion of the less than comparison
+    // is meant to handle values close to but one or both are not exactly zero.
+    Ioss::sort(face_nodes.begin(), face_nodes.end(), [&coord_j](size_t a, size_t b) {
+      return !approx_equal(coord_j[a], coord_j[b]) && float(coord_j[a]) < float(coord_j[b]);
+    });
+    std::stable_sort(face_nodes.begin(), face_nodes.end(), [&coord_i](size_t a, size_t b) {
+      return !approx_equal(coord_i[a], coord_i[b]) && float(coord_i[a]) < float(coord_i[b]);
     });
   }
 } // namespace
@@ -100,30 +104,63 @@ UnitCell::UnitCell(std::shared_ptr<Ioss::Region> region) : m_region(region)
   minmax_x = std::make_pair(*x_min_max_it.first, *x_min_max_it.second);
   minmax_y = std::make_pair(*y_min_max_it.first, *y_min_max_it.second);
 
+  if (debug_level & 4) {
+    fmt::print("Min / Max X = {} ... {}\n", minmax_x.first, minmax_x.second);
+    fmt::print("Min / Max Y = {} ... {}\n", minmax_y.first, minmax_y.second);
+  }
   // Now iterate all nodes and categorize if on a face -- minx, maxx, miny, maxy,
   gather_face_nodes(coord_x, minmax_x, min_I_face, max_I_face);
   gather_face_nodes(coord_y, minmax_y, min_J_face, max_J_face);
+  if (debug_level & 4) {
+    fmt::print("Nodes on X Face = {}\n", min_I_face.size());
+    fmt::print("Nodes on Y Face = {}\n", min_J_face.size());
+  }
 
   sort_face_nodes(min_I_face, coord_z, coord_y);
   sort_face_nodes(max_I_face, coord_z, coord_y);
   sort_face_nodes(min_J_face, coord_z, coord_x);
   sort_face_nodes(max_J_face, coord_z, coord_x);
-
   if (debug_level & 4) {
     // Output each set of nodes --
     fmt::print("\nSORTED:\n");
-    fmt::print("Min I: {}\n\n", fmt::join(min_I_face, " "));
-    fmt::print("Max I: {}\n\n", fmt::join(max_I_face, " "));
-    fmt::print("Min J: {}\n\n", fmt::join(min_J_face, " "));
-    fmt::print("Max J: {}\n\n", fmt::join(max_J_face, " "));
+    fmt::print("\tMin/Max I Face:\n");
+    for (size_t i = 0; i < min_I_face.size(); i++) {
+      auto min_I = min_I_face[i];
+      auto max_I = max_I_face[i];
+      fmt::print("\t\t{:10}: {:12.4e} {:12.4e} {:12.4e}\t{:10}: {:12.4e} {:12.4e} {:12.4e}\n",
+                 min_I, coord_x[min_I], coord_y[min_I], coord_z[min_I], max_I, coord_x[max_I],
+                 coord_y[max_I], coord_z[max_I]);
+    }
+    fmt::print("\tMin/Max J Face:\n");
+    for (size_t i = 0; i < min_J_face.size(); i++) {
+      auto min_J = min_J_face[i];
+      auto max_J = max_J_face[i];
+      fmt::print("\t\t{:10}: {:12.4e} {:12.4e} {:12.4e}\t{:10}: {:12.4e} {:12.4e} {:12.4e}\n",
+                 min_J, coord_x[min_J], coord_y[min_J], coord_z[min_J], max_J, coord_x[max_J],
+                 coord_y[max_J], coord_z[max_J]);
+    }
   }
 
 #ifndef NDEBUG
   for (size_t i = 0; i < min_I_face.size(); i++) {
     auto minI = min_I_face[i];
     auto maxI = max_I_face[i];
+    SMART_ASSERT((size_t)minI < coord_y.size());
+    SMART_ASSERT((size_t)maxI < coord_y.size());
+    SMART_ASSERT((size_t)minI < coord_z.size());
+    SMART_ASSERT((size_t)maxI < coord_z.size());
     SMART_ASSERT(approx_equal(coord_y[minI], coord_y[maxI]))(coord_y[minI])(coord_y[maxI]);
     SMART_ASSERT(approx_equal(coord_z[minI], coord_z[maxI]))(coord_z[minI])(coord_z[maxI]);
+  }
+  for (size_t i = 0; i < min_J_face.size(); i++) {
+    auto minJ = min_J_face[i];
+    auto maxJ = max_J_face[i];
+    SMART_ASSERT((size_t)minJ < coord_x.size());
+    SMART_ASSERT((size_t)maxJ < coord_x.size());
+    SMART_ASSERT((size_t)minJ < coord_z.size());
+    SMART_ASSERT((size_t)maxJ < coord_z.size());
+    SMART_ASSERT(approx_equal(coord_x[minJ], coord_x[maxJ]))(coord_x[minJ])(coord_z[maxJ]);
+    SMART_ASSERT(approx_equal(coord_z[minJ], coord_z[maxJ]))(coord_z[minJ])(coord_z[maxJ]);
   }
 #endif
 

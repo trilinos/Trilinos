@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -457,7 +457,7 @@ namespace {
 
   template <typename INT>
   void create_adjacency_list(const Ioss::Region &region, std::vector<idx_t> &pointer,
-                             std::vector<idx_t> &adjacency, INT dummy)
+                             std::vector<idx_t> &adjacency, INT)
   {
     progress(__func__);
     // Size of pointer list is element count + 1;
@@ -500,7 +500,7 @@ namespace {
 
   template <typename INT>
   void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                          std::vector<int> &elem_to_proc, INT dummy)
+                          std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
   {
     progress(__func__);
     // Populate the 'elem_to_proc' vector with a mapping from element to processor.
@@ -1730,8 +1730,8 @@ namespace {
     }
     progress("\tProc_node reserved");
 
-    size_t            sum_on_proc_count = 0;
-    Ioss::DatabaseIO *db                = region.get_database();
+    IOSS_MAYBE_UNUSED size_t sum_on_proc_count = 0;
+    Ioss::DatabaseIO        *db                = region.get_database();
 
     const auto &ebs         = region.get_element_blocks();
     size_t      block_count = ebs.size();
@@ -1913,7 +1913,7 @@ namespace {
       Ioss::copy_database(region, output_region, options);
 
       // KLUGE: The metadata has already been written on
-      // output_region, but we couln't define the maps until now, so
+      // output_region, but we couldn't define the maps until now, so
       // need to update the metadata with map information and hope
       // that no other maps exist on the database...
       if (interFace.outputDecompMap_) {

@@ -30,6 +30,7 @@ endif()
 
 SET(HEADERS
   aprepro.h
+  apr_tokenize.h
 )
 
 SET(SOURCES

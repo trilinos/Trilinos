@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -20,7 +20,7 @@ Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
                [--root <root directory>] [--subdir <sub directory>] [--spread_suffix <suffix>]
                [--multikl] [--spectral] [--inertial] [--linear]
                [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
-               [...others...] meshfile.ext
+               [--weight <specification>] [...others...] meshfile.ext
 
 Decomposition methods: [0..3] = speed ranking 0=fastest
               (See chaco and/or zoltan documentation for more details)
@@ -56,6 +56,7 @@ Other options:
 --nodal            Nodal Decomposition (-N)
 --elemental        Elemental Decomposition (default, -E)
 --input            Optional nem_slice input file (-i)
+--weight  <spec>   Specification of weighting options (-w)
 --viz_mesh         Output mesh showing processor distribution of elements. (-V)
 --spheres_linear   Decompose sphere elements using linear method (matches old behavior) (-s)
 --processors #p    Specify number of processors (-p, -j)
@@ -63,6 +64,9 @@ Other options:
 --subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
 --spread_suffix x  Suffix for parallel files (default: meshfile suffix) (-X)
 --64               Force creation of 64-bit integer decomposed files (-6)
+-n options         Specify additional nem_slice options
+
+   Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#decomp"
    help-email: sierra-help@sandia.gov
 
 DECOMP_USAGE_EOF
@@ -112,6 +116,7 @@ Other options:
 -V          Output mesh showing processor distribution of elements
 -6          Force creation of 64-bit integer decomposed files
 
+   Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#decomp"
    help-email: sierra-help@sandia.gov
 
 DECOMP_USAGE_EOF
@@ -149,6 +154,7 @@ function execute_loadbalance {
     input=$6
     LAUNCH=$7
     decomp_type=$8
+    weighting=$9
 
     nemesis=$basename.$suffix_mesh.nem
     genesis=$basename.$suffix_mesh
@@ -174,16 +180,16 @@ function execute_loadbalance {
     then
         echo ${txtblu}
         echo "Executing:"
-        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
         echo ${txtrst}
-        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
         load_rc=$?
     else
         echo ${txtblu}
         echo "Executing:"
-        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
         echo ${txtrst}
-        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
         load_rc=$?
     fi
     return $load_rc
@@ -276,6 +282,7 @@ debug_level='0'
 decomp_type="-e"
 decomp_method="-l inertial"
 nem_slice_flag="-c"
+weighting=''
 rootdir="`pwd`/"
 subdir="."
 suffix_spread=''
@@ -309,7 +316,7 @@ fi
 if [ $OLDGETOPT -eq 1 ] ; then
    TEMP=$(getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*)
 else
-   TEMP=$(getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: -a \
+   TEMP=$(getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd:w: -a \
        --long input: \
        --long launch: \
        --long nolaunch \
@@ -339,6 +346,7 @@ else
        --long scattered \
        --long brick \
        --long zpinch \
+       --long weight:
        -n 'decomp' -- "$@")
 fi
 
@@ -366,6 +374,8 @@ while true ; do
         decomp_type="-e" ; shift ;;
     (-i|--input)
         input=$2 ; shift 2 ;;
+    (-w|--weight)
+	weighting="-w $2" ; shift 2 ;;
     (-p|-j|--processors)
         processors=$2 ; shift 2 ;;
     (-R|--rootdir)
@@ -517,7 +527,7 @@ then
 fi
 
 ########################################################################
-execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" "$LAUNCH" "$decomp_type"
+execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" "$LAUNCH" "$decomp_type" "$weighting"
 if [ $? -ne 0 ]
 then
     echo ${txtred}

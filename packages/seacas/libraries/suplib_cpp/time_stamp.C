@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,6 +15,6 @@ std::string time_stamp(const std::string &format)
 
   time_t      calendar_time = std::time(nullptr);
   struct tm  *local_time    = std::localtime(&calendar_time);
-  std::string time_string   = fmt::format(format, *local_time);
+  std::string time_string   = fmt::format(fmt::runtime(format), *local_time);
   return time_string;
 }

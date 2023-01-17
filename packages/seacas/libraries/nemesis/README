@@ -13,13 +13,13 @@ information. The NEMESIS information is written and read via C or C++
 callable functions which compromise the NEMESIS I API.
 
 NOTE:
-All nemesis functinality has been moved into the exodus library API.
+All nemesis functionality has been moved into the exodus library API.
 All (almost) nemesis API functions are available in exodus by
 replacing the `ne_` at the beginning of the function name with `ex_`.
 
 For example, the nemesis function `ne_get_init_global` is known as
 `ex_get_init_global` in the exodus library API.
 
-The nemesis library is only retained for backward compatiblity; for
+The nemesis library is only retained for backward compatibility; for
 all new development, the exodus library should be used instead.
 
