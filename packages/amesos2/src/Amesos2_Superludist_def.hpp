@@ -327,13 +327,60 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::preOrdering_impl()
   {
-    // We will always use the NATURAL row ordering to avoid the
-    // sequential bottleneck present when doing any other row
-    // ordering scheme from SuperLU_DIST
-    //
-    // Set perm_r to be the natural ordering
-    SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
-    for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
+    if (data_.options.RowPerm == SLUD::NOROWPERM) {
+      SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
+      for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
+    } else if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+
+      double *R1, *C1;
+
+      /* Allocate storage for scaling factors. */
+
+      TEUCHOS_TEST_FOR_EXCEPTION( !(R1 = SLUD::D::doubleMalloc_dist(data_.A.nrow)),
+          std::runtime_error,
+          "SUPERLU_MALLOC fails for R1[]");
+
+      TEUCHOS_TEST_FOR_EXCEPTION( !(C1 = SLUD::D::doubleMalloc_dist(data_.A.ncol)),
+          std::runtime_error,
+          "SUPERLU_MALLOC fails for C1[]");
+
+      SLUD::SuperMatrix GA;      /* Global A in NC format */
+      SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
+
+      SLUD::NCformat *GAstore = (SLUD::NCformat*) GA.Store;
+      SLUD::int_t* colptr = GAstore->colptr;
+      SLUD::int_t* rowind = GAstore->rowind;
+      SLUD::int_t nnz = GAstore->nnz;
+      double *a_GA = (double *) GAstore->nzval;
+
+      int iinfo, job = 5;
+      if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
+
+        iinfo = SLUD::D::dldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
+                data_.perm_r.getRawPtr(), R1, C1);
+
+        MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+        if ( iinfo == 0 ) {
+            MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+            if ( job == 5 && data_.options.Equil ) {
+                MPI_Bcast( R1, data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
+                MPI_Bcast( C1, data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
+            }
+        }
+      } else {
+          MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+          if ( iinfo == 0 ) {
+            MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+            if ( job == 5 && data_.options.Equil ) {
+                MPI_Bcast( R1, data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
+                MPI_Bcast( C1, data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
+            }
+          }
+      }
+
+      SUPERLU_FREE(R1);
+      SUPERLU_FREE(C1);
+    }
 
     // loadA_impl();                    // Refresh matrix values
 
@@ -736,6 +783,13 @@ namespace Amesos2 {
     bool equil = parameterList->get<bool>("Equil", false);
     data_.options.Equil = equil ? SLUD::YES : SLUD::NO;
 
+    if( parameterList->isParameter("RowPerm") ){
+      RCP<const ParameterEntryValidator> rowperm_validator = valid_params->getEntry("RowPerm").validator();
+      parameterList->getEntry("RowPerm").setValidator(rowperm_validator);
+
+      data_.options.RowPerm = getIntegralValue<SLUD::rowperm_t>(*parameterList, "RowPerm");
+    }
+
     if( parameterList->isParameter("ColPerm") ){
       RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
       parameterList->getEntry("ColPerm").setValidator(colperm_validator);
@@ -743,20 +797,12 @@ namespace Amesos2 {
       data_.options.ColPerm = getIntegralValue<SLUD::colperm_t>(*parameterList, "ColPerm");
     }
 
-    // Always use the "NOROWPERM" option to avoid a serial bottleneck
-    // with the weighted bipartite matching algorithm used for the
-    // "LargeDiag" RowPerm.  Note the inconsistency with the SuperLU
-    // User guide (which states that the value should be "NATURAL").
-    data_.options.RowPerm = SLUD::NOROWPERM;
+    if( parameterList->isParameter("IterRefine") ){
+      RCP<const ParameterEntryValidator> iter_refine_validator = valid_params->getEntry("IterRefine").validator();
+      parameterList->getEntry("IterRefine").setValidator(iter_refine_validator);
 
-    // TODO: Uncomment when supported
-    // if( parameterList->isParameter("IterRefine") ){
-    //   RCP<const ParameterEntryValidator> iter_refine_validator = valid_params->getEntry("IterRefine").validator();
-    //   parameterList->getEntry("IterRefine").setValidator(iter_refine_validator);
-
-    //   data_.options.IterRefine = getIntegralValue<SLUD::IterRefine_t>(*parameterList, "IterRefine");
-    // }
-    data_.options.IterRefine = SLUD::NOREFINE;
+      data_.options.IterRefine = getIntegralValue<SLUD::IterRefine_t>(*parameterList, "IterRefine");
+    }
 
     bool replace_tiny = parameterList->get<bool>("ReplaceTinyPivot", true);
     data_.options.ReplaceTinyPivot = replace_tiny ? SLUD::YES : SLUD::NO;
@@ -802,22 +848,35 @@ namespace Amesos2 {
                                                   tuple<SLUD::trans_t>(SLUD::NOTRANS),
                                                   pl.getRawPtr());
 
-      // Equillbration
-      pl->set("Equil", false, "Whether to equilibrate the system before solve");
+      // Equilibration
+      pl->set("Equil", true, "Whether to equilibrate the system before solve");
 
-      // TODO: uncomment when supported
-      // setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
-      //                                                     "Type of iterative refinement to use",
-      //                                                     tuple<string>("NOREFINE", "DOUBLE"),
-      //                                                     tuple<string>("Do not use iterative refinement",
-      //                                                                   "Do double iterative refinement"),
-      //                                                     tuple<SLUD::IterRefine_t>(SLUD::NOREFINE,
-      //                                                                               SLUD::DOUBLE),
-      //                                                     pl.getRawPtr());
+      // Iterative refinement
+      setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
+                                                    "Type of iterative refinement to use",
+                                                    tuple<string>("NOREFINE", "SLU_DOUBLE"),
+                                                    tuple<string>("Do not use iterative refinement",
+                                                                  "Do double iterative refinement"),
+                                                    tuple<SLUD::IterRefine_t>(SLUD::NOREFINE,
+                                                                              SLUD::SLU_DOUBLE),
+                                                    pl.getRawPtr());
 
+      // Tiny pivot handling
       pl->set("ReplaceTinyPivot", true,
               "Specifies whether to replace tiny diagonals during LU factorization");
 
+      // Row permutation
+      setStringToIntegralParameter<SLUD::rowperm_t>("RowPerm", "LargeDiag_MC64",
+                                                    "Specifies how to permute the rows of the "
+                                                    "matrix for sparsity preservation",
+                                                    tuple<string>("NOROWPERM", "LargeDiag_MC64"),
+                                                    tuple<string>("Natural ordering",
+                                                                  "Duff/Koster algorithm"),
+                                                    tuple<SLUD::rowperm_t>(SLUD::NOROWPERM,
+                                                                           SLUD::LargeDiag_MC64),
+                                                    pl.getRawPtr());
+
+      // Column permutation
       setStringToIntegralParameter<SLUD::colperm_t>("ColPerm", "PARMETIS",
                                                     "Specifies how to permute the columns of the "
                                                     "matrix for sparsity preservation",
