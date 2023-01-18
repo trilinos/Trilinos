@@ -140,6 +140,9 @@ int main(int argc, char *argv[]) {
 
     std::vector<RealT> xstar(dim);
     sobj->getSolution(xstar, *wtsP, *yP);
+    RealT xmax(0);
+    for (int i = 0; i < dim; ++i)
+      xmax = std::max(xmax,std::abs(xstar[i]));
 
     // Check derivatives of smooth function
     ROL::Ptr<ROL::Vector<RealT>> xd = sol->clone();
@@ -169,7 +172,7 @@ int main(int argc, char *argv[]) {
       *outStream << "  x" << i+1 << " = " << xstar[i];
     }
     *outStream << std::endl;
-    *outStream << "  Max-Error = " << err << std::endl;
+    *outStream << "  Max Relative Error = " << err/xmax << std::endl;
     errorFlag += (err > tol ? 1 : 0);
 
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "Simplified SPG");  
@@ -189,7 +192,7 @@ int main(int argc, char *argv[]) {
       *outStream << "  x" << i+1 << " = " << xstar[i];
     }
     *outStream << std::endl;
-    *outStream << "  Max-Error = " << err << std::endl;
+    *outStream << "  Max Relative Error = " << err/xmax << std::endl;
     errorFlag += (err > tol ? 1 : 0);
 
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
@@ -209,7 +212,7 @@ int main(int argc, char *argv[]) {
       *outStream << "  x" << i+1 << " = " << xstar[i];
     }
     *outStream << std::endl;
-    *outStream << "  Max-Error = " << err << std::endl;
+    *outStream << "  Max Relative Error = " << err/xmax << std::endl;
     errorFlag += (err > tol ? 1 : 0);
   }
   catch (std::logic_error& err) {
