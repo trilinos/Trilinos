@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,13 +31,13 @@
 namespace Iotm {
   void error_handler(const std::ostringstream &message) { throw std::logic_error((message).str()); }
 
-  TextMesh::TextMesh(IOSS_MAYBE_UNUSED int proc_count, int my_proc) : m_myProcessor(my_proc)
+  TextMesh::TextMesh(int proc_count, int my_proc) : m_myProcessor(my_proc)
   {
     m_errorHandler = [](const std::ostringstream &errmsg) { error_handler(errmsg); };
     initialize();
   }
 
-  TextMesh::TextMesh(const std::string &parameters, IOSS_MAYBE_UNUSED int proc_count, int my_proc)
+  TextMesh::TextMesh(const std::string &parameters, int proc_count, int my_proc)
       : m_myProcessor(my_proc)
   {
     m_errorHandler = [](const std::ostringstream &errmsg) { error_handler(errmsg); };
