@@ -85,10 +85,13 @@ public:
   //! Copy constructor
   ParameterEntry(const ParameterEntry& source);
 
+  //! Move constructor.
+  ParameterEntry(ParameterEntry&& other);
+
   //! Templated constructor
   template<typename T>
   explicit ParameterEntry(
-    T value, bool isDefault = false, bool isList = false,
+    T&& value, bool isDefault = false, bool isList = false,
     const std::string &docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
@@ -100,6 +103,9 @@ public:
 
   //! Replace the current parameter entry with \c source.
   ParameterEntry& operator=(const ParameterEntry& source);
+
+  //! Move-assignment operator.
+  ParameterEntry& operator=(ParameterEntry&&);
 
   /*! \brief Templated set method that uses the input value type to determine the type of parameter.  
       
@@ -313,13 +319,13 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e)
 template<typename T>
 inline
 ParameterEntry::ParameterEntry(
-  T value_in,
+  T&& value_in,
   bool isDefault_in,
   bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
   const std::string &docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
-  : val_(value_in),
+  : val_(std::forward<T>(value_in)),
     isUsed_(false),
     isDefault_(isDefault_in),
     docString_(docString_in),
