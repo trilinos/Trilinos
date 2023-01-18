@@ -97,7 +97,7 @@ if(CCACHE_PROGRAM)
         set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/launch-cxx")
     endif()
 else()
-    message(WARNING "ccache requested but not found")
+    message(FATAL_ERROR "ccache requested but not found")
 endif()
 endif()
 
