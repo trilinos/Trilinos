@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
     list.sublist("Status Test").set("Iteration Limit", 10);
-    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Select Subproblem Solver", 3);  
+    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;

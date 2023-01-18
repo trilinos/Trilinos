@@ -47,6 +47,7 @@
 #include "ROL_TypeP_Algorithm.hpp"
 #include "ROL_TrustRegionModel_U.hpp"
 #include "ROL_TrustRegionUtilities.hpp"
+#include "ROL_Types.hpp"
 
 /** \class ROL::TypeP::TrustRegionAlgorithm
     \brief Provides an interface to run the trust-region algorithm.
@@ -54,6 +55,63 @@
 
 namespace ROL {
 namespace TypeP {
+
+enum ETrustRegionP{
+  TRUSTREGION_P_SPG = 0,
+  TRUSTREGION_P_SPG2,
+  TRUSTREGION_P_NCG,
+  TRUSTREGION_P_LAST
+};
+
+inline std::string ETrustRegionPToString(ETrustRegionP alg) {
+  std::string retString;
+  switch(alg) {
+    case TRUSTREGION_P_SPG:          retString = "SPG";               break;
+    case TRUSTREGION_P_SPG2:         retString = "Simplified SPG";    break;
+    case TRUSTREGION_P_NCG:          retString = "NCG";               break;
+    case TRUSTREGION_P_LAST:         retString = "Last Type (Dummy)"; break;
+    default:                         retString = "INVALID ETrustRegionP";
+  }
+  return retString;
+}
+
+inline int isValidTrustRegionP(ETrustRegionP alg){
+  return( (alg == TRUSTREGION_P_SPG)  ||
+          (alg == TRUSTREGION_P_SPG2) ||
+          (alg == TRUSTREGION_P_NCG)  ||
+          (alg == TRUSTREGION_P_LAST)
+        );
+}
+
+inline ETrustRegionP & operator++(ETrustRegionP &type) {
+  return type = static_cast<ETrustRegionP>(type+1);
+}
+
+inline ETrustRegionP operator++(ETrustRegionP &type, int) {
+  ETrustRegionP oldval = type;
+  ++type;
+  return oldval;
+}
+
+inline ETrustRegionP & operator--(ETrustRegionP &type) {
+  return type = static_cast<ETrustRegionP>(type-1);
+}
+
+inline ETrustRegionP operator--(ETrustRegionP &type, int) {
+  ETrustRegionP oldval = type;
+  --type;
+  return oldval;
+}
+
+inline ETrustRegionP StringToETrustRegionP(std::string s) {
+  s = removeStringFormat(s);
+  for ( ETrustRegionP alg = TRUSTREGION_P_SPG; alg < TRUSTREGION_P_LAST; alg++ ) {
+    if ( !s.compare(removeStringFormat(ETrustRegionPToString(alg))) ) {
+      return alg;
+    }
+  }
+  return TRUSTREGION_P_SPG;
+}
 
 template<typename Real>
 class TrustRegionAlgorithm : public TypeP::Algorithm<Real> {
@@ -105,10 +163,10 @@ private:
   int maxSize_;
   bool useMin_;
   bool useNMSP_;
-  Real algSelect_;
+  ETrustRegionP algSelect_;
   int ncgType_; 
-	Real etaNCG_; 
-	Real desPar_;
+  Real etaNCG_; 
+  Real desPar_;
 
   // Inexactness Parameters
   std::vector<bool> useInexact_;
@@ -252,13 +310,12 @@ private:
             Real del, 
             TrustRegionModel_U<Real> &model, 
             Objective<Real> &nobj,
-            Vector<Real> &px,
-            Vector<Real> &pwa, 
+            Vector<Real> &s, 
             Vector<Real> &pwa1, 
             Vector<Real> &pwa2,
             Vector<Real> &pwa3, 
             Vector<Real> &pwa4, 
-            Vector<Real> &pwa5,
+            Vector<Real> &pwa5, 
             Vector<Real> &dwa, 
             std::ostream &outStream = std::cout);
 
