@@ -843,22 +843,22 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
                                       Vector<Real> &dwa,
                                       std::ostream &outStream) {
   // Use NCG to approximately solve TR subproblem:
-  //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)> + phi(y)  subject to  ||y|| \le del
+  //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)> + phi(y)  subject to  ||y-x|| \le del
   //
   //   Inpute:
-  //       y     = Cauchy step
+  //       y     = computed iterate
   //       sval  = smooth model value
   //       nval  = nonsmooth value
-  //       gmod  = Current gradient
-  //       x     = Current iterate
+  //       gmod  = current gradient
+  //       x     = current iterate
   //       del   = trust region radius
   //       model = trust region model
   //       nobj  = nonsmooth objective function
-  //       s     = stores the current step
-  //       pwa1  = stores the SPG iterate
-  //       pwa2  = stores the SPG step (i.e., descent direction)
-  //       pwa3  = stores y - x
-  //       pwa4  = stores the previous step
+  //       s     = the current step
+  //       pwa1  = the SPG iterate
+  //       pwa2  = the "negative gradient"
+  //       pwa3  = y - x
+  //       pwa4  = the previous "negative gradient"
   //       pwa5  = temporary storage
   //       dwa   = the Hessian applied to the step
   const Real zero(0), half(0.5), one(1), two(2);
