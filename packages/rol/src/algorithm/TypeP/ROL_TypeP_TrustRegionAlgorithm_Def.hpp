@@ -358,7 +358,6 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
       state_->gnorm = computeGradient(x,*state_->gradientVec,*px,*dg,*pwa1,state_->searchSize,sobj,nobj,outStream);
-      state_->ngrad++;
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
@@ -535,7 +534,7 @@ void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
 
     // Evaluate nonsmooth term
     nobj.update(pwa2,UpdateType::Trial);
-    nval = nobj.value(pwa2,tol);
+    nval = nobj.value(pwa2,tol); state_->nnval++;
 
     // Perform line search
     alphaMax = one;
@@ -554,7 +553,7 @@ void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
     else {
       y.axpy(alpha,pwa); // New iterate
       nobj.update(y,UpdateType::Trial);
-      nval  = nobj.value(y, tol); 
+      nval  = nobj.value(y, tol); state_->nnval++; 
       sval += alpha * (gs + half * alpha * sHs);
       gmod.axpy(alpha,dwa);
     }

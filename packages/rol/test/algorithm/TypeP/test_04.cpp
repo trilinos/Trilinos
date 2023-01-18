@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
     list.sublist("Status Test").set("Iteration Limit", 10);
-    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;
@@ -135,10 +134,12 @@ int main(int argc, char *argv[]) {
     sol = ROL::makePtr<ROL::StdVector<RealT>>(dim);
     wts->randomize(static_cast<RealT>(0),static_cast<RealT>(1));
     y->randomize(static_cast<RealT>(-5),static_cast<RealT>(5));
-    sol->zero();
 
     nobj = ROL::makePtr<ROL::l1Objective<RealT>>(wts,y);
     sobj = ROL::makePtr<QuadraticTypeP_Test01<RealT>>(dim);
+
+    std::vector<RealT> xstar(dim);
+    sobj->getSolution(xstar, *wtsP, *yP);
 
     // Check derivatives of smooth function
     ROL::Ptr<ROL::Vector<RealT>> xd = sol->clone();
@@ -151,11 +152,51 @@ int main(int argc, char *argv[]) {
     sobj->checkHessVec(*xd,*yd,true,*outStream);
     sobj->checkHessSym(*xd,*yd,*zd,true,*outStream);
 
+    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "SPG");  
+    sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
     algo->run(*sol,*sobj,*nobj,*outStream);
 
-    std::vector<RealT> xstar(dim);
-    sobj->getSolution(xstar, *wtsP, *yP);
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Result:   ";
+    for (int i = 0; i < dim; ++i) {
+      *outStream << "  x" << i+1 << " = " << data[i];
+      err = std::max(err,std::abs(data[i]-xstar[i]));
+    }
+    *outStream << std::endl;
+    *outStream << "  Truth:    ";
+    for (int i = 0; i < dim; ++i) {
+      *outStream << "  x" << i+1 << " = " << xstar[i];
+    }
+    *outStream << std::endl;
+    *outStream << "  Max-Error = " << err << std::endl;
+    errorFlag += (err > tol ? 1 : 0);
+
+    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "Simplified SPG");  
+    sol->zero();
+    algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    algo->run(*sol,*sobj,*nobj,*outStream);
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Result:   ";
+    for (int i = 0; i < dim; ++i) {
+      *outStream << "  x" << i+1 << " = " << data[i];
+      err = std::max(err,std::abs(data[i]-xstar[i]));
+    }
+    *outStream << std::endl;
+    *outStream << "  Truth:    ";
+    for (int i = 0; i < dim; ++i) {
+      *outStream << "  x" << i+1 << " = " << xstar[i];
+    }
+    *outStream << std::endl;
+    *outStream << "  Max-Error = " << err << std::endl;
+    errorFlag += (err > tol ? 1 : 0);
+
+    list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
+    sol->zero();
+    algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    algo->run(*sol,*sobj,*nobj,*outStream);
+
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
