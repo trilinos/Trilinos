@@ -22,6 +22,15 @@
 
 FMT_BEGIN_NAMESPACE
 
+// Check if std::chrono::utc_timestamp is available.
+#ifndef FMT_USE_UTC_TIME
+#  ifdef __cpp_lib_chrono
+#    define FMT_USE_UTC_TIME (__cpp_lib_chrono >= 201907L)
+#  else
+#    define FMT_USE_UTC_TIME 0
+#  endif
+#endif
+
 // Enable tzset.
 #ifndef FMT_USE_TZSET
 // UWP doesn't provide _tzset.
@@ -427,7 +436,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
   auto&& buf = get_buffer<Char>(out);
   do_write<Char>(buf, time, loc, format, modifier);
-  return buf.out();
+  return get_iterator(buf, out);
 }
 
 template <typename Char, typename OutputIt,
@@ -1397,7 +1406,7 @@ inline bool isfinite(T) {
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(std::is_unsigned<Int>::value ||
-             (value >= 0 && to_unsigned(value) <= to_unsigned(upper)),
+                 (value >= 0 && to_unsigned(value) <= to_unsigned(upper)),
              "invalid value");
   (void)upper;
   return static_cast<Int>(value);
@@ -2013,6 +2022,25 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     return formatter<std::tm, Char>::format(localtime(val), ctx);
   }
 };
+
+#if FMT_USE_UTC_TIME
+template <typename Char, typename Duration>
+struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
+                 Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    basic_string_view<Char> default_specs =
+        detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
+    this->do_parse(default_specs.begin(), default_specs.end());
+  }
+
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::utc_clock> val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    return formatter<std::tm, Char>::format(
+        localtime(std::chrono::utc_clock::to_sys(val)), ctx);
+  }
+};
+#endif
 
 template <typename Char> struct formatter<std::tm, Char> {
  private:

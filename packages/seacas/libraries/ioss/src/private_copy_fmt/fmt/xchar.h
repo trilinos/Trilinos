@@ -12,11 +12,30 @@
 
 #include "format.h"
 
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#  include <locale>
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
+
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
+
+inline auto write_loc(std::back_insert_iterator<detail::buffer<wchar_t>> out,
+                      loc_value value, const basic_format_specs<wchar_t>& specs,
+                      locale_ref loc) -> bool {
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+  auto& numpunct =
+      std::use_facet<std::numpunct<wchar_t>>(loc.get<std::locale>());
+  auto separator = std::wstring();
+  auto grouping = numpunct.grouping();
+  if (!grouping.empty()) separator = std::wstring(1, numpunct.thousands_sep());
+  return value.visit(loc_writer<wchar_t>{out, specs, separator, grouping, {}});
+#endif
+  return false;
 }
+}  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
 
@@ -126,7 +145,7 @@ auto vformat_to(OutputIt out, const S& format_str,
     -> OutputIt {
   auto&& buf = detail::get_buffer<Char>(out);
   detail::vformat_to(buf, detail::to_string_view(format_str), args);
-  return detail::get_iterator(buf);
+  return detail::get_iterator(buf, out);
 }
 
 template <typename OutputIt, typename S, typename... Args,
@@ -200,8 +219,10 @@ inline void vprint(std::FILE* f, wstring_view fmt, wformat_args args) {
   wmemory_buffer buffer;
   detail::vformat_to(buffer, fmt, args);
   buffer.push_back(L'\0');
+#if !__NVCC__
   if (std::fputws(buffer.data(), f) == -1)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+#endif
 }
 
 inline void vprint(wstring_view fmt, wformat_args args) {
