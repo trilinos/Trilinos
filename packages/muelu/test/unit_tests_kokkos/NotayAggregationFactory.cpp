@@ -415,7 +415,6 @@ namespace MueLuTests {
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     // Use Cuthill-McKee if we have it (requires Kokkos refactor)
    {
       MueLu::Level currentLevel;
@@ -449,8 +448,6 @@ namespace MueLuTests {
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
-
-#endif
 
   } // BuildNotayAggregates2D
 

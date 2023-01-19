@@ -1,5 +1,5 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos KokkosCore KokkosContainers)
-SET(LIB_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Tpetra KokkosKernels Thyra)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos KokkosCore KokkosContainers Tpetra)
+SET(LIB_OPTIONAL_DEP_PACKAGES Epetra EpetraExt KokkosKernels Thyra)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Tpetra KokkosKernels Thyra)
 SET(LIB_REQUIRED_DEP_TPLS BLAS LAPACK)

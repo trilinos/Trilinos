@@ -153,8 +153,6 @@ namespace Xpetra {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -183,8 +181,6 @@ namespace Xpetra {
         const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> >& exporter,
         const Teuchos::RCP<Teuchos::ParameterList>& params)
     : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(lclMatrix, toTpetra(rowMap), toTpetra(colMap), toTpetra(domainMap), toTpetra(rangeMap), toTpetra(importer), toTpetra(exporter), params))) {  }
-#endif
-#endif
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraCrsMatrix() {  }

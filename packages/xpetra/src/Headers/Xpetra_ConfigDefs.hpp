@@ -86,9 +86,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <TpetraCore_config.h>
 
-#if defined(HAVE_XPETRA_TPETRA)
     #include <Tpetra_ConfigDefs.hpp>
-#endif
 
 //! %Xpetra namespace
 namespace Xpetra {

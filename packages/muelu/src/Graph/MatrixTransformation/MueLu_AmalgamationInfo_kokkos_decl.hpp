@@ -62,7 +62,6 @@
 
 #include "MueLu_BaseClass.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 
@@ -198,5 +197,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_AMALGAMATIONINFO_KOKKOS_DECL_HPP_ */

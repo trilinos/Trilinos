@@ -55,9 +55,7 @@
 
 #include <MueLu.hpp>
 
-#if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h> // needed for check whether KLU2 is available
-#endif
 
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>
@@ -98,9 +96,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string xmlForceFile = "";
   bool useKokkos = false;
   if(lib == Xpetra::UseTpetra) {
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkos = false;
@@ -117,7 +112,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos = true;
 # endif
-#endif
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
@@ -155,12 +149,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string prefix;
   if (useKokkos) {
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     prefix = "kokkos/";
-#else
-    std::cout << "No kokkos refactor available." << std::endl;
-    return EXIT_FAILURE;
-#endif
   } else {
     prefix = "default/";
   }
@@ -180,14 +169,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       dirList.push_back(prefix+"FactoryParameterListInterpreter/");
     }
   }
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
-  // The ML interpreter have internal ifdef, which means that the resulting
-  // output would depend on configuration (reguarl interpreter does not have
-  // that). Therefore, we need to stabilize the configuration here.
-  // In addition, we run ML parameter list tests only if KLU is available
-  dirList.push_back(prefix+"MLParameterListInterpreter/");
-  dirList.push_back(prefix+"MLParameterListInterpreter2/");
-#endif
   int numLists = dirList.size();
 
   bool failed = false;

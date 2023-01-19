@@ -53,11 +53,9 @@
 
 #include "MueLu.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#endif
 
 #ifdef HAVE_MUELU_STRATIMIKOS
 #include <Stratimikos_LinearSolverBuilder.hpp>

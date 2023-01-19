@@ -55,10 +55,8 @@
 
 #include <Xpetra_MatrixMatrix.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
-#endif
 
 
 namespace MueLuTests {
@@ -68,37 +66,7 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS) && defined(HAVE_MUELU_AMESOS2)
-
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-
-    ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
-
-    for(int i=0; i< fileList.size(); i++) {
-      // Ignore files with "BlockCrs" in their name
-      auto found = fileList[i].find("BlockCrs");
-      if(found != std::string::npos) continue;
-
-      // Ignore files with "Comparison" in their name
-      found = fileList[i].find("Comparison");
-      if(found != std::string::npos) continue;
-
-      out << "Processing file: " << fileList[i] << std::endl;
-      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
-
-      RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-      H->GetLevel(0)->Set("A", A);
-
-      mueluFactory.SetupHierarchy(*H);
-
-      //TODO: check no unused parameters
-      //TODO: check results of Iterate()
-    }
-
-#   else
     out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2, Amesos, Amesos2)." << std::endl;
-#   endif
   }
 
 
@@ -107,7 +75,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#if defined(HAVE_MUELU_TPETRA)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
       Teuchos::ParameterList matrixParams;
       matrixParams.set("matrixType","Laplace1D");
@@ -151,13 +118,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
         //TODO: check results of Iterate()
       }
     }
-#   endif
     TEST_EQUALITY(1,1);
   }
 
 
 
-#if defined(HAVE_MUELU_TPETRA)
 template<class Matrix,class MT>
 MT compare_matrices(RCP<Matrix> & Ap, RCP<Matrix> &Ab) {
   using SC = typename Matrix::scalar_type;
@@ -178,7 +143,6 @@ MT compare_matrices(RCP<Matrix> & Ap, RCP<Matrix> &Ab) {
   Tpetra::MatrixMatrix::Add<SC,LO,GO,NO>(*Ap_t,false,one,*Ab_as_point,false,-one,diff);
   return diff->getFrobeniusNorm();
 }
-#endif
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -186,10 +150,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#   endif
-#if defined(HAVE_MUELU_TPETRA)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
       Teuchos::ParameterList matrixParams;
       matrixParams.set("matrixType","Laplace1D");
@@ -266,7 +226,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
         //TODO: check results of Iterate()
       }
     }
-#   endif
     TEST_EQUALITY(1,1);
   }
 

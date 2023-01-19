@@ -55,9 +55,7 @@
 #include "Epetra_Util.h"
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_Import_Util2.hpp"
-#endif
 
 namespace Xpetra {
 
@@ -89,9 +87,7 @@ namespace Xpetra {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::CrsMatrixUtils::sortCrsEntries only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;
@@ -109,9 +105,7 @@ namespace Xpetra {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::CrsMatrixUtils::sortAndMergeCrsEntries only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;
@@ -150,9 +144,7 @@ namespace Xpetra {
         }
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;
@@ -177,9 +169,7 @@ namespace Xpetra {
         }
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;
@@ -218,9 +208,7 @@ namespace Xpetra {
         }
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;
@@ -245,9 +233,7 @@ namespace Xpetra {
         }
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
-#endif // HAVE_XPETRA_TPETRA
       }
 
       return;

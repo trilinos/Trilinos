@@ -95,9 +95,7 @@ namespace Belos {
             class Node>
   class XpetraOp :
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#endif
   {
 
   public:
@@ -130,7 +128,6 @@ namespace Belos {
       Op_->apply(x,y);
     }
 
-#ifdef HAVE_XPETRA_TPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -152,7 +149,6 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
-#endif
 
     RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() const { return Op_; }
 
@@ -175,11 +171,9 @@ namespace Belos {
   class XpetraOp<double, int, int, Xpetra::EpetraNode>
     :
     public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
-#ifdef HAVE_XPETRA_TPETRA
 #if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
-#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
@@ -206,7 +200,6 @@ namespace Belos {
       Op_->apply(x,y);
     }
 
-#ifdef HAVE_XPETRA_TPETRA
 #if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
@@ -223,7 +216,6 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -273,11 +265,9 @@ namespace Belos {
   class XpetraOp<double, int, long long, Xpetra::EpetraNode>
     :
     public OperatorT<Xpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
-#ifdef HAVE_XPETRA_TPETRA
 #if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     , public OperatorT<Tpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
-#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
@@ -304,7 +294,6 @@ namespace Belos {
       Op_->apply(x,y);
     }
 
-#ifdef HAVE_XPETRA_TPETRA
 #if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
@@ -321,7 +310,6 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

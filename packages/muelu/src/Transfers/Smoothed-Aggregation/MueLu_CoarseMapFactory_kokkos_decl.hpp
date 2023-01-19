@@ -47,7 +47,6 @@
 #define MUELU_COARSEMAPFACTORY_KOKKOS_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 
@@ -163,5 +162,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_COARSEMAPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_COARSEMAPFACTORY_KOKKOS_DECL_HPP_ */

@@ -46,8 +46,6 @@
 #ifndef MUELU_NULLSPACEFACTORY_KOKKOS_DEF_HPP
 #define MUELU_NULLSPACEFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include "MueLu_NullspaceFactory_kokkos_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
@@ -185,5 +183,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_NULLSPACEFACTORY_KOKKOS_DEF_HPP

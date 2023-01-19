@@ -65,7 +65,6 @@ namespace Xpetra {
   //
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-#ifdef HAVE_XPETRA_TPETRA
 #include "TpetraCore_config.h"
 #if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
     (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
@@ -100,17 +99,9 @@ template class EpetraIntMultiVectorT<int, default_node_type >;
 template Epetra_IntMultiVector & toEpetra<int,default_node_type >(MultiVector<int, int, int, default_node_type> &);
 template const Epetra_IntMultiVector & toEpetra<int,default_node_type >(const MultiVector<int, int, int, default_node_type> &);
 #endif
-#else
-// Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Xpetra::EpetraNode default_node_type;
-template class EpetraIntMultiVectorT<int, default_node_type >;
-template Epetra_IntMultiVector & toEpetra<int,default_node_type >(MultiVector<int, int, int, default_node_type> &);
-template const Epetra_IntMultiVector & toEpetra<int,default_node_type >(const MultiVector<int, int, int, default_node_type> &);
-#endif // HAVE_XPETRA_TPETRA
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-#ifdef HAVE_XPETRA_TPETRA
 #include "TpetraCore_config.h"
 #if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
     (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
@@ -145,13 +136,6 @@ template class EpetraIntMultiVectorT<long long, default_node_type >;
 template Epetra_IntMultiVector & toEpetra<long long,default_node_type >(MultiVector<int, int, long long, default_node_type> &);
 template const Epetra_IntMultiVector & toEpetra<long long,default_node_type >(const MultiVector<int, int, long long, default_node_type> &);
 #endif
-#else
-// Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Xpetra::EpetraNode default_node_type;
-template class EpetraIntMultiVectorT<long long, default_node_type >;
-template Epetra_IntMultiVector & toEpetra<long long,default_node_type >(MultiVector<int, int, long long, default_node_type> &);
-template const Epetra_IntMultiVector & toEpetra<long long,default_node_type >(const MultiVector<int, int, long long, default_node_type> &);
-#endif // HAVE_XPETRA_TPETRA
 #endif
 
 } // namespace Xpetra

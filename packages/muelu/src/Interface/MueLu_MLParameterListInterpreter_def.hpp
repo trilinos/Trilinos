@@ -49,9 +49,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_ML)
-#include <ml_ValidateParameters.h>
-#endif
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
@@ -85,7 +82,6 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 // #include "MueLu_CoarseMapFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -93,17 +89,6 @@
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#endif
-
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-#include "MueLu_IsorropiaInterface.hpp"
-#include "MueLu_RepartitionHeuristicFactory.hpp"
-#include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_RepartitionInterface.hpp"
-#include "MueLu_RebalanceAcFactory.hpp"
-//#include "MueLu_RebalanceMapFactory.hpp"
-#endif
 
 // Note: do not add options that are only recognized by MueLu.
 
@@ -198,9 +183,6 @@ namespace MueLu {
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
     bool useKokkosRefactor;
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkosRefactor = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkosRefactor = false;
@@ -217,7 +199,6 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkosRefactor = true;
 # endif
-#endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
       setKokkosRefactor = true;
@@ -232,17 +213,10 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
 
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-        // Validate parameter list using ML validator
-        int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
-        TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
-                                   "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
-#else
         // If no validator available: issue a warning and set parameter value to false in the output list
         this->GetOStream(Warnings0) << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
 
-#endif // HAVE_MUELU_ML
       } // if(validate)
     } // scope
 
@@ -269,11 +243,9 @@ namespace MueLu {
 
     // Create MueLu factories
     RCP<Factory> dropFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       dropFact = rcp( new CoalesceDropFactory_kokkos() );
     else
-#endif
       dropFact = rcp( new CoalesceDropFactory() );
 
     if (agg_use_aux) {
@@ -285,12 +257,10 @@ namespace MueLu {
     if (agg_type == "Uncoupled") {
       // Uncoupled aggregation
       RCP<Factory> MyUncoupledAggFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor) {
         MyUncoupledAggFact = rcp( new UncoupledAggregationFactory_kokkos() );
       }
       else
-#endif
         MyUncoupledAggFact = rcp( new UncoupledAggregationFactory() );
 
       MyUncoupledAggFact->SetFactory("Graph", dropFact);
@@ -303,7 +273,6 @@ namespace MueLu {
       AggFact = MyUncoupledAggFact;
     } else {
       // Coupled Aggregation (default)
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor) {
         AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
       } else {
@@ -316,17 +285,6 @@ namespace MueLu {
         CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
         AggFact = CoupledAggFact2;
       }
-#else
-      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");
-      CoupledAggFact2->SetPhase3AggCreation(0.5);
-      CoupledAggFact2->SetFactory("Graph", dropFact);
-      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-      AggFact = CoupledAggFact2;
-#endif
     }
     if (verbosityLevel > 3) {
       std::ostringstream oss;
@@ -341,11 +299,9 @@ namespace MueLu {
     RCP<Factory> PFact;
     RCP<Factory> RFact;
     RCP<Factory> PtentFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       PtentFact = rcp( new TentativePFactory_kokkos() );
     else
-#endif
       PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
@@ -354,11 +310,9 @@ namespace MueLu {
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
       RCP<Factory> SaPFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor)
         SaPFact = rcp( new SaPFactory_kokkos() );
       else
-#endif
         SaPFact = rcp( new SaPFactory() );
       SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;
@@ -378,79 +332,10 @@ namespace MueLu {
     //
     // introduce rebalancing
     //
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    Teuchos::RCP<Factory>            RebalancedPFact = Teuchos::null;
-    Teuchos::RCP<Factory>            RebalancedRFact = Teuchos::null;
-    Teuchos::RCP<Factory>            RepartitionFact = Teuchos::null;
-    Teuchos::RCP<RebalanceAcFactory> RebalancedAFact = Teuchos::null;
-
-    MUELU_READ_PARAM(paramList, "repartition: enable",                      int,                   0,       bDoRepartition);
-    if (bDoRepartition == 1) {
-      // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
-      // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
-      RFact->SetFactory("P", PFact);
-      //
-      AcFact->SetFactory("P", PFact);
-      AcFact->SetFactory("R", RFact);
-
-      // define rebalancing factory for coarse matrix
-      Teuchos::RCP<MueLu::AmalgamationFactory<SC, LO, GO, NO> > rebAmalgFact = Teuchos::rcp(new MueLu::AmalgamationFactory<SC, LO, GO, NO>());
-      rebAmalgFact->SetFactory("A", AcFact);
-
-      MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
-      MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
-
-      // Repartitioning heuristic
-      RCP<RepartitionHeuristicFactory> RepartitionHeuristicFact = Teuchos::rcp(new RepartitionHeuristicFactory());
-      {
-        Teuchos::ParameterList paramListRepFact;
-        paramListRepFact.set("repartition: min rows per proc", minperproc);
-        paramListRepFact.set("repartition: max imbalance", maxminratio);
-        RepartitionHeuristicFact->SetParameterList(paramListRepFact);
-      }
-      RepartitionHeuristicFact->SetFactory("A", AcFact);
-
-      // create "Partition"
-      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-      isoInterface->SetFactory("A", AcFact);
-      isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-      isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
-
-      // create "Partition" by unamalgamtion
-      Teuchos::RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = Teuchos::rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
-      repInterface->SetFactory("A", AcFact);
-      repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-      repInterface->SetFactory("AmalgamatedPartition", isoInterface);
-      //repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact); // not necessary?
-
-      // Repartitioning (creates "Importer" from "Partition")
-      RepartitionFact = Teuchos::rcp(new RepartitionFactory());
-      RepartitionFact->SetFactory("A", AcFact);
-      RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
-      RepartitionFact->SetFactory("Partition", repInterface);
-
-      // Reordering of the transfer operators
-      RebalancedPFact = Teuchos::rcp(new RebalanceTransferFactory());
-      RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-      RebalancedPFact->SetFactory("P", PFact);
-      RebalancedPFact->SetFactory("Nullspace", PtentFact);
-      RebalancedPFact->SetFactory("Importer",    RepartitionFact);
-
-      RebalancedRFact = Teuchos::rcp(new RebalanceTransferFactory());
-      RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-      RebalancedRFact->SetFactory("R", RFact);
-      RebalancedRFact->SetFactory("Importer",    RepartitionFact);
-
-      // Compute Ac from rebalanced P and R
-      RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
-      RebalancedAFact->SetFactory("A", AcFact);
-    }
-#else // #ifdef HAVE_MUELU_ISORROPIA
     // Get rid of [-Wunused] warnings
     //(void)
     //
     // ^^^ FIXME (mfh 17 Nov 2013) That definitely doesn't compile.
-#endif
 
     //
     // Nullspace factory
@@ -543,22 +428,10 @@ namespace MueLu {
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("Ptent", PtentFact);
 
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    if (bDoRepartition == 1) {
-      manager->SetFactory("A", RebalancedAFact);
-      manager->SetFactory("P", RebalancedPFact);
-      manager->SetFactory("R", RebalancedRFact);
-      manager->SetFactory("Nullspace",   RebalancedPFact);
-      manager->SetFactory("Importer",    RepartitionFact);
-    } else {
-#endif // #ifdef HAVE_MUELU_ISORROPIA
       manager->SetFactory("Nullspace", nspFact); // use same nullspace factory throughout all multigrid levels
       manager->SetFactory("A", AcFact);          // same RAP factory for all levels
       manager->SetFactory("P", PFact);           // same prolongator and restrictor factories for all levels
       manager->SetFactory("R", RFact);           // same prolongator and restrictor factories for all levels
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    }
-#endif
 
       this->AddFactoryManager(levelID, 1, manager);
     } // for (level loop)
@@ -736,30 +609,7 @@ namespace MueLu {
 
     } else if (type == "IFPACK") { // TODO: this option is not described in the ML Guide v5.0
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      ifpackType = paramList.get<std::string>("smoother: ifpack type");
-
-      if (ifpackType == "ILU") {
-        // TODO fix this (type mismatch double vs. int)
-        //MUELU_COPY_PARAM(paramList, "smoother: ifpack level-of-fill", double /*int*/, 0.0 /*2*/,  smootherParamList, "fact: level-of-fill");
-        if (paramList.isParameter("smoother: ifpack level-of-fill"))
-          smootherParamList.set("fact: level-of-fill", Teuchos::as<int>(paramList.get<double>("smoother: ifpack level-of-fill")));
-        else smootherParamList.set("fact: level-of-fill", as<int>(0));
-
-        MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
-
-        // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-        smooProto =
-          MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> (ifpackType,
-                                                                               smootherParamList,
-                                                                               paramList.get<int> ("smoother: ifpack overlap"));
-        smooProto->SetFactory("A", AFact);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
-      }
-#else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: MueLu compiled without Ifpack support");
-#endif
 
     } else if (type.length() > strlen("Amesos") && type.substr(0, strlen("Amesos")) == "Amesos") {  /* catch Amesos-* */
       std::string solverType = type.substr(strlen("Amesos")+1);  /* ("Amesos-KLU" -> "KLU") */

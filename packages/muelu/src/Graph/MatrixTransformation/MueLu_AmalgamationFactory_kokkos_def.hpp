@@ -52,7 +52,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos_decl.hpp"
 #include "MueLu_AmalgamationInfo_kokkos.hpp"
 
@@ -242,6 +241,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_AMALGAMATIONFACTORY_KOKKOS_DEF_HPP */
 

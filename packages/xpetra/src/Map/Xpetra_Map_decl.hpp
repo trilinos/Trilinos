@@ -55,11 +55,7 @@
     #include "Epetra_config.h"
 #endif
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    #ifdef HAVE_XPETRA_TPETRA
         #include <Tpetra_Map.hpp>
-    #endif
-#endif
 
 namespace Xpetra {
 
@@ -221,14 +217,10 @@ namespace Xpetra {
     // it to return the base map.
     virtual RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type local_map_type;
 
     /// \brief Get the local Map for Kokkos kernels.
     virtual local_map_type getLocalMap () const = 0;
-#endif
-#endif
 
     //@}
 

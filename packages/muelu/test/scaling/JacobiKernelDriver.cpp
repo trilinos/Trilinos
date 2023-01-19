@@ -104,7 +104,6 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    vector_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -236,10 +235,6 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     mkl_sparse_destroy(XTempMKL);
     mkl_sparse_destroy(YTempMKL);
 
-#else
-    std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
-#endif
-
 
 
   tm = Teuchos::null;
@@ -254,12 +249,10 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 // =========================================================================
 // LTG Testing
 // =========================================================================
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_Import_Util2.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_decl.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-#endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,  Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C,const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D, Scalar omega, std::string jacobi_algorithm_name, std::string spgemm_algorithm_name, int team_work_size) {

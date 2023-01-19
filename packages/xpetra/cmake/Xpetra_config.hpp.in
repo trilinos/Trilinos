@@ -3,8 +3,6 @@
 
 #cmakedefine HAVE_XPETRA_DEBUG
 
-#cmakedefine HAVE_XPETRA_TPETRA
-
 /* Define whether Xpetra enables deprecated code at compile time. */
 #cmakedefine XPETRA_ENABLE_DEPRECATED_CODE
 
@@ -25,8 +23,6 @@
 #cmakedefine HAVE_XPETRA_KOKKOSCONTAINERS
 
 #cmakedefine HAVE_XPETRA_KOKKOSKERNELS
-
-#cmakedefine HAVE_XPETRA_KOKKOS_REFACTOR
 
 #cmakedefine HAVE_XPETRA_PROFILING
 

@@ -53,10 +53,8 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraMap.hpp"
@@ -69,11 +67,7 @@ namespace {
 
   bool mapDebugChecksEnabled()
   {
-#ifdef HAVE_XPETRA_TPETRA
     return Tpetra::Details::Behavior::debug("Map");
-#else
-    return false;
-#endif // HAVE_XPETRA_TPETRA
   }
 
   bool testMpi = true;
@@ -148,8 +142,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, validConstructor3, M, LO, GO, N )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     // create Kokkos templates
     typedef typename N::device_type device_type;
     typedef typename device_type::execution_space execution_space;
@@ -343,8 +335,6 @@ namespace {
       reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
       TEST_EQUALITY_CONST( globalSuccess_int, 0 );
     }
-#endif
-#endif
   }
 
   // This test exercises Tpetra's debug-mode checks.
@@ -552,8 +542,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, localMap, M, LO, GO, N )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     typedef typename N::device_type device_type;
     typedef typename device_type::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, int> range_type;
@@ -643,8 +631,6 @@ namespace {
         TEST_EQUALITY(globalElement, elementList[i]);
       }
     }
-#endif
-#endif
   }
 
 
@@ -739,12 +725,9 @@ namespace {
   //
   // INSTANTIATIONS
   //
-#ifdef HAVE_XPETRA_TPETRA
 
   #define XPETRA_TPETRA_TYPES( LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N;
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -769,8 +752,6 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor3,   M##LO##GO##N, LO, GO, N)
 
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -779,8 +760,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_LGN ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_LGN ( XP_MAP_INSTANT )
 TPETRA_INSTANTIATE_LGN ( XPT_MAP_INSTANT )
-
-#endif
 
 #if defined(HAVE_XPETRA_EPETRA)
 

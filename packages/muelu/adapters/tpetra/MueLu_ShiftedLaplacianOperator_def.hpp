@@ -49,8 +49,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -172,6 +170,5 @@ bool ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransp
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #endif //ifdef MUELU_SHIFTEDLAPLACIANOPERATOR_DEF_HPP

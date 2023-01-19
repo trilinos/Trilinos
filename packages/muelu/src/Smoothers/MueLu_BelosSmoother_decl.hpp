@@ -57,11 +57,9 @@
 
 #include "MueLu_BelosSmoother_fwd.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "BelosTpetraAdapter.hpp"
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_MultiVector.hpp>
-#endif
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
@@ -183,62 +181,15 @@ namespace MueLu {
 
     std::string                         type_;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::MultiVector<SC, LO, GO, NO> tMV;
     typedef Tpetra::Operator<SC, LO, GO, NO>    tOP;
     RCP<Belos::LinearProblem<Scalar, tMV, tOP> > tBelosProblem_;
     RCP<Belos::SolverManager<Scalar, tMV, tOP> > tSolver_;
-#endif
 
     //! matrix, used in apply if solving residual equation
     RCP<Matrix> A_;
 
   }; // class BelosSmoother
-
-
-  #ifdef HAVE_MUELU_EPETRA
-
-# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-  // Stub specialization for missing Epetra template args
-  template<>
-  class BelosSmoother<double,int,int,Xpetra::EpetraNode> : public SmootherPrototype<double,int,int,Xpetra::EpetraNode> {
-    typedef double              Scalar;
-    typedef int                 LocalOrdinal;
-    typedef int                 GlobalOrdinal;
-    typedef Xpetra::EpetraNode  Node;
-#undef MUELU_BELOSSMOOTHER_SHORT
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-#ifndef _MSC_VER
-    // Avoid error C3772: invalid friend template declaration
-    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
-    friend class BelosSmoother;
-#endif
-
-    BelosSmoother(const std::string& type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LocalOrdinal& overlap = 0) {
-      MUELU_TPETRA_ETI_EXCEPTION("BelosSmoother<double,int,int,EpetraNode>","BelosSmoother<double,int,int,EpetraNode>","int");
-    };
-
-    virtual ~BelosSmoother() { }
-
-    void SetParameterList(const Teuchos::ParameterList& paramList) {}
-    void DeclareInput(Level &currentLevel) const {}
-    void Setup(Level &currentLevel) {}
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {}
-    RCP<SmootherPrototype> Copy() const { return Teuchos::null;}
-
-    std::string description() const { return std::string(""); }
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {}
-
-    //! Get a rough estimate of cost per iteration
-    size_t getNodeSmootherComplexity() const {size_t cplx=0; return cplx;};
-
-  };
-# endif
-
-#endif // HAVE_MUELU_EPETRA
 
 
 } // namespace MueLu

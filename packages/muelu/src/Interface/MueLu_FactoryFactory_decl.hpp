@@ -160,7 +160,6 @@
 #include "MueLu_NodePartitionInterface.hpp"
 
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
@@ -174,7 +173,6 @@
 #include "MueLu_MatrixFreeTentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_RegionRFactory_kokkos.hpp"
-#endif
 
 #ifdef HAVE_MUELU_MATLAB
 // This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
@@ -278,9 +276,7 @@ namespace MueLu {
       if (factoryName == "MultiVectorTransferFactory")            return Build2<MultiVectorTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                             return MueLu::NoFactory::getRCP();
       if (factoryName == "NoSmoother")                            return rcp(new SmootherFactory(Teuchos::null));
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "NotayAggregationFactory")               return Build2<NotayAggregationFactory>               (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "NullspaceFactory")                      return Build2<NullspaceFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspacePresmoothFactory")             return Build2<NullspacePresmoothFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PatternFactory")                        return Build2<PatternFactory>                        (paramList, factoryMapIn, factoryManagersIn);
@@ -290,10 +286,8 @@ namespace MueLu {
       if (factoryName == "RAPShiftFactory")                       return BuildRAPFactory<RAPShiftFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceAcFactory")                    return Build2<RebalanceAcFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceTransferFactory")              return Build2<RebalanceTransferFactory>              (paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "RegionRFactory")                        return Build2<RegionRFactory>                        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RegionRFactory_kokkos")                 return Build2<RegionRFactory_kokkos>                 (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "ReorderBlockAFactory")                  return Build2<ReorderBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RepartitionInterface")                  return Build2<RepartitionInterface>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ScaledNullspaceFactory")                return Build2<ScaledNullspaceFactory>                (paramList, factoryMapIn, factoryManagersIn);
@@ -314,7 +308,6 @@ namespace MueLu {
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
@@ -327,14 +320,9 @@ namespace MueLu {
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixFreeTentativePFactory_kokkos")    return Build2<MatrixFreeTentativePFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
-#endif
 
       if (factoryName == "ZoltanInterface") {
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-        return Build2<ZoltanInterface>(paramList, factoryMapIn, factoryManagersIn);
-#else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
-#endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
       }
       if (factoryName == "Zoltan2Interface") {
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
@@ -344,11 +332,7 @@ namespace MueLu {
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
       if (factoryName == "IsorropiaInterface") {
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-        return Build2<IsorropiaInterface>(paramList, factoryMapIn, factoryManagersIn);
-#else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
-#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
       if (factoryName == "NodePartitionInterface") {

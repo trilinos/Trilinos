@@ -52,9 +52,7 @@
 #include "Xpetra_DefaultPlatform.hpp"
 #include "Xpetra_StridedMap.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraMap.hpp"
@@ -484,12 +482,9 @@ namespace {
   //
   // INSTANTIATIONS
   //
-#ifdef HAVE_XPETRA_TPETRA
 
   #define XPETRA_TPETRA_TYPES( LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N;
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -509,8 +504,6 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( StridedMap, StridedPartConstructorWithOffset, M##LO##GO##N , LO, GO, N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M##LO##GO##N , LO, GO, N)
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -518,8 +511,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
 TPETRA_INSTANTIATE_LGN ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_LGN ( XP_MAP_INSTANT )
-
-#endif
 
 #if defined(HAVE_XPETRA_EPETRA)
 

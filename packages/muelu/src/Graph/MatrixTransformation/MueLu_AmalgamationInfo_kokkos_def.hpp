@@ -58,7 +58,6 @@
 
 #include "MueLu_Exceptions.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationInfo_kokkos_decl.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
 
@@ -250,5 +249,4 @@ namespace MueLu {
 } //namespace
 
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_AMALGAMATIONINFO_KOKKOS_DEF_HPP_ */

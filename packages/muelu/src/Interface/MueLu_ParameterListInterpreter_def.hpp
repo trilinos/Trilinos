@@ -80,9 +80,7 @@
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_MasterList.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_NotayAggregationFactory.hpp"
-#endif
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_ReplicatePFactory.hpp"
@@ -109,7 +107,6 @@
 #include "MueLu_NodePartitionInterface.hpp"
 #include "MueLu_LowPrecisionFactory.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
@@ -118,7 +115,6 @@
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#endif
 
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
@@ -238,12 +234,6 @@ namespace MueLu {
       defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
       MasterList::getDefault<paramType>(paramName) ) ) )
 
-#ifndef HAVE_MUELU_KOKKOS_REFACTOR
-#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
-  RCP<Factory> varName = rcp(new oldFactory());
-#define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
-  varName = rcp(new oldFactory());
-#else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
   if (!useKokkos_) varName = rcp(new oldFactory()); \
@@ -251,7 +241,6 @@ namespace MueLu {
 #define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
   if (!useKokkos_) varName = rcp(new oldFactory()); \
   else             varName = rcp(new newFactory());
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -269,9 +258,6 @@ namespace MueLu {
     }
 
     // Check for Kokkos
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos_ = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
@@ -289,7 +275,6 @@ namespace MueLu {
       useKokkos_ = true;
 # endif
     (void)MUELU_TEST_AND_SET_VAR(paramList, "use kokkos refactor", bool, useKokkos_);
-#endif
 
     // Check for timer synchronization
     MUELU_SET_VAR_2LIST(paramList, paramList, "synchronize factory timers", bool, syncTimers);
@@ -1242,7 +1227,6 @@ namespace MueLu {
       }
       return;
     }
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     else if (aggType == "notay") {
       aggFactory = rcp(new NotayAggregationFactory());
       ParameterList aggParams;
@@ -1255,7 +1239,6 @@ namespace MueLu {
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     }
-#endif
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");
@@ -1642,18 +1625,12 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-#ifndef HAVE_MUELU_ZOLTAN
       bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
-#else
-# ifndef HAVE_MUELU_ZOLTAN2
-      bool switched = false;
-# endif
-#endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
         this->GetOStream(Warnings0) << "Zoltan2 interface is not available, trying to switch to Zoltan" << std::endl;
@@ -1693,12 +1670,7 @@ namespace MueLu {
 #endif
       }
       else if (partName == "zoltan") {
-#ifdef HAVE_MUELU_ZOLTAN
-        partitioner = rcp(new ZoltanInterface());
-        // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-#else
         throw Exceptions::RuntimeError("Zoltan interface is not available");
-#endif
       } else if (partName == "zoltan2") {
 #ifdef HAVE_MUELU_ZOLTAN2
         partitioner = rcp(new Zoltan2Interface());

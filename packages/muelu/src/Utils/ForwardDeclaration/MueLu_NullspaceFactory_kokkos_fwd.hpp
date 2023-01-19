@@ -46,8 +46,8 @@
 #ifndef MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP
 #define MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+
+
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -58,6 +58,6 @@ namespace MueLu {
 #define MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
 #endif
 
-#endif
+
 
 #endif // MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP

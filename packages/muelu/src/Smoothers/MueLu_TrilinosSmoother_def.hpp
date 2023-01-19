@@ -85,7 +85,6 @@ namespace MueLu {
     // We want TrilinosSmoother to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Ifpack and Ifpack2 smoother prototypes. The construction really depends on configuration options.
     triedEpetra_ = triedTpetra_ = triedBelos_ = triedStratimikos_ = false;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
     try {
       sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
       if (sTpetra_.is_null())
@@ -102,23 +101,6 @@ namespace MueLu {
       errorTpetra_ = e.what();
     }
     triedTpetra_ = true;
-#endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-    try {
-      // GetIfpackSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-      sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList), overlap_);
-      if (sEpetra_.is_null())
-        errorEpetra_ = "Unable to construct Ifpack smoother";
-      else if (!sEpetra_->constructionSuccessful()) {
-        errorEpetra_ = sEpetra_->constructionErrorMsg();
-        sEpetra_ = Teuchos::null;
-      }
-    } catch (Exceptions::RuntimeError& e) {
-      // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      errorEpetra_ = e.what();
-    }
-    triedEpetra_ = true;
-#endif
 #if defined(HAVE_MUELU_BELOS)
     try {
       sBelos_ = rcp(new BelosSmoother(type_, paramList));
@@ -135,7 +117,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())
@@ -195,28 +177,15 @@ namespace MueLu {
       s_ = (useTpetra ? sTpetra_ : sEpetra_);
       if (s_.is_null()) {
         if (useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK2)
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                     "Error: running in Tpetra mode, but MueLu with Ifpack2 was disabled during the configure stage.\n"
-                                     "Please make sure that:\n"
-                                     "  - Ifpack2 is enabled (Trilinos_ENABLE_Ifpack2=ON),\n"
-                                     "  - Ifpack2 is available for MueLu to use (MueLu_ENABLE_Ifpack2=ON)\n");
-#else
           if (triedTpetra_)
             this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n" << errorTpetra_ << std::endl;
-#endif
         }
         if (!useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK)
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                      "Error: running in Epetra mode, but MueLu with Ifpack was disabled during the configure stage.\n"
                                      "Please make sure that:\n"
                                      "  - Ifpack is enabled (you can do that with Trilinos_ENABLE_Ifpack=ON),\n"
                                      "  - Ifpack is available for MueLu to use (MueLu_ENABLE_Ifpack=ON)\n");
-#else
-          if (triedEpetra_)
-            this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n" << errorEpetra_ << std::endl;
-#endif
         }
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                    "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");

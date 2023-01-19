@@ -528,7 +528,6 @@ namespace MueLuTests
     auto vector = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
     vector->randomize();
 
-#ifdef HAVE_MUELU_TPETRA
     using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using TpetraMV = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -642,7 +641,6 @@ namespace MueLuTests
       TEST_INEQUALITY(powerRes2, Scalar(0.0));
     }
 
-#endif
   } //TransformFunctions
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, UtilsFunctions, Scalar, LocalOrdinal, GlobalOrdinal, Node)

@@ -46,8 +46,6 @@
 #ifndef MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP
 #define MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include "MueLu_MatrixFreeTentativeP_kokkos_decl.hpp"
 
 #include "MueLu_Aggregates_kokkos.hpp"
@@ -123,5 +121,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP

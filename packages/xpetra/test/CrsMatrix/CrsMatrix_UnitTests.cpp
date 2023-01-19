@@ -48,9 +48,7 @@
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
@@ -333,9 +331,7 @@ namespace {
 
     A->leftScale(*s);
 
-#ifdef HAVE_XPETRA_TPETRA
     Kokkos::fence();
-#endif
 
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
       if (MyGlobalElements[i] == 0) {
@@ -431,9 +427,7 @@ namespace {
 
     A->rightScale(*s);
 
-#ifdef HAVE_XPETRA_TPETRA
     Kokkos::fence();
-#endif
 
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
       if (MyGlobalElements[i] == 0) {
@@ -557,7 +551,7 @@ namespace {
       TEST_NOTHROW(mx(Teuchos::rcp(new mm(10, 0, comm)), 0));
     }
 
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
+#if defined(HAVE_TPETRA_INST_PTHREAD)
     {
       typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
@@ -565,7 +559,7 @@ namespace {
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
+#if defined(HAVE_TPETRA_INST_CUDA)
     {
       typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
@@ -573,7 +567,7 @@ namespace {
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
+#if defined(HAVE_TPETRA_INST_HIP)
     {
       typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
@@ -648,7 +642,6 @@ namespace {
   // just a copy of the Epetra_ReplaceLocalValues test for Tpetra
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Tpetra_ReplaceLocalValues, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -875,13 +868,11 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     success = success && (gblSuccess == 1);
     TEST_EQUALITY_CONST( gblSuccess, 1 );
-#endif
   }
 
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TpetraDeepCopy, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -1228,7 +1219,6 @@ namespace {
       s += Teuchos::ScalarTraits<Scalar>::magnitude (rdata[i] - rdatacopy[i]);
     }
     TEUCHOS_TEST_COMPARE(s, <, 1e-16, out, success);
-#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EpetraDeepCopy, Scalar, LO, GO, Node )
@@ -1286,7 +1276,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, GetLocalMatrix, M, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
@@ -1397,13 +1386,10 @@ namespace {
 	}
       }
     }
-#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     std::cout << "Run ConstructMatrixKokkos test" << std::endl;
     //Kokkos::initialize();
     typedef Xpetra::Map<LO, GO, Node> MapClass;
@@ -1601,20 +1587,14 @@ namespace {
       }
     }
     //Kokkos::finalize();
-#endif
-#endif
   }
 
   //
   // INSTANTIATIONS
   //
 
-#ifdef HAVE_XPETRA_TPETRA
-
   #define XPETRA_TPETRA_TYPES( SC, LO, GO, Node) \
       typedef typename Xpetra::TpetraMap<LO,GO,Node> M##LO##GO##Node; \
-
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 
@@ -1646,8 +1626,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( CrsMatrix, ConstructMatrixKokkos, M##LO##GO##Node, SC, LO, GO, Node )
 
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -1656,8 +1634,6 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_TPETRAONLY )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_KOKKOS )
-
-#endif
 
 
 #if defined(HAVE_XPETRA_EPETRA)

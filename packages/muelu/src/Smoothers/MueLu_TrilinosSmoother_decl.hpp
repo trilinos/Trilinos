@@ -57,16 +57,14 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_IfpackSmoother_fwd.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2)
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
-#endif
 
 #if defined(HAVE_MUELU_BELOS)
 #include "MueLu_BelosSmoother_fwd.hpp"
 #endif
 
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS)
 #include "MueLu_StratimikosSmoother_fwd.hpp"
 #endif
 

@@ -256,7 +256,6 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   // NOTE: ViennaCL matrices use "unsigned int" for rowptr and colind and are templated on scalar type (yay); which means (for us) POD only.
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -368,7 +367,6 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 
     Au->getComm()->barrier();
   }
-  #endif
 }
 
 #endif
@@ -423,7 +421,6 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   static constexpr bool sortCSR = false;
 
   RCP<TimeMonitor> tm;
-#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -592,7 +589,6 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
         my_experiment_timings["MKL: Sort"].push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(ds).count ());
       }
     #endif
-#endif
 
 }
 
@@ -615,7 +611,6 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
   std::string prefix = std::string("MM KokkosKernels ")+algorithm_name + std::string(": ");
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_device_type  KCRS;
     typedef typename KCRS::StaticCrsGraphType                   graph_t;
@@ -769,19 +764,16 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
       }
       #endif
     } // scope for Teuchos time monitor
-  #endif // MUEUL_HAVE_TPETRA
   } // lib
 }
 
 // =========================================================================
 // Kokkos Kernels Testing
 // =========================================================================
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_Import_Util2.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_decl.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-#endif
 
 //The LTG kernel is only defined for the Kokkos OpenMP node, so
 //its test must only be enabled for OpenMP
@@ -812,7 +804,6 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
     typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
@@ -925,7 +916,6 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
       #endif
     }
     Au->getComm()->barrier();
-#endif
   }
 }
 };

@@ -49,9 +49,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Vector.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #  include "Xpetra_TpetraVector_decl.hpp"
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraVector.hpp"
 #  include "Xpetra_EpetraIntVector.hpp"
@@ -97,12 +95,10 @@ namespace Xpetra {
             return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
         }
 
-        #ifdef HAVE_XPETRA_TPETRA
         if(map->lib() == UseTpetra)
         {
             return rcp(new TpetraVector(map, zeroOut));
         }
-        #endif
 
         XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
         XPETRA_FACTORY_END;

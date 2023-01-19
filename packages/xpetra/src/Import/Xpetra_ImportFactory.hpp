@@ -50,9 +50,7 @@
 
 #include "Xpetra_Import.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraImport.hpp"
-#endif
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraImport.hpp"
 #endif
@@ -79,10 +77,8 @@ namespace Xpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target, plist));
-#endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(source->lib());
       XPETRA_FACTORY_END;
@@ -114,10 +110,8 @@ namespace Xpetra {
       XPETRA_MONITOR("ImportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target,plist));
-#endif
 
       if (source->lib() == UseEpetra)
         return rcp( new EpetraImportT<int,Node>(source, target));
@@ -149,10 +143,8 @@ namespace Xpetra {
       XPETRA_MONITOR("ImportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target, plist));
-#endif
 
       if (source->lib() == UseEpetra)
         return rcp( new EpetraImportT<long long,Node>(source, target));

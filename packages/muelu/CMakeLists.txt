@@ -8,15 +8,13 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 # B) Set up package-specific options
 #
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
+IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
-ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
-ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
 IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
 ENDIF()
@@ -79,26 +77,10 @@ IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
   MESSAGE(STATUS "MueLu: Enabling deprecated tests")
 ENDIF ()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
-ENDIF()
-
-
-# If you want MueLu Epetra, you need Xpetra Epetra
-ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
-IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
-  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
-ENDIF()
-
-# If you want MueLu Epetra, you need Xpetra Tpetra
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
-
-# Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
-# HAVE_MUELU_EPETRA was first set automatically
-GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -108,10 +90,6 @@ ENDIF ()
 
 
 # Print a warning when we might be lacking a coarse solver.
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
-  MESSAGE(WARNING "MueLu's Epetra backend is enabled, but Amesos is disabled. This means only iterative coarse solves are available when using Epetra.")
-ENDIF ()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
   MESSAGE(WARNING "MueLu's Tpetra backend is enabled, but Amesos2 is disabled. This means only iterative coarse solves are available when using Tpetra.")
@@ -226,19 +204,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   "Enable Boost"
   OFF)
 
-SET(Kokkos_Refactor_On_By_Default ON)
-MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable Xpetra code refactored to use Kokkos."
-  ${Kokkos_Refactor_On_By_Default})
-
-IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
-ENDIF()
-
 # Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
 GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_STRATIMIKOS ${${PACKAGE_NAME}_ENABLE_Stratimikos})
@@ -260,7 +225,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_LONG_LONG OFF)
 
   # <double, int, int>
-  # Examples and tests need at least this one, also if Epetra is enabled
+  # Examples and tests need at least this one
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
     GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_INT ON)
     GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT ON)
@@ -273,12 +238,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   #IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
   #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
   #    MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
-  #  ENDIF()
-  #ENDIF()
-
-  #IF(${PACKAGE_NAME}_ENABLE_Epetra)
-  #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-  #    MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
   #  ENDIF()
   #ENDIF()
 
@@ -374,24 +333,12 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_HIP     ${Tpetra_INST_HIP})
   ENDIF()
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
-    # If Epetra is active, always activate SerialNode
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
-  ENDIF ()
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_HIP          : ${HAVE_${PACKAGE_NAME_UC}_HIP}")
 ELSE()
   # ETI is turned off
-
-  # If Epetra only is enabled, ETI is off by default. We have to make sure that
-  # the HAVE_MUELU_SERIAL variable is set such that the IfpackSmoother and other
-  # purely Epetra-related routines are enabled properly
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
-    # If Epetra only is active, only activate SerialNode by default
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
-  ENDIF()
 
   # With ETI off, free to leave int as the default GO
 ENDIF()
@@ -466,7 +413,7 @@ if(TPL_ENABLE_MATLAB)
     MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
   ENDIF()
 
-  IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
       MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
 ENDIF()

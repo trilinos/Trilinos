@@ -76,9 +76,7 @@ namespace Xpetra {
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
     typedef Map map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type local_graph_type;
-#endif
 
   public:
 
@@ -106,7 +104,6 @@ namespace Xpetra {
     
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
     ///
@@ -189,8 +186,6 @@ namespace Xpetra {
 
 
 
-
-#endif
 
     TpetraCrsGraph(const Teuchos::RCP<const Map>& rowMap,
                    const Teuchos::RCP<const Map>& colMap,
@@ -331,14 +326,11 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Access the local KokkosSparse::StaticCrsGraph data for host use
     typename local_graph_type::HostMirror getLocalGraphHost () const;
 
     /// \brief Access the local KokkosSparse::StaticCrsGraph data for device use
     local_graph_type getLocalGraphDevice () const;
-
-#endif
 
 
     //! Force the computation of global constants if we don't have them

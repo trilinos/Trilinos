@@ -72,7 +72,6 @@ namespace Xpetra {
 
     bool bTpetra = false;
     bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
@@ -80,7 +79,6 @@ namespace Xpetra {
     if(tpetraMat!=Teuchos::null) bTpetra = true;
 #else
     bTpetra = false;
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -148,7 +146,6 @@ namespace Xpetra {
 
     bool bTpetra = false;
     bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
     // Note: Epetra is enabled
 #if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_DOUBLE)))
@@ -156,7 +153,6 @@ namespace Xpetra {
     if(tpetraMat!=Teuchos::null) bTpetra = true;
 #else
     bTpetra = false;
-#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

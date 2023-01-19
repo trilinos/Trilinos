@@ -60,14 +60,12 @@
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_IO.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <TpetraExt_TripleMatrixMultiply.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 // #include <Xpetra_TpetraMultiVector.hpp>
 // #include <Xpetra_TpetraVector.hpp>
-#endif // HAVE_XPETRA_TPETRA
 
 namespace Xpetra {
 
@@ -128,7 +126,6 @@ namespace Xpetra {
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
         if(helpers::isTpetraCrs(R) && helpers::isTpetraCrs(A) && helpers::isTpetraCrs(P)) {
           // All matrices are Crs
@@ -178,9 +175,6 @@ namespace Xpetra {
           // Mix and match
           TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      
         }            
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
       }
 
       if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -254,7 +248,6 @@ namespace Xpetra {
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,int> ETI enabled."));
@@ -309,9 +302,6 @@ namespace Xpetra {
           TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      
         }            
 # endif
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
         if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
           RCP<Teuchos::ParameterList> fillParams = rcp(new Teuchos::ParameterList());
           fillParams->set("Optimize Storage", doOptimizeStorage);
@@ -383,7 +373,6 @@ namespace Xpetra {
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
 # if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,long long,EpetraNode> ETI enabled."));
@@ -438,9 +427,6 @@ namespace Xpetra {
         }    
 
 # endif
-#else
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
         if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
           RCP<Teuchos::ParameterList> fillParams = rcp(new Teuchos::ParameterList());
           fillParams->set("Optimize Storage", doOptimizeStorage);

@@ -47,7 +47,6 @@
 #define MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 
 #include <Xpetra_Map_fwd.hpp>
@@ -172,5 +171,4 @@ private:
 }
 
 #define MUELU_NOTAYAGGREGATIONFACTORY_SHORT
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_ */

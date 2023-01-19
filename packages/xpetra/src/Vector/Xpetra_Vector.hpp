@@ -79,8 +79,6 @@ namespace Xpetra {
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;  // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;  // overloading, not hiding
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
 
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
@@ -94,8 +92,6 @@ namespace Xpetra {
      getLocalView (AccessType access_type) const {
        return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>(access_type);
      }
-
-#endif
 
     //! @name Constructor/Destructor Methods
     //@{

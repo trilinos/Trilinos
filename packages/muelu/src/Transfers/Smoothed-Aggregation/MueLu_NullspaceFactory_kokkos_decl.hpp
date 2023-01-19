@@ -47,7 +47,6 @@
 #define MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 
@@ -162,5 +161,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP

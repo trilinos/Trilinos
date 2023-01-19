@@ -48,7 +48,6 @@
 #define MUELU_REGIONRFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RegionRFactory_fwd.hpp"
@@ -110,5 +109,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_REGIONRFACTORY_SHORT
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_REGIONRFACTORY_DECL_HPP

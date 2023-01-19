@@ -49,9 +49,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_MultiVector_decl.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"

@@ -59,9 +59,7 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Details_DefaultTypes.hpp>
-#endif
 
 
 namespace MueLu {

@@ -47,7 +47,6 @@
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 
@@ -181,5 +180,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_TENTATIVEPFACTORY_KOKKOS_DECL_HPP

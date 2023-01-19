@@ -102,9 +102,6 @@ namespace Xpetra {
     {}
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
-
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
     template<class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::
@@ -117,8 +114,6 @@ namespace Xpetra {
                                                                                indexBase,
                                                                                comm)))
     {}
-#endif
-#endif
 
 //! Destructor.
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -243,16 +238,11 @@ RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrd
 { return map_; }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
-
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
 {
     return map_->getLocalMap();
 }
-#endif
-#endif
 
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -419,15 +409,11 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
       return local_map_type();
     }
-#endif
-#endif
 
     //@}
 
@@ -585,16 +571,12 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef HAVE_XPETRA_TPETRA
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
       // We will never be here, this is a stub class
       return local_map_type();
     }
-#endif
-#endif
 
     //@}
   }; // TpetraMap class (specialization for GO=int and NO=EpetraNode)

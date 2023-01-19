@@ -63,12 +63,10 @@
 
 #include "Xpetra_IO.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Details_extractBlockDiagonal.hpp>
 #include <Tpetra_Details_scaleBlockDiagonal.hpp>
-#endif
 
 namespace Xpetra {
 
@@ -709,11 +707,9 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::extractBlockDiagonal not available for Epetra."));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         const Tpetra::CrsMatrix<SC,LO,GO,NO> & At = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
         Tpetra::MultiVector<SC,LO,GO,NO> &     Dt = Xpetra::toTpetra(diagonal);
         Tpetra::Details::extractBlockDiagonal(At,Dt);
-#endif // HAVE_XPETRA_TPETRA
       }
   }
 
@@ -729,11 +725,9 @@ public:
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::inverseScaleBlockDiagonal not available for Epetra."));
 #endif // HAVE_XPETRA_EPETRA
       } else if(lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
         Tpetra::MultiVector<SC,LO,GO,NO> & Dt = Xpetra::toTpetra(blockDiagonal);
         Tpetra::MultiVector<SC,LO,GO,NO> &       St = Xpetra::toTpetra(toBeScaled);
         Tpetra::Details::inverseScaleBlockDiagonal(Dt,doTranspose,St);
-#endif // HAVE_XPETRA_TPETRA
       }
   }
 

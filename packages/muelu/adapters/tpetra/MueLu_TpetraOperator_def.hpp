@@ -49,8 +49,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
-
 #include <Xpetra_BlockedMap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
@@ -146,6 +144,5 @@ TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetOperator() const {
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #endif //ifdef MUELU_TPETRAOPERATOR_DEF_HPP

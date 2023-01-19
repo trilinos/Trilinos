@@ -48,9 +48,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Epetra_CombineMode.h"
@@ -63,8 +61,6 @@ namespace Xpetra {
   //! Convert a Xpetra::UnderlyingLib to a std::string
   std::string toString(UnderlyingLib lib);
 
-#ifdef HAVE_XPETRA_TPETRA
-
   //! Convert a Tpetra::LookupStatus to a Xpetra::LookupStatus.
   Xpetra::LookupStatus   toXpetra(Tpetra::LookupStatus);
 
@@ -76,8 +72,6 @@ namespace Xpetra {
 
   //! Convert a Xpetra::LocalGlobal to a Tpetra::LocalGlobal.
   Tpetra::LocalGlobal    toTpetra(LocalGlobal lg);
-
-#endif // HAVE_XPETRA_TPETRA
 
 #ifdef HAVE_XPETRA_EPETRA
 

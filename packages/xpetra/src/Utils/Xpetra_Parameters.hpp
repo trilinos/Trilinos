@@ -92,7 +92,6 @@ namespace Xpetra {
       optionNames[nOptions] = "Epetra";
       nOptions++;
 #endif
-#if defined(HAVE_XPETRA_TPETRA)
 #  if defined(HAVE_XPETRA_EPETRA)
       documentation << ", ";
 #  endif
@@ -102,12 +101,10 @@ namespace Xpetra {
       //optionsValues[nOptions] = "tpetra"; //TODO: do not break compatibility right now
       optionNames[nOptions] = "Tpetra";
       nOptions++;
-#endif
       documentation << ")";
 
       clp.setOption<Xpetra::UnderlyingLib>("linAlgebra", &lib_, nOptions, optionValues, optionNames, documentation.str().c_str());
 
-#if defined(HAVE_XPETRA_TPETRA)
       int nInstOptions=0;                                     // Gives the number of possible option values to select
       const int   maxInstOptions=5;                           // No more than 5 instantiations are supported right now
       Xpetra::Instantiation instOptionValues[maxInstOptions]; // Array that gives the numeric values for each option.
@@ -150,7 +147,6 @@ namespace Xpetra {
       instDocumentation << "choice of instantiation";
 
       clp.setOption<Xpetra::Instantiation>("instantiation", &inst_, nInstOptions, instOptionValues, instOptionNames, instDocumentation.str().c_str());
-#endif
 
     }
 
