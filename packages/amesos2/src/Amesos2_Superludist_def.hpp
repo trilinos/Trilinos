@@ -867,7 +867,7 @@ namespace Amesos2 {
               "Specifies whether to replace tiny diagonals during LU factorization");
 
       // Row permutation
-      setStringToIntegralParameter<SLUD::rowperm_t>("RowPerm", "LargeDiag_MC64",
+      setStringToIntegralParameter<SLUD::rowperm_t>("RowPerm", "NOROWPERM",
                                                     "Specifies how to permute the rows of the "
                                                     "matrix for sparsity preservation",
                                                     tuple<string>("NOROWPERM", "LargeDiag_MC64"),
