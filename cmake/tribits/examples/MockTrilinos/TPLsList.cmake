@@ -10,6 +10,7 @@ tribits_repository_define_tpls(
   ADOLC          cmake/TPLs/    ST
   ADIC           cmake/TPLs/    EX
   TVMET          cmake/TPLs/    ST
+  #Zlib           cmake/TPLs/    PT  # Listed in zoltan/cmake/Dependencies.cmake!
   y12m           cmake/TPLs/    ST
   SuperLUDist    cmake/TPLs/    ST
   SuperLU        cmake/TPLs/    ST

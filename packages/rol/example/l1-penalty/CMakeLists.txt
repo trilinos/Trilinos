@@ -1,5 +1,5 @@
-include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/vector)
-include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/function)
+tribits_include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/vector)
+tribits_include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/function)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01

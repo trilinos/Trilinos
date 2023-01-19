@@ -36,7 +36,7 @@ CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
@@ -47,7 +47,7 @@ SET(HEADERS ${HEADERS}
 # Core Files
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   AnasaziBasicEigenproblem.hpp
@@ -149,7 +149,7 @@ APPEND_SET(HEADERS
 
 ASSERT_DEFINED(Anasazi_ENABLE_ThyraCore)
 IF (Anasazi_ENABLE_ThyraCore)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thyra/src)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thyra/src)
   APPEND_SET(HEADERS
     ../thyra/src/AnasaziThyraAdapter.hpp
     ../thyra/src/AnasaziThyraDebugAdapter.hpp
@@ -158,7 +158,7 @@ ENDIF()
 
 ASSERT_DEFINED(Anasazi_ENABLE_Tpetra)
 IF (Anasazi_ENABLE_Tpetra)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
   # The AnasaziTpetraAdapter headers are already pulled in by
   # <./packages/anasazi/tpetra/src/CMakeLists.txt>.
 ENDIF()

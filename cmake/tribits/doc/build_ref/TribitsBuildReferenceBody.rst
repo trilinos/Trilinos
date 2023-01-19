@@ -427,18 +427,12 @@ To find this output, look for the line::
 
 and the dependencies are listed below this for each package in the form::
 
-  -- <PKG>_LIB_REQUIRED_DEP_TPLS: <TPL0> <TPL1> ...
-  -- <PKG>_LIB_OPTIONAL_DEP_TPLS: <TPL2> <TPL3> ...
-  -- <PKG>_LIB_REQUIRED_DEP_PACKAGES: <PKG0> <[PKG1> ...
-  -- <PKG>_LIB_OPTIONAL_DEP_PACKAGES: <PKG2> <PKG3> ...
-  -- <PKG>_TEST_REQUIRED_DEP_TPLS: <TPL4> <TPL5> ...
-  -- <PKG>_TEST_OPTIONAL_DEP_TPLS: <TPL6> <TPL7> ...
-  -- <PKG>_TEST_REQUIRED_DEP_PACKAGES: <PKG4> <[PKG5> ...
-  -- <PKG>_TEST_OPTIONAL_DEP_PACKAGES: <PKG6> <PKG7> ...
-  
+  -- <PKG>_LIB_DEFINED_DEPENDENCIES: <PKG0>[O] <[PKG1>[R] ...
+  -- <PKG>_TEST_DEFINED_DEPENDENCIES: <PKG6>[R] <[PKG8>[R] ...
+
 (Dependencies that don't exist are left out of the output.  For example, if
-there are no ``<PKG>_LIB_OPTIONAL_DEP_PACKAGES`` dependencies, then that line
-is not printed.)
+there are no extra test dependencies, then ``<PKG>_TEST_DEFINED_DEPENDENCIES``
+will not be printed.)
 
 To also see the direct forward/downstream dependencies for each package,
 also include::
@@ -459,8 +453,8 @@ Enable a set of packages
 
 .. _<Project>_ENABLE_TESTS:
 
-To enable an package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
-and examples), configure with::
+To enable a package ``<TRIBITS_PACKAGE>`` (and optionally also its tests and
+examples), configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
   -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
@@ -471,14 +465,18 @@ as all packages that ``<TRIBITS_PACKAGE>`` can use.  All of the package's
 optional "can use" upstream dependent packages are enabled with
 ``-D<Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON``.  However,
 ``-D<Project>_ENABLE_TESTS=ON`` will only enable tests and examples for
-``<TRIBITS_PACKAGE>`` (or any other packages specifically enabled).
+``<TRIBITS_PACKAGE>`` (and any other packages explicitly enabled).
 
-If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
-``<B>``, etc.), then enabling the package is equivalent to setting::
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. subpackages
+``<A>``, ``<B>``, ...), then enabling the package is equivalent to enabling
+all of the required **and optional** subpackagses::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>=ON \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>=ON \
    ...
+
+(In this case, the parent package's optional subpackages are enabled
+regardless the value of ``<Project>_ENABLE_ALL_OPTIONAL_PACKAGES``.)
 
 However, a TriBITS subpackage will only be enabled if it is not already
 disabled either explicitly or implicitly.
@@ -493,9 +491,6 @@ not enforce this if you set the value on the command line or in a ``set()``
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
-
-NOTE: Setting ``<Project>_ENABLE_TESTS=ON`` also causes
-``<Project>_ENABLE_EXAMPLES=ON`` to be set by default as well.
 
 
 Enable or disable tests for specific packages
@@ -517,7 +512,8 @@ packages.
 
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then one can use a "exclude-list"
-appraoch to disable the tests for that package by configuring with::
+appraoch to disable the tests for that package by configuring with, for
+example::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
@@ -527,12 +523,12 @@ appraoch to disable the tests for that package by configuring with::
 
 The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
 ``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
-packages that might get implicitly enabled).  One might use this if one wants
-to build and install package ``<TRIBITS_PACKAGE_2>`` but does not want to
-build and run the test suite for that package.
+packages that might get implicitly enabled).  One might use this approch if
+one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
+want to build and run the test suite for that package.
 
 Alternatively, one can use an "include-list" appraoch to enable packages and
-only enable tests for specific packages.  For example, configuring with::
+only enable tests for specific packages, for example, configuring with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
     -D <TRIBITS_PACKAGE_1>_ENABLE_TESTS=ON \
@@ -558,7 +554,7 @@ Enable to test all effects of changing a given package(s)
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES:
 
-To enable an package ``<TRIBITS_PACKAGE>`` to test it and all of its
+To enable a package ``<TRIBITS_PACKAGE>`` to test it and all of its
 down-stream packages, configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
@@ -568,8 +564,9 @@ down-stream packages, configure with::
 The above set of arguments will result in package ``<TRIBITS_PACKAGE>`` and
 all packages that depend on ``<TRIBITS_PACKAGE>`` to be enabled and have all
 of their tests turned on.  Tests will not be enabled in packages that do not
-depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
-pre-push testing.
+depend (at least implicitly) on ``<TRIBITS_PACKAGE>`` in this case.  This
+speeds up and robustifies testing for changes in specific packages (like in
+per-merge testing in a continuous integration process).
 
 NOTE: setting ``<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON`` also
 automatically sets and overrides `<Project>_ENABLE_ALL_OPTIONAL_PACKAGES`_ to
@@ -580,7 +577,7 @@ packages for testing purposes unless you are enabling all optional packages.)
 Enable all packages (and optionally all tests)
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-To enable all defined packages and subpackages add the configure option::
+To enable all defined packages, add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
 
@@ -589,13 +586,12 @@ packages, add the configure option::
 
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled (i.e. "black-listed") by adding
+Specific packages can be disabled (i.e. "exclude-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
 Note, all examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
-tests).
+``<Project>_ENABLE_TESTS=ON``.
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
 tested (PT) packages and code.  To have this also enable all secondary tested
@@ -613,50 +609,58 @@ details.
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
 
-To disable an package and all of the packages that depend on it, add the
-configure options::
+To disable a package and all of the packages that depend on it, add the
+configure option::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=OFF
 
 For example::
 
-  -D <Project>_ENABLE_<PACKAGE_A>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_A>=ON \
   -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
-  -D <Project>_ENABLE_<PACKAGE_B>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_B>=OFF \
 
-will enable ``<PACKAGE_A>`` and all of the packages that it depends on except
-for ``<PACKAGE_B>`` and all of its forward dependencies.
+will enable ``<TRIBITS_PACKAGE_A>`` and all of the packages that it depends on
+except for ``<TRIBITS_PACKAGE_B>`` and all of its forward dependencies.
 
-If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
-``<B>``, etc.), then disabling the package is equivalent to setting::
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. a parent
+package with subpackages ``<A>``, ``<B>``, ...), then disabling the parent
+package is equivalent to disabling all of the required and optional
+subpackages::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>=OFF \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>=OFF \
   ...
 
-The disable of the subpackage is this case will override any enables.
+The disable of the subpackages in this case will override any enables.
+
+.. _<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
 If a disabled package is a required dependency of some explicitly enabled
-downstream package, then the configure will error out if
-``<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF``.  Otherwise, a WARNING
-will be printed and the downstream package will be disabled and configuration
-will continue.
+downstream package, then the configure will error out if::
+
+  -D <Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF \
+
+is set.  Otherwise, if ``<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON``,
+a ``NOTE`` will be printed and the downstream package will be disabled and
+configuration will continue.
 
 
 Remove all package enables in the cache
 +++++++++++++++++++++++++++++++++++++++
 
 To wipe the set of package enables in the ``CMakeCache.txt`` file so they can
-be reset again from scratch, configure with::
+be reset again from scratch, re-configure with::
 
-  $ ./-do-confiugre -D <Project>_UNENABLE_ENABLED_PACKAGES=TRUE
+  $ cmake -D <Project>_UNENABLE_ENABLED_PACKAGES=TRUE .
 
 This option will set to empty '' all package enables, leaving all other cache
 variables as they are.  You can then reconfigure with a new set of package
 enables for a different set of packages.  This allows you to avoid more
-expensive configure time checks and to preserve other cache variables that you
-have set and don't want to loose.  For example, one would want to do this to
-avoid compiler and TPL checks.
+expensive configure time checks (like the standard CMake compiler checks) and
+to preserve other cache variables that you have set and don't want to loose.
+For example, one would want to do this to avoid more expensive compiler and
+TPL checks.
 
 
 Selecting compiler and linker options
@@ -1595,27 +1599,70 @@ NOTE: Newer versions of CMake may automatically determine when these options
 need to be turned on so watch for that in looking at the build lines.
 
 
-Enabling support for an optional Third-Party Library (TPL)
-----------------------------------------------------------
+External Packages/Third-Party Library (TPL) support
+---------------------------------------------------
 
-To enable a given TPL, set::
+A set of external packages/third-party libraries (TPL) can be enabled and
+disabled and the locations of those can be specified at configure time (if
+they are not found in the default path).
+
+
+Enabling support for an optional Third-Party Library (TPL)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable a given external packages/TPL, set::
 
   -D TPL_ENABLE_<TPLNAME>=ON
 
 where ``<TPLNAME>`` = ``BLAS``, ``LAPACK`` ``Boost``, ``Netcdf``, etc.
+(Requires TPLs for enabled package will automatically be enabled.)
 
 The full list of TPLs that is defined and can be enabled is shown by doing a
 configure with CMake and then grepping the configure output for ``Final set of
-.* TPLs``.  The set of TPL names listed in ``'Final set of enabled external packages/TPLs'`` and
-``'Final set of non-enabled external packages/TPLs'`` gives the full list of TPLs that can be
-enabled (or disabled).
+.* TPLs``.  The set of TPL names listed in ``'Final set of enabled external
+packages/TPLs'`` and ``'Final set of non-enabled external packages/TPLs'``
+gives the full list of TPLs that can be enabled (or disabled).
+
+Optional package-specific support for a TPL can be turned off by setting::
+
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=OFF
+
+This gives the user full control over what TPLs are supported by which package
+independent of whether the TPL is enabled or not.
+
+Support for an optional TPL can also be turned on implicitly by setting::
+
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=ON
+
+where ``<TRIBITS_PACKAGE>`` is a TriBITS package that has an optional
+dependency on ``<TPLNAME>``.  That will result in setting
+``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
+``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
+
+
+Specifying the location of the parts of an enabled external package/TPL
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Once an external package/TPL is enabled, the parts of that TPL must be found.
+For many external packages/TPLs, this will be done automatically by searching
+the environment paths.
+
+Some external packages/TPLs are specified with a call to
+``find_package(<externalPkg>)`` (see CMake documentation for
+``find_package()``).  Many other external packages/TPLs use a legacy TriBITS
+system that locates the parts using the CMake commands ``find_file()`` and
+``find_library()`` as described below.
+
+Every defined external package/TPL uses a specification provided in a
+``FindTPL<TPLNAME>.cmake`` module file.  This file describes how the package
+is found in a way that provides modern CMake IMPORTED targets (including the
+``<TPLNAME>::all_libs`` target) that is used by the downstream packages.
 
 Some TPLs require only libraries (e.g. Fortran libraries like BLAS or LAPACK),
 some TPL require only include directories, and some TPLs require both.
 
-Each TPL specification is defined in a ``FindTPL<TPLNAME>.cmake`` module file.
-The job of each of these of these module files is to set the CMake cache
-variables:
+For ``FindTPL<TPLNAME>.cmake`` files using the legacy TriBITS TPL system, a
+TPL is fully specified through the following cache variables:
 
 * ``TPL_<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to header files for the
   TPL (if the TPL supplies header files).
@@ -1623,8 +1670,8 @@ variables:
 * ``TPL_<TPLNAME>_LIBRARIES:PATH``: List of (absolute) paths to libraries,
   ordered as they will be on the link line (of the TPL supplies libraries).
 
-These variables are the only variables that are actually used in the CMake
-build system.  Therefore, one can set these two variables as CMake cache
+These variables are the only variables are used to create IMPORTED CMake
+targets for the TPL.  One can set these two variables as CMake cache
 variables, for ``SomeTPL`` for example, with::
 
   -D TPL_SomeTPL_INCLUDE_DIRS="${LIB_BASE}/include/a;${LIB_BASE}/include/b" \
@@ -1634,7 +1681,7 @@ Using this approach, one can be guaranteed that these libraries and these
 include directories and will used in the compile and link lines for the
 packages that depend on this TPL ``SomeTPL``.
 
-**WARNING:** When specifying ``TPL_<TPLNAME>_INCLUDE_DIRS`` and/or
+**NOTE:** When specifying ``TPL_<TPLNAME>_INCLUDE_DIRS`` and/or
 ``TPL_<TPLNAME>_LIBRARIES``, the build system will use these without question.
 It will **not** check for the existence of these directories or files so make
 sure that these files and directories exist before these are used in the
@@ -1642,29 +1689,31 @@ compiles and links.  (This can actually be a feature in rare cases the
 libraries and header files don't actually get created until after the
 configure step is complete but before the build step.)
 
-**WARNING:** It is **not recommended** to specify the TPLs libraries as just a set
-of link options as, for example::
+**NOTE:** It is generally *not recommended* to specify the TPLs libraries as
+just a set of link options as, for example::
 
   TPL_SomeTPL_LIBRARIES="-L/some/dir;-llib1;-llib2;..."
 
-This is not compatible with proper CMake usage and it not guaranteed to be
-supported for all use cases or all platforms.  (CMake really wants to have
-full library paths when linking.)
+But this is supported as long as this link line contains only link library
+directories and library names.  (Link options that are not order-sensitive are
+also supported like ``-mkl``.)
 
 When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 ``TPL_<TPLNAME>_LIBRARIES`` are not specified, then most
 ``FindTPL<TPLNAME>.cmake`` modules use a default find operation.  Some will
-call ``find_package(<TPLNAME>)`` internally by default and some may implement
-the default find in some other way.  To know for sure, see the documentation
-for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
-be sure).  NOTE: if a given ``FindTPL<TPLNAME>.cmake`` would use
-``find_package(<TPLNAME>)`` by default, this can be disabled by configuring
-with::
+call ``find_package(<externalPkg>)`` internally by default and some may
+implement the default find in some other way.  To know for sure, see the
+documentation for the specific external package/TPL (e.g. looking in the
+``FindTPL<TPLNAME>.cmake`` file to be sure).  NOTE: if a given
+``FindTPL<TPLNAME>.cmake`` will use ``find_package(<externalPkg>)`` by
+default, this can be disabled by configuring with::
 
   -D<TPLNAME>_ALLOW_PACKAGE_PREFIND=OFF
 
-Most TPLs, however, use a standard system for finding include directories
-and/or libraries based on the function
+(Not all ``FindTPL<TPLNAME>.cmake`` files support this option.)
+
+Many ``FindTPL<TPLNAME>.cmake`` files, use the legacy TriBITS TPL system for
+finding include directories and/or libraries based on the function
 `tribits_tpl_find_include_dirs_and_libraries()`_.  These simple standard
 ``FindTPL<TPLNAME>.cmake`` modules specify a set of header files and/or
 libraries that must be found.  The directories where these header files and
@@ -1684,9 +1733,9 @@ library files are looked for are specified using the CMake cache variables:
   files will be searched for using ``find_library()``, for each library, in
   order.
 
-Most ``FindTPL<TPLNAME>.cmake`` modules will define a default set of libraries
-to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically be left
-off.
+Most of these ``FindTPL<TPLNAME>.cmake`` modules will define a default set of
+libraries to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically
+be left off.
 
 Therefore, to find the same set of libraries for ``SimpleTPL`` shown
 above, one would specify::
@@ -1698,29 +1747,13 @@ override that using::
 
   -D SomeTPL_LIBRARY_NAMES="lib1;lib2"
 
-Therefore, this is in fact the preferred way to specify the libraries for a
-TPL.
+Therefore, this is in fact the preferred way to specify the libraries for
+these legacy TriBITS TPLs.
 
 In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
   -D <TPLNAME>_LIBRARY_NAMES=""
-
-Optional package-specific support for a TPL can be turned off by setting::
-
-  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=OFF
-
-This gives the user full control over what TPLs are supported by which package
-independent of whether the TPL is enabled or not.
-
-Support for an optional TPL can also be turned on implicitly by setting::
-
-  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=ON
-
-where ``<TRIBITS_PACKAGE>`` is a TriBITS package that has an optional
-dependency on ``<TPLNAME>``.  That will result in setting
-``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
-``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
 
 If all the parts of a TPL are not found on an initial configure, the configure
 will error out with a helpful error message.  In that case, one can change the
@@ -1730,14 +1763,6 @@ can do this over and over until the TPL is found. By reconfiguring, one avoids
 a complete configure from scratch which saves time.  Or, one can avoid the
 find operations by directly setting ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 ``TPL_<TPLNAME>_LIBRARIES`` as described above.
-
-**WARNING:** The cmake cache variable ``TPL_<TPLNAME>_LIBRARY_DIRS`` does
-**not** control where libraries are found.  Instead, this variable is set
-during the find processes and is not actually used in the CMake build system
-at all.
-
-In summary, this gives the user complete and direct control in specifying
-exactly what is used in the build process.
 
 **TPL Example 1: Standard BLAS Library**
 
@@ -1842,7 +1867,7 @@ libraries in the right order by configuring with::
 
 
 Adjusting upstream dependencies for a Third-Party Library (TPL)
----------------------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Some TPLs have dependencies on one or more upstream TPLs.  These dependencies
 must be specified correctly for the compile and links to work correctly.  The
@@ -1857,34 +1882,38 @@ the upstream TPLs are enabled), set::
 A dependency on an upstream TPL ``<tpl_i>`` will be set if the an upstream TPL
 ``<tpl_i>`` is actually enabled.
 
-If any of the specified TPLs are listed after ``<TPLNAME>`` in the
-``TPLsList.cmake`` file or are not enabled, then a configure-time error will
-occur.
+If any of the specified dependent TPLs ``<tpl_i>`` are listed after
+``<TPLNAME>`` in the ``TPLsList.cmake`` file (or are not listed at all), then
+a configure-time error will occur.
 
 To take complete control over what dependencies an TPL has, set::
 
   -D <TPLNAME>_LIB_ENABLED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
 
 If the upstream TPLs listed here are not defined upstream and enabled TPLs,
-then an error will occur.
+then a configure-time error will occur.
 
 
 Disabling support for a Third-Party Library (TPL)
---------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Disabling a TPL explicitly can be done using::
 
   -D TPL_ENABLE_<TPLNAME>=OFF
 
+This will result in the disabling of any direct or indirect downstream
+packages that have a required dependency on ``<TPLNAME>`` as described in
+`Disable a package and all its dependencies`_.
+
 NOTE: If a disabled TPL is a required dependency of some explicitly enabled
 downstream package, then the configure will error out if
-<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING will
-be printed and the downstream package will be disabled and configuration will
-continue.
+`<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_ ``= OFF``.  Otherwise, a
+NOTE will be printed and the downstream package will be disabled and
+configuration will continue.
 
 
 Disabling tentatively enabled TPLs
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 To disable a tentatively enabled TPL, set::
 
@@ -1908,7 +1937,7 @@ also want to explicitly disable the TPL as shown above.
 
 
 Require all TPL libraries be found
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 By default, some TPLs don't require that all of the libraries listed in
 ``<tplName>_LIBRARY_NAMES`` be found.  To change this behavior so that all
@@ -1920,7 +1949,7 @@ This makes the configure process catch more mistakes with the env.
 
 
 Disable warnings from TPL header files
---------------------------------------
+++++++++++++++++++++++++++++++++++++++
 
 To disable warnings coming from included TPL header files for C and C++ code,
 set::
@@ -1939,9 +1968,8 @@ project is pulling in module files from TPLs.
 xSDK Configuration Options
 --------------------------
 
-The configure of <Project> will adhere to the xSDK configuration standard
-(todo: put in reference to final document) simply by setting the CMake cache
-variable::
+The configure of <Project> will adhere to the `xSDK Community Package
+Policies`_ simply by setting the CMake cache variable::
 
   -D USE_XSDK_DEFAULTS=TRUE
 
@@ -2059,6 +2087,26 @@ To enable/disable deprecated warnings for a single <Project> package, set::
 This will override the global behavior set by
 ``<Project>_SHOW_DEPRECATED_WARNINGS`` for individual package
 ``<TRIBITS_PACKAGE>``.
+
+
+Adjusting CMake DEPRECATION warnings
+------------------------------------
+
+By default, deprecated TriBITS features being used in the project's CMake
+files will result in CMake deprecation warning messages (issued by calling
+``message(DEPRECATION ...)`` internally).  The handling of these deprecation
+warnings can be changed by setting the CMake cache variable
+``TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE``.  For example, to remove all
+deprecation warnings, set::
+
+  -D TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE
+
+Other valid values include:
+
+* ``DEPRECATION``: Issue a CMake ``DEPRECATION`` message and continue (default).
+* ``AUTHOR_WARNING``: Issue a CMake ``AUTHOR_WARNING`` message and continue.
+* ``SEND_ERROR``: Issue a CMake ``SEND_ERROR`` message and continue.
+* ``FATAL_ERROR``: Issue a CMake ``FATAL_ERROR`` message and exit.
 
 
 Disabling deprecated code
@@ -2887,13 +2935,19 @@ package directories.  In development mode, the failure to find a package
 directory is usually a programming error (i.e. a miss-spelled package
 directory name).  But in a tarball release of the project, package directories
 may be purposefully missing (see `Creating a tarball of the source tree`_) and
-must be ignored.  When building from a reduced source tarball created from the
+must be ignored.
+
+When building from a reduced source tarball created from the
 development sources, set::
 
-  -D <Project>_ASSERT_MISSING_PACKAGES=OFF
+  -D <Project>_ASSERT_DEFINED_DEPENDENCIES=OFF
+
+or to ``IGNORE``.  (valid values include ``FATAL_ERROR``, ``SEND_ERROR``,
+``WARNING``, ``NOTICE``, ``IGNORE`` and ``OFF``)
 
 Setting this ``OFF`` will cause the TriBITS CMake configure to simply ignore
-any missing packages and turn off all dependencies on these missing packages.
+any undefined packages and turn off all dependencies on these missing
+packages.
 
 Another type of checking is for optional inserted/external packages
 (e.g. packages who's source can optionally be included and is flagged with
@@ -2904,27 +2958,29 @@ printed by configuring with::
 
   -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
 
-These warnings (starting with 'NOTE', not 'WARNING' that would otherwise
-trigger warnings in CDash) about missing inserted/external packages will print
-regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
+These warnings starting with 'NOTE' (not starting with 'WARNING' that would
+otherwise trigger warnings in CDash) about missing inserted/external packages
+will print regardless of the setting for
+``<Project>_ASSERT_DEFINED_DEPENDENCIES``.
 
 Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
 checks for invalid usage of TriBITS in the project's ``CMakeLists.txt`` files
-and will abort configure with a fatal error on the first check failure. This
-is appropriate for development mode when a project is clean of all such
-invalid usage patterns but there are times when it makes sense to report these
-check failures in different ways (such as when upgrading TriBITS in a project
-that has some invalid usage patterns that just happen work but may be
+and will, by default, abort configure with a fatal error on the first failed
+check. This is appropriate for development mode when a project is clean of all
+such invalid usage patterns but there are times when it makes sense to report
+these check failures in different ways (such as when upgrading TriBITS in a
+project that has some invalid usage patterns that just happen work but may be
 disallowed in future versions of TriBITS).  To change how these invalid usage
 checks are handled, set::
 
   -D <Project>_ASSERT_CORRECT_TRIBITS_USAGE=<check-mode>
 
-where ``<check-mode>`` can be 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', or
-'IGNORE'.
+where ``<check-mode>`` can be ``FATAL_ERROR``, ``SEND_ERROR``, ``WARNING``,
+``IGNORE`` or ``OFF`` (where ``IGNORE`` or ``OFF`` avoids any error reporting
+or warnings).
 
 For ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``, the default for
-``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is actually set to ``IGNORE``.
+``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is set to ``IGNORE``.
 
 
 Building (Makefile generator)
@@ -4048,10 +4104,10 @@ generators on your system).
 NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with::
 
-  -D <Project>_ASSERT_MISSING_PACKAGES=OFF
+  -D <Project>_ASSERT_DEFINED_DEPENDENCIES=OFF
 
 Otherwise, TriBITS will error out complaining about missing packages.  (Note
-that ``<Project>_ASSERT_MISSING_PACKAGES`` will default to ```OFF``` in
+that ``<Project>_ASSERT_DEFINED_DEPENDENCIES`` will default to ```OFF``` in
 release mode, i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
@@ -4301,5 +4357,7 @@ dashboard``.
 .. _TribitsExampleApp: https://github.com/TriBITSPub/TriBITS/tree/master/tribits/examples/TribitsExampleApp
 
 .. _TriBITS TribitsExampleApp Tests: https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake
+
+.. _xSDK Community Package Policies: https://doi.org/10.6084/m9.figshare.4495136
 
 ..  LocalWords:  templated instantiation Makefiles CMake

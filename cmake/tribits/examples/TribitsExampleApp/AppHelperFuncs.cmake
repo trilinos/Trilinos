@@ -65,7 +65,6 @@ macro(getTribitsExProjStuffForAppByProject)
   message("   TribitsExProj_DIR = ${TribitsExProj_DIR}")
   message("   TribitsExProj_VERSION = ${TribitsExProj_VERSION}")
   message("   TribitsExProj_PACKAGE_LIST = ${TribitsExProj_PACKAGE_LIST}")
-  message("   TribitsExProj_TPL_LIST = ${TribitsExProj_TPL_LIST}")
   message("   TribitsExProj_BUILD_SHARED_LIBS = ${TribitsExProj_BUILD_SHARED_LIBS}")
   message("End of TribitsExProj details\n")
 
@@ -139,7 +138,7 @@ endfunction()
 #
 function(getExpectedAppDepsStr expectedDepsStrOut)
 
-  if ("SimpleTpl" IN_LIST SimpleCxx_TPL_LIST)
+  if (TARGET SimpleTpl::all_libs)
     set(simpleCxxDeps "simpletpl ")
   else()
     set(simpleCxxDeps "")

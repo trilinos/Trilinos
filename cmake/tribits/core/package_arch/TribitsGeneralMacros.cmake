@@ -42,6 +42,8 @@ include(AssertDefined)
 include(MessageWrapper)
 include(TribitsParseArgumentsHelpers)
 include(TribitsSortListAccordingToMasterList)
+include(TribitsDeprecatedHelpers)
+include(TribitsGetPackageEnableStatus)
 
 
 # Optionally start CMake code configure timing
@@ -143,165 +145,6 @@ function(tribits_set_base_repo_dir  BASE_DIR  REPO_DIR  BASE_REPO_DIR_OUT)
 endfunction()
 
 
-# Get the list of explicitly enabled entries
-#
-# These is the list of entries in ${LISTVAR} for which:
-#
-#   if (${ENABLED_PREFIX}_ENABLE_{ENTRY})
-#
-# evaluates to true.
-#
-function(tribits_get_enabled_list  LISTVAR  ENABLED_PREFIX  
-  ENABLED_LIST_OUT_OUT  NUM_ENABLED_OUT_OUT
-  )
-  set(ENABLED_LIST_OUT)
-  foreach(ENTITY ${${LISTVAR}})
-    set(ENTITY_NAME ${ENABLED_PREFIX}_ENABLE_${ENTITY})
-    assert_defined(${ENTITY_NAME})
-    set(INCLUDE_ENTITY FALSE)
-    if (${ENTITY_NAME})
-      list(APPEND  ENABLED_LIST_OUT  ${ENTITY})
-    endif()
-  endforeach()
-  list(LENGTH  ENABLED_LIST_OUT  NUM_ENABLED_OUT)
-  set(${ENABLED_LIST_OUT_OUT} ${ENABLED_LIST_OUT} PARENT_SCOPE)
-  if (NUM_ENABLED_OUT_OUT)
-    set(${NUM_ENABLED_OUT_OUT} ${NUM_ENABLED_OUT} PARENT_SCOPE)
-  endif()
-endfunction()
-
-
-# Get the list non-disabled entries
-#
-# These is the list of entries in ${LISTVAR} for which:
-#
-#   if (
-#     (${ENABLED_PREFIX}_ENABLE_{ENTRY})
-#     OR
-#     (${ENABLED_PREFIX}_ENABLE_{ENTRY} STREQUAL "" )
-#     )
-#
-# evaluates to true.
-#
-function(tribits_get_nondisabled_list  LISTVAR  ENABLED_PREFIX  
-  NONDISABLED_LIST_OUT_OUT  NUM_NONDISABLED_OUT_OUT
-  )
-  set(NONDISABLED_LIST_OUT)
-  foreach(ENTITY ${${LISTVAR}})
-    set(ENTITY_NAME ${ENABLED_PREFIX}_ENABLE_${ENTITY})
-    assert_defined(${ENTITY_NAME})
-    set(INCLUDE_ENTITY FALSE)
-    if (${ENTITY_NAME} OR ${ENTITY_NAME} STREQUAL "")
-      list(APPEND  NONDISABLED_LIST_OUT  ${ENTITY})
-    endif()
-  endforeach()
-  list(LENGTH  NONDISABLED_LIST_OUT  NUM_NONDISABLED_OUT)
-  set(${NONDISABLED_LIST_OUT_OUT} ${NONDISABLED_LIST_OUT} PARENT_SCOPE)
-  if (NUM_NONDISABLED_OUT_OUT)
-    set(${NUM_NONDISABLED_OUT_OUT} ${NUM_NONDISABLED_OUT} PARENT_SCOPE)
-  endif()
-endfunction()
-
-
-# Get the list of explicitly disabled entries
-#
-# These is the list of entries in ${LISTVAR} for which:
-#
-#   if (
-#     (NOT ${ENABLED_PREFIX}_ENABLE_{ENTRY})
-#     AND
-#     (NOT ${ENABLED_PREFIX}_ENABLE_{ENTRY} STREQUAL "" )
-#     )
-#
-# evaluates to true.
-#
-function(tribits_get_disabled_list  LISTVAR  ENABLED_PREFIX  
-  DISABLED_LIST_OUT_OUT  NUM_DISABLED_OUT_OUT
-  )
-  set(DISABLED_LIST_OUT)
-  foreach(ENTITY ${${LISTVAR}})
-    set(ENTITY_NAME ${ENABLED_PREFIX}_ENABLE_${ENTITY})
-    assert_defined(${ENTITY_NAME})
-    set(INCLUDE_ENTITY FALSE)
-    if ( (NOT ${ENTITY_NAME}) AND (NOT ${ENTITY_NAME} STREQUAL "") )
-      list(APPEND  DISABLED_LIST_OUT  ${ENTITY})
-    endif()
-  endforeach()
-  list(LENGTH  DISABLED_LIST_OUT  NUM_DISABLED_OUT)
-  set(${DISABLED_LIST_OUT_OUT} ${DISABLED_LIST_OUT} PARENT_SCOPE)
-  if (NUM_DISABLED_OUT_OUT)
-    set(${NUM_DISABLED_OUT_OUT} ${NUM_DISABLED_OUT} PARENT_SCOPE)
-  endif()
-endfunction()
-
-
-# Get the list of non-enabled entries
-#
-# These is the list of entries in ${LISTVAR} for which:
-#
-#   if (NOT ${ENABLED_PREFIX}_ENABLE_{ENTRY})
-#
-# evaluates to true.
-#
-function(tribits_get_nonenabled_list  LISTVAR  ENABLED_PREFIX  
-  NONENABLED_LIST_OUT_OUT  NUM_NONENABLED_OUT_OUT
-  )
-  set(NONENABLED_LIST_OUT)
-  foreach(ENTITY ${${LISTVAR}})
-    set(ENTITY_NAME ${ENABLED_PREFIX}_ENABLE_${ENTITY})
-    assert_defined(${ENTITY_NAME})
-    set(INCLUDE_ENTITY FALSE)
-    if (NOT ${ENTITY_NAME}) # Note that empty "" is also false!
-      list(APPEND  NONENABLED_LIST_OUT  ${ENTITY})
-    endif()
-  endforeach()
-  list(LENGTH  NONENABLED_LIST_OUT  NUM_NONENABLED_OUT)
-  set(${NONENABLED_LIST_OUT_OUT} ${NONENABLED_LIST_OUT} PARENT_SCOPE)
-  if (NUM_NONENABLED_OUT_OUT)
-    set(${NUM_NONENABLED_OUT_OUT} ${NUM_NONENABLED_OUT} PARENT_SCOPE)
-  endif()
-endfunction()
-
-
-# Macro that sets up the basic lists of enabled packages and packages.
-#
-macro(tribits_set_up_enabled_lists_and_pkg_idx)
-
-  # ${PROJECT_NAME}_ENABLED_PACKAGES
-  tribits_get_enabled_list(
-    ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES  ${PROJECT_NAME}
-    ${PROJECT_NAME}_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
-    ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES)
-
-  # ${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES
-  tribits_get_enabled_list( ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
-    ${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES
-    ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_PACKAGES)
-
-  # ${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES
-  set(${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES
-    "${${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES}")
-  list(REVERSE ${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES)
-
-  # ${PACKAGE_NAME}_PKG_IDX
-  set(PKG_IDX 0)
-  foreach(tribitsPackage ${${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES})
-    set(${tribitsPackage}_PKG_IDX ${PKG_IDX})
-    math(EXPR  PKG_IDX  "${PKG_IDX} + 1")
-  endforeach()
-
-  # ${PROJECT_NAME}_ENABLED_TPLS
-  tribits_get_enabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
-    ${PROJECT_NAME}_ENABLED_TPLS  ${PROJECT_NAME}_NUM_ENABLED_TPLS)
-
-  # ${PROJECT_NAME}_REVERSE_ENABLED_TPLS
-  set(${PROJECT_NAME}_REVERSE_ENABLED_TPLS
-    "${${PROJECT_NAME}_ENABLED_TPLS}")
-  list(REVERSE ${PROJECT_NAME}_REVERSE_ENABLED_TPLS)
-
-endmacro()
-
-
 # @FUNCTION: tribits_set_st_for_dev_mode()
 #
 # Function that allows packages to easily make a feature ``ST`` for
@@ -337,45 +180,10 @@ endfunction()
 
 # For backward compatibility
 macro(tribits_set_ss_for_dev_mode  OUTPUT_VAR)
-  message(WARNING
-    "WARNING: tribits_set_ss_for_dev_mode() is deprecated,"
-    " use tribits_set_st_for_dev_mode() instead!")
+  tribits_deprecated_command(tribits_set_ss_for_dev_mode
+    MESSAGE "Use tribits_set_st_for_dev_mode() instead.")
   tribits_set_st_for_dev_mode(${OUTPUT_VAR})
 endmacro()
-
-
-# Function that extracts all of the required and optional
-# items for a given class of package lists
-#
-function( tribits_gather_enabled_items  PACKAGE_NAME  LISTTYPE_PREFIX
-  LISTTYPE_POSTFIX  GATHERED_ITEMS_LIST_OUT
-  )
-
-  #message("TRIBITS_GATHER_ENABLED_ITEMS:  '${PACKAGE_NAME}'  '${LISTTYPE_PREFIX}'"
-  #  "  '${LISTTYPE_POSTFIX}'  '${GATHERED_ITEMS_LIST_OUT}'")
-
-  set(GATHERED_ITEMS_LIST_TMP
-    ${${PACKAGE_NAME}_${LISTTYPE_PREFIX}_REQUIRED_DEP_${LISTTYPE_POSTFIX}}
-    )
-
-  #message("TRIBITS_GATHER_ENABLED_ITEMS:"
-  #  "  ${PACKAGE_NAME}_${LISTTYPE_PREFIX}_REQUIRED_DEP_${LISTTYPE_POSTFIX} = ${GATHERED_ITEMS_LIST_TMP}")
-
-  foreach(ITEM
-    ${${PACKAGE_NAME}_${LISTTYPE_PREFIX}_OPTIONAL_DEP_${LISTTYPE_POSTFIX}}
-    )
-    assert_defined(${PACKAGE_NAME}_ENABLE_${ITEM})
-    if (${PACKAGE_NAME}_ENABLE_${ITEM})
-      append_set(GATHERED_ITEMS_LIST_TMP ${ITEM})
-    endif()
-  endforeach()
-
-  #message("TRIBITS_GATHER_ENABLED_ITEMS:"
-  #  "  ${GATHERED_ITEMS_LIST_OUT} = ${GATHERED_ITEMS_LIST_TMP}")
-
-  set(${GATHERED_ITEMS_LIST_OUT} ${GATHERED_ITEMS_LIST_TMP} PARENT_SCOPE)
-
-endfunction()
 
 
 # @FUNCTION: tribits_trace_file_processing()

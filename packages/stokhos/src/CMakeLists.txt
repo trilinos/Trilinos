@@ -207,11 +207,11 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 # Add path to Dakota headers in installed directory
 IF (${PACKAGE_NAME}_ENABLE_TriKota)
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_BINARY_DIR}/../../TriKota/Dakota/install/include
   )
 ENDIF()
@@ -221,7 +221,7 @@ SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
   Stokhos.hpp
@@ -374,7 +374,7 @@ SET(SOURCES ${SOURCES}
 
 # Epetra
 IF (Stokhos_ENABLE_EpetraExt)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
   SET(HEADERS ${HEADERS}
     epetra/Stokhos_Sparse3TensorUtilities.hpp
     epetra/Stokhos_EpetraSparse3Tensor.hpp
@@ -488,8 +488,8 @@ IF (Stokhos_ENABLE_EpetraExt)
     )
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)
 SET(HEADERS ${HEADERS}
   kokkos/Stokhos_Multiply.hpp
   kokkos/Stokhos_CrsMatrix.hpp
@@ -509,26 +509,26 @@ SET(HEADERS ${HEADERS}
   kokkos/Stokhos_MatrixMarket.hpp
   )
 IF(Kokkos_ENABLE_SERIAL)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
   SET(HEADERS ${HEADERS}
     kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
 ENDIF()
 IF(Kokkos_ENABLE_THREADS)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
     )
 ENDIF()
 IF(Kokkos_ENABLE_OPENMP)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
   SET(HEADERS ${HEADERS}
     kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
     kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
     )
 ENDIF()
 IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
   SET(HEADERS ${HEADERS}
     kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
     kokkos/Cuda/Stokhos_Cuda_WarpShuffle.hpp
@@ -550,7 +550,7 @@ ENDIF()
 # NOX
 IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     NOX_ENABLE_EpetraExt)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
   SET(HEADERS ${HEADERS}
     epetra/Stokhos_GaussSeidelPreconditioner.hpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
@@ -567,7 +567,7 @@ ENDIF()
 
 # Include cusp
 IF (Stokhos_ENABLE_Cusp)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cusp)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cusp)
   SET(HEADERS ${HEADERS}
     cusp/krylov/blockcg.h
     cusp/block_monitor.h
@@ -600,7 +600,7 @@ TRIBITS_ADD_LIBRARY(
 
 # Sacado
 IF (Stokhos_ENABLE_Sacado)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
   SET(SACADO_HEADERS "")
   SET(SACADO_SOURCES "")
   SET(STOKHOS_DEPLIBS stokhos)
@@ -623,7 +623,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/Sacado_ETPCE_OrthogPoly.cpp
       )
   ENDIF()
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
   LIST(APPEND SACADO_HEADERS
     sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
     sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
@@ -649,7 +649,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/Stokhos_MemoryTraits.cpp
     )
   IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
+    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
       sacado/kokkos/vector/Stokhos_MP_Vector_MaskTraits.hpp
@@ -689,7 +689,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
 
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/Fad)
+    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/Fad)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/vector/Fad/Sacado_Fad_ExprSpec_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_Expr_MP_Vector.hpp
@@ -704,7 +704,7 @@ IF (Stokhos_ENABLE_Sacado)
       )
   ENDIF()
   IF(Stokhos_ENABLE_PCE_Scalar_Type)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce)
+    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/pce/Stokhos_Sacado_Kokkos_UQ_PCE.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE.hpp
@@ -724,7 +724,7 @@ IF (Stokhos_ENABLE_Sacado)
 
   IF (Stokhos_ENABLE_KokkosKernels)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_Blas1_MP_Vector.hpp
@@ -735,7 +735,7 @@ IF (Stokhos_ENABLE_Sacado)
         )
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_Blas1_UQ_PCE.hpp
@@ -749,13 +749,13 @@ IF (Stokhos_ENABLE_Sacado)
 
   IF (Stokhos_ENABLE_TeuchosKokkosComm)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
         )
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/pce/mpicomm/Kokkos_TeuchosCommAdapters_UQ_PCE.hpp
         )
@@ -764,13 +764,13 @@ IF (Stokhos_ENABLE_Sacado)
 
   IF (Stokhos_ENABLE_KokkosAlgorithms)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/vector/algorithms/Kokkos_Random_MP_Vector.hpp
         )
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/pce/algorithms/Kokkos_Random_UQ_PCE.hpp
         )
@@ -817,7 +817,7 @@ IF (Stokhos_ENABLE_Sacado)
         LocalCrsMatrixOperator
         )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
@@ -857,7 +857,7 @@ IF (Stokhos_ENABLE_Sacado)
       ENDIF()
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
+      TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         # We have manually written cpp files for CrsMatrix
@@ -906,7 +906,7 @@ IF (Stokhos_ENABLE_Sacado)
     # adapters if either is enabled.
     IF (Stokhos_ENABLE_Belos OR Stokhos_ENABLE_Ifpack2)
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
         LIST(APPEND TPETRA_HEADERS
           sacado/kokkos/vector/belos/Belos_Tpetra_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
@@ -921,7 +921,7 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/belos)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/belos)
         LIST(APPEND TPETRA_HEADERS
           sacado/kokkos/pce/belos/Belos_TpetraAdapter_UQ_PCE.hpp
           )
@@ -954,7 +954,7 @@ IF (Stokhos_ENABLE_Sacado)
       ENDIF()
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra)
         APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra/*.hpp)
         IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_ENSEMBLE_ETI(
@@ -969,7 +969,7 @@ IF (Stokhos_ENABLE_Sacado)
         ENDIF()
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra)
         APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra/*.hpp)
         IF(Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
@@ -1006,7 +1006,7 @@ IF (Stokhos_ENABLE_Sacado)
       ENDIF()
       SET(STOKHOS_AMESOS2_DEPLIBS "")
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
         APPEND_GLOB(AMESOS2_HEADERS
           sacado/kokkos/vector/amesos2/*.hpp
           )
@@ -1026,7 +1026,7 @@ IF (Stokhos_ENABLE_Sacado)
         ENDIF()
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
         APPEND_GLOB(AMESOS2_HEADERS
           sacado/kokkos/pce/amesos2/*.hpp
           )
@@ -1051,7 +1051,7 @@ IF (Stokhos_ENABLE_Sacado)
       SET(IFPACK2_CPP_SOURCES Stokhos_Dummy.cpp)
       SET(STOKHOS_IFPACK2_DEPLIBS "")
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
         APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
@@ -1067,7 +1067,7 @@ IF (Stokhos_ENABLE_Sacado)
         ENDIF()
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2)
         APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.hpp)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
@@ -1116,7 +1116,7 @@ IF (Stokhos_ENABLE_Sacado)
       ENDIF()
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
         IF (MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_ENSEMBLE_ETI(
@@ -1131,7 +1131,7 @@ IF (Stokhos_ENABLE_Sacado)
         ENDIF()
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
+        TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
