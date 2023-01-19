@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -488,6 +488,8 @@ void SystemInterface::enroll_options()
 
   options_.enroll("maxnames", GetLongOption::MandatoryValue, "[deprecated -- no longer needed]",
                   "1000");
+  options_.enroll("t", GetLongOption::MandatoryValue, "Backward-compatible option for -tolerance",
+                  "1.0E-6");
   options_.enroll("m", GetLongOption::NoValue, "Backward-compatible option for -map", nullptr);
   options_.enroll("p", GetLongOption::NoValue, "Backward-compatible option for -partial.", nullptr);
   options_.enroll("s", GetLongOption::NoValue, "Backward-compatible option for -short", nullptr);
@@ -608,7 +610,17 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  default_tol.value    = options_.get_option_value("tolerance", default_tol.value);
+  {
+    auto t1 = options_.get_option_value("t", default_tol.value);
+    auto t2 = options_.get_option_value("tolerance", default_tol.value);
+    if (t1 != default_tol.value) {
+      default_tol.value = t1;
+    }
+    else if (t2 != default_tol.value) {
+      default_tol.value = t2;
+    }
+  }
+
   coord_tol.value      = options_.get_option_value("coordinate_tolerance", coord_tol.value);
   default_tol.floor    = options_.get_option_value("Floor", default_tol.floor);
   final_time_tol.value = options_.get_option_value("final_time_tolerance", final_time_tol.value);
@@ -1549,7 +1561,8 @@ namespace {
     cmd_file.getline(line, 256);
     xline = line;
     while (!cmd_file.eof()) {
-      if (xline.empty() || (xline[0] != '\t' && first_character(xline) != '#')) {
+      if (xline.empty() ||
+          ((xline[0] != '\t' && xline[0] != ' ') && first_character(xline) != '#')) {
         break;
       }
 

@@ -3,9 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef EXOII_READ_H
-#define EXOII_READ_H
+#pragma once
 
 #include "exo_entity.h"
 
@@ -283,5 +281,3 @@ template <typename INT> inline INT ExoII_Read<INT>::Element_Order(size_t elmt_nu
   }
   return 0;
 }
-
-#endif

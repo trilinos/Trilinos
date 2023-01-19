@@ -5,9 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _EXOIILB_CONST_H_
-#define _EXOIILB_CONST_H_
+#pragma once
 
 #include "elb_elem.h"
 #include <cstdio>
@@ -273,5 +271,3 @@ template <typename INT> struct Graph_Description
 #define EDGE_WGT  4
 #define TIME_INDX 5
 #define VAR_NAME  6
-
-#endif /* _EXOIILB_CONST_H_ */

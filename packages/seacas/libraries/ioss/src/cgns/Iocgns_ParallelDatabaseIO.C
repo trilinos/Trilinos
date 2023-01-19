@@ -1298,18 +1298,18 @@ namespace Iocgns {
                (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
       }
 
+      int field_offset = Utils::index(field);
       int comp_count = field.get_component_count(Ioss::Field::InOut::INPUT);
       if (comp_count == 1) {
-        CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index,
-                               field.get_name().c_str(), CGNS_ENUMV(RealDouble), rmin, rmax,
-                               rdata));
+        CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index,
+				     field_offset, rmin, rmax, rdata));
       }
       else {
         std::vector<double> cgns_data(num_to_get);
         for (int i = 0; i < comp_count; i++) {
           std::string var_name = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
-          CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index, var_name.c_str(),
-                                 CGNS_ENUMV(RealDouble), rmin, rmax, cgns_data.data()));
+          CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index, field_offset + i,
+				       rmin, rmax, cgns_data.data()));
           for (cgsize_t j = 0; j < num_to_get; j++) {
             rdata[comp_count * j + i] = cgns_data[j];
           }

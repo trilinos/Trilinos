@@ -5,8 +5,8 @@
 #include <string>
 
 #include <Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
 #include <Ioss_ScopeGuard.h>
+#include <Ioss_SubSystem.h>
 
 #include <fmt/format.h>
 
@@ -18,9 +18,10 @@ namespace {
     Ioss::Init::Initializer init_db;
 
     Ioss::PropertyManager properties;
-    properties.add(Ioss::Property("SHOW_LABELS", 0));
-    properties.add(Ioss::Property("SHOW_LEGEND", 1));
+    properties.add(Ioss::Property("SHOW_LABELS", "yes"));
+    properties.add(Ioss::Property("SHOW_LEGEND", "no"));
     properties.add(Ioss::Property("SHOW_TIME_STAMP", 1));
+    properties.add(Ioss::Property("TIME_STAMP_FORMAT", "{%F %H:%M:%S}"));
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("heartbeat", filename, Ioss::WRITE_HEARTBEAT,
                                                     Ioss::ParallelUtils::comm_world(), properties);
     if (dbo == nullptr || !dbo->ok(true)) {
@@ -65,7 +66,7 @@ namespace {
   }
 } // namespace
 
-int main(int argc, char **argv)
+int main(IOSS_MAYBE_UNUSED int argc, char **argv)
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);

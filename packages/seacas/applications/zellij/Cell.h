@@ -3,8 +3,8 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ZE_Cell_H
-#define ZE_Cell_H
+#pragma once
+
 //
 // `Cell`:
 //  -- for each location:
@@ -162,5 +162,3 @@ private:
   //!  1 2 3    BL B BR
   std::array<int, 9> m_ranks{{0, -1, -1, -1, -1, -1, -1, -1, -1}};
 };
-
-#endif

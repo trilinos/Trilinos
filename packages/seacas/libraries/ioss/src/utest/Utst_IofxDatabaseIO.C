@@ -403,7 +403,7 @@ namespace {
   }
   // EndDocTest2
 } // namespace
-int main(int argc, char **argv)
+int main(IOSS_MAYBE_UNUSED int argc, char **argv)
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);

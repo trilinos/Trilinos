@@ -60,25 +60,21 @@ class TestAssemblies(unittest.TestCase):
             name="Unit_test", type=exo.ex_entity_type.EX_ASSEMBLY, id=444
         )
         new.entity_list = [100, 222]
-        temp_exo_path2 = self.temp_exo_path + "2"
+        temp_exo_path2 = f"{self.temp_exo_path}2"
         with exo.exodus(self.temp_exo_path, mode="r") as temp_exofile:
-            expected = [assem for assem in temp_exofile.get_ids("EX_ASSEMBLY")]
+            expected = list(temp_exofile.get_ids("EX_ASSEMBLY"))
             with temp_exofile.copy(temp_exo_path2, True, mode="a") as temp_exofile2:
                 temp_exofile2.put_assembly(new)
-                copied_output = [
-                    assem for assem in temp_exofile2.get_ids("EX_ASSEMBLY")
-                ]
+                copied_output = list(temp_exofile2.get_ids("EX_ASSEMBLY"))
                 self.assertNotEqual(temp_exofile.modeChar, temp_exofile2.modeChar)
         self.assertNotEqual(expected, copied_output)
 
     def test_copy_opened_in_read_mode(self):
-        temp_exo_path2 = self.temp_exo_path + "2"
+        temp_exo_path2 = f"{self.temp_exo_path}2"
         with exo.exodus(self.temp_exo_path, mode="r") as temp_exofile:
             with temp_exofile.copy(temp_exo_path2, True, mode="r") as temp_exofile2:
-                expected = [assem for assem in temp_exofile.get_ids("EX_ASSEMBLY")]
-                copied_output = [
-                    assem for assem in temp_exofile2.get_ids("EX_ASSEMBLY")
-                ]
+                expected = list(temp_exofile.get_ids("EX_ASSEMBLY"))
+                copied_output = list(temp_exofile2.get_ids("EX_ASSEMBLY"))
                 self.assertEqual(temp_exofile.modeChar, temp_exofile2.modeChar)
         self.assertEqual(expected, copied_output)
 
@@ -138,15 +134,15 @@ class TestAssemblies(unittest.TestCase):
             exo.assembly(name="NewAssembly", type="EX_ASSEMBLY", id=222),
             exo.assembly(name="FromPython", type="EX_ASSEMBLY", id=333),
         ]
+        entity_lists = [
+            [200, 300, 400],
+            [10, 11, 12, 13],
+            [14, 15, 16],
+            [10, 16],
+            [100, 200, 300, 400],
+            [100, 222],
+        ]
         for i, x in enumerate(expected):
-            entity_lists = [
-                [200, 300, 400],
-                [10, 11, 12, 13],
-                [14, 15, 16],
-                [10, 16],
-                [100, 200, 300, 400],
-                [100, 222],
-            ]
             x.entity_list = entity_lists[i]
         self.maxDiff = None
         self.assertEqual(str(expected), str(assemblies))

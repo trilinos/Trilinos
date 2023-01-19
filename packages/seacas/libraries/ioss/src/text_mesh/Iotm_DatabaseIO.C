@@ -556,7 +556,7 @@ namespace Iotm {
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::Assembly *assembly, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+                                         void * /* data */, size_t data_size) const
   {
     {
       Ioss::SerializeIO serializeIO__(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -309,12 +309,14 @@ namespace {
     }
   }
 
+#ifndef NDEBUG
   template <typename INT> void assert_sorted(INT *vector, size_t vecsize)
   {
     for (size_t i = 1; i < vecsize; i++) {
       assert(vector[i - 1] <= vector[i]);
     }
   }
+#endif
 } // namespace
 
 /*****************************************************************************
@@ -329,7 +331,9 @@ template void find_first_last(int64_t val, size_t vecsize, int64_t *vector, int6
 template <typename INT>
 void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last)
 {
-  /* assert_sorted(vector, vecsize); */
+#ifndef NDEBUG
+  assert_sorted(vector, vecsize);
+#endif
 
   *first = -1;
   *last  = -1;

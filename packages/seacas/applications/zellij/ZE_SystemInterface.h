@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ZE_SystemInterface_h
-#define ZE_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <array>
@@ -88,4 +87,3 @@ private:
   bool          ignoreInternalSidesets_{false};
   enum Minimize minimizeOpenFiles_ { Minimize::NONE };
 };
-#endif

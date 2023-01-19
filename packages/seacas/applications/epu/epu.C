@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -1477,9 +1477,10 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
     }
 
     if (nodal_vars.count(InOut::OUT) > 0) {
+      T fill_val = -std::numeric_limits<T>::max();
       for (int i = 0; i < nodal_vars.count(InOut::IN); i++) {
         if (debug_level & 2) {
-          std::fill(master_values.begin(), master_values.end(), T(0.0));
+          std::fill(master_values.begin(), master_values.end(), fill_val);
         }
 
         for (p = 0; p < part_count; p++) {
@@ -1495,7 +1496,8 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
             if (debug_level & 2) {
               for (size_t j = 0; j < node_count; j++) {
                 size_t nodal_value = local_node_to_global[p][j];
-                if (master_values[nodal_value] != 0 && master_values[nodal_value] != values[j]) {
+                if (master_values[nodal_value] != fill_val &&
+                    master_values[nodal_value] != values[j]) {
                   fmt::print(stderr, "Variable {}, Node {}, old = {}, new = {}\n", i + 1,
                              fmt::group_digits(nodal_value), master_values[nodal_value], values[j]);
                 }

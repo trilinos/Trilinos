@@ -5,12 +5,13 @@
 //    strange cases
 //
 //
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+#include <Ioss_CodeTypes.h>
 #include <exodus/Ioex_ParallelDatabaseIO.h>
 #if defined PARALLEL_AWARE_EXODUS
 #include <algorithm>
@@ -35,8 +36,6 @@
 #endif
 #include <utility>
 #include <vector>
-
-#include <Ioss_CodeTypes.h>
 
 #include <exodus/Ioex_DecompositionData.h>
 #include <exodus/Ioex_Internals.h>
@@ -2407,7 +2406,7 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
 
   // Find corresponding set in file decomp class...
   if (role == Ioss::Field::MESH) {
-    int64_t        id   = Ioex::get_id(ns, &ids_);
+    int64_t id = Ioex::get_id(ns, &ids_);
 
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       if (field.get_type() == Ioss::Field::INTEGER) {
@@ -4903,5 +4902,5 @@ void ParallelDatabaseIO::check_valid_values() const
 }
 } // namespace Ioex
 #else
-const char ioss_exodus_parallel_database_unused_symbol_dummy = '\0';
+IOSS_MAYBE_UNUSED const char ioss_exodus_parallel_database_unused_symbol_dummy = '\0';
 #endif

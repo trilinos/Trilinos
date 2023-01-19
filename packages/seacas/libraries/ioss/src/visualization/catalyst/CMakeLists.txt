@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2021 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -8,7 +8,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.8.0)
 
 PROJECT(CatalystIossAdapter)
 
-SET(CMAKE_CXX_STANDARD 14)
+SET(CMAKE_CXX_STANDARD 17)
 
 SET(PVCSA_VERSION CACHE STRING "Version string to append to catalyst adapter library.")
 
@@ -37,9 +37,9 @@ IF("${isSystemDir}" STREQUAL "-1")
    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF()
 
-INCLUDE_DIRECTORIES("manager")
-INCLUDE_DIRECTORIES("parser")
-INCLUDE_DIRECTORIES("../../")
+TRIBITS_INCLUDE_DIRECTORIES("manager")
+TRIBITS_INCLUDE_DIRECTORIES("parser")
+TRIBITS_INCLUDE_DIRECTORIES("../../")
 
 ADD_SUBDIRECTORY(manager)
 ADD_SUBDIRECTORY(parser)

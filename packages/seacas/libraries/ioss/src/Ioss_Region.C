@@ -480,7 +480,7 @@ namespace Ioss {
 
     int64_t num_ts = get_property("state_count").get_int();
     auto    max_sb = std::max(
-           {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
+        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
             get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
             get_property("element_block_count").get_int(),
             get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
@@ -1377,6 +1377,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(sideset);
+
+      // Also add "sideset_{id}" as an alias.
+      auto id = sideset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ss_alias = fmt::format("sideset_{}", id);
+        add_alias__(sideset->name(), ss_alias, sideset->type());
+      }
       sideSets.push_back(sideset);
       return true;
     }
@@ -1397,6 +1404,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(nodeset);
+
+      // Also add "nodeset_{id}" as an alias.
+      auto id = nodeset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ns_alias = fmt::format("nodeset_{}", id);
+        add_alias__(nodeset->name(), ns_alias, nodeset->type());
+      }
       nodeSets.push_back(nodeset);
       return true;
     }

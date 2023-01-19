@@ -1,11 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef APREPRO_GETLINE_H
-#define APREPRO_GETLINE_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,5 +16,3 @@ void  ap_gl_histadd(char *);  /* adds entries to hist */
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
 #endif
-
-#endif /* APREPRO_GETLINE_H */

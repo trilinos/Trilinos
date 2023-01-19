@@ -6,9 +6,7 @@
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
  *  Copyright: Sandia National Labs, 2020, 2021, 2022
  */
-
-#ifndef INCLUDE_N2EDATATYPES_H_
-#define INCLUDE_N2EDATATYPES_H_
+#pragma once
 
 #include <cstring>
 #include <exodusII.h>
@@ -63,4 +61,3 @@ namespace N2EModules {
                                  N2EGridPtList /*nodes*/>;
 
 } // namespace N2EModules
-#endif /* INCLUDE_N2EDATATYPES_H_ */

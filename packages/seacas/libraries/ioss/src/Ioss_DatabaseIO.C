@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -206,6 +206,39 @@ namespace Ioss {
     // vz to be a 3-component field 'v'.
     Utils::check_set_bool_property(properties, "FIELD_STRIP_TRAILING_UNDERSCORE",
                                    fieldStripTrailing_);
+
+    // Determine how to handle duplicate incompatible fields (transient and attribute field with
+    // same name, ...)
+    if (properties.exists("DUPLICATE_FIELD_NAME_BEHAVIOR")) {
+      auto prop = properties.get("DUPLICATE_FIELD_NAME_BEHAVIOR").get_string();
+      if (prop == "IGNORE") {
+        duplicateFieldBehavior = DuplicateFieldBehavior::IGNORE_;
+      }
+      else if (prop == "WARNING") {
+        duplicateFieldBehavior = DuplicateFieldBehavior::WARNING_;
+      }
+      else if (prop == "ERROR") {
+        duplicateFieldBehavior = DuplicateFieldBehavior::ERROR_;
+      }
+      else {
+        std::ostringstream errmsg;
+        fmt::print(errmsg,
+                   "Invalid value ({}) for property `DUPLICATE_FIELD_NAME_BEHAVIOR`.\n"
+                   "\tValid values are `IGNORE`, `WARNING`, or `ERROR`\n",
+                   prop);
+        IOSS_ERROR(errmsg);
+      }
+    }
+    else {
+      bool allow_duplicate = false;
+      Utils::check_set_bool_property(properties, "IGNORE_DUPLICATE_FIELD_NAMES", allow_duplicate);
+      if (allow_duplicate) {
+        duplicateFieldBehavior = DuplicateFieldBehavior::WARNING_;
+      }
+      else {
+        duplicateFieldBehavior = DuplicateFieldBehavior::ERROR_;
+      }
+    }
 
     if (properties.exists("SURFACE_SPLIT_TYPE")) {
       Ioss::SurfaceSplitType split_type = Ioss::SPLIT_INVALID;
