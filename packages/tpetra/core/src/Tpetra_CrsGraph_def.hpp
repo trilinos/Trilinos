@@ -2793,8 +2793,8 @@ namespace Tpetra {
     // FIXME get rid of the else-clause when the minimum CXX standard required is bumped to C++17
 #ifdef KOKKOS_ENABLE_CXX17
     if constexpr (same) { // size_t == row_offset_type
-      using execution_space = typename device_type::execution_space;
-      Kokkos::deep_copy (execution_space(),
+      using lexecution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (lexecution_space(),
                          ptr_rot,
                          ptr_in);
     }
