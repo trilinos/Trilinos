@@ -797,12 +797,13 @@ namespace Amesos2 {
       data_.options.ColPerm = getIntegralValue<SLUD::colperm_t>(*parameterList, "ColPerm");
     }
 
-    if( parameterList->isParameter("IterRefine") ){
-      RCP<const ParameterEntryValidator> iter_refine_validator = valid_params->getEntry("IterRefine").validator();
-      parameterList->getEntry("IterRefine").setValidator(iter_refine_validator);
-
-      data_.options.IterRefine = getIntegralValue<SLUD::IterRefine_t>(*parameterList, "IterRefine");
-    }
+    // TODO: Uncomment when supported
+    // if( parameterList->isParameter("IterRefine") ){
+    //   RCP<const ParameterEntryValidator> iter_refine_validator = valid_params->getEntry("IterRefine").validator();
+    //   parameterList->getEntry("IterRefine").setValidator(iter_refine_validator);
+    //   data_.options.IterRefine = getIntegralValue<SLUD::IterRefine_t>(*parameterList, "IterRefine");
+    // }
+    data_.options.IterRefine = SLUD::NOREFINE;
 
     bool replace_tiny = parameterList->get<bool>("ReplaceTinyPivot", true);
     data_.options.ReplaceTinyPivot = replace_tiny ? SLUD::YES : SLUD::NO;
@@ -848,18 +849,18 @@ namespace Amesos2 {
                                                   tuple<SLUD::trans_t>(SLUD::NOTRANS),
                                                   pl.getRawPtr());
 
-      // Equilibration
-      pl->set("Equil", true, "Whether to equilibrate the system before solve");
+      // Equillbration
+      pl->set("Equil", false, "Whether to equilibrate the system before solve");
 
-      // Iterative refinement
-      setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
-                                                    "Type of iterative refinement to use",
-                                                    tuple<string>("NOREFINE", "SLU_DOUBLE"),
-                                                    tuple<string>("Do not use iterative refinement",
-                                                                  "Do double iterative refinement"),
-                                                    tuple<SLUD::IterRefine_t>(SLUD::NOREFINE,
-                                                                              SLUD::SLU_DOUBLE),
-                                                    pl.getRawPtr());
+      // TODO: uncomment when supported
+      // setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
+      //                                                     "Type of iterative refinement to use",
+      //                                                     tuple<string>("NOREFINE", "DOUBLE"),
+      //                                                     tuple<string>("Do not use iterative refinement",
+      //                                                                   "Do double iterative refinement"),
+      //                                                     tuple<SLUD::IterRefine_t>(SLUD::NOREFINE,
+      //                                                                               SLUD::DOUBLE),
+      //                                                     pl.getRawPtr());
 
       // Tiny pivot handling
       pl->set("ReplaceTinyPivot", true,
