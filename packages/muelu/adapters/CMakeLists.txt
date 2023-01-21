@@ -8,7 +8,7 @@ SET(SOURCES "")
 # access explicit instantiation
 SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  INCLUDE_DIRECTORIES(${BDIR}/)
+  TRIBITS_INCLUDE_DIRECTORIES(${BDIR}/)
   APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
 ENDIF()
 
@@ -20,7 +20,7 @@ ENDIF()
 #
 IF (${PACKAGE_NAME}_ENABLE_Belos)
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
 
   APPEND_SET(HEADERS
     belos/BelosXpetraStatusTestGenResSubNorm.hpp
@@ -34,8 +34,8 @@ ENDIF()
 #
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/aztecoo)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/aztecoo)
 
   APPEND_SET(HEADERS
     epetra/MueLu_EpetraOperator.hpp
@@ -56,7 +56,7 @@ ENDIF()
 #
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
-   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+   TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
 
    APPEND_SET(HEADERS
      tpetra/MueLu_CreateTpetraPreconditioner.hpp
@@ -88,7 +88,7 @@ ENDIF()
 # Stratimikos
 #
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
+  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
 
   APPEND_SET(SOURCES
     ${DIR}/Stratimikos_MueLuHelpers.cpp
@@ -116,7 +116,7 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
 
   # Tpetra specific extensions
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
-    SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
+    TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
     IF (${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Experimental)
       APPEND_SET(HEADERS
         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp
@@ -129,7 +129,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_AmgX)
 
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/amgx)
+  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/amgx)
 
   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
   APPEND_GLOB(SOURCES ${DIR}/*.cpp)
@@ -206,13 +206,13 @@ ENDIF()
 ############################################
 
 # Must glob the binary dir last to get all of the auto-generated headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 IF ("${SOURCES}" STREQUAL "")
   # always include at least one file in the adapters library.
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
   APPEND_GLOB(SOURCES ${DIR}/muelu-trivial-adapter.cpp)
 ENDIF()
 TRIBITS_ADD_LIBRARY(

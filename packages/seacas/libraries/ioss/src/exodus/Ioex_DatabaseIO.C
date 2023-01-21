@@ -2418,21 +2418,19 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
           }
         }
         else if (field.get_name() == "connectivity_face") {
-          int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The element_face index varies fastest
           if (my_element_count > 0) {
-            get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
+	    int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+	    get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
             get_map(EX_FACE_BLOCK).map_data(data, field, num_to_get * face_count);
           }
         }
         else if (field.get_name() == "connectivity_edge") {
-          int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The element_edge index varies fastest
           if (my_element_count > 0) {
+	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
@@ -2584,34 +2582,33 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
         // (The 'genesis' portion)
 
         if (field.get_name() == "connectivity") {
-          int face_nodes = eb->topology()->number_nodes();
-          assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
-
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
+	    int face_nodes = eb->topology()->number_nodes();
+	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
+
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
             get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get * face_nodes);
           }
         }
         else if (field.get_name() == "connectivity_edge") {
-          int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The face_edge index varies fastest
           if (my_face_count > 0) {
+	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
         }
         else if (field.get_name() == "connectivity_raw") {
-          // "connectivity_raw" has nodes in local id space (1-based)
-          assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
-                 eb->topology()->number_nodes());
-
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
+	    // "connectivity_raw" has nodes in local id space (1-based)
+	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
+                 eb->topology()->number_nodes());
+
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
           }
         }

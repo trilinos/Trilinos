@@ -80,8 +80,10 @@ FMT_FUNC void report_error(format_func func, int error_code,
 inline void fwrite_fully(const void* ptr, size_t size, size_t count,
                          FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
+#if !__NVCC__
   if (written < count)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+#endif
 }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
@@ -115,17 +117,50 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
   return '.';
 }
 #endif
+
+FMT_FUNC auto write_loc(appender out, loc_value value,
+                        const format_specs& specs, locale_ref loc) -> bool {
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+  auto locale = loc.get<std::locale>();
+  // We cannot use the num_put<char> facet because it may produce output in
+  // a wrong encoding.
+  using facet = format_facet<std::locale>;
+  if (std::has_facet<facet>(locale))
+    return std::use_facet<facet>(locale).put(out, value, specs);
+  return facet(locale).put(out, value, specs);
+#endif
+  return false;
+}
 }  // namespace detail
+
+template <typename Locale> typename Locale::id format_facet<Locale>::id;
+
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+template <typename Locale> format_facet<Locale>::format_facet(Locale& loc) {
+  auto& numpunct = std::use_facet<std::numpunct<char>>(loc);
+  grouping_ = numpunct.grouping();
+  if (!grouping_.empty()) separator_ = std::string(1, numpunct.thousands_sep());
+}
+
+template <>
+FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
+    appender out, loc_value val, const format_specs& specs) const -> bool {
+  return val.visit(
+      detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_});
+}
+#endif
 
 #if !FMT_MSC_VERSION
 FMT_API FMT_FUNC format_error::~format_error() noexcept = default;
 #endif
 
+#if !__NVCC__
 FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
                                          format_args args) {
   auto ec = std::error_code(error_code, std::generic_category());
   return std::system_error(ec, vformat(format_str, args));
 }
+#endif
 
 namespace detail {
 
@@ -1413,9 +1448,8 @@ template <> struct formatter<detail::bigint> {
     return ctx.begin();
   }
 
-  template <typename FormatContext>
-  auto format(const detail::bigint& n, FormatContext& ctx) const ->
-      typename FormatContext::iterator {
+  auto format(const detail::bigint& n, format_context& ctx) const
+      -> format_context::iterator {
     auto out = ctx.out();
     bool first = true;
     for (auto i = n.bigits_.size(); i > 0; --i) {
@@ -1451,12 +1485,14 @@ FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
 
 FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
                                   const char* message) noexcept {
+#if !__NVCC__
   FMT_TRY {
     auto ec = std::error_code(error_code, std::generic_category());
     write(std::back_inserter(out), std::system_error(ec, message).what());
     return;
   }
   FMT_CATCH(...) {}
+#endif
   format_error_code(out, error_code, message);
 }
 

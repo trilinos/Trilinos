@@ -145,7 +145,7 @@ add_dependencies(build_external_func pws_a)
 append_set(${PACKAGE_NAME}_LIB_TARGETS external_func)
 global_set(${PACKAGE_NAME}_LIBRARIES external_func pws_a)
 global_set(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES ON)
-include_directories(${EXTERNAL_FUNC_SOURCE_DIR})
+tribits_include_directories(${EXTERNAL_FUNC_SOURCE_DIR})
 # NOTE: Above, you have to add the upstream dependent libraries to the current
 # package's list of libraries because you can't link to an importing lib with
 # link_target_libraries() :-(

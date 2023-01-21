@@ -6,8 +6,7 @@
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
-#ifndef INCLUDE_N2ENASREADER_H_
-#define INCLUDE_N2ENASREADER_H_
+#pragma once
 
 #include "N2EDataTypes.h"
 #include <fstream>
@@ -63,5 +62,3 @@ namespace NasModules {
   };
 
 } // namespace NasModules
-
-#endif /* INCLUDE_N2ENASREADER_H_ */

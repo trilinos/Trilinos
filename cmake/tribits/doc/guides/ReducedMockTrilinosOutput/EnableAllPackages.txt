@@ -8,10 +8,13 @@ Enabling all packages that are not currently disabled because of \
 -- Setting Trilinos_ENABLE_ThyraEpetra=ON
 -- Setting Trilinos_ENABLE_Thyra=ON
 
-Enabling all remaining required TPLs for current set of enabled packages ...
+Enabling all required (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON) upstream packages for current set of enabled packages
+(Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF) ...
 
--- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
--- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
+-- NOTE: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- NOTE: Not Setting Trilinos_ENABLE_ThyraEpetraExt=ON even though Thyra has an optional dependence on ThyraEpetraExt because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- Setting TPL_ENABLE_BLAS=ON because Epetra has a required dependence on BLAS
+-- Setting TPL_ENABLE_LAPACK=ON because Epetra has a required dependence on LAPACK
 
 Final set of enabled top-level packages:  Teuchos RTOp Epetra Thyra 4
 Final set of enabled packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6

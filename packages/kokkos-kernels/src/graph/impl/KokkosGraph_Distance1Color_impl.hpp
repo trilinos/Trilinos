@@ -2299,8 +2299,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_,
     color_temp_work_view_type color_ban(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "color_ban"), this->nv);
     color_temp_work_view_type tentative_color_ban(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "tentative_color_ban"),
-        this->nv);  // views are initialized with zero
+        "tentative_color_ban", this->nv);  // views are initialized with zero
     // allocate memory for vertex color set shifts.
     nnz_lno_temp_work_view_t color_set("color_set",
                                        this->nv);  // initialized with zero.

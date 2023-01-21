@@ -138,6 +138,7 @@ endmacro()
 #   * `${TPL_NAME}_TESTGROUP`_
 #   * `${TPL_NAME}_DEPENDENCIES_FILE`_
 #   * `${TPL_NAME}_TPLS_LIST_FILE`_
+#   * `${TPL_NAME}_PACKAGE_BUILD_STATUS`_ (to ``EXTERNAL``)
 #
 # See `Function call tree for constructing package dependency graph`_
 #
@@ -216,10 +217,6 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         list(APPEND ${PROJECT_NAME}_DEFINED_TPLS ${TPL_NAME})
       endif()
 
-      # Set ${TPL_NAME}_PACKAGE_BUILD_STATUS
-
-      set(${TPL_NAME}_PACKAGE_BUILD_STATUS EXTERNAL)
-
       # Set ${TPL_NAME}_TESTGROUP
 
       if (TPL_TESTGROUP STREQUAL PT
@@ -274,6 +271,10 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
       assert_defined(${REPOSITORY_NAME}_TPLS_FILE)
       set(${TPL_NAME}_TPLS_LIST_FILE ${${REPOSITORY_NAME}_TPLS_FILE})
 
+      # Set ${TPL_NAME}_PACKAGE_BUILD_STATUS
+
+      set(${TPL_NAME}_PACKAGE_BUILD_STATUS  EXTERNAL)
+
       # Print variables/properties for the TPL
 
       if (${PROJECT_NAME}_VERBOSE_CONFIGURE  OR  TRIBITS_PROCESS_TPLS_LISTS_VERBOSE)
@@ -281,6 +282,7 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         print_var(${TPL_NAME}_FINDMOD)
         print_var(${TPL_NAME}_DEPENDENCIES_FILE)
         print_var(${TPL_NAME}_TPLS_LIST_FILE)
+        print_var(${TPL_NAME}_PACKAGE_BUILD_STATUS)
       endif()
 
       # Set cache var TPL_ENABLE_${TPL_NAME} with default ""

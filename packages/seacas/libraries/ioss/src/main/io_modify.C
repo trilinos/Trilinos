@@ -1256,7 +1256,7 @@ namespace {
       idx++;
       while (!(Ioss::Utils::str_equal(tokens[idx], "x") ||
                Ioss::Utils::str_equal(tokens[idx], "y") ||
-               Ioss::Utils::str_equal(tokens[idx], "x"))) {
+               Ioss::Utils::str_equal(tokens[idx], "z"))) {
         auto  name = tokens[idx++];
         auto *ge   = region.get_entity(name, Ioss::ELEMENTBLOCK);
         if (ge == nullptr) {

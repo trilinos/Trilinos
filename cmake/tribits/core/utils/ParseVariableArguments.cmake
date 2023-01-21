@@ -37,14 +37,12 @@
 # ************************************************************************
 # @HEADER
 
-# Set up to use cmake_parse_arguments() function!
-include(CMakeParseArguments)
-# NOTE: For CMake versions 3.5.0 and above, this module is empty so the
-# natively implemented function cmake_parse_arguments() will get used!
+include(TribitsDeprecatedHelpers)
+
 
 macro(parse_arguments_deprecated_warning)
-  message(DEPRECATION "parse_arguments() is deprecated and should not be used."
-     " Instead use cmake_parse_arguments()")
+  tribits_deprecated_command(parse_arguments
+    MESSAGE "Use cmake_parse_arguments() instead.")
 endmacro()
 
 parse_arguments_deprecated_warning()

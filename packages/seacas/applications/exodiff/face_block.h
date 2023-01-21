@@ -3,9 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef FACE_BLOCK_H
-#define FACE_BLOCK_H
+#pragma once
 
 #include "exo_entity.h"
 #include <iostream>
@@ -39,5 +37,3 @@ private:
 
   friend class ExoII_Read<INT>;
 };
-
-#endif

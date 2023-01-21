@@ -238,7 +238,8 @@ namespace Ioss {
       return pow2;
     }
 
-    template <typename T> static bool check_block_order(const std::vector<T *> &blocks)
+    template <typename T>
+    static bool check_block_order(IOSS_MAYBE_UNUSED const std::vector<T *> &blocks)
     {
 #ifndef NDEBUG
       // Verify that element blocks are defined in sorted offset order...

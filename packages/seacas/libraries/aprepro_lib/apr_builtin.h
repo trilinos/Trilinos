@@ -5,8 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef APR_BUILTIN_H
-#define APR_BUILTIN_H
+#pragma once
 
 #include <cstdio>
 
@@ -156,5 +155,3 @@ namespace SEAMS {
   array *do_transpose(const array *a);
   array *do_array_from_string(const char *string, const char *delm);
 } // namespace SEAMS
-
-#endif

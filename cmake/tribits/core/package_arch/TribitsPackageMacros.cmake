@@ -545,10 +545,7 @@ endmacro()
 # up example directories any way one would like.
 #
 # Currently, all it does macro does is to call ``add_subdirectory(<diri>)`` if
-# ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
-# ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
-# be extended in the future in order to modify behavior related to adding
-# tests and examples in a uniform way.
+# `${PACKAGE_NAME}_ENABLE_EXAMPLES`_ ``= TRUE``.
 #
 macro(tribits_add_example_directories)
 

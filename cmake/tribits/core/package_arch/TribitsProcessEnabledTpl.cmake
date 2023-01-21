@@ -57,9 +57,9 @@ function(tribits_process_enabled_tpl  TPL_NAME)
 
   # Setup the processing string
   set(PROCESSING_MSG_STRING "Processing enabled external package/TPL: ${TPL_NAME} (")
-  if (TPL_${TPL_NAME}_ENABLING_PKG)
+  if (${TPL_NAME}_ENABLING_PKG)
     string(APPEND PROCESSING_MSG_STRING
-      "enabled by ${TPL_${TPL_NAME}_ENABLING_PKG}," )
+      "enabled by ${${TPL_NAME}_ENABLING_PKG}," )
   else()
     string(APPEND PROCESSING_MSG_STRING
       "enabled explicitly," )
@@ -121,14 +121,14 @@ function(tribits_process_enabled_tpl  TPL_NAME)
         "   which is pointed to in the file:\n"
         "     ${${TPL_NAME}_TPLS_LIST_FILE}\n"
         )
-      if (TPL_${TPL_NAME}_ENABLING_PKG)
+      if (${TPL_NAME}_ENABLING_PKG)
         message(
           "TIP: One way to get past the configure failure for the\n"
           "TPL '${TPL_NAME}' is to simply disable it with:\n"
           "  -DTPL_ENABLE_${TPL_NAME}=OFF\n"
           "which will disable it and will recursively disable all of the\n"
           "downstream packages that have required dependencies on it, including\n"
-          "the package '${TPL_${TPL_NAME}_ENABLING_PKG}' which triggered its enable.\n"
+          "the package '${${TPL_NAME}_ENABLING_PKG}' which triggered its enable.\n"
           "When you reconfigure, just grep the cmake stdout for '${TPL_NAME}'\n"
           "and then follow the disables that occur as a result to see what impact\n"
           "this TPL disable has on the configuration of ${PROJECT_NAME}.\n"

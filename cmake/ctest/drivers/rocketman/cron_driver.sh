@@ -40,6 +40,10 @@ export MODULEPATH=$SCRIPT_DIR:$MODULEPATH
 # Trilinos source repo
 export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
 
+# update the Trilinos source
+pushd $TRILINOS_SOURCE
+./cmake/tribits/python_utils/gitdist --dist-no-color pull
+popd
 
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we

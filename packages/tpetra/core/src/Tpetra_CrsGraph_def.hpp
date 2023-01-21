@@ -378,7 +378,8 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
+    using exec_space = typename nc_view_type::execution_space;
+    Kokkos::deep_copy (exec_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
@@ -512,7 +513,8 @@ namespace Tpetra {
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
     // DEEP_COPY REVIEW - HOST-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), numAllocPerRowOut, numAllocPerRowIn);
+    using exec_space = typename nc_view_type::execution_space;
+    Kokkos::deep_copy (exec_space(), numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
@@ -2791,8 +2793,8 @@ namespace Tpetra {
     // FIXME get rid of the else-clause when the minimum CXX standard required is bumped to C++17
 #ifdef KOKKOS_ENABLE_CXX17
     if constexpr (same) { // size_t == row_offset_type
-      using execution_space = typename device_type::execution_space;
-      Kokkos::deep_copy (execution_space(),
+      using lexecution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (lexecution_space(),
                          ptr_rot,
                          ptr_in);
     }

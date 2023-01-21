@@ -644,7 +644,7 @@ namespace Iovs_exodus {
     return -4;
   }
 
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet * /* ns */, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get          = field.verify(data_size);

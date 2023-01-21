@@ -425,14 +425,18 @@ FMT_CONSTEXPR ansi_color_escape<Char> make_emphasis(emphasis em) noexcept {
 
 template <typename Char> inline void fputs(const Char* chars, FILE* stream) {
   int result = std::fputs(chars, stream);
+#if !__NVCC__
   if (result < 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+#endif
 }
 
 template <> inline void fputs<wchar_t>(const wchar_t* chars, FILE* stream) {
   int result = std::fputws(chars, stream);
+#if !__NVCC__
   if (result < 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+#endif
 }
 
 template <typename Char> inline void reset_color(FILE* stream) {
@@ -566,7 +570,7 @@ OutputIt vformat_to(
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto&& buf = detail::get_buffer<Char>(out);
   detail::vformat_to(buf, ts, format_str, args);
-  return detail::get_iterator(buf);
+  return detail::get_iterator(buf, out);
 }
 
 /**

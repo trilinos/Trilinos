@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef CHACO_H
-#define CHACO_H
+#pragma once
 /**
  * Calling Chaco from other programs. Throughout this document we have
  * assumed that Chaco is being used as a stand{alone program. However,
@@ -170,14 +169,14 @@ extern "C" {
 #endif
 
 extern int INTER_FACE(int    nvtxs,                 /**< number of vertices in full graph */
-                      int *  start,                 /**< start of edge list for each vertex */
-                      int *  adjacency,             /**< edge list data */
-                      int *  vwgts,                 /**< weights for all vertices */
+                      int   *start,                 /**< start of edge list for each vertex */
+                      int   *adjacency,             /**< edge list data */
+                      int   *vwgts,                 /**< weights for all vertices */
                       float *ewgts,                 /**< weights for all edges */
                       float *x, float *y, float *z, /**< coordinates for inertial method */
-                      char *  outassignname,        /**< name of assignment output file */
-                      char *  outfilename,          /**< output file name */
-                      int *   assignment,           /**< set number of each vtx (length n) */
+                      char   *outassignname,        /**< name of assignment output file */
+                      char   *outfilename,          /**< output file name */
+                      int    *assignment,           /**< set number of each vtx (length n) */
                       int     architecture,         /**< 0 => hypercube, d => d-dimensional mesh */
                       int     ndims_tot,     /**< total number of cube dimensions to divide */
                       int     mesh_dims[3],  /**< dimensions of mesh of processors */
@@ -199,6 +198,4 @@ extern int input_assign(FILE *, char *, int, int *);
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
-#endif
-
 #endif

@@ -40,16 +40,13 @@ Enabling all required (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=
 -- Setting Trilinos_ENABLE_Epetra=ON because ThyraEpetra has a required dependence on Epetra
 -- Setting Trilinos_ENABLE_Teuchos=ON because ThyraCoreLibs has a required dependence on Teuchos
 -- Setting Trilinos_ENABLE_RTOp=ON because ThyraCoreLibs has a required dependence on RTOp
+-- Setting TPL_ENABLE_BLAS=ON because Epetra has a required dependence on BLAS
+-- Setting TPL_ENABLE_LAPACK=ON because Epetra has a required dependence on LAPACK
 
 Enabling all optional intra-package enables <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE> that are 
  not currently disabled if both sets of packages are enabled ...
 
 -- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetra=ON
-
-Enabling all remaining required TPLs for current set of enabled packages ...
-
--- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
--- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
 
 Final set of enabled top-level packages:  Teuchos RTOp Epetra Thyra 4
 Final set of enabled packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6

@@ -4,7 +4,7 @@ if (SEACASExodus_ENABLE_STATIC)
 INCLUDE(InstallSymLink)
 endif()
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
@@ -19,10 +19,11 @@ if (NOT ${EXODUS_THREADSAFE})
    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ex_threadsafe.c)
 endif()
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS
   include/exodusII.h
+  include/exodusII_int.h
   include/exodusII_par.h
   ${CMAKE_CURRENT_BINARY_DIR}/exodus_config.h
 )

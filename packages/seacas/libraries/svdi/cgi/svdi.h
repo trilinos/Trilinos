@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef SVDI_H
-#define SVDI_H
+#pragma once
 void vbstmp(int *);
 void vdakgl(int *charac, float *x, float *y);
 void vdbell(void);
@@ -41,4 +39,3 @@ void vdstrs(int *nx1, int *nx2);
 void vdstrv(float *xmin, float *xmax, float *ymin, float *ymax);
 void vdterm(void);
 void vdtext(int *length, int *char_array);
-#endif
