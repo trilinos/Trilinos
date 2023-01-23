@@ -16,11 +16,28 @@ namespace Iohb {
 
   Layout::~Layout() = default;
 
-  void Layout::add_literal(const std::string &label) { fmt::print(layout_, "{}", label); }
+  std::ostream &operator<<(std::ostream &o, Layout &lo)
+  {
+    o << lo.layout_.str();
+    return o;
+  }
+
+  void Layout::add_literal(const std::string &label) { layout_ << label; }
 
   void Layout::add_legend(const std::string &label)
   {
-    fmt::print(layout_, "{}{:>{}}", legendStarted ? separator_ : "", label, fieldWidth_);
-    legendStarted = true;
+    if (legendStarted && !separator_.empty()) {
+      layout_ << separator_;
+    }
+    else {
+      legendStarted = true;
+    }
+
+    if (fieldWidth_ != 0) {
+      layout_ << std::setw(fieldWidth_) << label;
+    }
+    else {
+      layout_ << label;
+    }
   }
 } // namespace Iohb
