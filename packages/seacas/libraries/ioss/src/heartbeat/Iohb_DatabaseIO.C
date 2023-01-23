@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -422,8 +422,7 @@ namespace Iohb {
     }
     else {
       std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n");
+      errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
       IOSS_ERROR(errmsg);
     }
     return num_to_get;
