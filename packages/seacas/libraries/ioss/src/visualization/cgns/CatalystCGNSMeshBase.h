@@ -7,7 +7,11 @@
 #ifndef __CATALYST_CGNS_MESH_BASE_H
 #define __CATALYST_CGNS_MESH_BASE_H
 
+#ifndef __CATALYST_PLUGIN_BUILD
 #include "iovs_export.h"
+#else
+#define IOVS_EXPORT
+#endif
 
 #include <string>
 #include <vector>
@@ -23,7 +27,7 @@ namespace Iovs_cgns {
 
     // Description:
     // Calls the ParaView Catalyst pipeline to run co-processing for this time iteration.
-    virtual void PerformCoProcessing(std::vector<int> &        error_and_warning_codes,
+    virtual void PerformCoProcessing(std::vector<int>         &error_and_warning_codes,
                                      std::vector<std::string> &error_and_warning_messages) = 0;
 
     // Description:
@@ -33,7 +37,7 @@ namespace Iovs_cgns {
     virtual void SetTimeData(double currentTime, int timeStep) = 0;
 
     // Description:
-    // Clears all nodal and element variables from the vtkMultiBlockDataSet.
+    // Clears all nodal and element variables
     // Clears the global vtkPoints.
     virtual void ReleaseMemory() = 0;
 
@@ -46,12 +50,26 @@ namespace Iovs_cgns {
 
     virtual void Delete() = 0;
 
-    virtual void CreateBase(int base_id, const std::string &base_name) = 0;
+    struct ZoneData
+    {
+      int         zone_id;
+      std::string zone_name;
+      std::string data_name;
+      int         ni;
+      int         nj;
+      int         nk;
+      int         comp_count;
+      bool        is_cell_field;
+      enum { T_DOUBLE, T_INT, T_INT64 } data_type;
+      union {
+        int     *p_int;
+        int64_t *p_int64;
+        double  *p_double;
+      } data;
+      int size;
+    };
 
-    virtual void AddStructuredZoneData(int base_id, int zone_id, const std::string &zone_name,
-                                       const std::string &data_name, int ni, int nj, int nk,
-                                       int comp_count, bool is_cell_field,
-                                       char field_suffix_separator, double *data, int size) = 0;
+    virtual void AddStructuredZoneData(const ZoneData &zoneData) = 0;
   };
 
 } // namespace Iovs_cgns

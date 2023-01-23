@@ -172,7 +172,7 @@ def UseMpiToSendAllProcessesFloatArrayToOneProcess(thisProcessFloatArray, pidToC
     retVal = []
 
   if PhactoriDbg(100):
-    if len(globalFloatArray) == 0:
+    if len(globalFloatArray) == 0: 
       myDebugPrint3(str(len(globalFloatArray)) + "\n")
     else:
       myDebugPrint3(str(len(globalFloatArray)) + "  " + str(globalFloatArray[0]) + "  " + str(globalFloatArray[-1]) + "\n")
@@ -230,3 +230,4 @@ def ReadAndMpiBroadcastJsonFile(inJsonFileName):
   return returnJson
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+

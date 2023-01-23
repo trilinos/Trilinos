@@ -67,6 +67,7 @@ namespace Iovs {
     CatalystManagerBase *catalystManager = nullptr;
 
     CatalystManagerBase *createCatalystManagerInstance();
+    void checkCatalystInterfaceAndPluginVersions();
 
     void initMeshFromIOSSProps(CatalystManagerBase::CatalystMeshInit &cmInit,
                                const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);

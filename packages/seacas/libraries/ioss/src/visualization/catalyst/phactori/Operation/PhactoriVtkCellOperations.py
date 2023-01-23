@@ -181,9 +181,9 @@ def PhactoriCountCellTouchingEachFace(inInputCsData):
       "\nnum faces with 1 cell:   " + str(cctef.totalNumFacesWithOneCellTouching) + \
       "\nnum faces with 2 cells:  " + str(cctef.totalNumFacesWithTwoCellsTouching) + \
       "\nnum faces with 3+ cells: " + str(cctef.totalNumFacesWith3plCellsTouching) + "\n")
-
+   
   return countCellsTouchingEachFace
-
+  
 def PhactoriCountCellTouchingEachPoint(inInputCsData):
   numCells = inInputCsData.GetNumberOfCells()
   numPoints = inInputCsData.GetNumberOfPoints()
@@ -474,7 +474,7 @@ def PhactoriGetAverageOfCellPoints(inInputCsData, oneCell):
   avgFac = 1.0/float(numPoints)
   vecScaleInPlace(avgFac, retAvgPt)
   return retAvgPt
-
+  
 def PhactoriFindSelectedAngleBetweenEdgeAndCellNormal(inInputCsData, oneCell,
   compareNormal, paramUseSmallestAngle, paramOffsetIndex):
   edgeCompareDotProdList = []
@@ -484,7 +484,7 @@ def PhactoriFindSelectedAngleBetweenEdgeAndCellNormal(inInputCsData, oneCell,
     vecNormalize2(oneEdgeVec, oneEdgeVec)
     edgeCompareDotProd = abs(vecDotProduct(compareNormal, oneEdgeVec))
     edgeCompareDotProdList.append(edgeCompareDotProd)
-
+  
   sortedEdgeCompareDotProdList = sorted(edgeCompareDotProdList)
 
   if paramUseSmallestAngle:
@@ -499,7 +499,7 @@ def DebugPrintPhactoriFindHeightOfCell(inInputCsData, oneCell, compareNormal):
   if PhactoriDbg(100):
     dbght = []
     dbglen = []
-    dbgretHeight = -1.0
+    dbgretHeight = -1.0 
     dbgretHeightIndex = -1
     for ii in range(0, numCellEdges):
       oneCellEdgeVec = PhactoriGetCellEdgeVector(inInputCsData, oneCell, ii)
@@ -528,7 +528,7 @@ def PhactoriFindHeightOfCell(inInputCsData, oneCell, compareNormal):
   #than the four shortest sides?
   numCellEdges = oneCell.GetNumberOfEdges()
 
-  retHeight = -1.0
+  retHeight = -1.0 
   for ii in range(0, numCellEdges):
     #get edge vectory and project on to normal vector (which is unit length)
     #and find magnitude
@@ -928,3 +928,4 @@ def GetPhactoriVtkCellOperationsProgrammableFilterLines(pfLns):
   pfLns.append("  return retAngle, retHeight\n")
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+

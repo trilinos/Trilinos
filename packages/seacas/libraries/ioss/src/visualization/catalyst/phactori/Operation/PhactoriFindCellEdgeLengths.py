@@ -77,7 +77,7 @@ class PhactoriFindCellEdgeLengths(PhactoriOperationSpecifics):
       self.OutputShortestLongestIndex = 0
 
     keyval10 = "output cell variable name"
-    if keyval10 in inJson:
+    if keyval10 in inJson: 
       self.ProgrammableFilterOutputCellVariableName = inJson[keyval10]
 
   def CreateParaViewFilter(self, inInputFilter):
