@@ -61,6 +61,7 @@ namespace Tpetra {
     Teuchos::Array<std::string> sendTypes;
     sendTypes.push_back ("Isend");
     sendTypes.push_back ("Send");
+    sendTypes.push_back ("Alltoall");
     return sendTypes;
   }
 
@@ -194,6 +195,7 @@ namespace Tpetra {
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",

@@ -187,6 +187,8 @@ Smoother (level 2) post : no smoother
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 Build (MueLu::RebalanceTransferFactory)
 Using original prolongator
 repartition: rebalance P and R = 0
@@ -206,3 +208,5 @@ Replacing maps with a subcommunicator
 Setup Smoother (<Direct> solver interface)
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]

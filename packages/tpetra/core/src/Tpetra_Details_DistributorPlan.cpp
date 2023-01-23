@@ -55,6 +55,9 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   else if (sendType == DISTRIBUTOR_SEND) {
     return "Send";
   }
+  else if (sendType == DISTRIBUTOR_ALLTOALL) {
+    return "Alltoall";
+  }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
       "EDistributorSendType enum value " << sendType << ".");
@@ -894,6 +897,7 @@ Teuchos::Array<std::string> distributorSendTypes()
   Teuchos::Array<std::string> sendTypes;
   sendTypes.push_back ("Isend");
   sendTypes.push_back ("Send");
+  sendTypes.push_back ("Alltoall");
   return sendTypes;
 }
 
@@ -911,6 +915,7 @@ DistributorPlan::getValidParameters() const
   Array<Details::EDistributorSendType> sendTypeEnums;
   sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 

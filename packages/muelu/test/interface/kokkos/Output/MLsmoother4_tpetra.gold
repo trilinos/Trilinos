@@ -1,4 +1,5 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
@@ -6,6 +7,7 @@ smoother ->
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  chebyshev: boost factor = 1.1   [unused]
+
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
@@ -43,6 +45,7 @@ smoother ->
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  chebyshev: boost factor = 1.1   [unused]
+
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
@@ -82,6 +85,7 @@ smoother ->
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  chebyshev: boost factor = 1.1   [unused]
+
 Level 3
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
@@ -121,6 +125,7 @@ smoother ->
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  chebyshev: boost factor = 1.1   [unused]
+
 Level 4
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
@@ -158,6 +163,8 @@ Max coarse size (<= 128) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 smoother -> 
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
