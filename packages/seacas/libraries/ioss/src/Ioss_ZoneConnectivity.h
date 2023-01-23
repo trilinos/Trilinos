@@ -147,4 +147,3 @@ namespace Ioss {
 
   IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
 } // namespace Ioss
-#endif
