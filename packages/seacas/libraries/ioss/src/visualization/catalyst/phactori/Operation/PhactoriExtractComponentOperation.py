@@ -84,7 +84,7 @@ class PhactoriExtractComponentOperation(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriExtractComponentOperation:CreateParaViewFilter entered\n", 100)
     #info in block class should already be parsed and checked
-
+    
     if PhactoriDbg(100):
       myDebugPrint3("about to call UpdatePipelineWithCurrentTimeArgument\n", 100)
     UpdatePipelineWithCurrentTimeArgument(inInputFilter)
