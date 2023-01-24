@@ -877,6 +877,7 @@ get_field_output_type_from_storage(const std::string & storageType)
   else if (storageType == matrix_33)      return stk::io::FieldOutputType::MATRIX_33;
   else if (storageType == quaternion_2d)  return stk::io::FieldOutputType::QUATERNION_2D;
   else if (storageType == quaternion_3d)  return stk::io::FieldOutputType::QUATERNION_3D;
+  else if (stk::string_starts_with(sierra::make_lower(storageType), "real")) return stk::io::FieldOutputType::CUSTOM;
   else {
     ThrowErrorMsg("Invalid storage type: " << storageType);
     return stk::io::FieldOutputType::SCALAR;  // Quiet down compiler
@@ -987,6 +988,35 @@ void create_and_test_output_field(const FieldConfig & fieldConfig,
 }
 
 template <typename T>
+void create_and_test_output_field_with_copy(const FieldConfig & fieldConfig,
+                                            Ioss::Field::BasicType expectedDataType,
+                                            const std::vector<std::string> & expectedComponentNames)
+{
+  const int spatialDimension = 3;
+  stk::mesh::MetaData meta(spatialDimension);
+  meta.use_simple_fields();
+
+  stk::mesh::FieldBase & field = create_stk_field<T>(meta, fieldConfig);
+
+  stk::mesh::FieldBase & fieldCopy = meta.declare_field<T>(field.entity_rank(),
+                                                           fieldConfig.fieldName + "_copy", fieldConfig.numStates);
+  stk::mesh::put_field_on_mesh(fieldCopy, meta.universal_part(), fieldConfig.firstDimension, fieldConfig.numCopies, nullptr);
+
+  if (fieldConfig.storageName != unspecified) {
+    const Ioss::VariableType * variableType = stk::io::get_field_output_variable_type(field);
+    stk::io::set_field_output_variable_type(fieldCopy, variableType);
+  }
+
+  for (unsigned i = 0; i < field.number_of_states(); ++i) {
+    stk::mesh::FieldBase * fieldState = field.field_state(static_cast<stk::mesh::FieldState>(i));
+    test_output_field(meta, *fieldState, fieldConfig, expectedDataType, expectedComponentNames);
+
+    stk::mesh::FieldBase * fieldCopyState = fieldCopy.field_state(static_cast<stk::mesh::FieldState>(i));
+    test_output_field(meta, *fieldCopyState, fieldConfig, expectedDataType, expectedComponentNames);
+  }
+}
+
+template <typename T>
 void create_and_test_custom_output_field(const FieldConfig & fieldConfig,
                                          Ioss::Field::BasicType expectedDataType,
                                          const std::vector<std::string> & expectedComponentNames)
@@ -1079,6 +1109,15 @@ TEST(StkIoFieldType, outputFieldType_Scalar)
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
+TEST(StkIoFieldType, outputFieldType_Scalar_CopyTypeToAnotherField)
+{
+  FieldConfig fieldConfig {"f", scalar, 1, 1};
+  std::vector<std::string> expectedComponentNames {"f"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
 TEST(StkIoFieldType, outputFieldType_Scalar_2Copies)
 {
   FieldConfig fieldConfig {"f", scalar, 1, 2};
@@ -1086,6 +1125,15 @@ TEST(StkIoFieldType, outputFieldType_Scalar_2Copies)
 
   create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
+TEST(StkIoFieldType, outputFieldType_Scalar_2Copies_CopyTypeToAnotherField)
+{
+  FieldConfig fieldConfig {"f", scalar, 1, 2};
+  std::vector<std::string> expectedComponentNames {"f_1", "f_2"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 TEST(StkIoFieldType, outputFieldType_Scalar_2States)
@@ -1096,6 +1144,16 @@ TEST(StkIoFieldType, outputFieldType_Scalar_2States)
 
   create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
+TEST(StkIoFieldType, outputFieldType_Scalar_2States_CopyTypeToAnotherField)
+{
+  FieldConfig fieldConfig {"f", scalar, 1, 1};
+  fieldConfig.numStates = 2;
+  std::vector<std::string> expectedComponentNames {"f"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 TEST(StkIoFieldType, outputFieldType_Vector2D)
@@ -1162,6 +1220,15 @@ TEST(StkIoFieldType, outputFieldType_Vector3D)
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
+TEST(StkIoFieldType, outputFieldType_Vector3D_CopyTypeToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 3, 1};
+  std::vector<std::string> expectedComponentNames {"f_x", "f_y", "f_z"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
 TEST(StkIoFieldType, outputFieldType_Vector3D_FieldLongerThanOutputType)
 {
   FieldConfig fieldConfig {"f", vector_3d, 4, 1, real_array};
@@ -1169,6 +1236,15 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_FieldLongerThanOutputType)
 
   create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
+TEST(StkIoFieldType, outputFieldType_Vector3D_FieldLongerThanOutputType_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 4, 1, real_array};
+  std::vector<std::string> expectedComponentNames {"f_1", "f_2", "f_3", "f_4"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedTo2D)
@@ -1180,6 +1256,15 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedTo2D)
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
+TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedTo2D_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 2, 1, vector_2d};
+  std::vector<std::string> expectedComponentNames {"f_x", "f_y"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
 TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedToScalar)
 {
   FieldConfig fieldConfig {"f", vector_3d, 1, 1, scalar};
@@ -1189,6 +1274,15 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedToScalar)
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
+TEST(StkIoFieldType, outputFieldType_Vector3D_FieldDegradedToScalar_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 1, 1, scalar};
+  std::vector<std::string> expectedComponentNames {"f"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
 TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies)
 {
   FieldConfig fieldConfig {"f", vector_3d, 3, 2};
@@ -1196,6 +1290,15 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies)
 
   create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
+TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 3, 2};
+  std::vector<std::string> expectedComponentNames {"f_x_1", "f_y_1", "f_z_1", "f_x_2", "f_y_2", "f_z_2"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 TEST(StkIoFieldType, outputFieldType_Vector3D_2States)
@@ -1208,6 +1311,16 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_2States)
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
+TEST(StkIoFieldType, outputFieldType_Vector3D_2States_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 3, 1};
+  fieldConfig.numStates = 2;
+  std::vector<std::string> expectedComponentNames {"f_x", "f_y", "f_z"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
 TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies_2States)
 {
   FieldConfig fieldConfig {"f", vector_3d, 3, 2};
@@ -1216,6 +1329,16 @@ TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies_2States)
 
   create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
   create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+}
+
+TEST(StkIoFieldType, outputFieldType_Vector3D_2Copies_2States_CopyToAnotherField)
+{
+  FieldConfig fieldConfig {"f", vector_3d, 3, 2};
+  fieldConfig.numStates = 2;
+  std::vector<std::string> expectedComponentNames {"f_x_1", "f_y_1", "f_z_1", "f_x_2", "f_y_2", "f_z_2"};
+
+  create_and_test_output_field_with_copy<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_output_field_with_copy<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 TEST(StkIoFieldType, outputFieldType_FullTensor36)
@@ -1788,8 +1911,12 @@ void create_and_test_stk_field(stk::mesh::MetaData & meta, const FieldConfig & f
   }
 
   ASSERT_EQ(stk::io::has_field_output_type(*field), true);
-  const Ioss::VariableType * fieldVarType = stk::io::get_field_output_type(*field);
+
+  const Ioss::VariableType * fieldVarType = stk::io::get_field_output_variable_type(*field);
   EXPECT_EQ(fieldVarType->name(), varType->name());
+
+  const stk::io::FieldOutputType fieldOutputType = stk::io::get_field_output_type(*field);
+  EXPECT_EQ(fieldOutputType, get_field_output_type_from_storage(fieldConfig.storageName));
 
   const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*field, field->entity_rank(), meta.universal_part());
   const unsigned fieldNumComponents = res.dimension();

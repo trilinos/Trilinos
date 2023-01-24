@@ -132,8 +132,8 @@ void print_timings(const std::string & typeName, const TimingData & newTiming, c
 
 TEST(POD, performanceOfPODvsClass)
 {
-  static_assert(std::is_pod<PodThingy>::value, "PodThingy should be POD");
-  static_assert(!std::is_pod<NonPodThingy>::value, "NonPodThingy should not be POD");
+  static_assert(std::is_trivial<PodThingy>::value, "PodThingy should be POD");
+  static_assert(!std::is_trivial<NonPodThingy>::value, "NonPodThingy should not be POD");
 
   const size_t NUM_THINGIES = 1000000;
   const size_t NUM_REPEAT = 500;

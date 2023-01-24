@@ -72,7 +72,7 @@ bool print_comm_data_for_entity_in_ghosting(const BulkData& mesh, const Ghosting
     std::vector<int> procs;
     mesh.comm_procs(ghosting, entityKey, procs);
     if (procs.empty()) { return false; }
-    out << "        Ghosting " << mesh.ghosting_part(ghosting).name() << " with procs:  " << stk::util::join(procs, ", ") << std::endl;
+    out << "        Ghosting " << mesh.ghosting_part(ghosting).name() << " procs: " << stk::util::join(procs, ", ") << std::endl;
     return true;
 }
 
@@ -120,20 +120,20 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
     const std::vector<std::string> & rank_names = mesh.mesh_meta_data().entity_rank_names();
     EntityRank b_rank = bucket->entity_rank();
     for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
-        out << "        Connectivity to " << rank_names[r] << std::endl;
+        out << "        Conn to " << rank_names[r] << std::endl;
         Entity const* entities = bucket->begin(b_ord, r);
         ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
         const int num_conn         = bucket->num_connectivity(b_ord, r);
         for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
             Entity target_entity = entities[c_itr];
             uint32_t ord = ordinals[c_itr];
-            out << "          [" << ord << "]  " << mesh.entity_key(target_entity) << "  ";
+            out << "          [" << ord << "] " << mesh.entity_key(target_entity) << " ";
             if (r != stk::topology::NODE_RANK) {
                 out << mesh.bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
                     Permutation const *permutations = bucket->begin_permutations(b_ord, r);
                     if (permutations) {
-                        out << " permutation " << permutations[c_itr];
+                        out << " perm " << static_cast<uint8_t>(permutations[c_itr]);
                     }
                 }
             }

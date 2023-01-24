@@ -35,6 +35,7 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for set_assert_handler, ThrowRequireMsg, set_erro...
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <iostream>                         // for basic_ostream::operator<<, operator<<, ostrin...
 #include <stdexcept>                        // for logic_error, runtime_error, invalid_argument
 #include <string>                           // for string
@@ -247,7 +248,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
 void testNGPThrowRequireMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowRequireMsg(test == true, "Error testing whatever");
   });
@@ -294,7 +295,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 
 void testNGPThrowRequire()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowRequire(test == true);
   });
@@ -329,7 +330,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 #ifndef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowAssertMsg(test == true, "Error testing whatever");
   });
@@ -364,7 +365,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 #ifdef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     NGP_ThrowAssertMsg(false, "Error testing whatever");
   });
 }
@@ -386,7 +387,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 
 void testNGPThrowErrorMsgIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
     NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
   });
@@ -418,7 +419,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 
 void testNGPThrowErrorIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
     NGP_ThrowErrorIf(test == true);
   });
@@ -448,7 +449,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 
 void testNGPThrowErrorMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     NGP_ThrowErrorMsg("Error testing whatever");
   });
 }

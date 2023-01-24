@@ -65,12 +65,14 @@ FILE(GLOB HEADERS
      ParallelReduce.hpp
      ParallelReduceBool.hpp
      ParallelVectorConcat.hpp
+     mpi_filebuf.hpp
     )
 FILE(GLOB SOURCES
      CommBuffer.cpp
      Parallel.cpp
      ParallelComm.cpp
      ParallelReduce.cpp
+     mpi_filebuf.cpp
     )
 
 ENDIF()

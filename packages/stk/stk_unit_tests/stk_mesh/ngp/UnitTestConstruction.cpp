@@ -41,7 +41,7 @@ namespace {
 void test_device_field_default_constructor()
 {
   int constructionFinished = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
                             stk::mesh::DeviceField<double> deviceField;
                             NGP_EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
                             localFinished = 1;
@@ -109,17 +109,18 @@ void test_ngp_field_placement_new()
   MimicNaluWindKernel* devicePtr = static_cast<MimicNaluWindKernel*>(Kokkos::kokkos_malloc<stk::ngp::MemSpace>(debugName, sizeof(MimicNaluWindKernel)));
 
   int constructionFinished = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
     new (devicePtr) MimicNaluWindKernel(hostObj);
     localFinished = 1;
   }, constructionFinished);
   EXPECT_EQ(1, constructionFinished);
 
   int numFromDevice = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localNum) {
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const unsigned& i, int& localNum) {
     localNum = devicePtr->get_num();
   }, numFromDevice);
   EXPECT_EQ(42, numFromDevice);
+  Kokkos::kokkos_free<stk::ngp::MemSpace>(devicePtr);
 }
 
 TEST(NgpDeviceConstruction, structWithNgpField)

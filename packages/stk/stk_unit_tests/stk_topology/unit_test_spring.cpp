@@ -98,7 +98,7 @@ void check_spring2_on_device()
   OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_spring2());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_spring2());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::SPRING_2;
 
@@ -202,7 +202,7 @@ void check_spring3_on_device()
   OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_spring3());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_spring3());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::SPRING_3;
 

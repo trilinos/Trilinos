@@ -45,8 +45,7 @@
 #include <algorithm>
 #include <string>
 
-namespace stk {
-namespace balance {
+namespace stk::balance {
 
 class DiagnosticsContainer
 {
@@ -58,8 +57,7 @@ public:
   using ValueVector = std::vector<Diagnostic *>;
 
   template <typename T, typename... Args>
-  std::enable_if_t<std::is_base_of<Diagnostic, T>::value, void>
-  register_diagnostic(Args&&... args);
+  void register_diagnostic(Args&&... args);
 
   template <typename T>
   T * get() const;
@@ -77,15 +75,18 @@ private:
 
 
 template <typename T, typename... Args>
-std::enable_if_t<std::is_base_of<Diagnostic, T>::value, void>
-DiagnosticsContainer::register_diagnostic(Args&&... args)
+void DiagnosticsContainer::register_diagnostic(Args&&... args)
 {
-  const std::type_info * newType = &typeid(T);
-  ThrowRequireMsg(std::none_of(m_types.begin(), m_types.end(),
-                               [newType](const std::type_info * existingType) { return *newType == *existingType; }),
-                  std::string("Can only register each Diagnostic once: ") + sierra::demangle(newType->name()));
-  m_types.push_back(newType);
-  m_values.push_back(new T{std::forward<Args>(args)...});
+  static_assert(std::is_base_of_v<Diagnostic, T>, "Registered type must have a base class of stk::balance::Diagnostic");
+  if constexpr (std::is_base_of_v<Diagnostic, T>)
+  {
+    const std::type_info * newType = &typeid(T);
+    ThrowRequireMsg(std::none_of(m_types.begin(), m_types.end(),
+                                 [newType](const std::type_info * existingType) { return *newType == *existingType; }),
+                    std::string("Can only register each Diagnostic once: ") + sierra::demangle(newType->name()));
+    m_types.push_back(newType);
+    m_values.push_back(new T{std::forward<Args>(args)...});
+  }
 }
 
 template <typename T>
@@ -119,7 +120,6 @@ T * get_diagnostic() {
   return impl::g_diagnosticsContainer.get<T>();
 }
 
-} // namespace balance
-} // namespace stk
+} // namespace stk::balance
 
 #endif // DIAGNOSTICSCONTAINER_HPP

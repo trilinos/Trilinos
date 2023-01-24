@@ -13,6 +13,7 @@
 #include <stk_util/parallel/CouplingVersions_impl.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
+#include "MockMeshUtils.hpp"
 #include "StkRecvAdapter.hpp"
 #include "EmptySendAdapter.hpp"
 #include "RecvInterpolate.hpp"
@@ -30,6 +31,7 @@ public:
       m_doneFlagName("time step status"),
       m_splitComms(),
       m_otherColor(),
+      m_otherAppName(),
       m_iAmRootRank(false),
       m_myInfo(),
       m_otherInfo(),
@@ -61,6 +63,9 @@ public:
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    const std::string defaultFileName = "generated:1x1x4|sideset:x";
+    std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+
     stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
 
@@ -91,7 +96,8 @@ public:
       std::cout << os.str() << std::endl;
     }
 
-    m_mesh.reset(new mock::StkMesh(splitComm));
+    std::vector<std::string> fieldNames = {"traction", "temperature"};
+    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
     m_currentTime = 0.0;
     m_finalTime = 1.0;
   }
@@ -109,13 +115,13 @@ public:
       if (m_iAmRootRank) std::cout << os.str() << std::endl;
     }
 
-    std::string otherAppName = m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none");
+    m_otherAppName = m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none");
 
-    if (otherAppName=="Mock-Sparc") {
+    if (m_otherAppName=="Mock-Sparc") {
       m_doingRecvTransfer = true;
       m_recvFieldName = "traction";
     }
-    if (otherAppName=="Mock-Aria") {
+    if (m_otherAppName=="Mock-Aria") {
       m_doingRecvTransfer = true;
       m_recvFieldName = "temperature";
     }
@@ -124,7 +130,7 @@ public:
       if (m_doingRecvTransfer) {
         std::ostringstream os;
         os << m_appName << ": will recv-transfer (field='"<<m_recvFieldName<<"') "
-           <<" from other app: "<<otherAppName<<std::endl;
+           <<" from other app: "<<m_otherAppName<<std::endl;
         if (m_iAmRootRank) std::cout << os.str() << std::endl;
       }
     }
@@ -210,18 +216,13 @@ public:
   void perform_transfers()
   {
     if (m_doingRecvTransfer) {
-      MPI_Comm splitComm = m_splitComms.get_split_comm();
-      if (stk::parallel_machine_rank(splitComm) == m_mesh->owning_rank()) {
-        m_mesh->set_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName, 0.0);
-      }
+      m_mesh->set_stk_field_values(m_recvFieldName, 0.0);
       m_recvTransfer->apply();
       ThrowRequire(m_recvTransfer->meshb()->called_update_values);
-      if (stk::parallel_machine_rank(splitComm) == m_mesh->owning_rank()) {
-        std::ostringstream os;
-        os << m_appName << " transfer: recvd '"<<m_recvFieldName<<"' value: "
-          << m_mesh->get_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName) << std::endl;
-        std::cout << os.str();
-      }
+
+      const double expectedFieldValue = (m_otherAppName=="Mock-Sparc" ? 4.4 : 9.9);
+      const bool valuesMatch = m_mesh->verify_stk_field_values(m_recvFieldName, expectedFieldValue);
+      ThrowRequireMsg(valuesMatch, "Mock-Salinas error, field-values are not correct after transfer");
     }
   }
 
@@ -246,6 +247,7 @@ private:
 
   stk::coupling::SplitComms m_splitComms;
   int m_otherColor;
+  std::string m_otherAppName;
   bool m_iAmRootRank;
 
   stk::coupling::SyncInfo m_myInfo;

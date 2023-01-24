@@ -146,8 +146,8 @@ public:
 
   void pass_time_on_device(const stk::ngp::ExecSpace& space, unsigned iterationSpent = 100)
   {
-    typedef typename Kokkos::TeamPolicy<stk::ngp::ExecSpace>::member_type TeamHandleType;
-    const auto& teamPolicy = Kokkos::TeamPolicy<stk::ngp::ExecSpace>(space, 10, Kokkos::AUTO);
+    typedef typename stk::ngp::DeviceTeamPolicy::member_type TeamHandleType;
+    const auto& teamPolicy = stk::ngp::DeviceTeamPolicy(space, 10, Kokkos::AUTO);
 
     Kokkos::parallel_for("run_with_team_policy", teamPolicy,
                         KOKKOS_LAMBDA(const TeamHandleType & team) {

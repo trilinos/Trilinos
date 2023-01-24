@@ -12,6 +12,11 @@
 
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <memory>
 #include <utility>
@@ -23,29 +28,34 @@ class StkMesh
 public:
   using Point = stk::search::Point<double>;
   using ToPointsContainer = std::vector<Point>;
-  using EntityKey = uint64_t;
+  using EntityKey = stk::mesh::EntityKey;
   using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
   using BoundingSphere = std::pair<stk::search::Sphere<double>, EntityProc>;
 
-  StkMesh(MPI_Comm mpiComm)
-  : m_comm(mpiComm), m_owning_rank(0), m_sourceEntityKey(3), m_destEntityKey(5)
+  StkMesh(std::shared_ptr<stk::mesh::BulkData> bulk, const std::string& surfaceName)
+  : m_comm(bulk->parallel()),
+    m_bulk(bulk),
+    m_surface(bulk->mesh_meta_data().get_part(surfaceName))
   {
+    ThrowRequireMsg(m_surface != nullptr,
+                    "StkMesh error, no part found for surface-name '"<<surfaceName<<"'");
   }
 
   MPI_Comm comm() const {return m_comm;}
 
-  int owning_rank() const { return m_owning_rank; }
+  std::shared_ptr<stk::mesh::BulkData> get_stk_mesh() { return m_bulk; }
 
   double get_stk_field_value(const EntityKey & entityKey,
                          const std::string & fieldName)
   {
-    if (entityKey == m_sourceEntityKey) {
-      return get_value_from_map(fieldName, m_sourceEntityFieldValues, -99.9);
-    }
-    if (entityKey == m_destEntityKey) {
-      return get_value_from_map(fieldName, m_destEntityFieldValues, -99.9);
+    stk::mesh::EntityRank rank = entityKey.rank();
+    stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
+    const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
+    const double* fieldValue = reinterpret_cast<const double*>(stk::mesh::field_data(*field, entity));
+    if (fieldValue != nullptr) {
+      return *fieldValue;
     }
     return -99.9;
   }
@@ -54,63 +64,126 @@ public:
                        const std::string & fieldName,
                        const double & fieldValue)
   {
-    if (entityKey == m_sourceEntityKey) {
-      m_sourceEntityFieldValues[fieldName] = fieldValue;
+    stk::mesh::EntityRank rank = entityKey.rank();
+    stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
+    const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
+    double* fieldData = reinterpret_cast<double*>(stk::mesh::field_data(*field, entity));
+    if (fieldData != nullptr) {
+      *fieldData = fieldValue;
     }
-    if (entityKey == m_destEntityKey) {
-      m_destEntityFieldValues[fieldName] = fieldValue;
+  }
+
+  void set_stk_field_values(const std::string & fieldName,
+                            const double & fieldValue)
+  {
+    const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
+    ThrowRequireMsg(field != nullptr, "StkMesh failed to find field with name "<<fieldName);
+    stk::mesh::field_fill(fieldValue, *field);
+  }
+
+  bool verify_stk_field_values(const std::string & fieldName,
+                               const double expectedFieldValue)
+  {
+    const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
+    ThrowRequireMsg(field != nullptr, "StkMesh failed to find field with name "<<fieldName);
+    stk::mesh::Selector fieldSelector(*field);
+    stk::mesh::EntityVector sides;
+    stk::mesh::get_entities(*m_bulk, stk::topology::FACE_RANK, fieldSelector, sides);
+    for(stk::mesh::Entity side : sides) {
+      const double* fieldData = reinterpret_cast<const double*>(stk::mesh::field_data(*field, side));
+      if (std::abs(*fieldData - expectedFieldValue) > 1.e-6) {
+std::cerr<<"for entity "<<m_bulk->entity_key(side)<<" found fieldData="<<*fieldData<<" expected "<<expectedFieldValue<<std::endl;
+        return false;
+      }
     }
+    return true;
   }
 
   unsigned get_field_size() const { return 1; }
 
-  EntityKey get_stk_source_entity_key() const { return m_sourceEntityKey; }
-  EntityKey get_stk_dest_entity_key() const { return m_destEntityKey; }
+  stk::search::Box<double> get_box(stk::mesh::Entity side) const
+  {
+    constexpr double maxDouble = std::numeric_limits<double>::max();
+    double minXYZ[3] = {maxDouble, maxDouble, maxDouble};
+    double maxXYZ[3] = {0.0, 0.0, 0.0};
+    const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
 
-  stk::search::Box<double> get_source_box() const { return stk::search::Box<double>(0., 0., 0., 1., 1., 1.); }
-  Point get_dest_point() const {return Point(0.5, 0.5, 0.5);}
+    const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
+    const unsigned numNodes = m_bulk->num_nodes(side);
+    for(unsigned i=0; i<numNodes; ++i) {
+      const double* coords = reinterpret_cast<const double*>(stk::mesh::field_data(*coordField, nodes[i]));
+      minXYZ[0] = std::min(minXYZ[0], coords[0]);
+      minXYZ[1] = std::min(minXYZ[1], coords[1]);
+      minXYZ[2] = std::min(minXYZ[2], coords[2]);
+      maxXYZ[0] = std::max(maxXYZ[0], coords[0]);
+      maxXYZ[1] = std::max(maxXYZ[1], coords[1]);
+      maxXYZ[2] = std::max(maxXYZ[2], coords[2]);
+    }
+
+    constexpr double tol = 1.e-5;
+    return stk::search::Box<double>(minXYZ[0]-tol, minXYZ[1]-tol, minXYZ[2]-tol,
+                                    maxXYZ[0]+tol, maxXYZ[1]+tol, maxXYZ[2]+tol);
+  }
 
   void stk_source_bounding_boxes(std::vector<BoundingBox> & domain_vector) const
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      EntityProc entityProc(m_sourceEntityKey, owning_rank());
-      domain_vector.emplace_back(get_source_box(), entityProc);
+    stk::mesh::EntityVector sides;
+    stk::mesh::Selector ownedSurface = m_bulk->mesh_meta_data().locally_owned_part() & *m_surface;
+    stk::mesh::get_entities(*m_bulk, m_bulk->mesh_meta_data().side_rank(), ownedSurface, sides);
+    domain_vector.clear();
+    const int thisProc = m_bulk->parallel_rank();
+    for(stk::mesh::Entity side : sides) {
+      EntityProc entityProc(m_bulk->entity_key(side), thisProc);
+      domain_vector.emplace_back(get_box(side), entityProc);
     }
+  }
+
+  Point get_centroid(stk::mesh::Entity side) const
+  {
+    double sumXYZ[3] = {0.0, 0.0, 0.0};
+    const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
+
+    const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
+    const unsigned numNodes = m_bulk->num_nodes(side);
+    for(unsigned i=0; i<numNodes; ++i) {
+      const double* coords = reinterpret_cast<const double*>(stk::mesh::field_data(*coordField, nodes[i]));
+      sumXYZ[0] += coords[0];
+      sumXYZ[1] += coords[1];
+      sumXYZ[2] += coords[2];
+    }
+
+    return Point(sumXYZ[0]/numNodes, sumXYZ[1]/numNodes, sumXYZ[2]/numNodes);
   }
 
   void stk_dest_bounding_boxes(std::vector<BoundingSphere>& range_vector) const
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      EntityProc entityProc(m_destEntityKey, owning_rank());
-      const double radius = 1.e-6;
-      range_vector.emplace_back(stk::search::Sphere<double>(get_dest_point(), radius), entityProc);
+    stk::mesh::EntityVector sides;
+    stk::mesh::Selector ownedSurface = m_bulk->mesh_meta_data().locally_owned_part() & *m_surface;
+    stk::mesh::get_entities(*m_bulk, m_bulk->mesh_meta_data().side_rank(), ownedSurface, sides);
+    constexpr double radius = 1.e-6;
+    range_vector.clear();
+    const int thisProc = m_bulk->parallel_rank();
+    for(stk::mesh::Entity side : sides) {
+      EntityProc entityProc(m_bulk->entity_key(side), thisProc);
+      range_vector.emplace_back(stk::search::Sphere<double>(get_centroid(side), radius), entityProc);
     }
   }
 
   void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      to_points.push_back(get_dest_point());
+    stk::mesh::EntityVector sides;
+    stk::mesh::Selector ownedSurface = m_bulk->mesh_meta_data().locally_owned_part() & *m_surface;
+    stk::mesh::get_entities(*m_bulk, m_bulk->mesh_meta_data().side_rank(), ownedSurface, sides);
+    to_points.clear();
+    for(stk::mesh::Entity side : sides) {
+      to_points.push_back(get_centroid(side));
     }
   }
 
 private:
-  using FieldValues = std::map<std::string,double>;
-  double get_value_from_map(const std::string& name, const FieldValues& fieldValues, const double& defaultIfNotFound)
-  {
-    FieldValues::const_iterator iter = fieldValues.find(name);
-    if (iter != fieldValues.end()) {
-      return iter->second;
-    }
-    return defaultIfNotFound;
-  }
-
   MPI_Comm m_comm;
-  int m_owning_rank = 0;
-  EntityKey m_sourceEntityKey;
-  EntityKey m_destEntityKey;
-  FieldValues m_sourceEntityFieldValues;
-  FieldValues m_destEntityFieldValues;
+  std::shared_ptr<stk::mesh::BulkData> m_bulk;
+  stk::mesh::Part* m_surface;
 };
 
 }

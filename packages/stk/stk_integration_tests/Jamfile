@@ -145,6 +145,8 @@ exe mock_sparc
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -156,6 +158,8 @@ exe mock_aria
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -167,6 +171,8 @@ exe mock_salinas
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -178,6 +184,8 @@ exe mock_fuego
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;

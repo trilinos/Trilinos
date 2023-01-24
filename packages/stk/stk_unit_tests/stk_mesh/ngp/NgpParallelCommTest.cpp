@@ -105,7 +105,7 @@ private:
 
 void check_device_values(int pRank, ValueViewType & deviceValues)
 {
-  Kokkos::parallel_for(deviceValues.size(), KOKKOS_LAMBDA(size_t i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, deviceValues.size()), KOKKOS_LAMBDA(size_t i)
                        {
                          //printf("[p%i] deviceValue(%lu) = %f\n", pRank, i, deviceValues(i));
                          NGP_EXPECT_NEAR(1.0, deviceValues(i), 1.e-12);
