@@ -19,6 +19,7 @@ SYNOPSIS
 #STATUS: [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
 
 updated table string example: python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 111
+                              python table_Automation2.py 1 3 1 22 21 0 5 5 21 58 1 504
 """
 from time import sleep as pause
 from datetime import timedelta
@@ -121,11 +122,10 @@ def main():
             # writer.dump("sample.md")
     except:
         print("Can not write to file, missing arguements ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
-    
+
+'''
+   -> python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 -> working
+   python table_Automation2.py 1 3 1 22 21 0 5 5 21 58 1 504 <twelve input values from user>
+'''    
 if __name__ == "__main__":
     main()
-
-
-'''
-    PR-status-1,MM-status-10 -> python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 111 -> working
-'''
