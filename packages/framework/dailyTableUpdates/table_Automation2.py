@@ -135,23 +135,7 @@ if __name__ == "__main__":
 
 
 '''
-    1) Let’s just drop the “Failed PRs (Past 24 Hrs from 12pm)” column.  
-    It would be nice to show how many PRs failed in the last 24 hours but this search reports 
-    something slightly different (i.e., PRs that have been updated in the last 
-    24 hours that have the failed status at 12pm) which requires explanation and just causes 
-    confusion. If we can figure out how to report “PRs failed in the last 24 hours”, 
-    we should add this back.  
-    - Also, the “Failed PRs (@ 12pm)” column reports the number of 
-    failures @ 12pm which can give us a felling if things are backing up.
-
-
-    2 COMPLETE) Is there a reason why the “Total Open PRs” is not a link in the table?  
-    If possible, can you make it a link?
     
-    
-    3 COMPLETE) Let’s change the column header “Successful Master Merges” to “Master Merges 
-    (Past 24 hrs from 12pm)” to match the others.
-
     
 
 '''
