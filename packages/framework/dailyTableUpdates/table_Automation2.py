@@ -100,7 +100,7 @@ def main():
     try:
         writer = ptw.MarkdownTableWriter(
               table_name="Trilinos Status Table",
-              headers=["Date", "PR Status", "PRs Merged (Past 24 Hrs from 12pm)", " Failed PRs (Past 24 Hrs from 12pm)","WIP PRs (@ 12pm)", "Review-Required PRs (@ 12pm) ", "Change-Requested PRs (@ 12pm) ", "Review-Approved PRs (@ 12pm)"," Failed PRs (@ 12pm)", "Total Open PRs (@ 12pm)", "MM Status", "Number of Successful Master Merges","Jira Ticket #"],
+              headers=["Date", "PR Status", "PRs Merged (Past 24 Hrs from 12pm)", " Failed PRs (Past 24 Hrs from 12pm)","WIP PRs (@ 12pm)", "Review-Required PRs (@ 12pm) ", "Change-Requested PRs (@ 12pm) ", "Review-Approved PRs (@ 12pm)"," Failed PRs (@ 12pm)", "Total Open PRs (@ 12pm)", "MM Status", "Master Merges (Past 24 hrs from 12pm)", "Jira Ticket #"],
               value_matrix=[
                     [str(today), pr_status[int(stat_container[0])], NUMBER_OF_PRs_MERGED, NUMBER_OF_FAILED_PRs, WIP_PRs, REVIEW_REQUIRED, CHANGE_REQUESTED, REVIEW_APROVED, NUMBER_OF_PRs_WAITING, number_open_pr , mm_status[int(stat_container[5])], NUMBER_SUCCESSFUL_MM, JIRA_TICKETS]
               ],
@@ -129,3 +129,11 @@ def main():
 '''    
 if __name__ == "__main__":
     main()
+
+
+
+'''
+
+    
+
+'''
