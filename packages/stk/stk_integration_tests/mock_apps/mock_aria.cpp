@@ -12,6 +12,7 @@
 #include <stk_util/parallel/CouplingVersions.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
+#include "MockMeshUtils.hpp"
 #include "StkSendAdapter.hpp"
 #include "StkRecvAdapter.hpp"
 #include "EmptySendAdapter.hpp"
@@ -69,6 +70,9 @@ public:
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    const std::string defaultFileName = "generated:1x1x4|sideset:x";
+    std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+
     stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
     std::string defaultSyncMode = "Send";
@@ -95,7 +99,7 @@ public:
     m_otherColor = otherColors[0];
     stk::coupling::PairwiseRanks rootRanks = m_splitComms.get_pairwise_root_ranks(m_otherColor);
 
-    {
+    if (m_iAmRootRank) {
       std::ostringstream os;
       os << m_appName << ": STK version: " << stk::version_string()
          << " (Coupling Version: " << stk::util::get_common_coupling_version() << ")" << std::endl;
@@ -105,7 +109,8 @@ public:
       std::cout << os.str() << std::endl;
     }
 
-    m_mesh.reset(new mock::StkMesh(splitComm));
+    std::vector<std::string> fieldNames = {"reference-temperature", "heat-transfer-coefficient"};
+    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
   }
 
   void communicate_initial_setup()
@@ -210,7 +215,7 @@ public:
     check_field_sizes(otherSendFields, myRecvFields);
 
     if (m_doingSendTransfer) {
-      m_mesh->set_stk_field_value(m_mesh->get_stk_source_entity_key(), m_sendFieldName, 9.9);
+      m_mesh->set_stk_field_values(m_sendFieldName, 9.9);
       std::shared_ptr<mock::StkSendAdapter> sendAdapter =
          std::make_shared<mock::StkSendAdapter>(parentComm, *m_mesh, m_sendFieldName);
       std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;
@@ -251,20 +256,13 @@ public:
       m_sendTransfer->apply();
     }
     if (m_doingRecvTransfer) {
-      if (stk::parallel_machine_rank(m_splitComms.get_split_comm()) == m_mesh->owning_rank()) {
-        m_mesh->set_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName, 0.0);
-      }
+      m_mesh->set_stk_field_values(m_recvFieldName, 0.0);
       m_recvTransfer->apply();
       ThrowRequire(m_recvTransfer->meshb()->called_update_values);
 
-      {
-        if (stk::parallel_machine_rank(m_splitComms.get_split_comm()) == m_mesh->owning_rank()) {
-          std::ostringstream os;
-          os << m_appName << " transfer: recvd '"<<m_recvFieldName<<"' value: "
-            << m_mesh->get_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName) << std::endl;
-          std::cout << os.str();
-        }
-      }
+      const double expectedFieldValue = 4.4;
+      const bool valuesMatch = m_mesh->verify_stk_field_values(m_recvFieldName, expectedFieldValue);
+      ThrowRequireMsg(valuesMatch, "Mock-Aria error, field-values are not correct after transfer");
     }
   }
 
@@ -349,6 +347,7 @@ int main(int argc, char** argv)
   do {
     app.communicate_time_step_info();
     if (app.time_to_stop()) break;
+
     app.perform_transfers();
     app.do_physics_solve();
     app.update_current_time();

@@ -554,13 +554,17 @@ enum class FieldOutputType {
   MATRIX_22,        //  [xx, xy, yx, yy]
   MATRIX_33,        //  [xx, xy, xz, yx, yy, yz, zx, zy, zz]
   QUATERNION_2D,    //  [s, q]
-  QUATERNION_3D     //  [x, y, z, q]
+  QUATERNION_3D,    //  [x, y, z, q]
+  CUSTOM            //  User-defined subscripting
 };
 
-void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
-
 bool has_field_output_type(const stk::mesh::FieldBase & field);
-const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
+FieldOutputType get_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_variable_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type);
+const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field);
 
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
 

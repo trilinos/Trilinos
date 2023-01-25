@@ -133,13 +133,14 @@ double device_evaluate(const std::string & expression,
   auto & parsedEval = eval.get_parsed_eval();
 
   double result = 0.0;
-  Kokkos::parallel_reduce(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
-    stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
-    for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
-    }
-    localResult = parsedEval.evaluate(deviceVariableMap);
-  }, result);
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int& i, double& localResult) {
+        stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+        for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
+          deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
+        }
+        localResult = parsedEval.evaluate(deviceVariableMap);
+    }, result);
 
   return result;
 }
@@ -188,7 +189,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
-  Kokkos::parallel_for(numThreads, KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numThreads), KOKKOS_LAMBDA (const int& i) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
       deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(i, varIndex, 0), variableSizesDevice(varIndex), 1);
@@ -662,7 +663,7 @@ TEST(UnitTestEvaluator, deviceVariableMap_too_small)
   eval.parse();
 
   auto & parsedEval = eval.get_parsed_eval();
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& i) {
     EXPECT_ANY_THROW(stk::expreval::DeviceVariableMap<2> deviceVariableMap(parsedEval));
   });
 }

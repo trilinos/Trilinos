@@ -230,7 +230,7 @@ public:
 
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
-    Kokkos::parallel_for(numElems,
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numElems),
                          KOKKOS_LAMBDA(const int& elemIdx) {
                            stk::mesh::Entity elem = ngpElements.device_get(elemIdx);
                            auto meshIndex = ngpMesh.fast_mesh_index(elem);

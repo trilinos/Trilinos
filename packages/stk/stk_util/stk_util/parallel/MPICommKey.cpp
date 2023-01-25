@@ -35,9 +35,7 @@ int delete_mpi_comm_key(MPI_Comm comm, int comm_keyval, void* attribute_val, voi
 
 }
 
-
-MPIKeyManager::MPIKeyManager() :
-  m_destructor([=](){destructor();})
+MPIKeyManager::MPIKeyManager() : m_destructor([this]() { destructor(); })
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);

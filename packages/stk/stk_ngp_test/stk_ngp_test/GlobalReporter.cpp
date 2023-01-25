@@ -3,6 +3,7 @@
 
 #include "GlobalReporter.hpp"
 #include "Reporter.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace ngp_testing {
 namespace global {
@@ -45,7 +46,7 @@ using HostReporter = Reporter<Kokkos::DefaultHostExecutionSpace::device_type>;
 inline
 void copy_to_device(const DeviceReporter& reporter,
                     ReporterBase* const addr) {
-  Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1), KOKKOS_LAMBDA(const int){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int){
     global::getDeviceReporterOnDevice() = addr;
     new (global::getDeviceReporterOnDevice()) DeviceReporter(reporter);
   });

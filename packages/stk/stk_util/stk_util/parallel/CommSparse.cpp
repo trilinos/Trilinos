@@ -575,8 +575,7 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
 
   {
     MPI_Request * const p_request = request.data();
-    MPI_Status  * const p_status  = status.data();
-    result = MPI_Waitall( num_recv , p_request , p_status );
+    result = MPI_Waitall( num_recv , p_request , MPI_STATUSES_IGNORE );
     ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Waitall");
   }
 

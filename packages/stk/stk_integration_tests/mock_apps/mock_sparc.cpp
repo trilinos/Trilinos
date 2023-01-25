@@ -13,6 +13,7 @@
 #include <stk_util/parallel/CouplingVersions.hpp>
 #include "MockUtils.hpp"
 #include "SparcMesh.hpp"
+#include "MockMeshUtils.hpp"
 #include "SparcSendAdapter.hpp"
 #include "EmptyRecvAdapter.hpp"
 #include "SendInterpolate.hpp"
@@ -56,6 +57,9 @@ public:
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    const std::string defaultFileName = "generated:1x1x4|sideset:x";
+    std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+
     stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
@@ -81,17 +85,19 @@ public:
       int myWorldRank = stk::parallel_machine_rank(commWorld);
       int numWorldRanks = stk::parallel_machine_size(commWorld);
  
-
-      std::ostringstream os;
-      os << m_appName << ": STK version: " << stk::version_string() 
-         << " (Coupling Version: " << stk::util::get_common_coupling_version() << ")"<<std::endl;
-      os << m_appName << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks
-         <<", app rank: " << myAppRank << " out of " << numAppRanks << std::endl;
-      os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;
-      std::cout << os.str() << std::endl;
+      if (m_iAmRootRank) {
+        std::ostringstream os;
+        os << m_appName << ": STK version: " << stk::version_string() 
+           << " (Coupling Version: " << stk::util::get_common_coupling_version() << ")"<<std::endl;
+        os << m_appName << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks
+           <<", app rank: " << myAppRank << " out of " << numAppRanks << std::endl;
+        os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;
+        std::cout << os.str() << std::endl;
+      }
     }
 
-    m_mesh.reset(new mock::SparcMesh(splitComm));
+    std::vector<std::string> fieldNames = {"sparc-traction", "heat-transfer-coefficient"};
+    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
 
     // TODO: put timeSyncMode in a command-line arg like mock-aria
     m_timeSyncMode = stk::coupling::Send; // This is usually Send, but could be Receive for SPARC-SPARC MPMD coupling
@@ -191,7 +197,7 @@ public:
     check_field_sizes(mySendFields, otherRecvFields);
     check_field_sizes(otherSendFields, myRecvFields);
 
-    m_mesh->set_sparc_field_value(m_mesh->get_sparc_source_entity_key(), m_sendFieldName, 4.4);
+    m_mesh->set_sparc_field_values(m_sendFieldName, 4.4);
     std::shared_ptr<mock::SparcSendAdapter> sendAdapter =
        std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName);
     std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;

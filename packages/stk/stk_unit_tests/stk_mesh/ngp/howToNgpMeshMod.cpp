@@ -26,7 +26,7 @@ void test_change_entity_parts(stk::mesh::BulkData& bulk, stk::mesh::Entity elem,
 
   stk::mesh::DynamicMesh ngpMesh(bulk);
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          stk::mesh::FastMeshIndex oldMeshIndex = ngpMesh.device_mesh_index(elem);
