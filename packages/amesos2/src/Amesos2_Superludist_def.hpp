@@ -156,6 +156,7 @@ namespace Amesos2 {
     data_.colequ = false;
     data_.perm_r.resize(this->globalNumRows_);
     data_.perm_c.resize(this->globalNumCols_);
+    data_.largediag_mc64_job = 4;
 
     ////////////////////////////////////////////////////////////////
     // Set up a communicator for the parallel column ordering and //
@@ -327,25 +328,24 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::preOrdering_impl()
   {
+    SLUD::SuperMatrix GA;      /* Global A in NC format */
+    bool need_value = false;
+    if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+      SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
+      need_value = true;
+    }
+
     if (data_.options.RowPerm == SLUD::NOROWPERM) {
       SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
       for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
     } else if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+      int job = data_.largediag_mc64_job;
 
-      double *R1, *C1;
-
-      /* Allocate storage for scaling factors. */
-
-      TEUCHOS_TEST_FOR_EXCEPTION( !(R1 = SLUD::D::doubleMalloc_dist(data_.A.nrow)),
-          std::runtime_error,
-          "SUPERLU_MALLOC fails for R1[]");
-
-      TEUCHOS_TEST_FOR_EXCEPTION( !(C1 = SLUD::D::doubleMalloc_dist(data_.A.ncol)),
-          std::runtime_error,
-          "SUPERLU_MALLOC fails for C1[]");
-
-      SLUD::SuperMatrix GA;      /* Global A in NC format */
-      SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
+      if (job == 5)
+      {
+        data_.R1.resize(data_.A.nrow);
+        data_.C1.resize(data_.A.ncol);
+      }
 
       SLUD::NCformat *GAstore = (SLUD::NCformat*) GA.Store;
       SLUD::int_t* colptr = GAstore->colptr;
@@ -353,33 +353,29 @@ namespace Amesos2 {
       SLUD::int_t nnz = GAstore->nnz;
       double *a_GA = (double *) GAstore->nzval;
 
-      int iinfo, job = 5;
+      int iinfo;
       if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
-
-        iinfo = SLUD::D::dldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
-                data_.perm_r.getRawPtr(), R1, C1);
+        iinfo = function_map::ldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
+                data_.perm_r.getRawPtr(), data_.R1.getRawPtr(), data_.C1.getRawPtr());
 
         MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
         if ( iinfo == 0 ) {
             MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
             if ( job == 5 && data_.options.Equil ) {
-                MPI_Bcast( R1, data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
-                MPI_Bcast( C1, data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
+                MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
+                MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
             }
         }
       } else {
-          MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
-          if ( iinfo == 0 ) {
-            MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
-            if ( job == 5 && data_.options.Equil ) {
-                MPI_Bcast( R1, data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
-                MPI_Bcast( C1, data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
-            }
+        MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+        if ( iinfo == 0 ) {
+          MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+          if ( job == 5 && data_.options.Equil ) {
+              MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
+              MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
           }
+        }
       }
-
-      SUPERLU_FREE(R1);
-      SUPERLU_FREE(C1);
     }
 
     // loadA_impl();                    // Refresh matrix values
@@ -415,6 +411,9 @@ namespace Amesos2 {
                           "SuperLU_DIST pre-ordering ran out of memory after allocating "
                           << info << " bytes of memory" );
     }
+
+    if (need_value)
+      SLUD::Destroy_CompCol_Matrix_dist(&GA);
 
     // Ordering will be applied directly before numeric factorization,
     // after we have a chance to get updated coefficients from the
@@ -486,12 +485,43 @@ namespace Amesos2 {
                                 &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
 
         // Apply the scalings
-        function_map::laqgs_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(), 
+        function_map::laqgs_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
                                 data_.rowcnd, data_.colcnd, data_.amax,
                                 &(data_.equed));
 
         data_.rowequ = (data_.equed == SLUD::ROW) || (data_.equed == SLUD::BOTH);
         data_.colequ = (data_.equed == SLUD::COL) || (data_.equed == SLUD::BOTH);
+
+        // Apply row-permutation scaling
+        if (data_.options.RowPerm == SLUD::LargeDiag_MC64 && data_.largediag_mc64_job == 5)
+        {
+          SLUD::NRformat_loc *Astore  = (SLUD::NRformat_loc*) data_.A.Store;
+          double *a = (double*) Astore->nzval;
+          SLUD::int_t m_loc   = Astore->m_loc;
+          SLUD::int_t fst_row = Astore->fst_row;
+          SLUD::int_t i, j, irow = fst_row, icol;
+
+          for (i = 0; i < data_.A.nrow; ++i) data_.R1[i] = exp(data_.R1[i]);
+          for (i = 0; i < data_.A.ncol; ++i) data_.C1[i] = exp(data_.C1[i]);
+
+          /* Scale the distributed matrix further.
+           A <-- diag(R1)*A*diag(C1)            */
+          for (j = 0; j < m_loc; ++j) {
+            for (i = rowptr_view_.data()[j]; i < rowptr_view_.data()[j+1]; ++i) {
+                icol = colind_view_.data()[i];
+                a[i] *= data_.R1[irow] * data_.C1[icol];
+            }
+            ++irow;
+          }
+
+          /* Multiply together the scaling factors */
+          if ( data_.rowequ ) for (i = 0; i < data_.A.nrow; ++i) data_.R[i] *= data_.R1[i];
+          else for (i = 0; i < data_.A.nrow; ++i) data_.R[i] = data_.R1[i];
+          if ( data_.colequ ) for (i = 0; i < data_.A.ncol; ++i) data_.C[i] *= data_.C1[i];
+          else for (i = 0; i < data_.A.ncol; ++i) data_.C[i] = data_.C1[i];
+
+          data_.rowequ = data_.colequ = 1;
+        }
       }
 
       // Apply the column ordering, so that AC is the column-permuted A, and compute etree
@@ -790,6 +820,10 @@ namespace Amesos2 {
       data_.options.RowPerm = getIntegralValue<SLUD::rowperm_t>(*parameterList, "RowPerm");
     }
 
+    if( parameterList->isParameter("LargeDiag_MC64-Options") ){
+      data_.largediag_mc64_job = parameterList->template get<int>("LargeDiag_MC64-Options");
+    }
+
     if( parameterList->isParameter("ColPerm") ){
       RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
       parameterList->getEntry("ColPerm").setValidator(colperm_validator);
@@ -823,6 +857,7 @@ namespace Amesos2 {
     using Teuchos::ParameterList;
     using Teuchos::EnhancedNumberValidator;
     using Teuchos::setStringToIntegralParameter;
+    using Teuchos::setIntParameter;
     using Teuchos::stringToIntegralParameterEntryValidator;
 
     static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
@@ -876,6 +911,8 @@ namespace Amesos2 {
                                                     tuple<SLUD::rowperm_t>(SLUD::NOROWPERM,
                                                                            SLUD::LargeDiag_MC64),
                                                     pl.getRawPtr());
+
+      setIntParameter("LargeDiag_MC64-Options", 4, "Options for RowPerm-LargeDiag_MC64", pl.getRawPtr());
 
       // Column permutation
       setStringToIntegralParameter<SLUD::colperm_t>("ColPerm", "PARMETIS",

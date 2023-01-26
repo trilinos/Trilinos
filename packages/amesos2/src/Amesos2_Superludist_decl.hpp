@@ -308,6 +308,7 @@ private:
     SLUD::DiagScale_t equed;    ///< Whether/what kind of equilibration to use/has been used
     bool rowequ, colequ;        ///< whether row/col equilibration has been applied to AC
     magnitude_type rowcnd, colcnd, amax;
+    int largediag_mc64_job;     // job id for LargeDiag_MC64 row permutation
   } data_;
 
   // The following Arrays are persisting storage arrays for A, X, and B
