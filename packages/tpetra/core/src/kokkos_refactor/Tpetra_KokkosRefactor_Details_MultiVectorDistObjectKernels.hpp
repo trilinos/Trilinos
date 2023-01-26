@@ -57,8 +57,6 @@
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
-#include "impl/Kokkos_Atomic_Generic.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -786,28 +784,25 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-  // Kokkos::Impl::atomic_fetch_oper wants a class like this.
-  template<class Scalar1, class Scalar2>
-  struct AbsMaxOper {
-    KOKKOS_INLINE_FUNCTION
-    static Scalar1 apply(const Scalar1& val1, const Scalar2& val2) {
-      const auto val1_abs = Kokkos::ArithTraits<Scalar1>::abs(val1);
-      const auto val2_abs = Kokkos::ArithTraits<Scalar2>::abs(val2);
-      return val1_abs > val2_abs ? Scalar1(val1_abs) : Scalar1(val2_abs);
-    }
-  };
-
   struct AbsMaxOp {
+    template <class Scalar>
+    struct WrapScalarAndCompareAbsMax{
+      Scalar value;
+    private:
+      friend KOKKOS_FUNCTION bool operator<(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::abs(lhs.value) < Kokkos::abs(rhs.value); }
+      friend KOKKOS_FUNCTION bool operator>(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::abs(lhs.value) > Kokkos::abs(rhs.value); }
+    };
+
     template <typename SC>
     KOKKOS_INLINE_FUNCTION
-    void operator() (atomic_tag, SC& dest, const SC& src) const {
-      Kokkos::Impl::atomic_fetch_oper (AbsMaxOper<SC, SC> (), &dest, src);
+    void operator() (atomic_tag, SC& dst, const SC& src) const {
+      Kokkos::atomic_max(reinterpret_cast<WrapScalarAndCompareAbsMax<SC>*>(&dst), WrapScalarAndCompareAbsMax<SC>{src});
     }
 
     template <typename SC>
     KOKKOS_INLINE_FUNCTION
-    void operator() (nonatomic_tag, SC& dest, const SC& src) const {
-      dest = AbsMaxOper<SC, SC> ().apply (dest, src);
+    void operator() (nonatomic_tag, SC& dst, const SC& src) const {
+      if (Kokkos::abs(dst) < Kokkos::abs(src)) dst = src;
     }
   };
 
