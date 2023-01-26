@@ -87,7 +87,7 @@ def main():
         NUMBER_OF_PRs_MERGED = "["+number_of_pr_merged+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
         # -> NUMBER_OF_FAILED_PRs = "["+number_of_failed_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+updated%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop+status%3Afailure+)"
         # NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+status%3Apending+-label%3A%22AT%3A+WIP%22+)"
-        # -> NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
+        NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
         NUMBER_SUCCESSFUL_MM = "["+number_of_successful_mm+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
         JIRA_TICKETS = "[TrilFrame-"+jira_ticket_number+"]"+"(https://sems-atlassian-son.sandia.gov/jira/browse/TRILFRAME-"+str(jira_ticket_number)+")"
         # change "total open PR's at 12" to clickable link
@@ -102,9 +102,9 @@ def main():
     try:
         writer = ptw.MarkdownTableWriter(
               table_name="Trilinos Status Table",
-              headers=["Date", "PR Status", "PRs Merged (Past 24 Hrs from 12pm)", "WIP PRs (@ 12pm)", "Review-Required PRs (@ 12pm) ", "Change-Requested PRs (@ 12pm) ", "Review-Approved PRs (@ 12pm)", "Total Open PRs (@ 12pm)", "MM Status", "Master Merges (Past 24 hrs from 12pm)", "Jira Ticket #"],
+              headers=["Date", "PR Status", "PRs Merged (Past 24 Hrs from 12pm)", "WIP PRs (@ 12pm)", "Review-Required PRs (@ 12pm) ", "Change-Requested PRs (@ 12pm) ", "Review-Approved PRs (@ 12pm)", " Failed PRs (@ 12pm)", "Total Open PRs (@ 12pm)", "MM Status", "Master Merges (Past 24 hrs from 12pm)", "Jira Ticket #"],
               value_matrix=[
-                    [str(today), pr_status[int(stat_container[0])], NUMBER_OF_PRs_MERGED, WIP_PRs, REVIEW_REQUIRED, CHANGE_REQUESTED, REVIEW_APROVED, Open_PRs , mm_status[int(stat_container[5])], NUMBER_SUCCESSFUL_MM, JIRA_TICKETS]
+                    [str(today), pr_status[int(stat_container[0])], NUMBER_OF_PRs_MERGED, WIP_PRs, REVIEW_REQUIRED, CHANGE_REQUESTED, REVIEW_APROVED, NUMBER_OF_PRs_WAITING, Open_PRs, mm_status[int(stat_container[5])], NUMBER_SUCCESSFUL_MM, JIRA_TICKETS]
               ],
           )
     except:
