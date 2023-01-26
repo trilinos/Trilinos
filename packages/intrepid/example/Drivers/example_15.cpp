@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
 	{
 	  for (int i=0; i<NX; i++) 
 	    {
-	      int ielem = i + j * NX + k * NY * NY;
+	      ielem = i + j * NX + k * NY * NY;
 	      for (int m=0; m<numNodesPerElem; m++)
 		{
 		  fe2nout << elemToNode(ielem,m) <<"  ";
@@ -347,7 +347,6 @@ int main(int argc, char *argv[]) {
     }
 #ifdef DUMP_DATA
   // Output ltg mapping 
-  ielem = 0;
   ofstream ltgout("ltg.dat");
   for (int k=0;k<NZ;k++)  
     {
@@ -355,7 +354,7 @@ int main(int argc, char *argv[]) {
 	{
 	  for (int i=0; i<NX; i++) 
 	    {
-	      int ielem = i + j * NX + k * NX * NY;
+	      ielem = i + j * NX + k * NX * NY;
 	      for (int m=0; m<numFieldsG; m++)
 		{
 		  ltgout << ltgMapping(ielem,m) <<"  ";

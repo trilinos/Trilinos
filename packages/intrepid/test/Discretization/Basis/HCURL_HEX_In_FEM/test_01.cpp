@@ -131,13 +131,12 @@ int main(int argc, char *argv[]) {
   hexNodes(5,0) = 1.0; hexNodes(5,1) = -1.0; hexNodes(5,2) = 1.0;
   hexNodes(6,0) = -1.0; hexNodes(6,1) = 1.0; hexNodes(6,2) = 1.0;
   hexNodes(7,0) = 1.0; hexNodes(7,1) = 1.0; hexNodes(7,2) = 1.0;
-
-
   
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+    
     // exception #1: GRAD cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
     vals.resize(hexBasis.getCardinality(), hexNodes.dimension(0), 4 );
