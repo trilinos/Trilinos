@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2021, 2022 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -39,7 +39,7 @@
 #endif
 
 #include <termios.h>
-struct termios new_termios, old_termios;
+struct termios io_new_termios, io_old_termios;
 #endif
 
 /********************* C library headers ********************************/
@@ -128,21 +128,21 @@ namespace {
   void io_gl_char_init(void) /* turn off input echo */
   {
 #ifdef __unix__
-    tcgetattr(0, &old_termios);
-    new_termios = old_termios;
-    new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
-    new_termios.c_iflag |= (IGNBRK | IGNPAR);
-    new_termios.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
-    new_termios.c_cc[VMIN]  = 1;
-    new_termios.c_cc[VTIME] = 0;
-    tcsetattr(0, TCSANOW, &new_termios);
+    tcgetattr(0, &io_old_termios);
+    io_new_termios = io_old_termios;
+    io_new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
+    io_new_termios.c_iflag |= (IGNBRK | IGNPAR);
+    io_new_termios.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
+    io_new_termios.c_cc[VMIN]  = 1;
+    io_new_termios.c_cc[VTIME] = 0;
+    tcsetattr(0, TCSANOW, &io_new_termios);
 #endif /* __unix__ */
   }
 
   void io_gl_char_cleanup(void) /* undo effects of io_gl_char_init */
   {
 #ifdef __unix__
-    tcsetattr(0, TCSANOW, &old_termios);
+    tcsetattr(0, TCSANOW, &io_old_termios);
 #endif /* __unix__ */
   }
 } // namespace
