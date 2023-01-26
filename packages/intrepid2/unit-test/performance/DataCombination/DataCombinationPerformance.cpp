@@ -371,9 +371,6 @@ int main( int argc, char* argv[] )
           {
             cout << "Error: results do not match.  Comparison details:\n";
             
-            Teuchos::oblackholestream  outNothing;
-            Teuchos::basic_FancyOStream<char> out(Teuchos::rcp(&outNothing,false));
-            
             Teuchos::basic_FancyOStream<char> std_out(Teuchos::rcp(&std::cout,false));
             testFloatingEquality2(resultView, result, relTol, absTol, std_out, localSuccess);
             
