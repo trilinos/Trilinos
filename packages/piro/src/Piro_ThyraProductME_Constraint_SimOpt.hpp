@@ -848,8 +848,8 @@ public:
       inArgs.set_f_multiplier(thyra_w.getVector());
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_px product vector is not supported");
+        bool supports_deriv_i =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, p_indices_[i]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv_i, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_px product vector is not supported");
         outArgs.set_hess_vec_prod_f_px(p_indices_[i], prodvec_ahwv->getNonconstVectorBlock(i));
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -928,8 +928,8 @@ public:
       }
 
       for(std::size_t j=0; j<p_indices_.size(); ++j) {
-        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, p_indices_[j]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_xp product vector is not supported");
+        bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, p_indices_[j]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_xp product vector is not supported");
         outArgs.set_hess_vec_prod_f_xp(p_indices_[j], ahwv_vec[j]);
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -1015,8 +1015,8 @@ public:
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
-          bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, p_indices_[i], p_indices_[j]);
-          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_pp product vector is not supported");
+          bool supports_deriv_ij =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, p_indices_[i], p_indices_[j]);
+          ROL_TEST_FOR_EXCEPTION( !supports_deriv_ij, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_pp product vector is not supported");
 
           outArgs.set_hess_vec_prod_f_pp(p_indices_[i], p_indices_[j], ahwv_vec[i][j]);
         }

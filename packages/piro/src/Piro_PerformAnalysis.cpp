@@ -380,11 +380,11 @@ Piro::PerformROLAnalysis(
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_y.ptr());
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_z.ptr());
 
-      ROL::ThyraVector<double> rol_x(rand_vec_x);
-      ROL::ThyraVector<double> rol_y(rand_vec_y);
-      ROL::ThyraVector<double> rol_z(rand_vec_z);
+      ROL::ThyraVector<double> rol_vec_x(rand_vec_x);
+      ROL::ThyraVector<double> rol_vec_y(rand_vec_y);
+      ROL::ThyraVector<double> rol_vec_z(rand_vec_z);
 
-      rol_x.checkVector(rol_y, rol_z, true, *out);
+      rol_vec_x.checkVector(rol_vec_y, rol_vec_z, true, *out);
     }
   }
 

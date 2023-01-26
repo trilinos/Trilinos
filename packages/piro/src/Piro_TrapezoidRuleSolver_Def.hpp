@@ -434,9 +434,9 @@ Piro::TrapezoidRuleSolver<Scalar>::getSolutionManager() const
 
 template <typename Scalar>
 Piro::TrapezoidDecorator<Scalar>::TrapezoidDecorator(
-                          const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_) :
-  Thyra::ModelEvaluatorDelegatorBase<Scalar>(model_),
-  DMEWSF(Teuchos::rcp_dynamic_cast<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> >(model_)),
+                          const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& modelEvaluator) :
+  Thyra::ModelEvaluatorDelegatorBase<Scalar>(modelEvaluator),
+  DMEWSF(Teuchos::rcp_dynamic_cast<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> >(modelEvaluator)),
   fdt2(0.0),
   tdt(0.0),
   time(0.0),

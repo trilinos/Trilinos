@@ -282,42 +282,37 @@ public:
     bool supports_deriv = true;
     for(std::size_t i=0; i<p_indices_.size(); ++i)
       supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices_[i], p_indices_[i]);
+    
+    ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp is not supported");
 
-    if(supports_deriv) { //use derivatives computed by model evaluator
-      const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-      ROL::Ptr<ROL::Vector<Real>> unew = u.clone();
-      unew->set(u);
-      const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
+    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
+    ROL::Ptr<ROL::Vector<Real>> unew = u.clone();
+    unew->set(u);
+    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
 
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+    Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
-      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
+    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-      H->beginBlockFill(p_indices_.size(), p_indices_.size());
+    H->beginBlockFill(p_indices_.size(), p_indices_.size());
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-      }
-      inArgs.set_x(thyra_x.getVector());
-
-      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_idx));
-      Thyra::put_scalar(1.0, multiplier_g.ptr());
-      inArgs.set_g_multiplier(g_idx, multiplier_g);
-
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices_[i], p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp is not supported");
-
-        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model_->create_hess_g_pp(g_idx, p_indices_[i], p_indices_[i]);
-        outArgs.set_hess_g_pp(g_idx, p_indices_[i], p_indices_[i], hess_g_pp);
-        H->setBlock(i, i, hess_g_pp);
-      }
-      H->endBlockFill();
-
-      thyra_model_->evalModel(inArgs, outArgs);
+    for(std::size_t i=0; i<p_indices_.size(); ++i) {
+      inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
     }
+    inArgs.set_x(thyra_x.getVector());
+
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_idx));
+    Thyra::put_scalar(1.0, multiplier_g.ptr());
+    inArgs.set_g_multiplier(g_idx, multiplier_g);
+
+    for(std::size_t i=0; i<p_indices_.size(); ++i) {
+      Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model_->create_hess_g_pp(g_idx, p_indices_[i], p_indices_[i]);
+      outArgs.set_hess_g_pp(g_idx, p_indices_[i], p_indices_[i], hess_g_pp);
+      H->setBlock(i, i, hess_g_pp);
+    }
+    H->endBlockFill();
+
+    thyra_model_->evalModel(inArgs, outArgs);
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
@@ -426,8 +421,8 @@ public:
       }
 
       for(std::size_t j=0; j<p_indices_.size(); ++j) {
-        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, p_indices_[j]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
+        bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, p_indices_[j]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
         outArgs.set_hess_vec_prod_g_xp(g_index_,p_indices_[j], hv_vec[j]);
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -500,11 +495,9 @@ public:
       Thyra::put_scalar(1.0, multiplier_g.ptr());
       inArgs.set_g_multiplier(g_index_, multiplier_g);
 
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
+        bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, p_indices_[i]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
         outArgs.set_hess_vec_prod_g_px(g_index_,p_indices_[i], prodvec_hv->getNonconstMultiVectorBlock(i));
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -584,8 +577,8 @@ public:
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
-          bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, p_indices_[i], p_indices_[j]);
-          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
+          bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, p_indices_[i], p_indices_[j]);
+          ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
 
           outArgs.set_hess_vec_prod_g_pp(g_index_,p_indices_[i], p_indices_[j], hv_vec[i][j]);
         }
