@@ -83,3 +83,7 @@ class tVector(ROL.Vector_double_t):
                         self.tvector.replaceGlobalValue(global_indices[i], val[i])
                     else:
                         self.tvector.replaceGlobalValue(global_indices[i], val)
+
+    def reduce(self, op):
+        reductionType = op.reductionType()
+        raise NotImplementedError(reductionType)

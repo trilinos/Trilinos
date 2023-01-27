@@ -11,7 +11,7 @@ class npVector(getTypeName('Vector')):
         self.values = values
         self.copies = []
         super().__init__()
-    
+
     def __del__(self):
         for copy in self.copies:
             del copy
@@ -52,10 +52,19 @@ class npVector(getTypeName('Vector')):
         self.values[:] = new_value
 
     def reduce(self, op):
-        v = op.initialValue()
-        for i in range(self.dimension()):
-            op.reduce(self.values[i], v)
-        return v
+        reductionType = op.reductionType()
+        if reductionType == ROL.Elementwise.REDUCE_MIN:
+            return self.values.min()
+        elif reductionType == ROL.Elementwise.REDUCE_MAX:
+            return self.values.max()
+        elif reductionType == ROL.Elementwise.REDUCE_SUM:
+            return self.values.sum()
+        elif reductionType == ROL.Elementwise.REDUCE_AND:
+            return np.logical_and.reduce(self.values)
+        elif reductionType == ROL.Elementwise.REDUCE_BOR:
+            return np.bitwise_or.reduce(self.values)
+        else:
+            raise NotImplementedError(reductionType)
 
     def applyUnary(self, op):
         for i in range(self.dimension()):
