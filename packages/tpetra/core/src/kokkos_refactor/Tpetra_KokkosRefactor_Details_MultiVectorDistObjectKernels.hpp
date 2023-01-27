@@ -57,6 +57,7 @@
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_ArithTraits.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -789,8 +790,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     struct WrapScalarAndCompareAbsMax{
       Scalar value;
     private:
-      friend KOKKOS_FUNCTION bool operator<(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::abs(lhs.value) < Kokkos::abs(rhs.value); }
-      friend KOKKOS_FUNCTION bool operator>(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::abs(lhs.value) > Kokkos::abs(rhs.value); }
+      friend KOKKOS_FUNCTION bool operator<(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::ArithTraits<Scalar>::abs(lhs.value) < Kokkos::ArithTraits<Scalar>::abs(rhs.value); }
+      friend KOKKOS_FUNCTION bool operator>(WrapScalarAndCompareAbsMax const& lhs, WrapScalarAndCompareAbsMax const& rhs) { return Kokkos::ArithTraits<Scalar>::abs(lhs.value) > Kokkos::ArithTraits<Scalar>::abs(rhs.value); }
     };
 
     template <typename SC>
@@ -802,7 +803,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     template <typename SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (nonatomic_tag, SC& dst, const SC& src) const {
-      if (Kokkos::abs(dst) < Kokkos::abs(src)) dst = src;
+      if (Kokkos::ArithTraits<SC>::abs(dst) < Kokkos::ArithTraits<SC>::abs(src)) dst = src;
     }
   };
 
