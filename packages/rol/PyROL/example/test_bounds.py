@@ -22,7 +22,10 @@ op = matrix(10)
 g = vector_type.full(10, 0.)
 x = vector_type.full(10, 1.)
 
-bnd = Bounds_double_t(g.clone(), x.clone())
+# passes:
+# bnd = Bounds_double_t(g.clone(), x.clone())
+# fails:
+bnd = Bounds_double_t(vector_type.full(10, 0.), x.clone())
 obj = QuadraticObjective(op, g)
 
 params = getParametersFromXmlFile("input.xml")
