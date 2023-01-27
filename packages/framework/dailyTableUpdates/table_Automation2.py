@@ -14,12 +14,12 @@ Trilinos Status Table Automation Script
     
     
 SYNOPSIS                                                                                                                                 
-<python> table_Automation.py <0 4 6 4 72 0 4 [435]>
+<python> table_Automation.py <[0-3] 1 2 3 4 [0-3] 5 6 7 8 9 [435]> [TrilFrame-435]
 
 #STATUS: [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
 
-updated table string example: python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 111
-                              python table_Automation2.py 1 3 1 22 21 0 5 5 21 58 1 504
+<User inputs twelve charter(s) from terminal>
+updated table string example: python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 
 """
 from time import sleep as pause
 from datetime import timedelta
@@ -62,37 +62,22 @@ def main():
     try:
         number_of_pr_merged = stat_container[1]
         number_of_failed_pr = stat_container[2]
-        
-        # new table items
-        # WIP_Pr - complete
         number_wip_prs = stat_container[3]
-        
-        # review_required - complete
         number_reviewed_required = stat_container[4]
-
-        # change_requested - complete
         number_change_requested = stat_container[6]
-
-        # review_approved - complete
         number_review_approved = stat_container[7]
-
-        # old update index
         number_of_waiting_pr = stat_container[8]
-        number_open_pr = stat_container[9] # update to failed pr's @ 12 options
+        number_open_pr = stat_container[9]
         number_of_successful_mm = stat_container[10]
         jira_ticket_number = stat_container[11]
     except:
         print("Requires more arguments ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
     try:
         NUMBER_OF_PRs_MERGED = "["+number_of_pr_merged+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
-        # -> NUMBER_OF_FAILED_PRs = "["+number_of_failed_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+updated%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop+status%3Afailure+)"
-        # NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+status%3Apending+-label%3A%22AT%3A+WIP%22+)"
         NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
         NUMBER_SUCCESSFUL_MM = "["+number_of_successful_mm+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
         JIRA_TICKETS = "[TrilFrame-"+jira_ticket_number+"]"+"(https://sems-atlassian-son.sandia.gov/jira/browse/TRILFRAME-"+str(jira_ticket_number)+")"
-        # change "total open PR's at 12" to clickable link
         Open_PRs = "["+number_open_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls)"
-        #   new table items 
         WIP_PRs = "["+number_wip_prs+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+label%3A%22AT%3A+WIP%22)"
         REVIEW_REQUIRED = "["+number_reviewed_required+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Arequired+-label%3A%22AT%3A+WIP%22)"
         CHANGE_REQUESTED = "["+number_change_requested+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Achanges-requested+-label%3A%22AT%3A+WIP%22)"
@@ -109,33 +94,10 @@ def main():
           )
     except:
         print("Not enough arguments ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
-    #change the output stream to terminal <- OPTIONAL IMPORT ABOVE
-    # writer.stream = io.StringIO()
-    # writer.write_table()
-    # print(writer.stream.getvalue())
-
-    # change the output stream to a file
     try:
         print(writer)
-        # with open("trilinos_Table_Updates.md", "w") as f:
-            # writer.stream = f
-            # writer.write_table()
-            # or you can use dump method to file if you just output a table to a file
-            # writer.dump("sample.md")
     except:
         print("Can not write to file, missing arguements ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
-
-'''
-   -> python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 -> working
-   python table_Automation2.py 1 3 1 22 21 0 5 5 21 58 1 504 <twelve input values from user>
-'''    
+            
 if __name__ == "__main__":
     main()
-
-
-
-'''
-    
-    
-
-'''
