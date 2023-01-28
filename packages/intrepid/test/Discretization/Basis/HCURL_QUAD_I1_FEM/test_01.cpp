@@ -126,10 +126,11 @@ int main(int argc, char *argv[]) {
   quadNodes(7,0) = -0.5;  quadNodes(7,1) =  0.0;    
   quadNodes(8,0) =  0.5;  quadNodes(8,1) =  0.0;    
     
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+   
     // exception #1: GRAD cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
     vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0), 4 );

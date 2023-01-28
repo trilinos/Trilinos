@@ -691,8 +691,8 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
               int num_params = p_space->dim();
               auto p_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(p_space);
               bool p_dist = !p_space_plus->isLocallyReplicated();//p_space->DistributedGlobal();
-              Thyra::ModelEvaluatorBase::DerivativeSupport ds = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
-              if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+              Thyra::ModelEvaluatorBase::DerivativeSupport ds_dgdp = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
+              if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
                 auto dgdp_op =
                     this->getModel().create_DgDp_op(j,i);
                 TEUCHOS_TEST_FOR_EXCEPTION(
@@ -702,13 +702,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                     std::endl);
                 modelOutArgs.set_DgDp(j,i,dgdp_op);
               }
-              else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
+              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
                 auto tmp_dgdp = createMembers(g_space, num_params);
                 Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
                 dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
                 modelOutArgs.set_DgDp(j,i,dmv_dgdp);
               }
-              else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
+              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
                 auto tmp_dgdp = createMembers(p_space, num_responses);
                 Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
                 dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);

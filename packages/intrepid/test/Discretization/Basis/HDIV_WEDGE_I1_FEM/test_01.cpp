@@ -129,10 +129,11 @@ int main(int argc, char *argv[]) {
   wedgeNodes(10,0)=  0.0;  wedgeNodes(10,1)=  0.5;  wedgeNodes(10,2)= -0.25;
   wedgeNodes(11,0)=  0.5;  wedgeNodes(11,1)=  0.5;  wedgeNodes(11,2)=  0.0;
 
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+
     // exception #1: GRAD cannot be applied to HDIV functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
     vals.resize(wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 3 );

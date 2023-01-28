@@ -65,9 +65,9 @@ public:
 
   SGPoint();
   SGPoint(Scalar p[D]);
-  bool const operator==(const SGPoint<Scalar, D> & right);
-  bool const operator<(const SGPoint<Scalar, D> & right);
-  bool const operator>(const SGPoint<Scalar, D> & right);
+  bool operator==(const SGPoint<Scalar, D> & right) const;
+  bool operator<(const SGPoint<Scalar, D> & right) const;
+  bool operator>(const SGPoint<Scalar, D> & right) const;
   //friend ostream & operator<<(ostream & o, const SGPoint<D> & p);
 };
 
@@ -108,7 +108,7 @@ SGPoint<Scalar, D>::SGPoint(Scalar p[D])
 }
 
 template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right)
+bool SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right) const
 {
   bool equal = true;
 
@@ -122,7 +122,7 @@ bool const SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right)
 }
 
 template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right)
+bool SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right) const
 {
   for(int i = 0; i < D; i++)
   {
@@ -136,7 +136,7 @@ bool const SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right)
 }
 
 template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right)
+bool SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right) const
 {
   if(this < right || this == right)
     return false;
