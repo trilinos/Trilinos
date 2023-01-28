@@ -80,3 +80,10 @@ class npVector(getTypeName('Vector')):
 
     def __setitem__(self, index, val):
         self.values[index] = val
+
+    def basis(self, i):
+        b = self.clone()
+        b.values[:] = 0.
+        b.values[i] = 1.
+        self._basis = b
+        return b
