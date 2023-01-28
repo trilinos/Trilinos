@@ -154,7 +154,7 @@ Eval::parse()
 
       m_parseStatus = true;
     } else {
-      throw std::runtime_error("");
+      throw std::runtime_error("The following expression has a syntax error in it.\n" + m_expression);
     }
   }
   catch (std::runtime_error & ) {

@@ -498,8 +498,11 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class IdentityProblem : public Problem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       IdentityProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
+      Teuchos::RCP<MultiVector> BuildNullspace();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
     };
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -508,6 +511,36 @@ namespace Galeri {
       this->A_ = Identity<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, a);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<MultiVector> IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
+      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, 1);
+      this->Nullspace_->putScalar(Teuchos::ScalarTraits<typename MultiVector::scalar_type>::one());
+      return this->Nullspace_;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+
+      if (nx == -1) {
+        nx = this->Map_->getGlobalNumElements();
+      }
+
+      Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
+
+      return this->Coords_;
+
     }
 
   } // namespace Xpetra

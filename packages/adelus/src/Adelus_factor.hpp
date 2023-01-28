@@ -48,6 +48,7 @@
 #define __ADELUS_FACTOR_HPP__
 
 #include <math.h>
+#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -358,7 +359,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
         //return; 
         std::ostringstream os;
         os << "Adelus::factor: rank " << me << " error -- zero pivot found in column "<< j;
-        Kokkos::Impl::throw_runtime_exception (os.str ());
+        throw std::runtime_error (os.str ());
       }
 
       // divide everything including the diagonal by the pivot entry

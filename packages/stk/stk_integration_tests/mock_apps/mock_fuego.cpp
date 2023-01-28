@@ -12,6 +12,7 @@
 #include <stk_util/parallel/CouplingVersions_impl.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
+#include "MockMeshUtils.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -55,6 +56,9 @@ public:
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    const std::string defaultFileName = "generated:1x1x4|sideset:x";
+    std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+
     stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
 
@@ -84,6 +88,9 @@ public:
       os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;
       std::cout << os.str() << std::endl;
     }
+
+    std::vector<std::string> fieldNames = {"not-set-yet1", "not-set-yet2"};
+    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
   }
 
   void communicate_initial_setup()

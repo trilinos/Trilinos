@@ -228,6 +228,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 smoother -> 
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

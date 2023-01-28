@@ -194,7 +194,7 @@ void expect_equal_fields(stk::mesh::MetaData &newMeta, stk::mesh::FieldBase &old
 
   ASSERT_EQ(stk::io::has_field_output_type(oldField), stk::io::has_field_output_type(newField));
   if (stk::io::has_field_output_type(oldField)) {
-    EXPECT_EQ(stk::io::get_field_output_type(oldField)->name(), stk::io::get_field_output_type(newField)->name());
+    EXPECT_EQ(stk::io::get_field_output_type(oldField), stk::io::get_field_output_type(newField));
   }
 
   expect_equal_data_traits(oldField.data_traits(), newField.data_traits());

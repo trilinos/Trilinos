@@ -31,7 +31,7 @@ namespace {
       this->checkNodeIDRange = false;
       this->checkElementIDRange = false;
       }
-    
+
      ~ParseData()
        {
        this->root.clear();
@@ -62,7 +62,7 @@ namespace {
   ParseData& c(void* pd) {
     return *(static_cast<ParseData*>(pd));
   }
- 
+
   std::vector<std::string> getTokensBeforeEqualsAsLowerCase(
       const std::string & line);
   std::string getStringAfterEquals(const std::string & line);
@@ -463,10 +463,10 @@ bool check_color_name(YYLTYPE * llocp, yyscan_t yyscanner, ParseData& pd, const 
   return false;
 }
 
-bool check_plot_axes(YYLTYPE * llocp, 
-                     yyscan_t yyscanner, 
-                     ParseData& pd, 
-                     const Json::Value& c, 
+bool check_plot_axes(YYLTYPE * llocp,
+                     yyscan_t yyscanner,
+                     ParseData& pd,
+                     const Json::Value& c,
                      const std::string& axis)
 {
   if(c.isMember(axis + " axis range") && (c.isMember(axis + " axis use current data range") ||
@@ -1050,14 +1050,14 @@ void switch_variable_to_used(const std::string& name,
    }
 }
 
-bool compare_variable_type(const std::string& name, 
+bool compare_variable_type(const std::string& name,
                            Iovs::PhactoriParserInterface::varMap& v,
                            Iovs::PhactoriParserInterface::VarType vt)
 {
   if(v.find(name) != v.end())
    {
-   if( v[name] == vt || 
-       v[name] == Iovs::PhactoriParserInterface::ALLTYPE || 
+   if( v[name] == vt ||
+       v[name] == Iovs::PhactoriParserInterface::ALLTYPE ||
        v[name] == Iovs::PhactoriParserInterface::ALLTYPE_USED )
      return true;
    else if( v[name] == Iovs::PhactoriParserInterface::SCALAR_USED &&
@@ -1066,7 +1066,7 @@ bool compare_variable_type(const std::string& name,
    else if( v[name] == Iovs::PhactoriParserInterface::VECTOR_USED &&
              vt == Iovs::PhactoriParserInterface::VECTOR )
      return true;
-   else if( v[name] == Iovs::PhactoriParserInterface::TENSOR_USED && 
+   else if( v[name] == Iovs::PhactoriParserInterface::TENSOR_USED &&
              vt == Iovs::PhactoriParserInterface::TENSOR )
      return true;
    }
@@ -1076,7 +1076,7 @@ bool compare_variable_type(const std::string& name,
 bool check_variable_name(YYLTYPE * llocp,
                          yyscan_t yyscanner,
                          ParseData& pd,
-                         const std::string& name, 
+                         const std::string& name,
                          Iovs::PhactoriParserInterface::VarType vt)
 {
   if (!pd.nodeVars.empty() && !pd.elementVars.empty() && !pd.globalVars.empty())
@@ -1471,8 +1471,8 @@ void four_argument_command(ParseData& pd,
 bool check_two_argument_command(YYLTYPE * llocp,
                                 yyscan_t yyscanner,
                                 ParseData& pd,
-                                const std::string& command, 
-                                const std::string& position, 
+                                const std::string& command,
+                                const std::string& position,
                                 double value)
 {
   if(value < 0 || value > 1)
@@ -1530,7 +1530,7 @@ void no_argument_command(ParseData& pd,
 
 template<class T>
 void vector_command(ParseData& pd,
-                    const std::string& command, 
+                    const std::string& command,
                     std::vector<T>& values)
 {
   Json::Value a(Json::arrayValue);
@@ -1566,7 +1566,7 @@ void vector_command(ParseData& pd,
 }
 
 void string_vector_command(ParseData& pd,
-                           const std::string& command, 
+                           const std::string& command,
                            std::vector<std::string>& values)
 {
   Json::Value a(Json::arrayValue);
@@ -1584,7 +1584,7 @@ void string_vector_command(ParseData& pd,
 }
 
 void identifier_command(ParseData& pd,
-                        const std::string& command, 
+                        const std::string& command,
                         const std::string& identifier)
 {
   if (pd.cb == TOKCATALYST)
@@ -1643,7 +1643,7 @@ void boolean_command(ParseData& pd,
 }
 
 void integer_command(ParseData& pd,
-                     const std::string& command, 
+                     const std::string& command,
                      int value)
 {
   if (pd.cb == TOKCATALYST)
@@ -2349,9 +2349,9 @@ show_bouding_box
       ;
 
 color_by_scalar
-      : TOKCOLORBYSCALAR TOKEQUAL TOKIDENTIFIER 
-      { 
-      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR)) 
+      : TOKCOLORBYSCALAR TOKEQUAL TOKIDENTIFIER
+      {
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR))
         YYABORT;
       identifier_command(c(pd), "color by scalar", $3);
       }
@@ -2360,7 +2360,7 @@ color_by_scalar
 color_by_vector_magnitude
       : TOKCOLORBYVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER
       {
-      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR))
         YYABORT;
       identifier_command(c(pd), "color by vector magnitude", $3);
       }
@@ -2398,8 +2398,8 @@ color_by_solid_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "color by solid color", c(pd).d); 
-      } 
+      vector_command(c(pd), "color by solid color", c(pd).d);
+      }
       ;
 
 color_by_blockid
@@ -3179,8 +3179,8 @@ background_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "background color", c(pd).d); 
-      } 
+      vector_command(c(pd), "background color", c(pd).d);
+      }
       ;
 
 surface_color
@@ -3197,8 +3197,8 @@ surface_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "surface color", c(pd).d); 
-      } 
+      vector_command(c(pd), "surface color", c(pd).d);
+      }
       ;
 
 edge_color
@@ -3215,8 +3215,8 @@ edge_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "edge color", c(pd).d); 
-      } 
+      vector_command(c(pd), "edge color", c(pd).d);
+      }
       ;
 
 text_color
@@ -3233,8 +3233,8 @@ text_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "text color", c(pd).d); 
-      } 
+      vector_command(c(pd), "text color", c(pd).d);
+      }
       ;
 
 axes_color
@@ -3251,8 +3251,8 @@ axes_color
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "axes color", c(pd).d); 
-      } 
+      vector_command(c(pd), "axes color", c(pd).d);
+      }
       ;
 
 threshold_shortcut
@@ -3475,7 +3475,7 @@ absolute_point_on_plane
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "absolute point on plane", c(pd).d); 
+      vector_command(c(pd), "absolute point on plane", c(pd).d);
       }
       | TOKABSOLUTEPOINTONPLANE point_location TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
@@ -3485,7 +3485,7 @@ absolute_point_on_plane
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
       c(pd).d.push_back($6);
-      vector_command(c(pd), "absolute point on plane " + ct, c(pd).d); 
+      vector_command(c(pd), "absolute point on plane " + ct, c(pd).d);
       }
       ;
 
@@ -3506,7 +3506,7 @@ relative_point_on_plane
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
       c(pd).d.push_back($6);
-      vector_command(c(pd), "relative point on plane " + ct, c(pd).d); 
+      vector_command(c(pd), "relative point on plane " + ct, c(pd).d);
       }
       ;
 
@@ -3725,7 +3725,7 @@ center_at_absolute_point
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "center at absolute point", c(pd).d); 
+      vector_command(c(pd), "center at absolute point", c(pd).d);
       }
       ;
 
@@ -3736,7 +3736,7 @@ center_at_relative_point
       c(pd).d.push_back($3);
       c(pd).d.push_back($4);
       c(pd).d.push_back($5);
-      vector_command(c(pd), "center at relative point", c(pd).d); 
+      vector_command(c(pd), "center at relative point", c(pd).d);
       }
       ;
 
@@ -3864,18 +3864,18 @@ threshold_statement
       ;
 
 variable_scalar
-      : TOKVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
-      { 
-      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR)) 
+      : TOKVARIABLESCALAR TOKEQUAL TOKIDENTIFIER
+      {
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR))
         YYABORT;
       identifier_command(c(pd), "variable scalar", $3);
       }
       ;
 
 variable_vector_magnitude
-      : TOKVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
-      { 
-      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR)) 
+      : TOKVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER
+      {
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR))
         YYABORT;
       identifier_command(c(pd), "variable vector magnitude", $3);
       }
@@ -4066,17 +4066,17 @@ all_variables
       ;
 
 x_axis_variable_scalar
-      : TOKXAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
-      { 
-      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR)) 
+      : TOKXAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER
+      {
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR))
         YYABORT;
       identifier_command(c(pd), "x axis variable scalar", $3);
       }
       ;
 
 y_axis_variable_scalar
-      : TOKYAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
-      { 
+      : TOKYAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER
+      {
       if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::SCALAR))
         YYABORT;
       identifier_command(c(pd), "y axis variable scalar", $3);
@@ -4084,8 +4084,8 @@ y_axis_variable_scalar
       ;
 
 x_axis_variable_vector_magnitude
-      : TOKXAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
-      { 
+      : TOKXAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER
+      {
       if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR))
         YYABORT;
       identifier_command(c(pd), "x axis variable vector magnitude", $3);
@@ -4093,8 +4093,8 @@ x_axis_variable_vector_magnitude
       ;
 
 y_axis_variable_vector_magnitude
-      : TOKYAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
-      { 
+      : TOKYAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER
+      {
       if(!check_variable_name(&yylloc, scanner, c(pd), $3, Iovs::PhactoriParserInterface::VECTOR))
         YYABORT;
       identifier_command(c(pd), "y axis variable vector magnitude", $3);

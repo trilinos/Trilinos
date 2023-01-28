@@ -1337,8 +1337,8 @@ void BulkData::record_entity_deletion(Entity entity, bool isGhost)
 
 size_t get_max_num_ids_needed_across_all_procs(const stk::mesh::BulkData& bulkData, size_t numIdsNeededThisProc)
 {
-    size_t maxNumNeeded = 0;
-    ThrowRequireMsg(MPI_Allreduce(&numIdsNeededThisProc, &maxNumNeeded, 1, sierra::MPI::Datatype<size_t>::type(), MPI_MAX, bulkData.parallel()) == MPI_SUCCESS,
+    size_t maxNumNeeded = numIdsNeededThisProc;
+    ThrowRequireMsg(MPI_Allreduce(MPI_IN_PLACE, &maxNumNeeded, 1, sierra::MPI::Datatype<size_t>::type(), MPI_MAX, bulkData.parallel()) == MPI_SUCCESS,
             "Program error (MPI_Allreduce failure). Please contact sierra-help@sandia.gov for support.");
     return maxNumNeeded;
 }

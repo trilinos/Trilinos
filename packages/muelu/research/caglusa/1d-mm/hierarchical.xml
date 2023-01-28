@@ -1,0 +1,26 @@
+
+        <ParameterList name="1d fractional Laplacian, s=0.75">
+          <Parameter name="read binary" type="bool" value="false"/>
+          <Parameter name="read local" type="bool" value="true"/>
+          <Parameter name="map" type="string" value="1d-mm/rowmap"/>
+          <Parameter name="near colmap" type="string" value="1d-mm/Anear_colmap"/>
+          <Parameter name="coefficient map" type="string" value="1d-mm/coeffmap"/>
+          <Parameter name="ghosted coefficient map" type="string" value="1d-mm/ghosted_coeffmap"/>
+          <Parameter name="cluster map" type="string" value="1d-mm/clustermap"/>
+          <Parameter name="ghosted cluster map" type="string" value="1d-mm/ghosted_clustermap"/>
+          <Parameter name="gid_cluster_to_gid_coeff" type="string" value="1d-mm/gid_cluster_to_gid_coeff"/>
+
+          <Parameter name="near field matrix" type="string" value="1d-mm/Anear"/>
+
+          <Parameter name="basis expansion coefficient matrix" type="string" value="1d-mm/basismatrix"/>
+          <Parameter name="far field interaction matrix" type="string" value="1d-mm/kernelApproximations"/>
+
+          <ParameterList name="shift coefficient matrices">
+            <Parameter name="0" type="string" value="1d-mm/transfer0"/>
+    <Parameter name="1" type="string" value="1d-mm/transfer1"/>
+    <Parameter name="2" type="string" value="1d-mm/transfer2"/>
+    <Parameter name="3" type="string" value="1d-mm/transfer3"/>
+          </ParameterList>
+
+        </ParameterList>
+        

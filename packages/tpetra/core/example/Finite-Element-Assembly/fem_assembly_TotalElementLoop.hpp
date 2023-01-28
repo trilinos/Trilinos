@@ -569,14 +569,19 @@ namespace TpetraExamples
     
       timerElementLoopMemory = Teuchos::null;
       RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.3) ElementLoop  (Matrix)")));
+
+      // Work around subview of managed views being slower than unmanaged
+      auto all_element_rhs_unmanaged = makeUnmanaged(all_element_rhs);
+      auto all_element_matrix_unmanaged = makeUnmanaged(all_element_matrix);
+      auto all_lcids_unmanaged = makeUnmanaged(all_lcids);
     
       // Loop over owned elements:
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
           // Get subviews
           pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
-          auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
-          auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
-          auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
+          auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
+          auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
+          auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
       
           // Get the contributions for the current element
           ReferenceQuad4(element_matrix);
@@ -610,9 +615,9 @@ namespace TpetraExamples
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numGhostElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
           // Get subviews
           pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
-          auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
-          auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
-          auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
+          auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
+          auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
+          auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
 
           // Get the contributions for the current element
           ReferenceQuad4(element_matrix);

@@ -5,82 +5,75 @@
 // See packages/seacas/LICENSE for details
 
 #include "CatalystMeshWriter.h"
-#include "vtkMultiBlockDataSet.h"
-#include "vtkXMLPMultiBlockDataWriter.h"
-#include "vtkXMLMultiBlockDataWriter.h"
-#include "vtkTrivialProducer.h"
 #include "vtkMultiProcessController.h"
+#include "vtkPartitionedDataSetCollection.h"
+#include "vtkTrivialProducer.h"
+#include "vtkXMLPartitionedDataSetCollectionWriter.h"
+#include <iostream>
+#include <vtkNew.h>
 
 namespace Iovs {
 
-CatalystMeshWriter::CatalystMeshWriter() {
-    this->catalystMeshOneFile = false;
+  CatalystMeshWriter::CatalystMeshWriter()
+  {
+    this->catalystMeshOneFile     = false;
     this->catalystMeshFilePerProc = false;
-}
+  }
 
-CatalystMeshWriter::~CatalystMeshWriter() {
+  CatalystMeshWriter::~CatalystMeshWriter() {}
 
-}
+  bool CatalystMeshWriter::outputCatalystMeshOneFileON() { return this->catalystMeshOneFile; }
 
-bool CatalystMeshWriter::outputCatalystMeshOneFileON() {
-    return this->catalystMeshOneFile;
-}
-
-void CatalystMeshWriter::setOutputCatalystMeshOneFilePrefix(
-    std::string & prefix) {
+  void CatalystMeshWriter::setOutputCatalystMeshOneFilePrefix(std::string &prefix)
+  {
 
     this->catalystMeshOneFilePrefix = prefix;
-    this->catalystMeshOneFile = true;
-}
+    this->catalystMeshOneFile       = true;
+  }
 
-bool CatalystMeshWriter::outputCatalystMeshFilePerProcON() {
+  bool CatalystMeshWriter::outputCatalystMeshFilePerProcON()
+  {
     return this->catalystMeshFilePerProc;
-}
+  }
 
-void CatalystMeshWriter::setOutputCatalystMeshFilePerProcPrefix(
-    std::string & prefix) {
+  void CatalystMeshWriter::setOutputCatalystMeshFilePerProcPrefix(std::string &prefix)
+  {
 
     this->catalystMeshFilePerProcPrefix = prefix;
-    this->catalystMeshFilePerProc = true;
-}
+    this->catalystMeshFilePerProc       = true;
+  }
 
-void CatalystMeshWriter::writeCatalystMeshOneFile(vtkMultiBlockDataSet* mbds,
-    int timeStep) {
+  void CatalystMeshWriter::writeCatalystMeshOneFile(vtkDataObject *dobj, int timeStep)
+  {
 
-    vtkTrivialProducer* producer = vtkTrivialProducer::New();
-    producer->SetOutput(mbds);
-    vtkMultiProcessController* controller =
-        vtkMultiProcessController::GetGlobalController();
-    int myRank = controller->GetLocalProcessId();
-    int numRanks = controller->GetNumberOfProcesses();
-    vtkXMLPMultiBlockDataWriter* writer =
-        vtkXMLPMultiBlockDataWriter::New();
+    vtkNew<vtkTrivialProducer> producer;
+    producer->SetOutput(dobj);
+    vtkMultiProcessController *controller = vtkMultiProcessController::GetGlobalController();
+    int                        myRank     = controller->GetLocalProcessId();
+    int                        numRanks   = controller->GetNumberOfProcesses();
+
+    vtkNew<vtkXMLPartitionedDataSetCollectionWriter> writer;
     writer->SetController(controller);
     writer->SetInputConnection(producer->GetOutputPort());
-    writer->SetNumberOfPieces(numRanks);
-    writer->SetStartPiece(myRank);
     std::ostringstream extension;
     extension << "." << writer->GetDefaultFileExtension();
     std::ostringstream time;
     time << timeStep;
-    std::string fileName = this->catalystMeshOneFilePrefix +\
-        "_time_" + time.str() + extension.str();
+    std::string fileName =
+        this->catalystMeshOneFilePrefix + "_time_" + time.str() + extension.str();
     writer->SetFileName(fileName.c_str());
     writer->Write();
-    writer->Delete();
-    producer->Delete();
-}
+  }
 
-void CatalystMeshWriter::writeCatalystMeshFilePerProc(
-    vtkMultiBlockDataSet* mbds, int timeStep) {
+  void CatalystMeshWriter::writeCatalystMeshFilePerProc(vtkDataObject *dobj, int timeStep)
+  {
 
-    vtkTrivialProducer* producer = vtkTrivialProducer::New();
-    producer->SetOutput(mbds);
-    vtkMultiProcessController* controller =
-        vtkMultiProcessController::GetGlobalController();
-    int myRank = controller->GetLocalProcessId();
-    vtkXMLMultiBlockDataWriter* writer =
-        vtkXMLMultiBlockDataWriter::New();
+    vtkNew<vtkTrivialProducer> producer;
+    producer->SetOutput(dobj);
+    vtkMultiProcessController *controller = vtkMultiProcessController::GetGlobalController();
+    int                        myRank     = controller->GetLocalProcessId();
+
+    vtkNew<vtkXMLPartitionedDataSetCollectionWriter> writer;
     writer->SetInputConnection(producer->GetOutputPort());
     std::ostringstream extension;
     extension << "." << writer->GetDefaultFileExtension();
@@ -88,12 +81,10 @@ void CatalystMeshWriter::writeCatalystMeshFilePerProc(
     time << timeStep;
     std::ostringstream proc;
     proc << myRank;
-    std::string fileName = this->catalystMeshFilePerProcPrefix +\
-        "_proc_" + proc.str() + "_time_" + time.str() + extension.str();
+    std::string fileName = this->catalystMeshFilePerProcPrefix + "_proc_" + proc.str() + "_time_" +
+                           time.str() + extension.str();
     writer->SetFileName(fileName.c_str());
     writer->Write();
-    writer->Delete();
-    producer->Delete();
-}
+  }
 
 } // namespace Iovs

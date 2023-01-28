@@ -36,6 +36,7 @@
 #include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_EQ
 #include "stk_ngp_test/ngp_test.hpp"  // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_TRUE
 #include "stk_topology/topology.hpp"  // for topology, topology::BEAM_2, topology::EDGE_RANK
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "topology_test_utils.hpp"    // for check_edge_node_ordinals, check_edge_node_ordinals_ngp
 #include <vector>                     // for vector
 
@@ -100,7 +101,7 @@ void check_beam2_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_beam2());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_beam2());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::BEAM_2;
 
@@ -210,7 +211,7 @@ void check_beam3_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_beam3());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_beam3());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::BEAM_3;
 

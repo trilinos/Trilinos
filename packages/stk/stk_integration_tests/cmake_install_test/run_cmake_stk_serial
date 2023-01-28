@@ -30,9 +30,7 @@ cmake \
 -DTPL_ENABLE_MPI=OFF \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
--DTrilinos_ENABLE_STKSimd:BOOL=ON \
--DTrilinos_ENABLE_STKMath:BOOL=ON \
--DTrilinos_ENABLE_STKTopology:BOOL=ON \
+-DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \

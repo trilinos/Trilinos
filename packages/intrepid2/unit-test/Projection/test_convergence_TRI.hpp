@@ -277,8 +277,7 @@ int ConvergenceTri(const bool verbose) {
     // Get nodal coordinates
     DynRankView ConstructWithLabel(nodeCoord, numNodes, dim);
     auto hNodeCoord = Kokkos::create_mirror_view(nodeCoord);
-    int inode = 0;
-    for (int j=0; j<NY+1; j++) {
+    for (int j=0, inode=0; j<NY+1; j++) {
       for (int i=0; i<NX+1; i++) {
         hNodeCoord(inode,0) = leftX + (double)i*hx;
         hNodeCoord(inode,1) = leftY + (double)j*hy;
@@ -389,7 +388,6 @@ int ConvergenceTri(const bool verbose) {
           DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
           linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
           ExecSpaceType().fence();
-          DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
           Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
           KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)

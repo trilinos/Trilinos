@@ -90,12 +90,12 @@ class PhactoriStreamTracerOperation(PhactoriOperationSpecifics):
       myDebugPrint3("stido0 st: " + str(stido0.GetClassName()) + "\n")
       stido1 = stcso.GetInputDataObject(1,0)
       myDebugPrint3("stido1 st: " + str(stido1.GetClassName()) + " numcells " + str(stido1.GetNumberOfCells()) + " numpoints " + str(stido1.GetNumberOfPoints()) + "\n")
-
+ 
     SetActiveSource(newParaViewFilter)
     SetActiveSource(savedActiveSource)
 
     UpdatePipelineWithCurrentTimeArgument(newParaViewFilter)
-
+     
     if PhactoriDbg(100):
       stcso = newParaViewFilter.GetClientSideObject()
       stodo = stcso.GetOutputDataObject(0)
@@ -104,7 +104,7 @@ class PhactoriStreamTracerOperation(PhactoriOperationSpecifics):
       myDebugPrint3("B stido0 st: " + str(stido0.GetClassName()) + "\n")
       stido1 = stcso.GetInputDataObject(1,0)
       myDebugPrint3("B stido1 st: " + str(stido1.GetClassName()) + " numcells " + str(stido1.GetNumberOfCells()) + " numpoints " + str(stido1.GetNumberOfPoints()) + "\n")
-
+ 
     if PhactoriDbg(100):
       myDebugPrint3('PhactoriStreamTracerOperation.CreateParaViewFilter returning\n', 100)
 

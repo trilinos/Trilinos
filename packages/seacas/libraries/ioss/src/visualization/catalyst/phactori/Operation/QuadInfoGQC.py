@@ -191,3 +191,4 @@ class QuadInfoGQC:
     return self.MakeSamplePointsAlongRayStartingAtAveragePoint(self.normal, 50, 0.05)
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+

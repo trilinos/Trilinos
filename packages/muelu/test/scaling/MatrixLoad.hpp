@@ -118,7 +118,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     // Create map and coordinates
     // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    if (matrixType == "Laplace1D") {
+    if (matrixType == "Laplace1D" || matrixType == "Identity") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
@@ -195,17 +195,24 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
     } else {
       A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, lib, comm, binaryFormat);
-
-      if (!map.is_null()) {
-        RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
-        RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
-        newMatrix->doImport(*A, *importer, Xpetra::INSERT);
-        newMatrix->fillComplete();
-
-        A.swap(newMatrix);
-      }
     }
-    map = A->getMap();
+
+    //If no rowmap file has been provided and the driver is being run in parallel,
+    //create a uniformly distributed map and use it as A's row map.
+    if (map.is_null() && comm->getSize() > 1) {
+      if (comm->getRank()==0)
+        std::cout << "No rowmap file specified, redistributing matrix using a uniformly distributed rowmap." << std::endl;
+      map = Xpetra::MapFactory<LO,GO,Node>::Build(lib, A->getRowMap()->getGlobalNumElements(), (int) 0, comm);
+
+      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
+      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
+      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
+      newMatrix->fillComplete();
+
+      A.swap(newMatrix);
+    } else {
+      map = A->getRowMap();
+    }
 
     comm->barrier();
 

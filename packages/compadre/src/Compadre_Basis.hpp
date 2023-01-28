@@ -724,15 +724,13 @@ void calcGradientPij(const BasisData& data, const member_type& teamMember, doubl
 
     } else if ((polynomial_sampling_functional == VectorPointSample) &&
                (reconstruction_space == DivergenceFreeVectorTaylorPolynomial)) {
-        // Divergence free vector polynomial basis
-        double cutoff_p = data._epsilons(target_index);
 
+        // Divergence free vector polynomial basis
         DivergenceFreePolynomialBasis::evaluatePartialDerivative(teamMember, delta, thread_workspace, dimension, poly_order, component, partial_direction, cutoff_p, relative_coord.x, relative_coord.y, relative_coord.z);
 
     } else if (reconstruction_space == BernsteinPolynomial) {
-        // Bernstein vector polynomial basis
-        double cutoff_p = data._epsilons(target_index);
 
+        // Bernstein vector polynomial basis
         BernsteinPolynomialBasis::evaluatePartialDerivative(teamMember, delta, thread_workspace, dimension, poly_order, component, partial_direction, cutoff_p, relative_coord.x, relative_coord.y, relative_coord.z);
 
     } else {

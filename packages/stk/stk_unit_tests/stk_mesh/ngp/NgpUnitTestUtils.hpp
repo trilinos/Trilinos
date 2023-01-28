@@ -116,7 +116,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
 
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   CheckElementMembership checkElementMembership(ngpMesh, bucketPartOrdinals, numBuckets);
-  Kokkos::parallel_for(1, checkElementMembership);
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), checkElementMembership);
 
   using BucketEntitiesType = Kokkos::View<stk::mesh::EntityId*, stk::ngp::MemSpace>;
   BucketEntitiesType bucketEntities("bucketEntities", numElemsAcrossBuckets+numBuckets);
@@ -131,7 +131,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
   }
   Kokkos::deep_copy(bucketEntities, hostBucketEntities);
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t /*index*/) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(size_t /*index*/) {
                          NGP_ASSERT_EQ(ngpMesh.num_buckets(stk::topology::ELEM_RANK), numBuckets);
                          size_t idx = 0;
                          for (unsigned bucketIdx = 0; bucketIdx < numBuckets; ++bucketIdx) {

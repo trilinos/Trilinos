@@ -91,6 +91,32 @@ using HostPinnedSpace = Kokkos::Experimental::HIPHostPinnedSpace;
 using HostPinnedSpace = MemSpace;
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+template <typename ExecutionSpace>
+using RangePolicy = Kokkos::RangePolicy<ExecutionSpace, Kokkos::LaunchBounds<128, 1>>;
+
+using HostRangePolicy = Kokkos::RangePolicy<HostExecSpace, Kokkos::LaunchBounds<128, 1>>;
+using DeviceRangePolicy = Kokkos::RangePolicy<ExecSpace, Kokkos::LaunchBounds<128, 1>>;
+
+template <typename ExecutionSpace>
+using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace, Kokkos::LaunchBounds<128, 1>>;
+
+using HostTeamPolicy = Kokkos::TeamPolicy<HostExecSpace, Kokkos::LaunchBounds<128, 1>>;
+using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace, Kokkos::LaunchBounds<128, 1>>;
+#else
+template <typename ExecutionSpace>
+using RangePolicy = Kokkos::RangePolicy<ExecutionSpace>;
+
+using HostRangePolicy = Kokkos::RangePolicy<HostExecSpace>;
+using DeviceRangePolicy = Kokkos::RangePolicy<ExecSpace>;
+
+template <typename ExecutionSpace>
+using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+
+using HostTeamPolicy = Kokkos::TeamPolicy<HostExecSpace>;
+using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
+#endif
+
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
 
 }

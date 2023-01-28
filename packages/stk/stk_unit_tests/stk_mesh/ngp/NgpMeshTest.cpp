@@ -72,7 +72,7 @@ public:
     stk::NgpVector<double> numNodesVec("numNodes", 1);
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    Kokkos::parallel_for(1,
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                          KOKKOS_LAMBDA(const int i)
                          {
                            stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, stk::mesh::FastMeshIndex{0,0});
@@ -142,7 +142,7 @@ void run_vector_gpu_test()
 {
   size_t n = 10;
   stk::NgpVector<double> vec("vec", n);
-  Kokkos::parallel_for(n,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, n),
                        KOKKOS_LAMBDA(const int i)
                        {
                          vec.device_get(i) = i;
@@ -159,7 +159,7 @@ TEST(StkVectorGpuTest, gpu_runs)
 
 void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMesh & ngpMesh, int proc, const stk::mesh::DeviceCommMapIndices & deviceCommMapIndicesGold)
 {
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(size_t i)
                        {
                          stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);

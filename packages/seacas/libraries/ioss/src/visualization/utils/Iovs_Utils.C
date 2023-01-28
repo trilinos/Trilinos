@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <visualization/utils/Iovs_CatalystLogging.h>
+#include <visualization/utils/Iovs_CatalystVersion.h>
 #include <visualization/utils/Iovs_Utils.h>
 
 #if defined(__IOSS_WINDOWS__)
@@ -58,6 +59,7 @@ namespace Iovs {
   {
     if (this->catalystManager == nullptr) {
       this->catalystManager = this->createCatalystManagerInstance();
+      this->checkCatalystInterfaceAndPluginVersions();
     }
     return *this->catalystManager;
   }
@@ -86,6 +88,17 @@ namespace Iovs {
 #else
     return nullptr;
 #endif
+  }
+
+  void Utils::checkCatalystInterfaceAndPluginVersions()
+  {
+    CatalystVersion cv;
+    std::string     iVer = cv.getIOSSCatalystInterfaceVersion();
+    std::string     pVer = this->catalystManager->getCatalystPluginVersion();
+    if (!cv.isInterfaceCompatibleWithPlugin(iVer, pVer)) {
+      throw std::runtime_error("IOSS Catalyst interface version: " + iVer +
+                               ", is not compatible with IOSS Catalyst plugin version: " + pVer);
+    }
   }
 
   std::unique_ptr<Iovs_exodus::CatalystExodusMeshBase>

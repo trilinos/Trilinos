@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -83,19 +83,30 @@ ACCESSBIN="`dirname \"$0\"`"
 ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 
 # Text color variables
-if [[ $TERM != *"xterm"* ]]; then
+if [[ $TERM == *"xterm"* ]] || [[ $TERM == "screen" ]]; then
+    txtund=$(tput sgr 0 1)    # Underline
+    txtbld=$(tput bold)       # Bold
+    txtred=$(tput setaf 1)    # Red
+    txtgrn=$(tput setaf 2)    # Green
+    txtylw=$(tput setaf 3)    # Yellow
+    txtblu=$(tput setaf 4)    # Blue
+    txtpur=$(tput setaf 5)    # Purple
+    txtcyn=$(tput setaf 6)    # Cyan
+    txtwht=$(tput setaf 7)    # White
+    txtrst=$(tput sgr0)       # Text reset
+else
     export TERM=dumb
+    txtund=""
+    txtbld=""
+    txtred=""
+    txtgrn=""
+    txtylw=""
+    txtblu=""
+    txtpur=""
+    txtcyn=""
+    txtwht=""
+    txtrst=""
 fi
-txtund=$(tput sgr 0 1)    # Underline
-txtbld=$(tput bold)       # Bold
-txtred=$(tput setaf 1)    # Red
-txtgrn=$(tput setaf 2)    # Green
-txtylw=$(tput setaf 3)    # Yellow
-txtblu=$(tput setaf 4)    # Blue
-txtpur=$(tput setaf 5)    # Purple
-txtcyn=$(tput setaf 6)    # Cyan
-txtwht=$(tput setaf 7)    # White
-txtrst=$(tput sgr0)       # Text reset
 
 echo " "
 echo "=============================================================="

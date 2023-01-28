@@ -165,13 +165,13 @@ class HostField : public NgpFieldBase
 
   void set_all(const HostMesh& ngpMesh, const T& value)
   {
-    stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const FastMeshIndex& entity) {
-                                     T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
-                                     int numScalars = stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
-                                     for (int i=0; i<numScalars; i++) {
-                                       fieldPtr[i] = value;
-                                     }
-                             });
+    stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, [&](const FastMeshIndex& entity) {
+      T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
+      int numScalars = stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
+      for (int i = 0; i < numScalars; i++) {
+        fieldPtr[i] = value;
+      }
+    });
   }
 
   void modify_on_host() override { field->modify_on_host(); }

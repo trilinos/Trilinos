@@ -14,6 +14,7 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include "StkMesh.hpp"
+#include <stk_mesh/base/FieldParallel.hpp>
 #include <memory>
 #include <utility>
 
@@ -28,9 +29,9 @@ public:
     m_fieldName(fieldName)
   {
   }
-  using EntityKey = uint64_t;
-  using EntityProc = stk::search::IdentProc<EntityKey>;
-  using EntityProcVec = std::vector<EntityProc>;
+  using EntityKey = StkMesh::EntityKey;
+  using EntityProc = StkMesh::EntityProc;
+  using EntityProcVec = StkMesh::EntityProcVec;
   using BoundingBox = StkMesh::BoundingSphere;
 
   //Used for Reduced dependency
@@ -41,10 +42,17 @@ public:
 
   MPI_Comm comm() const {return m_comm;}
 
-  void update_values() {called_update_values = true;}
+  void update_values()
+  {
+    const stk::mesh::BulkData& bulk = *(m_mesh.get_stk_mesh());
+    std::vector<const stk::mesh::FieldBase*> fields = {stk::mesh::get_field_by_name(m_fieldName, bulk.mesh_meta_data())};
+    const bool syncOnlySharedOrGhosted = false;
+    stk::mesh::communicate_field_data(bulk, fields, syncOnlySharedOrGhosted);
+    
+    called_update_values = true;
+  }
 
   bool called_update_values = false;
-  bool owning_rank() const { return stk::parallel_machine_rank(m_mesh.comm()) == m_mesh.owning_rank(); }
 
   void set_field_value(const EntityKey & entityKey, const double & value)
   {

@@ -107,6 +107,8 @@ Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -236,6 +238,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (<Direct> solver interface)
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -83,7 +83,7 @@ class PhactoriGroupOperation(PhactoriOperationSpecifics):
           "Error:  operation '" + str(ii) + "' paraview filter not "
           "constructed\n")
       self.mOperationList.append(inputOperationBlock.GetPvFilter())
-
+      
     newParaViewFilter = GroupDatasets(Input = self.mOperationList)
 
     SetActiveSource(newParaViewFilter)
@@ -96,3 +96,4 @@ class PhactoriGroupOperation(PhactoriOperationSpecifics):
 
     return newParaViewFilter
 #phactori_combine_to_single_python_file_subpiece_end_1
+

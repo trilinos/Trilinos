@@ -1,0 +1,28 @@
+{
+"camera blocks":{
+  "camxyz1":{"camera type":"camera","look direction":[-1,-1,-1]}
+},
+"representation blocks":{
+  "rep_vonmises":{"color by scalar":"vonmises"},
+  "rep_pressure":{"color by scalar":"pressure"},
+  "rep_density":{"color by scalar":"density"},
+  "rep_temperature":{"color by scalar":"temperature"}
+},
+"imageset blocks":{
+  "is_test9b":{
+    "operation":"inputB",
+    "camera":"camxyz1",
+    "representation":"rep_vonmises",
+    "image basedirectory":"CatalystOutput_test9",
+    "image basename":"test9_inputB."
+  }
+},
+"operation blocks":{},
+"text annotation blocks":{},
+"scatter plot blocks":{},
+"plot over time blocks":{},
+"experimental blocks":{},
+"onoff criteria blocks":{},
+"visual marker blocks":{}
+}
+

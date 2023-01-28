@@ -70,7 +70,7 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
         errStr = "PhactoriPointSourceGeometrySampler1::ValidateJsonPointList\n" \
           "point with index " + str(ptNdx) + "does not have three elements\n"
         myDebugPrint3AndException(errStr)
-
+      
 
   def ParseParametersFromJson(self, inJson):
     if 'filename' in inJson:
@@ -93,7 +93,7 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
 
     pidWithDataList = UseReduceOnIntegerList(localPidList, 0)
     return pidWithDataList, globalDistSqrdList
-
+    
   def UseMpiToGetGlobalQuadsClosest(self, inLocalQuadList, inLocalDistSqrdList):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriPointSourceGeometrySampler1.UseMpiToGetGlobalQuadsClosest entered\n", 100)
@@ -205,3 +205,4 @@ class PhactoriPointSourceGeometrySampler1(PhactoriOperationSpecifics):
     return self.ParaviewPointSource
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+
