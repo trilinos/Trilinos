@@ -259,7 +259,7 @@ class MachineLearningStatistics_Hex3D {
         edge_length_1 = distance2(nodeCoord, node1, node2);
         edge_length_2 = distance2(nodeCoord, node3, node4);
         double my_ratio = edge_length_1 / edge_length_2;
-        my_ratio  std::min(my_ratio, 1/my_ratio);
+        my_ratio = std::min(my_ratio, 1/my_ratio);
         ratio = std::min(ratio, my_ratio);
       }
       local_stat_max[5] = std::max(local_stat_max[5], ratio);
