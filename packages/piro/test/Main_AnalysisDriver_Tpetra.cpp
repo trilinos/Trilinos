@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
         RCP<Thyra::ModelEvaluator<double>> model, adjointModel(Teuchos::null);
         if (mockModel=="MockModelEval_A_Tpetra") {
           if(boundConstrained) {
-            model = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams));
+            model = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams,true));
             if(explicitAdjointME)
               adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
             modelName = "A";
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
         else {//if (mockModel=="MockModelEval_B_Tpetra") 
-          model = rcp(new MockModelEval_B_Tpetra(appComm,false,probParams));
+          model = rcp(new MockModelEval_B_Tpetra(appComm,false,probParams,true));
           if(explicitAdjointME)
             adjointModel = rcp(new MockModelEval_B_Tpetra(appComm,true));
           modelName = "B";
