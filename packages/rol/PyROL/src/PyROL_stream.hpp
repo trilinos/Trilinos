@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "Teuchos_RCP.hpp"
 
 namespace ROL {
 
@@ -16,8 +17,8 @@ namespace ROL {
     outdata.close();
   }
 
-  std::ostream& getCout() {
-    std::ostream &out(std::cout);
+  Teuchos::RCP<std::ostream> getCout() {
+    Teuchos::RCP<std::ostream> out = Teuchos::rcp(&std::cout, false);
     return out;
   }
 }
