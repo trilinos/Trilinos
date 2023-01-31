@@ -48,10 +48,11 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport)
 {
     comm = appComm;
     adjointModel = adjoint;
+    hessSupport = hessianSupport;
 
     //set up map and initial guess for solution vector
     const int vecLength = 4;
@@ -277,7 +278,7 @@ MockModelEval_A_Tpetra::createOutArgsImpl() const
   result.setSupports(
         Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
 
-  result.setHessianSupports(true);
+  result.setHessianSupports(hessSupport);
 
   return result;
 }
@@ -358,25 +359,25 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         ConverterT::getConstTpetraVector(inArgs.get_f_multiplier()) :
         Teuchos::null;
 
-  auto f_hess_xx_v = outArgs.get_hess_vec_prod_f_xx();
+  auto f_hess_xx_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_xx) ? outArgs.get_hess_vec_prod_f_xx() : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_xx_v_out =
       Teuchos::nonnull(f_hess_xx_v) ?
         ConverterT::getTpetraMultiVector(f_hess_xx_v) :
         Teuchos::null;
 
-  auto f_hess_xp_v = outArgs.get_hess_vec_prod_f_xp(0);
+  auto f_hess_xp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_xp,0) ? outArgs.get_hess_vec_prod_f_xp(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_xp_v_out =
       Teuchos::nonnull(f_hess_xp_v) ?
         ConverterT::getTpetraMultiVector(f_hess_xp_v) :
         Teuchos::null;
 
-  auto f_hess_px_v = outArgs.get_hess_vec_prod_f_px(0);
+  auto f_hess_px_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_px,0) ? outArgs.get_hess_vec_prod_f_px(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_px_v_out =
       Teuchos::nonnull(f_hess_px_v) ?
         ConverterT::getTpetraMultiVector(f_hess_px_v) :
         Teuchos::null;
 
-  auto f_hess_pp_v = outArgs.get_hess_vec_prod_f_pp(0,0);
+  auto f_hess_pp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_pp,0,0) ? outArgs.get_hess_vec_prod_f_pp(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_pp_v_out =
       Teuchos::nonnull(f_hess_pp_v) ?
         ConverterT::getTpetraMultiVector(f_hess_pp_v) :
@@ -393,25 +394,25 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         ConverterT::getConstTpetraVector(inArgs.get_g_multiplier(0)) :
         Teuchos::null;
 
-  auto g_hess_xx_v = outArgs.get_hess_vec_prod_g_xx(0);
+  auto g_hess_xx_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_xx,0) ? outArgs.get_hess_vec_prod_g_xx(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_xx_v_out =
       Teuchos::nonnull(g_hess_xx_v) ?
         ConverterT::getTpetraMultiVector(g_hess_xx_v) :
         Teuchos::null;
 
-  auto g_hess_xp_v = outArgs.get_hess_vec_prod_g_xp(0,0);
+  auto g_hess_xp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_xp,0,0) ? outArgs.get_hess_vec_prod_g_xp(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_xp_v_out =
       Teuchos::nonnull(g_hess_xp_v) ?
         ConverterT::getTpetraMultiVector(g_hess_xp_v) :
         Teuchos::null;
 
-  auto g_hess_px_v = outArgs.get_hess_vec_prod_g_px(0,0);
+  auto g_hess_px_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_px,0,0) ? outArgs.get_hess_vec_prod_g_px(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_px_v_out =
       Teuchos::nonnull(g_hess_px_v) ?
         ConverterT::getTpetraMultiVector(g_hess_px_v) :
         Teuchos::null;
 
-  auto g_hess_pp_v = outArgs.get_hess_vec_prod_g_pp(0,0,0);
+  auto g_hess_pp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_pp,0,0,0) ? outArgs.get_hess_vec_prod_g_pp(0,0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_pp_v_out =
       Teuchos::nonnull(g_hess_pp_v) ?
         ConverterT::getTpetraMultiVector(g_hess_pp_v) :
@@ -476,8 +477,9 @@ void MockModelEval_A_Tpetra::evalModelImpl(
       }
     }
     
+    auto hess_g_pp = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_g_pp,0,0,0) ? outArgs.get_hess_g_pp(0,0,0) : Teuchos::null;
     const Teuchos::RCP<MatrixBased_LOWS> H_pp_out =
-      Teuchos::nonnull(outArgs.get_hess_g_pp(0,0,0)) ?
+      Teuchos::nonnull(hess_g_pp) ?
         Teuchos::rcp_dynamic_cast<MatrixBased_LOWS>(outArgs.get_hess_g_pp(0,0,0)):
         Teuchos::null;
     

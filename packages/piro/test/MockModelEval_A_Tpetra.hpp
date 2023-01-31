@@ -85,7 +85,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
 
   //@}
 
@@ -185,6 +185,9 @@ class MockModelEval_A_Tpetra
 
    //whether to compute the adjoint model
    bool adjointModel;
+
+   //whether hessian is supported 
+   bool hessSupport;
 
    //Problem parameter list
    Teuchos::RCP<Teuchos::ParameterList> probList_;
