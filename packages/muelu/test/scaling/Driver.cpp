@@ -454,6 +454,9 @@ MueLu::MueLu_AMGX_initialize_plugins();
         }
         if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
+
+        if (useStackedTimer && runCount > 1)
+          stacked_timer->startBaseTimer();
       }
 
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
