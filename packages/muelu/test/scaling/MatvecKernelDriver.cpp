@@ -171,15 +171,19 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   }
 
   // Slightly cleaner
-  const int NUM_TIMERS = 5;
-  std::string SPMV_test_names[NUM_TIMERS] = {"colind","rowptr","vals","x","y"};
+  const int NUM_TIMERS = 6;
+  std::string SPMV_test_names[NUM_TIMERS] = {"colind","rowptr","vals","x","y","all"};
   std::vector<int> SPMV_num_objects(NUM_TIMERS), SPMV_object_size(NUM_TIMERS);
   SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
   SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
   SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
   SPMV_num_objects[3] = n;       SPMV_object_size[3] = sizeof(SC);  // x
   SPMV_num_objects[4] = m;       SPMV_object_size[4] = sizeof(SC);  // y
-  
+
+  // All-Model: 
+  SPMV_object_size[5] = 1;
+  SPMV_num_objects[5]  = (m+1)*sizeof(rowptr_type) + nnz*sizeof(LO) + nnz*sizeof(SC) + 
+    n*sizeof(SC) + m*sizeof(SC);  
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
   if(verbose && rank == 0)
@@ -208,7 +212,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   }
 
   /***************************************************************************/
-  // *** Calculate SPMV minimum time (local) ***
+  // *** Calculate SPMV minimum time (composite) ***
   // Model: 
   // rowptr = One read per row
   // colind = One read per entry
@@ -221,13 +225,18 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
      nnz * sizeof(LO), //colind
      nnz * sizeof(SC), // values
      nnz * sizeof(SC), //x
-     m * sizeof(SC) // y
+     m * sizeof(SC), // y
+     0
     };
+  for(int i=0; i<NUM_TIMERS-1; i++)
+    spmv_memory_bytes[NUM_TIMERS-1] += spmv_memory_bytes[i];
 
-  double minimum_local_time = 0.0;
-  for(int i=0; i<NUM_TIMERS; i++)
-    minimum_local_time +=  spmv_memory_bytes[i] / (GB * gb_per_sec[i]);
 
+  double minimum_local_composite_time = 0.0;
+  for(int i=0; i<NUM_TIMERS-1; i++)
+    minimum_local_composite_time +=  spmv_memory_bytes[i] / (GB * gb_per_sec[i]);
+
+  double minimum_local_all_time = spmv_memory_bytes[NUM_TIMERS-1] / (GB * gb_per_sec[NUM_TIMERS-1]);
 
   /***************************************************************************/
   // *** Calculate Remote part of the SPMV ***
@@ -303,14 +312,15 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       time_communicate = std::max(send_time,recv_time);
     }
   }
-  double minimum_time_in_place     = minimum_local_time + time_communicate + time_pack_unpack_inplace;
-  double minimum_time_out_of_place = minimum_local_time + time_communicate + time_pack_unpack_outofplace;
+  double minimum_time_in_place     = time_communicate + time_pack_unpack_inplace;
+  double minimum_time_out_of_place = time_communicate + time_pack_unpack_outofplace;
 
 
   /***************************************************************************/
   if(rank == 0)
     std::cout << "\n\n========================================================\n"
-              << "Minimum time model (local only): " << minimum_local_time << std::endl
+              << "Minimum time model (composite) : " << minimum_local_composite_time << std::endl
+              << "Minimum time model (all)       : " << minimum_local_all_time << std::endl
               << "Pack/unpack in-place           : " << time_pack_unpack_inplace << std::endl
               << "Pack/unpack out-of-place       : " << time_pack_unpack_outofplace << std::endl
               << "Communication time             : " << time_communicate << std::endl;
@@ -329,16 +339,18 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(rank == 0) {
     if(!globalTimeMonitor.is_null()) {
-      printf("%-60s %30s %30s %30s\n","Timer","Speedup vs. local model","Speedup vs. comm (in place)","Speedup vs. comm (oo place)");
-      printf("%-60s %30s %30s %30s\n","-----","-----------------------","---------------------------","---------------------------");
+      printf("%-60s %30s %30s %30s %30s %30s %30s\n","Timer","Speedup vs. comp model ","Speedup vs. comp+inplace   ","Speedup vs. comp+ooplace   ","Speedup vs. all model      ","Speedup vs. all+inplace    ","Speedup vs. all+ooplace    ");
+      printf("%-60s %30s %30s %30s %30s %30s %30s\n","-----","-----------------------","---------------------------","---------------------------","---------------------------","---------------------------","---------------------------");
       for(int i=0; i<(int)timer_names.size(); i++) {
         Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
         if(!t.is_null()) {
           double time_per_call = t->totalElapsedTime() / t->numCalls();
-          double p_local = minimum_local_time / time_per_call;
+          double p_comp = minimum_local_composite_time / time_per_call;
+          double p_all = minimum_local_all_time / time_per_call;
           double p_inplace = minimum_time_in_place / time_per_call;
           double p_ooplace = minimum_time_out_of_place / time_per_call;
-          printf("%-60s %30.2f %30.2f %30.2f\n",timer_names[i],p_local,p_inplace,p_ooplace);
+
+          printf("%-60s %30.2f %30.2f %30.2f %30.2f %30.2f %30.2f\n",timer_names[i],p_comp,p_comp+p_inplace,p_comp+p_ooplace,p_all,p_all+p_inplace,p_all+p_ooplace);
         }
       }
     }
