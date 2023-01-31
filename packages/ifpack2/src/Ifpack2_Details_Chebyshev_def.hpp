@@ -307,6 +307,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   fourthKindAlgorithm_ (false),
+  useOptimalWeights_ (false),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -341,6 +342,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   fourthKindAlgorithm_ (false),
+  useOptimalWeights_ (false),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -389,6 +391,7 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultFourthKindAlgorithm = false;
+  const bool defaultUseOptimalWeights = false;
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
@@ -413,6 +416,7 @@ setParameters (Teuchos::ParameterList& plist)
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool fourthKindAlgorithm = defaultFourthKindAlgorithm;
+  bool useOptimalWeights = defaultUseOptimalWeights;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
   bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
@@ -649,6 +653,9 @@ setParameters (Teuchos::ParameterList& plist)
   if (plist.isParameter ("chebyshev: fourth kind algorithm")) {
     fourthKindAlgorithm = plist.get<bool> ("chebyshev: fourth kind algorithm");
   }
+  if (plist.isParameter ("chebyshev: use optimal weights")) {
+    useOptimalWeights = plist.get<bool> ("chebyshev: use optimal weights");
+  }
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
@@ -709,6 +716,7 @@ setParameters (Teuchos::ParameterList& plist)
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   fourthKindAlgorithm_ = fourthKindAlgorithm;
+  useOptimalWeights_ = useOptimalWeights;
   computeMaxResNorm_ = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
@@ -1321,6 +1329,11 @@ fourthKindApplyImpl (const op_type& A,
                      const V& D_inv) const
 {
   const auto betas = optimalWeightsImpl<ScalarType>(numIters);
+
+  // standard 4th kind Chebyshev smoother has \beta_i := 1
+  if(!useOptimalWeights_){
+    std::fill(betas.begin(), betas.end(), 1.0);
+  }
 
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);

@@ -515,6 +515,10 @@ private:
   //! Whether to use Chebyshev polynomials of the 4th kind with optimal weights.
   bool fourthKindAlgorithm_;
 
+  //! Whether to use optimal weights for the Chebyshev polynomial.
+  //  Only applicable when using the Chebyshev polynomials of the 4th kind.
+  bool useOptimalWeights_;
+
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
 
