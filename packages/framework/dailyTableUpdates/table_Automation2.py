@@ -19,7 +19,7 @@ SYNOPSIS
 #STATUS: [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
 
 <User inputs twelve charter(s) from terminal>
-updated table string example: python table_Automation2.py 0 1 2 3 4 0 5 6 7 8 9 10 
+updated table string example: python table_Automation2.py 0 0 2 22 21 0 5 3 4 57 1 000
 """
 from time import sleep as pause
 from datetime import timedelta
@@ -71,7 +71,7 @@ def main():
         number_of_successful_mm = stat_container[10]
         jira_ticket_number = stat_container[11]
     except:
-        print("Requires more arguments ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
+        print("Requires more arguments ... Example: table_Automation.py 0 0 2 22 21 0 5 3 4 57 1 000")
     try:
         NUMBER_OF_PRs_MERGED = "["+number_of_pr_merged+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
         NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
@@ -83,7 +83,7 @@ def main():
         CHANGE_REQUESTED = "["+number_change_requested+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Achanges-requested+-label%3A%22AT%3A+WIP%22)"
         REVIEW_APROVED = "["+number_review_approved+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+-status%3Afailure+-label%3A%22AT%3A+WIP%22)"
     except:
-        print("Missing required argument(s)... Example: table_Automation.py 0 4 6 4 72 0 4 435")
+        print("Missing required argument(s)... Example: table_Automation.py 0 0 2 22 21 0 5 3 4 57 1 000")
     try:
         writer = ptw.MarkdownTableWriter(
               table_name="Trilinos Status Table",
@@ -93,11 +93,11 @@ def main():
               ],
           )
     except:
-        print("Not enough arguments ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
+        print("Not enough arguments ... Example: table_Automation.py 0 0 2 22 21 0 5 3 4 57 1 000")
     try:
         print(writer)
     except:
-        print("Can not write to file, missing arguements ... Example: table_Automation.py 0 4 6 4 72 0 4 435")
+        print("Can not write to file, missing arguements ... Example: table_Automation.py 0 0 2 22 21 0 5 3 4 57 1 000")
             
 if __name__ == "__main__":
     main()
