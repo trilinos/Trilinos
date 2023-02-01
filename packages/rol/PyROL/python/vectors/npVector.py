@@ -33,8 +33,11 @@ class npVector(getTypeName('Vector')):
     def norm(self):
         return LA.norm(self.values)
 
+    def zero(self):
+        self.setScalar(0.)
+
     def clone(self):
-        tmp = npVector(np.empty_like(self.values))
+        tmp = type(self)(np.full(self.values.shape, fill_value=np.nan))
         self.copies.append(tmp)
         return tmp
 
