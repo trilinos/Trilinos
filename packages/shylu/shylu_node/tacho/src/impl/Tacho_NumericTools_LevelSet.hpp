@@ -2360,7 +2360,7 @@ public:
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0
+        const ordinal_type qid = 0;
 #endif
         blas_handle_type handle_blas = getBlasHandle(qid);
 
