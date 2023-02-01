@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterEntry, move_constructor)
   //! Same behavior is expected for the move-assign.
   ParameterEntry move_assigned;
   move_assigned = std::move(move_constructed);
-  TEST_EQUALITY(move_constructed.getAny().access_content(),nullptr);
+  TEST_ASSERT  (move_constructed.getAny().access_content() == nullptr);
   TEST_EQUALITY(move_constructed.getAny().has_value(),false);
   TEST_EQUALITY(Teuchos::any_cast<std::string>(move_assigned.getAny()),"nice-entry");
 }

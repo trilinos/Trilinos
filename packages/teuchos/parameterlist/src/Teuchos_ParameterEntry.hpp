@@ -88,8 +88,8 @@ public:
   //! Move constructor.
   ParameterEntry(ParameterEntry&& other);
 
-  //! Templated constructor
-  template<typename T>
+  //! Templated constructor. @note Accepting a @ref ParameterEntry would lead to infinite recursion.
+  template <typename T, typename = std::enable_if_t< ! std::is_same_v<std::decay_t<T>, ParameterEntry>>>
   explicit ParameterEntry(
     T&& value, bool isDefault = false, bool isList = false,
     const std::string &docString = "",
@@ -316,7 +316,7 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e)
 
 // Constructor/Destructor
 
-template<typename T>
+template<typename T, typename>
 inline
 ParameterEntry::ParameterEntry(
   T&& value_in,
