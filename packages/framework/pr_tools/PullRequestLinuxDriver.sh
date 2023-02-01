@@ -24,7 +24,7 @@ function configure_ccache() {
     envvar_set_or_create CCACHE_MAXSIZE 100G
     envvar_set_or_create CCACHE_DEBUG true
 
-    message_std "PRDriver> " "$(ccache -s)"
+    message_std "PRDriver> " "$(ccache --show-stats --verbose)"
 }
 
 # Load the right version of Git / Python based on a regex
