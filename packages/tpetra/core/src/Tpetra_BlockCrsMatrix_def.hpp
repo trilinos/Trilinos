@@ -366,6 +366,7 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void
     operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
     {
+      constexpr bool runOnHost = std::is_same<typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type,Kokkos::DefaultHostExecutionSpace>::value;
       const local_ordinal_type lclRow = member.league_rank();
 
       using Kokkos::Details::ArithTraits;
@@ -424,16 +425,17 @@ namespace Impl {
                 scalar_type val(0);
                 for (local_ordinal_type k1=0;k1<blockSize_;++k1)
                   val += A_cur(k0,k1)*X_cur(k1);
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-                // host space team size is always 1
-                Y_cur(k0) += alpha_*val;
-#else
-                // cuda space team size can be larger than 1
-                // atomic is not allowed for sacado type;
-                // thus this needs to be specialized or 
-                // sacado atomic should be supported.
-                Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
-#endif
+                if constexpr(runOnHost) {
+                  // host space team size is always 1
+                  Y_cur(k0) += alpha_*val;
+                }
+                else {
+                  // cuda space team size can be larger than 1
+                  // atomic is not allowed for sacado type;
+                  // thus this needs to be specialized or 
+                  // sacado atomic should be supported.
+                  Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
+                }
               });
           }); // for each entry in current local block row of matrix
       }
