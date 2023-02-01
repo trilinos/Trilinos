@@ -176,10 +176,6 @@ namespace Example {
 template<typename ValueType, typename DeviceSpaceType>
 int feAssemblyHex(int argc, char *argv[]) {
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-#else
   // host_memory/execution/mirror_space deprecated for kokkos@3.7.00, removed after release
   // see https://github.com/kokkos/kokkos/pull/3973
   using exec_space = typename Kokkos::is_space<DeviceSpaceType>::execution_space;
@@ -228,7 +224,6 @@ int feAssemblyHex(int argc, char *argv[]) {
                      do_not_use_host_memory_space>>;
 
   using HostSpaceType = typename host_mirror_space::execution_space;
-#endif
 
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
