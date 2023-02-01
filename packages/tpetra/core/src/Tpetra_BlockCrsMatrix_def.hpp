@@ -366,7 +366,7 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void
     operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
     {
-      constexpr bool runOnHost = std::is_same<typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type,Kokkos::DefaultHostExecutionSpace>::value;
+      constexpr bool runOnHost = !std::is_same_v<typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
       const local_ordinal_type lclRow = member.league_rank();
 
       using Kokkos::Details::ArithTraits;
