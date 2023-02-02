@@ -1023,6 +1023,8 @@ namespace MueLu {
      ParameterList rParams;
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: constant column sums", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, rParams);
 
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
      rFactory->SetParameterList(rParams);
