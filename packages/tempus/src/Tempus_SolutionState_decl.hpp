@@ -24,6 +24,7 @@
 namespace Tempus {
 
 /** \brief Solution state for integrators and steppers.
+ *
  *  SolutionState contains the metadata for solutions and the solutions
  *  themselves.
  *
@@ -255,25 +256,25 @@ public:
     /// Less than comparison for sorting based on time
     bool operator< (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Less than or equal to comparison for sorting based on time
     bool operator<= (const SolutionState<Scalar>& ss) const;
 
     /// Less than comparison for sorting based on time
     bool operator< (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Less than or equal to comparison for sorting based on time
     bool operator<= (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than comparison for sorting based on time
     bool operator> (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than or equal to comparison for sorting based on time
     bool operator>= (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than comparison for sorting based on time
     bool operator> (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than or equal to comparison for sorting based on time
     bool operator>= (const Scalar& t) const;
 
     /// Equality comparison for matching
