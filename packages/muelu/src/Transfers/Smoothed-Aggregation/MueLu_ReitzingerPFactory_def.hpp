@@ -83,6 +83,8 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: enable");
     SET_VALID_ENTRY("repartition: use subcommunicators");
+    SET_VALID_ENTRY("tentative: calculate qr"); 
+    SET_VALID_ENTRY("tentative: constant column sums");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -118,12 +120,17 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
+    using Teuchos::arcp_const_cast;
     using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
     using XMM = Xpetra::MatrixMatrix<SC,LO,GO,NO>;
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
 
     bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
+
+    std::cout<<"*** Reitzinger pL ***"<<std::endl<<pL<<std::endl;
+    // If these are set correctly we assume that the nodal P contains only ones
+    bool nodal_p_is_all_ones = !pL.get<bool>("tentative: constant column sums") && !pL.get<bool>("tentative: calculate qr");
 
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
@@ -142,6 +149,21 @@ namespace MueLu {
     if(pL.isSublist("matrixmatrix: kernel params"))
       mm_params->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
+
+    // Normalize P
+    if(!nodal_p_is_all_ones) {
+      // The parameters told us the nodal P isn't all ones, so we make a copy that is.
+      GetOStream(Runtime0) << "ReitzingerPFactory::BuildP(): Assuming Pn is not normalized" << std::endl;
+      RCP<Matrix> Pn_old = Pn;    
+
+      Pn = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(Pn->getCrsGraph());
+      Pn->setAllToScalar(Teuchos::ScalarTraits<SC>::one());
+      Pn->fillComplete(Pn->getDomainMap(),Pn->getRangeMap());
+    }
+    else {
+      // The parameters claim P is all ones.
+      GetOStream(Runtime0) << "ReitzingerPFactory::BuildP(): Assuming Pn is normalized" << std::endl;
+    }
 
     // TODO: We need to make sure Pn isn't normalized.  Right now this has to be done explicitly by the user
 
@@ -267,7 +289,7 @@ namespace MueLu {
         if(!keep_shared_edge && !own_both_nodes) continue;
 
 
-        // We're doing this in GID space, but only only because it allows us to explain
+        // We're doing this in GID space, but only because it allows us to explain
         // the edge orientation as "always goes from lower GID to higher GID".  This could
         // be done entirely in local GIDs, but then the ordering is a little more confusing.
         // This could be done in local indices later if we need the extra performance.
@@ -393,34 +415,52 @@ namespace MueLu {
 
       Pe = XMM::Multiply(*D0,false,*Pn_D0cT,false,dummy,out0,true,true,"D0*(Pn*D0c')",mm_params);
 
-      // TODO: Something like this *might* work.  But this specifically, doesn;'t
+      // TODO: Something like this *might* work.  But this specifically, doesn't
       // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0_coarse_m,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
     }
 
-    /* Weed out the +/- entries */
-    {
+    /* Weed out the +/- entries, shrinking the matrix as we go */
+    { 
       SubFactoryMonitor m2(*this, "Generate Pe (post-fix)", coarseLevel);
       Pe->resumeFill();
       SC one = Teuchos::ScalarTraits<SC>::one();
       MT two = 2*Teuchos::ScalarTraits<MT>::one();
       SC zero = Teuchos::ScalarTraits<SC>::zero();
       SC neg_one = - one;
-      // FIXME: Deprecated code
-      for(LO i=0; i<(LO) Ne; i++) {
-        ArrayView<const LO>  columns;
-        ArrayView<const SC>  values;
-        Pe->getLocalRowView(i,columns,values);
-        Teuchos::Array<SC> newValues(values.size());
-        for (LO j=0; j<(LO)values.size(); j++)
-          if ((values[j] == one || values[j] == neg_one))
-            newValues[j] = zero;
-          else
-            newValues[j] = values[j] / two;
-        Pe->replaceLocalValues(i,columns,newValues());
-      }//end for i < Ne
+
+      RCP<const CrsMatrix> Pe_crs = rcp_dynamic_cast<const CrsMatrixWrap>(Pe)->getCrsMatrix();
+      TEUCHOS_TEST_FOR_EXCEPTION(Pe_crs.is_null(), Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Pe is not a crs matrix.");
+      ArrayRCP<const size_t > rowptr_const;
+      ArrayRCP<const LO> colind_const;
+      ArrayRCP<const SC> values_const;
+      Pe_crs->getAllValues(rowptr_const,colind_const,values_const);
+      ArrayRCP<size_t> rowptr = arcp_const_cast<size_t>(rowptr_const);
+      ArrayRCP<LO> colind = arcp_const_cast<LO>(colind_const);
+      ArrayRCP<SC> values = arcp_const_cast<SC>(values_const);
+      LO ct = 0;
+      LO lower = rowptr[0];
+      for(LO i=0; i<(LO)Ne; i++) {
+        for(size_t j=lower; j<rowptr[i+1]; j++) {
+          if (values[j] == one || values[j] == neg_one || values[j] == zero) {
+            // drop this guy
+          }
+          else {
+            colind[ct] = colind[j];
+            values[ct] = values[j] / two;
+            ct++;
+          }          
+        }
+        lower = rowptr[i+1];
+        rowptr[i+1] = ct;
+      }
+      rowptr[Ne] = ct;
+      colind.resize(ct);
+      values.resize(ct);
+      rcp_const_cast<CrsMatrix>(Pe_crs)->setAllValues(rowptr,colind,values);
+
       Pe->fillComplete(Pe->getDomainMap(),Pe->getRangeMap());
     }
-
+   
     /* Check commuting property */
     CheckCommutingProperty(*Pe,*D0_coarse_m,*D0,*Pn);
 
