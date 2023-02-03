@@ -16,6 +16,8 @@ namespace Tempus {
 
 template<class Scalar>
 TimeEventList<Scalar>::TimeEventList()
+  : timeScale_(1.0), relTol_(this->getDefaultTol()),
+    absTol_(this->getDefaultTol()), landOnExactly_(true)
 {
   this->setType("List");
   this->setName("TimeEventList");
@@ -29,6 +31,8 @@ template<class Scalar>
 TimeEventList<Scalar>::TimeEventList(
   std::vector<Scalar> timeList, std::string name,
   bool landOnExactly, Scalar relTol)
+  : timeScale_(1.0), relTol_(this->getDefaultTol()),
+    absTol_(this->getDefaultTol()), landOnExactly_(true)
 {
   this->setType("List");
   this->setName(name);
