@@ -2001,8 +2001,8 @@ namespace Tpetra {
 
       // This fixes GitHub Issue #4418.
       const bool use_atomic_updates = unpackOnHost ?
-        host_exec_space::concurrency () != 1 :
-        dev_exec_space::concurrency () != 1;
+        host_exec_space().concurrency () != 1 :
+        dev_exec_space().concurrency () != 1;
 
       if (printDebugOutput) {
         std::ostringstream os;
