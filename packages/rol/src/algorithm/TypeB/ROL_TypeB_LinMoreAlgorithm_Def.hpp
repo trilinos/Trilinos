@@ -456,7 +456,7 @@ Real LinMoreAlgorithm<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
                                      BoundConstraint<Real> &bnd,
                                      Vector<Real> &pwa, Vector<Real> &dwa,
                                      std::ostream &outStream) {
-  const Real half(0.5);
+  const Real zero(0.0), half(0.5);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   Real beta(1), snorm(0), gs(0);
   int nsteps = 0;
@@ -469,7 +469,7 @@ Real LinMoreAlgorithm<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     gs = pwa.dot(g);
     //q  = half * pwa.dot(dwa.dual()) + gs;
     q  = half * pwa.apply(dwa) + gs;
-    if (q <= mu0_*gs || nsteps > pslim_) {
+    if (q <= mu0_*std::min(gs,zero) || nsteps > pslim_) {
       search = false;
     }
     else {
