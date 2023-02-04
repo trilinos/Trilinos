@@ -84,7 +84,7 @@ class MockModelEval_B_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null);
+  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
 
   //@}
 
@@ -181,6 +181,9 @@ class MockModelEval_B_Tpetra
    Thyra::ModelEvaluatorBase::InArgs<double> nominalValues;
    Thyra::ModelEvaluatorBase::InArgs<double> lowerBounds;
    Thyra::ModelEvaluatorBase::InArgs<double> upperBounds;
+
+   //whether hessian is supported 
+   bool hessSupport;
 
    //Problem parameter list
    Teuchos::RCP<Teuchos::ParameterList> probList_;

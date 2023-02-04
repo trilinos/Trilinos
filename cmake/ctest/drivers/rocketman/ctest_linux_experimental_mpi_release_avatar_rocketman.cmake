@@ -75,6 +75,7 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 
 SET(Trilinos_PACKAGES TrilinosCouplings MueLu )
+SET(Trilinos_EXCLUDE_PACKAGES Epetra Domi PyTrilinos Moertel)
 
 # If true, this option yields faster builds. In that case, however, it won't disable any upstream package that fails to compile.
 SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)

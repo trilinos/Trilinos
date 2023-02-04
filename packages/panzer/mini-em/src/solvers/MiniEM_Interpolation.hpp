@@ -152,9 +152,10 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
     Teuchos::ArrayView<size_t> nEPR = Teuchos::ArrayView<size_t>(numEntriesPerRow.data(), numEntriesPerRow.extent(0));
     tp_interp_matrix = rcp(new tp_matrix(tp_rowmap,tp_colmap,nEPR));
-
-    thyra_interp = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap),
-                                                                                                          Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap),
+    RCP<const Thyra::VectorSpaceBase<Scalar> > rangeVectorSpace = Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap);
+    RCP<const Thyra::VectorSpaceBase<Scalar> > domainVectorSpace = Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap);
+    thyra_interp = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(rangeVectorSpace,
+                                                                                                          domainVectorSpace,
                                                                                                           tp_interp_matrix);
   }
 #ifdef PANZER_HAVE_EPETRA_STACK

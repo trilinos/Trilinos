@@ -158,26 +158,26 @@ class MachineLearningStatistics_Hex3D {
       
       // Now I have to get the node coordinates
       for(int j=0; j<dim; j++) {
-	hex_0[j] = nodeCoord(hexnode0, j);
-	hex_1[j] = nodeCoord(hexnode1, j);
-	hex_2[j] = nodeCoord(hexnode2, j);
-	hex_3[j] = nodeCoord(hexnode3, j);
-	hex_4[j] = nodeCoord(hexnode4, j);
-	hex_5[j] = nodeCoord(hexnode5, j);
-	hex_6[j] = nodeCoord(hexnode6, j);
-	hex_7[j] = nodeCoord(hexnode7, j);
+        hex_0[j] = nodeCoord(hexnode0, j);
+        hex_1[j] = nodeCoord(hexnode1, j);
+        hex_2[j] = nodeCoord(hexnode2, j);
+        hex_3[j] = nodeCoord(hexnode3, j);
+        hex_4[j] = nodeCoord(hexnode4, j);
+        hex_5[j] = nodeCoord(hexnode5, j);
+        hex_6[j] = nodeCoord(hexnode6, j);
+        hex_7[j] = nodeCoord(hexnode7, j);
       }
       
       double pr1_norm = 0;
       double pr2_norm = 0;
       double pr3_norm = 0;
       for(int j=0; j<dim; j++){
-	principle_axis_1[j] = hex_1[j] - hex_0[j] + hex_2[j] - hex_3[j] + hex_5[j] - hex_4[j] + hex_6[j] - hex_7[j];
-	pr1_norm += principle_axis_1[j] * principle_axis_1[j];
-	principle_axis_2[j] = hex_3[j] - hex_0[j] + hex_2[j] - hex_1[j] + hex_7[j] - hex_4[j] + hex_6[j] - hex_5[j];
-	pr2_norm += principle_axis_2[j] * principle_axis_2[j];
-	principle_axis_3[j] = hex_4[j] - hex_0[j] + hex_5[j] - hex_1[j] + hex_6[j] - hex_2[j] + hex_7[j] - hex_3[j];
-	pr3_norm += principle_axis_3[j] * principle_axis_3[j];
+        principle_axis_1[j] = hex_1[j] - hex_0[j] + hex_2[j] - hex_3[j] + hex_5[j] - hex_4[j] + hex_6[j] - hex_7[j];
+        pr1_norm += principle_axis_1[j] * principle_axis_1[j];
+        principle_axis_2[j] = hex_3[j] - hex_0[j] + hex_2[j] - hex_1[j] + hex_7[j] - hex_4[j] + hex_6[j] - hex_5[j];
+        pr2_norm += principle_axis_2[j] * principle_axis_2[j];
+        principle_axis_3[j] = hex_4[j] - hex_0[j] + hex_5[j] - hex_1[j] + hex_6[j] - hex_2[j] + hex_7[j] - hex_3[j];
+        pr3_norm += principle_axis_3[j] * principle_axis_3[j];
       }
       
       pr1_norm = sqrt(pr1_norm);
@@ -185,9 +185,9 @@ class MachineLearningStatistics_Hex3D {
       pr3_norm = sqrt(pr3_norm);
       
       for(int j=0; j<dim; j++) {
-	principle_axis_1[j] = principle_axis_1[j] / pr1_norm;
-	principle_axis_2[j] = principle_axis_2[j] / pr2_norm;
-	principle_axis_3[j] = principle_axis_3[j] / pr3_norm;
+        principle_axis_1[j] = principle_axis_1[j] / pr1_norm;
+        principle_axis_2[j] = principle_axis_2[j] / pr2_norm;
+        principle_axis_3[j] = principle_axis_3[j] / pr3_norm;
       }
       
       
@@ -205,12 +205,12 @@ class MachineLearningStatistics_Hex3D {
       edge_length_min = edge_length_max;
       int numEdgesPerElem = elemToEdge.dimension(1);
       for (int j=0; j<numEdgesPerElem; j++) {
-	edge = elemToEdge(i,j);
-	node1 = edgeToNode(edge,0);
-	node2 = edgeToNode(edge,1);
-	dist = distance2(nodeCoord,node1,node2);
-	edge_length_max = std::max(edge_length_max,dist);
-	edge_length_min = std::min(edge_length_min,dist);
+        edge = elemToEdge(i,j);
+        node1 = edgeToNode(edge,0);
+        node2 = edgeToNode(edge,1);
+        dist = distance2(nodeCoord,node1,node2);
+        edge_length_max = std::max(edge_length_max,dist);
+        edge_length_min = std::min(edge_length_min,dist);
       }
       maxmin_ratio = edge_length_max / edge_length_min;
       local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
@@ -221,15 +221,15 @@ class MachineLearningStatistics_Hex3D {
       
       // 3 - Stretch
       diag_length_max = distance2(nodeCoord, elemToNode(i, diag_nodes1[0]),
-				  elemToNode(i, diag_nodes2[0]));
+                                  elemToNode(i, diag_nodes2[0]));
       diag_length_min = distance2(nodeCoord, elemToNode(i, diag_nodes1[0]),
-				  elemToNode(i, diag_nodes2[0]));
+                                  elemToNode(i, diag_nodes2[0]));
       for (int j=0; j<NUM_NODE_PAIRS; j++) {
-	node1 = elemToNode(i, diag_nodes1[j]);
-	node2 = elemToNode(i, diag_nodes2[j]);
-	dist = distance2(nodeCoord, node1, node2);
-	diag_length_max = std::max(diag_length_max, dist);
-	diag_length_min = std::min(diag_length_min, dist);
+        node1 = elemToNode(i, diag_nodes1[j]);
+        node2 = elemToNode(i, diag_nodes2[j]);
+        dist = distance2(nodeCoord, node1, node2);
+        diag_length_max = std::max(diag_length_max, dist);
+        diag_length_min = std::min(diag_length_min, dist);
       }
       stretch = sqrt(3) * edge_length_min / diag_length_max;
       diag_ratio = diag_length_min / diag_length_max;
@@ -252,14 +252,15 @@ class MachineLearningStatistics_Hex3D {
       double ratio = edge_length_1 / edge_length_2;
       ratio = std::min(ratio, 1/ratio);
       for (int j=0; j<NUM_EDGE_PAIRS; j++) {
-	node1 = elemToNode(i, edge_nodes_1[edge_opposites_1[j]]);
-	node2 = elemToNode(i, edge_nodes_2[edge_opposites_1[j]]);
-	node3 = elemToNode(i, edge_nodes_1[edge_opposites_2[j]]);
-	node4 = elemToNode(i, edge_nodes_2[edge_opposites_2[j]]);
-	edge_length_1 = distance2(nodeCoord, node1, node2);
-	edge_length_2 = distance2(nodeCoord, node3, node4);
-	double ratio = edge_length_1 / edge_length_2;
-	ratio = std::min(ratio, 1/ratio);
+        node1 = elemToNode(i, edge_nodes_1[edge_opposites_1[j]]);
+        node2 = elemToNode(i, edge_nodes_2[edge_opposites_1[j]]);
+        node3 = elemToNode(i, edge_nodes_1[edge_opposites_2[j]]);
+        node4 = elemToNode(i, edge_nodes_2[edge_opposites_2[j]]);
+        edge_length_1 = distance2(nodeCoord, node1, node2);
+        edge_length_2 = distance2(nodeCoord, node3, node4);
+        double my_ratio = edge_length_1 / edge_length_2;
+        my_ratio = std::min(my_ratio, 1/my_ratio);
+        ratio = std::min(ratio, my_ratio);
       }
       local_stat_max[5] = std::max(local_stat_max[5], ratio);
       local_stat_min[5] = std::min(local_stat_min[5], ratio);
@@ -272,9 +273,9 @@ class MachineLearningStatistics_Hex3D {
       double skew3 = 0;
       
       for(int j=0; j<dim; j++) {
-	skew1 += principle_axis_1[j] * principle_axis_2[j];
-	skew2 += principle_axis_1[j] * principle_axis_3[j];
-	skew3 += principle_axis_1[j] * principle_axis_3[j];
+        skew1 += principle_axis_1[j] * principle_axis_2[j];
+        skew2 += principle_axis_1[j] * principle_axis_3[j];
+        skew3 += principle_axis_1[j] * principle_axis_3[j];
       }
       skew1 = std::abs(skew1);
       skew2 = std::abs(skew2);
@@ -303,7 +304,7 @@ class MachineLearningStatistics_Hex3D {
       // 2 - det of cell Jacobian (later)
       double elementdetJ = 0.0, elementWeight=0.0;
       for(int j=0; j<numCubPoints; j++) {
-	double weight = weightsWorkset ? worksetCubWeights(i,j) : worksetCubWeights(j);
+        double weight = weightsWorkset ? worksetCubWeights(i,j) : worksetCubWeights(j);
         elementdetJ   += worksetJacobDet(i,j) * weight;
         elementWeight += weight;
       }
@@ -342,9 +343,9 @@ class MachineLearningStatistics_Hex3D {
       gl_StiffGraph->getLocalRowView(row, indices);
       size_t numIndices = indices.size();
       for (size_t j=0; j<numIndices; j++) {
-	size_t col = indices[j];
-	if (row == col) continue;
-	laplDiagOwned->sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
+        size_t col = indices[j];
+        if (row == col) continue;
+        laplDiagOwned->sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
       }
     }
     Teuchos::RCP<vector_type> laplDiagOwnedPlusShared;
@@ -360,15 +361,15 @@ class MachineLearningStatistics_Hex3D {
       gl_StiffGraph->getLocalRowView(row, indices);
       size_t numIndices = indices.size();
       for(size_t j=0; j<numIndices; j++) {
-	size_t col = indices[j];
-	if (row==col) continue;
-	double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
-	double aiiajj = std::abs(laplDiagOwnedPlusShared->getData(0)[row]*laplDiagOwnedPlusShared->getData(0)[col]);
-	double aij = laplVal * laplVal;
-	double ratio = sqrt(aij / aiiajj);
-	local_stat_max[7] = std::max(local_stat_max[7], ratio);
-	local_stat_min[7] = std::min(local_stat_min[7], ratio);
-	local_stat_sum[7] += ratio;
+        size_t col = indices[j];
+        if (row==col) continue;
+        double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
+        double aiiajj = std::abs(laplDiagOwnedPlusShared->getData(0)[row]*laplDiagOwnedPlusShared->getData(0)[col]);
+        double aij = laplVal * laplVal;
+        double ratio = sqrt(aij / aiiajj);
+        local_stat_max[7] = std::max(local_stat_max[7], ratio);
+        local_stat_min[7] = std::min(local_stat_min[7], ratio);
+        local_stat_sum[7] += ratio;
       }
     }
     globalNumMatrixEntries = gl_StiffGraph->getGlobalNumEntries();
