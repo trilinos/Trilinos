@@ -91,6 +91,11 @@ if(CCACHE_PROGRAM)
         set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/launch-cxx")
         set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/launch-c")
         set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/launch-cxx")
+    elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+        set(CMAKE_GENERATOR "Unix Makefiles")
+        # Support Unix Makefiles and Ninja
+        set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_BINARY_DIR}/launch-c")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/launch-cxx")
     else()
         # Support Unix Makefiles and Ninja
         set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_BINARY_DIR}/launch-c")
