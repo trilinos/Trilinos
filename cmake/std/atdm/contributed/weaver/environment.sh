@@ -79,7 +79,7 @@ fi
 source /etc/profile.d/modules.sh
 module purge
 
-module load git/2.10.1
+module load git/2.10.1 python/3.7.3
 # NOTE: Must load a git module since /usr/bin/git does not exist on the
 # compute nodes.
 
