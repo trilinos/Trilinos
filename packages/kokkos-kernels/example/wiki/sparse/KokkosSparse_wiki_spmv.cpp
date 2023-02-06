@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include "Kokkos_Core.hpp"
 
 #include "KokkosKernels_default_types.hpp"
@@ -51,7 +66,7 @@ int main() {
     // BCs in that direction, BC=0 means Neumann BC is applied,
     // BC=1 means Dirichlet BC is applied by zeroing out the row and putting
     // one on the diagonal.
-    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure(
+    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
         "Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 0;   // Add BC to the left
