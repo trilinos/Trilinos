@@ -93,6 +93,10 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
   - Paul Tsuji, LLNL
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Sandia National Labs
+  - Christian Glusa, Sandia National Labs
+  - Luc Berger-Vergiat, Sandia National Labs
+  - Peter Ohm, RIKEN (Japan)
+  - Graham Harper, Sandia National Labs
 
 \section muelu_copyright Copyright and License
 
