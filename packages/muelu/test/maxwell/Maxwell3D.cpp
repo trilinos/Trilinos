@@ -289,9 +289,6 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
   bool success = false;
 
   auto tm2 = TimeMonitor::getNewTimer("Maxwell: 2 - Build solver and preconditioner");
-  if(!comm->getRank())
-    std::cout<<"*** MueLu Parameters ***\n"<<params<<std::endl;
-
 #ifdef HAVE_MUELU_BELOS
   if (solverName == "Belos") {
     // construct preconditioner
