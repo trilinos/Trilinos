@@ -89,7 +89,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("D0",                 Teuchos::null, "Generating factory of the matrix D0");
-    validParamList->set< RCP<const FactoryBase> >("NodeMatrix",         Teuchos::null, "Generating factory of the matrix NodeMatrix");
+    validParamList->set< RCP<const FactoryBase> >("NodeAggMatrix",      Teuchos::null, "Generating factory of the matrix NodeAggMatrix");
     validParamList->set< RCP<const FactoryBase> >("Pnodal",             Teuchos::null, "Generating factory of the matrix P");
     validParamList->set< RCP<const FactoryBase> >("NodeImporter",       Teuchos::null, "Generating factory of the matrix NodeImporter");
 
@@ -105,8 +105,8 @@ namespace MueLu {
   void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel,   "A");
     Input(fineLevel,   "D0");
-    Input(fineLevel,   "NodeMatrix");
-    Input(coarseLevel,   "NodeMatrix");
+    Input(fineLevel,   "NodeAggMatrix");
+    Input(coarseLevel, "NodeAggMatrix");
     Input(coarseLevel, "Pnodal");
     //    Input(coarseLevel, "NodeImporter");
 
@@ -134,14 +134,14 @@ namespace MueLu {
 
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
-    RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeMatrix");
+    RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeAggMatrix");
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
 
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
     // This needs to be an Operator because if NodeMatrix gets repartitioned away, we get an Operator on the level
-    RCP<Operator> CoarseNodeMatrix = Get< RCP<Operator> >(coarseLevel, "NodeMatrix");
+    RCP<Operator> CoarseNodeMatrix = Get< RCP<Operator> >(coarseLevel, "NodeAggMatrix");
     int MyPID  = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getRank();
 
     // Matrix matrix params
