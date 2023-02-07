@@ -1,7 +1,6 @@
 import math
 import sys
 import re
-import numpy as np
 
 try:
   if not len(sys.argv)==5:
@@ -41,28 +40,22 @@ try:
       if match!=None:
         q1_errors.append(float(match.group(1)))
 
-  q2gold_errors = np.asarray(q2gold_errors)
-  q1gold_errors = np.asarray(q1gold_errors)
-  q2_errors = np.asarray(q2_errors)
-  q1_errors = np.asarray(q1_errors)
+  for i in range(len(q2gold_errors)):
+    if q2gold_errors[i] != q2_errors[i]:
+      print( 'Poisson example using a Q2 mesh does not pass regression check' )
+      raise 'Exception'
 
-  if (np.any( q2gold_errors != q2_errors ) ):
-    print( 'Poisson example using a Q2 mesh does not pass regression check' )
-    raise 'Exception'
-  else:
-    print( 'Poisson example using a Q2 mesh passes regression check' )
+    if q1gold_errors[i] != q1_errors[i]:
+      print( 'Poisson example using a Q1 mesh does not pass regression check' )
+      raise 'Exception'
 
-  if (np.any( q1gold_errors != q1_errors ) ):
-    print( 'Poisson example using a Q1 mesh does not pass regression check' )
-    raise 'Exception'
-  else:
-    print( 'Poisson example using a Q1 mesh passes regression check' )
+    if q2_errors[i] > q1_errors[i]:
+      print ( 'Errors are larger when using Q2 mesh!' )
+      raise 'Exception'
 
-  if (np.any( q2_errors > q1_errors ) ):
-    print ( 'Errors are larger when using Q2 mesh!' )
-    raise 'Exception'
-  else:
-    print ( 'Errors are smaller when using Q2 mesh, as expected')
+  print( 'Poisson example using a Q2 mesh passes regression check' )
+  print( 'Poisson example using a Q1 mesh passes regression check' )
+  print ( 'Errors are smaller when using Q2 mesh, as expected')
 
 except Exception as e:
   print("Test Failed: ")

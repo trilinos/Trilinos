@@ -78,63 +78,6 @@ namespace panzer_stk
 namespace
 {
 
-/////////// TO BE DEPRECATED......
-
-/** This method takes a cell importer (owned to ghstd) and communicates vertices
-  * of the ghstd elements.
-  */
-Kokkos::DynRankView<double,PHX::Device>
-buildGhostedVertices(const Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & importer,
-                     Kokkos::DynRankView<const double,PHX::Device> owned_vertices)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  typedef Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> mvec_type;
-  typedef typename mvec_type::dual_view_type dual_view_type;
-
-  size_t owned_cell_cnt = importer.getSourceMap()->getLocalNumElements();
-  size_t ghstd_cell_cnt = importer.getTargetMap()->getLocalNumElements();
-  int vertices_per_cell = owned_vertices.extent(1);
-  int space_dim         = owned_vertices.extent(2);
-
-  TEUCHOS_ASSERT(owned_vertices.extent(0)==owned_cell_cnt);
-
-  // build vertex multivector
-  RCP<mvec_type> owned_vertices_mv   = rcp(new mvec_type(importer.getSourceMap(),vertices_per_cell*space_dim));
-  RCP<mvec_type> ghstd_vertices_mv = rcp(new mvec_type(importer.getTargetMap(),vertices_per_cell*space_dim));
-
-  {
-    auto owned_vertices_view = owned_vertices_mv->getLocalViewDevice(Tpetra::Access::OverwriteAll);
-    Kokkos::parallel_for(owned_cell_cnt, KOKKOS_LAMBDA (size_t i) {
-      int l = 0;
-      for(int j=0;j<vertices_per_cell;j++)
-        for(int k=0;k<space_dim;k++,l++)
-          owned_vertices_view(i,l) = owned_vertices(i,j,k);
-      });
-  }
-
-  // communicate ghstd vertices
-  ghstd_vertices_mv->doImport(*owned_vertices_mv,importer,Tpetra::INSERT);
-
-  // copy multivector into ghstd vertex structure
-  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices("ghstd_vertices",ghstd_cell_cnt,vertices_per_cell,space_dim);
-  {
-    auto ghstd_vertices_view = ghstd_vertices_mv->getLocalViewDevice(Tpetra::Access::ReadOnly);
-    Kokkos::parallel_for(ghstd_cell_cnt, KOKKOS_LAMBDA (size_t i) {
-      int l = 0;
-      for(int j=0;j<vertices_per_cell;j++)
-        for(int k=0;k<space_dim;k++,l++)
-          ghstd_vertices(i,j,k) = ghstd_vertices_view(i,l);
-      } );
-    Kokkos::fence();
-  }
-
-  return ghstd_vertices;
-} // end build ghstd vertices
-
-///////// END TO BE DEPRECATED
-
 /** This method takes a cell importer (owned to ghstd) and communicates nodes
   * of the ghstd elements.
   */

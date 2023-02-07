@@ -69,10 +69,6 @@ namespace panzer
     // These are the cell indexes in the LocalMeshInfo class
     PHX::View<panzer::LocalOrdinal*> local_cells;
 
-    // TO BE DEPRECATED
-    // Vertices
-    PHX::View<double***> cell_vertices;
-
     // Nodes
     PHX::View<double***> cell_nodes;
 
