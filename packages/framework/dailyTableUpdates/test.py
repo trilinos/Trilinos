@@ -80,22 +80,22 @@ def main():
         args.failed
         args.wip
         args.reviewed
-        args.review
+        args.reviewing
         args.waiting
         args.open
         args.master
         args.jira
 
-        number_of_pr_merged = stat_container[1]
-        number_of_failed_pr = stat_container[2]
-        number_wip_prs = stat_container[3]
-        number_reviewed_required = stat_container[4]
-        number_change_requested = stat_container[6]
-        number_review_approved = stat_container[7]
-        number_of_waiting_pr = stat_container[8]
-        number_open_pr = stat_container[9]
-        number_of_successful_mm = stat_container[10]
-        jira_ticket_number = stat_container[11]
+        number_of_pr_merged = stat_container[args.merged]
+        # number_of_failed_pr = stat_container[args.failed]
+        number_wip_prs = stat_container[args.wip]
+        number_reviewed_required = stat_container[args.reviewed]
+        number_change_requested = stat_container[args.reviewing]
+        number_review_approved = stat_container[args.waiting]
+        number_of_waiting_pr = stat_container[args.failed]
+        number_open_pr = stat_container[args.open]
+        number_of_successful_mm = stat_container[args.master]
+        jira_ticket_number = stat_container[args.jira]
     
     except:
         print("Requires more arguments ... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
