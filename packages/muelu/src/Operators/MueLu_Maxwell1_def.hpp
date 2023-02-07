@@ -107,24 +107,14 @@ namespace MueLu {
       newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
 
 
-      // CMS hackery
+      // Hardwiring options to ensure ML compatibility
       newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
       newList.sublist("maxwell1: 22list").set("tentative: constant column sums", false);
       newList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
 
-      newList.sublist("maxwell1: 22list").sublist("export data").set("A","{0,1,2,3,4,5,6}");
-      newList.sublist("maxwell1: 22list").sublist("export data").set("P","{0,1,2,3,4,5,6}");
-
       newList.sublist("maxwell1: 11list").set("use kokkos refactor", false);
       newList.sublist("maxwell1: 11list").set("tentative: constant column sums", false);
       newList.sublist("maxwell1: 11list").set("tentative: calculate qr", false);
-
-      newList.sublist("maxwell1: 11list").sublist("export data").set("A","{0,1,2,3,4,5,6}");
-      //newList.sublist("maxwell1: 11list").sublist("export data").set("NodeAggMatrix","{1,2,3,4,5,6}");
-      //newList.sublist("maxwell1: 11list").sublist("export data").set("NodeMatrix","{1,2,3,4,5,6}");
-      newList.sublist("maxwell1: 11list").sublist("export data").set("P","{0,1,2,3,4,5,6}");
-      newList.sublist("maxwell1: 11list").sublist("export data").set("D0","{0,1,2,3,4,5,6}");          
-      //end hackery
 
       if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
         newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
@@ -159,12 +149,6 @@ namespace MueLu {
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       false);
     dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
-
-
-
-    std::cout<<"CMS: maxwell1: apply BCs to 22 = "<< (applyBCsTo22_ ? "TRUE" : "FALSE") <<std::endl;    
-   
-
 
     // Default smoother.  We'll copy this around.
     Teuchos::ParameterList defaultSmootherList;
@@ -358,8 +342,7 @@ namespace MueLu {
         // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
         // is going to be used (this is generated in ReitzingerPFactory)
         precList11_.set("repartition: use subcommunicators in place",true);
-      }
-
+      }        
         
     }
     else
@@ -394,9 +377,9 @@ namespace MueLu {
 #endif
                                                              BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
                                                              allEdgesBoundary_,allNodesBoundary_);
-      //      if (IsPrint(Statistics2)) {
-        GetOStream(Runtime0) << "MueLu::Maxwell1::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
-        //      }
+      if (IsPrint(Statistics2)) {
+        GetOStream(Statistics2) << "MueLu::Maxwell1::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
+      }
     }
 
     if (allEdgesBoundary_) {
@@ -457,8 +440,6 @@ namespace MueLu {
 
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
     }
-
-    Xpetra::IO<SC, LO, GO, NO>::Write("D0_with_bcs_applied.m", *D0_Matrix_);
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -576,22 +557,13 @@ namespace MueLu {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    // Swap back Kn and generate the smoother for the Fine level   
-    {
-      RCP<Level> EdgeL = Hierarchy11_->GetLevel(0);
-      EdgeL->Set("NodeMatrix",Kn_Matrix_);
-
-    }
-   
-
-    ////////////////////////////////////////////////////////////////////////////////
     // Allocate temporary MultiVectors for solve (only needed for RefMaxwell style)
     allocateMemory(1);
 
     describe(GetOStream(Runtime0));
 
 
-    // CMS: DEBUG
+#ifdef MUELU_MAXWELL1_DEBUG
     for(int i=0; i<Hierarchy11_->GetNumLevels(); i++) {
       RCP<Level> L = Hierarchy11_->GetLevel(i);
       RCP<Matrix> EdgeMatrix = rcp_dynamic_cast<Matrix>(L->Get<RCP<Operator> >("A"));
@@ -604,14 +576,14 @@ namespace MueLu {
       auto nrmNa = NodeAggMatrix->getFrobeniusNorm();
       auto nrmD0= D0->getFrobeniusNorm();
 
-      std::cout<<"CMS: Norms on Level "<<i<<" E/N/NA/D0 = "<<nrmE<<" / "<<nrmN <<" / "<<nrmNa<<" / "<< nrmD0 <<std::endl;
-      std::cout<<"CMS: NNZ on Level    "<<i<<" E/N/NA/D0 = "<< 
+      std::cout<<"DEBUG: Norms on Level "<<i<<" E/N/NA/D0 = "<<nrmE<<" / "<<nrmN <<" / "<<nrmNa<<" / "<< nrmD0 <<std::endl;
+      std::cout<<"DEBUG: NNZ on Level    "<<i<<" E/N/NA/D0 = "<< 
         EdgeMatrix->getGlobalNumEntries()<<" / "<<
         NodeMatrix->getGlobalNumEntries()<<" / "<<
         NodeAggMatrix->getGlobalNumEntries()<<" / "<<
-        D0->getGlobalNumEntries()<<std::endl;
-      
+        D0->getGlobalNumEntries()<<std::endl;      
     }
+#endif
 
   }
 
