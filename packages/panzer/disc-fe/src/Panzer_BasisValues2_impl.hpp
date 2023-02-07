@@ -454,7 +454,6 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   int numcells = basisDesc->numCells();
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
   cell_topology_ = basisDesc->getCellTopology();
-  // TODO BWR this cell topo is the correct mesh cell topo. remove this note later
 
   intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
 

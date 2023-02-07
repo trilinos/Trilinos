@@ -511,8 +511,6 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
       faceIndices.resize(cellTopo.getSubcellCount(subcell_dim));
    
       for(unsigned f=0;f<cellTopo.getSubcellCount(subcell_dim);f++) {
-         // TODO BWR Here... rename to indicate base?
-         // TODO BWR need to look more into this file
          shards::CellTopology faceTopo(cellTopo.getBaseCellTopologyData(subcell_dim,f));
    
          for(unsigned v=0;v<faceTopo.getNodeCount();v++) {

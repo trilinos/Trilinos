@@ -132,8 +132,6 @@ namespace panzer {
     auto s_point_coords = Kokkos::subview(point_coords.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::CellTools<PHX::exec_space> cell_tools;
 
-    // TODO BWR Cannot confirm that the point_rule topo is "correct" with the main_driver
-    
     cell_tools.setJacobian(s_jac, coords_ref.get_view(), s_node_coordinates, *(point_rule->topology));
     cell_tools.setJacobianInv(s_jac_inv, s_jac);
     cell_tools.setJacobianDet(s_jac_det, s_jac);

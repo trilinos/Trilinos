@@ -70,7 +70,6 @@ panzer::basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& 
 panzer::BasisIRLayout::
 BasisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& point_rule)
 {
-  // TODO BWR Check that this purebasis gets the correct topo
   basis_data_ = Teuchos::rcp(new PureBasis(basis_type,basis_order,point_rule.workset_size,point_rule.topology));
 
   setup(point_rule);

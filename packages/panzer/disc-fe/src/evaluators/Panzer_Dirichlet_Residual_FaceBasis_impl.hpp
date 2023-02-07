@@ -173,7 +173,6 @@ evaluateFields(
       ort.getFaceOrientation(faceOrts, numFaces); 
 
       // vertex count represent rotation count before it flips
-      // TODO BWR --> what is this?
       const double ortVal = faceOrts[subcellOrd] < subcellVertexCount ? 1.0 : -1.0;
       for(int b=0;b<numFaceDofs;b++) {
         residual_local(c,b) = 0.0;

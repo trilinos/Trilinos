@@ -72,12 +72,9 @@ namespace panzer {
 
     // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
     const auto cellTopo = elementBlockTopologies.at(0);
-    // TODO BWR Will setting orientations need higher order mesh nodes if we have a curvilinear mesh?
-    // TODO BWR Or are vertices sufficient?
-    const int numNodesPerCell = cellTopo.getNodeCount();
+    const int numVerticesPerCell = cellTopo.getVertexCount();
 
     const auto fp = NodalFieldPattern(cellTopo);
-    // TODO BWR This is full mesh topo
     connMgr.buildConnectivity(fp);
 
     // Count and pre-alloc orientations
@@ -98,20 +95,9 @@ namespace panzer {
       for (int c=0;c<numElementsPerBlock;++c) {
         const int localCellId = elementBlock.at(c);
         Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace>
-          nodes(connMgr.getConnectivity(localCellId), numNodesPerCell);
-          // TODO BWR according to intrepid2 docco, getOrientation is looking for the VERTICES
-          // TODO BWR so why is this not breaking for a second order mesh with HCURL?
-          // TODO BWR OK, so I think I see why...
-          // TODO BWR In intrepid2_orientation a shards cellTopo is required and getCellVertexMap is called
-          // TODO BWR and even though the nodes are being passed in, they are subselected eventually
-          // TODO BWR Because shards topologies are low order first, this still works
-          // TODO BWR However, I'm not sure of the downstream effects. It is also unclear what may happen if we
-          // TODO BWR restrict the buildConnectivity call but still pass the cellTopo here
-          // TODO BWR I think it should just pass the vertices in that case, at least
-
-          // TODO BWR I think we should rewrite this section using the base topo and notion of vertices
-          // TODO BWR Unclear if this is sufficient for curvilinear meshes, especially for higher orders though
-        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
+          vertices(connMgr.getConnectivity(localCellId), numVerticesPerCell);
+          // This function call expects a view for the vertices, not the nodes
+        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, vertices));
       }
     }
   }

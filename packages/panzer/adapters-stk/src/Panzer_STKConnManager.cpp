@@ -169,9 +169,6 @@ STKConnManager::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp,
    GlobalOrdinal maxNodeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
    GlobalOrdinal maxEdgeId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getEdgeRank());
    GlobalOrdinal maxFaceId = stkMeshDB_->getMaxEntityId(stkMeshDB_->getFaceRank());
-   // TODO BWR This also mashes information from the mesh with information from the field pattern
-   // If the field pattern is always based on the low order topology (which MUST match the mesh topology),
-   // are we going to clash here?
 
    // compute ID counts for each sub cell type
    int patternDim = fp.getDimension();
@@ -237,8 +234,6 @@ STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk
                                             unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,
                                             GlobalOrdinal offset)
 {
-  // TODO BWR THIS NEEDS TO BE LOOKED AT
-  // TODO BWR we should have a periodic test, too? Or does that ever make sense for curved meshes? I think it could be possible.
    LocalOrdinal elmtLID = stkMeshDB_->elementLocalId(element);
    auto * conn = this->getConnectivity(elmtLID);
    const std::vector<int> & subCellIndices = fp.getSubcellIndices(subcellRank,subcellId);
@@ -255,12 +250,6 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
   using Teuchos::TimeMonitor;
   RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::buildConnectivity"))));
 #endif
-
-   // TODO BUILD CONN IS CORRECT
-
-   // TODO BWR the intrepidfieldpattern ALWAYS returns the base cell topology (and I assume uses it).
-   // TODO BWR This routine gets called with edge, face, nodal field patterns, too
-   // TODO BWR Will our subselection of nodes be appropriate for those other patterns?
 
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
@@ -285,8 +274,6 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
    // Connectivity only requires lowest order mesh node information
    // With the notion of extended topologies used by shards, it is 
    // sufficient to take the first num_vertices nodes for connectivity purposes.
-   // TODO BWR This mapping is more complex for cn and will need to be modified
-   // TODO BWR see note above on intrepid field patterns
    const unsigned num_vertices = fp.getCellTopology().getVertexCount();
 
    // loop over elements and build global connectivity
@@ -403,8 +390,6 @@ void STKConnManager::getDofCoords(const std::string & blockId,
 
    // setup output array
    points = Kokkos::DynRankView<double,PHX::Device>("points",localCellIds.size(),numIds,dim);
-   // TODO BWR changed here, needs testing
-   // TODO BWR not covered with main_driver
    coordProvider.getInterpolatoryCoordinates(nodes,points,stkMeshDB_->getCellTopology(blockId));
 }
 

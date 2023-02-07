@@ -465,7 +465,7 @@ int main(int argc,char * argv[])
    }
 
    // write out solution to matrix, if desired
-   if(false) {
+   if(true) {
       
       // create a stkIOresponselibrary 
       Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 

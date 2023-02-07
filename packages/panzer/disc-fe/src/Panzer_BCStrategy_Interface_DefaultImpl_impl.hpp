@@ -288,7 +288,6 @@ panzer::BCStrategy_Interface_DefaultImpl<EvalT>::
 buildIntegrationRule(const int integration_order,const panzer::PhysicsBlock& side_pb) const
 {
   TEUCHOS_ASSERT(side_pb.cellData().isSide());
-  // TODO BWR Is this the correct cell data/topology?
   Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integration_order,side_pb.cellData()));
   return ir;
 }

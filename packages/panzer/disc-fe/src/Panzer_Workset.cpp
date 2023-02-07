@@ -453,7 +453,6 @@ getPointValues(const panzer::PointDescriptor & description) const
   auto pv = Teuchos::rcp(new PointValues2<double>("",true));
 
   pv->setupArrays(pr);
-  // TODO BWR main_driver not checking this topo either
 
   // Point values are not necessarily set at the workset level, but can be set by evaluators
   if(description.hasGenerator())

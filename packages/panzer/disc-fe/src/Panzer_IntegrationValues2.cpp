@@ -972,7 +972,6 @@ getJacobian(const bool cache,
   auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
   auto s_jac        = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
 
-  // TODO BWR This seems to get the "correct" mesh cell topology, at least when running main_driver
   cell_tools.setJacobian(s_jac, s_ref_coord, s_node_coord,*(int_rule->topology));
 
   PHX::Device::execution_space().fence();
@@ -1340,7 +1339,6 @@ getSurfaceNormals(const bool cache,
       });
 
       // Get the "physical side normals"
-      // TODO BWR here
       cell_tools.getPhysicalSideNormals(side_normals,side_jacobian,subcell_index,cell_topology);
 
       // Normalize each normal
@@ -1615,7 +1613,6 @@ getCubaturePoints(const bool cache,
     auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
-    // TODO BWR here
     cell_tools.mapToPhysicalFrame(s_coord, s_ref_coord, s_node_coord, *(int_rule->topology));
 
   }

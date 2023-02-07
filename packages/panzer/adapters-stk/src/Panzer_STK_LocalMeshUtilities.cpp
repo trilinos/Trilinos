@@ -204,8 +204,6 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   {
     const shards::CellTopology & topology = *(mesh.getCellTopology(element_block_name));
     Teuchos::RCP<panzer::FieldPattern> cell_pattern;
-    // TODO BWR Here is another spot to double-check. We are only going to extract lowest order mesh nodes in buildConnectivity
-    // TODO BWR if this is only used for identifying cells below, may be ok
     if(topology.getDimension() == 1){
       cell_pattern = Teuchos::rcp(new panzer::EdgeFieldPattern(topology));
     } else if(topology.getDimension() == 2){
@@ -762,7 +760,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 
     // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
     // This way we can define a virtual cell geometry without extruding the face outside of the domain
-    // TODO BWR THIS AN ISSUE FOR CURVED MESHES
+    // TODO BWR Certainly, this is an issue for curved meshes
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Assign geometry traits",AssignGeometryTraits);
       Kokkos::parallel_for(num_virtual_cells,KOKKOS_LAMBDA (int i) {

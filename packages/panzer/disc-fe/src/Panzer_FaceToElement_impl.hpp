@@ -131,8 +131,6 @@ initialize(panzer::ConnManager & conn,
   for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
     // The connectivity takes in a shards class, therefore, it has to be build block by block?
     // This seems odd, but o.k, moving forward.
-    // TODO BWR Probably just want to use the base topology, but this may break in EMPIRE down the road...
-    // TODO BWR more below too
     if ( dimension == 1 ) {
       panzer::EdgeFieldPattern edge_pattern(ebt[iblk]);
       conn.buildConnectivity(edge_pattern);

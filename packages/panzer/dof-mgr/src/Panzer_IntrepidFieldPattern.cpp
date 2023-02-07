@@ -134,10 +134,7 @@ namespace panzer {
   getCellTopology() const
   {
     // TODO BWR Probably should change the name of this call...
-    // TODO BWR We DO rely on the intrepid2 fp using the base topo downstream so need to be careful here
     // TODO BWR However this is a virtual function
-    // TODO BWR The other field patterns (edge,face,etc.) DO NOT use the base topo
-    // TODO BWR ASK!
     return intrepidBasis_->getBaseCellTopology();
   }
 
@@ -264,6 +261,7 @@ namespace panzer {
     if(numCells>0) {
       Intrepid2::CellTools<PHX::Device> cellTools;
       // For backwards compatability, allow the FE basis to supply the mesh cell topology (via the FEM base cell topo)
+      // This will occur if no meshCellTopology is provided (defaults to Teuchos::null)
       // If provided, use the mesh topology directly
       if (meshCellTopology==Teuchos::null) {
         cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,intrepidBasis_->getBaseCellTopology());

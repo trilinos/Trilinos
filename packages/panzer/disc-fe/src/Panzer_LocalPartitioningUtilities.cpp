@@ -131,7 +131,6 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
 /** Build a Kokkos array mapping local cells to global node IDs.
   * Note that these are 'vertex nodes' and not 'basis nodes', 'quad nodes', or 'dof nodes'
   */
- // TODO BWR --> what exactly is this getting at? Ask about this...
 void
 buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> & globals)
 {

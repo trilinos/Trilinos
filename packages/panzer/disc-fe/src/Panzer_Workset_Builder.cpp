@@ -111,7 +111,6 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
       
   std::vector<RCP<const panzer::PureBasis> > bases;
   std::vector<RCP<const panzer::IntegrationRule> > int_rules;
-  // TODO BWR At least for the main_driver example, needs.cellData has the CORRECT topology
   if(isSide) {
     const panzer::CellData side_cell_data(num_cells,
                                           details.subcell_index,
