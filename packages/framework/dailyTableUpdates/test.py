@@ -76,15 +76,15 @@ def main():
 
         args = parser.parse_args()
        
-         args.merged
-         args.failed
-         args.wip
-         args.reviewed
-         args.review
-         args.waiting
-         args.open
-         args.master
-         args.jira
+        args.merged
+        args.failed
+        args.wip
+        args.reviewed
+        args.review
+        args.waiting
+        args.open
+        args.master
+        args.jira
 
         number_of_pr_merged = stat_container[1]
         number_of_failed_pr = stat_container[2]
