@@ -1031,7 +1031,7 @@ namespace MueLu {
      
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
-     rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+     rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
 
      if(levelID > 1)
        rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));
