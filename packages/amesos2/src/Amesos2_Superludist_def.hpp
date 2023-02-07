@@ -55,6 +55,7 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_Details_MpiTypeTraits.hpp>
 
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Superludist_TypeMap.hpp"
@@ -352,6 +353,7 @@ namespace Amesos2 {
       SLUD::int_t* rowind = GAstore->rowind;
       SLUD::int_t nnz = GAstore->nnz;
       double *a_GA = (double *) GAstore->nzval;
+      MPI_Datatype dtype = Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(0.0);
 
       int iinfo;
       if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
@@ -362,8 +364,8 @@ namespace Amesos2 {
         if ( iinfo == 0 ) {
             MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
             if ( job == 5 && data_.options.Equil ) {
-                MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
-                MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
+                MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
+                MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
             }
         }
       } else {
@@ -371,10 +373,16 @@ namespace Amesos2 {
         if ( iinfo == 0 ) {
           MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
           if ( job == 5 && data_.options.Equil ) {
-              MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, MPI_DOUBLE, 0, data_.grid.comm );
-              MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, MPI_DOUBLE, 0, data_.grid.comm );
+              MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
+              MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
           }
         }
+      }
+
+      if (job == 5)
+      {
+        for (SLUD::int_t i = 0; i < data_.A.nrow; ++i) data_.R1[i] = exp(data_.R1[i]);
+        for (SLUD::int_t i = 0; i < data_.A.ncol; ++i) data_.C1[i] = exp(data_.C1[i]);
       }
     }
 
@@ -500,9 +508,6 @@ namespace Amesos2 {
           SLUD::int_t m_loc   = Astore->m_loc;
           SLUD::int_t fst_row = Astore->fst_row;
           SLUD::int_t i, j, irow = fst_row, icol;
-
-          for (i = 0; i < data_.A.nrow; ++i) data_.R1[i] = exp(data_.R1[i]);
-          for (i = 0; i < data_.A.ncol; ++i) data_.C1[i] = exp(data_.C1[i]);
 
           /* Scale the distributed matrix further.
            A <-- diag(R1)*A*diag(C1)            */
