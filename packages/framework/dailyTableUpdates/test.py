@@ -68,26 +68,23 @@ def main():
         parser.add_argument("--failed", type=int, required=True, help="second argument")
         parser.add_argument("--wip", type=int, required=True, help="third argument")
         parser.add_argument("--reviewed", type=int, required=True, help="fourth argument")
-        parser.add_argument("--review", type=int, required=True, help="fifth argument")
+        parser.add_argument("--reviewing", type=int, required=True, help="fifth argument")
         parser.add_argument("--waiting", type=int, required=True, help="sixth argument")
         parser.add_argument("--open", type=int, required=True, help="seventh argument")
         parser.add_argument("--master", type=int, required=True, help="eighth argument")
         parser.add_argument("--jira", type=int, required=True, help="ninth argument")
 
         args = parser.parse_args()
-
-
-        print("Argument 1:", args.arg1)
-        print("Argument 2:", args.arg2)
-        print("Argument 3:", args.arg3)
-        print("Argument 4:", args.arg4)
-        print("Argument 5:", args.arg5)
-        print("Argument 6:", args.arg6)
-        print("Argument 7:", args.arg7)
-        print("Argument 8:", args.arg8)
-        print("Argument 9:", args.arg9)
-
-
+       
+         args.merged
+         args.failed
+         args.wip
+         args.reviewed
+         args.review
+         args.waiting
+         args.open
+         args.master
+         args.jira
 
         number_of_pr_merged = stat_container[1]
         number_of_failed_pr = stat_container[2]
@@ -102,6 +99,9 @@ def main():
     
     except:
         print("Requires more arguments ... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
+        print("    ")
+        print(sys.stderr)
+
     try:
         NUMBER_OF_PRs_MERGED = "["+number_of_pr_merged+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
         NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
