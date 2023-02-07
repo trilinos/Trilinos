@@ -48,7 +48,7 @@ def main():
     #STATUS: [0] == success, [1] == warning [3] == failure
     mm_status = [":white_check_mark:", ":warning:", ":x:"]
     pr_status = [":white_check_mark:", ":warning:", ":x:"]
-    status_example = ":white_check_mark:"
+    status_example = ":white_check_mark:" # DELETE 
     
     stat_container = sys.argv[1:]
    
@@ -61,19 +61,21 @@ def main():
         print("Veiw needed dependencies above\n\n")
 
     try:
+        
         parser = argparse.ArgumentParser()
         
-        parser.add_argument("--arg1", type=int, required=True, help="first argument")
-        parser.add_argument("--arg2", type=int, required=True, help="second argument")
-        parser.add_argument("--arg3", type=int, required=True, help="third argument")
-        parser.add_argument("--arg4", type=int, required=True, help="fourth argument")
-        parser.add_argument("--arg5", type=int, required=True, help="fifth argument")
-        parser.add_argument("--arg6", type=int, required=True, help="sixth argument")
-        parser.add_argument("--arg7", type=int, required=True, help="seventh argument")
-        parser.add_argument("--arg8", type=int, required=True, help="eighth argument")
-        parser.add_argument("--arg9", type=int, required=True, help="ninth argument")
-        
+        parser.add_argument("--merged", type=int, required=True, help="first argument")
+        parser.add_argument("--failed", type=int, required=True, help="second argument")
+        parser.add_argument("--wip", type=int, required=True, help="third argument")
+        parser.add_argument("--reviewed", type=int, required=True, help="fourth argument")
+        parser.add_argument("--review", type=int, required=True, help="fifth argument")
+        parser.add_argument("--waiting", type=int, required=True, help="sixth argument")
+        parser.add_argument("--open", type=int, required=True, help="seventh argument")
+        parser.add_argument("--master", type=int, required=True, help="eighth argument")
+        parser.add_argument("--jira", type=int, required=True, help="ninth argument")
+
         args = parser.parse_args()
+
 
         print("Argument 1:", args.arg1)
         print("Argument 2:", args.arg2)

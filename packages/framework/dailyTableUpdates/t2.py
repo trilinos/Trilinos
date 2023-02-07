@@ -1,20 +1,6 @@
 import argparse
 import sys
 
-
-  
- 
- 
- 
-  
- 
- 
- 
- 
- 
-
-
-
 try:
     parser = argparse.ArgumentParser()
     parser.add_argument("--merged", type=int, required=True, help="first argument")
