@@ -128,7 +128,6 @@ namespace MueLu {
 
     bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
 
-    std::cout<<"*** Reitzinger pL ***"<<std::endl<<pL<<std::endl;
     // If these are set correctly we assume that the nodal P contains only ones
     bool nodal_p_is_all_ones = !pL.get<bool>("tentative: constant column sums") && !pL.get<bool>("tentative: calculate qr");
 
