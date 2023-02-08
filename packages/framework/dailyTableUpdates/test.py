@@ -29,10 +29,8 @@ from time import sleep as pause
 from datetime import timedelta
 
 from datetime import date
-import subprocess
 import argparse
 import sys
-import os
 
 STOP = 0b11
 ONE_OFF = -0b1
@@ -107,11 +105,11 @@ def main():
         
         number_of_waiting_pr = args.failedprs # 6
         
-        number_of_successful_mm = args.totalopen # 7
+        number_of_successful_mm = args.mmmerges # 7
         
         master_merge_status = args.mmstatus # status range [0 - 2]
         
-        number_open_pr = args.mmmerges # 8
+        number_open_pr = args.totalopen # 8
         
         jira_ticket_number = args.jira # 9
 
@@ -139,9 +137,9 @@ def main():
         
         NUMBER_OF_PRs_WAITING = "["+str(number_of_waiting_pr)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
         
-        NUMBER_SUCCESSFUL_MM = "["+str(number_of_successful_mm)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
-        
         Open_PRs = "["+str(number_open_pr)+"]"+"(https://github.com/trilinos/Trilinos/pulls)"
+        
+        NUMBER_SUCCESSFUL_MM = "["+str(number_of_successful_mm)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
         
         JIRA_TICKETS = "[TrilFrame-"+str(jira_ticket_number)+"]"+"(https://sems-atlassian-son.sandia.gov/jira/browse/TRILFRAME-"+str(jira_ticket_number)+")"    
         
