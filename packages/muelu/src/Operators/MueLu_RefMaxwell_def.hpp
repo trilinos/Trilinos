@@ -364,7 +364,8 @@ namespace MueLu {
     if(P11_.is_null()) {
       if (skipFirstLevel_) {
         // Form A_nodal = D0* Ms D0  (aka TMT_agg)
-        A_nodal_Matrix_ = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(Ms_Matrix_,D0_Matrix_,parameterList_,std::string("D0*Ms*D0"));
+        std::string label("D0*Ms*D0");
+        A_nodal_Matrix_ = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(Ms_Matrix_,D0_Matrix_,parameterList_,label);
 
         if (applyBCsToAnodal_) {
           // Apply boundary conditions to A_nodal
