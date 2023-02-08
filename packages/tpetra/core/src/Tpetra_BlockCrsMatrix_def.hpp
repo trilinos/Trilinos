@@ -314,6 +314,11 @@ namespace Impl {
   public:
     typedef typename GraphType::device_type device_type;
 
+    //! Does this Functor get run on the host or on the device
+    static constexpr bool runOnHost = !std::is_same_v<typename device_type::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+
+
+
     //! Type of the (mesh) column indices in the sparse graph / matrix.
     typedef typename std::remove_const<typename GraphType::data_type>::type
     local_ordinal_type;
@@ -366,7 +371,7 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void
     operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
     {
-      constexpr bool runOnHost = !std::is_same_v<typename device_type::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+      //      constexpr bool runOnHost = !std::is_same_v<typename device_type::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
       const local_ordinal_type lclRow = member.league_rank();
 
       using Kokkos::Details::ArithTraits;
