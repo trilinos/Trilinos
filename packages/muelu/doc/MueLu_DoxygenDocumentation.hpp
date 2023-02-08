@@ -59,6 +59,7 @@
 
 - \ref muelu_overview
 - \ref muelu_documentation
+- \ref muelu_developers
 - \ref muelu_authors
 - \ref muelu_copyright
 - \ref muelu_questions
@@ -78,6 +79,15 @@ Useful views of the Doxygen documentation are:
 The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
 <a href=https://trilinos.org/packages/muelu/muelu-documentation>MueLu home page</a>.
 
+\section muelu_developers Current Developers
+
+  - Jonathan Hu, Sandia National Labs
+  - Matthias Mayr, Sandia National Labs
+  - Chris Siefert, Sandia National Labs
+  - Ray Tuminaro, Sandia National Labs
+  - Christian Glusa, Sandia National Labs
+  - Luc Berger-Vergiat, Sandia National Labs
+  - Graham Harper, Sandia National Labs
 
 \section muelu_authors Authors and Contributors
 
@@ -85,14 +95,11 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
   - Emily Furst, University of Washington (summer intern, 2015)
   - Jeremie Gaidamour, INRIA (Nancy, France)
   - Axel Gerstenberger, Rolls Royce
-  - Jonathan Hu, Sandia National Labs
   - Brian Kelley, Texas A&M (summer intern, 2015)
-  - Matthias Mayr, Sandia National Labs
   - Andrey Prokopenko, Sandia National Labs
-  - Chris Siefert, Sandia National Labs
   - Paul Tsuji, LLNL
-  - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Sandia National Labs
+  - Peter Ohm, RIKEN (Japan)
 
 \section muelu_copyright Copyright and License
 
