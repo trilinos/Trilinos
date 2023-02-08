@@ -272,6 +272,18 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
+    /* Algorithm overview for Maxwell1 construction:
+
+       1) Create a nodal auxillary hierarchy based on (a) the user's nodal matrix or (b) a matrix constructed
+       by D0^T A D0 if the user doesn't provide a nodal matrix.  We call this matrix "NodeAggMatrix."
+
+       2)  If the user provided a node matrix, we use the prolongators from the auxillary nodal hierarchy
+       to generate matrices for smoothers on all levels.  We call this "NodeMatrix."  Otherwise NodeMatrix = NodeAggMatrix
+
+       3) We stick all of the nodal P matrices and NodeMatrix objects on the final (1,1) hierarchy and then use the
+       ReitzingerPFactory to generate the edge P and A matrices.
+     */
+
 
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("maxwell1: cuda profile setup", false)) cudaProfilerStart();
