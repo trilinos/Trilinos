@@ -33,17 +33,22 @@ import argparse
 import sys
 
 STOP = 0b11
-ONE_OFF = -0b1
+ONE = 0b1
+ONE_OFF = -ONE
+DUNDER_MAIN = '__main__'
 
 try:
   import pytablewriter as ptw
   from dateutil.relativedelta import relativedelta, FR
+
 except ImportError:
   print("\n\nHere are a list of needed dependencies ... \n\n\n")
+  
   pause(STOP)
 
   print("\t*** Package(s) that need to be installed ***\n \n\tpip3 install python-dateutil " 
         + "\n\tpip3 install pytablewriter \n\n\n\t*** Install and try running again ***\n\n\n")
+  
   pause(STOP)  
 
 def main():
@@ -55,7 +60,7 @@ def main():
     
     today = date.today()
 
-    yesterday = today - timedelta(days = 1)
+    yesterday = today - timedelta(days = ONE)
 
     try:
         last_Friday = today + relativedelta(weekday=FR(ONE_OFF))
@@ -65,7 +70,6 @@ def main():
 
     try:
         parser = argparse.ArgumentParser()
-        # --prstatus --merged --wip --reviewed --changerequest --reviewaproved --failedprs --totalopen --mmstatus --mmmerges --jira
         
         parser.add_argument("--prstatus", type=int, required=True, help="Pull Request Status")
         
@@ -91,27 +95,27 @@ def main():
         
         args = parser.parse_args()
        
-        pull_request_status = args.prstatus # status range [0 - 2]
+        pull_request_status = args.prstatus
 
-        number_of_pr_merged = args.merged # 1
+        number_of_pr_merged = args.merged 
         
-        number_wip_prs = args.wip # 2 
+        number_wip_prs = args.wip
         
-        number_reviewed_required = args.reviewed # 3 
+        number_reviewed_required = args.reviewed 
         
-        number_change_requested = args.changerequest # 4
+        number_change_requested = args.changerequest 
         
-        number_review_approved = args.reviewaproved # 5
+        number_review_approved = args.reviewaproved 
         
-        number_of_waiting_pr = args.failedprs # 6
+        number_of_waiting_pr = args.failedprs 
         
-        number_of_successful_mm = args.mmmerges # 7
+        number_of_successful_mm = args.mmmerges 
         
-        master_merge_status = args.mmstatus # status range [0 - 2]
+        master_merge_status = args.mmstatus 
         
-        number_open_pr = args.totalopen # 8
+        number_open_pr = args.totalopen 
         
-        jira_ticket_number = args.jira # 9
+        jira_ticket_number = args.jira 
 
     except:
         print("Error in variable initialization ....")
@@ -182,5 +186,5 @@ def main():
         
         print("    ")
             
-if __name__ == "__main__":
+if __name__ == DUNDER_MAIN:
     main()
