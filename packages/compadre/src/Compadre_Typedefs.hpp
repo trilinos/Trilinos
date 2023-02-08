@@ -113,6 +113,10 @@ typedef typename pool_type::generator_type generator_type;
         using KokkosInitArguments = Kokkos::InitArguments;
         constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-threads";
     #endif
+  #elif COMPADRE_KOKKOS_VERSION_MAJOR >= 4
+    using KokkosInitArguments = Kokkos::InitializationSettings;
+    #define COMPADRE_KOKKOS_GREATEREQUAL_3_7
+    constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-num-threads";
   #endif
 #else // older version
   using KokkosInitArguments = Kokkos::InitArguments;
