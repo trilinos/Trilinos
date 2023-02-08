@@ -14,12 +14,16 @@ Trilinos Status Table Automation Script
     
     
 SYNOPSIS                                                                                                                                 
-<python> table_Automation.py <[0-3] 1 2 3 4 [0-3] 5 6 7 8 9 [435]> [TrilFrame-435]
 
-#STATUS: [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
+<python> table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2] --mmmerges <int> --jira <int>
 
-<User inputs twelve charter(s) from terminal, 2* is not used>
-updated table string example: python table_Automation2.py 0 0 2* 22 21 0 5 3 4 57 1 000
+#STATUS --prstatus --mmstatus : [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
+
+<User inputs eleven charter(s) from terminal>
+
+python test.py --prstatus [0-2] --merged 2 --wip 3 --reviewed 4 --changerequest 5 --reviewaproved 6 --failedprs 7 --totalopen 8 --mmstatus [0-2] --mmmerges 10 --jira 11
+
+python table_Automation.py --merged --failed --wip --reviewed --changerequest --reviewaproved --failedprs --totalopen --mmstatus --mmmerges --jira
 """
 from time import sleep as pause
 from datetime import timedelta
@@ -46,14 +50,15 @@ except ImportError:
 
 def main():
     #STATUS: [0] == success, [1] == warning [3] == failure
+
+    pr_status = [":white_check_mark:", ":warning:", ":x:"] 
+
     mm_status = [":white_check_mark:", ":warning:", ":x:"]
-    pr_status = [":white_check_mark:", ":warning:", ":x:"]
-    status_example = ":white_check_mark:" # DELETE 
     
-    stat_container = sys.argv[1:]
-   
     today = date.today()
+
     yesterday = today - timedelta(days = 1)
+
     try:
         last_Friday = today + relativedelta(weekday=FR(ONE_OFF))
     
@@ -61,73 +66,123 @@ def main():
         print("Veiw needed dependencies above\n\n")
 
     try:
-        
         parser = argparse.ArgumentParser()
+        # --prstatus --merged --wip --reviewed --changerequest --reviewaproved --failedprs --totalopen --mmstatus --mmmerges --jira
         
-        parser.add_argument("--merged", type=int, required=True, help="first argument")
-        parser.add_argument("--failed", type=int, required=True, help="second argument")
-        parser.add_argument("--wip", type=int, required=True, help="third argument")
-        parser.add_argument("--reviewed", type=int, required=True, help="fourth argument")
-        parser.add_argument("--reviewing", type=int, required=True, help="fifth argument")
-        parser.add_argument("--waiting", type=int, required=True, help="sixth argument")
-        parser.add_argument("--open", type=int, required=True, help="seventh argument")
-        parser.add_argument("--master", type=int, required=True, help="eighth argument")
-        parser.add_argument("--jira", type=int, required=True, help="ninth argument")
+        parser.add_argument("--prstatus", type=int, required=True, help="Pull Request Status")
+        
+        parser.add_argument("--merged", type=int, required=True, help="Pull Request Merged Past 24 Hrs")
+        
+        parser.add_argument("--wip", type=int, required=True, help="WIP Pull Request @ 12pm")
+        
+        parser.add_argument("--reviewed", type=int, required=True, help="Review Required, Pull Request @ 12pm")
+        
+        parser.add_argument("--changerequest", type=int, required=True, help="Change Requested Pull Request @ 12pm")
+        
+        parser.add_argument("--reviewaproved", type=int, required=True, help="Review Approved, Pull Request @ 12pm")
+        
+        parser.add_argument("--failedprs", type=int, required=True, help="Failed Pull Request @ 12pm")
 
+        parser.add_argument("--totalopen", type=int, required=True, help="Total Open Pull Request @ 12pm")
+        
+        parser.add_argument("--mmstatus", type=int, required=True, help="Master Merge Status")
+        
+        parser.add_argument("--mmmerges", type=int, required=True, help="Master Merge(s) last 24Hr's")
+        
+        parser.add_argument("--jira", type=int, required=True, help="Jira tickets, if needed")
+        
         args = parser.parse_args()
        
-        args.merged
-        args.failed
-        args.wip
-        args.reviewed
-        args.reviewing
-        args.waiting
-        args.open
-        args.master
-        args.jira
+        pull_request_status = args.prstatus # status range [0 - 2]
 
-        number_of_pr_merged = stat_container[args.merged]
-        # number_of_failed_pr = stat_container[args.failed]
-        number_wip_prs = stat_container[args.wip]
-        number_reviewed_required = stat_container[args.reviewed]
-        number_change_requested = stat_container[args.reviewing]
-        number_review_approved = stat_container[args.waiting]
-        number_of_waiting_pr = stat_container[args.failed]
-        number_open_pr = stat_container[args.open]
-        number_of_successful_mm = stat_container[args.master]
-        jira_ticket_number = stat_container[args.jira]
-    
+        number_of_pr_merged = args.merged # 1
+        
+        number_wip_prs = args.wip # 2 
+        
+        number_reviewed_required = args.reviewed # 3 
+        
+        number_change_requested = args.changerequest # 4
+        
+        number_review_approved = args.reviewaproved # 5
+        
+        number_of_waiting_pr = args.failedprs # 6
+        
+        number_of_successful_mm = args.totalopen # 7
+        
+        master_merge_status = args.mmstatus # status range [0 - 2]
+        
+        number_open_pr = args.mmmerges # 8
+        
+        jira_ticket_number = args.jira # 9
+
     except:
-        print("Requires more arguments ... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
+        print("Error in variable initialization ....")
+        
+        print("\n ") 
+        
+        print("table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2]")
+        
         print("    ")
+        
         print(sys.stderr)
 
     try:
-        NUMBER_OF_PRs_MERGED = "["+number_of_pr_merged+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
-        NUMBER_OF_PRs_WAITING = "["+number_of_waiting_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
-        NUMBER_SUCCESSFUL_MM = "["+number_of_successful_mm+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
-        JIRA_TICKETS = "[TrilFrame-"+jira_ticket_number+"]"+"(https://sems-atlassian-son.sandia.gov/jira/browse/TRILFRAME-"+str(jira_ticket_number)+")"
-        Open_PRs = "["+number_open_pr+"]"+"(https://github.com/trilinos/Trilinos/pulls)"
-        WIP_PRs = "["+number_wip_prs+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+label%3A%22AT%3A+WIP%22)"
-        REVIEW_REQUIRED = "["+number_reviewed_required+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Arequired+-label%3A%22AT%3A+WIP%22)"
-        CHANGE_REQUESTED = "["+number_change_requested+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Achanges-requested+-label%3A%22AT%3A+WIP%22)"
-        REVIEW_APROVED = "["+number_review_approved+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+-status%3Afailure+-label%3A%22AT%3A+WIP%22)"
+        NUMBER_OF_PRs_MERGED = "["+str(number_of_pr_merged)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(yesterday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Adevelop)"
+        
+        WIP_PRs = "["+str(number_wip_prs)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+label%3A%22AT%3A+WIP%22)"
+        
+        REVIEW_REQUIRED = "["+str(number_reviewed_required)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Arequired+-label%3A%22AT%3A+WIP%22)"
+        
+        CHANGE_REQUESTED = "["+str(number_change_requested)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Achanges-requested+-label%3A%22AT%3A+WIP%22)"
+        
+        REVIEW_APROVED = "["+str(number_review_approved)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=+is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+-status%3Afailure+-label%3A%22AT%3A+WIP%22)"
+        
+        NUMBER_OF_PRs_WAITING = "["+str(number_of_waiting_pr)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+is%3Aopen+base%3Adevelop+review%3Aapproved+status%3Afailure+-label%3A%22AT%3A+WIP%22)"
+        
+        NUMBER_SUCCESSFUL_MM = "["+str(number_of_successful_mm)+"]"+"(https://github.com/trilinos/Trilinos/pulls?q=is%3Apr+merged%3A"+str(last_Friday)+"T12%3A00%3A00-07%3A00.."+str(today)+"T12%3A00%3A00-07%3A00+base%3Amaster+)"
+        
+        Open_PRs = "["+str(number_open_pr)+"]"+"(https://github.com/trilinos/Trilinos/pulls)"
+        
+        JIRA_TICKETS = "[TrilFrame-"+str(jira_ticket_number)+"]"+"(https://sems-atlassian-son.sandia.gov/jira/browse/TRILFRAME-"+str(jira_ticket_number)+")"    
+        
     except:
-        print("Missing required argument(s)... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
+        print("Error in Link initialization ... ")
+
     try:
+        print("\n  ")
+
         writer = ptw.MarkdownTableWriter(
               table_name="Trilinos Status Table",
               headers=["Date", "PR Status", "PRs Merged (Past 24 Hrs from 12pm)", "WIP PRs (@ 12pm)", "Review-Required PRs (@ 12pm) ", "Change-Requested PRs (@ 12pm) ", "Review-Approved PRs (@ 12pm)", " Failed PRs (@ 12pm)", "Total Open PRs (@ 12pm)", "MM Status", "Master Merges (Past 24 hrs from 12pm)", "Jira Ticket #"],
               value_matrix=[
-                    [str(today), pr_status[int(stat_container[0])], NUMBER_OF_PRs_MERGED, WIP_PRs, REVIEW_REQUIRED, CHANGE_REQUESTED, REVIEW_APROVED, NUMBER_OF_PRs_WAITING, Open_PRs, mm_status[int(stat_container[5])], NUMBER_SUCCESSFUL_MM, JIRA_TICKETS]
+                    [str(today), pr_status[pull_request_status], NUMBER_OF_PRs_MERGED, WIP_PRs, REVIEW_REQUIRED, CHANGE_REQUESTED, REVIEW_APROVED, NUMBER_OF_PRs_WAITING, Open_PRs, mm_status[master_merge_status], NUMBER_SUCCESSFUL_MM, JIRA_TICKETS]
               ],
           )
+
+        print("\n  ") 
+
     except:
-        print("Not enough arguments ... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
+        print("Error in table creation")
+        
+        print("\n ") 
+        
+        print("table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2]")
+        
+        print("    ")
+
     try:
         print(writer)
+
+        print("\n  ")
+
     except:
-        print("Can not write to file, missing arguements ... Example: table_Automation.py 0 0 2* 22 21 0 5 3 4 57 1 000")
+        print("Error in generating table to terminal ....")
+        
+        print("\n ") 
+        
+        print("table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2]")
+        
+        print("    ")
             
 if __name__ == "__main__":
     main()
