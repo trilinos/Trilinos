@@ -246,6 +246,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
+    EdgeL->Set("NodeAggMatrix",NodeL->Get<RCP<Matrix> >("A"));
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
@@ -355,6 +356,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
+    EdgeL->Set("NodeAggMatrix",NodeL->Get<RCP<Matrix> >("A"));
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
@@ -480,6 +482,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
+    EdgeL->Set("NodeAggMatrix",NodeL->Get<RCP<Matrix> >("A"));
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
@@ -624,6 +627,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
+    EdgeL->Set("NodeAggMatrix",NodeL->Get<RCP<Matrix> >("A"));
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
