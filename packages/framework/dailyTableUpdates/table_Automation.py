@@ -2,9 +2,11 @@
 """
 Trilinos Status Table Automation Script
       
-      table_Automation.py <pr_status, pr_merged, failed_pr, 
-                                waiting_pr, open_pr, mm_status, successful_mm[, jira_ticket]>
-    
+      <python> table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> 
+                                        --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2] --mmmerges <int> --jira <int>
+
+      python table_Automation.py --prstatus [0-2] --merged 2 --wip 3 --reviewed 4 --changerequest 5 --reviewaproved 6 --failedprs 7 --totalopen 8 --mmstatus [0-2] --mmmerges 10 --jira 11
+
       This script prints out todays Trilinos status in MarkDown syntax so that it can be added to the Trilinos Wiki page.
     
 ** Dependencies needed to run script:
@@ -17,13 +19,11 @@ SYNOPSIS
 
 <python> table_Automation.py --prstatus <int>[0-2] --merged <int> --wip <int> --reviewed <int> --changerequest <int> --reviewaproved <int> --failedprs <int> --totalopen <int> --mmstatus <int>[0-2] --mmmerges <int> --jira <int>
 
-#STATUS --prstatus --mmstatus : [0] == success, [1] == warning [3] == failure -> Pull Request(s) and Master Merge Status codes.
+#STATUS --prstatus --mmstatus : [0] == success, [1] == warning [2] == failure -> Pull Request(s) and Master Merge Status codes.
 
-<User inputs eleven charter(s) from terminal>
+<User inputs eleven int value(s) from terminal>
 
-python test.py --prstatus [0-2] --merged 2 --wip 3 --reviewed 4 --changerequest 5 --reviewaproved 6 --failedprs 7 --totalopen 8 --mmstatus [0-2] --mmmerges 10 --jira 11
-
-python table_Automation.py --merged --failed --wip --reviewed --changerequest --reviewaproved --failedprs --totalopen --mmstatus --mmmerges --jira
+python table_Automation.py --prstatus [0-2] --merged 2 --wip 3 --reviewed 4 --changerequest 5 --reviewaproved 6 --failedprs 7 --totalopen 8 --mmstatus [0-2] --mmmerges 10 --jira 11
 """
 from time import sleep as pause
 from datetime import timedelta
@@ -52,7 +52,7 @@ except ImportError:
   pause(STOP)  
 
 def main():
-    #STATUS: [0] == success, [1] == warning [3] == failure
+    #STATUS: [0] == success, [1] == warning [2] == failure
 
     pr_status = [":white_check_mark:", ":warning:", ":x:"] 
 
