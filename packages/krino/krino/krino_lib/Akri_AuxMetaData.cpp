@@ -37,6 +37,12 @@ AuxMetaData::get(const stk::mesh::MetaData & stk_meta)
   return *aux_meta;
 }
 
+bool AuxMetaData::has(const stk::mesh::MetaData & stk_meta)
+{
+  AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
+  return aux_meta != nullptr;
+}
+
 AuxMetaData &
 AuxMetaData::create(stk::mesh::MetaData & stk_meta)
 {

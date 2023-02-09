@@ -220,6 +220,7 @@ public:
   virtual NodeVec get_parents() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
   virtual size_t get_num_parents() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
   virtual std::vector<double> get_parent_weights() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const = 0;
   virtual void prolongate_fields(const CDMesh & mesh) const = 0;
 
   void get_parent_entities(std::vector<stk::mesh::Entity*> & parent_entities) const;
@@ -278,8 +279,6 @@ public:
   // This is called from Mesh::find_prolongation_node to determine the set of candidate prolongation nodes.
   std::vector<unsigned> prolongation_node_fields(const CDMesh & mesh) const;
 
-  const SubElementNode * find_node_with_common_ancestry(const CDMesh & search_mesh) const;
-
   void get_ancestors(NodeSet & ancestors) const;
   SubElementNodeAncestry get_ancestry() const;
   void build_stencil(std::map<const SubElementNode *, double> & stencil, const double self_weight = 1.0) const;
@@ -316,13 +315,13 @@ public:
       const std::vector<double> & weights );
 
   virtual ~SubElementChildNode() {}
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override;
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override;
 
   virtual NodeVec get_parents() const override { return my_parents; }
   virtual size_t get_num_parents() const override { return my_parents.size(); }
   virtual std::vector<double> get_parent_weights() const override { return my_weights; }
-  bool needs_to_be_ale_prolonged(const CDMesh & mesh) const;
 
 private:
   void prolong_ale_fields(const CDMesh & mesh, const ProlongationPointData * prolong_data) const;
@@ -341,6 +340,7 @@ public:
   : SubElementChildNode(in_owner, parents, weights) {}
 
   virtual ~SubElementSteinerNode() {}
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual Vector3d compute_owner_coords( const Mesh_Element * owner ) const override {
     throw std::runtime_error("Incorrect usage of SubElementSteinerNode.  The type of node only has one owner.");
@@ -379,6 +379,7 @@ public:
       stk::mesh::EntityId meshNodeId);
 
   virtual ~SubElementMidSideNode() {}
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override {
     return 0.5 * my_parent1->owner_coords(in_owner) + 0.5 * my_parent2->owner_coords(in_owner);
@@ -412,10 +413,10 @@ public:
 
   virtual ~SubElementMeshNode() {}
 
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override;
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual Vector3d compute_owner_coords( const Mesh_Element * owner ) const override { return owner->get_node_parametric_coords(this); }
   virtual bool is_mesh_node() const override { return true; }
-  bool needs_to_be_ale_prolonged(const CDMesh & mesh) const;
 protected:
 
 private:

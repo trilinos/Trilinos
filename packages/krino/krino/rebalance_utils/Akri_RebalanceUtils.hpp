@@ -19,6 +19,8 @@ namespace krino { class RefinementInterface; }
 namespace krino {
 namespace rebalance_utils {
 
+bool have_parmetis();
+
 // This function will call STK rebalance to rebalance the specified selections of the
 // mesh based on the ELEMENT_RANK field element_weights_field. If cdmesh != nullptr the
 // rebalance operation will ensure that all CDFEM child elements are moved to the same

@@ -21,6 +21,8 @@
 #include <Akri_Faceted_Surface.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_Vec.hpp>
+#include "Akri_MasterElementDeterminer.hpp"
+#include "Akri_TopologyData.hpp"
 
 namespace krino {
 
@@ -30,19 +32,26 @@ bool compare_ptr_by_global_id (const T* i, const T* j) { return (i->global_id() 
 class ContourSubElement {
 public:
 
-  ContourSubElement( const stk::topology topo,
-	      const PointVec & coords,
-	      const std::vector<int> & side_ids,
-	      const ContourElement * owner,
+  ContourSubElement(const ContourElement * owner,
               const int in_subelement_depth,
               const int subelement_sign );
 
   virtual ~ContourSubElement();
 
+  virtual const MasterElement& get_master_element() const = 0;
+  virtual const MasterElement& get_side_master_element() const = 0;
+  virtual int get_num_nodes() const = 0;
+  virtual int get_num_sides() const = 0;
+  virtual const int * get_side_ids() const = 0;
+  virtual const double * get_distance_at_nodes() const = 0;
+  virtual const Vector3d * get_coordinates_at_nodes() const = 0;
+
   static bool is_more(const Vector3d & v1, const Vector3d & v2);
 
+  double compute_area_of_interface() const;
+  double compute_relative_signed_volume(const int signOfDomain) const;
+
   double relative_volume() const;
-  double side_relative_area( const int side ) const;
   double parametric_quality() const;
   double physical_quality() const;
   double side_quality(const int side) const;
@@ -59,16 +68,13 @@ public:
 
   // default implementation
   virtual int side_facets( Faceted_Surface & facets, int side ) const;
+  virtual double side_area( int side ) const;
 
-  stk::topology topology() const { return my_master_element.get_topology(); }
+  stk::topology topology() const { return get_master_element().get_topology(); }
 
   int spatial_dim() const { return my_owner->spatial_dim(); }
   int num_subelements() const { return my_subelements.size(); }
 
-  std::vector<int> & get_side_ids() { return my_side_ids; }
-  const std::vector<int> & get_side_ids() const { return my_side_ids; }
-
-  const PointVec & get_coords() const { return my_coords; }
   const ContourElement * owner() const { return my_owner; }
   int subelement_depth() const { return my_subelement_depth; }
 
@@ -89,13 +95,6 @@ public:
 
 protected:
 
-  const MasterElement& my_master_element;
-  const MasterElement& my_side_master_element;
-  int my_num_nodes;
-  int my_num_sides;
-  PointVec my_coords;
-  std::vector<int> my_side_ids;
-  std::vector<double> my_dist;
   std::vector< ContourSubElement * > my_subelements;
   const ContourElement * my_owner;
   int my_subelement_depth; // depth down the tree of subelements (0 for the base_subelement)
@@ -106,53 +105,87 @@ private:
   ContourSubElement();
 };
 
-class ContourSubElement_Quad_4 : public ContourSubElement {
+template<stk::topology::topology_t TOPO>
+class ContourSubElementWithTopology : public ContourSubElement {
 public:
-  ContourSubElement_Quad_4( const PointVec & coords,
-		     const std::vector<int> & side_ids,
+  static constexpr unsigned NUM_NODES = TopologyData<TOPO>::num_nodes();
+  static constexpr unsigned NUM_SIDES = TopologyData<TOPO>::num_sides();
+
+  ContourSubElementWithTopology( const std::array<Vector3d,NUM_NODES> & coords,
+              const std::array<int,NUM_SIDES> & sideIds,
+              const ContourElement * owner,
+              const int subelementDepth,
+              const int subelementSign )
+  : ContourSubElement(owner, subelementDepth, subelementSign),
+    myCoords(coords),
+    mySideIds(sideIds)
+  {
+    for ( unsigned i = 0; i < NUM_NODES; i++ )
+      myDist[i] = my_owner->distance( coords[i] );
+  }
+
+  virtual ~ContourSubElementWithTopology() {}
+
+  virtual int get_num_nodes() const { return NUM_NODES; }
+  virtual int get_num_sides() const { return NUM_SIDES; }
+  virtual const int * get_side_ids() const override { return mySideIds.data(); }
+  virtual const double * get_distance_at_nodes() const override { return myDist.data(); }
+  virtual const Vector3d * get_coordinates_at_nodes() const override { return myCoords.data(); }
+  virtual const MasterElement& get_master_element() const { return theMasterElement; }
+  virtual const MasterElement& get_side_master_element() const { return theSideMasterElement; }
+
+protected:
+  static const MasterElement& theMasterElement;
+  static const MasterElement& theSideMasterElement;
+  std::array<Vector3d,NUM_NODES> myCoords;
+  std::array<int,NUM_SIDES> mySideIds;
+  std::array<double,NUM_NODES> myDist;
+};
+
+template<stk::topology::topology_t TOPO>
+const MasterElement& ContourSubElementWithTopology<TOPO>::theMasterElement = MasterElementDeterminer::getMasterElement(stk::topology(TOPO));
+
+template<stk::topology::topology_t TOPO>
+const MasterElement& ContourSubElementWithTopology<TOPO>::theSideMasterElement = MasterElementDeterminer::getMasterElement(stk::topology(TOPO).side_topology());
+
+class ContourSubElement_Quad_4 : public ContourSubElementWithTopology<stk::topology::QUAD_4_2D> {
+public:
+  ContourSubElement_Quad_4( const std::array<Vector3d,4> & coords,
+		     const std::array<int,4> & sideIds,
 		     const ContourElement * in_owner );
   virtual ~ContourSubElement_Quad_4() {}
 
 private:
-  //: Default constructor not allowed
-  ContourSubElement_Quad_4();
-
   int non_conformal_decomposition();
 };
 
-class ContourSubElement_Quad_9 : public ContourSubElement {
+class ContourSubElement_Quad_9 : public ContourSubElementWithTopology<stk::topology::QUAD_9_2D> {
 public:
-  ContourSubElement_Quad_9( const PointVec & coords,
-		     const std::vector<int> & side_ids,
+  ContourSubElement_Quad_9( const std::array<Vector3d,9> & coords,
+		     const std::array<int,4> & sideIds,
 		     const ContourElement * in_owner );
 
   virtual ~ContourSubElement_Quad_9() {}
 
 private:
-  //: Default constructor not allowed
-  ContourSubElement_Quad_9();
-
   int non_conformal_decomposition();
 };
 
-class ContourSubElement_Hex_8 : public ContourSubElement {
+class ContourSubElement_Hex_8 : public ContourSubElementWithTopology<stk::topology::HEX_8> {
 public:
-  ContourSubElement_Hex_8( const PointVec & coords,
-		    const std::vector<int> & side_ids,
+  ContourSubElement_Hex_8( const std::array<Vector3d,8> & coords,
+		    const std::array<int,6> & sideIds,
 		    const ContourElement * in_owner );
   virtual ~ContourSubElement_Hex_8() {}
 
 private:
-  //: Default constructor not allowed
-  ContourSubElement_Hex_8();
-
   int subpyramid_non_conformal_decomposition( const int face );
 };
 
-class ContourSubElement_Hex_27 : public ContourSubElement {
+class ContourSubElement_Hex_27 : public ContourSubElementWithTopology<stk::topology::HEX_27> {
 public:
-  ContourSubElement_Hex_27( const PointVec & coords,
-		     const std::vector<int> & side_ids,
+  ContourSubElement_Hex_27( const std::array<Vector3d,27> & coords,
+		     const std::array<int,6> & sideIds,
 		     const ContourElement * in_owner );
   virtual ~ContourSubElement_Hex_27() {}
 
@@ -163,10 +196,10 @@ private:
   int subpyramid_non_conformal_decomposition( const int face );
 };
 
-class ContourSubElement_Wedge_6 : public ContourSubElement {
+class ContourSubElement_Wedge_6 : public ContourSubElementWithTopology<stk::topology::WEDGE_6> {
 public:
-  ContourSubElement_Wedge_6( const PointVec & coords,
-                    const std::vector<int> & side_ids,
+  ContourSubElement_Wedge_6( const std::array<Vector3d,6> & coords,
+                    const std::array<int,5> & sideIds,
                     const ContourElement * in_owner );
   virtual ~ContourSubElement_Wedge_6() {}
 
@@ -174,16 +207,17 @@ private:
   int subpyramid_non_conformal_decomposition( const int face );
 };
 
-class ContourSubElement_Tri_3 : public ContourSubElement {
+class ContourSubElement_Tri_3 : public ContourSubElementWithTopology<stk::topology::TRI_3_2D> {
 public:
-  ContourSubElement_Tri_3( const PointVec & coords,
-		    const std::vector<int> & side_ids,
+  ContourSubElement_Tri_3( const std::array<Vector3d,3> & coords,
+		    const std::array<int,3> & sideIds,
 		    const ContourElement * in_owner,
                     const int in_subelement_depth = 0,
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tri_3() {}
 
-  virtual int side_facets( Faceted_Surface & facets, int side ) const;
+  virtual int side_facets( Faceted_Surface & facets, int side ) const override;
+  double side_area( int side ) const override;
 
 private:
   //: Default constructor not allowed
@@ -194,23 +228,23 @@ private:
   int process_edge( const int i0,
                     const int i1,
                     const int i2,
-                    std::vector<int> & is_on_surf,
-                    PointVec & lnodes,
-                    const std::vector<double> & ldist );
+                    std::array<int,6> & is_on_surf,
+                    std::array<Vector3d,6> & lnodes,
+                    const std::array<double,3> & ldist );
 
-  bool is_degenerate( const std::vector<int> & edge_node_ids,
+  bool is_degenerate( const std::array<int,6> & edge_node_ids,
                       const int i0, const int i1, const int i2 );
 };
 
-class ContourSubElement_Adaptive_Tri_3 : public ContourSubElement {
+class ContourSubElement_Adaptive_Tri_3 : public ContourSubElementWithTopology<stk::topology::TRI_3_2D> {
 public:
-  ContourSubElement_Adaptive_Tri_3( const PointVec & coords,
-                             const std::vector<int> & side_ids,
+  ContourSubElement_Adaptive_Tri_3( const std::array<Vector3d,3> & coords,
+                             const std::array<int,3> & sideIds,
                              const ContourElement * in_owner,
                              const int in_subelement_depth = 0);
-  ContourSubElement_Adaptive_Tri_3( const PointVec & coords,
-                             const std::vector<int> & side_ids,
-                             const std::vector<int> & edge_age,
+  ContourSubElement_Adaptive_Tri_3( const std::array<Vector3d,3> & coords,
+                             const std::array<int,3> & sideIds,
+                             const std::array<int,3> & edge_age,
                              const ContourElement * in_owner,
                              const int in_subelement_depth = 0);
   virtual ~ContourSubElement_Adaptive_Tri_3() {}
@@ -223,13 +257,13 @@ private:
 
   int non_conformal_decomposition();
 
-  std::vector<int> my_edge_age;
+  std::array<int,3> my_edge_age;
 };
 
-class ContourSubElement_Tri_6 : public ContourSubElement {
+class ContourSubElement_Tri_6 : public ContourSubElementWithTopology<stk::topology::TRI_6_2D> {
 public:
-  ContourSubElement_Tri_6( const PointVec & coords,
-                    const std::vector<int> & side_ids,
+  ContourSubElement_Tri_6( const std::array<Vector3d,6> & coords,
+                    const std::array<int,3> & sideIds,
                     const ContourElement * in_owner,
                     const int in_subelement_depth = 0,
                     const int subelement_sign = 0 );
@@ -240,16 +274,17 @@ private:
   ContourSubElement_Tri_6();
 };
 
-class ContourSubElement_Tet_4 : public ContourSubElement {
+class ContourSubElement_Tet_4 : public ContourSubElementWithTopology<stk::topology::TET_4> {
 public:
-  ContourSubElement_Tet_4( const PointVec & coords,
-                    const std::vector<int> & side_ids,
+  ContourSubElement_Tet_4( const std::array<Vector3d,4> & coords,
+                    const std::array<int,4> & sideIds,
                     const ContourElement * in_owner,
                     const int in_subelement_depth = 0,
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tet_4() {}
 
-  virtual int side_facets( Faceted_Surface & facets, int side ) const;
+  virtual int side_facets( Faceted_Surface & facets, int side ) const override;
+  virtual double side_area( int side ) const override;
 
 private:
   //: Default constructor not allowed
@@ -260,23 +295,23 @@ private:
   int process_edge( const int i0,
                     const int i1,
                     const int i2,
-                    std::vector<int> & is_on_surf,
-                    PointVec & lnodes,
-                    const std::vector<double> & ldist );
+                    std::array<int,10> & is_on_surf,
+                    std::array<Vector3d,10> & lnodes,
+                    const std::array<double,4> & ldist );
 
-  bool is_degenerate( const std::vector<int> & edge_node_ids,
+  bool is_degenerate( const std::array<int,10> & edge_node_ids,
                       const int i0, const int i1, const int i2, const int i3 );
 };
 
-class ContourSubElement_Adaptive_Tet_4 : public ContourSubElement {
+class ContourSubElement_Adaptive_Tet_4 : public ContourSubElementWithTopology<stk::topology::TET_4> {
 public:
-  ContourSubElement_Adaptive_Tet_4( const PointVec & coords,
-                             const std::vector<int> & side_ids,
+  ContourSubElement_Adaptive_Tet_4( const std::array<Vector3d,4> & coords,
+                             const std::array<int,4> & sideIds,
                              const ContourElement * in_owner,
                              const int in_subelement_depth = 0);
-  ContourSubElement_Adaptive_Tet_4( const PointVec & coords,
-                             const std::vector<int> & side_ids,
-                             const std::vector<int> & edge_age,
+  ContourSubElement_Adaptive_Tet_4( const std::array<Vector3d,4> & coords,
+                             const std::array<int,4> & sideIds,
+                             const std::array<int,6> & edge_age,
                              const ContourElement * in_owner,
                              const int in_subelement_depth = 0);
   virtual ~ContourSubElement_Adaptive_Tet_4() {}
@@ -289,13 +324,13 @@ private:
 
   int non_conformal_decomposition();
 
-  std::vector<int> my_edge_age;
+  std::array<int,6> my_edge_age;
 };
 
-class ContourSubElement_Tet_10 : public ContourSubElement {
+class ContourSubElement_Tet_10 : public ContourSubElementWithTopology<stk::topology::TET_10> {
 public:
-  ContourSubElement_Tet_10( const PointVec & coords,
-                     const std::vector<int> & side_ids,
+  ContourSubElement_Tet_10( const std::array<Vector3d,10> & coords,
+                     const std::array<int,4> & sideIds,
                      const ContourElement * in_owner,
                      const int in_subelement_depth = 0,
                      const int subelement_sign = 0 );

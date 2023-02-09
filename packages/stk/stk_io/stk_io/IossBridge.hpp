@@ -341,10 +341,9 @@ std::string map_stk_topology_to_ioss(stk::topology topo);
  * Ioss::GroupingEntity to/from an stk::mesh::Field.  See
  * stk::io::field_data_from_ioss() and stk::io::field_data_to_ioss() for examples.
  */
-void get_input_entity_list(Ioss::GroupingEntity *io_entity,
-                           stk::mesh::EntityRank part_type,
-                           const stk::mesh::BulkData &bulk,
-                           std::vector<stk::mesh::Entity> &entities);
+std::vector<stk::mesh::Entity> get_input_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                     stk::mesh::EntityRank part_type,
+                                                     const stk::mesh::BulkData &bulk);
 
 void get_output_entity_list(Ioss::GroupingEntity *io_entity,
                             stk::mesh::EntityRank part_type,
@@ -370,7 +369,7 @@ bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::
 
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const stk::mesh::FieldBase *field,
-                                     std::vector<stk::mesh::Entity> &entity_list,
+                                     const std::vector<stk::mesh::Entity> &entity_list,
                                      Ioss::GroupingEntity *io_entity,
                                      const std::string &name,
                                      const size_t state_count,
@@ -378,14 +377,14 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      std::vector<std::string>* multiStateSuffixes=nullptr);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-					       const stk::mesh::FieldBase *field,
-					       std::vector<stk::mesh::Entity> &entity_list,
-					       Ioss::GroupingEntity *io_entity,
-					       const stk::mesh::Part *stk_part,
-					       const std::string &name,
-					       const size_t state_count,
-					       bool ignore_missing_fields = false,
-					       std::vector<std::string>* multiStateSuffixes=nullptr);
+                 const stk::mesh::FieldBase *field,
+                 const std::vector<mesh::Entity> &entity_list,
+                 Ioss::GroupingEntity *io_entity,
+                 const stk::mesh::Part *stk_part,
+                 const std::string &name,
+                 const size_t state_count,
+                 bool ignore_missing_fields = false,
+                 std::vector<std::string>* multiStateSuffixes=nullptr);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named
@@ -395,16 +394,16 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
  */
 void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity> &entities,
+                          const std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
 void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-				    const stk::mesh::FieldBase *field,
-				    std::vector<stk::mesh::Entity> &entities,
-				    Ioss::GroupingEntity *io_entity,
-				    const stk::mesh::Part *stk_part,
-				    const std::string &io_fld_name);
+            const stk::mesh::FieldBase *field,
+            const std::vector<mesh::Entity> &entities,
+            Ioss::GroupingEntity *io_entity,
+            const stk::mesh::Part *stk_part,
+            const std::string &io_fld_name);
 
 void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
                         const stk::mesh::FieldBase *field,

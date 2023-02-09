@@ -37,9 +37,12 @@ bool SnapInfo::Comparator::is_first_higher_priority_than_second(const SnapInfo& 
 
     if(mQualityMetric.is_first_quality_metric_better_than_second(snapInfoA.get_post_worst_quality(),snapInfoB.get_post_worst_quality()))
         return true;
-    else if(mQualityMetric.is_first_quality_metric_better_than_second(snapInfoB.get_post_worst_quality(),snapInfoA.get_post_worst_quality()))
-        return false;
 
+    return false;
+}
+
+bool SnapInfo::Comparator::does_first_win_priority_tie_with_second(const SnapInfo& snapInfoA,const SnapInfo& snapInfoB) const
+{
     if (snapInfoA.get_node_global_id() != snapInfoB.get_node_global_id())
     {
       if ( is_less_than_in_x_then_y_then_z(snapInfoA.get_node_location(), snapInfoB.get_node_location()) )
@@ -50,14 +53,7 @@ bool SnapInfo::Comparator::is_first_higher_priority_than_second(const SnapInfo& 
 
     if ( is_less_than_in_x_then_y_then_z(snapInfoA.get_snap_location(), snapInfoB.get_snap_location()) )
         return true;
-    else if ( is_less_than_in_x_then_y_then_z(snapInfoB.get_snap_location(), snapInfoA.get_snap_location()) )
-        return false;
 
-    return false;
-}
-
-bool SnapInfo::Comparator::does_first_win_priority_tie_with_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const
-{
     return false;
 }
 

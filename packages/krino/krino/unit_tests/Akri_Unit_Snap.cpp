@@ -107,10 +107,10 @@ TEST_F(RegularTriWithSides, triMeshWithOneSidesetOnTwoSides_attemptSnapToIntPoin
 }
 
 template <typename MESHSPEC>
-class SharpFeatureFixture : public StkMeshFixture<MESHSPEC::DIM>
+class SharpFeatureFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
 {
 protected:
-  using StkMeshFixture<MESHSPEC::DIM>::mMesh;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
 
   void find_sharp_features()
   {
@@ -295,10 +295,10 @@ TEST_F(SharpFeatureTwoRightTetsFixture, meshWithCornerNodesAndEdgeNode_constrain
 }
 
 template <typename MESHSPEC>
-class VolumePreservingSnappingLimiterFixture : public StkMeshFixture<MESHSPEC::DIM>
+class VolumePreservingSnappingLimiterFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
 {
 protected:
-  using StkMeshFixture<MESHSPEC::DIM>::mMesh;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
 
   Vector3d compute_snap_location(const std::vector<unsigned> & snapNodeIndices, const std::vector<double> & snapNodeWeights)
   {

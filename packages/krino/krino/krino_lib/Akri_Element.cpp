@@ -230,42 +230,6 @@ ElementObj::compute_local_coords_from_owner_coordinates(const Mesh_Element * own
   return get_parametric_coordinates_of_point(nodeOwnerCoords, ptOwnerCoords);
 }
 
-void
-ElementObj::integration_weights(
-    std::vector<double> & intg_weights, // includes both gauss point weight and detJ
-    const MasterElement & me ) const
-{
-  const unsigned dim = spatial_dim();
-  const unsigned nnodes = my_nodes.size();
-  std::vector<double> flat_coords(nnodes*dim);
-  for ( unsigned n = 0; n < nnodes; n++ )
-  {
-    const Vector3d & node_coords = my_nodes[n]->coordinates();
-    for (unsigned d=0; d<dim; ++d)
-    {
-      flat_coords[n*dim+d] = node_coords[d];
-    }
-  }
-
-  integration_weights(intg_weights, dim, flat_coords, me, my_master_elem);
-}
-
-double
-Mesh_Element::volume() const
-{ /* %TRACE% */  /* %TRACE% */
-
-  std::vector<double> intg_weights;
-  integration_weights( intg_weights, my_master_elem );
-
-  double vol = 0.0;
-
-  for ( double intg_weight : intg_weights )
-  {
-    vol += intg_weight;
-  }
-  return vol;
-}
-
 void ElementObj::add_subelement(std::unique_ptr<SubElement> subelem)
 {
   my_subelements.emplace_back(std::move(subelem));
@@ -348,43 +312,29 @@ bool ElementObj::captures_intersection_point_domains(const std::vector<int> & in
 void
 ElementObj::prolongate_fields(const CDMesh & mesh) const
 {
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  if (nullptr != old_mesh)
+  const FieldSet & elementFields = mesh.get_element_fields();
+  if (elementFields.empty()) return;
+
+  const ProlongationElementData * prolong_element = nullptr;
+  const SubElement * subelem = dynamic_cast<const SubElement * >(this);
+  if (nullptr == subelem)
+    prolong_element = mesh.fetch_prolong_element(entityId());
+  else
+    prolong_element = mesh.fetch_prolong_element(subelem->get_owner().entityId());
+
+  //I think that adaptivity currently can lead to prolong_element == NULL: ThrowAssert(NULL != prolong_element);
+
+  for(auto && field : elementFields)
   {
-    const FieldSet & element_fields = mesh.get_element_fields();
-    if (element_fields.empty()) return;
-
-    const ProlongationElementData * prolong_element = NULL;
-    const SubElement * subelem = dynamic_cast<const SubElement * >(this);
-    if (NULL == subelem)
+    double * val = field_data<double>(field, entity());
+    if (nullptr != val)
     {
-      prolong_element = old_mesh->fetch_prolong_element(entityId());
-    }
-    else
-    {
-      prolong_element = old_mesh->fetch_prolong_element(subelem->get_owner().entityId());
-    }
-
-    //I think that adaptivity currently can lead to prolong_element == NULL: ThrowAssert(NULL != prolong_element);
-
-    for(FieldSet::const_iterator it = element_fields.begin(); it != element_fields.end(); ++it)
-    {
-      const FieldRef field = *it;
-
-      double * val = field_data<double>(field, entity());
-      if (NULL == val) continue;
-
-      const unsigned field_length = field.length();
-
-      const double * owner_val = (NULL == prolong_element) ? NULL : prolong_element->get_field_data(field);
-      if (NULL == owner_val)
-      {
-        std::fill(val, val+field_length, 0.);
-      }
+      const unsigned fieldLength = field.length();
+      const double * owner_val = (nullptr == prolong_element) ? nullptr : prolong_element->get_field_data(field);
+      if (nullptr == owner_val)
+        std::fill(val, val+fieldLength, 0.);
       else
-      {
-        std::copy(owner_val, owner_val+field_length, val);
-      }
+        std::copy(owner_val, owner_val+fieldLength, val);
     }
   }
 }
@@ -582,17 +532,6 @@ Mesh_Element::get_node_parametric_coords( const SubElementNode * node ) const
 {
   ThrowAssertMsg(!get_nodes().empty(), "Attempt to use get_node_parametric_coords before NodeVec filled.");
   return get_node_parametric_coords(get_local_node_number(get_nodes(), node));
-}
-
-static double compute_parametric_square_distance(const Vector3d childPCoords)
-{
-  double dist2 = 0.0;
-  if (childPCoords[0] < 0.0) dist2 += childPCoords[0]*childPCoords[0];
-  if (childPCoords[1] < 0.0) dist2 += childPCoords[1]*childPCoords[1];
-  if (childPCoords[2] < 0.0) dist2 += childPCoords[2]*childPCoords[2];
-  const double zeta = 1.0 - childPCoords[0] - childPCoords[1] - childPCoords[2];
-  if (zeta < 0.0) dist2 += zeta*zeta;
-  return dist2;
 }
 
 void Mesh_Element::find_child_coordinates_at_owner_coordinates(const Vector3d & ownerCoordinates, const ElementObj *& child, Vector3d & childPCoords) const

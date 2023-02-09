@@ -149,6 +149,7 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
   m_enableEdgeIO(false),
+  m_cacheEntityListForTransientSteps(false),
   m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
@@ -161,6 +162,7 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
   m_enableEdgeIO(false),
+  m_cacheEntityListForTransientSteps(false),
   m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
@@ -1134,7 +1136,9 @@ double StkMeshIoBroker::read_defined_input_fields_at_step(int step,
     }
 
     validate_input_file_index(m_activeMeshIndex);
-    return m_inputFiles[m_activeMeshIndex]->read_defined_input_fields_at_step(step, missing, bulk_data());
+
+    return m_inputFiles[m_activeMeshIndex]->read_defined_input_fields_at_step(step, missing, bulk_data(),
+                                                                              m_cacheEntityListForTransientSteps);
 }
 
 bool StkMeshIoBroker::use_nodeset_for_block_nodes_fields(size_t output_file_index) const

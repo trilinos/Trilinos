@@ -22,6 +22,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_RefinementSupport.hpp>
 
 namespace krino{
 
@@ -77,7 +78,7 @@ void IC_Alg::execute(const double time)
     DistanceSweeper::fix_sign_by_sweeping(mesh, dField, surface_list.get_signed_narrow_band_size(levelSet.narrow_band_size()));
   }
 
-  if(CDFEM_Support::get(meta).get_nonconformal_adapt_target_count() > 0)
+  if(RefinementSupport::get(meta).get_nonconformal_adapt_target_count() > 0)
   {
     compute_IC_error_indicator();
   }
@@ -96,10 +97,10 @@ void IC_Alg::compute_IC_error_indicator()
   const FieldRef dField = levelSet.get_distance_field();
   stk::mesh::Selector fieldSelector(dField);
   const int spatial_dim = meta.spatial_dimension();
-  const auto & cdfem_support = CDFEM_Support::get(meta);
+  const auto & refinementSupport = RefinementSupport::get(meta);
 
   const auto & aux_meta = AuxMetaData::get(meta);
-  const auto & indicator_field_name = cdfem_support.get_nonconformal_adapt_indicator_name();
+  const auto & indicator_field_name = refinementSupport.get_nonconformal_adapt_indicator_name();
   auto indicator_field =
       aux_meta.get_field(stk::topology::ELEMENT_RANK, indicator_field_name);
   const auto & elem_buckets =

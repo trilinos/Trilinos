@@ -113,74 +113,76 @@ namespace {
 }
 
 namespace stk {
-  namespace io {
+namespace io {
 
-    InputFile::InputFile(std::string mesh_filename,
-			 MPI_Comm communicator, 
-			 const std::string &mesh_type,
-			 DatabasePurpose purpose,
-			 Ioss::PropertyManager &properties)
-      : m_db_purpose(purpose), m_region(nullptr),
-	m_startupTime(0.0),
-	m_periodLength(0.0),
-	m_scaleTime(1.0),
-	m_offsetTime(0.0),
-	m_startTime(-std::numeric_limits<double>::max()),
-	m_stopTime(std::numeric_limits<double>::max()),
-	m_periodType(CYCLIC),
-	m_fieldsInitialized(false),
-	m_multiStateSuffixes(nullptr)
-    {
-      Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
-      if (m_db_purpose == stk::io::READ_RESTART)
-        db_usage = Ioss::READ_RESTART;
+  InputFile::InputFile(std::string mesh_filename,
+                       MPI_Comm communicator,
+                       const std::string &mesh_type,
+                       DatabasePurpose purpose,
+                       Ioss::PropertyManager &properties)
+    : m_db_purpose(purpose), m_region(nullptr),
+      m_startupTime(0.0),
+      m_periodLength(0.0),
+      m_scaleTime(1.0),
+      m_offsetTime(0.0),
+      m_startTime(-std::numeric_limits<double>::max()),
+      m_stopTime(std::numeric_limits<double>::max()),
+      m_periodType(CYCLIC),
+      m_fieldsInitialized(false),
+      m_haveCachedEntityList(false),
+      m_multiStateSuffixes(nullptr)
+  {
+    Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
+    if (m_db_purpose == stk::io::READ_RESTART)
+      db_usage = Ioss::READ_RESTART;
 
-      stk::util::filename_substitution(mesh_filename);
-      m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-							db_usage, communicator,
-							properties));
-      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
-		      "ERROR: Could not open database '" << mesh_filename
-		      << "' of type '" << mesh_type << "'");
+    stk::util::filename_substitution(mesh_filename);
+    m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
+                                                      db_usage, communicator,
+                                                      properties));
+    ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
+                    "ERROR: Could not open database '" << mesh_filename
+                    << "' of type '" << mesh_type << "'");
+  }
+
+
+  InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
+    : m_database(ioss_input_region->get_database()), m_region(ioss_input_region),
+      m_startupTime(0.0),
+      m_periodLength(0.0),
+      m_scaleTime(1.0),
+      m_offsetTime(0.0),
+      m_startTime(-std::numeric_limits<double>::max()),
+      m_stopTime(std::numeric_limits<double>::max()),
+      m_periodType(CYCLIC),
+      m_fieldsInitialized(false),
+      m_haveCachedEntityList(false),
+      m_multiStateSuffixes(nullptr)
+  {
+    ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
+                    "ERROR: Invalid Ioss region detected in add_mesh_database");
+
+    Ioss::DatabaseUsage db_usage = m_database->usage();
+    if (db_usage == Ioss::READ_RESTART) {
+      m_db_purpose = stk::io::READ_RESTART;
+    }
+    else if (db_usage == Ioss::READ_MODEL) {
+      m_db_purpose = stk::io::READ_MESH;
+    }
+    else {
+      std::ostringstream msg;
+      msg << "ERROR: Unrecognized database usage for Ioss region named "
+          << ioss_input_region->name()
+          << ". Must be READ_RESTART or READ_MODEL";
+      throw std::runtime_error( msg.str() );
     }
 
+    ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+                    "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+                                                                        "Only 'Unstructured' mesh is currently supported.");
 
-    InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
-      : m_database(ioss_input_region->get_database()), m_region(ioss_input_region),
-	m_startupTime(0.0),
-	m_periodLength(0.0),
-	m_scaleTime(1.0),
-	m_offsetTime(0.0),
-	m_startTime(-std::numeric_limits<double>::max()),
-	m_stopTime(std::numeric_limits<double>::max()),
-	m_periodType(CYCLIC),
-	m_fieldsInitialized(false),
-        m_multiStateSuffixes(nullptr)
-    {
-      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
-		      "ERROR: Invalid Ioss region detected in add_mesh_database");
-
-      Ioss::DatabaseUsage db_usage = m_database->usage();
-      if (db_usage == Ioss::READ_RESTART) {
-	m_db_purpose = stk::io::READ_RESTART;
-      }
-      else if (db_usage == Ioss::READ_MODEL) {
-	m_db_purpose = stk::io::READ_MESH;
-      }
-      else {
-        std::ostringstream msg;
-        msg << "ERROR: Unrecognized database usage for Ioss region named "
-	    << ioss_input_region->name()
-	    << ". Must be READ_RESTART or READ_MODEL";
-        throw std::runtime_error( msg.str() );
-      }
-
-      ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
-		      "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
-		      "Only 'Unstructured' mesh is currently supported.");
-
-      m_database.release(); // The m_region will delete the m_database pointer.
-    }
+    m_database.release(); // The m_region will delete the m_database pointer.
+  }
 
     void InputFile::create_ioss_region()
     {
@@ -829,70 +831,75 @@ namespace stk {
 
 
     double InputFile::read_defined_input_fields_at_step(int step,
-                                                std::vector<stk::io::MeshField> *missingFields,
-                                                stk::mesh::BulkData &bulk)
+                                                        std::vector<stk::io::MeshField> *missingFields,
+                                                        stk::mesh::BulkData &bulk, bool useEntityListCache)
     {
-        ThrowErrorMsgIf(step <= 0,
-                        "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
+      ThrowErrorMsgIf(step <= 0,
+                      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-        ThrowErrorMsgIf (Teuchos::is_null(m_region),
-                         "There is no Input mesh/restart region associated with this Mesh Data.");
+      ThrowErrorMsgIf(Teuchos::is_null(m_region),
+                      "There is no Input mesh/restart region associated with this Mesh Data.");
 
-        Ioss::Region *region = m_region.get();
+      Ioss::Region *region = m_region.get();
 
-        int step_count = region->get_property("state_count").get_int();
+      int step_count = region->get_property("state_count").get_int();
 
-        ThrowErrorMsgIf(step_count == 0,
-                        "ERROR: Input database '" << region->get_database()->get_filename()
-                        << "' has no transient data.");
+      ThrowErrorMsgIf(step_count == 0,
+                      "ERROR: Input database '" << region->get_database()->get_filename()
+                      << "' has no transient data.");
 
-        ThrowErrorMsgIf(step > step_count,
-                        "ERROR: Input database '" << region->get_database()->get_filename()
-                        << "'. Step " << step << " was specified, but database only has "
-                        << step_count << " steps.");
+      ThrowErrorMsgIf(step > step_count,
+                      "ERROR: Input database '" << region->get_database()->get_filename()
+                      << "'. Step " << step << " was specified, but database only has "
+                      << step_count << " steps.");
 
-        // Sort fields to ensure they are iterated in the same order on all processors.
-        std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
+      // Sort fields to ensure they are iterated in the same order on all processors.
+      std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-        bool ignore_missing_fields = (missingFields != nullptr);
+      bool ignore_missing_fields = (missingFields != nullptr);
 
-        if (!m_fieldsInitialized) {
-            std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-            while (I != m_fields.end()) {
-                (*I).set_inactive(); ++I;
-            }
-
-            build_field_part_associations(bulk, missingFields);
-
-            m_fieldsInitialized = true;
+      if (!m_fieldsInitialized) {
+        for (auto & meshField : m_fields) {
+          meshField.set_inactive();
         }
 
-        double time  = region->get_state_time(step);
-        if (time < m_startTime || time > m_stopTime)
-            return 0.0;
+        build_field_part_associations(bulk, missingFields);
 
-        std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-        double time_read = -1.0;
-        while (I != m_fields.end()) {
-            // NOTE: If the fields being restored have different settings, the time
-            // value can be different for each field and this will return the value
-            // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
-            // and one is TIME_INTERPOLATION, then the time value to return is
-            // ambiguous.  Also an issue if some of the fields are inactive.
-            double time_t = (*I).restore_field_data_at_step(region, bulk, step, ignore_missing_fields, m_multiStateSuffixes);
-            if ((*I).is_active()) {
-                time_read = time_t > time_read ? time_t : time_read;
-            }
-            ++I;
+        m_fieldsInitialized = true;
+      }
+
+      double time  = region->get_state_time(step);
+      if (time < m_startTime || time > m_stopTime)
+        return 0.0;
+
+      if (useEntityListCache && not m_haveCachedEntityList) {
+        for (auto & meshField : m_fields) {
+          meshField.fill_entity_list_cache(bulk);
         }
+        m_haveCachedEntityList = true;
+      }
 
-        int current_step = region->get_current_state();
-        if (current_step != -1 && current_step != static_cast<int>(step))
-            region->end_state(current_step);
-        if (current_step != static_cast<int>(step))
-            region->begin_state(step);
+      double time_read = -1.0;
+      for (auto & meshField : m_fields) {
+        // NOTE: If the fields being restored have different settings, the time
+        // value can be different for each field and this will return the value
+        // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+        // and one is TIME_INTERPOLATION, then the time value to return is
+        // ambiguous.  Also an issue if some of the fields are inactive.
+        double time_t = meshField.restore_field_data_at_step(region, bulk, step, ignore_missing_fields,
+                                                             m_multiStateSuffixes, useEntityListCache);
+        if (meshField.is_active()) {
+          time_read = time_t > time_read ? time_t : time_read;
+        }
+      }
 
-        return time_read;
+      int current_step = region->get_current_state();
+      if (current_step != -1 && current_step != static_cast<int>(step))
+        region->end_state(current_step);
+      if (current_step != static_cast<int>(step))
+        region->begin_state(step);
+
+      return time_read;
     }
 
   }

@@ -217,7 +217,11 @@ static void prepare_to_compute_with_surface(const stk::mesh::BulkData & mesh, co
 void AnalyticSurfaceInterfaceGeometry::prepare_to_process_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
-  myElementsToIntersect = get_owned_parent_elements(mesh, myActivePart, myCdfemSupport, myPhaseSupport);
+  const stk::mesh::Selector parentElementSelector = (is_cdfem_use_case(myPhaseSupport)) ?
+      get_cdfem_parent_element_selector(myActivePart, myCdfemSupport, myPhaseSupport) :
+      stk::mesh::Selector(myActivePart);
+
+  myElementsToIntersect = get_owned_parent_elements(mesh, parentElementSelector);
   prepare_to_compute_with_surface(mesh, mySurfaces);
 }
 

@@ -76,7 +76,7 @@ public:
     const Phase_Support & phaseSupport)
 : myActivePart(activePart),
   myCdfemSupport(cdfemSupport),
-  myPhaseSupport(phaseSupport) {}
+  myPhaseSupport(phaseSupport) { set_parent_element_selector(); }
 
   LevelSetInterfaceGeometry(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
@@ -102,7 +102,7 @@ public:
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const override;
 
-  virtual void set_ls_fields(const std::vector<LS_Field> & lsFields) { myLSFields = lsFields; }
+  virtual void set_ls_fields(const std::vector<LS_Field> & lsFields);
 
   // FIXME: Temporary methods
   virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & mesh) const override;
@@ -122,10 +122,12 @@ public:
   const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
 
 private:
+  void set_parent_element_selector();
   bool have_enough_levelsets_to_have_interior_intersections_or_multiple_crossings() const;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;
+  stk::mesh::Selector myParentElementSelector;
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
   mutable ParentEdgeMap myParentEdges;

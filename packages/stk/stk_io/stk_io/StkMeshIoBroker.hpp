@@ -215,6 +215,11 @@ namespace stk {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
+      void cache_entity_list_for_transient_steps(bool cacheEntityList)
+      {
+          m_cacheEntityListForTransientSteps = cacheEntityList;
+      }
+
       bool get_filter_empty_input_entity_blocks() const;
       bool get_filter_empty_input_entity_blocks(size_t input_file_index) const;
 
@@ -770,6 +775,7 @@ namespace stk {
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
+      bool m_cacheEntityListForTransientSteps;
       bool m_useSimpleFields;
     };
 
