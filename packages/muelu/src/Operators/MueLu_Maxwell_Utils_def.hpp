@@ -59,6 +59,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_ThresholdAFilterFactory.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_Utilities_kokkos.hpp"
@@ -235,6 +236,42 @@ namespace MueLu {
     if (!xpExporter.is_null())
       xpExporter->setDistributorParameters(matvecParams);
   }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  PtAPWrapper(RCP<Matrix>& A,RCP<Matrix>& P, ParameterList &params, std::string & label) {
+    Level fineLevel, coarseLevel;
+    fineLevel.SetFactoryManager(null);
+    coarseLevel.SetFactoryManager(null);
+    coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+    fineLevel.SetLevelID(0);
+    coarseLevel.SetLevelID(1);
+    fineLevel.Set("A",A);
+    coarseLevel.Set("P",P);
+    coarseLevel.setlib(A->getDomainMap()->lib());
+    fineLevel.setlib(A->getDomainMap()->lib());
+    coarseLevel.setObjectLabel(label);
+    fineLevel.setObjectLabel(label);
+
+    RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+    ParameterList rapList = *(rapFact->GetValidParameterList());
+    rapList.set("transpose: use implicit", true);
+    rapList.set("rap: fix zero diagonals", params.get<bool>("rap: fix zero diagonals", true));
+    rapList.set("rap: fix zero diagonals threshold", params.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
+    rapList.set("rap: triple product", params.get<bool>("rap: triple product", false));
+    rapFact->SetParameterList(rapList);
+
+    coarseLevel.Request("A", rapFact.get());
+    
+    return coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+  }
+
+
+
+
+
 
 } // namespace
 

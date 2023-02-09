@@ -128,7 +128,7 @@ namespace MueLu {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
-                                     name != "Pnodal" && name != "NodeMatrix" &&
+                                     name != "Pnodal" && name != "NodeMatrix" && name != "NodeAggMatrix" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
@@ -193,7 +193,7 @@ namespace MueLu {
               level->Set(name, mat, NoFactory::get());
             }
           }
-          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix") {
+          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             if (levelListEntry->second.isType<RCP<Operator> >())
               level->Set(name, Teuchos::getValue<RCP<Operator> >   (levelListEntry->second), NoFactory::get());
