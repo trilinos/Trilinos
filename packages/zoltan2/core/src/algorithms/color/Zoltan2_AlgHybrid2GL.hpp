@@ -589,10 +589,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         Teuchos::ArrayView<gno_t> send_adjs_view = Teuchos::arrayViewFromVector(send_adj);
         Teuchos::ArrayView<int> adjsendcounts_view = Teuchos::arrayViewFromVector(send_adj_counts);
         Teuchos::ArrayRCP<gno_t> ghost_adjs;
-        uint64_t recv_adjs_count = 0;
-        for(int i = 0; i < comm->getSize(); i++){
-          recv_adjs_count += per_proc_round_adj_sums[round][i];
-        }
         std::vector<int> adjrecvcounts(comm->getSize(),0);
         Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
         Zoltan2::AlltoAllv<gno_t>(*comm, *env, send_adjs_view, adjsendcounts_view, ghost_adjs, adjsrecvcounts_view);
