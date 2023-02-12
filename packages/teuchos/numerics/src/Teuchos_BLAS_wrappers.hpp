@@ -166,6 +166,9 @@
 #define CHERK_F77   F77_BLAS_MANGLE(cherk,CHERK)
 #define CTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
 #define CTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
+#define TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(TYPE, Z) \
+   reinterpret_cast<std::complex<TYPE>&>(Z);
+// NOTE: The above is guaranteed to be okay given the C99 and C++11 standards
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 

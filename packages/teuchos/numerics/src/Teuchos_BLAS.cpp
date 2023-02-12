@@ -333,7 +333,8 @@ namespace Teuchos {
     CDOT_F77(&z, &n, x, &incx, y, &incy);
     return z;
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    return CDOT_F77(&n, x, &incx, y, &incy);
+    Teuchos_Complex_float_type_name z = CDOT_F77(&n, x, &incx, y, &incy);
+    return TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(float, z);
 #else // Wow, you just plain don't have this routine.
     // mfh 01 Feb 2013: See www.netlib.org/blas/cdotc.f.
     // I've enhanced this by accumulating in double precision.
@@ -512,7 +513,8 @@ namespace Teuchos {
 
 #  endif // defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 #else
-    return ZDOT_F77(&n, x, &incx, y, &incy);
+    Teuchos_Complex_double_type_name z = ZDOT_F77(&n, x, &incx, y, &incy);
+    return TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(double, z);
 #endif
   }
 
