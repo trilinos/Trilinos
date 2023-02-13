@@ -45,13 +45,17 @@ struct StkMeshEntities
 };
 
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank);
+double compute_tri_volume(const std::array<krino::Vector2d,3> & elementNodeCoords);
 double compute_tri_volume(const std::array<krino::Vector3d,3> & elementNodeCoords);
+double compute_tri_volume(const krino::Vector3d * elementNodeCoords);
 double compute_tet_volume(const std::array<krino::Vector3d,4> & elementNodeCoords);
+double compute_tet_volume(const krino::Vector3d * elementNodeCoords);
 double compute_tri_or_tet_volume(const std::vector<krino::Vector3d> & elementNodeCoords);
 Vector3d get_side_normal(const stk::mesh::BulkData& mesh, const FieldRef coordsField, stk::mesh::Entity side);
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<Vector3d> & elementNodeCoords);
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode);
 double compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector);
+double compute_maximum_size_of_selected_elements_using_node(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity node);
 void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeLength, double & maxEdgeLength, double & minVolume, double & maxVolume);
 void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold);
 std::vector<unsigned> get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permutation);
@@ -61,6 +65,8 @@ void attach_sides_to_elements(stk::mesh::BulkData & mesh);
 void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
+void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
+void unpack_shared_entities(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & sharedEntities, stk::CommSparse &commSparse);
 void update_node_activation(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void activate_all_entities(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void destroy_custom_ghostings(stk::mesh::BulkData & mesh);
@@ -73,6 +79,7 @@ bool check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk
 bool check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Part & active_part);
 bool fix_coincident_element_ownership(stk::mesh::BulkData & mesh);
 bool fix_face_and_edge_ownership(stk::mesh::BulkData & mesh);
+bool fix_node_owners_to_assure_active_owned_element_for_node(stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart);
 bool check_face_and_edge_ownership(const stk::mesh::BulkData & mesh);
 bool check_face_and_edge_relations(const stk::mesh::BulkData & mesh);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey remote_entity_key, std::vector<stk::mesh::EntityId> & remote_entity_node_ids);
@@ -118,7 +125,7 @@ const unsigned * get_edge_node_ordinals(stk::topology topology, unsigned edge_or
 
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields);
-std::string debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
+std::string debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool omitSideRank = false);
 
 struct SideDescription
 {
@@ -132,6 +139,8 @@ struct SideDescription
 
 void batch_create_sides(stk::mesh::BulkData & mesh, const std::vector< SideDescription > & side_requests);
 void make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh);
+
+void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities);
 
 double compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Entity element, const stk::mesh::Field<double> * const coords_field);
 

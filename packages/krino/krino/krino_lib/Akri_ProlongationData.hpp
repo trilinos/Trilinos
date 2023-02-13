@@ -15,123 +15,221 @@
 
 #include <Akri_Facet.hpp>
 #include <Akri_InterfaceID.hpp>
-#include <Akri_CDMesh.hpp>
+#include <Akri_MasterElement.hpp>
 #include <Akri_Vec.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Entity.hpp>
 
 namespace krino {
+
+class CDFEM_Support;
+class CDMesh;
+class FieldRef;
+class ProlongationFacet;
+class ProlongationNodeData;
+typedef std::vector< const ProlongationFacet * > ProlongFacetVec;
+typedef std::unordered_map<stk::mesh::EntityId, ProlongationNodeData *> EntityProlongationNodeMap;
+
+class PartCollection {
+public:
+  PartCollection() = default;
+  PartCollection(std::vector<unsigned> & parts) { myParts.swap(parts); }
+  const std::vector<unsigned> & get_parts() const { return myParts; }
+  bool operator<(const PartCollection & other) const{ return get_parts() < other.get_parts(); }
+  bool operator==(const PartCollection & other) const { return get_parts() == other.get_parts(); }
+private:
+  std::vector<unsigned> myParts;
+};
+
+class FieldCollection {
+public:
+  FieldCollection() = default;
+  FieldCollection(std::vector<unsigned> & fields) { myFields.swap(fields); }
+  const std::vector<unsigned> & get_fields() const { return myFields; }
+  bool operator<(const FieldCollection & other) const { return get_fields() < other.get_fields(); }
+  bool operator==(const FieldCollection & other) const { return get_fields() == other.get_fields(); }
+  const std::vector<int> & get_field_storage_indices() const {  return myFieldStorageIndices; }
+  size_t get_field_storage_size() const {  return myFieldStorageSize; }
+  void compute_field_storage_indices(const stk::mesh::BulkData & mesh) const;
+
+private:
+  std::vector<unsigned> myFields;
+  mutable size_t myFieldStorageSize{0};
+  mutable std::vector<int> myFieldStorageIndices;
+};
+
+class PartAndFieldCollections {
+public:
+  void build(const stk::mesh::BulkData & mesh);
+  bool have_part_collection(const PartCollection & parts) const;
+  bool have_field_collection(const FieldCollection & fields) const;
+  int get_part_collection_id(const PartCollection & parts) const;
+  int get_field_collection_id(const FieldCollection & fields) const;
+  int get_part_collection_id(const stk::mesh::BulkData& mesh, const stk::mesh::Bucket & bucket) const;
+  int get_field_collection_id(const stk::mesh::BulkData& mesh, const stk::mesh::Bucket & bucket) const;
+  const std::vector<unsigned> & get_parts(const unsigned partCollectionId) const { return myPartCollections[partCollectionId].get_parts(); }
+  const std::vector<unsigned> & get_fields(const unsigned fieldCollectionId) const { return myFieldCollections[fieldCollectionId].get_fields(); }
+  const std::vector<int> & get_field_storage_indices(const unsigned fieldCollectionId) const { return myFieldCollections[fieldCollectionId].get_field_storage_indices(); }
+  size_t get_field_storage_size(const unsigned fieldCollectionId) const { return myFieldCollections[fieldCollectionId].get_field_storage_size(); }
+
+  static std::vector<unsigned> determine_io_parts(const stk::mesh::Bucket & bucket);
+  static std::vector<unsigned> determine_fields(const stk::mesh::BulkData& mesh, const stk::mesh::Bucket & bucket);
+private:
+  void communicate(const stk::mesh::BulkData & mesh);
+  std::vector<PartCollection> myPartCollections;
+  std::vector<FieldCollection> myFieldCollections;
+};
 
 class ProlongationData {
 public:
   ProlongationData() {}
-  ~ProlongationData() {}
 
-  const double * get_field_data( const stk::mesh::FieldBase& state_field ) const { const int field_index = my_field_indices[state_field.mesh_meta_data_ordinal()]; return (field_index < 0) ? nullptr : &my_field_data[field_index]; }
-  std::string missing_prolongation_fields_for_entity( const CDMesh & mesh, const stk::mesh::Entity dst ) const;
-  void restore_fields(const stk::mesh::BulkData& stk_mesh, stk::mesh::Entity entity) const;
+  const double * get_field_data( const stk::mesh::FieldBase& state_field ) const;
+  const std::vector<double> & get_field_data() const { return myFieldData; }
 
 protected:
-  void save_fields(const stk::mesh::BulkData& stk_mesh, stk::mesh::Entity entity);
-  const std::vector<double> & get_field_data() const { return my_field_data; }
-  std::vector<double> & get_field_data() { return my_field_data; }
-  const std::vector<int> & get_field_indices() const { return my_field_indices; }
-  std::vector<int> & get_field_indices() { return my_field_indices; }
+  void save_field_data(const stk::mesh::BulkData& stk_mesh, const PartAndFieldCollections & partAndFieldCollections, const int fieldCollectionId, const stk::mesh::Entity entity);
+  void save_field_data(const std::vector<int> & fieldStorageIndices, std::vector<double> & fieldData) { myFieldStorageIndices = &fieldStorageIndices; myFieldData.swap(fieldData); }
+  std::string debug_data_output(const stk::mesh::BulkData & mesh) const;
 
-protected:
-  mutable std::vector<int> my_field_indices;
-  mutable std::vector<double> my_field_data;
+private:
+  const std::vector<int> * myFieldStorageIndices{nullptr};
+  std::vector<double> myFieldData;
 };
 
 class ProlongationPointData : public ProlongationData {
 public:
-  ProlongationPointData(const Vector3d & coordinates) : my_coordinates(coordinates) {}
-  ProlongationPointData(const CDMesh & mesh, const FacetDistanceQuery & facet_dist_query, const std::vector<const ProlongationNodeData *> & facet_nodes);
-  ~ProlongationPointData() {}
+  static void set_coords_fields(const int spatialDim, FieldRef coordsField, FieldRef snapDisplacementsField);
+  ProlongationPointData() {}
 
-  const Vector3d & get_coordinates() const { return my_coordinates; }
-  Vector3d & get_coordinates() { return my_coordinates; }
+  Vector3d get_previous_coordinates() const;
+  Vector3d get_post_snap_coordinates() const;
 
 protected:
-  Vector3d my_coordinates;
+  static int theSpatialDim;
+  static FieldRef theSnapDisplacementsField;
+  static FieldRef theCoordsField;
+};
+
+class ProlongationFacetPointData : public ProlongationPointData {
+public:
+  ProlongationFacetPointData(const CDMesh & mesh, const FacetDistanceQuery & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
+private:
+  void interpolate_to_point(const stk::mesh::MetaData & meta, const FacetDistanceQuery & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
+  std::vector<int> myFieldStorageIndices;
 };
 
 class ProlongationElementData : public ProlongationData {
 public:
-  ProlongationElementData(const stk::mesh::BulkData& stk_mesh, stk::mesh::Entity element) : ProlongationData() { save_fields(stk_mesh, element); }
-  ProlongationElementData(const stk::mesh::BulkData& stk_mesh, const std::vector<const ProlongationElementData *> & children_data, const std::vector< std::vector<double> > & children_intg_wts);
-  ~ProlongationElementData() {}
-
+  ProlongationElementData(const CDMesh & cdmesh, const stk::mesh::Entity element);
+  virtual ~ProlongationElementData() {}
+  ProlongationElementData (const ProlongationElementData&) = delete;
+  ProlongationElementData& operator= (const ProlongationElementData&) = delete;
+  void evaluate_prolongation_field(const CDFEM_Support & cdfemSupport, const FieldRef field, const unsigned field_length, const Vector3d & p_coords, double * result) const;
+  Vector3d compute_parametric_coords_at_point(const Vector3d & pointCoords) const;
+  bool have_prolongation_data_stored_for_all_nodes() const;
+  void fill_integration_weights(std::vector<double> & childIntgWeights) const;
+  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const = 0;
+  virtual bool have_subelements() const = 0;
 private:
-  //: copy constructor not allowed
-  ProlongationElementData(const ProlongationElementData & copy);
+  const MasterElement& myMasterElem;
+  std::vector<const ProlongationNodeData *> myElemNodesData;
+};
+
+class ProlongationLeafElementData : public ProlongationElementData {
+public:
+  ProlongationLeafElementData(const CDMesh & cdmesh, const PartAndFieldCollections & partAndFieldCollections, const stk::mesh::Entity element);
+  virtual ~ProlongationLeafElementData() {}
+  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const override;
+  virtual bool have_subelements() const override { return false; }
+private:
+  std::string debug_output(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element) const;
+};
+
+class ProlongationParentElementData : public ProlongationElementData {
+public:
+  ProlongationParentElementData(const CDMesh & cdmesh, const stk::mesh::Entity element, const std::vector<const ProlongationElementData *> & subelementsData, const bool doStoreElementFields);
+  virtual ~ProlongationParentElementData() {}
+  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const override;
+  virtual bool have_subelements() const override { return true; }
+private:
+  std::string debug_output(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element) const;
+  void homogenize_subelement_fields(const CDMesh & cdmesh,
+    const std::vector<const ProlongationElementData *> & subelementsData);
+  bool have_prolongation_data_stored_for_all_nodes_of_subelements() const;
+
+  std::vector<const ProlongationElementData *> mySubelementsData;
+  std::vector<int> myFieldStorageIndices;
 };
 
 class ProlongationNodeData : public ProlongationPointData {
 public:
-  ProlongationNodeData(const CDMesh & mesh, stk::mesh::Entity node, bool communicate_me_to_all_sharers);
-  ProlongationNodeData(const stk::mesh::EntityId in_entityId, const Vector3d & coordinates, const std::vector<unsigned> & fields, const std::vector<unsigned> & ioparts)
-    : ProlongationPointData(coordinates), my_entityId(in_entityId), myCommunicateMeToAllSharersFlag(false), my_fields(fields), my_ioparts(ioparts) {}
+  ProlongationNodeData(const CDMesh & mesh, const PartAndFieldCollections & partAndFieldCollections, const stk::mesh::Entity node, bool communicate_me_to_all_sharers);
+  ProlongationNodeData(const PartAndFieldCollections & partAndFieldCollections, const stk::mesh::EntityId in_entityId, const int partCollectionId, const int fieldCollectionId, std::vector<double> & fieldData);
+  ProlongationNodeData (const ProlongationNodeData&) = delete;
+  ProlongationNodeData& operator= (const ProlongationNodeData&) = delete;
 
   ~ProlongationNodeData() {}
 
-  static std::vector<unsigned> get_node_io_parts(const stk::mesh::BulkData& stk_mesh, stk::mesh::Entity entity);
-  static std::vector<unsigned> get_fields_on_node(const stk::mesh::BulkData& stk_mesh, stk::mesh::Entity entity);
-  static Vector3d get_node_coordinates(const CDMesh & mesh, stk::mesh::Entity node);
-
-  static ProlongationNodeData * unpack_from_buffer( stk::CommBuffer & b, const stk::mesh::MetaData & stk_meta ); // static method that builds surface from data in buffer for off-processor communication
+  static ProlongationNodeData * unpack_from_buffer( stk::CommBuffer & b, const PartAndFieldCollections & partAndFieldCollections );
   void pack_into_buffer(stk::CommBuffer & b) const;
   bool communicate_me_to_all_sharers() const { return myCommunicateMeToAllSharersFlag; }
+  int get_part_collection_id() const { return myPartCollectionId; }
+  int get_field_collection_id() const { return myFieldCollectionId; }
 
-  const std::vector<unsigned> & get_fields() const { ThrowRequireMsg(!my_fields.empty(), "Fields not set for prolongation node."); return my_fields; }
-  const std::vector<unsigned> & get_io_parts() const { ThrowRequireMsg(!my_ioparts.empty(), "IO Parts not set for prolongation node."); return my_ioparts; }
   stk::mesh::EntityId entityId() const { return my_entityId; }
 
 protected:
-  const stk::mesh::EntityId my_entityId;
-  const bool myCommunicateMeToAllSharersFlag;
-  mutable std::vector<unsigned> my_fields;
-  mutable std::vector<unsigned> my_ioparts;
+  std::string debug_output(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node) const;
 
-private:
-  //: copy constructor not allowed
-  ProlongationNodeData(const ProlongationNodeData & copy);
+  stk::mesh::EntityId my_entityId;
+  bool myCommunicateMeToAllSharersFlag;
+  int myPartCollectionId;
+  int myFieldCollectionId;
 };
 
 class ProlongationFacet {
 public:
-  ProlongationFacet(const CDMesh & mesh, const std::vector<const ProlongationNodeData *> & prolong_nodes, const std::vector<unsigned> & common_fields);
+  ProlongationFacet(const CDMesh & mesh, const std::vector<const ProlongationNodeData *> & prolong_nodes);
   ProlongationFacet(const CDMesh & mesh, stk::mesh::Entity side);
+  ProlongationFacet (const ProlongationFacet&) = delete;
+  ProlongationFacet& operator= (const ProlongationFacet&) = delete;
 
   static void communicate( const CDMesh & mesh, ProlongFacetVec & proc_prolong_facets, EntityProlongationNodeMap & proc_prolong_nodes, const std::vector<BoundingBox> & proc_target_bboxes );
   static std::set<const ProlongationNodeData *> get_facet_nodes_to_communicate( const ProlongFacetVec & proc_prolong_facets, const BoundingBox & proc_target_bbox );
 
   void pack_into_buffer(stk::CommBuffer & b) const;
-  static ProlongationFacet * unpack_from_buffer( const CDMesh & mesh, stk::CommBuffer & b ); // static method that builds surface from data in buffer for off-processor communication
-  void compute_common_fields();
+  static ProlongationFacet * unpack_from_buffer( const CDMesh & mesh, stk::CommBuffer & b );
 
   static const BoundingBox & get_bounding_box(const ProlongationFacet * prolong_facet) { return prolong_facet->get_facet()->bounding_box(); }
 
   Facet * get_facet() const { return my_facet.get(); }
-  const std::vector<unsigned> & get_common_fields() const { return my_common_fields; }
-  const ProlongationPointData * get_prolongation_point_data(const FacetDistanceQuery & dist_query) const { update_prolongation_point_data(dist_query); return my_prolongation_point_data.get(); }
+  std::vector<unsigned> compute_common_fields(const PartAndFieldCollections & partAndFieldCollections) const;
+  std::unique_ptr<ProlongationFacetPointData> get_prolongation_point_data(const FacetDistanceQuery & dist_query) const;
   const std::vector<const ProlongationNodeData *> & get_prolongation_nodes() const { return my_prolong_nodes; }
   bool communicate_me(const BoundingBox & proc_target_bbox) const;
 
 protected:
-  void update_prolongation_point_data(const FacetDistanceQuery & dist_query) const;
-
-protected:
   const CDMesh & my_mesh;
   std::unique_ptr<Facet> my_facet;
-  mutable std::unique_ptr<ProlongationPointData> my_prolongation_point_data;
   mutable std::vector<const ProlongationNodeData *> my_prolong_nodes;
-  mutable std::vector<unsigned> my_common_fields;
 
 private:
-  //: copy constructor not allowed
-  ProlongationFacet(const ProlongationFacet & copy);
   static void communicate_shared_nodes( const CDMesh & mesh, EntityProlongationNodeMap & proc_prolong_nodes );
   static void communicate_facets( const CDMesh & mesh, ProlongFacetVec & proc_prolong_facets, const std::vector<BoundingBox> & proc_target_bboxes );
   static void communicate_facet_nodes( const CDMesh & mesh, const ProlongFacetVec & proc_prolong_facets, EntityProlongationNodeMap & proc_prolong_nodes, const std::vector<BoundingBox> & proc_target_bboxes );
+};
+
+class ProlongationQuery {
+public:
+  ProlongationQuery() = default;
+  ProlongationQuery(const ProlongationFacet & facet, const FacetDistanceQuery & distQuery) { myProlongFacetPointData = facet.get_prolongation_point_data(distQuery); }
+  ProlongationQuery(const ProlongationNodeData * prolongNodeData) : myProlongNodeData(prolongNodeData) {}
+  const ProlongationPointData * get_prolongation_point_data() const { return myProlongFacetPointData ? get_facet_point_data() : myProlongNodeData; }
+private:
+  const ProlongationPointData * get_facet_point_data() const { return myProlongFacetPointData.get(); }
+  const ProlongationPointData * myProlongNodeData{nullptr};
+  std::unique_ptr<ProlongationFacetPointData> myProlongFacetPointData;
 };
 
 } // namespace krino

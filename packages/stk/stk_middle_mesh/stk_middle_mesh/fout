@@ -1,0 +1,168 @@
+****************************************************
+** Identified compiler as 'gcc', version '10.2.0' **
+** Identified MPI as 'openmpi', version '4.0.5'   **
+****************************************************
+Changing your environment by:
+  Using ninja
+
+REMARK: Detected existing Spack-built TPLs; bypassing Spack call.
+Determining whether to rebuild your Makefile...took 0.68 seconds
+Bypassing equivalent bjam command:
+cd \
+    /ceeGPFS/fgs/jccrean/code; \
+    bjam \
+    --bin-dir=/ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release \
+    --gfortran=/projects/cde/v2.1/spack/opt/spack/linux-rhel7-x86_64/gcc-8.4.0/gcc-10.2.0-fwnsolryzhrsu4k2f3gdwsr73rmap7qc/bin/gfortran \
+    --mpiCC=/projects/sierra/linux_rh7/SDK/mpi/openmpi/4.0.5-gcc-10.2.0-RHEL7/bin/mpicxx \
+    --sierrabuilddir=/ceeGPFS/fgs/jccrean/code/objs/apps \
+    --sierradir=/ceeGPFS/fgs/jccrean/code \
+    --tplbuilddir=/ceeGPFS/fgs/jccrean/code/objs/tpls \
+    --tpldir=/ceeGPFS/fgs/jccrean/code/TPLs_src \
+    --with-stk_middle_grid \
+    -j60 \
+    address-model=64 \
+    gcc-10.2.0 \
+    mpi=openmpi \
+    release \
+    runtime-link=shared \
+    underscore=one \
+    --lapack-lib=source \
+    
+Executing Make
+ /usr/netpub/ninja/ninja -j60 -f /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/bakefiles/bakefile_75327d251222fa73_a87dd2f814669bc7.ninja  -k 0  
+
+[0/66] algebra
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/algebra
+[1/66] aprepro
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/aprepro
+[2/66] blot_x11
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/blot_x11
+[3/66] aprepro_lib_test
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/aprepro_lib_test
+[4/66] blot_pst
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/blot_pst
+[5/66] blot_xcps
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/blot_xcps
+[6/66] blot_cps
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/blot_cps
+[7/66] blot_met
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/blot_met
+[8/66] fastq_x11
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/fastq_x11
+[9/66] cgns_decomp
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/cgns_decomp
+[10/66] fastq_pst
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/fastq_pst
+[11/66] fastq_xcps
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/fastq_xcps
+[12/66] fastq_cps
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/fastq_cps
+[13/66] fastq_met
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/fastq_met
+[14/66] conjoin
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/conjoin
+[15/66] ejoin
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/ejoin
+[16/66] epu
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/epu
+[17/66] exodiff
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/exodiff
+[18/66] exomatlab
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/exomatlab
+[19/66] exo_format
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/exo_format
+[20/66] exotxt
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/exotxt
+[21/66] ex1ex2v2
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/ex1ex2v2
+[22/66] ex2ex1v2
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/ex2ex1v2
+[23/66] exo2mat
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/exo2mat
+[24/66] mat2exo
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/mat2exo
+[25/66] gen3d
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/gen3d
+[26/66] genshell
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/genshell
+[27/66] grepos
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/grepos
+[28/66] gjoin
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/gjoin
+[29/66] explore
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/explore
+[30/66] mapvar
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/mapvar
+[31/66] mapvar_kd
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/mapvar_kd
+[32/66] nem_slice
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/nem_slice
+[33/66] nem_spread
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/nem_spread
+[34/66] numbers
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/numbers
+[35/66] txtexo
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/txtexo
+[36/66] io_shell
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/io_shell
+[37/66] io_info
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/io_info
+[38/66] io_modify
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/io_modify
+[39/66] slice
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/slice
+[40/66] shell_to_hex
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/shell_to_hex
+[41/66] Utst_ioel
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_ioel
+[42/66] cth_pressure_map
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/cth_pressure_map
+[43/66] struc_to_unstruc
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/struc_to_unstruc
+[44/66] Utst_sort
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_sort
+[45/66] Utst_superelement
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_superelement
+[46/66] Utst_database_io
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_database_io
+[47/66] Utst_textmesh
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_textmesh
+[48/66] Utst_map
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_map
+[49/66] Utst_structured_decomp
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/Utst_structured_decomp
+[51/66] COMPILE /ceeGPFS/fgs/jccrean/code/stk/stk_middle_grid/src/application_interface_fake_parallel_impl.cc
+[52/66] ARCHIVE /ceeGPFS/fgs/jccrean/code/objs/apps/stk_middle_grid/votd/gcc-10.2.0/release/address-model-64/mpi-openmpi/runtime-link-shared/threading-multi/libstk_middle_grid_lib.a
+[53/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest4
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[53/66] vtest4
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest4
+[55/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest8
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[55/66] vtest8
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest8
+[57/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest2
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[57/66] vtest2
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest2
+[59/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest7
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[59/66] vtest7
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest7
+[61/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest6
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[61/66] vtest6
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/vtest6
+[63/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/stk_middle_grid_vtest
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[63/66] stk_middle_grid_vtest
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/stk_middle_grid_vtest
+[65/66] LINK /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/stk_middle_grid_utest
+/usr/bin/ld: warning: libgfortran.so.3, needed by /lib/../lib64/liblapack.so, may conflict with libgfortran.so.5
+[65/66] stk_middle_grid_utest
+located at /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.2.0-openmpi-4.0.5/release/stk_middle_grid_utest
+Elapsed time from startup to calling make : 0m 2s
+Your code spent 0m 10s in the turkey fryer.
+
+Rule 55:  Prefer the canonical form of assignment. -- Sutter, Alexandrescu
+

@@ -33,3 +33,4 @@
 // 
 
 #cmakedefine KRINO_HAVE_YAML
+#cmakedefine KRINO_HAVE_PARMETIS

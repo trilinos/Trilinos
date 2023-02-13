@@ -6,8 +6,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_RefinementInterface.hpp>
 #include <Akri_RebalanceUtils.hpp>
 #include <Akri_RebalanceUtils_Impl.hpp>
+#include <Akri_config.hpp>
 #include <Akri_CDMesh.hpp>
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
@@ -16,6 +19,15 @@
 
 namespace krino {
 namespace rebalance_utils {
+
+bool have_parmetis()
+{
+#ifdef KRINO_HAVE_PARMETIS
+  return true;
+#else
+  return false;
+#endif
+}
 
 namespace {
 
@@ -159,6 +171,9 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     const double imbalance_threshold)
 {
   const auto & meta = bulk_data.mesh_meta_data();
+
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+
   auto weights_base = meta.get_field(stk::topology::ELEMENT_RANK, element_weights_field_name);
   ThrowRequireMsg(weights_base,
       "Failed to find element rank field " << element_weights_field_name
@@ -180,11 +195,15 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
   const bool rebalanced =
           stk::balance::balanceStkMesh(balancer, bulk_data, selections_to_rebalance_separately);
 
+  if(AuxMetaData::has(meta))
+    fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
 
   if(cdmesh)
   {
-    cdmesh->rebuild_after_rebalance();
+    cdmesh->rebuild_after_rebalance_or_failed_step();
   }
 
   return rebalanced;
@@ -200,6 +219,8 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     const double imbalance_threshold)
 {
   const auto & meta = bulk_data.mesh_meta_data();
+
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
 
   std::vector<stk::mesh::Field<double> *> weights_fields;
   for (auto && field_name : element_weights_field_names)
@@ -227,11 +248,15 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
   if (rebalanced)
     stk::balance::balanceStkMeshNodes(balancer, bulk_data);
 
+  if(AuxMetaData::has(meta))
+    fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
 
   if (cdmesh)
   {
-    cdmesh->rebuild_after_rebalance();
+    cdmesh->rebuild_after_rebalance_or_failed_step();
   }
 
   return rebalanced;

@@ -41,6 +41,9 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlocking.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternBlockingBuffer.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternNonBlocking.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
+
 
 #include <vector>
 #include <algorithm>
@@ -57,6 +60,12 @@ template <typename T>
 using DataExchangeNonBlockingBuffer     = stk::DataExchangeUnknownPatternNonBlockingBuffer<T>;
 using DataExchangeBlockingCommBuffer    = stk::DataExchangeUnknownPatternBlockingCommBuffer;
 using DataExchangeNonBlockingCommBuffer = stk::DataExchangeUnknownPatternNonBlockingCommBuffer;
+
+using DataExchangeNonBlockingKnown = stk::DataExchangeKnownPatternNonBlocking;
+template <typename T>
+using DataExchangeNonBlockingBufferKnown = stk::DataExchangeKnownPatternNonBlockingBuffer<T>;
+using DataExchangeNonBlockingCommBufferKnown = stk::DataExchangeKnownPatternNonBlockingCommBuffer;
+
 
 
 template <typename T>
@@ -236,6 +245,13 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
       set_send_buffers_values();
     }
 
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    {
+      for (int src=0; src < commSize; ++src) {
+        recvLists[src].resize(this->get_size(src, myrank));
+      }
+    }
+
     virtual int get_num_sends() override { return commSize; }
 
     virtual int get_num_recvs() override { return commSize; }
@@ -330,6 +346,14 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
     {
       ParallelCommTester<T>::set_offset(val);
       set_send_buffers_values();
+    }
+
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    {
+      int src1 = (myrank - 1 + commSize) % commSize;
+      int src2 = (myrank - 2 + commSize) % commSize;
+      recvLists[src1].resize(this->get_size(src1, myrank));
+      recvLists[src2].resize(this->get_size(src2, myrank));
     }
 
     virtual int get_num_sends() override { return std::min(2, commSize); }
@@ -739,6 +763,135 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlocking)
   }
 }
 
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingKnownPattern)
+{
+  DataExchangeNonBlockingKnown exchanger1(comm);
+  DataExchangeNonBlockingKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger2.start_nonblocking(sendLists2, recvLists2);
+
+    auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(recvLists, f);
+    test_results(recvLists);
+
+    exchanger2.complete_receives(recvLists2, f);
+    test_results(recvLists2);
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+  }
+}
+
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
+{
+  DataExchangeNonBlockingBufferKnown<int> exchanger1(comm);
+  DataExchangeNonBlockingBufferKnown<int> exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int rank=0; rank < commSize; ++rank) {
+      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+    }
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(f);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_recv_bufs();
+  }
+}
+
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
+{
+  DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
+  DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int phase=0; phase < 2; ++phase)
+    {
+      for (int rank=0; rank < commSize; ++rank) {
+        for (auto& val : sendLists[rank]) {
+          exchanger1.get_send_buf(rank).pack(val);
+          exchanger2.get_send_buf(rank).pack(val);
+        }
+
+        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+      }
+
+      if (phase == 0)
+      {
+        exchanger1.allocate_send_buffers();
+        exchanger2.allocate_send_buffers();
+      }
+    }
+
+    exchanger1.allocate_recv_buffers();
+    exchanger2.allocate_recv_buffers();
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, stk::CommBuffer& buf) {};
+
+    exchanger1.complete_receives(f);
+    auto recvListsCopy = copy_recv_bufs<int>(exchanger1);
+    test_results(recvListsCopy);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    recvListsCopy = copy_recv_bufs<int>(exchanger2);
+    test_results(recvListsCopy);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_send_bufs();
+  }
+}
+
 
 TEST_F(DenseParallelCommTesterDouble, ClassNonBlocking)
 {
@@ -881,6 +1034,135 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBuffer)
   }
 }
 
+TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingKnownPattern)
+{
+  DataExchangeNonBlockingKnown exchanger1(comm);
+  DataExchangeNonBlockingKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger2.start_nonblocking(sendLists2, recvLists2);
+
+    auto f = [&](int rank, std::vector<double>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(recvLists, f);
+    test_results(recvLists);
+
+    exchanger2.complete_receives(recvLists2, f);
+    test_results(recvLists2);
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+  }
+}
+
+
+TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingBufferKnownPattern)
+{
+  DataExchangeNonBlockingBufferKnown<double> exchanger1(comm);
+  DataExchangeNonBlockingBufferKnown<double> exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int rank=0; rank < commSize; ++rank) {
+      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+    }
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, std::vector<double>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(f);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_recv_bufs();
+  }
+}
+
+TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingCommBufferKnownPattern)
+{
+  DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
+  DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int phase=0; phase < 2; ++phase)
+    {
+      for (int rank=0; rank < commSize; ++rank) {
+        for (auto& val : sendLists[rank]) {
+          exchanger1.get_send_buf(rank).pack(val);
+          exchanger2.get_send_buf(rank).pack(val);
+        }
+
+        exchanger1.set_recv_buffer_size(rank, sizeof(double)*recvLists[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(double)*recvLists[rank].size());
+      }
+
+      if (phase == 0)
+      {
+        exchanger1.allocate_send_buffers();
+        exchanger2.allocate_send_buffers();
+      }
+    }
+
+    exchanger1.allocate_recv_buffers();
+    exchanger2.allocate_recv_buffers();
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, stk::CommBuffer& buf) {};
+
+    exchanger1.complete_receives(f);
+    auto recvListsCopy = copy_recv_bufs<double>(exchanger1);
+    test_results(recvListsCopy);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    recvListsCopy = copy_recv_bufs<double>(exchanger2);
+    test_results(recvListsCopy);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_send_bufs();
+  }
+}
 
 TEST_F(NeighborParallelCommTesterInt, ClassNonBlocking)
 {
@@ -920,6 +1202,134 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlocking)
   }
 }
 
+TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingKnownPattern)
+{
+  DataExchangeNonBlockingKnown exchanger1(comm);
+  DataExchangeNonBlockingKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger2.start_nonblocking(sendLists2, recvLists2);
+
+    auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(recvLists, f);
+    test_results(recvLists);
+
+    exchanger2.complete_receives(recvLists2, f);
+    test_results(recvLists2);
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+  }
+}
+
+TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
+{
+  DataExchangeNonBlockingBufferKnown<int> exchanger1(comm);
+  DataExchangeNonBlockingBufferKnown<int> exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int rank=0; rank < commSize; ++rank) {
+      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+    }
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(f);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_recv_bufs();
+  }
+}
+
+TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
+{
+  DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
+  DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
+
+  auto& sendLists = get_send_lists();
+  auto& recvLists = get_receive_lists();
+  set_recv_buffer_sizes(recvLists);
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    //std::vector< std::vector<ElementType> > sendLists2 = sendLists;
+    //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+
+    for (int phase=0; phase < 2; ++phase)
+    {
+      for (int rank=0; rank < commSize; ++rank) {
+        for (auto& val : sendLists[rank]) {
+          exchanger1.get_send_buf(rank).pack(val);
+          exchanger2.get_send_buf(rank).pack(val);
+        }
+
+        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+      }
+
+      if (phase == 0)
+      {
+        exchanger1.allocate_send_buffers();
+        exchanger2.allocate_send_buffers();
+      }
+    }
+
+    exchanger1.allocate_recv_buffers();
+    exchanger2.allocate_recv_buffers();
+
+    exchanger1.start_nonblocking();
+    exchanger2.start_nonblocking();
+
+    auto f = [&](int rank, stk::CommBuffer& buf) {};
+
+    exchanger1.complete_receives(f);
+    auto recvListsCopy = copy_recv_bufs<int>(exchanger1);
+    test_results(recvListsCopy);
+    exchanger1.clear_recv_bufs();
+
+    exchanger2.complete_receives(f);
+    recvListsCopy = copy_recv_bufs<int>(exchanger2);
+    test_results(recvListsCopy);
+    exchanger2.clear_recv_bufs();
+
+    exchanger1.complete_sends();
+    exchanger2.complete_sends();
+
+    exchanger1.clear_send_bufs();
+    exchanger2.clear_send_bufs();
+  }
+}
 
 TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBuffer)
 {

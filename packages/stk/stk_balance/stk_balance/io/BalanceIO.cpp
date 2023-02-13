@@ -113,6 +113,7 @@ void BalanceIO::write(BalanceMesh& mesh)
   outputBroker.use_simple_fields();
   outputBroker.set_bulk_data(mesh.get_bulk());
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
+  m_inputBroker.cache_entity_list_for_transient_steps(true);
 
   stk::transfer_utils::TransientFieldTransferById transfer(m_inputBroker, outputBroker);
   transfer.transfer_and_write_transient_fields(m_settings.get_output_filename());

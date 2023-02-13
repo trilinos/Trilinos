@@ -47,6 +47,7 @@ public:
 
   const double * nodal_parametric_coordinates() const { return m_refCoords.data(); }
   const double * centroid_parametric_coordinates() const { return m_centroidParCoords.data(); }
+  double parametric_volume() const { return m_refVolume; }
 
   void determinant(
      const int numCoordDims,
@@ -122,6 +123,8 @@ private:
   int m_numIntgPts;
 
   std::unique_ptr<Basis> m_Basis;
+
+  double m_refVolume;
 
   // Local FieldContainers
   std::vector<double> m_shapeFuncs;

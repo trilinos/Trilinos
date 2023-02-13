@@ -102,13 +102,12 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
 {
   auto all_changes = decomp_changes.get_all_partition_changes();
 
-  // First pass remove all refinement children from the list of changes.
-  // Second pass will set their destinations all to the destination of their root parent
-  // if it is moving.
+  // First pass remove all constrained entities from the list of changes.
+  // Second pass will set their destinations according to their dependence
   for(auto && change : all_changes)
   {
     stk::mesh::Entity entity = change.first;
-    if(refinement.is_child(entity))
+    if(refinement.has_rebalance_constraint(entity))
     {
       decomp_changes.delete_entity(entity);
     }
@@ -121,7 +120,7 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
     stk::mesh::Entity entity = change.first;
     const auto dest = change.second;
 
-    fill_all_children(refinement, entity, adapt_children);
+    refinement.fill_dependents(entity, adapt_children);
     for(auto && child : adapt_children)
     {
       decomp_changes.set_entity_destination(child, dest);
@@ -230,21 +229,21 @@ void accumulate_adaptivity_child_weights_to_parents(
 {
   auto selector = stk::mesh::selectField(element_weights_field) &
       bulk_data.mesh_meta_data().locally_owned_part();
-  std::vector<stk::mesh::Entity> all_children;
+  std::vector<stk::mesh::Entity> all_dependents;
   const auto & buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, selector);
   for (auto && b_ptr : buckets)
   {
     for (auto && elem : *b_ptr)
     {
-      if (refinement.is_child(elem)) continue;
+      if (!refinement.is_parent(elem)) continue;
 
-      all_children.clear();
-      fill_all_children(refinement, elem, all_children);
+      all_dependents.clear();
+      refinement.fill_dependents(elem, all_dependents);
 
       double child_weights_sum = 0.;
-      for (auto && child : all_children)
+      for (auto && dep : all_dependents)
       {
-        double & child_weight = *stk::mesh::field_data(element_weights_field, child);
+        double & child_weight = *stk::mesh::field_data(element_weights_field, dep);
         child_weights_sum += child_weight;
         child_weight = 0.;
       }

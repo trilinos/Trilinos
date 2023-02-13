@@ -9,8 +9,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/util/RemoveIntersection.hpp>
 #include "Akri_Edge.hpp"
-#include "Akri_FieldRef.hpp"
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_Refinement.hpp"
 
@@ -64,36 +64,54 @@ void UniformEdgeMarker::fill_element_refined_edge_nodes(const NodeRefiner & node
   }
 }
 
-void UniformEdgeMarker::fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & elementsWithoutChildrenAfterUnrefinement, std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const
+void UniformEdgeMarker::fill_elements_modified_by_unrefinement(
+    std::vector<stk::mesh::Entity> & parentElementsModifiedByUnrefinement,
+    std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const
 {
-  elementsWithoutChildrenAfterUnrefinement.clear();
+  parentElementsModifiedByUnrefinement.clear();
   childElementsToDeleteForUnrefinement.clear();
   // FIXME
 }
 
-ElementBasedEdgeMarker::ElementBasedEdgeMarker(const stk::mesh::BulkData & mesh, Refinement & refinement, const std::string & elementMarkerFieldName)
-: myMesh(mesh), myRefinement(refinement)
+ElementBasedEdgeMarker::ElementBasedEdgeMarker(const stk::mesh::BulkData & mesh,
+    Refinement & refinement,
+    const std::string & elementMarkerFieldName)
+    : myMesh(mesh), myRefinement(refinement)
 {
-  myElementMarkerField = mesh.mesh_meta_data().get_field(stk::topology::ELEMENT_RANK, elementMarkerFieldName);
-  ThrowRequireMsg(myElementMarkerField.valid(), "Element marker field \"" << elementMarkerFieldName << "\" not found.");
+  myElementMarkerField = static_cast<stk::mesh::Field<int> *>(mesh.mesh_meta_data().get_field(stk::topology::ELEMENT_RANK, elementMarkerFieldName));
+  ThrowRequireMsg(myElementMarkerField, "Element marker field \"" << elementMarkerFieldName << "\" not found.");
 }
 
 const std::string & ElementBasedEdgeMarker::get_marker_field_name() const
 {
-  return myElementMarkerField.name();
+  ThrowAssert(myElementMarkerField);
+  return myElementMarkerField->name();
 }
 
-TransitionElementEdgeMarker::TransitionElementEdgeMarker(const stk::mesh::BulkData & mesh, Refinement & refinement, const std::string & elementMarkerFieldName)
-: ElementBasedEdgeMarker(mesh, refinement, elementMarkerFieldName), myMesh(mesh), myRefinement(refinement)
+const stk::mesh::Field<int> & ElementBasedEdgeMarker::get_marker_field() const
+{
+  ThrowAssert(myElementMarkerField);
+  return *myElementMarkerField;
+}
+
+TransitionElementEdgeMarker::TransitionElementEdgeMarker(const stk::mesh::BulkData & mesh,
+    Refinement & refinement,
+    const std::string & elementMarkerFieldName)
+    : ElementBasedEdgeMarker(mesh, refinement, elementMarkerFieldName),
+      myMesh(mesh),
+      myRefinement(refinement)
 {
 }
+
 
 static bool node_is_element_node(const StkMeshEntities & elementNodes, const stk::mesh::Entity node)
 {
   return (std::find(elementNodes.begin(), elementNodes.end(), node) != elementNodes.end());
 }
 
-std::vector<stk::mesh::Entity> TransitionElementEdgeMarker::get_edge_nodes_of_transition_elements(const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & transitionElements) const
+std::vector<stk::mesh::Entity> TransitionElementEdgeMarker::get_edge_nodes_of_transition_elements(
+    const stk::mesh::Entity parentElem,
+    const std::vector<stk::mesh::Entity> & transitionElements) const
 {
   std::vector<stk::mesh::Entity> transitionElementEdgeNodes;
   if (!transitionElements.empty())
@@ -115,6 +133,12 @@ bool TransitionElementEdgeMarker::is_transition(const stk::mesh::Entity elem) co
   const stk::mesh::Bucket & bucket = myMesh.bucket(elem);
   if (!myRefinement.is_parent(bucket) && myRefinement.is_child(bucket))
   {
+    auto parent = myRefinement.get_parent(elem);
+    //If this is a leaf child but doesn't have its parent on this proc, it must be a
+    //newly childless element that hasn't been returned to its originating proc yet.
+    //Thus, it cannot be a transition element since a transition element couldn't have been
+    //a parent in the first place
+    if(!myMesh.is_valid(parent)) return false;
     return myRefinement.is_this_parent_element_partially_refined(myRefinement.get_parent(elem));
   }
   return false;
@@ -242,8 +266,8 @@ void TransitionElementEdgeMarker::mark_unrefined_edges_of_partially_refined_pare
 
 void TransitionElementEdgeMarker::locally_mark_edges_of_partially_refined_parent_elements_with_marked_children(NodeRefiner & nodeRefiner) const
 {
-  FieldRef markerField = get_marker_field();
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField.field()) & myRefinement.parent_part();
+  const stk::mesh::Field<int> & markerField = get_marker_field();
+  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & myRefinement.parent_part();
   std::vector<Edge> elemEdges;
   std::vector<stk::mesh::Entity> childTransitionElements;
   bool wasAnyEdgeMarked = false;
@@ -301,8 +325,8 @@ bool does_any_child_element_have_marked_edge_that_is_not_parent_edge(const stk::
 
 void TransitionElementEdgeMarker::locally_mark_edges_of_partially_refined_parent_elements_to_satisfy_template(NodeRefiner & nodeRefiner, bool & wasAnyEdgeMarked) const
 {
-  FieldRef markerField = get_marker_field();
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField.field()) & myRefinement.parent_part();
+  const stk::mesh::Field<int> & markerField = get_marker_field();
+  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & myRefinement.parent_part();
   std::vector<Edge> elemEdges;
   std::vector<stk::mesh::Entity> childTransitionElements;
 
@@ -322,18 +346,21 @@ void TransitionElementEdgeMarker::locally_mark_edges_of_partially_refined_parent
 
 void TransitionElementEdgeMarker::locally_mark_edges_of_marked_non_transition_elements(NodeRefiner & nodeRefiner) const
 {
-  const FieldRef markerField = get_marker_field();
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField.field()) & !myRefinement.parent_part();
+  const stk::mesh::Field<int> & markerField = get_marker_field();
+  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & !myRefinement.parent_part();
   std::vector<Edge> edgesToRefineForElement;
 
   for(const auto & bucketPtr : myMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
   {
     const stk::mesh::Bucket & bucket = *bucketPtr;
     auto * elemMarker = field_data<int>(markerField, bucket);
+    const unsigned markerFieldLength = stk::mesh::field_scalars_per_entity(markerField, bucket);
+
     for(size_t i=0; i<bucketPtr->size(); ++i)
     {
       const stk::mesh::Entity elem = bucket[i];
-      if (elemMarker[i] == Refinement::REFINE && !is_transition(elem))
+
+      if (elemMarker[i*markerFieldLength] == Refinement::REFINE && !is_transition(elem))
       {
         fill_entity_edges(myMesh, elem, edgesToRefineForElement);
         for (auto && edgeToRefineForElement : edgesToRefineForElement)
@@ -380,25 +407,145 @@ bool TransitionElementEdgeMarker::are_all_children_leaves_and_marked_for_unrefin
   return true;
 }
 
-void TransitionElementEdgeMarker::fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & elementsWithoutChildrenAfterUnrefinement, std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const
+bool TransitionElementEdgeMarker::child_elements_are_all_leaves_and_are_transition_elements_or_marked_for_unrefinement(const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & childElements) const
 {
-  const FieldRef markerField = get_marker_field();
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField.field()) & myRefinement.parent_part();
-  std::vector<stk::mesh::Entity> childElements;
+  if (are_all_children_leaves_and_marked_for_unrefinement(childElements))
+    return true;
 
-  elementsWithoutChildrenAfterUnrefinement.clear();
+  const bool isPartiallyRefined = myRefinement.get_num_children_when_fully_refined(parentElem) != childElements.size();
+  if (isPartiallyRefined)
+    return true;
+
+  return false;
+}
+
+bool TransitionElementEdgeMarker::can_edge_node_be_unrefined_based_on_locally_owned_elements(const stk::mesh::Entity refinedNode,
+    std::vector<stk::mesh::Entity> & workParentEdgeElements,
+    std::vector<stk::mesh::Entity> & workChildElements) const
+{
+  // Fast, but only partial check.  If any element using this node is not a leaf child, then the node must be kept.
+  for (auto && elem : StkMeshEntities{myMesh.begin_elements(refinedNode), myMesh.end_elements(refinedNode)})
+    if (myRefinement.is_parent(elem))
+      return false;
+
+  const auto edgeNodeParents = myRefinement.get_edge_parent_nodes(refinedNode);
+  stk::mesh::get_entities_through_relations(myMesh, {edgeNodeParents[0], edgeNodeParents[1]}, stk::topology::ELEMENT_RANK, workParentEdgeElements);
+
+  for (auto && parentEdgeElem : workParentEdgeElements)
+  {
+    // Only examines locally owned elements so that any return value of false is sure to be correct.
+    // Subsequent communication is then needed to make sure the final determination is parallel consistent.
+    if (myMesh.bucket(parentEdgeElem).owned())
+    {
+      myRefinement.fill_children(parentEdgeElem, workChildElements);
+      if (!child_elements_are_all_leaves_and_are_transition_elements_or_marked_for_unrefinement(parentEdgeElem, workChildElements))
+        return false;
+    }
+  }
+
+  return true;
+}
+
+static void communicate_to_get_sorted_edges_nodes_that_will_be_removed_by_unrefinement(const stk::mesh::BulkData & mesh,
+  const std::vector<stk::mesh::Entity> & sharedEdgeNodesThatMustBeKept,
+  std::vector<stk::mesh::Entity> & ownedOrSharedEdgeNodesThatMayBeUnrefined)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+
+  pack_entities_for_sharing_procs(mesh, sharedEdgeNodesThatMustBeKept, commSparse);
+  std::vector<stk::mesh::Entity> sharedEdgeNodesThatMustBeKeptFromOtherProcs;
+  unpack_shared_entities(mesh, sharedEdgeNodesThatMustBeKeptFromOtherProcs, commSparse);
+  stk::util::remove_intersection_from_first(ownedOrSharedEdgeNodesThatMayBeUnrefined, sharedEdgeNodesThatMustBeKeptFromOtherProcs);
+}
+
+std::vector<stk::mesh::Entity> TransitionElementEdgeMarker::get_sorted_edge_nodes_that_will_be_removed_by_unrefinement() const
+{
+  std::vector<stk::mesh::Entity> ownedOrSharedEdgeNodesThatMayBeUnrefined;
+  std::vector<stk::mesh::Entity> sharedEdgeNodesThatMustBeKept;
+  std::vector<stk::mesh::Entity> workParentEdgeElements;
+  std::vector<stk::mesh::Entity> workChildElements;
+
+  const stk::mesh::Selector refinedEdgeNodeSelector = myRefinement.refined_edge_node_part() & (myMesh.mesh_meta_data().locally_owned_part() | myMesh.mesh_meta_data().globally_shared_part());
+
+  for(const auto & bucketPtr : myMesh.get_buckets(stk::topology::NODE_RANK, refinedEdgeNodeSelector))
+  {
+    for (auto && refinedNode : *bucketPtr)
+    {
+      if (can_edge_node_be_unrefined_based_on_locally_owned_elements(refinedNode, workParentEdgeElements, workChildElements))
+      {
+        ownedOrSharedEdgeNodesThatMayBeUnrefined.push_back(refinedNode);
+      }
+      else if (bucketPtr->shared())
+      {
+        sharedEdgeNodesThatMustBeKept.push_back(refinedNode);
+      }
+    }
+  }
+
+  communicate_to_get_sorted_edges_nodes_that_will_be_removed_by_unrefinement(myMesh, sharedEdgeNodesThatMustBeKept, ownedOrSharedEdgeNodesThatMayBeUnrefined);
+  return ownedOrSharedEdgeNodesThatMayBeUnrefined;
+}
+
+static bool is_any_in_second_vec_in_first_sorted_vec(const std::vector<stk::mesh::Entity> & sortedFirstVec, const std::vector<stk::mesh::Entity> & secondVec)
+{
+  for (auto && entity : secondVec)
+  {
+    auto it = std::lower_bound(sortedFirstVec.begin(), sortedFirstVec.end(), entity);
+    if (it != sortedFirstVec.end() && *it == entity)
+      return true;
+  }
+  return false;
+}
+
+static bool is_any_child_invalid_or_a_parent(const stk::mesh::BulkData & mesh, const Refinement & refinement, const std::vector<stk::mesh::Entity> & childElements)
+{
+  for (auto && childElem : childElements)
+    if (!mesh.is_valid(childElem) || refinement.is_parent(childElem))
+      return true;
+  return false;
+}
+
+bool TransitionElementEdgeMarker::is_parent_element_modified_by_unrefinement(const stk::mesh::Entity parentElem,
+    const std::vector<stk::mesh::Entity> & childElements,
+    const std::vector<stk::mesh::Entity> & sortedEdgeNodesThatWillBeUnrefined,
+    std::vector<stk::mesh::Entity> & workElemEdgeChildNodes) const
+{
+  if (is_any_child_invalid_or_a_parent(myMesh, myRefinement, childElements))
+    return false;
+
+  // If all edge nodes are going to unrefined, then this parent element will have no children after unrefinement
+  // If only some of the edge nodes are going to unrefined, then the parent will still have children, but the current elements must still be deleted
+  const stk::topology elemTopology = myMesh.bucket(parentElem).topology();
+  const unsigned elemNumEdges = elemTopology.num_edges();
+  fill_existing_element_refined_edge_nodes_for_partially_refined_parent_element(parentElem, elemTopology, elemNumEdges, childElements, workElemEdgeChildNodes);
+
+  const bool isParentModifiedByUnrefinement = is_any_in_second_vec_in_first_sorted_vec(sortedEdgeNodesThatWillBeUnrefined, workElemEdgeChildNodes);
+
+  return isParentModifiedByUnrefinement;
+}
+
+void TransitionElementEdgeMarker::fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & parentElementsModifiedByUnrefinement,
+    std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const
+{
+  const stk::mesh::Field<int> & markerField = get_marker_field();
+  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & myRefinement.parent_part();
+  std::vector<stk::mesh::Entity> childElements;
+  std::vector<stk::mesh::Entity> workElemEdgeChildNodes;
+
+  parentElementsModifiedByUnrefinement.clear();
   childElementsToDeleteForUnrefinement.clear();
+
+  const std::vector<stk::mesh::Entity> sortedEdgeNodesThatWillBeUnrefined = get_sorted_edge_nodes_that_will_be_removed_by_unrefinement();
 
   for(const auto & bucketPtr : myMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
   {
     for(const auto & parentElem : *bucketPtr)
     {
       myRefinement.fill_children(parentElem, childElements);
-      const bool isPartiallyRefined = myRefinement.get_num_children_when_fully_refined(parentElem) != childElements.size();
-      if (isPartiallyRefined || are_all_children_leaves_and_marked_for_unrefinement(childElements))
+      if (is_parent_element_modified_by_unrefinement(parentElem, childElements, sortedEdgeNodesThatWillBeUnrefined, workElemEdgeChildNodes))
       {
-        elementsWithoutChildrenAfterUnrefinement.push_back(parentElem);
         childElementsToDeleteForUnrefinement.insert(childElementsToDeleteForUnrefinement.end(), childElements.begin(), childElements.end());
+        parentElementsModifiedByUnrefinement.push_back(parentElem);
       }
     }
   }
@@ -406,8 +553,8 @@ void TransitionElementEdgeMarker::fill_elements_modified_by_unrefinement(std::ve
 
 bool TransitionElementEdgeMarker::locally_have_elements_to_unrefine() const
 {
-  const FieldRef markerField = get_marker_field();
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField.field()) & myRefinement.parent_part();
+  const stk::mesh::Field<int> & markerField = get_marker_field();
+  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & myRefinement.parent_part();
   std::vector<stk::mesh::Entity> childElements;
 
   for(const auto & bucketPtr : myMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))

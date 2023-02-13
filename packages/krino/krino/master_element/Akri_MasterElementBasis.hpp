@@ -20,6 +20,7 @@ public:
 
   virtual ~Basis() {}
   virtual void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const = 0;
+  virtual double parametric_volume() const = 0;
   virtual void shape_fcn(const int nint, const double* p_coords, double* result) const = 0;
   virtual void shape_fcn_deriv(const int nint, const double* p_coords, double* result ) const = 0;
   unsigned degree() const { return my_degree; }
@@ -33,12 +34,14 @@ class Basis_LINE_2 : public Basis
 public:
   Basis_LINE_2() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 2.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[0] = -1.0;
     p_coords[1] =  1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -47,7 +50,7 @@ public:
       result[ip*2 + 1] = ( 1.0 + x ) * 0.5;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -62,13 +65,15 @@ class Basis_LINE_3 : public Basis
 public:
   Basis_LINE_3() : Basis(2) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 2.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[0] = -1.0;
     p_coords[1] =  1.0;
     p_coords[2] =  0.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -78,7 +83,7 @@ public:
       result[ip*3 + 2] = ( 1.0 - x ) * ( 1.0 + x );
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -95,13 +100,15 @@ class Basis_TRI_3 : public Basis
 public:
   Basis_TRI_3() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 0.5; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[0] = 0.0; p_coords[1] = 0.0;
     p_coords[2] = 1.0; p_coords[3] = 0.0;
     p_coords[4] = 0.0; p_coords[5] = 1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -112,7 +119,7 @@ public:
       result[ip*3 + 2] = y;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -131,7 +138,9 @@ class Basis_TRI_6 : public Basis
 public:
   Basis_TRI_6() : Basis(2) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 0.5; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = 0.0; p_coords[ 1] = 0.0;
     p_coords[ 2] = 1.0; p_coords[ 3] = 0.0;
@@ -140,7 +149,7 @@ public:
     p_coords[ 8] = 0.5; p_coords[ 9] = 0.5;
     p_coords[10] = 0.0; p_coords[11] = 0.5;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -154,7 +163,7 @@ public:
       result[ip*6 + 5] = -4.0*y*(x + y - 1.0);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -181,14 +190,16 @@ class Basis_QUAD_4 : public Basis
 public:
   Basis_QUAD_4() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 4.0; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = -1.0; p_coords[ 1] = -1.0;
     p_coords[ 2] =  1.0; p_coords[ 3] = -1.0;
     p_coords[ 4] =  1.0; p_coords[ 5] =  1.0;
     p_coords[ 6] = -1.0; p_coords[ 7] =  1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -200,7 +211,7 @@ public:
       result[ip*4 + 3] = 0.25*(1.0 - x)*(1.0 + y);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -223,7 +234,9 @@ class Basis_QUAD_9 : public Basis
 public:
   Basis_QUAD_9() : Basis(2) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 4.0; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = -1.0; p_coords[ 1] = -1.0;
     p_coords[ 2] =  1.0; p_coords[ 3] = -1.0;
@@ -235,7 +248,7 @@ public:
     p_coords[14] = -1.0; p_coords[15] =  0.0;
     p_coords[16] =  0.0; p_coords[17] =  0.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -252,7 +265,7 @@ public:
       result[ip*9 + 8] = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -285,14 +298,16 @@ class Basis_TET_4 : public Basis
 public:
   Basis_TET_4() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 1./6.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = 0.0; p_coords[ 1] = 0.0; p_coords[ 2] = 0.0;
     p_coords[ 3] = 1.0; p_coords[ 4] = 0.0; p_coords[ 5] = 0.0;
     p_coords[ 6] = 0.0; p_coords[ 7] = 1.0; p_coords[ 8] = 0.0;
     p_coords[ 9] = 0.0; p_coords[10] = 0.0; p_coords[11] = 1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -305,7 +320,7 @@ public:
       result[ip*4 + 3] = z;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -330,7 +345,9 @@ class Basis_TET_10 : public Basis
 public:
   Basis_TET_10() : Basis(2) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 1./6.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = 0.0; p_coords[ 1] = 0.0; p_coords[ 2] = 0.0;
     p_coords[ 3] = 1.0; p_coords[ 4] = 0.0; p_coords[ 5] = 0.0;
@@ -343,7 +360,7 @@ public:
     p_coords[24] = 0.5; p_coords[25] = 0.0; p_coords[26] = 0.5;
     p_coords[27] = 0.0; p_coords[28] = 0.5; p_coords[29] = 0.5;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -362,7 +379,7 @@ public:
       result[ip*10 + 9] = 4.*y*z;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -408,7 +425,9 @@ class Basis_HEX_8 : public Basis
 public:
   Basis_HEX_8() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 8.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = -1.0; p_coords[ 1] = -1.0; p_coords[ 2] = -1.0;
     p_coords[ 3] =  1.0; p_coords[ 4] = -1.0; p_coords[ 5] = -1.0;
@@ -419,7 +438,7 @@ public:
     p_coords[18] =  1.0; p_coords[19] =  1.0; p_coords[20] =  1.0;
     p_coords[21] = -1.0; p_coords[22] =  1.0; p_coords[23] =  1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -436,7 +455,7 @@ public:
       result[ip*8 + 7] = 0.125*(1.0 - x)*(1.0 + y)*(1.0 + z);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -476,7 +495,9 @@ class Basis_HEX_27 : public Basis
 public:
   Basis_HEX_27() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 8.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] = -1.0; p_coords[ 1] = -1.0; p_coords[ 2] = -1.0;
     p_coords[ 3] =  1.0; p_coords[ 4] = -1.0; p_coords[ 5] = -1.0;
@@ -506,7 +527,7 @@ public:
     p_coords[75] =  0.0; p_coords[76] = -1.0; p_coords[77] =  0.0;
     p_coords[78] =  0.0; p_coords[79] =  1.0; p_coords[80] =  0.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -542,7 +563,7 @@ public:
       result[ip*27 + 26] = 0.5*(1. - x)*(1. + x)*y*(1.+ y)*(1. - z)*(1. + z);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -639,7 +660,9 @@ class Basis_WEDGE_6 : public Basis
 public:
   Basis_WEDGE_6() : Basis(1) {}
 
-  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const
+  double parametric_volume() const override { return 1.; }
+
+  void nodal_parametric_coordinates(double* ATTR_RESTRICT p_coords) const override
   {
     p_coords[ 0] =  0.0; p_coords[ 1] =  0.0; p_coords[ 2] = -1.0;
     p_coords[ 3] =  1.0; p_coords[ 4] =  0.0; p_coords[ 5] = -1.0;
@@ -648,7 +671,7 @@ public:
     p_coords[12] =  1.0; p_coords[13] =  0.0; p_coords[14] =  1.0;
     p_coords[15] =  0.0; p_coords[16] =  1.0; p_coords[17] =  1.0;
   }
-  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for (int ip(0); ip < nint; ++ip)
     {
@@ -665,7 +688,7 @@ public:
       result[ip*6 + 5] = 0.5 * y * (1.0 + z);
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {

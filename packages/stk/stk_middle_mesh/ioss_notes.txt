@@ -1,0 +1,37 @@
+Ioss Field
+  - raw_storage() gives the VariableType* of the data
+  - raw_count() gives the number of element of the raw_storage() type
+  - get_type() returns a BasicType, which is the type of the underlying data array? (and raw_storage gives the type Ioss interprets that raw data as)
+  - get_field_data() method taking a vector<T> resizes the vector to
+    raw_count() * variable_type()->component_count() and
+    calls internal_get_field_data with vector.data() to read
+    sizeof(T) * raw_count() * variable_type()->component_count()
+    bytes of data.  So it assumes T is the type described by
+    the VariableType
+  - Prefer to use the get_type() function to get an enum of the real type
+    - the enum values are REAL==DOUBLE=1, INTEGER = INT32=4, INT64=8
+    - This type may be different than the raw_storage() type given above
+      (I think because Exodus only really supports double fields, so Ioss
+       reinterprets the bits as double, and then handles converting them
+       back to the original type in the reader)
+
+VariableType
+  - component_count(): gives the number of scalars in one element
+
+One thing that is missing is the size (in bytes) of one scalar
+
+
+For volume blocks:
+  - the "ids" field gives the global ids of the elements in each block
+  - "implicit_ids" looks the same as "ids"?
+
+For side sets:
+  - "ids" field exists, but is empty
+  - no other fields
+
+For side block
+  - have connectivity, distribution_factors, element_side, and ids fields
+  - not sure what the data in "ids" is.  Maybe face numbers?
+  - connectivity: maybe connectivity of the faces?
+  - element_side: data from elem_ss and side_ss, returns pairs of
+    (element gid, local face idx) flattened into an array

@@ -218,7 +218,7 @@ namespace {
   void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const Ioss::Field &ioField,
                                      const stk::mesh::FieldBase *field,
-                                     std::vector<stk::mesh::Entity> &entities,
+                                     const std::vector<stk::mesh::Entity> &entities,
                                      Ioss::GroupingEntity *ioEntity)
   {
     size_t iossNumFieldComponents = ioField.transformed_storage()->component_count();
@@ -260,7 +260,7 @@ namespace {
   void internal_subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                                const Ioss::Field &ioField,
                                                const stk::mesh::FieldBase *field,
-                                               std::vector<stk::mesh::Entity> &entities,
+                                               const std::vector<stk::mesh::Entity> &entities,
                                                Ioss::GroupingEntity *ioEntity,
                                                const stk::mesh::Part *stkPart)
   {
@@ -307,6 +307,12 @@ namespace {
                                    std::vector<stk::mesh::Entity> &entities,
                                    Ioss::GroupingEntity *ioEntity)
   {
+    auto io_db = ioEntity->get_database();
+    const auto supports = io_db->entity_field_support();
+    
+    if (!(ioEntity->type() & supports)) {
+      return;
+    }
     size_t iossFieldLength = ioField.transformed_storage()->component_count();
     size_t entityCount = entities.size();
 
@@ -1837,11 +1843,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     }
 
     template <typename INT>
-    void get_entity_list(Ioss::GroupingEntity *ioEntity,
-                         stk::mesh::EntityRank partType,
-                         const stk::mesh::BulkData &bulk,
-                         std::vector<stk::mesh::Entity> &entities)
+    std::vector<stk::mesh::Entity> get_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                   stk::mesh::EntityRank partType,
+                                                   const stk::mesh::BulkData &bulk)
     {
+      std::vector<stk::mesh::Entity> entities;
+
       if (ioEntity->type() == Ioss::SIDEBLOCK) {
         std::vector<INT> elemSide ;
         ioEntity->get_field_data("element_side", elemSide);
@@ -1860,18 +1867,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           entities.push_back(bulk.get_entity( partType, ids[i] ));
         }
       }
+
+      return entities;
     }
 
-    void get_input_entity_list(Ioss::GroupingEntity *ioEntity,
-                         stk::mesh::EntityRank partType,
-                         const stk::mesh::BulkData &bulk,
-                         std::vector<stk::mesh::Entity> &entities)
+    std::vector<stk::mesh::Entity> get_input_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                         stk::mesh::EntityRank partType,
+                                                         const stk::mesh::BulkData &bulk)
     {
       ThrowRequireMsg(ioEntity->get_database()->is_input(), "Database is output type");
       if (db_api_int_size(ioEntity) == 4) {
-          get_entity_list<int>(ioEntity, partType, bulk, entities);
+          return get_entity_list<int>(ioEntity, partType, bulk);
       } else {
-          get_entity_list<int64_t>(ioEntity, partType, bulk, entities);
+          return get_entity_list<int64_t>(ioEntity, partType, bulk);
       }
     }
 
@@ -1967,7 +1975,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                          const stk::mesh::FieldBase *field,
-                                         std::vector<stk::mesh::Entity> &entityList,
+                                         const std::vector<stk::mesh::Entity> &entityList,
                                          Ioss::GroupingEntity *ioEntity,
                                          const std::string &name,
                                          const size_t stateCount,
@@ -1997,7 +2005,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                                    const stk::mesh::FieldBase *field,
-                                                   std::vector<stk::mesh::Entity> &entityList,
+                                                   const std::vector<stk::mesh::Entity> &entityList,
                                                    Ioss::GroupingEntity *ioEntity,
                                                    const stk::mesh::Part *stkPart,
                                                    const std::string &name,
@@ -2029,7 +2037,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                               const stk::mesh::FieldBase *field,
-                              std::vector<stk::mesh::Entity> &entities,
+                              const std::vector<stk::mesh::Entity> &entities,
                               Ioss::GroupingEntity *ioEntity,
                               const std::string &ioFieldName)
     {
@@ -2072,7 +2080,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                         const stk::mesh::FieldBase *field,
-                                        std::vector<stk::mesh::Entity> &entities,
+                                        const std::vector<stk::mesh::Entity> &entities,
                                         Ioss::GroupingEntity *ioEntity,
                                         const stk::mesh::Part *stkPart,
                                         const std::string &ioFieldName)
@@ -3657,21 +3665,31 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     void write_output_db_for_entitysets_and_comm_map(stk::io::OutputParams &params)
     {
         Ioss::Region &ioRegion = params.io_region();
+        auto *dbo = ioRegion.get_database();
+        const auto supports = dbo->entity_field_support();
 
-        for(Ioss::NodeSet *ns : ioRegion.get_nodesets()) {
+        if (supports & Ioss::NODESET) {
+          for(Ioss::NodeSet *ns : ioRegion.get_nodesets()) {
             output_node_set<T>(params, ns);
+          }
         }
 
-        for(Ioss::SideSet *ss : ioRegion.get_sidesets()) {
+        if (supports & Ioss::SIDESET) {
+          for(Ioss::SideSet *ss : ioRegion.get_sidesets()) {
             output_side_set<T>(params, ss);
+          }
         }
 
-        for(Ioss::EdgeBlock *eb: ioRegion.get_edge_blocks()) {
+        if (supports & Ioss::EDGEBLOCK) {
+          for(Ioss::EdgeBlock *eb: ioRegion.get_edge_blocks()) {
             output_edge_block<T>(params, eb);
+          }
         }
 
-        for(Ioss::FaceBlock *fb: ioRegion.get_face_blocks()) {
+        if (supports & Ioss::FACEBLOCK) {
+          for(Ioss::FaceBlock *fb: ioRegion.get_face_blocks()) {
             output_face_block<T>(params, fb);
+          }
         }
 
         output_communication_maps<T>(params);
