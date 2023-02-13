@@ -106,12 +106,12 @@
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
 /* FLIP is a "negation about -1", and is used to mark an integer i that is
- * normally non-negative.  FLIP (EMPTY) is EMPTY.  FLIP of a number > EMPTY
+ * normally non-negative.  FLIP (AMESOS2_KLU2_EMPTY) is AMESOS2_KLU2_EMPTY.  FLIP of a number > AMESOS2_KLU2_EMPTY
  * is negative, and FLIP of a number < EMTPY is positive.  FLIP (FLIP (i)) = i
- * for all integers i.  UNFLIP (i) is >= EMPTY. */
-#define EMPTY (-1)
+ * for all integers i.  UNFLIP (i) is >= AMESOS2_KLU2_EMPTY. */
+#define AMESOS2_KLU2_EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) (((i) < AMESOS2_KLU2_EMPTY) ? FLIP (i) : (i))
 
 template <typename Entry, typename Int>
 size_t KLU_kernel   /* final size of LU on output */
