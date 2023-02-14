@@ -360,9 +360,6 @@ namespace MueLu {
     else
       precList11_.remove("repartition: enable", false);
    
-    // Build (2,2) hierarchy
-    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
-
 
     ////////////////////////////////////////////////////////////////////////////////
     // Remove explicit zeros from matrices
@@ -403,17 +400,22 @@ namespace MueLu {
       // Generate single level hierarchy for the edge
       precList22_.set("max levels", 1);
     }
-      
+     
+ 
     if (allNodesBoundary_) {
-      // All Nodes have been detected as boundary edges.
+      // All Nodes have been detected as boundary nodes.
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
-      GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
+      GetOStream(Warnings0) << "All nodes are detected as boundary nodes!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
 
       // Generate single level hierarchy for the edge
       precList22_.set("max levels", 1);
     }
                                               
+    ////////////////////////////////////////////////////////////////////////////////
+    // Build (2,2) hierarchy
+    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // Apply boundary conditions to D0 (if needed)
