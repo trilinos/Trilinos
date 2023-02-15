@@ -11,6 +11,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
 #
 # gtest library
 #
+
+# Set some variables controlling the internal googletest package
+SET(INSTALL_GTEST OFF CACHE BOOL "Install GTest")
+
 TRIBITS_INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/googletest")
 TRIBITS_INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/googletest/include")
 
