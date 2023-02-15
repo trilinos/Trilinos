@@ -584,6 +584,70 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   return success;
 }
 
+
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+bool
+testCrsMatrixPerFile (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
+{
+  typedef ScalarType ST;
+  typedef LocalOrdinalType LO;
+  typedef GlobalOrdinalType GO;
+  typedef NodeType NT;
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
+  bool result = true; // current Boolean result; reused below
+  bool success = true;
+
+  out << "Test: CrsMatrix Per File Matrix Market I/O, w/ Map with index base "
+      << indexBase << endl;
+  OSTab tab1 (out);
+
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+
+  out << "Original sparse matrix:" << endl;
+  out << matrix_symRealSmall << endl;
+
+  out << "Creating the row Map" << endl;
+  const global_size_t globalNumElts = 5;
+  RCP<const map_type> rowMap =
+    rcp (new map_type (globalNumElts, indexBase, comm,
+                       Tpetra::GloballyDistributed));
+
+  out << "Creating original matrix" << endl;
+  RCP<crs_matrix_type> A_orig =
+    createSymRealSmall<ST, LO, GO, NT> (rowMap, out, debug);
+
+  // We'll add the number of total MPI ranks to the suffix
+  // so if ctest runs multiple jobs w/ different num procs at 
+  // the same time, they won't clash   
+  std::string prefix = "outfile_";
+  std::string suffix = std::string("_") + std::to_string(comm->getSize());
+
+  // Write out the matrix, rank by rank
+  typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
+  writer_type::writeSparsePerRank(prefix,suffix,*A_orig,"Original","");
+
+  // Read matrix back in
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  RCP<const map_type> row_map = rowMap;
+  RCP<const map_type> col_map, domain_map = row_map, range_map = row_map;
+  RCP<crs_matrix_type> A_new = reader_type::readSparsePerRank(prefix,suffix,row_map,col_map,domain_map,range_map);
+
+  out << "Comparing read-in matrix to original matrix" << endl;
+  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_new, out);
+  bool local_success = true;
+  TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
+  if (! result) { // see if ignoring zero values helps
+    result = compareCrsMatrixValues<crs_matrix_type> (*A_orig, *A_new, out);
+    local_success = true;
+    TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
+  }
+  success = success && local_success;
+
+  return success;
+}
+
+
 } // namespace (anonymous)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase0, ST, LO, GO, NT )
@@ -598,6 +662,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ST, LO, GO,
   success = testCrsMatrix<ST, LO, GO, NT> (out, indexBase);
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixPerFile, IndexBase0, ST, LO, GO, NT )
+{
+  const GO indexBase = 0;
+  success = testCrsMatrixPerFile<ST, LO, GO, NT> (out, indexBase);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixPerFile, IndexBase1, ST, LO, GO, NT )
+{
+  const GO indexBase = 1;
+  success = testCrsMatrixPerFile<ST, LO, GO, NT> (out, indexBase);
+}
+
 // We instantiate tests for all combinations of the following parameters:
 //   - indexBase = {0, 1}
 //   - Scalar = {double, float}
@@ -605,13 +682,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ST, LO, GO,
 #if defined(HAVE_TPETRA_INST_DOUBLE)
 #  define UNIT_TEST_GROUP( LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, double, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, double, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, double, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixPerFile, IndexBase0, double, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixPerFile, IndexBase1, double, LO, GO, NODE )
 
 #elif defined(HAVE_TPETRA_INST_FLOAT)
 #  define UNIT_TEST_GROUP( LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, float, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, float, LO, GO, NODE )
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, float, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixPerFile, IndexBase0, float, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixPerFile, IndexBase1, float, LO, GO, NODE )
 #else
 #  define UNIT_TEST_GROUP( LO, GO, NODE )
 #endif
