@@ -5827,7 +5827,6 @@ namespace Tpetra {
         for(int base_rank = 0; base_rank < numProc; base_rank += rank_limit) {
           int stop = std::min(base_rank+rank_limit,numProc);
 
-          printf("[%d] %s base_rank = %d stop = %d\n",myRank,filename.c_str(),base_rank,stop);
           if(base_rank <= myRank  && myRank < stop) {
             // My turn to read
             std::ifstream in(filename);
@@ -5888,18 +5887,13 @@ namespace Tpetra {
                   "instead.  That probably means the file contains dense matrix "
                   "data.";
               }
-            }
-              
-
-            printf("[%d] base_rank = %d stop = %d bannerIsCorrect = %d\n",myRank,base_rank,stop,bannerIsCorrect);
+            }              
 
             // Unpacked coordinate matrix dimensions
             using Teuchos::MatrixMarket::readCoordinateDimensions;
             success = readCoordinateDimensions (in, numRows, numCols,
                                                 numNonzeros, lineNumber,
                                                 tolerant);
-
-            printf("[%d] numRows,numCols,numNonZeros = %d %d %d success = %d\n",myRank,numRows,numCols,numNonzeros,(int)success);
             
             // Sanity checking of headers
             TEUCHOS_TEST_FOR_EXCEPTION(numRows != (LO)rowMap->getLocalNumElements(), std::invalid_argument,
@@ -5919,7 +5913,6 @@ namespace Tpetra {
               std::cerr << "-- Reading matrix data" << std::endl;
             }
 
-            printf("[%d] starting reader\n",myRank);
             try {
               // Reader for "coordinate" format sparse matrix data.
               typedef Teuchos::MatrixMarket::CoordDataReader<adder_type,
@@ -5934,8 +5927,6 @@ namespace Tpetra {
               readSuccess = 0;
               errMsg << e.what();
             }
-            printf("[%d] finishing reader\n",myRank);          
-
 
             ///////////////////////////////////////
             // Create the CSR Arrays
@@ -5968,14 +5959,13 @@ namespace Tpetra {
               
             // Convert from array-of-structs coordinate format to CSR
             // (compressed sparse row) format.
-            global_ordinal_type minIndex = rowMap->getMinGlobalIndex();
+            global_ordinal_type minIndex = rowMap->getMinGlobalIndex() - rowMap->getIndexBase();
             global_ordinal_type prvRow = minIndex;
             size_t curPos = 0;
             rowPtr[0] = 0;
             for (curPos = 0; curPos < numEntries; ++curPos) {
               const element_type& curEntry = entries[curPos];
               const global_ordinal_type curRow = curEntry.rowIndex();
-              printf("[%d] curEntry = %d %d (numRows = %d)\n",myRank,curRow,curEntry.colIndex(),numRows);
               TEUCHOS_TEST_FOR_EXCEPTION(curRow < prvRow, std::logic_error,      
                                          "Row indices are out of order, even though they are supposed "
                                          "to be sorted.  curRow = " << curRow << ", prvRow = "
