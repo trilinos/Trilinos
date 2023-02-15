@@ -8975,62 +8975,60 @@ namespace Tpetra {
         // Start the writing
         for(int base_rank = 0; base_rank < numProc; base_rank += rank_limit) {
           int stop = std::min(base_rank+rank_limit,numProc);
-          
-          for(int rank = base_rank; rank < stop; rank++) {
-            if(rank == myRank) {
-              // My turn to write
-              std::ofstream out(filename);
-              
-              // MatrixMarket Header
-              out << "%%MatrixMarket matrix coordinate "
-                  << (STS::isComplex ? "complex" : "real")
-                  << " general" << std::endl;
-              
-              // Print comments (the matrix name and / or description).
-              if (matrixName != "") {
-                printAsComment (out, matrixName);
-              }
-              if (matrixDescription != "") {
-                printAsComment (out, matrixDescription);
-              }
-              
-              // Print the Matrix Market header (# local rows, # local columns, #
-              // local enonzeros).  This will *not* be read correctly by a generic matrix
-              // market reader since we'll be writing out GIDs here and local row/col counts
-              out << local_num_rows << " " << local_num_cols << " " << local_nnz <<std::endl;
-              
-              {
-                // Make the output stream write floating-point numbers in
-                // scientific notation.  It will politely put the output
-                // stream back to its state on input, when this scope
-                // terminates.
-                Teuchos::SetScientific<ST> sci (out);
 
-                for(size_t l_row = 0; l_row < local_num_rows; l_row++) { 
-                  GO g_row = rowMap->getGlobalElement(l_row);            
-                  
-                  typename sparse_matrix_type::local_inds_host_view_type indices;
-                  typename sparse_matrix_type::values_host_view_type values;
-                  matrix.getLocalRowView(l_row, indices, values);
-                  for (size_t ii = 0; ii < indices.extent(0); ii++) {
-                    const GO g_col = colMap->getGlobalElement(indices(ii));
-                    // Convert row and column indices to 1-based.
-                    // This works because the global index type is signed.
-                    out << (g_row + 1 - rowIndexBase) << " "
-                        << (g_col + 1 - colIndexBase) << " ";
-                    if (STS::isComplex) {
-                      out << STS::real(values(ii)) << " " << STS::imag(values(ii));
-                    } else {
-                      out << values(ii);
-                    }
-                    out << std::endl;
-                  } // For each entry in the current row
-                } // For each row of the matrix
-              }// end Teuchos::SetScientfic scoping
+          if(base_rank <= myRank  && myRank < stop) {          
+            // My turn to write
+            std::ofstream out(filename);
+            
+            // MatrixMarket Header
+            out << "%%MatrixMarket matrix coordinate "
+                << (STS::isComplex ? "complex" : "real")
+                << " general" << std::endl;
+            
+            // Print comments (the matrix name and / or description).
+            if (matrixName != "") {
+              printAsComment (out, matrixName);
+            }
+            if (matrixDescription != "") {
+              printAsComment (out, matrixDescription);
+            }
+            
+            // Print the Matrix Market header (# local rows, # local columns, #
+            // local enonzeros).  This will *not* be read correctly by a generic matrix
+            // market reader since we'll be writing out GIDs here and local row/col counts
+            out << local_num_rows << " " << local_num_cols << " " << local_nnz <<std::endl;
+            
+            {
+              // Make the output stream write floating-point numbers in
+              // scientific notation.  It will politely put the output
+              // stream back to its state on input, when this scope
+              // terminates.
+              Teuchos::SetScientific<ST> sci (out);
               
-              out.close();
-            }// end if rank == myRank
-          }// end rank batch control
+              for(size_t l_row = 0; l_row < local_num_rows; l_row++) { 
+                GO g_row = rowMap->getGlobalElement(l_row);            
+                
+                typename sparse_matrix_type::local_inds_host_view_type indices;
+                typename sparse_matrix_type::values_host_view_type values;
+                matrix.getLocalRowView(l_row, indices, values);
+                for (size_t ii = 0; ii < indices.extent(0); ii++) {
+                  const GO g_col = colMap->getGlobalElement(indices(ii));
+                  // Convert row and column indices to 1-based.
+                  // This works because the global index type is signed.
+                  out << (g_row + 1 - rowIndexBase) << " "
+                      << (g_col + 1 - colIndexBase) << " ";
+                  if (STS::isComplex) {
+                    out << STS::real(values(ii)) << " " << STS::imag(values(ii));
+                  } else {
+                    out << values(ii);
+                  }
+                  out << std::endl;
+                } // For each entry in the current row
+              } // For each row of the matrix
+            }// end Teuchos::SetScientfic scoping
+            
+            out.close();
+          }// end if base_rank <= myRank < stop
           
           // Barrier after each writing "batch" to make sure we're not hammering the file system
           // too aggressively
