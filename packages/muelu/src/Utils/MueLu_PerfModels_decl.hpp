@@ -59,6 +59,8 @@ namespace MueLu {
             class Node = DefaultNode>
   class PerfModels {
   public:
+    PerfModels();
+
     /* Single Node tests based upon the STREAM benchmark for measuring memory
      * bandwith and computation rate. These processes compute either the addition
      * of two vectors or the multiplication of dense matrices of any given size.
@@ -76,13 +78,17 @@ namespace MueLu {
     /* Lookup in the stream_vector table */
     double stream_vector_copy_lookup(int SIZE_IN_BYTES);
     double stream_vector_add_lookup(int SIZE_IN_BYTES);
+    double latency_corrected_stream_vector_copy_lookup(int SIZE_IN_BYTES);
+    double latency_corrected_stream_vector_add_lookup(int SIZE_IN_BYTES);
 
     // Uses the faster of the tables.  The time is then divided by the number of memory transactions
     // per element in the kernel (e.g. 2 for COPY and 3 for ADD).
     double stream_vector_lookup(int SIZE_IN_BYTES);   
+    double latency_corrected_stream_vector_lookup(int SIZE_IN_BYTES);   
 
     /* Print table */
     void print_stream_vector_table(std::ostream & out);
+    void print_latency_corrected_stream_vector_table(std::ostream & out);
 
     /* A latency test between two processes based upon the MVAPICH OSU Micro-Benchmarks.
      * The sender process sends a message and then waits for confirmation of reception.
@@ -100,14 +106,34 @@ namespace MueLu {
     /* Print table */
     void print_pingpong_table(std::ostream & out);
 
+    
+    /* Estimate launch latency based on the cost of submitting an empty Kokkos::parallel_for.
+     * This necessary to correct the memory bandwidth costs for models on high latency platforms, 
+     * e.g., GPUS.
+     */
+    void launch_latency_make_table(int KERNEL_REPEATS);
+
+    /* Lookup launch latency */
+    double launch_latency_lookup();
+       
+    /* Print table */
+    void print_launch_latency_table(std::ostream & out);
+
   private:
+    void print_stream_vector_table_impl(std::ostream & out,bool use_latency_correction);    
+
+
     std::vector<int>    stream_sizes_;
     std::vector<double> stream_copy_times_;
     std::vector<double> stream_add_times_;
+    std::vector<double> latency_corrected_stream_copy_times_;
+    std::vector<double> latency_corrected_stream_add_times_;
 
     std::vector<int>     pingpong_sizes_;
     std::vector<double>  pingpong_host_times_;
     std::vector<double>  pingpong_device_times_;
+
+    double launch_and_wait_latency_;
 
 
   }; //class PerfModels

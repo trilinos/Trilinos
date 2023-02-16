@@ -164,26 +164,35 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
   if(verbose && rank == 0) {
+    std::cout<<"****** Launch Latency Table ******"<<std::endl;
+    PM.print_launch_latency_table(std::cout);
     std::cout<<"****** Stream Table ******"<<std::endl;
     PM.print_stream_vector_table(std::cout);
+    std::cout<<"****** Latency Corrected Stream Table ******"<<std::endl;
+    PM.print_latency_corrected_stream_vector_table(std::cout);
     std::cout<<"****** Pingpong Table ******"<<std::endl;
     PM.print_pingpong_table(std::cout);
   }
 
-  // Slightly cleaner
+  // For convenience
   const int NUM_TIMERS = 6;
   std::string SPMV_test_names[NUM_TIMERS] = {"colind","rowptr","vals","x","y","all"};
-  std::vector<int> SPMV_num_objects(NUM_TIMERS), SPMV_object_size(NUM_TIMERS);
-  SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO); // colind
-  SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);// rowptr 
-  SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);  // vals
-  SPMV_num_objects[3] = n;       SPMV_object_size[3] = sizeof(SC);  // x
-  SPMV_num_objects[4] = m;       SPMV_object_size[4] = sizeof(SC);  // y
+  std::vector<int> SPMV_num_objects(NUM_TIMERS), SPMV_object_size(NUM_TIMERS), SPMV_corrected(NUM_TIMERS);
 
-  // All-Model: 
+
+  // Composite model: Use latency correction
+  SPMV_num_objects[0] = nnz;     SPMV_object_size[0] = sizeof(LO);           SPMV_corrected[0] = 1;// colind
+  SPMV_num_objects[1] = (m + 1); SPMV_object_size[1] = sizeof(rowptr_type);  SPMV_corrected[1] = 1;// rowptr 
+  SPMV_num_objects[2] = nnz;     SPMV_object_size[2] = sizeof(SC);           SPMV_corrected[2] = 1;// vals
+  SPMV_num_objects[3] = n;       SPMV_object_size[3] = sizeof(SC);           SPMV_corrected[3] = 1; // x
+  SPMV_num_objects[4] = m;       SPMV_object_size[4] = sizeof(SC);           SPMV_corrected[4] = 1;// y
+
+  // All-Model: Do not use latency correction
   SPMV_object_size[5] = 1;
   SPMV_num_objects[5]  = (m+1)*sizeof(rowptr_type) + nnz*sizeof(LO) + nnz*sizeof(SC) + 
     n*sizeof(SC) + m*sizeof(SC);  
+  SPMV_corrected[5] = 0;
+
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
   if(verbose && rank == 0)
@@ -193,8 +202,11 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
     // Table interpolation - Take the faster of the two
     int size_in_bytes = SPMV_object_size[i] *SPMV_num_objects[i];
-    avg_time = PM.stream_vector_lookup(size_in_bytes);
-    double avg_distributed = avg_time;
+    if(SPMV_corrected[i] == 1)
+      avg_time = PM.latency_corrected_stream_vector_lookup(size_in_bytes);
+    else
+      avg_time = PM.stream_vector_lookup(size_in_bytes);
+    double avg_distributed = avg_time;      
 
     if(nproc > 1) {
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_time, &avg_distributed);
@@ -210,6 +222,19 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_distributed*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
     }
   }
+  
+  // Get the latency info
+  double avg_latency;
+  if(nproc > 1) {
+    double avg_latency_local = PM.launch_latency_lookup();    
+    double avg_latency_distributed = avg_latency_local;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_latency_local, &avg_latency_distributed);
+    avg_latency  = avg_latency_distributed / nproc;
+  }
+  else {
+    avg_latency = PM.launch_latency_lookup();
+  }
+
 
   /***************************************************************************/
   // *** Calculate SPMV minimum time (composite) ***
@@ -232,7 +257,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     spmv_memory_bytes[NUM_TIMERS-1] += spmv_memory_bytes[i];
 
 
-  double minimum_local_composite_time = 0.0;
+  double minimum_local_composite_time = avg_latency;
   for(int i=0; i<NUM_TIMERS-1; i++)
     minimum_local_composite_time +=  spmv_memory_bytes[i] / (GB * gb_per_sec[i]);
 
@@ -252,27 +277,27 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       // NOTE: Only if you're out-of-place
       size_t num_sames = importer->getNumSameIDs();
       double same_time = (num_sames == 0) ? 0.0 : 
-        2.0 * PM.stream_vector_lookup(num_sames*sizeof(SC));
+        2.0 * PM.latency_corrected_stream_vector_lookup(num_sames*sizeof(SC)) + avg_latency;
 
       // Permutes [pack] - 2 reads LO [to, from] , 1 read SC [values], 1 write SC [values]
       size_t num_permutes = importer->getNumPermuteIDs();
       double permute_time = (num_permutes == 0) ? 0.0 : 
-        2.0 * PM.stream_vector_lookup(num_permutes*sizeof(LO)) + 
-        2.0 * PM.stream_vector_lookup(num_permutes*sizeof(SC));
+        2.0 * PM.latency_corrected_stream_vector_lookup(num_permutes*sizeof(LO)) + 
+        2.0 * PM.latency_corrected_stream_vector_lookup(num_permutes*sizeof(SC)) + avg_latency;
 
       // Exports [pack] - 1 read LO [exportLIDs], 1 read SC [values], 1 write SC [buffer]
       // This is what Epetra does at least      
       size_t num_exports = importer->getNumExportIDs();
       double export_time = (num_exports == 0) ? 0.0 :
-        PM.stream_vector_lookup(num_exports*sizeof(LO)) + 
-        2.0 * PM.stream_vector_lookup(num_exports*sizeof(SC));
+        PM.latency_corrected_stream_vector_lookup(num_exports*sizeof(LO)) + 
+        2.0 * PM.latency_corrected_stream_vector_lookup(num_exports*sizeof(SC)) + avg_latency;
 
       // Remotes [unpack] - 1 read LO [remoteLIDs],  1 read SC [buffer], 1 write SC [values]
       // NOTE: Only if you're out of place
       size_t num_remotes = importer->getNumRemoteIDs();
       double remote_time = (num_remotes == 0) ? 0.0 :
-        PM.stream_vector_lookup(num_remotes*sizeof(LO)) + 
-        2.0 * PM.stream_vector_lookup(num_remotes*sizeof(SC));
+        PM.latency_corrected_stream_vector_lookup(num_remotes*sizeof(LO)) + 
+        2.0 * PM.latency_corrected_stream_vector_lookup(num_remotes*sizeof(SC)) + avg_latency;
 
 
       // Total pack / unpack time

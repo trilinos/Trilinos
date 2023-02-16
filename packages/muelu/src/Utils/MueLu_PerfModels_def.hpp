@@ -234,15 +234,26 @@ namespace MueLu {
 
   }// end namespace PerfDetails
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PerfModels():launch_and_wait_latency_(-1.0){}
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
+    // We need launch/waits latency estimates for corrected stream
+    launch_latency_make_table(KERNEL_REPEATS);
+    double latency = launch_latency_lookup();
+    
     if(LOG_MAX_SIZE < 2)
       LOG_MAX_SIZE=20;
 
     stream_sizes_.resize(LOG_MAX_SIZE+1);    
     stream_copy_times_.resize(LOG_MAX_SIZE+1);    
     stream_add_times_.resize(LOG_MAX_SIZE+1);    
+    latency_corrected_stream_copy_times_.resize(LOG_MAX_SIZE+1);    
+    latency_corrected_stream_add_times_.resize(LOG_MAX_SIZE+1);    
         
     for(int i=0; i<LOG_MAX_SIZE+1; i++) {
       int size = (int) pow(2,i);
@@ -250,9 +261,17 @@ namespace MueLu {
       double a_time = PerfDetails::stream_vector_add<Scalar,Node>(KERNEL_REPEATS,size);
 
       stream_sizes_[i] = size;
+
       // Correct for the difference in memory transactions per element
       stream_copy_times_[i] = c_time / 2.0;
       stream_add_times_[i] = a_time / 3.0;
+
+      // Correct for launch latency too.  We'll note that sometimes the latency estimate
+      // is higher than the actual copy/add time estimate.  If so, we don't correct
+      latency_corrected_stream_copy_times_[i] = (c_time - latency <= 0.0) ? c_time / 2.0 : ( (c_time-latency)/2.0 );
+      latency_corrected_stream_add_times_[i]  = (a_time - latency <= 0.0) ? a_time / 3.0 : ( (a_time-latency)/3.0 );
+
+
     }
   }
 
@@ -267,16 +286,49 @@ namespace MueLu {
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_add_lookup(int SIZE_IN_BYTES) {
     return PerfDetails::table_lookup(stream_sizes_,stream_add_times_,SIZE_IN_BYTES/sizeof(Scalar));
   }
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_lookup(int SIZE_IN_BYTES) {
-   return std::min(stream_vector_copy_lookup(SIZE_IN_BYTES),stream_vector_add_lookup(SIZE_IN_BYTES));
- }
+    return std::min(stream_vector_copy_lookup(SIZE_IN_BYTES),stream_vector_add_lookup(SIZE_IN_BYTES));
+  }
+  
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::latency_corrected_stream_vector_copy_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(stream_sizes_,latency_corrected_stream_copy_times_,SIZE_IN_BYTES/sizeof(Scalar));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::latency_corrected_stream_vector_add_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(stream_sizes_,latency_corrected_stream_add_times_,SIZE_IN_BYTES/sizeof(Scalar));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::latency_corrected_stream_vector_lookup(int SIZE_IN_BYTES) {
+    return std::min(latency_corrected_stream_vector_copy_lookup(SIZE_IN_BYTES),latency_corrected_stream_vector_add_lookup(SIZE_IN_BYTES));
+  }
  
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table(std::ostream & out) {
+    print_stream_vector_table_impl(out,false);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_latency_corrected_stream_vector_table(std::ostream & out) {
+    print_stream_vector_table_impl(out,true);
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table_impl(std::ostream & out,bool use_latency_correction) {
     using namespace std;
     std::ios old_format(NULL);
     old_format.copyfmt(out);
@@ -285,7 +337,7 @@ namespace MueLu {
         << setw(20) << "COPY (us)" << setw(1) << " "
         << setw(20) << "ADD (us)" << setw(1) << " "
         << setw(20) << "COPY (GB/s)" << setw(1) << " "
-        << setw(20) << "ADD (BG/s)" << std::endl;
+        << setw(20) << "ADD (GB/s)" << std::endl;
 
     out << setw(20) << "-----------------" << setw(1) << " "
         << setw(20) << "---------" << setw(1) << " "
@@ -296,8 +348,8 @@ namespace MueLu {
 
     for(int i=0; i<(int)stream_sizes_.size(); i++) {
       int size = stream_sizes_[i];
-      double c_time = stream_copy_times_[i];
-      double a_time = stream_add_times_[i];
+      double c_time = use_latency_correction ? latency_corrected_stream_copy_times_[i] : stream_copy_times_[i];
+      double a_time = use_latency_correction ? latency_corrected_stream_add_times_[i]  : stream_add_times_[i];
       // We've already corrected for the transactions per element difference
       double c_bw = PerfDetails::convert_time_to_bandwidth_gbs(c_time,1,size*sizeof(Scalar));
       double a_bw = PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,size*sizeof(Scalar));
@@ -367,6 +419,49 @@ namespace MueLu {
           << setw(20) << fixed << setprecision(4) << (h_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (d_time*1e6) << setw(1) << std::endl;
     }
+
+    out.copyfmt(old_format);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::launch_latency_make_table(int KERNEL_REPEATS) {
+    using exec_space   = typename Node::execution_space;
+    using range_policy = Kokkos::RangePolicy<exec_space>;
+    using clock = std::chrono::high_resolution_clock;
+
+    double total_test_time = 0;
+    clock::time_point start, stop;
+    for(int i = 0; i < KERNEL_REPEATS; i++) {       
+      start = clock::now();
+      Kokkos::parallel_for("empty kernel",range_policy(0,1), KOKKOS_LAMBDA (const size_t j) {
+          ;
+        });
+      exec_space().fence();
+      stop = clock::now();
+      double my_test_time = std::chrono::duration<double>(stop - start).count();
+      total_test_time += my_test_time;
+    }
+    
+    launch_and_wait_latency_ = total_test_time / KERNEL_REPEATS;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::launch_latency_lookup() {
+    return launch_and_wait_latency_;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_launch_latency_table(std::ostream & out) {
+    using namespace std;
+    std::ios old_format(NULL);
+    old_format.copyfmt(out);
+
+    out << setw(20) << "Launch+Wait Latency (us)" << setw(1) << " " 
+        << setw(20) << fixed << setprecision(4) << (launch_and_wait_latency_*1e6) << std::endl;
 
     out.copyfmt(old_format);
   }
