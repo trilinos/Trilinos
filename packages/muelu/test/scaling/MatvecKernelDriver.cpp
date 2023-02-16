@@ -511,6 +511,7 @@ public:
 
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = MatMult(A_p,x_p,y_p);
+    Kokkos::fence();
     return (rv != 0);
   }
 
@@ -609,6 +610,7 @@ public:
 
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = HYPRE_ParCSRMatrixMatvec(alpha,parcsr_matrix, x_par,beta, y_par);
+    Kokkos::fence();
     return (rv != 0);
   }
 
@@ -737,6 +739,7 @@ public:
   bool spmv(const Scalar alpha, const Scalar beta)
   {
     magma_d_spmv( 1.0, magma_dev_Acrs, magma_dev_x, 0.0, magma_dev_y, queue );
+    Kokkos::fence();
   }
 
 private:
@@ -903,7 +906,7 @@ public:
                                        dBuffer);
 
     CHECK_CUDA(cudaFree(dBuffer));
-
+    Kokkos::fence();
     return (rc);
   }
 private:
@@ -964,6 +967,7 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
   //sparse_status_t mkl_sparse_d_mv (sparse_operation_t operation, double alpha, const sparse_matrix_t A, struct matrix_descr descr, const double *x, double beta, double *y);
 
   mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1.0,AMKL,mkl_descr,x,0.0,y);
+  Kokkos::fence();
 }
 
 #endif
@@ -977,6 +981,7 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y);
+  Kokkos::fence();
 }
 
 
@@ -987,6 +992,7 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   auto X_lcl = x.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
+  Kokkos::fence();
 }
 #endif
 
