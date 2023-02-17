@@ -99,7 +99,8 @@ namespace MueLu {
     Maxwell1() :
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      HierarchyGmhd_(Teuchos::null)
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
@@ -107,7 +108,8 @@ namespace MueLu {
     Maxwell1(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
       Hierarchy11_(H11),
       Hierarchy22_(H22),
-      HierarchyGmhd_(Teuchos::null)
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
@@ -125,7 +127,8 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       RCP<Matrix> Kn_Matrix;
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
@@ -147,7 +150,8 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
@@ -169,10 +173,9 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List, const Teuchos::RCP<Matrix> & GmhdA_Matrix,
-               bool ComputePrec = true)
+             bool ComputePrec = true):
+            mode_(MODE_GMHD_STANDARD)
     {
-
-      mode_ = MODE_GMHD_STANDARD;
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
       GmhdA_Matrix_ = GmhdA_Matrix;
@@ -187,8 +190,9 @@ namespace MueLu {
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     Maxwell1(const Teuchos::RCP<Matrix> & SM_Matrix,
-               Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+             Teuchos::ParameterList& List,
+             bool ComputePrec = true):
+             mode_(MODE_STANDARD)
     {
 
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
