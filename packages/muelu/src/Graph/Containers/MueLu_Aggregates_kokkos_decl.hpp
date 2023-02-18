@@ -193,6 +193,12 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
+    /*! @brief Set number of global aggregates on current processor.
+  
+        This has to be done by the aggregation routines.
+    */
+    void SetNumGlobalAggregates(GO nGlobalAggregates) { numGlobalAggregates_ = nGlobalAggregates; }
+
     ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
     KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
       return numAggregates_;
@@ -266,6 +272,10 @@ namespace MueLu {
      */
     void ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const;
 
+    //! Get global number of aggregates
+    //  If # of global aggregates is unknown, this method does coummunication and internally record the value
+    GO GetNumGlobalAggregatesComputeIfNeeded();
+
     //! @name Overridden from Teuchos::Describable
     //@{
 
@@ -278,6 +288,7 @@ namespace MueLu {
 
   private:
     LO   numAggregates_;              ///< Number of aggregates on this processor
+    GO   numGlobalAggregates_;        ///< Number of global aggregates
 
     /*! vertex2AggId[k] gives a local id corresponding to the aggregate to which
      * local id k has been assigned. While k is the local id on my processor (MyPID),
@@ -318,10 +329,6 @@ namespace MueLu {
     //! Aggregates represented as Kokkos graph type
     mutable
     local_graph_type graph_;
-
-    //! Get global number of aggregates
-    // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
-    GO GetNumGlobalAggregates() const;
   };
 
 } //namespace MueLu
