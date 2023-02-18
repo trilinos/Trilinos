@@ -7,21 +7,21 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/IossBridge.hpp>
-#include "../../../stk/stk_mesh/stk_mesh/base/SkinBoundary.hpp"
+#include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace krino
 {
 
-template <int DIM>
-StkMeshBuilder<DIM>::StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::ParallelMachine comm)
+template<stk::topology::topology_t TOPO>
+StkMeshBuilder<TOPO>::StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::ParallelMachine comm)
 : mMesh(mesh), mAuxMeta(AuxMetaData::create(mesh.mesh_meta_data())), mPhaseSupport(Phase_Support::get(mesh.mesh_meta_data())), mComm(comm)
 {
   declare_coordinates();
   mMesh.mesh_meta_data().use_simple_fields();
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::declare_coordinates()
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::declare_coordinates()
 {
   stk::mesh::Field<double> & coordsField = mMesh.mesh_meta_data().template declare_field<double>(
       stk::topology::NODE_RANK, "coordinates", 1u);
@@ -29,15 +29,13 @@ void StkMeshBuilder<DIM>::declare_coordinates()
   stk::io::set_field_role(coordsField, Ioss::Field::MESH);
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::create_block_parts(const std::vector<unsigned> &elementBlockIDs)
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_block_parts(const std::vector<unsigned> &elementBlockIDs)
 {
-  stk::topology simplexTopology = ((DIM == 2) ? stk::topology::TRIANGLE_3_2D : stk::topology::TETRAHEDRON_4);
-
   for (unsigned blockId : elementBlockIDs)
   {
     const std::string blockName = "block_"+std::to_string(blockId);
-    stk::mesh::Part &part = mMesh.mesh_meta_data().declare_part_with_topology(blockName, simplexTopology);
+    stk::mesh::Part &part = mMesh.mesh_meta_data().declare_part_with_topology(blockName, TOPO);
     mMesh.mesh_meta_data().set_part_id(part, blockId);
     stk::io::put_io_part_attribute(part);
   }
@@ -49,8 +47,8 @@ std::string get_surface_name(const unsigned sidesetId)
   return surfaceName;
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::create_sideset_parts(const std::vector<unsigned> &sidesetIds)
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_sideset_parts(const std::vector<unsigned> &sidesetIds)
 {
     for (unsigned sidesetId : sidesetIds)
     {
@@ -72,8 +70,8 @@ std::vector<stk::mesh::PartVector> convert_vector_of_vector_of_sideset_ids_to_pa
     return addParts;
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::add_sides_to_sidesets(const std::vector<stk::mesh::Entity> &sides, const std::vector<std::vector<unsigned>> &sidesetIdsPerSide)
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::add_sides_to_sidesets(const std::vector<stk::mesh::Entity> &sides, const std::vector<std::vector<unsigned>> &sidesetIdsPerSide)
 {
     ThrowRequireWithSierraHelpMsg(sides.size() == sidesetIdsPerSide.size());
     const std::vector<stk::mesh::PartVector> addParts = convert_vector_of_vector_of_sideset_ids_to_parts(mMesh.mesh_meta_data(), sidesetIdsPerSide);
@@ -81,8 +79,8 @@ void StkMeshBuilder<DIM>::add_sides_to_sidesets(const std::vector<stk::mesh::Ent
     mMesh.batch_change_entity_parts(sides, addParts, remParts);
 }
 
-template <int DIM>
-stk::mesh::Entity StkMeshBuilder<DIM>::get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const
+template<stk::topology::topology_t TOPO>
+stk::mesh::Entity StkMeshBuilder<TOPO>::get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const
 {
   std::vector<stk::mesh::Entity> sidesWithNodes;
 
@@ -91,16 +89,16 @@ stk::mesh::Entity StkMeshBuilder<DIM>::get_side_with_nodes(const std::vector<stk
   return sidesWithNodes[0];
 }
 
-template <int DIM>
-stk::math::Vector3d StkMeshBuilder<DIM>::get_node_coordinates(const stk::mesh::Entity node) const
+template<stk::topology::topology_t TOPO>
+stk::math::Vector3d StkMeshBuilder<TOPO>::get_node_coordinates(const stk::mesh::Entity node) const
 {
     const double* nodeCoordsData = (double*)stk::mesh::field_data(*mMesh.mesh_meta_data().coordinate_field(), node);
     stk::math::Vector3d nodeCoords(nodeCoordsData, DIM);
     return nodeCoords;
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc)
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc)
 {
     double* node_coords = (double*)stk::mesh::field_data(*mMesh.mesh_meta_data().coordinate_field(), node);
     node_coords[0] = newLoc[0];
@@ -108,8 +106,8 @@ void StkMeshBuilder<DIM>::set_node_coordinates(const stk::mesh::Entity node, con
     if (mMesh.mesh_meta_data().spatial_dimension() == 3) node_coords[2] = newLoc[2];
 }
 
-template <int DIM>
-stk::mesh::Entity StkMeshBuilder<DIM>::create_node(const stk::math::Vector3d &loc, const std::vector<int> &sharingProcs, stk::mesh::EntityId nodeId)
+template<stk::topology::topology_t TOPO>
+stk::mesh::Entity StkMeshBuilder<TOPO>::create_node(const stk::math::Vector3d &loc, const std::vector<int> &sharingProcs, stk::mesh::EntityId nodeId)
 {
     stk::mesh::Entity node = mMesh.declare_node(nodeId);
 
@@ -139,44 +137,45 @@ stk::mesh::Part * get_block_part(const stk::mesh::MetaData &meta, const unsigned
     return blockPart;
 }
 
-template <int DIM>
-std::vector<stk::mesh::EntityId> StkMeshBuilder<DIM>::get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const
+template<stk::topology::topology_t TOPO>
+std::vector<stk::mesh::EntityId> StkMeshBuilder<TOPO>::get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const
 {
   std::vector<stk::mesh::EntityId> elemIds;
   elemIds.reserve(elemIndices.size());
   for (auto && elemIndex : elemIndices)
   {
+    ThrowRequire(elemIndex < mAssignedGlobalElementIdsforAllElements.size());
     elemIds.push_back(mAssignedGlobalElementIdsforAllElements[elemIndex]);
   }
   return elemIds;
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::create_boundary_sides()
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_boundary_sides()
 {
     stk::mesh::create_exposed_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), {&mAuxMeta.exposed_boundary_part()});
 }
 
-template <int DIM>
-bool StkMeshBuilder<DIM>::check_boundary_sides() const
+template<stk::topology::topology_t TOPO>
+bool StkMeshBuilder<TOPO>::check_boundary_sides() const
 {
   return stk::mesh::check_exposed_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), mAuxMeta.exposed_boundary_part());
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::create_block_boundary_sides()
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_block_boundary_sides()
 {
   stk::mesh::create_interior_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), {&mAuxMeta.block_boundary_part()});
 }
 
-template <int DIM>
-bool StkMeshBuilder<DIM>::check_block_boundary_sides() const
+template<stk::topology::topology_t TOPO>
+bool StkMeshBuilder<TOPO>::check_block_boundary_sides() const
 {
   return stk::mesh::check_interior_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), mAuxMeta.block_boundary_part());
 }
 
-template <int DIM>
-stk::mesh::Entity StkMeshBuilder<DIM>::create_element(const std::vector<stk::mesh::Entity> &nodes, stk::mesh::EntityId elementId, unsigned blockId)
+template<stk::topology::topology_t TOPO>
+stk::mesh::Entity StkMeshBuilder<TOPO>::create_element(const std::vector<stk::mesh::Entity> &nodes, stk::mesh::EntityId elementId, unsigned blockId)
 {
     const stk::mesh::Part *blockPart = get_block_part(mMesh.mesh_meta_data(), blockId);
     stk::mesh::Entity element = mMesh.declare_element(elementId, stk::mesh::ConstPartVector{blockPart});
@@ -186,9 +185,9 @@ stk::mesh::Entity StkMeshBuilder<DIM>::create_element(const std::vector<stk::mes
     return element;
 }
 
-template <int DIM>
+template<stk::topology::topology_t TOPO>
 std::vector<stk::mesh::Entity>
-StkMeshBuilder<DIM>::create_parallel_nodes(const std::vector<stk::math::Vec<double,DIM>>& nodeLocs,
+StkMeshBuilder<TOPO>::create_parallel_nodes(const std::vector<stk::math::Vec<double,DIM>>& nodeLocs,
     const std::map<unsigned,std::vector<int>> &nodeIndicesWithSharingProcs,
     const std::vector<stk::mesh::EntityId> & assignedGlobalNodeIdsforAllNodes)
 {
@@ -217,9 +216,9 @@ std::vector<stk::mesh::EntityId> get_ids_available_for_rank(stk::mesh::BulkData 
     return idsToReturn;
 }
 
-template <int DIM>
+template<stk::topology::topology_t TOPO>
 std::vector<stk::mesh::Entity>
-StkMeshBuilder<DIM>::create_parallel_elements(const std::vector<std::array<unsigned, NPE>> &elementConn,
+StkMeshBuilder<TOPO>::create_parallel_elements(const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
     const std::vector<int> &elementProcOwners,
     const std::vector<stk::mesh::Entity>& nodesWhichAreValidIfTheyExistOnProc,
@@ -250,9 +249,9 @@ StkMeshBuilder<DIM>::create_parallel_elements(const std::vector<std::array<unsig
     return ownedElems;
 }
 
-template <int DIM>
+template<stk::topology::topology_t TOPO>
 std::map<unsigned,std::vector<int>>
-StkMeshBuilder<DIM>::build_node_sharing_procs(const std::vector<std::array<unsigned, NPE>> &elementConn,
+StkMeshBuilder<TOPO>::build_node_sharing_procs(const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<int> &elementProcOwners) const
 {
   std::map<unsigned,std::vector<int>> nodeIndicesWithSharingProcs;
@@ -268,9 +267,9 @@ StkMeshBuilder<DIM>::build_node_sharing_procs(const std::vector<std::array<unsig
   return nodeIndicesWithSharingProcs;
 }
 
-template <int DIM>
+template<stk::topology::topology_t TOPO>
 std::map<unsigned,std::vector<int>>
-StkMeshBuilder<DIM>::build_node_sharing_procs_for_all_nodes_on_all_procs(const unsigned numNodes, const unsigned numProcs) const
+StkMeshBuilder<TOPO>::build_node_sharing_procs_for_all_nodes_on_all_procs(const unsigned numNodes, const unsigned numProcs) const
 {
   std::map<unsigned,std::vector<int>> nodeIndicesWithSharingProcs;
   for (unsigned iNode{0}; iNode<numNodes; ++iNode)
@@ -279,8 +278,8 @@ StkMeshBuilder<DIM>::build_node_sharing_procs_for_all_nodes_on_all_procs(const u
   return nodeIndicesWithSharingProcs;
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::build_mesh(const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::build_mesh(const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::vector<std::array<unsigned, NPE>>> &elementConnPerProc,
     const unsigned blockId)
 {
@@ -301,8 +300,8 @@ void StkMeshBuilder<DIM>::build_mesh(const std::vector<stk::math::Vec<double,DIM
     build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, {blockId}, elementProcOwners);
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::build_mesh(const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::build_mesh(const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
     const std::vector<int> &specifiedElementProcOwners)
@@ -313,8 +312,8 @@ void StkMeshBuilder<DIM>::build_mesh(const std::vector<stk::math::Vec<double,DIM
     build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, allBlockIDs, specifiedElementProcOwners);
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::build_mesh_nodes_and_elements(
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::build_mesh_nodes_and_elements(
     const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
@@ -351,13 +350,14 @@ void StkMeshBuilder<DIM>::build_mesh_nodes_and_elements(
 
     mMesh.batch_change_entity_parts(mMesh.mesh_meta_data().universal_part(), stk::topology::NODE_RANK, {&get_aux_meta().active_part()}, {});
     mMesh.batch_change_entity_parts(mMesh.mesh_meta_data().universal_part(), stk::topology::ELEMENT_RANK, {&get_aux_meta().active_part()}, {});
+    mMesh.batch_change_entity_parts(mMesh.mesh_meta_data().universal_part(), stk::topology::NODE_RANK, {&get_aux_meta().active_part()}, {});
 
     create_boundary_sides();
     create_block_boundary_sides();
 }
 
-template <int DIM>
-void StkMeshBuilder<DIM>::build_mesh_with_all_needed_block_ids
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::build_mesh_with_all_needed_block_ids
 (
     const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
@@ -370,7 +370,9 @@ void StkMeshBuilder<DIM>::build_mesh_with_all_needed_block_ids
 }
 
 // Explicit template instantiation
-template class StkMeshBuilder<2>;
-template class StkMeshBuilder<3>;
+template class StkMeshBuilder<stk::topology::TRIANGLE_3_2D>;
+template class StkMeshBuilder<stk::topology::TETRAHEDRON_4>;
+template class StkMeshBuilder<stk::topology::QUADRILATERAL_4_2D>;
+
 
 }

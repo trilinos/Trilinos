@@ -556,8 +556,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
-  std::vector<stk::mesh::Entity> nodes;
-  stk::io::get_input_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
+  std::vector<stk::mesh::Entity> nodes = stk::io::get_input_entity_list(nb, stk::topology::NODE_RANK, bulk);
 
   /** \todo REFACTOR Application would probably store this field
      * (and others) somewhere after the declaration instead of
@@ -751,8 +750,7 @@ void get_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::GroupingEntity *io_entity,
                     Ioss::Field::RoleType filter_role)
 {
-  std::vector<stk::mesh::Entity> entities;
-  stk::io::get_input_entity_list(io_entity, part_type, bulk, entities);
+  std::vector<stk::mesh::Entity> entities = stk::io::get_input_entity_list(io_entity, part_type, bulk);
 
   stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
   const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();

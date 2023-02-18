@@ -38,6 +38,18 @@ private:
   std::vector<int> mSortedDomains;
 };
 
+class InterpolationPoint
+{
+public:
+  InterpolationPoint(const std::vector<stk::mesh::Entity> & nodes, const std::vector<double> & weights)
+  : mNodes(nodes), mWeights(weights) {ThrowAssert(mNodes.size() == mWeights.size());}
+  const std::vector<stk::mesh::Entity> & get_nodes() const { return mNodes; }
+  const std::vector<double> & get_weights() const { return mWeights; }
+private:
+  std::vector<stk::mesh::Entity> mNodes;
+  std::vector<double> mWeights;
+};
+
 struct EdgeIntersection
 {
   EdgeIntersection(const IntersectionPoint & intersectionPt);

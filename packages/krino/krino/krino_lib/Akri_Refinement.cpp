@@ -4,7 +4,6 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <Akri_FieldRef.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include "Akri_ChildNodeCreator.hpp"
@@ -14,7 +13,7 @@
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_MOAB_TetRefiner.hpp"
 #include "Akri_NodeRefiner.hpp"
-#include "Akri_QualityMetric.hpp"
+#include "Akri_RefinementInterface.hpp"
 #include "Akri_TransitionElementEdgeMarker.hpp"
 #include "Akri_TriRefiner.hpp"
 #include "Akri_NodeRefiner.hpp"
@@ -32,27 +31,30 @@ void Refinement::declare_refinement_fields()
 {
   if (3 == myMeta.spatial_dimension())
   {
-    myChildElementIds8Field = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_8");
+    myChildElementIds8Field = &myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_8");
     const stk::topology elemTopology = stk::topology::TETRAHEDRON_4;
     const stk::mesh::Part & tet4TopologyPart = myMeta.get_topology_root_part(elemTopology);
-    stk::mesh::put_field_on_mesh(myChildElementIds8Field.field(), parent_part() & tet4TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
+    stk::mesh::put_field_on_mesh(*myChildElementIds8Field, parent_part() & tet4TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
   }
   else if (2 == myMeta.spatial_dimension())
   {
-    myChildElementIds4Field = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_4");
+    myChildElementIds4Field = &myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_4");
     const stk::topology elemTopology = stk::topology::TRIANGLE_3_2D;
     const stk::mesh::Part & tri3TopologyPart = myMeta.get_topology_root_part(elemTopology);
-    stk::mesh::put_field_on_mesh(myChildElementIds4Field.field(), parent_part() & tri3TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
+    stk::mesh::put_field_on_mesh(*myChildElementIds4Field, parent_part() & tri3TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
   }
 
-  myRefinementLevelField = myMeta.declare_field<int>(stk::topology::ELEMENT_RANK, "REFINEMENT_LEVEL");
-  stk::mesh::put_field_on_mesh(myRefinementLevelField.field(), myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be child_part
+  myRefinementLevelField = &myMeta.declare_field<int>(stk::topology::ELEMENT_RANK, "REFINEMENT_LEVEL");
+  stk::mesh::put_field_on_mesh(*myRefinementLevelField, myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be child_part
 
-  myParentElementIdField = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_PARENT_ELEMENT_ID");
-  stk::mesh::put_field_on_mesh(myParentElementIdField.field(), myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be child_part
+  myParentElementIdField = &myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_PARENT_ELEMENT_ID");
+  stk::mesh::put_field_on_mesh(*myParentElementIdField, myMeta.universal_part(), 1, &stk::mesh::InvalidEntityId); // needed everywhere for restart, otherwise could be child_part
 
-  myRefinedEdgeNodeParentIdsField = myMeta.declare_field<uint64_t>(stk::topology::NODE_RANK, "REFINEMENT_REFINED_EDGE_NODE_PARENTS_IDS");
-  stk::mesh::put_field_on_mesh(myRefinedEdgeNodeParentIdsField.field(), refined_edge_node_part(), 2, nullptr);
+  myRefinedEdgeNodeParentIdsField = &myMeta.declare_field<uint64_t>(stk::topology::NODE_RANK, "REFINEMENT_REFINED_EDGE_NODE_PARENTS_IDS");
+  stk::mesh::put_field_on_mesh(*myRefinedEdgeNodeParentIdsField, refined_edge_node_part(), 2, nullptr);
+
+  myOriginatingProcForParentElementField = &myMeta.declare_field<int>(stk::topology::ELEMENT_RANK, "ORIGINATING_PROC_FOR_PARENT_ELEMENT");
+  stk::mesh::put_field_on_mesh(*myOriginatingProcForParentElementField, myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be parent_part
 }
 
 Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit)
@@ -63,7 +65,7 @@ Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart,
     myEntityIdPool(meta),
     myActivePart(activePart)
 {
-  myCoordsField = myMeta.coordinate_field();
+  myCoordsField = static_cast<const stk::mesh::Field<double>*>(myMeta.coordinate_field());
   declare_refinement_parts();
   declare_refinement_fields();
 }
@@ -102,16 +104,35 @@ int Refinement::refinement_level(const stk::mesh::Entity elem) const
 {
   if (!is_child(elem))
     return 0;
-  const auto * refineLevel = field_data<int>(myRefinementLevelField, elem);
+  ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
+  const auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
   ThrowAssertMsg(refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   return *refineLevel;
 }
 
 void Refinement::set_refinement_level(const stk::mesh::Entity elem, const int refinementLevel) const
 {
-  auto * refineLevel = field_data<int>(myRefinementLevelField, elem);
+  ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
+  auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
   ThrowAssertMsg(is_child(elem) && refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   *refineLevel = refinementLevel;
+}
+
+
+int Refinement::get_originating_processor_for_parent_element(const stk::mesh::Entity elem) const
+{
+  ThrowAssertMsg(is_parent(elem), "Call to get_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
+  const auto * originatingProc = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
+  ThrowAssertMsg(originatingProc != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  return *originatingProc;
+}
+
+void Refinement::set_originating_processor_for_parent_element(const stk::mesh::Entity elem, const int originatingProc) const
+{
+  ThrowAssertMsg(is_parent(elem), "Call to set_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
+  auto * originatingProcData = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
+  ThrowAssertMsg(originatingProcData != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  *originatingProcData = originatingProc;
 }
 
 unsigned Refinement::get_num_children_when_fully_refined(const stk::topology elementTopology)
@@ -136,7 +157,8 @@ unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity
 std::array<stk::mesh::Entity,2> Refinement::get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  auto * edgeNodeIds = field_data<uint64_t>(myRefinedEdgeNodeParentIdsField, edgeNode);
+  ThrowAssertMsg(myRefinedEdgeNodeParentIdsField, "Edge Node Ids field is not defined.");
+  auto * edgeNodeIds = stk::mesh::field_data(*myRefinedEdgeNodeParentIdsField, edgeNode);
   ThrowAssertMsg(edgeNodeIds != nullptr, "Edge Node Ids field missing on node " << mesh.identifier(edgeNode));
   return {{mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[0]), mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[1])}};
 }
@@ -181,10 +203,28 @@ unsigned Refinement::get_num_children(const stk::mesh::Entity elem) const
 std::tuple<const uint64_t *,unsigned> Refinement::get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const
 {
   const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(elem);
-  FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  const auto * childElemIdsData = field_data<uint64_t>(childElementIdsField, elem);
+  const stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
+  const auto * childElemIdsData = stk::mesh::field_data(childElementIdsField, elem);
   ThrowAssertMsg(nullptr != childElemIdsData, "Element is parent, but does not have " << childElementIdsField.name() << " defined.");
   return std::make_tuple(childElemIdsData, numChildWhenFullyRefined);
+}
+
+void Refinement::fill_child_element_ids(const stk::mesh::Entity elem, std::vector<stk::mesh::EntityId> & childElemIds) const
+{
+  childElemIds.clear();
+  if (is_parent(elem))
+  {
+    //const auto & [childElemIdsData, numChildWhenFullyRefined] = get_child_ids_and_num_children_when_fully_refined(elem);
+    const auto & childElemIdsDataAndnumChildWhenFullyRefined = get_child_ids_and_num_children_when_fully_refined(elem);
+    const auto & childElemIdsData = std::get<0>(childElemIdsDataAndnumChildWhenFullyRefined);
+    const auto & numChildWhenFullyRefined = std::get<1>(childElemIdsDataAndnumChildWhenFullyRefined);
+    for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
+    {
+      if ((stk::mesh::InvalidEntityId == childElemIdsData[iChild]))
+        return;
+      childElemIds.push_back(childElemIdsData[iChild]);
+    }
+  }
 }
 
 void Refinement::fill_children(const stk::mesh::Entity elem, std::vector<stk::mesh::Entity> & children) const
@@ -217,11 +257,7 @@ stk::mesh::Entity Refinement::get_parent(const stk::mesh::Entity elem) const
 {
   stk::mesh::Entity parent;
   if (is_child(elem))
-  {
-    const auto * parentElemIdData = field_data<uint64_t>(myParentElementIdField, elem);
-    ThrowAssertMsg(nullptr != parentElemIdData, "Element is child, but does not have " << myParentElementIdField.name() << " defined.");
-    parent = myMeta.mesh_bulk_data().get_entity(stk::topology::ELEMENT_RANK, *parentElemIdData);
-  }
+    parent = myMeta.mesh_bulk_data().get_entity(stk::topology::ELEMENT_RANK, get_parent_id(elem));
   return parent;
 }
 
@@ -246,6 +282,14 @@ stk::mesh::Part & Refinement::refined_edge_node_part() const
 {
   ThrowAssert(myRefinedEdgeNodePart);
   return *myRefinedEdgeNodePart;
+}
+
+stk::math::Vector3d Refinement::get_coordinates(const stk::mesh::Entity node, const int dim) const
+{
+  ThrowAssertMsg(myCoordsField, "Coordinates field is not defined.");
+  const double * coordsData = stk::mesh::field_data(*myCoordsField, node);
+  ThrowAssertMsg(nullptr != coordsData, "Node does not have " << myCoordsField->name() << " defined.");
+  return stk::math::Vector3d(coordsData, dim);
 }
 
 static int get_edge_refinement_case_id(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes)
@@ -313,30 +357,28 @@ static void attach_child_to_existing_sides_and_append_missing_sides_to_sides_to_
 
   for (unsigned s=0; s<childSideIndices.size(); ++s)
   {
-    if (childSideIndices[s] >= 0)
+    const stk::topology sideTopology = topology.side_topology(s);
+    std::vector<stk::mesh::Entity> childSideNodes(sideTopology.num_nodes());
+    topology.side_nodes(childElemNodes, s, childSideNodes.data());
+
+    std::vector<stk::mesh::Entity> sides;
+    stk::mesh::get_entities_through_relations(mesh, childSideNodes, mesh.mesh_meta_data().side_rank(), sides);
+
+    if (!sides.empty())
     {
-      const stk::topology sideTopology = topology.side_topology(s);
-      std::vector<stk::mesh::Entity> childSideNodes(sideTopology.num_nodes());
-      topology.side_nodes(childElemNodes, s, childSideNodes.data());
+      ThrowRequire(sides.size() == 1);
 
-      std::vector<stk::mesh::Entity> sides;
-      stk::mesh::get_entities_through_relations(mesh, childSideNodes, mesh.mesh_meta_data().side_rank(), sides);
-
-      if (sides.empty())
+      attach_entity_to_element(mesh, mesh.mesh_meta_data().side_rank(), sides[0], childElem);
+    }
+    else if (childSideIndices[s] >= 0)
+    {
+      //const auto & [parentSide, parentSideParts] = parentSidesAndParts[childSideIndices[s]];
+      const auto & parentSideAndparentSideParts = parentSidesAndParts[childSideIndices[s]];
+      const auto & parentSide = parentSideAndparentSideParts.first;
+      const auto & parentSideParts = parentSideAndparentSideParts.second;
+      if (mesh.is_valid(parentSide))
       {
-        //const auto & [parentSide, parentSideParts] = parentSidesAndParts[childSideIndices[s]];
-        const auto & parentSideAndparentSideParts = parentSidesAndParts[childSideIndices[s]];
-        const auto & parentSide = parentSideAndparentSideParts.first;
-        const auto & parentSideParts = parentSideAndparentSideParts.second;
-        if (mesh.is_valid(parentSide))
-        {
-          sideRequests.emplace_back(childElem, s, parentSideParts);
-        }
-      }
-      else
-      {
-        ThrowRequire(sides.size() == 1);
-        attach_entity_to_element(mesh, mesh.mesh_meta_data().side_rank(), sides[0], childElem);
+        sideRequests.emplace_back(childElem, s, parentSideParts);
       }
     }
   }
@@ -366,18 +408,36 @@ static void declare_child_elements_and_append_sides_to_create(stk::mesh::BulkDat
   }
 }
 
-FieldRef Refinement::get_child_element_ids_field(const unsigned numChildWhenFullyRefined) const
+stk::mesh::Field<uint64_t> & Refinement::get_child_element_ids_field(const unsigned numChildWhenFullyRefined) const
 {
   switch(numChildWhenFullyRefined)
   {
   case 4:
-      return myChildElementIds4Field;
+      ThrowAssert(myChildElementIds4Field);
+      return *myChildElementIds4Field;
   case 8:
-      return myChildElementIds8Field;
+      ThrowAssert(myChildElementIds8Field);
+      return *myChildElementIds8Field;
   default:
       ThrowRuntimeError("Unsupported number of children when fully refined in get_child_element_ids_field: " << numChildWhenFullyRefined);
       break;
   }
+}
+
+stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Entity parent) const
+{
+  stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
+  stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, parent);
+  ThrowAssertMsg(nullptr != childElemIdsData, "Element is does not have " << childElementIdsField.name() << " defined.");
+  return childElemIdsData;
+}
+
+stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const
+{
+  stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
+  stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, bucket);
+  ThrowAssertMsg(nullptr != childElemIdsData, "Bucket does not have " << childElementIdsField.name() << " defined.");
+  return childElemIdsData;
 }
 
 template <size_t SIZE>
@@ -401,22 +461,62 @@ void Refinement::set_parent_parts_and_parent_child_relation_fields(const stk::me
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
-  stk::mesh::ConstPartVector removeParts;
-  if (myActivePart)
-    removeParts.push_back(myActivePart);
-  mesh.change_entity_parts(parentElement, stk::mesh::ConstPartVector{myParentPart}, removeParts);
+  const bool isNewParent = !mesh.bucket(parentElement).member(*myParentPart);
+
+  if (isNewParent)
+  {
+    stk::mesh::ConstPartVector removeParts;
+    if (myActivePart)
+      removeParts.push_back(myActivePart);
+    mesh.change_entity_parts(parentElement, stk::mesh::ConstPartVector{myParentPart}, removeParts);
+  }
 
   const stk::mesh::EntityId parentElementId = mesh.identifier(parentElement);
   const int parentRefinementLevel = refinement_level(parentElement);
-  FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  auto * childElemIds = field_data<uint64_t>(childElementIdsField, parentElement);
+  auto * childElemIds = get_child_element_ids(numChildWhenFullyRefined, parentElement);
   std::fill(childElemIds, childElemIds+numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
   for (size_t iChild=0; iChild<childElements.size(); ++iChild)
   {
     childElemIds[iChild] = mesh.identifier(childElements[iChild]);
-    auto * parentElemId = field_data<uint64_t>(myParentElementIdField, childElements[iChild]);
-    *parentElemId = parentElementId;
+    set_parent_id(childElements[iChild], parentElementId);
     set_refinement_level(childElements[iChild], parentRefinementLevel+1);
+  }
+
+  if (isNewParent)
+  {
+    ThrowAssert(mesh.bucket(parentElement).owned());
+    set_originating_processor_for_parent_element(parentElement, mesh.parallel_rank());
+  }
+}
+
+static void prolong_element_fields(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity parentElem,
+    const std::vector<stk::mesh::Entity> & childElems)
+{
+  const stk::mesh::FieldVector & allFields = mesh.mesh_meta_data().get_fields();
+  for ( auto && stkField : allFields )
+  {
+    const FieldRef field(stkField);
+    if( field.entity_rank() == stk::topology::ELEM_RANK && field.type_is<double>() )
+    {
+
+      const auto * parentElemData = field_data<double>(field, parentElem);
+      if (nullptr != parentElemData)
+      {
+        for(const auto & childElem : childElems)
+        {
+          auto * childElemData = field_data<double>(field, childElem);
+
+          if(!childElemData) continue;
+
+          const unsigned fieldLength = field.length();
+          for (unsigned i = 0; i < fieldLength; ++i)
+          {
+            childElemData[i] = parentElemData[i];
+          }
+        }
+      }
+    }
   }
 }
 
@@ -430,10 +530,7 @@ void Refinement::refine_tri_3_and_append_sides_to_create(const stk::mesh::PartVe
   const stk::mesh::Entity * parentNodes = mesh.begin_nodes(parentElem);
   const std::array<stk::mesh::Entity,6> parentElemNodes{ parentNodes[0], parentNodes[1], parentNodes[2], elemChildEdgeNodes[0], elemChildEdgeNodes[1], elemChildEdgeNodes[2] };
 
-  const std::array<stk::math::Vector3d,3> parentNodeCoords{{
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentElemNodes[0]), 2),
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentElemNodes[1]), 2),
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentElemNodes[2]), 2) }};
+  const std::array<stk::math::Vector3d,3> parentNodeCoords{{ get_coordinates(parentElemNodes[0], 2), get_coordinates(parentElemNodes[1], 2), get_coordinates(parentElemNodes[2], 2) }};
 
   const std::array<int,3> parentNodeRank = get_rank_of_nodes_based_on_coordinates(parentNodeCoords);
 
@@ -443,6 +540,8 @@ void Refinement::refine_tri_3_and_append_sides_to_create(const stk::mesh::PartVe
   declare_child_elements_and_append_sides_to_create(mesh, myEntityIdPool, childParts, parentElem, parentElemNodes, newTris, childElements, sideRequests);
 
   set_parent_parts_and_parent_child_relation_fields(parentElem, childElements, 4);
+  //prolong element fields
+  prolong_element_fields(mesh, parentElem, childElements);
 }
 
 
@@ -457,10 +556,10 @@ void Refinement::refine_tet_4_and_append_sides_to_create(const stk::mesh::PartVe
   const std::array<stk::mesh::Entity,10> parentElemNodes{ parentNodes[0], parentNodes[1], parentNodes[2], parentNodes[3], elemChildEdgeNodes[0], elemChildEdgeNodes[1], elemChildEdgeNodes[2], elemChildEdgeNodes[3], elemChildEdgeNodes[4], elemChildEdgeNodes[5] };
 
   const std::array<stk::math::Vector3d,4> parentNodeCoords{{
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentNodes[0])),
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentNodes[1])),
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentNodes[2])),
-    stk::math::Vector3d(field_data<double>(myCoordsField, parentNodes[3])) }};
+    get_coordinates(parentNodes[0]),
+    get_coordinates(parentNodes[1]),
+    get_coordinates(parentNodes[2]),
+    get_coordinates(parentNodes[3]) }};
 
   const std::array<int,4> parentNodeRank= get_rank_of_nodes_based_on_coordinates(parentNodeCoords);
 
@@ -471,6 +570,8 @@ void Refinement::refine_tet_4_and_append_sides_to_create(const stk::mesh::PartVe
   declare_child_elements_and_append_sides_to_create(mesh, myEntityIdPool, childParts, parentElem, parentElemNodes, newTets, childElements, sideRequests);
 
   set_parent_parts_and_parent_child_relation_fields(parentElem, childElements, 8);
+  //prolong element fields
+  prolong_element_fields(mesh, parentElem, childElements);
 }
 
 static unsigned num_new_child_elements_for_case_id(const stk::topology & elemTopology, const int caseId)
@@ -635,7 +736,7 @@ bool Refinement::locally_have_any_hanging_refined_nodes() const
         const Edge edge = edge_from_edge_nodes(mesh, edgeNodes[0], edgeNodes[1]);
         if (myNodeRefiner.is_edge_marked_for_refinement(edge))
         {
-          krinolog << "Found element with hanging node on edge " << debug_edge(mesh, edge) << " of element " << debug_entity_1line(mesh, elem) << stk::diag::dendl;;
+          krinolog << "Found element with hanging node on edge " << debug_edge(mesh, edge) << " of element " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
           return true;
         }
       }
@@ -652,6 +753,7 @@ bool Refinement::have_any_hanging_refined_nodes() const
 void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
   mesh.modification_begin();
 
   myNodeRefiner.create_refined_edge_nodes(mesh, get_parts_for_new_refined_edge_nodes(), myRefinedEdgeNodeParentIdsField);
@@ -663,7 +765,9 @@ void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterfa
   std::vector<stk::mesh::Entity> elementsToDelete;
   std::vector<SideDescription> sideRequests;
   refine_elements_with_refined_edges_and_store_sides_to_create(edgeMarker, bucketsData, sideRequests, elementsToDelete);
+  communicate_owned_entities_to_ghosting_procs(mesh, elementsToDelete);
   delete_mesh_entities(mesh, elementsToDelete);
+
   mesh.modification_end();
 
   if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
@@ -729,49 +833,104 @@ void Refinement::mark_already_refined_edges()
   }
 }
 
-void Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
+void Refinement::respect_originating_proc_for_parents_modified_by_unrefinement(const std::vector<stk::mesh::Entity> & parentsModifiedByUnrefinement, const std::vector<int> & originatingProcForParentsModifiedByUnrefinement)
+{
+  ThrowAssert(parentsModifiedByUnrefinement.size() == originatingProcForParentsModifiedByUnrefinement.size());
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  std::vector<stk::mesh::EntityProc> entitiesToMove;
+  for (size_t i=0; i<parentsModifiedByUnrefinement.size(); ++i)
+  {
+    if (is_parent(parentsModifiedByUnrefinement[i]))
+      set_originating_processor_for_parent_element(parentsModifiedByUnrefinement[i], originatingProcForParentsModifiedByUnrefinement[i]);
+    else
+      entitiesToMove.emplace_back(parentsModifiedByUnrefinement[i], originatingProcForParentsModifiedByUnrefinement[i]);
+  }
+
+  if(stk::is_true_on_any_proc(mesh.parallel(), !entitiesToMove.empty()))
+  {
+    mesh.change_entity_owner(entitiesToMove);
+    fix_face_and_edge_ownership(mesh);  // If this becomes a performance hotspot, then we should consider merging the edge/face movement with the element movement
+  }
+}
+
+std::vector<int> Refinement::get_originating_procs_for_elements(const std::vector<stk::mesh::Entity> & elements) const
+{
+  std::vector<int> originatingProcsForElems;
+  originatingProcsForElems.reserve(elements.size());
+  for (auto elem : elements)
+    originatingProcsForElems.push_back(get_originating_processor_for_parent_element(elem));
+  return originatingProcsForElems;
+}
+
+bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
+  check_leaf_children_have_parents_on_same_proc(mesh, this);
+
+  bool didMakeAnyChanges = false;
   if(stk::is_true_on_any_proc(mesh.parallel(), edgeMarker.locally_have_elements_to_unrefine()))
   {
-    std::vector<stk::mesh::Entity> childElementsToDeleteForUnrefinement;
-    std::vector<stk::mesh::Entity> elementsWithoutChildrenAfterUnrefinement;
-    edgeMarker.fill_elements_modified_by_unrefinement(elementsWithoutChildrenAfterUnrefinement, childElementsToDeleteForUnrefinement);
+    didMakeAnyChanges = true;
 
+    std::vector<stk::mesh::Entity> childElementsToDeleteForUnrefinement;
+    std::vector<stk::mesh::Entity> ownedParentElementsModifiedByUnrefinement;
+    edgeMarker.fill_elements_modified_by_unrefinement(ownedParentElementsModifiedByUnrefinement, childElementsToDeleteForUnrefinement);
+
+    const std::vector<int> originatingProcForParentsBeingModified = get_originating_procs_for_elements(ownedParentElementsModifiedByUnrefinement);
+
+    communicate_owned_entities_to_ghosting_procs(mesh, childElementsToDeleteForUnrefinement);
     mesh.modification_begin();
-    remove_parent_parts(elementsWithoutChildrenAfterUnrefinement);
     delete_mesh_entities(mesh, childElementsToDeleteForUnrefinement);
+    remove_parent_parts(ownedParentElementsModifiedByUnrefinement);
     mesh.modification_end();
 
     mark_already_refined_edges();
 
     create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
+
+    respect_originating_proc_for_parents_modified_by_unrefinement(ownedParentElementsModifiedByUnrefinement, originatingProcForParentsBeingModified);
   }
+
+  check_leaf_children_have_parents_on_same_proc(mesh, this);
+
+  return didMakeAnyChanges;
 }
 
 void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
+  check_leaf_children_have_parents_on_same_proc(mesh, this);
+
   find_edges_to_refine(edgeMarker);
+
+  bool didMakeAnyChanges = false;
 
   const bool haveEdgesToRefineLocally = get_num_edges_to_refine() > 0;
   if(stk::is_true_on_any_proc(mesh.parallel(), haveEdgesToRefineLocally))
   {
+    didMakeAnyChanges = true;
+
     create_refined_nodes_elements_and_sides(edgeMarker);
 
     create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
 
-    if (myActivePart)
-      activate_selected_sides_touching_active_elements(mesh, myMeta.universal_part(), *myActivePart);
-
     myNodeRefiner.prolong_refined_edge_nodes(mesh);
   }
 
-  do_unrefinement(edgeMarker);
+  didMakeAnyChanges |= do_unrefinement(edgeMarker);
+
+  if (didMakeAnyChanges && myActivePart)
+  {
+      activate_selected_sides_touching_active_elements(mesh, myMeta.universal_part(), *myActivePart);
+      fix_node_owners_to_assure_active_owned_element_for_node(mesh, *myActivePart);
+  }
 
   ThrowAssertMsg(!have_any_hanging_refined_nodes(), "Mesh has hanging refined node.");
+
+  check_leaf_children_have_parents_on_same_proc(mesh, this);
 }
 
 void Refinement::do_uniform_refinement(const int numUniformRefinementLevels)
@@ -807,28 +966,128 @@ void Refinement::find_edges_to_refine(const EdgeMarkerInterface & edgeMarker)
   edgeMarker.mark_edges_to_be_refined(myNodeRefiner);
 }
 
-void Refinement::restore_parent_and_child_element_parts_after_restart()
+stk::mesh::EntityId Refinement::get_parent_id(const stk::mesh::Entity elem) const
+{
+  ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
+  const auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
+  ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
+  return *parentElemIdData;
+}
+
+std::pair<stk::mesh::EntityId,int> Refinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
+{
+  const int parentParallelOwnerRank = is_parent(child) ? get_originating_processor_for_parent_element(child) : myMeta.mesh_bulk_data().parallel_owner_rank(child);
+  return {get_parent_id(child), parentParallelOwnerRank};
+}
+
+void Refinement::set_parent_id(const stk::mesh::Entity elem, const stk::mesh::EntityId parentElemId) const
+{
+  ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
+  auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
+  ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
+  *parentElemIdData = parentElemId;
+}
+
+namespace {
+
+struct OriginatingProcParentIdChildId {
+  OriginatingProcParentIdChildId(const int inOriginatingProc, const stk::mesh::EntityId inParentId, const stk::mesh::EntityId inChildId) : originatingProc(inOriginatingProc), parentId(inParentId), childId(inChildId)  {}
+
+  int originatingProc;
+  stk::mesh::EntityId parentId;
+  stk::mesh::EntityId childId;
+};
+
+}
+
+static
+void pack_parent_and_child_ids_for_originating_proc(const stk::mesh::BulkData & mesh,
+    const std::vector<OriginatingProcParentIdChildId> & originatingProcsParentIdChildId,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> elemCommProcs;
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto & originatingProcParentIdChildId : originatingProcsParentIdChildId)
+    {
+      commSparse.send_buffer(originatingProcParentIdChildId.originatingProc).pack(originatingProcParentIdChildId.parentId);
+      commSparse.send_buffer(originatingProcParentIdChildId.originatingProc).pack(originatingProcParentIdChildId.childId);
+    }
+  });
+}
+
+static
+void unpack_parent_and_child_id_on_originating_proc(const stk::mesh::BulkData & mesh,
+    std::vector<std::pair<stk::mesh::Entity, stk::mesh::EntityId>> & parentsAndOffProcChildId,
+    stk::CommSparse &commSparse)
+{
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityId parentId;
+      commSparse.recv_buffer(procId).unpack(parentId);
+      stk::mesh::EntityId childId;
+      commSparse.recv_buffer(procId).unpack(childId);
+      stk::mesh::Entity parent = mesh.get_entity(stk::topology::ELEMENT_RANK, parentId);
+      ThrowRequire(mesh.is_valid(parent));
+      parentsAndOffProcChildId.emplace_back(parent, childId);
+    }
+  });
+}
+
+static void communicate_to_get_parents_with_off_proc_child(const stk::mesh::BulkData & mesh, const std::vector<OriginatingProcParentIdChildId> & originatingProcsParentIdChildId, std::vector<std::pair<stk::mesh::Entity, stk::mesh::EntityId>> & parentsAndOffProcChildId)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_parent_and_child_ids_for_originating_proc(mesh, originatingProcsParentIdChildId, commSparse);
+  unpack_parent_and_child_id_on_originating_proc(mesh, parentsAndOffProcChildId, commSparse);
+}
+
+void Refinement::fill_parents_and_children_and_parents_with_off_proc_child(std::vector<stk::mesh::Entity> & parents, std::vector<stk::mesh::Entity> & children, std::vector<ParentAndChildId> & parentsAndOffProcChildId) const
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
-  std::vector<stk::mesh::Entity> children;
-  std::vector<stk::mesh::Entity> parents;
+  parents.clear();
+  children.clear();
+  parentsAndOffProcChildId.clear();
+  std::vector<OriginatingProcParentIdChildId> originatingProcsParentIdChildId;
+
   for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part()))
   {
     for (auto && elem : *bucket)
     {
-      const auto * parentElemIdData = field_data<uint64_t>(myParentElementIdField, elem);
-      ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField.name() << " defined.");
-      const stk::mesh::Entity parent = myMeta.mesh_bulk_data().get_entity(stk::topology::ELEMENT_RANK, *parentElemIdData);
-      if (mesh.is_valid(parent))
+      const stk::mesh::EntityId parentId = get_parent_id(elem);
+      if (stk::mesh::InvalidEntityId != parentId)
       {
-        children.push_back(elem);
-        parents.push_back(parent);
+        const stk::mesh::Entity parent = myMeta.mesh_bulk_data().get_entity(stk::topology::ELEMENT_RANK, parentId);
+        if (mesh.is_valid(parent) && mesh.bucket(parent).owned())
+        {
+          children.push_back(elem);
+          parents.push_back(parent);
+        }
+        else
+        {
+          ThrowAssertMsg(is_parent(elem), "In fill_parents_and_children_and_parents_with_off_proc_child(), found non-parent element " << mesh.identifier(elem) << " without local parent.");
+          children.push_back(elem);
+          originatingProcsParentIdChildId.emplace_back(get_originating_processor_for_parent_element(elem), parentId, mesh.identifier(elem));
+        }
       }
     }
   }
 
+  communicate_to_get_parents_with_off_proc_child(mesh, originatingProcsParentIdChildId, parentsAndOffProcChildId);
+
+  for (auto && parentAndChildId : parentsAndOffProcChildId)
+    parents.push_back(parentAndChildId.first);
+
   stk::util::sort_and_unique(parents);
+}
+
+void Refinement::restore_parent_and_child_element_parts(const std::vector<stk::mesh::Entity> & parents, const std::vector<stk::mesh::Entity> & children)
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
   const stk::mesh::PartVector childAddParts{&child_part()};
   const stk::mesh::PartVector childRemoveParts;
@@ -845,8 +1104,7 @@ void Refinement::restore_parent_and_child_element_parts_after_restart()
 void Refinement::add_child_to_parent(const stk::mesh::EntityId childId, const stk::mesh::Entity parent)
 {
   const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(parent);
-  FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  auto * childElemIdsData = field_data<uint64_t>(childElementIdsField, parent);
+  auto * childElemIdsData = get_child_element_ids(numChildWhenFullyRefined, parent);
 
   unsigned iChild = 0;
   while(iChild<numChildWhenFullyRefined && childElemIdsData[iChild] != stk::mesh::InvalidEntityId)
@@ -860,22 +1118,21 @@ void Refinement::add_child_to_parent(const stk::mesh::EntityId childId, const st
 void Refinement::parallel_sync_child_element_ids_fields()
 {
   std::vector< const stk::mesh::FieldBase *> syncFields;
-  if (myChildElementIds4Field.valid())
-    syncFields.push_back(&myChildElementIds4Field.field());
-  if (myChildElementIds8Field.valid())
-    syncFields.push_back(&myChildElementIds8Field.field());
+  if (myChildElementIds4Field)
+    syncFields.push_back(myChildElementIds4Field);
+  if (myChildElementIds8Field)
+    syncFields.push_back(myChildElementIds8Field);
   stk::mesh::communicate_field_data(myMeta.mesh_bulk_data(), syncFields);
 }
 
-void Refinement::restore_child_element_ids_field_after_restart()
+void Refinement::restore_child_element_ids_field(const std::vector<ParentAndChildId> & parentsAndOffProcChildId)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
   for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part() & parent_part()))
   {
     const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(bucket->topology());
-    FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-    auto * childElemIds = field_data<uint64_t>(childElementIdsField, *bucket);
+    auto * childElemIds = get_child_element_ids(numChildWhenFullyRefined, *bucket);
     std::fill(childElemIds, childElemIds+bucket->size()*numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
   }
 
@@ -884,21 +1141,30 @@ void Refinement::restore_child_element_ids_field_after_restart()
     for (auto && child : *bucket)
     {
       stk::mesh::Entity parent = get_parent(child);
-      if (mesh.is_valid(parent))
+      if (mesh.is_valid(parent) && mesh.bucket(parent).owned())
       {
         add_child_to_parent(mesh.identifier(child), parent);
       }
     }
   }
 
+  for (auto & parentAndOffProcChildId : parentsAndOffProcChildId)
+    add_child_to_parent(parentAndOffProcChildId.second, parentAndOffProcChildId.first);
+
   parallel_sync_child_element_ids_fields();
 }
 
 void Refinement::restore_after_restart()
 {
-  restore_parent_and_child_element_parts_after_restart();
+  std::vector<stk::mesh::Entity> parents;
+  std::vector<stk::mesh::Entity> children;
+  std::vector<ParentAndChildId> parentsAndOffProcChildId;
 
-  restore_child_element_ids_field_after_restart();
+  fill_parents_and_children_and_parents_with_off_proc_child(parents, children, parentsAndOffProcChildId);
+
+  restore_parent_and_child_element_parts(parents, children);
+
+  restore_child_element_ids_field(parentsAndOffProcChildId);
 }
 
 }

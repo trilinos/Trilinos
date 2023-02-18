@@ -465,6 +465,31 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
     timer2 = Teuchos::TimeMonitor::getNewCounter (timerName2);
   }
 
+  //#define IFPACK2_DEBUG_SMOOTHER
+#ifdef IFPACK2_DEBUG_SMOOTHER
+  int mypid = X.getMap()->getComm()->getRank();
+  Teuchos::Array<double> ttt(1);
+   printf("\n--------------------------------\n");
+   printf("Coming into matrix Hiptmair\n");
+   Y.norm2(ttt());
+   if (!mypid) printf("\t||x|| = %15.10e\n", ttt[0]);
+   X.norm2(ttt());
+   if (!mypid) printf("\t||rhs|| = %15.10e\n", ttt[0]);
+   {
+     double normA = A_->getFrobeniusNorm();
+     if (!mypid) printf("\t||A|| = %15.10e\n", normA);     
+     Tpetra::Vector<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> d(A_->getRowMap());
+     A_->getLocalDiagCopy(d);
+     d.norm2(ttt);
+     if (!mypid) printf("\t||diag(A)|| = %15.10e\n", ttt[0]);
+   }
+   fflush(stdout);
+#endif
+
+
   updateCachedMultiVectors (A_->getRowMap (),
                             PtAP_->getRowMap (),
                             X.getNumVectors ());
@@ -478,16 +503,60 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
     Y.update (ONE, *cachedSolution1_, ONE);
   }
 
+
+
   {
     // project to auxiliary space and smooth
     Teuchos::TimeMonitor timeMon (*timer2);
     Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+#ifdef IFPACK2_DEBUG_SMOOTHER
+      if (!mypid) printf("  After smoothing on edges\n");
+      Y.norm2(ttt());
+      if (!mypid) printf("\t||x|| = %15.10e\n", ttt[0]);
+      cachedResidual1_->norm2(ttt());
+      if (!mypid) printf("\t||res|| = %15.10e\n", ttt[0]);
+#endif
+
+
+
     if (!Pt_.is_null())
       Pt_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::NO_TRANS);
     else
       P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
     cachedSolution2_->putScalar (ZERO);
+
+#ifdef IFPACK2_DEBUG_SMOOTHER
+      if (!mypid)printf("  Before smoothing on nodes\n");
+      cachedSolution2_->norm2(ttt());
+      if (!mypid)printf("\t||x_nodal|| = %15.10e\n",ttt[0]);
+      cachedResidual2_->norm2(ttt());
+      if (!mypid)printf("\t||rhs_nodal|| = %15.10e\n", ttt[0]);
+      {
+        auto An = ifpack2_prec2_->getMatrix();
+        double normA = An->getFrobeniusNorm();
+        if (!mypid) printf("\t||An|| = %15.10e\n", normA);     
+     Tpetra::Vector<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> d(An->getRowMap());
+     An->getLocalDiagCopy(d);
+     d.norm2(ttt);
+     if (!mypid) printf("\t||diag(An)|| = %15.10e\n", ttt[0]);
+   }
+
+#endif
+
     ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
+
+#ifdef IFPACK2_DEBUG_SMOOTHER
+      if (!mypid)printf("  After smoothing on nodes\n");
+      cachedSolution2_->norm2(ttt());
+      if (!mypid)printf("\t||x_nodal|| = %15.10e\n",ttt[0]);
+      cachedResidual2_->norm2(ttt());
+      if (!mypid)printf("\t||rhs_nodal|| = %15.10e\n", ttt[0]);
+#endif
+
+
     P_->apply (*cachedSolution2_, Y, Teuchos::NO_TRANS, ONE, ONE);
   }
 
@@ -499,6 +568,15 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
     ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
     Y.update (ONE, *cachedSolution1_, ONE);
   }
+
+#ifdef IFPACK2_DEBUG_SMOOTHER
+  if (!mypid)printf("  After updating edge solution\n");
+  Y.norm2(ttt());
+  if (!mypid)printf("\t||x|| = %15.10e\n",ttt[0]);
+  if (!mypid)printf("--------------------------------\n");
+#endif
+
+
 }
 
 template <class MatrixType>

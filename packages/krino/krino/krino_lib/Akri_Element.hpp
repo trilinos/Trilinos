@@ -74,11 +74,6 @@ public:
   void fill_node_owner_coords(const Mesh_Element * owner, std::vector<Vector3d> & coords) const;
   Vector3d compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const Vector3d & coords) const;
 
-  void integration_weights(
-    std::vector<double> & intg_weights, // includes both gauss point weight and detJ
-    const MasterElement & me ) const;
-  void integration_weights(
-    std::vector<double> & intg_weights ) const { return integration_weights(intg_weights, my_master_elem); }
   static void integration_weights(
     std::vector<double> & intg_weights, // includes both gauss point weight and detJ
     const int numCoordDims,
@@ -188,8 +183,6 @@ public:
   void cut_interior_intersection_points(CDMesh & mesh);
 
   void find_child_coordinates_at_owner_coordinates(const Vector3d & ownerCoordinates, const ElementObj *& child, Vector3d & child_p_coords) const;
-
-  double volume() const;
 
   bool is_single_coincident() const;
 

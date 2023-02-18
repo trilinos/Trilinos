@@ -176,20 +176,19 @@ debug_nodal_parts_and_fields(const stk::mesh::BulkData & mesh, const SubElementN
     double * data = field_data<double>(field, node_obj);
     if (nullptr == data)
     {
-      krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << " -> NOT DEFINED." << "\n";
+      krinolog << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << " -> NOT DEFINED." << "\n";
     }
     else
     {
       if (1 == field_length)
       {
-        krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value=" << filter_negative_zero(*data) << "\n";
+        krinolog << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", value=" << filter_negative_zero(*data) << "\n";
       }
       else
       {
-        for (unsigned i=0; i<field_length; ++i)
-        {
-          krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value[" <<i << "]=" << filter_negative_zero(data[i]) << "\n";
-        }
+        krinolog << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", values[] = ";
+        for (unsigned i = 0; i < field_length; ++i) krinolog << filter_negative_zero(data[i]) << " ";
+        krinolog << "\n";
       }
     }
   }
@@ -198,38 +197,11 @@ debug_nodal_parts_and_fields(const stk::mesh::BulkData & mesh, const SubElementN
 void
 debug_sides(const stk::mesh::BulkData & mesh, stk::mesh::Part & active_part)
 {
-  std::vector< stk::mesh::Entity> objs;
-  stk::mesh::get_entities( mesh, mesh.mesh_meta_data().side_rank(), objs );
+  std::vector<stk::mesh::Entity> sides;
+  stk::mesh::get_entities( mesh, mesh.mesh_meta_data().side_rank(), sides );
 
-  const unsigned len = objs.size();
-  for ( unsigned iObj(0); iObj < len; ++iObj ) {
-
-    stk::mesh::Entity side = objs[iObj];
-
-    krinolog << "side, id=" << mesh.identifier(side) << ", active = " << mesh.bucket(side).member(active_part) << ", num elem = " << mesh.num_elements(side) << ", ioparts=";
-    const stk::mesh::PartVector & side_parts = mesh.bucket(side).supersets();
-    for(stk::mesh::PartVector::const_iterator part_iter = side_parts.begin(); part_iter != side_parts.end(); ++part_iter)
-    {
-      const stk::mesh::Part * const part = *part_iter;
-      if (stk::io::is_part_io_part(*part)) krinolog << part->name() << " ";
-    }
-    krinolog << "\n";
-    const unsigned num_side_elems = mesh.num_elements(side);
-    const stk::mesh::Entity* side_elems = mesh.begin_elements(side);
-    for (unsigned side_elem_index=0; side_elem_index<num_side_elems; ++side_elem_index)
-    {
-      stk::mesh::Entity side_elem = side_elems[side_elem_index];
-      krinolog << "  " << mesh.identifier(side_elem) << ", active = " << mesh.bucket(side_elem).member(active_part)  << ", ioparts=";
-      const stk::mesh::PartVector & elem_parts = mesh.bucket(side_elem).supersets();
-      for(stk::mesh::PartVector::const_iterator part_iter = elem_parts.begin(); part_iter != elem_parts.end(); ++part_iter)
-      {
-        const stk::mesh::Part * const part = *part_iter;
-        if (stk::io::is_part_io_part(*part)) krinolog << part->name() << " ";
-      }
-      krinolog << "\n";
-    }
-  }
-  krinolog << stk::diag::dendl;
+  for ( auto && side : sides )
+    krinolog << debug_entity_1line(mesh, side) << "\n";
 }
 
 }

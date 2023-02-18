@@ -1023,13 +1023,16 @@ namespace MueLu {
      ParameterList rParams;
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: constant column sums", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, rParams);
 
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
      rFactory->SetParameterList(rParams);
      
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
-     rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+     rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
+     //rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
 
      if(levelID > 1)
        rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));

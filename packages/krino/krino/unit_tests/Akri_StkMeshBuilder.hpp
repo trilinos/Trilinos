@@ -3,17 +3,19 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <Akri_TopologyData.hpp>
 
 namespace krino {
 
 class AuxMetaData;
 class Phase_Support;
 
-template<int DIM>
+template<stk::topology::topology_t TOPO>
 class StkMeshBuilder
 {
 public:
-    static constexpr int NPE = DIM+1;
+    static constexpr unsigned DIM = TopologyData<TOPO>::spatial_dimension();
+    static constexpr unsigned NPE = TopologyData<TOPO>::num_nodes();
 
     StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::ParallelMachine comm);
 
@@ -40,7 +42,7 @@ public:
 
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mOwnedElems; }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mAssignedGlobalNodeIdsforAllNodes; }
-    const std::vector<size_t> & get_assigned_element_global_ids() const { return mAssignedGlobalElementIdsforAllElements; }
+    const std::vector<stk::mesh::EntityId> & get_assigned_element_global_ids() const { return mAssignedGlobalElementIdsforAllElements; }
     std::vector<stk::mesh::EntityId> get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const;
 
     bool check_boundary_sides() const;

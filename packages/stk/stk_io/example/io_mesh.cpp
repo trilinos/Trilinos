@@ -95,7 +95,7 @@ public:
     size_t now = 0, hwm = 0;
     stk::get_memory_usage(now, hwm);
     if (hwm > now) {
-      m_baselineBuffer.resize((hwm-now)*sizeof(double));
+      m_baselineBuffer.resize((hwm-now)/sizeof(double));
     }
 
     size_t curMax = 0, curMin = 0, curAvg = 0;

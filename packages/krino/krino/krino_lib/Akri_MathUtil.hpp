@@ -14,6 +14,8 @@
 
 namespace krino {
 
+double compute_parametric_square_distance(const Vector3d childPCoords);
+
 Vector3d get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, const Vector3d & pt);
 
 std::pair<bool, double> find_root( const std::function<double(const double)> & f,

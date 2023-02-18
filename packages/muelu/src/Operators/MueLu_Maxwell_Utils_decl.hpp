@@ -58,6 +58,7 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_Utilities_kokkos_fwd.hpp"
@@ -120,9 +121,12 @@ namespace MueLu {
     //! Sets matvec params on a matrix
     static void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams);
 
+
+    // Performs an RAP
+    static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    PtAPWrapper(RCP<Matrix>& A,RCP<Matrix>& P, Teuchos::ParameterList &params, std::string & label);
+
   };
-
-
 
 } // namespace
 

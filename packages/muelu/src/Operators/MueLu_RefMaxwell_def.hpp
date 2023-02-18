@@ -364,31 +364,8 @@ namespace MueLu {
     if(P11_.is_null()) {
       if (skipFirstLevel_) {
         // Form A_nodal = D0* Ms D0  (aka TMT_agg)
-        Level fineLevel, coarseLevel;
-        fineLevel.SetFactoryManager(null);
-        coarseLevel.SetFactoryManager(null);
-        coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
-        fineLevel.SetLevelID(0);
-        coarseLevel.SetLevelID(1);
-        fineLevel.Set("A",Ms_Matrix_);
-        coarseLevel.Set("P",D0_Matrix_);
-        coarseLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
-        fineLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
-        coarseLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
-        fineLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
-
-        RCP<RAPFactory> rapFact = rcp(new RAPFactory());
-        ParameterList rapList = *(rapFact->GetValidParameterList());
-        rapList.set("transpose: use implicit", true);
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
-        rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
-        rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
-        rapFact->SetParameterList(rapList);
-
-
-        coarseLevel.Request("A", rapFact.get());
-
-        A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+        std::string label("D0*Ms*D0");
+        A_nodal_Matrix_ = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(Ms_Matrix_,D0_Matrix_,parameterList_,label);
 
         if (applyBCsToAnodal_) {
           // Apply boundary conditions to A_nodal

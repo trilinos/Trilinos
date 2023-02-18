@@ -75,19 +75,24 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-
   Tpetra::ScopeGuard mpiSession(&argc, &argv);
   Teuchos::RCP <const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-    int myPID = comm->getRank();
+  int myPID = comm->getRank();
+
+  bool success = true;
+  string pass = "End Result: TEST PASSED";
+  string fail = "End Result: TEST FAILED";
+
+#if !defined(HAVE_TPETRA_INST_INT_INT)
+  if(myPID == 0)
+    {
+      cout << "Tpetra was not instantiated with INT_INT" << endl;
+    }
+#else
   if(myPID == 0)
     {
       cout << "Starting Tpetra interface test" << endl;
     }
-
-
-  bool success = true;
-  string pass = "End Result: TEST PASSED";
-  string fail = "End Result: TEST PASSED";
 
   typedef double scalar_type;
   typedef int local_o_type;
@@ -99,7 +104,6 @@ int main(int argc, char** argv)
   typedef Tpetra::CrsMatrix<scalar_type, local_o_type, global_o_type, node_type> Matrix_t;
   typedef Tpetra::MultiVector<scalar_type, local_o_type, global_o_type, node_type> Vector_t;
 
-
   Teuchos::ParameterList defaultParameters;
 
   /*----------------Load a test matrix---------------*/
@@ -107,12 +111,6 @@ int main(int argc, char** argv)
 
   //Get Matrix
   Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm); 
-
-  if( &A == NULL)
-    {
-      success = false;
-    }
-
 
   //Note:: Tpetra::MatrixMarket::Reader is providing A->getColMap() wrong and equal A->row
   Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
@@ -179,7 +177,7 @@ int main(int argc, char** argv)
   cout << "Done with Belos" << endl;
 
   success = false;
-
+#endif
 
   if(myPID == 0)
     {
@@ -188,7 +186,6 @@ int main(int argc, char** argv)
       else
         cout << fail << endl;
     }
-
-
+  return 0;
 }
 

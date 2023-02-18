@@ -25,6 +25,7 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const double snappingSharpFeatureAngleInDegrees,
     const double minIntPtWeightForEstimatingCutQuality);
 
+void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields);
 }
 
 

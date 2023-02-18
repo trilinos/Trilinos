@@ -858,6 +858,52 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
    largest = ML_Comm_GmaxDouble(matrix->comm, largest);
    return largest;
 }
+
+/* ******************************************************************** */
+/* compute Frobenius norm of the matrix                                 */
+/* ******************************************************************** */
+
+double ML_Operator_FroNorm(ML_Operator *matrix, int divide_diag)
+{
+
+   int    i, j;
+   int    *bindx;
+   double *val;
+   int    allocated, row_length;
+   double sum, running, diag;
+
+   if ( matrix->getrow == NULL) {
+      printf("ML_Operator_FroNorm: No getrow() function\n");
+      return(1.);
+   }
+
+   allocated = 100;
+   bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+   val   = (double *)  ML_allocate( allocated*sizeof(double));
+
+   running = 0.;
+   for (i = 0 ; i < matrix->getrow->Nrows; i++) {
+      ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+                        &row_length, 0);
+      sum  = 0.;
+      diag = 0.;
+      for  (j = 0; j < row_length; j++) {
+         if (bindx[j] == i) diag = ML_dabs(val[j]);
+         sum += val[j]*val[j];
+      }
+      if (divide_diag == ML_TRUE) {
+         if (diag == 0.) printf("ML_Operator_MaxNorm: zero diagonal\n");
+         else sum = sum/diag;
+      }
+      running += sum;
+   }
+   ML_free(val);
+   ML_free(bindx);
+   running = sqrt(ML_Comm_GsumDouble(matrix->comm, running));
+   return running;
+}
+
+
 /* ******************************************************************** */
 /* set method to estimate spectral radius of A                          */
 /* -------------------------------------------------------------------- */

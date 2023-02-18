@@ -9,6 +9,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_yaml-cpp
   KRINO_HAVE_YAML
   "Enable support for YAML parser in ${PACKAGE_NAME}."
   OFF )
+  
+TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_ParMETIS
+  KRINO_HAVE_PARMETIS
+  "Enable support for ParMETIS parser in ${PACKAGE_NAME}."
+  OFF )
 
 TRIBITS_CONFIGURE_FILE(Akri_Trilinos_config.hpp)
 
