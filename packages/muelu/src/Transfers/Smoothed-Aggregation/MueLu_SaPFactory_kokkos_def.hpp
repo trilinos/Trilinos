@@ -129,6 +129,14 @@ namespace MueLu {
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
+    RCP<Matrix> finalP;
+    // If Tentative facctory bailed out (e.g., number of global aggregates is 0), then SaPFactory bails
+    //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if (Ptent == Teuchos::null) {
+      finalP = Teuchos::null;
+      Set(coarseLevel, "P", finalP);
+      return;
+    }
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
@@ -137,7 +145,6 @@ namespace MueLu {
     }
 
     //Build final prolongator
-    RCP<Matrix> finalP; // output
 
     // Reuse pattern if available
     RCP<ParameterList> APparams;
