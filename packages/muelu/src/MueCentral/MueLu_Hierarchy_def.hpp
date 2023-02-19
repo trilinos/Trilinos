@@ -422,6 +422,7 @@ namespace MueLu {
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
     }
 
+    bool setLastLevelviaMaxCoarseSize = false;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Operator> >("A");
     RCP<Matrix> Acm = rcp_dynamic_cast<Matrix>(Ac);
@@ -447,6 +448,7 @@ namespace MueLu {
         // Last level as the size of the coarse matrix became too small
         GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved" << std::endl;
         isLastLevel = true;
+        if (Acm->getGlobalNumRows() != 0) setLastLevelviaMaxCoarseSize = true;
       }
     }
 
@@ -502,21 +504,24 @@ namespace MueLu {
     }
 
     if (isLastLevel == true) {
+      int actualNumLevels = nextLevelID;
       if (isOrigLastLevel == false) {
         // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
         // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
         Levels_[nextLevelID]->Release(TopRAPFactory(coarseLevelManager, nextLevelManager));
+
+        // We truncate/resize the hierarchy and possibly remove the last created level if there is
+        // something wrong with it as indicated by its P not being valid. This might happen
+        // if the global number of aggregates turns out to be zero
+
+
+        if (!setLastLevelviaMaxCoarseSize) {
+          if   (Levels_[nextLevelID-1]->IsAvailable("P"))  {
+            if (Levels_[nextLevelID-1]->Get<RCP<Matrix> >("P") == Teuchos::null)   actualNumLevels = nextLevelID-1;
+          }
+          else actualNumLevels = nextLevelID-1;
+        }
       }
-       // We truncate/resize the hierarchy and possibly remove the last created level if there is
-       // something wrong with it as indicated by its P not being valid. This might happen
-       // if the global number of aggregates turns out to be zero
-
-       int actualNumLevels = nextLevelID;
-       if   (Levels_[nextLevelID-1]->IsAvailable("P"))  {
-         if (Levels_[nextLevelID-1]->Get<RCP<Matrix> >("P") == Teuchos::null)   actualNumLevels = nextLevelID-1;
-       }
-       else actualNumLevels = nextLevelID-1;
-
        if (actualNumLevels == nextLevelID-1) {
          // Didn't expect to finish early so we requested smoother but need coarse solver instead.
          Levels_[nextLevelID-2]->Release(*smootherFact);
