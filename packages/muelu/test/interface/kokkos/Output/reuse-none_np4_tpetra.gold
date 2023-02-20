@@ -9,8 +9,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
@@ -34,6 +32,8 @@ matrixmatrix: kernel params ->
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -57,8 +57,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
@@ -82,6 +80,8 @@ matrixmatrix: kernel params ->
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -130,8 +130,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
@@ -155,6 +153,8 @@ matrixmatrix: kernel params ->
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -178,8 +178,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
@@ -203,6 +201,8 @@ matrixmatrix: kernel params ->
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -245,8 +245,6 @@ presmoother ->
  Amesos2 -> 
   [empty list]
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 matrixmatrix: kernel params -> 
@@ -256,6 +254,8 @@ matrixmatrix: kernel params ->
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
