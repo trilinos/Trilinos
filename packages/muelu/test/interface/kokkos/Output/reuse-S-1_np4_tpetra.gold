@@ -30,11 +30,11 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -81,11 +81,11 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -155,11 +155,11 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -206,11 +206,11 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
@@ -260,11 +260,11 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
 Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
