@@ -540,7 +540,7 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def_static("sum", (int (*)(int)) &Teuchos::GlobalMPISession::sum, "Sum a set of integers across processes.\n\n This performs an MPI_Allreduce() of localVal over\n MPI_COMM_WORLD, and returns the result (which is the\n same on all processes).\n\n This method must be called collectively on all processes in\n MPI_COMM_WORLD.\n\n \n [in] Value on local process to sum across processes.\n \n\n The global sum (on all processes).\n\n \n Users should invoke reductions through the Teuchos::Comm\n   interface.  We only expose this method for Teuchos-internal\n   functionality.\n\nC++: Teuchos::GlobalMPISession::sum(int) --> int", pybind11::arg("localVal"));
 	}
 	{ // Teuchos::basic_oblackholestream file:Teuchos_basic_oblackholestream.hpp line:59
-		pybind11::class_<Teuchos::basic_oblackholestream<char,std::char_traits<char>>, Teuchos::RCP<Teuchos::basic_oblackholestream<char,std::char_traits<char>>>> cl(M("Teuchos"), "basic_oblackholestream_char_std_char_traits_char_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::basic_oblackholestream<char,std::char_traits<char>>, Teuchos::RCP<Teuchos::basic_oblackholestream<char,std::char_traits<char>>>, std::ostream> cl(M("Teuchos"), "basic_oblackholestream_char_std_char_traits_char_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::basic_oblackholestream<char,std::char_traits<char>>(); } ) );
 	}
 }

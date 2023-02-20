@@ -250,7 +250,7 @@ struct PyCallBack_Teuchos_LabeledObject : public Teuchos::LabeledObject {
 struct PyCallBack_Teuchos_InvalidArrayStringRepresentation : public Teuchos::InvalidArrayStringRepresentation {
 	using Teuchos::InvalidArrayStringRepresentation::InvalidArrayStringRepresentation;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::InvalidArrayStringRepresentation *>(this), "what");
 		if (overload) {
@@ -269,7 +269,7 @@ struct PyCallBack_Teuchos_InvalidArrayStringRepresentation : public Teuchos::Inv
 struct PyCallBack_Teuchos_EmptyXMLError : public Teuchos::EmptyXMLError {
 	using Teuchos::EmptyXMLError::EmptyXMLError;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::EmptyXMLError *>(this), "what");
 		if (overload) {
@@ -281,6 +281,129 @@ struct PyCallBack_Teuchos_EmptyXMLError : public Teuchos::EmptyXMLError {
 			else return pybind11::detail::cast_safe<const char *>(std::move(o));
 		}
 		return runtime_error::what();
+	}
+};
+
+// Teuchos::ParameterEntryValidator file:Teuchos_ParameterEntryValidator.hpp line:64
+struct PyCallBack_Teuchos_ParameterEntryValidator : public Teuchos::ParameterEntryValidator {
+	using Teuchos::ParameterEntryValidator::ParameterEntryValidator;
+
+	const std::string getXMLTypeName() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "getXMLTypeName");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<const std::string>::value) {
+				static pybind11::detail::override_caster_t<const std::string> caster;
+				return pybind11::detail::cast_ref<const std::string>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<const std::string>(std::move(o));
+		}
+		pybind11::pybind11_fail("Tried to call pure virtual function \"ParameterEntryValidator::getXMLTypeName\"");
+	}
+	void printDoc(const std::string & a0, std::ostream & a1) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "printDoc");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		pybind11::pybind11_fail("Tried to call pure virtual function \"ParameterEntryValidator::printDoc\"");
+	}
+	class Teuchos::RCP<const class Teuchos::Array<std::string > > validStringValues() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "validStringValues");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::RCP<const class Teuchos::Array<std::string > >>::value) {
+				static pybind11::detail::override_caster_t<class Teuchos::RCP<const class Teuchos::Array<std::string > >> caster;
+				return pybind11::detail::cast_ref<class Teuchos::RCP<const class Teuchos::Array<std::string > >>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<class Teuchos::RCP<const class Teuchos::Array<std::string > >>(std::move(o));
+		}
+		pybind11::pybind11_fail("Tried to call pure virtual function \"ParameterEntryValidator::validStringValues\"");
+	}
+	void validate(const class Teuchos::ParameterEntry & a0, const std::string & a1, const std::string & a2) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "validate");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		pybind11::pybind11_fail("Tried to call pure virtual function \"ParameterEntryValidator::validate\"");
+	}
+	void validateAndModify(const std::string & a0, const std::string & a1, class Teuchos::ParameterEntry * a2) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "validateAndModify");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return ParameterEntryValidator::validateAndModify(a0, a1, a2);
+	}
+	std::string description() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "description");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
+				static pybind11::detail::override_caster_t<std::string> caster;
+				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::string>(std::move(o));
+		}
+		return Describable::description();
+	}
+	void describe(class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > & a0, const enum Teuchos::EVerbosityLevel a1) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "describe");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return Describable::describe(a0, a1);
+	}
+	void setObjectLabel(const std::string & a0) override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "setObjectLabel");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return LabeledObject::setObjectLabel(a0);
+	}
+	std::string getObjectLabel() const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::ParameterEntryValidator *>(this), "getObjectLabel");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
+				static pybind11::detail::override_caster_t<std::string> caster;
+				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::string>(std::move(o));
+		}
+		return LabeledObject::getObjectLabel();
 	}
 };
 
@@ -372,7 +495,7 @@ struct PyCallBack_Teuchos_ParameterListModifier : public Teuchos::ParameterListM
 struct PyCallBack_Teuchos_StringIndexedOrderedValueObjectContainerBase_InvalidOrdinalIndexError : public Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidOrdinalIndexError {
 	using Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidOrdinalIndexError::InvalidOrdinalIndexError;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidOrdinalIndexError *>(this), "what");
 		if (overload) {
@@ -391,7 +514,7 @@ struct PyCallBack_Teuchos_StringIndexedOrderedValueObjectContainerBase_InvalidOr
 struct PyCallBack_Teuchos_StringIndexedOrderedValueObjectContainerBase_InvalidKeyError : public Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidKeyError {
 	using Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidKeyError::InvalidKeyError;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::StringIndexedOrderedValueObjectContainerBase::InvalidKeyError *>(this), "what");
 		if (overload) {
@@ -410,7 +533,7 @@ struct PyCallBack_Teuchos_StringIndexedOrderedValueObjectContainerBase_InvalidKe
 struct PyCallBack_Teuchos_InvalidDependencyException : public Teuchos::InvalidDependencyException {
 	using Teuchos::InvalidDependencyException::InvalidDependencyException;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::InvalidDependencyException *>(this), "what");
 		if (overload) {
@@ -429,6 +552,10 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 {
 	{ // Teuchos::basic_FancyOStream_buf file:Teuchos_FancyOStream.hpp line:63
 		pybind11::class_<Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>, Teuchos::RCP<Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>>, PyCallBack_Teuchos_basic_FancyOStream_buf_char_std_char_traits_char_t, std::streambuf> cl(M("Teuchos"), "basic_FancyOStream_buf_char_std_char_traits_char_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool>(), pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"), pybind11::arg("showProcRank") );
+
+		cl.def("initialize", (void (Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>::*)(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool)) &Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::initialize, "C++: Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::initialize(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool) --> void", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"), pybind11::arg("showProcRank"));
+		cl.def("getOStream", (class Teuchos::RCP<std::ostream > (Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>::*)()) &Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::getOStream, "C++: Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::getOStream() --> class Teuchos::RCP<std::ostream >");
 		cl.def("setTabIndentStr", (void (Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>::*)(const std::string &)) &Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::setTabIndentStr, "C++: Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::setTabIndentStr(const std::string &) --> void", pybind11::arg("tabIndentStr"));
 		cl.def("getTabIndentStr", (const std::string & (Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>::*)() const) &Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::getTabIndentStr, "C++: Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::getTabIndentStr() const --> const std::string &", pybind11::return_value_policy::automatic);
 		cl.def("setShowLinePrefix", (void (Teuchos::basic_FancyOStream_buf<char,std::char_traits<char>>::*)(const bool)) &Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::setShowLinePrefix, "C++: Teuchos::basic_FancyOStream_buf<char, std::char_traits<char> >::setShowLinePrefix(const bool) --> void", pybind11::arg("showLinePrefix"));
@@ -474,7 +601,23 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("__safe_pbump", (void (std::streambuf::*)(long)) &std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump, "C++: std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump(long) --> void", pybind11::arg("__n"));
 	}
 	{ // Teuchos::basic_FancyOStream file:Teuchos_FancyOStream.hpp line:381
-		pybind11::class_<Teuchos::basic_FancyOStream<char,std::char_traits<char>>, Teuchos::RCP<Teuchos::basic_FancyOStream<char,std::char_traits<char>>>> cl(M("Teuchos"), "basic_FancyOStream_char_std_char_traits_char_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::basic_FancyOStream<char,std::char_traits<char>>, Teuchos::RCP<Teuchos::basic_FancyOStream<char,std::char_traits<char>>>, std::ostream> cl(M("Teuchos"), "basic_FancyOStream_char_std_char_traits_char_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0); } ), "doc" , pybind11::arg("oStream"));
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0, a1); } ), "doc" , pybind11::arg("oStream"), pybind11::arg("tabIndentStr"));
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0, a1, a2); } ), "doc" , pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"));
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0, a1, a2, a3); } ), "doc" , pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"));
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0, a1, a2, a3, a4); } ), "doc" , pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"));
+		cl.def( pybind11::init( [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4, const bool & a5){ return new Teuchos::basic_FancyOStream<char,std::char_traits<char>>(a0, a1, a2, a3, a4, a5); } ), "doc" , pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"));
+		cl.def( pybind11::init<const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool>(), pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"), pybind11::arg("showProcRank") );
+
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0) -> void { return o.initialize(a0); }, "", pybind11::arg("oStream"));
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0, const std::string & a1) -> void { return o.initialize(a0, a1); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"));
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2) -> void { return o.initialize(a0, a1, a2); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"));
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3) -> void { return o.initialize(a0, a1, a2, a3); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"));
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4) -> void { return o.initialize(a0, a1, a2, a3, a4); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"));
+		cl.def("initialize", [](Teuchos::basic_FancyOStream<char,std::char_traits<char>> &o, const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4, const bool & a5) -> void { return o.initialize(a0, a1, a2, a3, a4, a5); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"));
+		cl.def("initialize", (void (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool)) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::initialize, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::initialize(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool) --> void", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"), pybind11::arg("showProcRank"));
+		cl.def("getOStream", (class Teuchos::RCP<std::ostream > (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)()) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getOStream, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getOStream() --> class Teuchos::RCP<std::ostream >");
 		cl.def("setTabIndentStr", (class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > & (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)(const std::string &)) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::setTabIndentStr, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::setTabIndentStr(const std::string &) --> class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > &", pybind11::return_value_policy::automatic, pybind11::arg("tabIndentStr"));
 		cl.def("getTabIndentStr", (const std::string & (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)() const) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getTabIndentStr, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getTabIndentStr() const --> const std::string &", pybind11::return_value_policy::automatic);
 		cl.def("setShowAllFrontMatter", (class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > & (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)(const bool)) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::setShowAllFrontMatter, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::setShowAllFrontMatter(const bool) --> class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > &", pybind11::return_value_policy::automatic, pybind11::arg("showAllFrontMatter"));
@@ -495,7 +638,40 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("getTopLinePrefix", (const std::string & (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)() const) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getTopLinePrefix, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::getTopLinePrefix() const --> const std::string &", pybind11::return_value_policy::automatic);
 		cl.def("pushDisableTabbing", (void (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)()) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::pushDisableTabbing, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::pushDisableTabbing() --> void");
 		cl.def("popDisableTabbing", (void (Teuchos::basic_FancyOStream<char,std::char_traits<char>>::*)()) &Teuchos::basic_FancyOStream<char, std::char_traits<char> >::popDisableTabbing, "C++: Teuchos::basic_FancyOStream<char, std::char_traits<char> >::popDisableTabbing() --> void");
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(long)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(long) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(unsigned long)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(unsigned long) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(bool)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(bool) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(short)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(short) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(unsigned short)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(unsigned short) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(int)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(int) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(unsigned int)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(unsigned int) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(long long)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(long long) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(unsigned long long)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(unsigned long long) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(double)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(double) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(float)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(float) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(long double)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(long double) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(const void *)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(const void *) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__p"));
+		cl.def("__lshift__", (std::ostream & (std::ostream::*)(class std::basic_streambuf<char> *)) &std::basic_ostream<char, std::char_traits<char> >::operator<<, "C++: std::basic_ostream<char, std::char_traits<char> >::operator<<(class std::basic_streambuf<char> *) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__sb"));
+		cl.def("put", (std::ostream & (std::ostream::*)(char)) &std::basic_ostream<char, std::char_traits<char> >::put, "C++: std::basic_ostream<char, std::char_traits<char> >::put(char) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__c"));
+		cl.def("_M_write", (void (std::ostream::*)(const char *, long)) &std::basic_ostream<char, std::char_traits<char> >::_M_write, "C++: std::basic_ostream<char, std::char_traits<char> >::_M_write(const char *, long) --> void", pybind11::arg("__s"), pybind11::arg("__n"));
+		cl.def("write", (std::ostream & (std::ostream::*)(const char *, long)) &std::basic_ostream<char, std::char_traits<char> >::write, "C++: std::basic_ostream<char, std::char_traits<char> >::write(const char *, long) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("__s"), pybind11::arg("__n"));
+		cl.def("flush", (std::ostream & (std::ostream::*)()) &std::basic_ostream<char, std::char_traits<char> >::flush, "C++: std::basic_ostream<char, std::char_traits<char> >::flush() --> std::ostream &", pybind11::return_value_policy::automatic);
+		cl.def("tellp", (class std::fpos<__mbstate_t> (std::ostream::*)()) &std::basic_ostream<char, std::char_traits<char> >::tellp, "C++: std::basic_ostream<char, std::char_traits<char> >::tellp() --> class std::fpos<__mbstate_t>");
+		cl.def("seekp", (std::ostream & (std::ostream::*)(class std::fpos<__mbstate_t>)) &std::basic_ostream<char, std::char_traits<char> >::seekp, "C++: std::basic_ostream<char, std::char_traits<char> >::seekp(class std::fpos<__mbstate_t>) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("seekp", (std::ostream & (std::ostream::*)(long, enum std::_Ios_Seekdir)) &std::basic_ostream<char, std::char_traits<char> >::seekp, "C++: std::basic_ostream<char, std::char_traits<char> >::seekp(long, enum std::_Ios_Seekdir) --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg(""), pybind11::arg(""));
 	}
+	// Teuchos::fancyOStream(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool) file:Teuchos_FancyOStream.hpp line:597
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0); }, "", pybind11::arg("oStream"));
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0, a1); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"));
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0, a1, a2); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"));
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0, a1, a2, a3); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"));
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0, a1, a2, a3, a4); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"));
+	M("Teuchos").def("fancyOStream", [](const class Teuchos::RCP<std::ostream > & a0, const std::string & a1, const int & a2, const bool & a3, const int & a4, const bool & a5) -> Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > { return Teuchos::fancyOStream(a0, a1, a2, a3, a4, a5); }, "", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"));
+	M("Teuchos").def("fancyOStream", (class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > (*)(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool)) &Teuchos::fancyOStream, "Dynamically allocate a FancyOStream and return it wrapped in an RCP\n object.\n\n Returns a null object if the input stream is null.\n\n \n\n \n\nC++: Teuchos::fancyOStream(const class Teuchos::RCP<std::ostream > &, const std::string &, const int, const bool, const int, const bool, const bool) --> class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > >", pybind11::arg("oStream"), pybind11::arg("tabIndentStr"), pybind11::arg("startingTab"), pybind11::arg("showLinePrefix"), pybind11::arg("maxLenLinePrefix"), pybind11::arg("showTabCount"), pybind11::arg("showProcRank"));
+
+	// Teuchos::getFancyOStream(const class Teuchos::RCP<std::ostream > &) file:Teuchos_FancyOStream.hpp line:629
+	M("Teuchos").def("getFancyOStream", (class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > (*)(const class Teuchos::RCP<std::ostream > &)) &Teuchos::getFancyOStream, "Get a FancyOStream from an std::ostream object.\n\n If the object already is a FancyOStream, then nothing has to be done.\n Otherwise, a temp FancyOStream is created for this purpose. If\n out.get()==NULL then return.get()==NULL on return also!\n\n \n\n \n\nC++: Teuchos::getFancyOStream(const class Teuchos::RCP<std::ostream > &) --> class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > >", pybind11::arg("out"));
+
 	{ // Teuchos::LabeledObject file:Teuchos_LabeledObject.hpp line:69
 		pybind11::class_<Teuchos::LabeledObject, Teuchos::RCP<Teuchos::LabeledObject>, PyCallBack_Teuchos_LabeledObject> cl(M("Teuchos"), "LabeledObject", "Base class for objects that contain a std::string label.\n\n The object label std::string objectLabel set in\n setObjectLabel() should be a simple one-line label given to an\n object to differentiate it from all other objects.  A subclass\n implementation can define a default label in some cases but typically this\n label is designed for end users to set to give the object a name that is\n meaningful to the user.  The label should not contain any information about\n the actual type of the object.  Adding type information is appropriate in\n the Describable interface, which inherits from this interface.\n\n This base class provides a default implementation for the functions\n setObjectLabel() and getObjectLabel() as well as private\n data to hold the label.  Subclasses can override these functions but\n general, there should be no need to do so.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::LabeledObject(); }, [](){ return new PyCallBack_Teuchos_LabeledObject(); } ) );
@@ -629,6 +805,7 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("getContentLine", (const std::string & (Teuchos::XMLObjectImplem::*)(int) const) &Teuchos::XMLObjectImplem::getContentLine, "Look up a content line by index\n\nC++: Teuchos::XMLObjectImplem::getContentLine(int) const --> const std::string &", pybind11::return_value_policy::automatic, pybind11::arg("i"));
 		cl.def("appendContentLine", (void (Teuchos::XMLObjectImplem::*)(const unsigned long &, const std::string &)) &Teuchos::XMLObjectImplem::appendContentLine, "Add string at the the end of a content line\n\nC++: Teuchos::XMLObjectImplem::appendContentLine(const unsigned long &, const std::string &) --> void", pybind11::arg("i"), pybind11::arg("str"));
 		cl.def("removeContentLine", (void (Teuchos::XMLObjectImplem::*)(const unsigned long &)) &Teuchos::XMLObjectImplem::removeContentLine, "Remove content line by index\n\nC++: Teuchos::XMLObjectImplem::removeContentLine(const unsigned long &) --> void", pybind11::arg("i"));
+		cl.def("print", (void (Teuchos::XMLObjectImplem::*)(std::ostream &, int) const) &Teuchos::XMLObjectImplem::print, "Print to stream with the given indentation level. Output will be well-formed XML.\n\nC++: Teuchos::XMLObjectImplem::print(std::ostream &, int) const --> void", pybind11::arg("os"), pybind11::arg("indent"));
 		cl.def("toString", (std::string (Teuchos::XMLObjectImplem::*)() const) &Teuchos::XMLObjectImplem::toString, "Write as a std::string. Output may be ill-formed XML.\n\nC++: Teuchos::XMLObjectImplem::toString() const --> std::string");
 		cl.def("header", [](Teuchos::XMLObjectImplem const &o) -> std::string { return o.header(); }, "");
 		cl.def("header", (std::string (Teuchos::XMLObjectImplem::*)(bool) const) &Teuchos::XMLObjectImplem::header, "Write the header\n\nC++: Teuchos::XMLObjectImplem::header(bool) const --> std::string", pybind11::arg("strictXML"));
@@ -672,6 +849,7 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("numContentLines", (int (Teuchos::XMLObject::*)() const) &Teuchos::XMLObject::numContentLines, "Return the number of lines of character content stored in this node\n\nC++: Teuchos::XMLObject::numContentLines() const --> int");
 		cl.def("getContentLine", (const std::string & (Teuchos::XMLObject::*)(int) const) &Teuchos::XMLObject::getContentLine, "Return the i-th line of character content stored in this node\n\nC++: Teuchos::XMLObject::getContentLine(int) const --> const std::string &", pybind11::return_value_policy::automatic, pybind11::arg("i"));
 		cl.def("toString", (std::string (Teuchos::XMLObject::*)() const) &Teuchos::XMLObject::toString, "Represent this node and its children as a std::string\n\nC++: Teuchos::XMLObject::toString() const --> std::string");
+		cl.def("print", (void (Teuchos::XMLObject::*)(std::ostream &, int) const) &Teuchos::XMLObject::print, "Print this node and its children to stream with the given indentation\n\nC++: Teuchos::XMLObject::print(std::ostream &, int) const --> void", pybind11::arg("os"), pybind11::arg("indent"));
 		cl.def("header", (std::string (Teuchos::XMLObject::*)() const) &Teuchos::XMLObject::header, "Write the header for this object to a std::string\n\nC++: Teuchos::XMLObject::header() const --> std::string");
 		cl.def("terminatedHeader", (std::string (Teuchos::XMLObject::*)() const) &Teuchos::XMLObject::terminatedHeader, "Write the header for this object to a std::string\n\nC++: Teuchos::XMLObject::terminatedHeader() const --> std::string");
 		cl.def("footer", (std::string (Teuchos::XMLObject::*)() const) &Teuchos::XMLObject::footer, "Write the footer for this object to a std::string\n\nC++: Teuchos::XMLObject::footer() const --> std::string");
@@ -691,8 +869,11 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 	M("Teuchos").def("toString", (std::string (*)(const class Teuchos::XMLObject &)) &Teuchos::toString, "Write XMLObject to std::string.\n\n \n\n \n\nC++: Teuchos::toString(const class Teuchos::XMLObject &) --> std::string", pybind11::arg("xml"));
 
 	{ // Teuchos::ParameterEntryValidator file:Teuchos_ParameterEntryValidator.hpp line:64
-		pybind11::class_<Teuchos::ParameterEntryValidator, Teuchos::RCP<Teuchos::ParameterEntryValidator>> cl(M("Teuchos"), "ParameterEntryValidator", "Abstract interface for an object that can validate a\n  ParameterEntry's value.\n\n Not only can a validator validate and entry but it can also help to set\n and/or adjust the default value.", pybind11::module_local());
+		pybind11::class_<Teuchos::ParameterEntryValidator, Teuchos::RCP<Teuchos::ParameterEntryValidator>, PyCallBack_Teuchos_ParameterEntryValidator> cl(M("Teuchos"), "ParameterEntryValidator", "Abstract interface for an object that can validate a\n  ParameterEntry's value.\n\n Not only can a validator validate and entry but it can also help to set\n and/or adjust the default value.", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new PyCallBack_Teuchos_ParameterEntryValidator(); } ) );
+		cl.def(pybind11::init<PyCallBack_Teuchos_ParameterEntryValidator const &>());
 		cl.def("getXMLTypeName", (const std::string (Teuchos::ParameterEntryValidator::*)() const) &Teuchos::ParameterEntryValidator::getXMLTypeName, "Get a string that should be used as a value of the type attribute\n when serializing it to XML.\n\n \n a string that should be used as a tag for this validator\n when serializing it to XML.\n\nC++: Teuchos::ParameterEntryValidator::getXMLTypeName() const --> const std::string");
+		cl.def("printDoc", (void (Teuchos::ParameterEntryValidator::*)(const std::string &, std::ostream &) const) &Teuchos::ParameterEntryValidator::printDoc, "Print documentation for this parameter.\n\n \n [in] (Multi-line) documentation std::string.\n\n \n [out] The std::ostream used for the output\n\n The purpose of this function is to augment what is\n in docString\n with some description of what valid values this parameter\n validator will accept.\n\nC++: Teuchos::ParameterEntryValidator::printDoc(const std::string &, std::ostream &) const --> void", pybind11::arg("docString"), pybind11::arg("out"));
 		cl.def("validStringValues", (class Teuchos::RCP<const class Teuchos::Array<std::string > > (Teuchos::ParameterEntryValidator::*)() const) &Teuchos::ParameterEntryValidator::validStringValues, "Return an array of strings of valid values if applicable.\n\n If there is no such array of std::string values that makes since, just return\n return.get()==NULL.\n\n The returned strings must not contain any newlines (i.e. no ''\n characters) and must be short enough to fit on one line and be readable.\n\nC++: Teuchos::ParameterEntryValidator::validStringValues() const --> class Teuchos::RCP<const class Teuchos::Array<std::string > >");
 		cl.def("validate", (void (Teuchos::ParameterEntryValidator::*)(const class Teuchos::ParameterEntry &, const std::string &, const std::string &) const) &Teuchos::ParameterEntryValidator::validate, "Validate a parameter entry value and throw std::exception (with a\n great error message) if validation fails.\n\n \n\n            [in] The ParameterEntry who's type and value is being validated\n \n\n\n            [in] The name of the ParameterEntry that is used to build error messages.\n \n\n\n            [in] The name of the ParameterList that paramName exists in\n            that is used to build error messages.\n\nC++: Teuchos::ParameterEntryValidator::validate(const class Teuchos::ParameterEntry &, const std::string &, const std::string &) const --> void", pybind11::arg("entry"), pybind11::arg("paramName"), pybind11::arg("sublistName"));
 		cl.def("validateAndModify", (void (Teuchos::ParameterEntryValidator::*)(const std::string &, const std::string &, class Teuchos::ParameterEntry *) const) &Teuchos::ParameterEntryValidator::validateAndModify, "Validate and perhaps modify a parameter entry's value.\n\n \n [in] The name of the ParameterEntry that is used to\n build error messages.\n\n \n [in] The name of the ParameterList that\n paramName exists in that is used to build error messages.\n\n \n [in/out] The ParameterEntry who's type and value is being\n validated and perhaps even changed as a result of calling this function.\n\n The default implementation simply calls this->validate().\n\nC++: Teuchos::ParameterEntryValidator::validateAndModify(const std::string &, const std::string &, class Teuchos::ParameterEntry *) const --> void", pybind11::arg("paramName"), pybind11::arg("sublistName"), pybind11::arg("entry"));
@@ -709,6 +890,7 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def( pybind11::init( [](PyCallBack_Teuchos_ParameterListModifier const &o){ return new PyCallBack_Teuchos_ParameterListModifier(o); } ) );
 		cl.def( pybind11::init( [](Teuchos::ParameterListModifier const &o){ return new Teuchos::ParameterListModifier(o); } ) );
 		cl.def("setName", (class Teuchos::ParameterListModifier & (Teuchos::ParameterListModifier::*)(const std::string &)) &Teuchos::ParameterListModifier::setName, "Set the name of *this modifier.\n\nC++: Teuchos::ParameterListModifier::setName(const std::string &) --> class Teuchos::ParameterListModifier &", pybind11::return_value_policy::automatic, pybind11::arg("name"));
+		cl.def("printDoc", (void (Teuchos::ParameterListModifier::*)(const std::string &, std::ostream &) const) &Teuchos::ParameterListModifier::printDoc, "Print documentation for this parameter list modifier.\n\n \n [in] (Multi-line) documentation std::string.\n\n \n [out] The std::ostream used for the output\n\n The purpose of this function is to augment what is\n in docString\n with some description of what happens during the modification and\n reconciliation stages of this modifier.\n\nC++: Teuchos::ParameterListModifier::printDoc(const std::string &, std::ostream &) const --> void", pybind11::arg("docString"), pybind11::arg("out"));
 		cl.def("findMatchingBaseNames", [](Teuchos::ParameterListModifier const &o, const class Teuchos::ParameterList & a0, const std::string & a1) -> Teuchos::Array<std::string > { return o.findMatchingBaseNames(a0, a1); }, "", pybind11::arg("paramList"), pybind11::arg("baseName"));
 		cl.def("findMatchingBaseNames", [](Teuchos::ParameterListModifier const &o, const class Teuchos::ParameterList & a0, const std::string & a1, const bool & a2) -> Teuchos::Array<std::string > { return o.findMatchingBaseNames(a0, a1, a2); }, "", pybind11::arg("paramList"), pybind11::arg("baseName"), pybind11::arg("findParameters"));
 		cl.def("findMatchingBaseNames", (class Teuchos::Array<std::string > (Teuchos::ParameterListModifier::*)(const class Teuchos::ParameterList &, const std::string &, const bool &, const bool &) const) &Teuchos::ParameterListModifier::findMatchingBaseNames, "Find the parameters and/or sublists with matching base names.\n\n \n [in] Modified parameter list to search.\n\n \n [out] Search through parameters\n\n \n [out] Search through sublists (not recursive)\n\n This convenience function makes it easy to search through the current level of\n a given parameter list and find all parameters and/or sublists that begin with a\n given name.\n\nC++: Teuchos::ParameterListModifier::findMatchingBaseNames(const class Teuchos::ParameterList &, const std::string &, const bool &, const bool &) const --> class Teuchos::Array<std::string >", pybind11::arg("paramList"), pybind11::arg("baseName"), pybind11::arg("findParameters"), pybind11::arg("findSublists"));
@@ -750,6 +932,8 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("isDefault", (bool (Teuchos::ParameterEntry::*)() const) &Teuchos::ParameterEntry::isDefault, "Indicate whether this entry takes on the default value.\n\nC++: Teuchos::ParameterEntry::isDefault() const --> bool");
 		cl.def("docString", (std::string (Teuchos::ParameterEntry::*)() const) &Teuchos::ParameterEntry::docString, "Return the (optional) documentation std::string\n\nC++: Teuchos::ParameterEntry::docString() const --> std::string");
 		cl.def("validator", (class Teuchos::RCP<const class Teuchos::ParameterEntryValidator> (Teuchos::ParameterEntry::*)() const) &Teuchos::ParameterEntry::validator, "Return the (optional) validator object\n\nC++: Teuchos::ParameterEntry::validator() const --> class Teuchos::RCP<const class Teuchos::ParameterEntryValidator>");
+		cl.def("leftshift", [](Teuchos::ParameterEntry const &o, std::ostream & a0) -> std::ostream & { return o.leftshift(a0); }, "", pybind11::return_value_policy::automatic, pybind11::arg("os"));
+		cl.def("leftshift", (std::ostream & (Teuchos::ParameterEntry::*)(std::ostream &, bool) const) &Teuchos::ParameterEntry::leftshift, "Output a non-list parameter to the given output stream.  \n\n      The parameter is followed by \"[default]\" if it is the default value given through a \n      Set method.  Otherwise, if the parameter was unused (not accessed through a Get method), \n      it will be followed by \"[unused]\".  This function is called by the \"std::ostream& operator<<\". \n\nC++: Teuchos::ParameterEntry::leftshift(std::ostream &, bool) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("printFlags"));
 		cl.def_static("getTagName", (const std::string & (*)()) &Teuchos::ParameterEntry::getTagName, "Get the string that should be used as the tag name for all parameters when they are serialized\n to xml.\n\nC++: Teuchos::ParameterEntry::getTagName() --> const std::string &", pybind11::return_value_policy::automatic);
 
 		cl.def("__str__", [](Teuchos::ParameterEntry const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
@@ -926,6 +1110,13 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 		cl.def("isSublist", (bool (Teuchos::ParameterList::*)(const std::string &) const) &Teuchos::ParameterList::isSublist, "Whether the given sublist exists in this list.\n\n Return true if a parameter with name  exists in this\n list, and is itself a ParameterList.  Otherwise, return false.\n\nC++: Teuchos::ParameterList::isSublist(const std::string &) const --> bool", pybind11::arg("name"));
 		cl.def("numParams", (long (Teuchos::ParameterList::*)() const) &Teuchos::ParameterList::numParams, "Get the number of stored parameters.\n\nC++: Teuchos::ParameterList::numParams() const --> long");
 		cl.def("print", (void (Teuchos::ParameterList::*)() const) &Teuchos::ParameterList::print, "Print function to use in debugging in a debugger.\n\n Prints to *VerboseObjectBase::getDefaultOStream() so it will print well\n in parallel.\n\nC++: Teuchos::ParameterList::print() const --> void");
+		cl.def("print", (std::ostream & (Teuchos::ParameterList::*)(std::ostream &, const class Teuchos::ParameterList::PrintOptions &) const) &Teuchos::ParameterList::print, "Printing method for parameter lists which takes an print options\n  object.\n\nC++: Teuchos::ParameterList::print(std::ostream &, const class Teuchos::ParameterList::PrintOptions &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("printOptions"));
+		cl.def("print", [](Teuchos::ParameterList const &o, std::ostream & a0) -> std::ostream & { return o.print(a0); }, "", pybind11::return_value_policy::automatic, pybind11::arg("os"));
+		cl.def("print", [](Teuchos::ParameterList const &o, std::ostream & a0, int const & a1) -> std::ostream & { return o.print(a0, a1); }, "", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("indent"));
+		cl.def("print", [](Teuchos::ParameterList const &o, std::ostream & a0, int const & a1, bool const & a2) -> std::ostream & { return o.print(a0, a1, a2); }, "", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("indent"), pybind11::arg("showTypes"));
+		cl.def("print", [](Teuchos::ParameterList const &o, std::ostream & a0, int const & a1, bool const & a2, bool const & a3) -> std::ostream & { return o.print(a0, a1, a2, a3); }, "", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("indent"), pybind11::arg("showTypes"), pybind11::arg("showFlags"));
+		cl.def("print", (std::ostream & (Teuchos::ParameterList::*)(std::ostream &, int, bool, bool, bool) const) &Teuchos::ParameterList::print, "Printing method for parameter lists.  Indenting is used to indicate\n    parameter list hierarchies. \n\nC++: Teuchos::ParameterList::print(std::ostream &, int, bool, bool, bool) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"), pybind11::arg("indent"), pybind11::arg("showTypes"), pybind11::arg("showFlags"), pybind11::arg("showDefault"));
+		cl.def("unused", (void (Teuchos::ParameterList::*)(std::ostream &) const) &Teuchos::ParameterList::unused, "Print out unused parameters in the ParameterList.\n\nC++: Teuchos::ParameterList::unused(std::ostream &) const --> void", pybind11::arg("os"));
 		cl.def("currentParametersString", (std::string (Teuchos::ParameterList::*)() const) &Teuchos::ParameterList::currentParametersString, "Create a single formated std::string of all of the zero-level parameters in this list\n\nC++: Teuchos::ParameterList::currentParametersString() const --> std::string");
 		cl.def("begin", (class Teuchos::FilteredIterator<struct std::_Deque_iterator<class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry>, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> &, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> *>, class Teuchos::StringIndexedOrderedValueObjectContainerBase::SelectActive<class Teuchos::ParameterEntry> > (Teuchos::ParameterList::*)() const) &Teuchos::ParameterList::begin, "An iterator pointing to the first entry\n\nC++: Teuchos::ParameterList::begin() const --> class Teuchos::FilteredIterator<struct std::_Deque_iterator<class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry>, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> &, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> *>, class Teuchos::StringIndexedOrderedValueObjectContainerBase::SelectActive<class Teuchos::ParameterEntry> >");
 		cl.def("end", (class Teuchos::FilteredIterator<struct std::_Deque_iterator<class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry>, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> &, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> *>, class Teuchos::StringIndexedOrderedValueObjectContainerBase::SelectActive<class Teuchos::ParameterEntry> > (Teuchos::ParameterList::*)() const) &Teuchos::ParameterList::end, "An iterator pointing beyond the last entry\n\nC++: Teuchos::ParameterList::end() const --> class Teuchos::FilteredIterator<struct std::_Deque_iterator<class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry>, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> &, const class Teuchos::StringIndexedOrderedValueObjectContainerBase::KeyObjectPair<class Teuchos::ParameterEntry> *>, class Teuchos::StringIndexedOrderedValueObjectContainerBase::SelectActive<class Teuchos::ParameterEntry> >");

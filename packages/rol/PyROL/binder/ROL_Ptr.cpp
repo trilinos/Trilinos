@@ -2,6 +2,7 @@
 #include <ROL_BoundConstraint.hpp>
 #include <ROL_ColemanLiModel.hpp>
 #include <ROL_Constraint.hpp>
+#include <ROL_Constraint_SimOpt.hpp>
 #include <ROL_ElasticObjective.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
@@ -27,6 +28,7 @@
 #include <deque>
 #include <ios>
 #include <iterator>
+#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream> // __str__
@@ -51,8 +53,14 @@
 
 void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
+	// ROL::makePtrFromRef(std::ostream &) file:ROL_Ptr.hpp line:88
+	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<std::ostream > (*)(std::ostream &)) &ROL::makePtrFromRef<std::ostream>, "C++: ROL::makePtrFromRef(std::ostream &) --> class Teuchos::RCP<std::ostream >", pybind11::arg("obj"));
+
 	// ROL::makePtrFromRef(const class ROL::Vector<double> &) file:ROL_Ptr.hpp line:88
 	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<const class ROL::Vector<double> > (*)(const class ROL::Vector<double> &)) &ROL::makePtrFromRef<const ROL::Vector<double>>, "C++: ROL::makePtrFromRef(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("obj"));
+
+	// ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) file:ROL_Ptr.hpp line:88
+	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > (*)(class ROL::Constraint_SimOpt<double> &)) &ROL::makePtrFromRef<ROL::Constraint_SimOpt<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) --> class Teuchos::RCP<class ROL::Constraint_SimOpt<double> >", pybind11::arg("obj"));
 
 	// ROL::makePtrFromRef(class ROL::Objective<double> &) file:ROL_Ptr.hpp line:88
 	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Objective<double> > (*)(class ROL::Objective<double> &)) &ROL::makePtrFromRef<ROL::Objective<double>>, "C++: ROL::makePtrFromRef(class ROL::Objective<double> &) --> class Teuchos::RCP<class ROL::Objective<double> >", pybind11::arg("obj"));
@@ -60,11 +68,11 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	// ROL::makePtrFromRef(class ROL::Constraint<double> &) file:ROL_Ptr.hpp line:88
 	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Constraint<double> > (*)(class ROL::Constraint<double> &)) &ROL::makePtrFromRef<ROL::Constraint<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint<double> &) --> class Teuchos::RCP<class ROL::Constraint<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::BoundConstraint<double> > (*)(class ROL::BoundConstraint<double> &)) &ROL::makePtrFromRef<ROL::BoundConstraint<double>>, "C++: ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) --> class Teuchos::RCP<class ROL::BoundConstraint<double> >", pybind11::arg("obj"));
-
 	// ROL::makePtrFromRef(class ROL::Vector<double> &) file:ROL_Ptr.hpp line:88
 	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Vector<double> > (*)(class ROL::Vector<double> &)) &ROL::makePtrFromRef<ROL::Vector<double>>, "C++: ROL::makePtrFromRef(class ROL::Vector<double> &) --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("obj"));
+
+	// ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) file:ROL_Ptr.hpp line:88
+	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::BoundConstraint<double> > (*)(class ROL::BoundConstraint<double> &)) &ROL::makePtrFromRef<ROL::BoundConstraint<double>>, "C++: ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) --> class Teuchos::RCP<class ROL::BoundConstraint<double> >", pybind11::arg("obj"));
 
 	// ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) file:ROL_Ptr.hpp line:88
 	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::ElasticObjective<double> > (*)(class ROL::ElasticObjective<double> &)) &ROL::makePtrFromRef<ROL::ElasticObjective<double>>, "C++: ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) --> class Teuchos::RCP<class ROL::ElasticObjective<double> >", pybind11::arg("obj"));

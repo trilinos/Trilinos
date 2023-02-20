@@ -24,7 +24,7 @@
 struct PyCallBack_Teuchos_Exceptions_InvalidArgument : public Teuchos::Exceptions::InvalidArgument {
 	using Teuchos::Exceptions::InvalidArgument::InvalidArgument;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Exceptions::InvalidArgument *>(this), "what");
 		if (overload) {
@@ -43,7 +43,7 @@ struct PyCallBack_Teuchos_Exceptions_InvalidArgument : public Teuchos::Exception
 struct PyCallBack_Teuchos_Exceptions_InvalidParameter : public Teuchos::Exceptions::InvalidParameter {
 	using Teuchos::Exceptions::InvalidParameter::InvalidParameter;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Exceptions::InvalidParameter *>(this), "what");
 		if (overload) {
@@ -62,7 +62,7 @@ struct PyCallBack_Teuchos_Exceptions_InvalidParameter : public Teuchos::Exceptio
 struct PyCallBack_Teuchos_Exceptions_InvalidParameterName : public Teuchos::Exceptions::InvalidParameterName {
 	using Teuchos::Exceptions::InvalidParameterName::InvalidParameterName;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Exceptions::InvalidParameterName *>(this), "what");
 		if (overload) {
@@ -81,7 +81,7 @@ struct PyCallBack_Teuchos_Exceptions_InvalidParameterName : public Teuchos::Exce
 struct PyCallBack_Teuchos_Exceptions_InvalidParameterType : public Teuchos::Exceptions::InvalidParameterType {
 	using Teuchos::Exceptions::InvalidParameterType::InvalidParameterType;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Exceptions::InvalidParameterType *>(this), "what");
 		if (overload) {
@@ -100,7 +100,7 @@ struct PyCallBack_Teuchos_Exceptions_InvalidParameterType : public Teuchos::Exce
 struct PyCallBack_Teuchos_Exceptions_InvalidParameterValue : public Teuchos::Exceptions::InvalidParameterValue {
 	using Teuchos::Exceptions::InvalidParameterValue::InvalidParameterValue;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Exceptions::InvalidParameterValue *>(this), "what");
 		if (overload) {

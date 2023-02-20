@@ -39,7 +39,7 @@
 
 void bind_unknown_unknown_3(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	// ROL::PyROL::foo(class ROL::Algorithm<double>) file: line:20
+	// ROL::PyROL::foo(class ROL::Algorithm<double>) file: line:26
 	M("ROL::PyROL").def("foo", (void (*)(class ROL::Algorithm<double>)) &ROL::PyROL::foo<ROL::Algorithm<double>>, "C++: ROL::PyROL::foo(class ROL::Algorithm<double>) --> void", pybind11::arg("a"));
 
 }

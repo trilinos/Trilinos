@@ -21,6 +21,7 @@
 #include <deque>
 #include <ios>
 #include <iterator>
+#include <locale>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -74,6 +75,19 @@ struct PyCallBack_Teuchos_Dependency : public Teuchos::Dependency {
 			else return pybind11::detail::cast_safe<void>(std::move(o));
 		}
 		pybind11::pybind11_fail("Tried to call pure virtual function \"Dependency::evaluate\"");
+	}
+	void print(std::ostream & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Dependency *>(this), "print");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return Dependency::print(a0);
 	}
 	void validateDep() const override {
 		pybind11::gil_scoped_acquire gil;
@@ -153,6 +167,7 @@ void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const
 		cl.def("getTypeAttributeValue", (std::string (Teuchos::Dependency::*)() const) &Teuchos::Dependency::getTypeAttributeValue, "Returns the string to be used for the value of the\n type attribute when converting the dependency to XML.\n\nC++: Teuchos::Dependency::getTypeAttributeValue() const --> std::string");
 		cl.def_static("getXMLTagName", (const std::string & (*)()) &Teuchos::Dependency::getXMLTagName, "Returns the XML tag to use when serializing Dependencies.\n\nC++: Teuchos::Dependency::getXMLTagName() --> const std::string &", pybind11::return_value_policy::automatic);
 		cl.def("evaluate", (void (Teuchos::Dependency::*)()) &Teuchos::Dependency::evaluate, "Evaluates the dependency and makes any appropriate changes to the\n dependee based on the dependent.\n\nC++: Teuchos::Dependency::evaluate() --> void");
+		cl.def("print", (void (Teuchos::Dependency::*)(std::ostream &) const) &Teuchos::Dependency::print, "prints out information about the dependency. \n\nC++: Teuchos::Dependency::print(std::ostream &) const --> void", pybind11::arg("out"));
 		cl.def("assign", (class Teuchos::Dependency & (Teuchos::Dependency::*)(const class Teuchos::Dependency &)) &Teuchos::Dependency::operator=, "C++: Teuchos::Dependency::operator=(const class Teuchos::Dependency &) --> class Teuchos::Dependency &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::DependencySheet file:Teuchos_DependencySheet.hpp line:61
@@ -169,6 +184,7 @@ void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const
 		cl.def("getName", (const std::string & (Teuchos::DependencySheet::*)() const) &Teuchos::DependencySheet::getName, "Gets the name of the dependency sheet.\n\nC++: Teuchos::DependencySheet::getName() const --> const std::string &", pybind11::return_value_policy::automatic);
 		cl.def("empty", (bool (Teuchos::DependencySheet::*)() const) &Teuchos::DependencySheet::empty, "Determines whether or not this dependency sheet has any dependencies.\n\nC++: Teuchos::DependencySheet::empty() const --> bool");
 		cl.def("size", (unsigned long (Teuchos::DependencySheet::*)()) &Teuchos::DependencySheet::size, "Returns the number of Dependencies in this\n DependencySheet.\n\n \n The number of Depenedencies in this\n DependencySheet.\n\nC++: Teuchos::DependencySheet::size() --> unsigned long");
+		cl.def("printDeps", (void (Teuchos::DependencySheet::*)(std::ostream &) const) &Teuchos::DependencySheet::printDeps, "Prints out a list of the dependencies in the DependencySheet\n\nC++: Teuchos::DependencySheet::printDeps(std::ostream &) const --> void", pybind11::arg("out"));
 		cl.def_static("getNameAttributeName", (const std::string & (*)()) &Teuchos::DependencySheet::getNameAttributeName, "When serializing to XML, this string should be used as the name\n of the name attribute \n\nC++: Teuchos::DependencySheet::getNameAttributeName() --> const std::string &", pybind11::return_value_policy::automatic);
 	}
 	// Teuchos::updateParametersFromXmlFile(const std::string &, const class Teuchos::Ptr<class Teuchos::ParameterList> &) file:Teuchos_XMLParameterListCoreHelpers.hpp line:71
@@ -189,6 +205,10 @@ void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const
 
 	// Teuchos::getParametersFromXmlString(const std::string &, class Teuchos::RCP<class Teuchos::DependencySheet>) file:Teuchos_XMLParameterListCoreHelpers.hpp line:150
 	M("Teuchos").def("getParametersFromXmlString", (class Teuchos::RCP<class Teuchos::ParameterList> (*)(const std::string &, class Teuchos::RCP<class Teuchos::DependencySheet>)) &Teuchos::getParametersFromXmlString, "Reads XML parameters from a std::string and return them in a new\n parameter list.\n\n \n [in] String containing XML parameter list specification.\n \n\n [in] The Dependency Sheet into which Dependencies should be\n placed.\n\n \n\n \n\nC++: Teuchos::getParametersFromXmlString(const std::string &, class Teuchos::RCP<class Teuchos::DependencySheet>) --> class Teuchos::RCP<class Teuchos::ParameterList>", pybind11::arg("xmlStr"), pybind11::arg("depSheet"));
+
+	// Teuchos::writeParameterListToXmlOStream(const class Teuchos::ParameterList &, std::ostream &, class Teuchos::RCP<const class Teuchos::DependencySheet>) file:Teuchos_XMLParameterListCoreHelpers.hpp line:166
+	M("Teuchos").def("writeParameterListToXmlOStream", [](const class Teuchos::ParameterList & a0, std::ostream & a1) -> void { return Teuchos::writeParameterListToXmlOStream(a0, a1); }, "", pybind11::arg("paramList"), pybind11::arg("xmlOut"));
+	M("Teuchos").def("writeParameterListToXmlOStream", (void (*)(const class Teuchos::ParameterList &, std::ostream &, class Teuchos::RCP<const class Teuchos::DependencySheet>)) &Teuchos::writeParameterListToXmlOStream, "Write parameters and sublists in XML format to an std::ostream.\n\n \n [in] Contains the parameters and sublists that will be\n written to file.\n\n \n [in] The stream that will get the XML output.\n\n \n [in] The Dependency Sheet which should be written out.\n\n \n\n \n\nC++: Teuchos::writeParameterListToXmlOStream(const class Teuchos::ParameterList &, std::ostream &, class Teuchos::RCP<const class Teuchos::DependencySheet>) --> void", pybind11::arg("paramList"), pybind11::arg("xmlOut"), pybind11::arg("depSheet"));
 
 	// Teuchos::writeParameterListToXmlFile(const class Teuchos::ParameterList &, const std::string &, class Teuchos::RCP<const class Teuchos::DependencySheet>) file:Teuchos_XMLParameterListCoreHelpers.hpp line:186
 	M("Teuchos").def("writeParameterListToXmlFile", [](const class Teuchos::ParameterList & a0, const std::string & a1) -> void { return Teuchos::writeParameterListToXmlFile(a0, a1); }, "", pybind11::arg("paramList"), pybind11::arg("xmlFileName"));

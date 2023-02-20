@@ -29,7 +29,7 @@
 
 void bind_unknown_unknown_1(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	// ROL::PyROL::foo(class ROL::QuadraticObjective<double>) file: line:20
+	// ROL::PyROL::foo(class ROL::QuadraticObjective<double>) file: line:26
 	M("ROL::PyROL").def("foo", (void (*)(class ROL::QuadraticObjective<double>)) &ROL::PyROL::foo<ROL::QuadraticObjective<double>>, "C++: ROL::PyROL::foo(class ROL::QuadraticObjective<double>) --> void", pybind11::arg("a"));
 
 }

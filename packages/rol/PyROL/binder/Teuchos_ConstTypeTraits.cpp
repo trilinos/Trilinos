@@ -20,6 +20,7 @@
 #include <cwchar>
 #include <ios>
 #include <iterator>
+#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream> // __str__
@@ -54,6 +55,10 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<double>(); } ) );
 	}
 	{ // Teuchos::ConstTypeTraits file:Teuchos_ConstTypeTraits.hpp line:59
+		pybind11::class_<Teuchos::ConstTypeTraits<std::ostream>, Teuchos::RCP<Teuchos::ConstTypeTraits<std::ostream>>> cl(M("Teuchos"), "ConstTypeTraits_std_ostream_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<std::ostream>(); } ) );
+	}
+	{ // Teuchos::ConstTypeTraits file:Teuchos_ConstTypeTraits.hpp line:59
 		pybind11::class_<Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>, Teuchos::RCP<Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>>> cl(M("Teuchos"), "ConstTypeTraits_ROL_TrustRegionModel_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ConstTypeTraits<ROL::TrustRegionModel<double>>(); } ) );
 	}
@@ -75,6 +80,12 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<unsigned long long>(); } ) );
 		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<unsigned long long>::name, "C++: Teuchos::TypeNameTraits<unsigned long long>::name() --> std::string");
 		cl.def_static("concreteName", (std::string (*)(const unsigned long long &)) &Teuchos::TypeNameTraits<unsigned long long>::concreteName, "C++: Teuchos::TypeNameTraits<unsigned long long>::concreteName(const unsigned long long &) --> std::string", pybind11::arg("t"));
+	}
+	{ // Teuchos::TypeNameTraits file:Teuchos_TypeNameTraits.hpp line:85
+		pybind11::class_<Teuchos::TypeNameTraits<std::ostream>, Teuchos::RCP<Teuchos::TypeNameTraits<std::ostream>>> cl(M("Teuchos"), "TypeNameTraits_std_ostream_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new Teuchos::TypeNameTraits<std::ostream>(); } ) );
+		cl.def_static("name", (std::string (*)()) &Teuchos::TypeNameTraits<std::ostream >::name, "C++: Teuchos::TypeNameTraits<std::ostream >::name() --> std::string");
+		cl.def_static("concreteName", (std::string (*)(const std::ostream &)) &Teuchos::TypeNameTraits<std::ostream >::concreteName, "C++: Teuchos::TypeNameTraits<std::ostream >::concreteName(const std::ostream &) --> std::string", pybind11::arg("t"));
 	}
 	{ // Teuchos::TypeNameTraits file:Teuchos_TypeNameTraits.hpp line:85
 		pybind11::class_<Teuchos::TypeNameTraits<Teuchos::basic_FancyOStream<char, std::char_traits<char> >>, Teuchos::RCP<Teuchos::TypeNameTraits<Teuchos::basic_FancyOStream<char, std::char_traits<char> >>>> cl(M("Teuchos"), "TypeNameTraits_Teuchos_basic_FancyOStream_char_std_char_traits_char_t", "", pybind11::module_local());
@@ -108,6 +119,9 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 	}
 	// Teuchos::typeName(const class Teuchos::any::placeholder &) file:Teuchos_TypeNameTraits.hpp line:115
 	M("Teuchos").def("typeName", (std::string (*)(const class Teuchos::any::placeholder &)) &Teuchos::typeName<Teuchos::any::placeholder>, "C++: Teuchos::typeName(const class Teuchos::any::placeholder &) --> std::string", pybind11::arg("t"));
+
+	// Teuchos::typeName(const std::ostream &) file:Teuchos_TypeNameTraits.hpp line:115
+	M("Teuchos").def("typeName", (std::string (*)(const std::ostream &)) &Teuchos::typeName<std::ostream>, "C++: Teuchos::typeName(const std::ostream &) --> std::string", pybind11::arg("t"));
 
 	// Teuchos::typeName(const class ROL::TrustRegionModel<double> &) file:Teuchos_TypeNameTraits.hpp line:115
 	M("Teuchos").def("typeName", (std::string (*)(const class ROL::TrustRegionModel<double> &)) &Teuchos::typeName<ROL::TrustRegionModel<double>>, "C++: Teuchos::typeName(const class ROL::TrustRegionModel<double> &) --> std::string", pybind11::arg("t"));

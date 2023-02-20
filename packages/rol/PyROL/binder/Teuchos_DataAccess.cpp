@@ -63,6 +63,19 @@ struct PyCallBack_Teuchos_Object : public Teuchos::Object {
 		}
 		return Object::label();
 	}
+	void print(std::ostream & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Object *>(this), "print");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return Object::print(a0);
+	}
 	int reportError(const std::string a0, int a1) const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Object *>(this), "reportError");
@@ -82,12 +95,38 @@ struct PyCallBack_Teuchos_Object : public Teuchos::Object {
 struct PyCallBack_Teuchos_SerialDenseMatrix_int_double_t : public Teuchos::SerialDenseMatrix<int,double> {
 	using Teuchos::SerialDenseMatrix<int,double>::SerialDenseMatrix;
 
+	std::ostream & print(std::ostream & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::SerialDenseMatrix<int,double> *>(this), "print");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<std::ostream &>::value) {
+				static pybind11::detail::override_caster_t<std::ostream &> caster;
+				return pybind11::detail::cast_ref<std::ostream &>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::ostream &>(std::move(o));
+		}
+		return SerialDenseMatrix::print(a0);
+	}
 };
 
 // Teuchos::SerialDenseVector file:Teuchos_SerialDenseVector.hpp line:60
 struct PyCallBack_Teuchos_SerialDenseVector_int_double_t : public Teuchos::SerialDenseVector<int,double> {
 	using Teuchos::SerialDenseVector<int,double>::SerialDenseVector;
 
+	std::ostream & print(std::ostream & a0) const override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::SerialDenseVector<int,double> *>(this), "print");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
+			if (pybind11::detail::cast_is_temporary_value_reference<std::ostream &>::value) {
+				static pybind11::detail::override_caster_t<std::ostream &> caster;
+				return pybind11::detail::cast_ref<std::ostream &>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<std::ostream &>(std::move(o));
+		}
+		return SerialDenseVector::print(a0);
+	}
 };
 
 void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const &namespace_) > &M)
@@ -117,6 +156,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("setTracebackMode", (void (*)(int)) &Teuchos::Object::setTracebackMode, "Set the value of the Object error traceback report mode.\n\n TracebackMode controls whether or not traceback information is\n printed when run time integer errors are detected:\n\n <= 0 - No information report\n\n = 1 - Fatal (negative) values are reported\n\n >= 2 - All values (except zero) reported.\n\n \n Default is set to -1 when object is constructed.\n\nC++: Teuchos::Object::setTracebackMode(int) --> void", pybind11::arg("tracebackModeValue"));
 		cl.def("label", (const char * (Teuchos::Object::*)() const) &Teuchos::Object::label, "Access the object's label (LEGACY; return std::string instead).\n\nC++: Teuchos::Object::label() const --> const char *", pybind11::return_value_policy::automatic);
 		cl.def_static("getTracebackMode", (int (*)()) &Teuchos::Object::getTracebackMode, "Get the value of the Object error traceback report mode.\n\nC++: Teuchos::Object::getTracebackMode() --> int");
+		cl.def("print", (void (Teuchos::Object::*)(std::ostream &) const) &Teuchos::Object::print, "Print the object to the given output stream.\n\nC++: Teuchos::Object::print(std::ostream &) const --> void", pybind11::arg("os"));
 		cl.def("reportError", (int (Teuchos::Object::*)(const std::string, int) const) &Teuchos::Object::reportError, "Report an error with this Object.\n\nC++: Teuchos::Object::reportError(const std::string, int) const --> int", pybind11::arg("message"), pybind11::arg("errorCode"));
 		cl.def("assign", (class Teuchos::Object & (Teuchos::Object::*)(const class Teuchos::Object &)) &Teuchos::Object::operator=, "C++: Teuchos::Object::operator=(const class Teuchos::Object &) --> class Teuchos::Object &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 
@@ -540,6 +580,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("normOne", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normOne, "C++: Teuchos::SerialDenseMatrix<int, double>::normOne() const --> double");
 		cl.def("normInf", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normInf, "C++: Teuchos::SerialDenseMatrix<int, double>::normInf() const --> double");
 		cl.def("normFrobenius", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normFrobenius, "C++: Teuchos::SerialDenseMatrix<int, double>::normFrobenius() const --> double");
+		cl.def("print", (std::ostream & (Teuchos::SerialDenseMatrix<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseMatrix<int, double>::print, "C++: Teuchos::SerialDenseMatrix<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::Flops &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::Flops &) --> void", pybind11::arg("FlopCounter"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::CompObject &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::CompObject &) --> void", pybind11::arg("compObject"));
 		cl.def("unsetFlopCounter", (void (Teuchos::CompObject::*)()) &Teuchos::CompObject::unsetFlopCounter, "Set the internal Teuchos::Flops() pointer to 0 (no flops counted).\n\nC++: Teuchos::CompObject::unsetFlopCounter() --> void");
@@ -575,6 +616,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("__getitem__", (double & (Teuchos::SerialDenseVector<int,double>::*)(int)) &Teuchos::SerialDenseVector<int, double>::operator[], "C++: Teuchos::SerialDenseVector<int, double>::operator[](int) --> double &", pybind11::return_value_policy::automatic, pybind11::arg("index"));
 		cl.def("dot", (double (Teuchos::SerialDenseVector<int,double>::*)(const class Teuchos::SerialDenseVector<int, double> &) const) &Teuchos::SerialDenseVector<int, double>::dot, "C++: Teuchos::SerialDenseVector<int, double>::dot(const class Teuchos::SerialDenseVector<int, double> &) const --> double", pybind11::arg("x"));
 		cl.def("length", (int (Teuchos::SerialDenseVector<int,double>::*)() const) &Teuchos::SerialDenseVector<int, double>::length, "C++: Teuchos::SerialDenseVector<int, double>::length() const --> int");
+		cl.def("print", (std::ostream & (Teuchos::SerialDenseVector<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseVector<int, double>::print, "C++: Teuchos::SerialDenseVector<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("shape", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::shape, "C++: Teuchos::SerialDenseMatrix<int, double>::shape(int, int) --> int", pybind11::arg("numRows_in"), pybind11::arg("numCols_in"));
 		cl.def("shapeUninitialized", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::shapeUninitialized, "C++: Teuchos::SerialDenseMatrix<int, double>::shapeUninitialized(int, int) --> int", pybind11::arg("numRows"), pybind11::arg("numCols"));
 		cl.def("reshape", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::reshape, "C++: Teuchos::SerialDenseMatrix<int, double>::reshape(int, int) --> int", pybind11::arg("numRows_in"), pybind11::arg("numCols_in"));
@@ -603,6 +645,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("normOne", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normOne, "C++: Teuchos::SerialDenseMatrix<int, double>::normOne() const --> double");
 		cl.def("normInf", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normInf, "C++: Teuchos::SerialDenseMatrix<int, double>::normInf() const --> double");
 		cl.def("normFrobenius", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normFrobenius, "C++: Teuchos::SerialDenseMatrix<int, double>::normFrobenius() const --> double");
+		cl.def("print", (std::ostream & (Teuchos::SerialDenseMatrix<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseMatrix<int, double>::print, "C++: Teuchos::SerialDenseMatrix<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::Flops &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::Flops &) --> void", pybind11::arg("FlopCounter"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::CompObject &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::CompObject &) --> void", pybind11::arg("compObject"));
 		cl.def("unsetFlopCounter", (void (Teuchos::CompObject::*)()) &Teuchos::CompObject::unsetFlopCounter, "Set the internal Teuchos::Flops() pointer to 0 (no flops counted).\n\nC++: Teuchos::CompObject::unsetFlopCounter() --> void");

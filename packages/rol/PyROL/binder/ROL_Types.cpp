@@ -24,7 +24,7 @@
 struct PyCallBack_ROL_Exception_NotImplemented : public ROL::Exception::NotImplemented {
 	using ROL::Exception::NotImplemented::NotImplemented;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Exception::NotImplemented *>(this), "what");
 		if (overload) {

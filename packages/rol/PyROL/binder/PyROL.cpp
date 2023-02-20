@@ -12,6 +12,7 @@ typedef std::function< pybind11::module & (std::string const &) > ModuleGetter;
 void bind_std_postypes(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_typeinfo(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_locale_classes(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_std_ostream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_Elementwise_Function(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -34,14 +35,13 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 void bind_unknown_unknown(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_1(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_unknown_unknown_3(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_Step(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_BundleAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_LineSearchAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_Step(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TrustRegionUtilities(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_TrustRegionAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -50,9 +50,6 @@ void bind_ROL_TypeB_Algorithm(std::function< pybind11::module &(std::string cons
 void bind_ROL_ReducedLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_LinMoreAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_SingletonVector(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_TypeU_Algorithm_1(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_ScalarController(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_MoreauYosidaAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_InteriorPointObjective(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -66,15 +63,18 @@ void bind_ROL_FletcherObjectiveBase(std::function< pybind11::module &(std::strin
 void bind_ROL_TypeE_FletcherAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ElasticLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeE_StabilizedLCLAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_BoundConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_Bounds(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeE_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_3(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_4(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_6(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_PyROL_Teuchos_ETI(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_PartitionedVector(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_std_fstream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_PyROL_stream(std::function< pybind11::module &(std::string const &namespace_) > &M);
 
 
 PYBIND11_MODULE(PyROL, root_module) {
@@ -120,6 +120,7 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_std_postypes(M);
 	bind_std_typeinfo(M);
 	bind_std_locale_classes(M);
+	bind_std_ostream_tcc(M);
 	bind_ROL_Elementwise_Function(M);
 	bind_std_istream_tcc(M);
 	bind_Teuchos_ConstTypeTraits(M);
@@ -142,14 +143,13 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_unknown_unknown(M);
 	bind_unknown_unknown_1(M);
 	bind_unknown_unknown_2(M);
-	bind_unknown_unknown_3(M);
-	bind_ROL_Step(M);
+	bind_ROL_KrylovFactory(M);
 	bind_ROL_TypeU_Algorithm(M);
 	bind_ROL_ValidParameters(M);
 	bind_ROL_TypeU_BundleAlgorithm(M);
 	bind_ROL_BundleStatusTest(M);
 	bind_ROL_TypeU_LineSearchAlgorithm(M);
-	bind_ROL_Gradient_U(M);
+	bind_ROL_Step(M);
 	bind_ROL_TrustRegionUtilities(M);
 	bind_ROL_TypeU_TrustRegionAlgorithm(M);
 	bind_ROL_CauchyPoint_U(M);
@@ -158,9 +158,6 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_ReducedLinearConstraint(M);
 	bind_ROL_TypeB_LinMoreAlgorithm(M);
 	bind_ROL_SingletonVector(M);
-	bind_ROL_KrylovFactory(M);
-	bind_ROL_TypeU_Algorithm_1(M);
-	bind_ROL_ScalarController(M);
 	bind_ROL_TypeB_MoreauYosidaAlgorithm(M);
 	bind_ROL_InteriorPointObjective(M);
 	bind_ROL_TypeB_InteriorPointAlgorithm(M);
@@ -174,14 +171,17 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_TypeE_FletcherAlgorithm(M);
 	bind_ROL_ElasticLinearConstraint(M);
 	bind_ROL_TypeE_StabilizedLCLAlgorithm(M);
-	bind_ROL_BoundConstraint(M);
+	bind_ROL_Bounds(M);
 	bind_ROL_TypeE_AlgorithmFactory(M);
 	bind_ROL_TypeG_Algorithm(M);
 	bind_ROL_TrustRegionTypes(M);
 	bind_ROL_KelleySachsModel(M);
+	bind_unknown_unknown_3(M);
 	bind_unknown_unknown_4(M);
 	bind_unknown_unknown_5(M);
+	bind_unknown_unknown_6(M);
 	bind_PyROL_Teuchos_ETI(M);
-	bind_ROL_PartitionedVector(M);
+	bind_std_fstream_tcc(M);
+	bind_PyROL_stream(M);
 
 }

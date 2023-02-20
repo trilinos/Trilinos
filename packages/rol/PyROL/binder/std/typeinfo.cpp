@@ -48,11 +48,11 @@ struct PyCallBack_std_type_info : public std::type_info {
 	}
 };
 
-// std::bad_cast file:typeinfo line:187
+// std::bad_cast file:typeinfo line:190
 struct PyCallBack_std_bad_cast : public std::bad_cast {
 	using std::bad_cast::bad_cast;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::bad_cast *>(this), "what");
 		if (overload) {
@@ -79,7 +79,7 @@ void bind_std_typeinfo(std::function< pybind11::module &(std::string const &name
 		cl.def("__is_pointer_p", (bool (std::type_info::*)() const) &std::type_info::__is_pointer_p, "C++: std::type_info::__is_pointer_p() const --> bool");
 		cl.def("__is_function_p", (bool (std::type_info::*)() const) &std::type_info::__is_function_p, "C++: std::type_info::__is_function_p() const --> bool");
 	}
-	{ // std::bad_cast file:typeinfo line:187
+	{ // std::bad_cast file:typeinfo line:190
 		pybind11::class_<std::bad_cast, Teuchos::RCP<std::bad_cast>, PyCallBack_std_bad_cast, std::exception> cl(M("std"), "bad_cast", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::bad_cast(); }, [](){ return new PyCallBack_std_bad_cast(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_std_bad_cast const &o){ return new PyCallBack_std_bad_cast(o); } ) );

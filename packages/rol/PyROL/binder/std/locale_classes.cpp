@@ -27,7 +27,7 @@
 struct PyCallBack_std_logic_error : public std::logic_error {
 	using std::logic_error::logic_error;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::logic_error *>(this), "what");
 		if (overload) {
@@ -42,11 +42,11 @@ struct PyCallBack_std_logic_error : public std::logic_error {
 	}
 };
 
-// std::invalid_argument file:stdexcept line:158
+// std::invalid_argument file:stdexcept line:168
 struct PyCallBack_std_invalid_argument : public std::invalid_argument {
 	using std::invalid_argument::invalid_argument;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::invalid_argument *>(this), "what");
 		if (overload) {
@@ -61,11 +61,11 @@ struct PyCallBack_std_invalid_argument : public std::invalid_argument {
 	}
 };
 
-// std::runtime_error file:stdexcept line:197
+// std::runtime_error file:stdexcept line:219
 struct PyCallBack_std_runtime_error : public std::runtime_error {
 	using std::runtime_error::runtime_error;
 
-	const char * what() const noexcept override {
+	const char * what() const throw() override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::runtime_error *>(this), "what");
 		if (overload) {
@@ -265,14 +265,14 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 		cl.def_static("global", (class std::locale (*)(const class std::locale &)) &std::locale::global, "C++: std::locale::global(const class std::locale &) --> class std::locale", pybind11::arg("__loc"));
 		cl.def_static("classic", (const class std::locale & (*)()) &std::locale::classic, "C++: std::locale::classic() --> const class std::locale &", pybind11::return_value_policy::automatic);
 
-		{ // std::locale::id file:bits/locale_classes.h line:483
+		{ // std::locale::id file:bits/locale_classes.h line:485
 			auto & enclosing_class = cl;
 			pybind11::class_<std::locale::id, Teuchos::RCP<std::locale::id>> cl(enclosing_class, "id", "", pybind11::module_local());
 			cl.def( pybind11::init( [](){ return new std::locale::id(); } ) );
 			cl.def("_M_id", (unsigned long (std::locale::id::*)() const) &std::locale::id::_M_id, "C++: std::locale::id::_M_id() const --> unsigned long");
 		}
 
-		{ // std::locale::_Impl file:bits/locale_classes.h line:522
+		{ // std::locale::_Impl file:bits/locale_classes.h line:524
 			auto & enclosing_class = cl;
 			pybind11::class_<std::locale::_Impl, std::locale::_Impl*> cl(enclosing_class, "_Impl", "", pybind11::module_local());
 		}
@@ -289,7 +289,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class std::logic_error & (std::logic_error::*)(const class std::logic_error &)) &std::logic_error::operator=, "C++: std::logic_error::operator=(const class std::logic_error &) --> class std::logic_error &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 		cl.def("what", (const char * (std::logic_error::*)() const) &std::logic_error::what, "C++: std::logic_error::what() const --> const char *", pybind11::return_value_policy::automatic);
 	}
-	{ // std::invalid_argument file:stdexcept line:158
+	{ // std::invalid_argument file:stdexcept line:168
 		pybind11::class_<std::invalid_argument, Teuchos::RCP<std::invalid_argument>, PyCallBack_std_invalid_argument, std::logic_error> cl(M("std"), "invalid_argument", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("__arg") );
 
@@ -299,7 +299,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 		cl.def( pybind11::init( [](std::invalid_argument const &o){ return new std::invalid_argument(o); } ) );
 		cl.def("assign", (class std::invalid_argument & (std::invalid_argument::*)(const class std::invalid_argument &)) &std::invalid_argument::operator=, "C++: std::invalid_argument::operator=(const class std::invalid_argument &) --> class std::invalid_argument &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
-	{ // std::runtime_error file:stdexcept line:197
+	{ // std::runtime_error file:stdexcept line:219
 		pybind11::class_<std::runtime_error, Teuchos::RCP<std::runtime_error>, PyCallBack_std_runtime_error, std::exception> cl(M("std"), "runtime_error", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("__arg") );
 
