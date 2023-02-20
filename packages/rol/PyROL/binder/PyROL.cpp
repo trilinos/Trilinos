@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <pybind11/pybind11.h>
+#include <pybind11/smart_holder.h>
 
 typedef std::function< pybind11::module & (std::string const &) > ModuleGetter;
 

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/pybind11.h>
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -31,6 +31,8 @@
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
 	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
+
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(ROL::Vector)
 
 // ROL::Vector file: line:29
 struct PyCallBack_ROL_Vector_double_t : public ROL::Vector<double> {
@@ -699,7 +701,7 @@ struct PyCallBack_ROL_QuadraticObjective_double_t : public ROL::QuadraticObjecti
 void bind_unknown_unknown(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Vector file: line:29
-		pybind11::class_<ROL::Vector<double>, std::shared_ptr<ROL::Vector<double>>, PyCallBack_ROL_Vector_double_t> cl(M("ROL"), "Vector_double_t", "", pybind11::module_local());
+		pybind11::classh<ROL::Vector<double>, PyCallBack_ROL_Vector_double_t> cl(M("ROL"), "Vector_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_Vector_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Vector_double_t(); } ) );
 		cl.def("plus", (void (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::plus, "C++: ROL::Vector<double>::plus(const class ROL::Vector<double> &) --> void", pybind11::arg("x"));
