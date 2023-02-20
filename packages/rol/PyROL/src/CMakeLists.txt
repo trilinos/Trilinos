@@ -11,7 +11,7 @@ list(APPEND PYROL_SRC ${BINDER_SRCS})
 MESSAGE("PYROL_SRC with binder = ${PYROL_SRC}")
 
 pybind11_add_module(PyROL ${PYROL_SRC})
-target_include_directories(PyROL PUBLIC ${Mpi4Py_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} "$<BUILD_INTERFACE:${ROL_all_include_dirs}>")
+target_include_directories(PyROL PUBLIC ${Mpi4Py_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/../binder "$<BUILD_INTERFACE:${ROL_all_include_dirs}>")
 target_compile_features(PyROL PUBLIC cxx_std_14)
 
 foreach(depPkg IN LISTS ROL_LIB_ENABLED_DEPENDENCIES) 

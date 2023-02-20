@@ -50,7 +50,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include "PyROL_Smart_Holder.hpp"
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -1603,7 +1603,7 @@ struct PyCallBack_ROL_GMRES_double_t : public ROL::GMRES<double> {
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Objective_SimOpt file: line:35
-		pybind11::class_<ROL::Objective_SimOpt<double>, std::shared_ptr<ROL::Objective_SimOpt<double>>, PyCallBack_ROL_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Objective_SimOpt_double_t", "", pybind11::module_local());
+		pybind11::classh<ROL::Objective_SimOpt<double>, PyCallBack_ROL_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Objective_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Objective_SimOpt_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Objective_SimOpt_double_t const &>());
 		cl.def("update", [](ROL::Objective_SimOpt<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("u"), pybind11::arg("z"));
@@ -1641,7 +1641,7 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Reduced_Objective_SimOpt file: line:36
-		pybind11::class_<ROL::Reduced_Objective_SimOpt<double>, std::shared_ptr<ROL::Reduced_Objective_SimOpt<double>>, PyCallBack_ROL_Reduced_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Reduced_Objective_SimOpt_double_t", "", pybind11::module_local());
+		pybind11::classh<ROL::Reduced_Objective_SimOpt<double>, PyCallBack_ROL_Reduced_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Reduced_Objective_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const class std::shared_ptr<class ROL::Objective_SimOpt<double> > & a0, const class std::shared_ptr<class ROL::Constraint_SimOpt<double> > & a1, const class std::shared_ptr<class ROL::Vector<double> > & a2, const class std::shared_ptr<class ROL::Vector<double> > & a3, const class std::shared_ptr<class ROL::Vector<double> > & a4){ return new ROL::Reduced_Objective_SimOpt<double>(a0, a1, a2, a3, a4); }, [](const class std::shared_ptr<class ROL::Objective_SimOpt<double> > & a0, const class std::shared_ptr<class ROL::Constraint_SimOpt<double> > & a1, const class std::shared_ptr<class ROL::Vector<double> > & a2, const class std::shared_ptr<class ROL::Vector<double> > & a3, const class std::shared_ptr<class ROL::Vector<double> > & a4){ return new PyCallBack_ROL_Reduced_Objective_SimOpt_double_t(a0, a1, a2, a3, a4); } ), "doc");
 		cl.def( pybind11::init( [](const class std::shared_ptr<class ROL::Objective_SimOpt<double> > & a0, const class std::shared_ptr<class ROL::Constraint_SimOpt<double> > & a1, const class std::shared_ptr<class ROL::Vector<double> > & a2, const class std::shared_ptr<class ROL::Vector<double> > & a3, const class std::shared_ptr<class ROL::Vector<double> > & a4, const bool & a5){ return new ROL::Reduced_Objective_SimOpt<double>(a0, a1, a2, a3, a4, a5); }, [](const class std::shared_ptr<class ROL::Objective_SimOpt<double> > & a0, const class std::shared_ptr<class ROL::Constraint_SimOpt<double> > & a1, const class std::shared_ptr<class ROL::Vector<double> > & a2, const class std::shared_ptr<class ROL::Vector<double> > & a3, const class std::shared_ptr<class ROL::Vector<double> > & a4, const bool & a5){ return new PyCallBack_ROL_Reduced_Objective_SimOpt_double_t(a0, a1, a2, a3, a4, a5); } ), "doc");
 		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective_SimOpt<double> > &, const class std::shared_ptr<class ROL::Constraint_SimOpt<double> > &, const class std::shared_ptr<class ROL::Vector<double> > &, const class std::shared_ptr<class ROL::Vector<double> > &, const class std::shared_ptr<class ROL::Vector<double> > &, const bool, const bool>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("state"), pybind11::arg("control"), pybind11::arg("adjoint"), pybind11::arg("storage"), pybind11::arg("useFDhessVec") );
@@ -1676,7 +1676,7 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Constraint file: line:39
-		pybind11::class_<ROL::Constraint<double>, std::shared_ptr<ROL::Constraint<double>>, PyCallBack_ROL_Constraint_double_t> cl(M("ROL"), "Constraint_double_t", "", pybind11::module_local());
+		pybind11::classh<ROL::Constraint<double>, PyCallBack_ROL_Constraint_double_t> cl(M("ROL"), "Constraint_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Constraint_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Constraint_double_t const &>());
 		cl.def("update", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));

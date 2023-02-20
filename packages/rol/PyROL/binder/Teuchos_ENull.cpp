@@ -41,7 +41,7 @@
 #include <utility>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include "PyROL_Smart_Holder.hpp"
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>

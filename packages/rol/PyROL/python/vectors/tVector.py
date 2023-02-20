@@ -17,12 +17,7 @@ class tVector(ROL.Vector_double_t):
             map = self.mapType(dimension, 0, comm)
         self.tvector = self.vectorType(map, False)
         self.tvector.putScalar(default_value)
-        self.copies = []
         super().__init__()
-
-    def __del__(self):
-        for copy in self.copies:
-            del copy
 
     def plus(self, b):
         self.tvector.update(1., b.tvector, 1.)
@@ -38,7 +33,6 @@ class tVector(ROL.Vector_double_t):
 
     def clone(self):
         tmp = tVector(map=self.tvector.getMap(), scalar_type=self.scalar_type, local_ordinal_type=self.local_ordinal_type, global_ordinal_type=self.global_ordinal_type, node_type=self.node_type)
-        self.copies.append(tmp)
         return tmp
 
     def axpy(self, scale_factor, x):

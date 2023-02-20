@@ -9,12 +9,7 @@ class npVector(getTypeName('Vector')):
         assert isinstance(values, np.ndarray)
         assert values.ndim == 1
         self.values = values
-        self.copies = []
         super().__init__()
-
-    def __del__(self):
-        for copy in self.copies:
-            del copy
 
     @staticmethod
     def full(dimension=1, default_value=0.):
@@ -38,7 +33,6 @@ class npVector(getTypeName('Vector')):
 
     def clone(self):
         tmp = type(self)(np.full(self.values.shape, fill_value=np.nan))
-        self.copies.append(tmp)
         return tmp
 
     def axpy(self, scale_factor, x):

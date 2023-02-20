@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <pybind11/smart_holder.h>
+#include "PyROL_Smart_Holder.hpp"
 
 typedef std::function< pybind11::module & (std::string const &) > ModuleGetter;
 
