@@ -1,11 +1,9 @@
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_LinearOperator.hpp>
+#include <ROL_PartitionedVector.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
-#include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
 #include <cwchar>
 #include <ios>
 #include <iterator>
@@ -21,14 +19,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::LinearOperator file:ROL_LinearOperator.hpp line:71
@@ -118,7 +115,7 @@ void bind_ROL_UpdateType(std::function< pybind11::module &(std::string const &na
 	M("ROL").def("UpdateTypeToString", (std::string (*)(const enum ROL::UpdateType &)) &ROL::UpdateTypeToString, "C++: ROL::UpdateTypeToString(const enum ROL::UpdateType &) --> std::string", pybind11::arg("type"));
 
 	{ // ROL::LinearOperator file:ROL_LinearOperator.hpp line:71
-		pybind11::class_<ROL::LinearOperator<double>, Teuchos::RCP<ROL::LinearOperator<double>>, PyCallBack_ROL_LinearOperator_double_t> cl(M("ROL"), "LinearOperator_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::LinearOperator<double>, std::shared_ptr<ROL::LinearOperator<double>>, PyCallBack_ROL_LinearOperator_double_t> cl(M("ROL"), "LinearOperator_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_LinearOperator_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_LinearOperator_double_t(); } ) );
 		cl.def("update", [](ROL::LinearOperator<double> &o, const class ROL::Vector<double> & a0) -> void { return o.update(a0); }, "", pybind11::arg("x"));

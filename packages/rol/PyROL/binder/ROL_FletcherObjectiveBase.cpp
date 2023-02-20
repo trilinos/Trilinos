@@ -1,17 +1,18 @@
+#include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_FletcherObjectiveBase.hpp>
 #include <ROL_FletcherObjectiveE.hpp>
 #include <ROL_Objective.hpp>
+#include <ROL_PartitionedVector.hpp>
+#include <ROL_SlacklessObjective.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <cwchar>
 #include <deque>
@@ -29,14 +30,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::FletcherObjectiveBase file:ROL_FletcherObjectiveBase.hpp line:60
@@ -288,16 +288,16 @@ struct PyCallBack_ROL_FletcherObjectiveE_double_t : public ROL::FletcherObjectiv
 void bind_ROL_FletcherObjectiveBase(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::FletcherObjectiveBase file:ROL_FletcherObjectiveBase.hpp line:60
-		pybind11::class_<ROL::FletcherObjectiveBase<double>, Teuchos::RCP<ROL::FletcherObjectiveBase<double>>, PyCallBack_ROL_FletcherObjectiveBase_double_t, ROL::Objective<double>> cl(M("ROL"), "FletcherObjectiveBase_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("cprim"), pybind11::arg("cdual"), pybind11::arg("parlist") );
+		pybind11::class_<ROL::FletcherObjectiveBase<double>, std::shared_ptr<ROL::FletcherObjectiveBase<double>>, PyCallBack_ROL_FletcherObjectiveBase_double_t, ROL::Objective<double>> cl(M("ROL"), "FletcherObjectiveBase_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("cprim"), pybind11::arg("cdual"), pybind11::arg("parlist") );
 
 		cl.def(pybind11::init<PyCallBack_ROL_FletcherObjectiveBase_double_t const &>());
 		cl.def("update", [](ROL::FletcherObjectiveBase<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", (void (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &, enum ROL::UpdateType, int)) &ROL::FletcherObjectiveBase<double>::update, "C++: ROL::FletcherObjectiveBase<double>::update(const class ROL::Vector<double> &, enum ROL::UpdateType, int) --> void", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
-		cl.def("getLagrangianGradient", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getLagrangianGradient, "C++: ROL::FletcherObjectiveBase<double>::getLagrangianGradient(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getConstraintVec", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getConstraintVec, "C++: ROL::FletcherObjectiveBase<double>::getConstraintVec(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getMultiplierVec", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getMultiplierVec, "C++: ROL::FletcherObjectiveBase<double>::getMultiplierVec(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getGradient", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getGradient, "C++: ROL::FletcherObjectiveBase<double>::getGradient(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getLagrangianGradient", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getLagrangianGradient, "C++: ROL::FletcherObjectiveBase<double>::getLagrangianGradient(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getConstraintVec", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getConstraintVec, "C++: ROL::FletcherObjectiveBase<double>::getConstraintVec(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getMultiplierVec", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getMultiplierVec, "C++: ROL::FletcherObjectiveBase<double>::getMultiplierVec(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getGradient", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getGradient, "C++: ROL::FletcherObjectiveBase<double>::getGradient(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
 		cl.def("getObjectiveValue", (double (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getObjectiveValue, "C++: ROL::FletcherObjectiveBase<double>::getObjectiveValue(const class ROL::Vector<double> &) --> double", pybind11::arg("x"));
 		cl.def("getNumberFunctionEvaluations", (int (ROL::FletcherObjectiveBase<double>::*)() const) &ROL::FletcherObjectiveBase<double>::getNumberFunctionEvaluations, "C++: ROL::FletcherObjectiveBase<double>::getNumberFunctionEvaluations() const --> int");
 		cl.def("getNumberGradientEvaluations", (int (ROL::FletcherObjectiveBase<double>::*)() const) &ROL::FletcherObjectiveBase<double>::getNumberGradientEvaluations, "C++: ROL::FletcherObjectiveBase<double>::getNumberGradientEvaluations() const --> int");
@@ -317,8 +317,8 @@ void bind_ROL_FletcherObjectiveBase(std::function< pybind11::module &(std::strin
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::FletcherObjectiveE file:ROL_FletcherObjectiveE.hpp line:53
-		pybind11::class_<ROL::FletcherObjectiveE<double>, Teuchos::RCP<ROL::FletcherObjectiveE<double>>, PyCallBack_ROL_FletcherObjectiveE_double_t, ROL::FletcherObjectiveBase<double>> cl(M("ROL"), "FletcherObjectiveE_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("cprim"), pybind11::arg("cdual"), pybind11::arg("parlist") );
+		pybind11::class_<ROL::FletcherObjectiveE<double>, std::shared_ptr<ROL::FletcherObjectiveE<double>>, PyCallBack_ROL_FletcherObjectiveE_double_t, ROL::FletcherObjectiveBase<double>> cl(M("ROL"), "FletcherObjectiveE_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("cprim"), pybind11::arg("cdual"), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_FletcherObjectiveE_double_t const &o){ return new PyCallBack_ROL_FletcherObjectiveE_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::FletcherObjectiveE<double> const &o){ return new ROL::FletcherObjectiveE<double>(o); } ) );
@@ -327,10 +327,10 @@ void bind_ROL_FletcherObjectiveBase(std::function< pybind11::module &(std::strin
 		cl.def("hessVec", (void (ROL::FletcherObjectiveE<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::FletcherObjectiveE<double>::hessVec, "C++: ROL::FletcherObjectiveE<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("update", [](ROL::FletcherObjectiveBase<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", (void (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &, enum ROL::UpdateType, int)) &ROL::FletcherObjectiveBase<double>::update, "C++: ROL::FletcherObjectiveBase<double>::update(const class ROL::Vector<double> &, enum ROL::UpdateType, int) --> void", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
-		cl.def("getLagrangianGradient", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getLagrangianGradient, "C++: ROL::FletcherObjectiveBase<double>::getLagrangianGradient(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getConstraintVec", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getConstraintVec, "C++: ROL::FletcherObjectiveBase<double>::getConstraintVec(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getMultiplierVec", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getMultiplierVec, "C++: ROL::FletcherObjectiveBase<double>::getMultiplierVec(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
-		cl.def("getGradient", (class Teuchos::RCP<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getGradient, "C++: ROL::FletcherObjectiveBase<double>::getGradient(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getLagrangianGradient", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getLagrangianGradient, "C++: ROL::FletcherObjectiveBase<double>::getLagrangianGradient(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getConstraintVec", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getConstraintVec, "C++: ROL::FletcherObjectiveBase<double>::getConstraintVec(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getMultiplierVec", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getMultiplierVec, "C++: ROL::FletcherObjectiveBase<double>::getMultiplierVec(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
+		cl.def("getGradient", (class std::shared_ptr<const class ROL::Vector<double> > (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getGradient, "C++: ROL::FletcherObjectiveBase<double>::getGradient(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"));
 		cl.def("getObjectiveValue", (double (ROL::FletcherObjectiveBase<double>::*)(const class ROL::Vector<double> &)) &ROL::FletcherObjectiveBase<double>::getObjectiveValue, "C++: ROL::FletcherObjectiveBase<double>::getObjectiveValue(const class ROL::Vector<double> &) --> double", pybind11::arg("x"));
 		cl.def("getNumberFunctionEvaluations", (int (ROL::FletcherObjectiveBase<double>::*)() const) &ROL::FletcherObjectiveBase<double>::getNumberFunctionEvaluations, "C++: ROL::FletcherObjectiveBase<double>::getNumberFunctionEvaluations() const --> int");
 		cl.def("getNumberGradientEvaluations", (int (ROL::FletcherObjectiveBase<double>::*)() const) &ROL::FletcherObjectiveBase<double>::getNumberGradientEvaluations, "C++: ROL::FletcherObjectiveBase<double>::getNumberGradientEvaluations() const --> int");

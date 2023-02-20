@@ -28,14 +28,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::StatusTest file:ROL_StatusTest.hpp line:58
@@ -88,10 +87,10 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 	M("ROL").def("updateParametersFromXmlFile", (void (*)(const std::string &, class Teuchos::ParameterList &)) &ROL::updateParametersFromXmlFile, "C++: ROL::updateParametersFromXmlFile(const std::string &, class Teuchos::ParameterList &) --> void", pybind11::arg("filename"), pybind11::arg("parlist"));
 
 	// ROL::getParametersFromXmlFile(const std::string &) file:ROL_ParameterList.hpp line:73
-	M("ROL").def("getParametersFromXmlFile", (class Teuchos::RCP<class Teuchos::ParameterList> (*)(const std::string &)) &ROL::getParametersFromXmlFile, "C++: ROL::getParametersFromXmlFile(const std::string &) --> class Teuchos::RCP<class Teuchos::ParameterList>", pybind11::arg("filename"));
+	M("ROL").def("getParametersFromXmlFile", (class std::shared_ptr<class Teuchos::ParameterList> (*)(const std::string &)) &ROL::getParametersFromXmlFile, "C++: ROL::getParametersFromXmlFile(const std::string &) --> class std::shared_ptr<class Teuchos::ParameterList>", pybind11::arg("filename"));
 
 	{ // ROL::StatusTest file:ROL_StatusTest.hpp line:58
-		pybind11::class_<ROL::StatusTest<double>, Teuchos::RCP<ROL::StatusTest<double>>, PyCallBack_ROL_StatusTest_double_t> cl(M("ROL"), "StatusTest_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::StatusTest<double>, std::shared_ptr<ROL::StatusTest<double>>, PyCallBack_ROL_StatusTest_double_t> cl(M("ROL"), "StatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](){ return new ROL::StatusTest<double>(); }, [](){ return new PyCallBack_ROL_StatusTest_double_t(); } ), "doc");
@@ -106,12 +105,12 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::StatusTest<double> & (ROL::StatusTest<double>::*)(const class ROL::StatusTest<double> &)) &ROL::StatusTest<double>::operator=, "C++: ROL::StatusTest<double>::operator=(const class ROL::StatusTest<double> &) --> class ROL::StatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::CombinedStatusTest file:ROL_CombinedStatusTest.hpp line:57
-		pybind11::class_<ROL::CombinedStatusTest<double>, Teuchos::RCP<ROL::CombinedStatusTest<double>>, PyCallBack_ROL_CombinedStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "CombinedStatusTest_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::CombinedStatusTest<double>, std::shared_ptr<ROL::CombinedStatusTest<double>>, PyCallBack_ROL_CombinedStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "CombinedStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::CombinedStatusTest<double>(); }, [](){ return new PyCallBack_ROL_CombinedStatusTest_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_CombinedStatusTest_double_t const &o){ return new PyCallBack_ROL_CombinedStatusTest_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::CombinedStatusTest<double> const &o){ return new ROL::CombinedStatusTest<double>(o); } ) );
 		cl.def("reset", (void (ROL::CombinedStatusTest<double>::*)()) &ROL::CombinedStatusTest<double>::reset, "C++: ROL::CombinedStatusTest<double>::reset() --> void");
-		cl.def("add", (void (ROL::CombinedStatusTest<double>::*)(const class Teuchos::RCP<class ROL::StatusTest<double> > &)) &ROL::CombinedStatusTest<double>::add, "C++: ROL::CombinedStatusTest<double>::add(const class Teuchos::RCP<class ROL::StatusTest<double> > &) --> void", pybind11::arg("status"));
+		cl.def("add", (void (ROL::CombinedStatusTest<double>::*)(const class std::shared_ptr<class ROL::StatusTest<double> > &)) &ROL::CombinedStatusTest<double>::add, "C++: ROL::CombinedStatusTest<double>::add(const class std::shared_ptr<class ROL::StatusTest<double> > &) --> void", pybind11::arg("status"));
 		cl.def("check", (bool (ROL::CombinedStatusTest<double>::*)(struct ROL::AlgorithmState<double> &)) &ROL::CombinedStatusTest<double>::check, "C++: ROL::CombinedStatusTest<double>::check(struct ROL::AlgorithmState<double> &) --> bool", pybind11::arg("state"));
 		cl.def("assign", (class ROL::CombinedStatusTest<double> & (ROL::CombinedStatusTest<double>::*)(const class ROL::CombinedStatusTest<double> &)) &ROL::CombinedStatusTest<double>::operator=, "C++: ROL::CombinedStatusTest<double>::operator=(const class ROL::CombinedStatusTest<double> &) --> class ROL::CombinedStatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 		cl.def("check", (bool (ROL::StatusTest<double>::*)(struct ROL::AlgorithmState<double> &)) &ROL::StatusTest<double>::check, "C++: ROL::StatusTest<double>::check(struct ROL::AlgorithmState<double> &) --> bool", pybind11::arg("state"));

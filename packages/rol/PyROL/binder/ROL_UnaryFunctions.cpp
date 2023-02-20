@@ -7,14 +7,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::Elementwise::Fill file:ROL_UnaryFunctions.hpp line:61
@@ -267,7 +266,7 @@ struct PyCallBack_ROL_Elementwise_ValueSet_double_t : public ROL::Elementwise::V
 void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Elementwise::Fill file:ROL_UnaryFunctions.hpp line:61
-		pybind11::class_<ROL::Elementwise::Fill<double>, Teuchos::RCP<ROL::Elementwise::Fill<double>>, PyCallBack_ROL_Elementwise_Fill_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Fill_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Fill<double>, std::shared_ptr<ROL::Elementwise::Fill<double>>, PyCallBack_ROL_Elementwise_Fill_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Fill_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const double &>(), pybind11::arg("value") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Fill_double_t const &o){ return new PyCallBack_ROL_Elementwise_Fill_double_t(o); } ) );
@@ -278,7 +277,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Shift file:ROL_UnaryFunctions.hpp line:73
-		pybind11::class_<ROL::Elementwise::Shift<double>, Teuchos::RCP<ROL::Elementwise::Shift<double>>, PyCallBack_ROL_Elementwise_Shift_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Shift_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Shift<double>, std::shared_ptr<ROL::Elementwise::Shift<double>>, PyCallBack_ROL_Elementwise_Shift_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Shift_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const double &>(), pybind11::arg("value") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Shift_double_t const &o){ return new PyCallBack_ROL_Elementwise_Shift_double_t(o); } ) );
@@ -289,7 +288,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::AbsoluteValue file:ROL_UnaryFunctions.hpp line:95
-		pybind11::class_<ROL::Elementwise::AbsoluteValue<double>, Teuchos::RCP<ROL::Elementwise::AbsoluteValue<double>>, PyCallBack_ROL_Elementwise_AbsoluteValue_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "AbsoluteValue_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::AbsoluteValue<double>, std::shared_ptr<ROL::Elementwise::AbsoluteValue<double>>, PyCallBack_ROL_Elementwise_AbsoluteValue_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "AbsoluteValue_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_AbsoluteValue_double_t const &o){ return new PyCallBack_ROL_Elementwise_AbsoluteValue_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::AbsoluteValue<double> const &o){ return new ROL::Elementwise::AbsoluteValue<double>(o); } ) );
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::AbsoluteValue<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_AbsoluteValue_double_t(); } ) );
@@ -299,7 +298,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Sign file:ROL_UnaryFunctions.hpp line:104
-		pybind11::class_<ROL::Elementwise::Sign<double>, Teuchos::RCP<ROL::Elementwise::Sign<double>>, PyCallBack_ROL_Elementwise_Sign_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Sign_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Sign<double>, std::shared_ptr<ROL::Elementwise::Sign<double>>, PyCallBack_ROL_Elementwise_Sign_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Sign_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::Sign<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_Sign_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Sign_double_t const &o){ return new PyCallBack_ROL_Elementwise_Sign_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::Sign<double> const &o){ return new ROL::Elementwise::Sign<double>(o); } ) );
@@ -309,7 +308,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Power file:ROL_UnaryFunctions.hpp line:123
-		pybind11::class_<ROL::Elementwise::Power<double>, Teuchos::RCP<ROL::Elementwise::Power<double>>, PyCallBack_ROL_Elementwise_Power_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Power_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Power<double>, std::shared_ptr<ROL::Elementwise::Power<double>>, PyCallBack_ROL_Elementwise_Power_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "Power_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const double &>(), pybind11::arg("exponent") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Power_double_t const &o){ return new PyCallBack_ROL_Elementwise_Power_double_t(o); } ) );
@@ -320,7 +319,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::SquareRoot file:ROL_UnaryFunctions.hpp line:137
-		pybind11::class_<ROL::Elementwise::SquareRoot<double>, Teuchos::RCP<ROL::Elementwise::SquareRoot<double>>, PyCallBack_ROL_Elementwise_SquareRoot_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "SquareRoot_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::SquareRoot<double>, std::shared_ptr<ROL::Elementwise::SquareRoot<double>>, PyCallBack_ROL_Elementwise_SquareRoot_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "SquareRoot_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::SquareRoot<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_SquareRoot_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_SquareRoot_double_t const &o){ return new PyCallBack_ROL_Elementwise_SquareRoot_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::SquareRoot<double> const &o){ return new ROL::Elementwise::SquareRoot<double>(o); } ) );
@@ -330,7 +329,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::UniformlyRandom file:ROL_UnaryFunctions.hpp line:175
-		pybind11::class_<ROL::Elementwise::UniformlyRandom<double>, Teuchos::RCP<ROL::Elementwise::UniformlyRandom<double>>, PyCallBack_ROL_Elementwise_UniformlyRandom_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "UniformlyRandom_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::UniformlyRandom<double>, std::shared_ptr<ROL::Elementwise::UniformlyRandom<double>>, PyCallBack_ROL_Elementwise_UniformlyRandom_double_t, ROL::Elementwise::UnaryFunction<double>> cl(M("ROL::Elementwise"), "UniformlyRandom_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::UniformlyRandom<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_UniformlyRandom_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](const double & a0){ return new ROL::Elementwise::UniformlyRandom<double>(a0); }, [](const double & a0){ return new PyCallBack_ROL_Elementwise_UniformlyRandom_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<const double &, const double &>(), pybind11::arg("lower"), pybind11::arg("upper") );
@@ -342,7 +341,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::UnaryFunction<double> & (ROL::Elementwise::UnaryFunction<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Elementwise::UnaryFunction<double>::operator=, "C++: ROL::Elementwise::UnaryFunction<double>::operator=(const class ROL::Elementwise::UnaryFunction<double> &) --> class ROL::Elementwise::UnaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Multiply file:ROL_BinaryFunctions.hpp line:54
-		pybind11::class_<ROL::Elementwise::Multiply<double>, Teuchos::RCP<ROL::Elementwise::Multiply<double>>, PyCallBack_ROL_Elementwise_Multiply_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Multiply_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Multiply<double>, std::shared_ptr<ROL::Elementwise::Multiply<double>>, PyCallBack_ROL_Elementwise_Multiply_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Multiply_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::Multiply<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_Multiply_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Multiply_double_t const &o){ return new PyCallBack_ROL_Elementwise_Multiply_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::Multiply<double> const &o){ return new ROL::Elementwise::Multiply<double>(o); } ) );
@@ -352,7 +351,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::BinaryFunction<double> & (ROL::Elementwise::BinaryFunction<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &)) &ROL::Elementwise::BinaryFunction<double>::operator=, "C++: ROL::Elementwise::BinaryFunction<double>::operator=(const class ROL::Elementwise::BinaryFunction<double> &) --> class ROL::Elementwise::BinaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Divide file:ROL_BinaryFunctions.hpp line:74
-		pybind11::class_<ROL::Elementwise::Divide<double>, Teuchos::RCP<ROL::Elementwise::Divide<double>>, PyCallBack_ROL_Elementwise_Divide_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Divide_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Divide<double>, std::shared_ptr<ROL::Elementwise::Divide<double>>, PyCallBack_ROL_Elementwise_Divide_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Divide_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::Divide<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_Divide_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Divide_double_t const &o){ return new PyCallBack_ROL_Elementwise_Divide_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::Divide<double> const &o){ return new ROL::Elementwise::Divide<double>(o); } ) );
@@ -362,7 +361,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::BinaryFunction<double> & (ROL::Elementwise::BinaryFunction<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &)) &ROL::Elementwise::BinaryFunction<double>::operator=, "C++: ROL::Elementwise::BinaryFunction<double>::operator=(const class ROL::Elementwise::BinaryFunction<double> &) --> class ROL::Elementwise::BinaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::DivideAndInvert file:ROL_BinaryFunctions.hpp line:84
-		pybind11::class_<ROL::Elementwise::DivideAndInvert<double>, Teuchos::RCP<ROL::Elementwise::DivideAndInvert<double>>, PyCallBack_ROL_Elementwise_DivideAndInvert_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "DivideAndInvert_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::DivideAndInvert<double>, std::shared_ptr<ROL::Elementwise::DivideAndInvert<double>>, PyCallBack_ROL_Elementwise_DivideAndInvert_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "DivideAndInvert_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::DivideAndInvert<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_DivideAndInvert_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_DivideAndInvert_double_t const &o){ return new PyCallBack_ROL_Elementwise_DivideAndInvert_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::DivideAndInvert<double> const &o){ return new ROL::Elementwise::DivideAndInvert<double>(o); } ) );
@@ -372,7 +371,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::BinaryFunction<double> & (ROL::Elementwise::BinaryFunction<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &)) &ROL::Elementwise::BinaryFunction<double>::operator=, "C++: ROL::Elementwise::BinaryFunction<double>::operator=(const class ROL::Elementwise::BinaryFunction<double> &) --> class ROL::Elementwise::BinaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Min file:ROL_BinaryFunctions.hpp line:120
-		pybind11::class_<ROL::Elementwise::Min<double>, Teuchos::RCP<ROL::Elementwise::Min<double>>, PyCallBack_ROL_Elementwise_Min_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Min_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Min<double>, std::shared_ptr<ROL::Elementwise::Min<double>>, PyCallBack_ROL_Elementwise_Min_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Min_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::Min<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_Min_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Min_double_t const &o){ return new PyCallBack_ROL_Elementwise_Min_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::Min<double> const &o){ return new ROL::Elementwise::Min<double>(o); } ) );
@@ -382,7 +381,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::BinaryFunction<double> & (ROL::Elementwise::BinaryFunction<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &)) &ROL::Elementwise::BinaryFunction<double>::operator=, "C++: ROL::Elementwise::BinaryFunction<double>::operator=(const class ROL::Elementwise::BinaryFunction<double> &) --> class ROL::Elementwise::BinaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::Max file:ROL_BinaryFunctions.hpp line:130
-		pybind11::class_<ROL::Elementwise::Max<double>, Teuchos::RCP<ROL::Elementwise::Max<double>>, PyCallBack_ROL_Elementwise_Max_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Max_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::Max<double>, std::shared_ptr<ROL::Elementwise::Max<double>>, PyCallBack_ROL_Elementwise_Max_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "Max_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::Max<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_Max_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_Max_double_t const &o){ return new PyCallBack_ROL_Elementwise_Max_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::Max<double> const &o){ return new ROL::Elementwise::Max<double>(o); } ) );
@@ -392,7 +391,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class ROL::Elementwise::BinaryFunction<double> & (ROL::Elementwise::BinaryFunction<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &)) &ROL::Elementwise::BinaryFunction<double>::operator=, "C++: ROL::Elementwise::BinaryFunction<double>::operator=(const class ROL::Elementwise::BinaryFunction<double> &) --> class ROL::Elementwise::BinaryFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::ValueSet file:ROL_BinaryFunctions.hpp line:166
-		pybind11::class_<ROL::Elementwise::ValueSet<double>, Teuchos::RCP<ROL::Elementwise::ValueSet<double>>, PyCallBack_ROL_Elementwise_ValueSet_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "ValueSet_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::ValueSet<double>, std::shared_ptr<ROL::Elementwise::ValueSet<double>>, PyCallBack_ROL_Elementwise_ValueSet_double_t, ROL::Elementwise::BinaryFunction<double>> cl(M("ROL::Elementwise"), "ValueSet_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const double & a0, const int & a1){ return new ROL::Elementwise::ValueSet<double>(a0, a1); }, [](const double & a0, const int & a1){ return new PyCallBack_ROL_Elementwise_ValueSet_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init( [](const double & a0, const int & a1, const double & a2){ return new ROL::Elementwise::ValueSet<double>(a0, a1, a2); }, [](const double & a0, const int & a1, const double & a2){ return new PyCallBack_ROL_Elementwise_ValueSet_double_t(a0, a1, a2); } ), "doc");
 		cl.def( pybind11::init<const double &, const int, const double &, const double &>(), pybind11::arg("threshold"), pybind11::arg("option"), pybind11::arg("c1"), pybind11::arg("c2") );

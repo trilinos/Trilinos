@@ -1,17 +1,17 @@
 #include <ROL_BoundConstraint.hpp>
+#include <ROL_BoundConstraint_Partitioned.hpp>
+#include <ROL_Bounds.hpp>
 #include <ROL_ColemanLiModel.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_Objective.hpp>
+#include <ROL_PartitionedVector.hpp>
 #include <ROL_Secant.hpp>
+#include <ROL_SlacklessObjective.hpp>
 #include <ROL_TrustRegionModel.hpp>
 #include <ROL_TrustRegionTypes.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
-#include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
-#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <ios>
 #include <iterator>
@@ -27,21 +27,20 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::TrustRegionModel file:ROL_TrustRegionModel.hpp line:67
 struct PyCallBack_ROL_TrustRegionModel_double_t : public ROL::TrustRegionModel<double> {
 	using ROL::TrustRegionModel<double>::TrustRegionModel;
 
-	void update(class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4) override {
+	void update(class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4) override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::TrustRegionModel<double> *>(this), "update");
 		if (overload) {
@@ -119,55 +118,55 @@ struct PyCallBack_ROL_TrustRegionModel_double_t : public ROL::TrustRegionModel<d
 		}
 		return TrustRegionModel::precond(a0, a1, a2, a3);
 	}
-	const class Teuchos::RCP<const class ROL::Vector<double> > getGradient() const override {
+	const class std::shared_ptr<const class ROL::Vector<double> > getGradient() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::TrustRegionModel<double> *>(this), "getGradient");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getGradient();
 	}
-	const class Teuchos::RCP<const class ROL::Vector<double> > getIterate() const override {
+	const class std::shared_ptr<const class ROL::Vector<double> > getIterate() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::TrustRegionModel<double> *>(this), "getIterate");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getIterate();
 	}
-	const class Teuchos::RCP<class ROL::Objective<double> > getObjective() const override {
+	const class std::shared_ptr<class ROL::Objective<double> > getObjective() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::TrustRegionModel<double> *>(this), "getObjective");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<class ROL::Objective<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<class ROL::Objective<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<class ROL::Objective<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<class ROL::Objective<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<class ROL::Objective<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<class ROL::Objective<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<class ROL::Objective<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<class ROL::Objective<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getObjective();
 	}
-	const class Teuchos::RCP<class ROL::BoundConstraint<double> > getBoundConstraint() const override {
+	const class std::shared_ptr<class ROL::BoundConstraint<double> > getBoundConstraint() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::TrustRegionModel<double> *>(this), "getBoundConstraint");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<class ROL::BoundConstraint<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<class ROL::BoundConstraint<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<class ROL::BoundConstraint<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<class ROL::BoundConstraint<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<class ROL::BoundConstraint<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getBoundConstraint();
 	}
@@ -268,7 +267,7 @@ struct PyCallBack_ROL_TrustRegionModel_double_t : public ROL::TrustRegionModel<d
 struct PyCallBack_ROL_ColemanLiModel_double_t : public ROL::ColemanLiModel<double> {
 	using ROL::ColemanLiModel<double>::ColemanLiModel;
 
-	void update(class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4) override {
+	void update(class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4) override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ColemanLiModel<double> *>(this), "update");
 		if (overload) {
@@ -398,55 +397,55 @@ struct PyCallBack_ROL_ColemanLiModel_double_t : public ROL::ColemanLiModel<doubl
 		}
 		return TrustRegionModel::precond(a0, a1, a2, a3);
 	}
-	const class Teuchos::RCP<const class ROL::Vector<double> > getGradient() const override {
+	const class std::shared_ptr<const class ROL::Vector<double> > getGradient() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ColemanLiModel<double> *>(this), "getGradient");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getGradient();
 	}
-	const class Teuchos::RCP<const class ROL::Vector<double> > getIterate() const override {
+	const class std::shared_ptr<const class ROL::Vector<double> > getIterate() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ColemanLiModel<double> *>(this), "getIterate");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getIterate();
 	}
-	const class Teuchos::RCP<class ROL::Objective<double> > getObjective() const override {
+	const class std::shared_ptr<class ROL::Objective<double> > getObjective() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ColemanLiModel<double> *>(this), "getObjective");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<class ROL::Objective<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<class ROL::Objective<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<class ROL::Objective<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<class ROL::Objective<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<class ROL::Objective<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<class ROL::Objective<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<class ROL::Objective<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<class ROL::Objective<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getObjective();
 	}
-	const class Teuchos::RCP<class ROL::BoundConstraint<double> > getBoundConstraint() const override {
+	const class std::shared_ptr<class ROL::BoundConstraint<double> > getBoundConstraint() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ColemanLiModel<double> *>(this), "getBoundConstraint");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class Teuchos::RCP<class ROL::BoundConstraint<double> >> caster;
-				return pybind11::detail::cast_ref<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<class ROL::BoundConstraint<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class std::shared_ptr<class ROL::BoundConstraint<double> >> caster;
+				return pybind11::detail::cast_ref<const class std::shared_ptr<class ROL::BoundConstraint<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class Teuchos::RCP<class ROL::BoundConstraint<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class std::shared_ptr<class ROL::BoundConstraint<double> >>(std::move(o));
 		}
 		return TrustRegionModel::getBoundConstraint();
 	}
@@ -553,11 +552,11 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 	M("ROL").def("ETrustRegionFlagToString", (std::string (*)(enum ROL::ETrustRegionFlag)) &ROL::ETrustRegionFlagToString, "C++: ROL::ETrustRegionFlagToString(enum ROL::ETrustRegionFlag) --> std::string", pybind11::arg("trf"));
 
 	{ // ROL::TrustRegionModel file:ROL_TrustRegionModel.hpp line:67
-		pybind11::class_<ROL::TrustRegionModel<double>, Teuchos::RCP<ROL::TrustRegionModel<double>>, PyCallBack_ROL_TrustRegionModel_double_t, ROL::Objective<double>> cl(M("ROL"), "TrustRegionModel_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::TrustRegionModel<double>, std::shared_ptr<ROL::TrustRegionModel<double>>, PyCallBack_ROL_TrustRegionModel_double_t, ROL::Objective<double>> cl(M("ROL"), "TrustRegionModel_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3){ return new ROL::TrustRegionModel<double>(a0, a1, a2, a3); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3){ return new PyCallBack_ROL_TrustRegionModel_double_t(a0, a1, a2, a3); } ), "doc");
-		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4){ return new ROL::TrustRegionModel<double>(a0, a1, a2, a3, a4); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4){ return new PyCallBack_ROL_TrustRegionModel_double_t(a0, a1, a2, a3, a4); } ), "doc");
-		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4, const bool & a5){ return new ROL::TrustRegionModel<double>(a0, a1, a2, a3, a4, a5); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class Teuchos::RCP<class ROL::Secant<double> > & a4, const bool & a5){ return new PyCallBack_ROL_TrustRegionModel_double_t(a0, a1, a2, a3, a4, a5); } ), "doc");
-		cl.def( pybind11::init<class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &, const bool, const bool>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"), pybind11::arg("useSecantPrecond"), pybind11::arg("useSecantHessVec") );
+		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4){ return new ROL::TrustRegionModel<double>(a0, a1, a2, a3, a4); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4){ return new PyCallBack_ROL_TrustRegionModel_double_t(a0, a1, a2, a3, a4); } ), "doc");
+		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4, const bool & a5){ return new ROL::TrustRegionModel<double>(a0, a1, a2, a3, a4, a5); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class std::shared_ptr<class ROL::Secant<double> > & a4, const bool & a5){ return new PyCallBack_ROL_TrustRegionModel_double_t(a0, a1, a2, a3, a4, a5); } ), "doc");
+		cl.def( pybind11::init<class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &, const bool, const bool>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"), pybind11::arg("useSecantPrecond"), pybind11::arg("useSecantHessVec") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TrustRegionModel_double_t const &o){ return new PyCallBack_ROL_TrustRegionModel_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::TrustRegionModel<double> const &o){ return new ROL::TrustRegionModel<double>(o); } ) );
@@ -567,16 +566,16 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1, int const & a2) -> void { return o.update(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3) -> void { return o.update(a0, a1, a2, a3); }, "", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"));
-		cl.def("update", (void (ROL::TrustRegionModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &)) &ROL::TrustRegionModel<double>::update, "C++: ROL::TrustRegionModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
+		cl.def("update", (void (ROL::TrustRegionModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &)) &ROL::TrustRegionModel<double>::update, "C++: ROL::TrustRegionModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
 		cl.def("value", (double (ROL::TrustRegionModel<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::value, "C++: ROL::TrustRegionModel<double>::value(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("gradient", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::gradient, "C++: ROL::TrustRegionModel<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("hessVec", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::hessVec, "C++: ROL::TrustRegionModel<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("invHessVec", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::invHessVec, "C++: ROL::TrustRegionModel<double>::invHessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("precond", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::precond, "C++: ROL::TrustRegionModel<double>::precond(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("Pv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
-		cl.def("getGradient", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getGradient, "C++: ROL::TrustRegionModel<double>::getGradient() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
-		cl.def("getIterate", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getIterate, "C++: ROL::TrustRegionModel<double>::getIterate() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
-		cl.def("getObjective", (const class Teuchos::RCP<class ROL::Objective<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getObjective, "C++: ROL::TrustRegionModel<double>::getObjective() const --> const class Teuchos::RCP<class ROL::Objective<double> >");
-		cl.def("getBoundConstraint", (const class Teuchos::RCP<class ROL::BoundConstraint<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getBoundConstraint, "C++: ROL::TrustRegionModel<double>::getBoundConstraint() const --> const class Teuchos::RCP<class ROL::BoundConstraint<double> >");
+		cl.def("getGradient", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getGradient, "C++: ROL::TrustRegionModel<double>::getGradient() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
+		cl.def("getIterate", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getIterate, "C++: ROL::TrustRegionModel<double>::getIterate() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
+		cl.def("getObjective", (const class std::shared_ptr<class ROL::Objective<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getObjective, "C++: ROL::TrustRegionModel<double>::getObjective() const --> const class std::shared_ptr<class ROL::Objective<double> >");
+		cl.def("getBoundConstraint", (const class std::shared_ptr<class ROL::BoundConstraint<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getBoundConstraint, "C++: ROL::TrustRegionModel<double>::getBoundConstraint() const --> const class std::shared_ptr<class ROL::BoundConstraint<double> >");
 		cl.def("dualTransform", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::dualTransform, "C++: ROL::TrustRegionModel<double>::dualTransform(class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("tv"), pybind11::arg("v"));
 		cl.def("primalTransform", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::primalTransform, "C++: ROL::TrustRegionModel<double>::primalTransform(class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("tv"), pybind11::arg("v"));
 		cl.def("updatePredictedReduction", (void (ROL::TrustRegionModel<double>::*)(double &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::updatePredictedReduction, "C++: ROL::TrustRegionModel<double>::updatePredictedReduction(double &, const class ROL::Vector<double> &) --> void", pybind11::arg("pred"), pybind11::arg("s"));
@@ -595,14 +594,14 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ColemanLiModel file:ROL_ColemanLiModel.hpp line:60
-		pybind11::class_<ROL::ColemanLiModel<double>, Teuchos::RCP<ROL::ColemanLiModel<double>>, PyCallBack_ROL_ColemanLiModel_double_t, ROL::TrustRegionModel<double>> cl(M("ROL"), "ColemanLiModel_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::ColemanLiModel<double>, std::shared_ptr<ROL::ColemanLiModel<double>>, PyCallBack_ROL_ColemanLiModel_double_t, ROL::TrustRegionModel<double>> cl(M("ROL"), "ColemanLiModel_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3); } ), "doc");
 		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4); } ), "doc");
 		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5); } ), "doc");
 		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5, a6); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5, a6); } ), "doc");
-		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class Teuchos::RCP<class ROL::Secant<double> > & a7){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5, a6, a7); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class Teuchos::RCP<class ROL::Secant<double> > & a7){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5, a6, a7); } ), "doc");
-		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class Teuchos::RCP<class ROL::Secant<double> > & a7, const bool & a8){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5, a6, a7, a8); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class Teuchos::RCP<class ROL::Secant<double> > & a7, const bool & a8){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5, a6, a7, a8); } ), "doc");
-		cl.def( pybind11::init<class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const double, const double, const bool, const class Teuchos::RCP<class ROL::Secant<double> > &, const bool, const bool>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("stepBackMax"), pybind11::arg("stepBackScale"), pybind11::arg("singleReflect"), pybind11::arg("secant"), pybind11::arg("useSecantPrecond"), pybind11::arg("useSecantHessVec") );
+		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class std::shared_ptr<class ROL::Secant<double> > & a7){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5, a6, a7); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class std::shared_ptr<class ROL::Secant<double> > & a7){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5, a6, a7); } ), "doc");
+		cl.def( pybind11::init( [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class std::shared_ptr<class ROL::Secant<double> > & a7, const bool & a8){ return new ROL::ColemanLiModel<double>(a0, a1, a2, a3, a4, a5, a6, a7, a8); }, [](class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double & a4, const double & a5, const bool & a6, const class std::shared_ptr<class ROL::Secant<double> > & a7, const bool & a8){ return new PyCallBack_ROL_ColemanLiModel_double_t(a0, a1, a2, a3, a4, a5, a6, a7, a8); } ), "doc");
+		cl.def( pybind11::init<class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const double, const double, const bool, const class std::shared_ptr<class ROL::Secant<double> > &, const bool, const bool>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("stepBackMax"), pybind11::arg("stepBackScale"), pybind11::arg("singleReflect"), pybind11::arg("secant"), pybind11::arg("useSecantPrecond"), pybind11::arg("useSecantHessVec") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_ColemanLiModel_double_t const &o){ return new PyCallBack_ROL_ColemanLiModel_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::ColemanLiModel<double> const &o){ return new ROL::ColemanLiModel<double>(o); } ) );
@@ -612,7 +611,7 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 		cl.def("update", [](ROL::ColemanLiModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", [](ROL::ColemanLiModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1, int const & a2) -> void { return o.update(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
 		cl.def("update", [](ROL::ColemanLiModel<double> &o, class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3) -> void { return o.update(a0, a1, a2, a3); }, "", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"));
-		cl.def("update", (void (ROL::ColemanLiModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &)) &ROL::ColemanLiModel<double>::update, "C++: ROL::ColemanLiModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
+		cl.def("update", (void (ROL::ColemanLiModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &)) &ROL::ColemanLiModel<double>::update, "C++: ROL::ColemanLiModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
 		cl.def("setRadius", (void (ROL::ColemanLiModel<double>::*)(const double)) &ROL::ColemanLiModel<double>::setRadius, "C++: ROL::ColemanLiModel<double>::setRadius(const double) --> void", pybind11::arg("del"));
 		cl.def("value", (double (ROL::ColemanLiModel<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::ColemanLiModel<double>::value, "C++: ROL::ColemanLiModel<double>::value(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("gradient", (void (ROL::ColemanLiModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::ColemanLiModel<double>::gradient, "C++: ROL::ColemanLiModel<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("s"), pybind11::arg("tol"));
@@ -627,16 +626,16 @@ void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string con
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1, int const & a2) -> void { return o.update(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
 		cl.def("update", [](ROL::TrustRegionModel<double> &o, class ROL::Objective<double> & a0, class ROL::BoundConstraint<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3) -> void { return o.update(a0, a1, a2, a3); }, "", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"));
-		cl.def("update", (void (ROL::TrustRegionModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &)) &ROL::TrustRegionModel<double>::update, "C++: ROL::TrustRegionModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
+		cl.def("update", (void (ROL::TrustRegionModel<double>::*)(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &)) &ROL::TrustRegionModel<double>::update, "C++: ROL::TrustRegionModel<double>::update(class ROL::Objective<double> &, class ROL::BoundConstraint<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class std::shared_ptr<class ROL::Secant<double> > &) --> void", pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("secant"));
 		cl.def("value", (double (ROL::TrustRegionModel<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::value, "C++: ROL::TrustRegionModel<double>::value(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("gradient", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::gradient, "C++: ROL::TrustRegionModel<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("hessVec", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::hessVec, "C++: ROL::TrustRegionModel<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("invHessVec", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::invHessVec, "C++: ROL::TrustRegionModel<double>::invHessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
 		cl.def("precond", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::TrustRegionModel<double>::precond, "C++: ROL::TrustRegionModel<double>::precond(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("Pv"), pybind11::arg("v"), pybind11::arg("s"), pybind11::arg("tol"));
-		cl.def("getGradient", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getGradient, "C++: ROL::TrustRegionModel<double>::getGradient() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
-		cl.def("getIterate", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getIterate, "C++: ROL::TrustRegionModel<double>::getIterate() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
-		cl.def("getObjective", (const class Teuchos::RCP<class ROL::Objective<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getObjective, "C++: ROL::TrustRegionModel<double>::getObjective() const --> const class Teuchos::RCP<class ROL::Objective<double> >");
-		cl.def("getBoundConstraint", (const class Teuchos::RCP<class ROL::BoundConstraint<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getBoundConstraint, "C++: ROL::TrustRegionModel<double>::getBoundConstraint() const --> const class Teuchos::RCP<class ROL::BoundConstraint<double> >");
+		cl.def("getGradient", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getGradient, "C++: ROL::TrustRegionModel<double>::getGradient() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
+		cl.def("getIterate", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getIterate, "C++: ROL::TrustRegionModel<double>::getIterate() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
+		cl.def("getObjective", (const class std::shared_ptr<class ROL::Objective<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getObjective, "C++: ROL::TrustRegionModel<double>::getObjective() const --> const class std::shared_ptr<class ROL::Objective<double> >");
+		cl.def("getBoundConstraint", (const class std::shared_ptr<class ROL::BoundConstraint<double> > (ROL::TrustRegionModel<double>::*)() const) &ROL::TrustRegionModel<double>::getBoundConstraint, "C++: ROL::TrustRegionModel<double>::getBoundConstraint() const --> const class std::shared_ptr<class ROL::BoundConstraint<double> >");
 		cl.def("dualTransform", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::dualTransform, "C++: ROL::TrustRegionModel<double>::dualTransform(class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("tv"), pybind11::arg("v"));
 		cl.def("primalTransform", (void (ROL::TrustRegionModel<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::primalTransform, "C++: ROL::TrustRegionModel<double>::primalTransform(class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("tv"), pybind11::arg("v"));
 		cl.def("updatePredictedReduction", (void (ROL::TrustRegionModel<double>::*)(double &, const class ROL::Vector<double> &)) &ROL::TrustRegionModel<double>::updatePredictedReduction, "C++: ROL::TrustRegionModel<double>::updatePredictedReduction(double &, const class ROL::Vector<double> &) --> void", pybind11::arg("pred"), pybind11::arg("s"));

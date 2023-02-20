@@ -6,14 +6,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // std::type_info file:typeinfo line:88
@@ -70,7 +69,7 @@ struct PyCallBack_std_bad_cast : public std::bad_cast {
 void bind_std_typeinfo(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // std::type_info file:typeinfo line:88
-		pybind11::class_<std::type_info, Teuchos::RCP<std::type_info>, PyCallBack_std_type_info> cl(M("std"), "type_info", "", pybind11::module_local());
+		pybind11::class_<std::type_info, std::shared_ptr<std::type_info>, PyCallBack_std_type_info> cl(M("std"), "type_info", "", pybind11::module_local());
 		cl.def("name", (const char * (std::type_info::*)() const) &std::type_info::name, "C++: std::type_info::name() const --> const char *", pybind11::return_value_policy::automatic);
 		cl.def("before", (bool (std::type_info::*)(const class std::type_info &) const) &std::type_info::before, "C++: std::type_info::before(const class std::type_info &) const --> bool", pybind11::arg("__arg"));
 		cl.def("__eq__", (bool (std::type_info::*)(const class std::type_info &) const) &std::type_info::operator==, "C++: std::type_info::operator==(const class std::type_info &) const --> bool", pybind11::arg("__arg"));
@@ -80,7 +79,7 @@ void bind_std_typeinfo(std::function< pybind11::module &(std::string const &name
 		cl.def("__is_function_p", (bool (std::type_info::*)() const) &std::type_info::__is_function_p, "C++: std::type_info::__is_function_p() const --> bool");
 	}
 	{ // std::bad_cast file:typeinfo line:190
-		pybind11::class_<std::bad_cast, Teuchos::RCP<std::bad_cast>, PyCallBack_std_bad_cast, std::exception> cl(M("std"), "bad_cast", "", pybind11::module_local());
+		pybind11::class_<std::bad_cast, std::shared_ptr<std::bad_cast>, PyCallBack_std_bad_cast, std::exception> cl(M("std"), "bad_cast", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::bad_cast(); }, [](){ return new PyCallBack_std_bad_cast(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_std_bad_cast const &o){ return new PyCallBack_std_bad_cast(o); } ) );
 		cl.def( pybind11::init( [](std::bad_cast const &o){ return new std::bad_cast(o); } ) );

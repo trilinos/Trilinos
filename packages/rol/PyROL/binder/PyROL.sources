@@ -2,15 +2,10 @@ PyROL.cpp
 std/postypes.cpp
 std/typeinfo.cpp
 std/locale_classes.cpp
-std/ostream_tcc.cpp
 ROL_Elementwise_Function.cpp
 std/istream_tcc.cpp
 Teuchos_ConstTypeTraits.cpp
 ROL_ScalarTraits.cpp
-Teuchos_any.cpp
-Teuchos_ENull.cpp
-Teuchos_Ptr.cpp
-Teuchos_RCP.cpp
 ROL_Ptr.cpp
 ROL_Types.cpp
 ROL_Elementwise_Reduce.cpp
@@ -19,6 +14,9 @@ ROL_UpdateType.cpp
 Teuchos_DataAccess.cpp
 Teuchos_ParameterListExceptions.cpp
 Teuchos_iostream_helpers.cpp
+Teuchos_ENull.cpp
+Teuchos_Ptr.cpp
+Teuchos_RCP.cpp
 Teuchos_FancyOStream.cpp
 Teuchos_Dependency.cpp
 ROL_ParameterList.cpp

@@ -3,19 +3,18 @@
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_Objective.hpp>
+#include <ROL_PartitionedVector.hpp>
 #include <ROL_Secant.hpp>
 #include <ROL_Step.hpp>
 #include <ROL_TrustRegionStep.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <cwchar>
 #include <deque>
@@ -33,14 +32,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::TrustRegionStep file: line:46
@@ -221,10 +219,10 @@ struct PyCallBack_ROL_TrustRegionStep_double_t : public ROL::TrustRegionStep<dou
 void bind_unknown_unknown_4(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TrustRegionStep file: line:46
-		pybind11::class_<ROL::TrustRegionStep<double>, Teuchos::RCP<ROL::TrustRegionStep<double>>, PyCallBack_ROL_TrustRegionStep_double_t, ROL::Step<double>> cl(M("ROL"), "TrustRegionStep_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::TrustRegionStep<double>, std::shared_ptr<ROL::TrustRegionStep<double>>, PyCallBack_ROL_TrustRegionStep_double_t, ROL::Step<double>> cl(M("ROL"), "TrustRegionStep_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
-		cl.def( pybind11::init<class Teuchos::RCP<class ROL::Secant<double> > &, class Teuchos::ParameterList &>(), pybind11::arg("secant"), pybind11::arg("parlist") );
+		cl.def( pybind11::init<class std::shared_ptr<class ROL::Secant<double> > &, class Teuchos::ParameterList &>(), pybind11::arg("secant"), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TrustRegionStep_double_t const &o){ return new PyCallBack_ROL_TrustRegionStep_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::TrustRegionStep<double> const &o){ return new ROL::TrustRegionStep<double>(o); } ) );
@@ -257,7 +255,7 @@ void bind_unknown_unknown_4(std::function< pybind11::module &(std::string const 
 		cl.def("printName", (std::string (ROL::Step<double>::*)() const) &ROL::Step<double>::printName, "C++: ROL::Step<double>::printName() const --> std::string");
 		cl.def("print", [](ROL::Step<double> const &o, struct ROL::AlgorithmState<double> & a0) -> std::string { return o.print(a0); }, "", pybind11::arg("algo_state"));
 		cl.def("print", (std::string (ROL::Step<double>::*)(struct ROL::AlgorithmState<double> &, bool) const) &ROL::Step<double>::print, "C++: ROL::Step<double>::print(struct ROL::AlgorithmState<double> &, bool) const --> std::string", pybind11::arg("algo_state"), pybind11::arg("printHeader"));
-		cl.def("getStepState", (const class Teuchos::RCP<const struct ROL::StepState<double> > (ROL::Step<double>::*)() const) &ROL::Step<double>::getStepState, "C++: ROL::Step<double>::getStepState() const --> const class Teuchos::RCP<const struct ROL::StepState<double> >");
+		cl.def("getStepState", (const class std::shared_ptr<const struct ROL::StepState<double> > (ROL::Step<double>::*)() const) &ROL::Step<double>::getStepState, "C++: ROL::Step<double>::getStepState() const --> const class std::shared_ptr<const struct ROL::StepState<double> >");
 		cl.def("reset", [](ROL::Step<double> &o) -> void { return o.reset(); }, "");
 		cl.def("reset", (void (ROL::Step<double>::*)(const double)) &ROL::Step<double>::reset, "C++: ROL::Step<double>::reset(const double) --> void", pybind11::arg("searchSize"));
 		cl.def("assign", (class ROL::Step<double> & (ROL::Step<double>::*)(const class ROL::Step<double> &)) &ROL::Step<double>::operator=, "C++: ROL::Step<double>::operator=(const class ROL::Step<double> &) --> class ROL::Step<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));

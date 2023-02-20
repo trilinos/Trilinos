@@ -23,14 +23,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // Teuchos::Object file:Teuchos_Object.hpp line:68
@@ -63,19 +62,6 @@ struct PyCallBack_Teuchos_Object : public Teuchos::Object {
 		}
 		return Object::label();
 	}
-	void print(std::ostream & a0) const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Object *>(this), "print");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		return Object::print(a0);
-	}
 	int reportError(const std::string a0, int a1) const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::Object *>(this), "reportError");
@@ -95,38 +81,12 @@ struct PyCallBack_Teuchos_Object : public Teuchos::Object {
 struct PyCallBack_Teuchos_SerialDenseMatrix_int_double_t : public Teuchos::SerialDenseMatrix<int,double> {
 	using Teuchos::SerialDenseMatrix<int,double>::SerialDenseMatrix;
 
-	std::ostream & print(std::ostream & a0) const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::SerialDenseMatrix<int,double> *>(this), "print");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<std::ostream &>::value) {
-				static pybind11::detail::override_caster_t<std::ostream &> caster;
-				return pybind11::detail::cast_ref<std::ostream &>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<std::ostream &>(std::move(o));
-		}
-		return SerialDenseMatrix::print(a0);
-	}
 };
 
 // Teuchos::SerialDenseVector file:Teuchos_SerialDenseVector.hpp line:60
 struct PyCallBack_Teuchos_SerialDenseVector_int_double_t : public Teuchos::SerialDenseVector<int,double> {
 	using Teuchos::SerialDenseVector<int,double>::SerialDenseVector;
 
-	std::ostream & print(std::ostream & a0) const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const Teuchos::SerialDenseVector<int,double> *>(this), "print");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<std::ostream &>::value) {
-				static pybind11::detail::override_caster_t<std::ostream &> caster;
-				return pybind11::detail::cast_ref<std::ostream &>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<std::ostream &>(std::move(o));
-		}
-		return SerialDenseVector::print(a0);
-	}
 };
 
 void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const &namespace_) > &M)
@@ -140,7 +100,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 ;
 
 	{ // Teuchos::Object file:Teuchos_Object.hpp line:68
-		pybind11::class_<Teuchos::Object, Teuchos::RCP<Teuchos::Object>, PyCallBack_Teuchos_Object> cl(M("Teuchos"), "Object", "", pybind11::module_local());
+		pybind11::class_<Teuchos::Object, std::shared_ptr<Teuchos::Object>, PyCallBack_Teuchos_Object> cl(M("Teuchos"), "Object", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::Object(); }, [](){ return new PyCallBack_Teuchos_Object(); } ), "doc");
 		cl.def( pybind11::init<int>(), pybind11::arg("tracebackModeIn") );
 
@@ -156,14 +116,13 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("setTracebackMode", (void (*)(int)) &Teuchos::Object::setTracebackMode, "Set the value of the Object error traceback report mode.\n\n TracebackMode controls whether or not traceback information is\n printed when run time integer errors are detected:\n\n <= 0 - No information report\n\n = 1 - Fatal (negative) values are reported\n\n >= 2 - All values (except zero) reported.\n\n \n Default is set to -1 when object is constructed.\n\nC++: Teuchos::Object::setTracebackMode(int) --> void", pybind11::arg("tracebackModeValue"));
 		cl.def("label", (const char * (Teuchos::Object::*)() const) &Teuchos::Object::label, "Access the object's label (LEGACY; return std::string instead).\n\nC++: Teuchos::Object::label() const --> const char *", pybind11::return_value_policy::automatic);
 		cl.def_static("getTracebackMode", (int (*)()) &Teuchos::Object::getTracebackMode, "Get the value of the Object error traceback report mode.\n\nC++: Teuchos::Object::getTracebackMode() --> int");
-		cl.def("print", (void (Teuchos::Object::*)(std::ostream &) const) &Teuchos::Object::print, "Print the object to the given output stream.\n\nC++: Teuchos::Object::print(std::ostream &) const --> void", pybind11::arg("os"));
 		cl.def("reportError", (int (Teuchos::Object::*)(const std::string, int) const) &Teuchos::Object::reportError, "Report an error with this Object.\n\nC++: Teuchos::Object::reportError(const std::string, int) const --> int", pybind11::arg("message"), pybind11::arg("errorCode"));
 		cl.def("assign", (class Teuchos::Object & (Teuchos::Object::*)(const class Teuchos::Object &)) &Teuchos::Object::operator=, "C++: Teuchos::Object::operator=(const class Teuchos::Object &) --> class Teuchos::Object &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 
 		cl.def("__str__", [](Teuchos::Object const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
 	}
 	{ // Teuchos::Flops file:Teuchos_Flops.hpp line:66
-		pybind11::class_<Teuchos::Flops, Teuchos::RCP<Teuchos::Flops>> cl(M("Teuchos"), "Flops", "", pybind11::module_local());
+		pybind11::class_<Teuchos::Flops, std::shared_ptr<Teuchos::Flops>> cl(M("Teuchos"), "Flops", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::Flops(); } ) );
 		cl.def( pybind11::init( [](Teuchos::Flops const &o){ return new Teuchos::Flops(o); } ) );
 		cl.def("flops", (double (Teuchos::Flops::*)() const) &Teuchos::Flops::flops, "Returns the number of floating point operations with  object and resets the count.\n\nC++: Teuchos::Flops::flops() const --> double");
@@ -171,7 +130,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class Teuchos::Flops & (Teuchos::Flops::*)(const class Teuchos::Flops &)) &Teuchos::Flops::operator=, "C++: Teuchos::Flops::operator=(const class Teuchos::Flops &) --> class Teuchos::Flops &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::CompObject file:Teuchos_CompObject.hpp line:65
-		pybind11::class_<Teuchos::CompObject, Teuchos::RCP<Teuchos::CompObject>> cl(M("Teuchos"), "CompObject", "", pybind11::module_local());
+		pybind11::class_<Teuchos::CompObject, std::shared_ptr<Teuchos::CompObject>> cl(M("Teuchos"), "CompObject", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::CompObject(); } ) );
 		cl.def( pybind11::init( [](Teuchos::CompObject const &o){ return new Teuchos::CompObject(o); } ) );
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::Flops &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::Flops &) --> void", pybind11::arg("FlopCounter"));
@@ -196,7 +155,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 	M("Teuchos").def("generic_real_isnaninf", (bool (*)(const double &)) &Teuchos::generic_real_isnaninf<double>, "C++: Teuchos::generic_real_isnaninf(const double &) --> bool", pybind11::arg("x"));
 
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:158
-		pybind11::class_<Teuchos::ScalarTraits<char>, Teuchos::RCP<Teuchos::ScalarTraits<char>>> cl(M("Teuchos"), "ScalarTraits_char_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<char>, std::shared_ptr<Teuchos::ScalarTraits<char>>> cl(M("Teuchos"), "ScalarTraits_char_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<char>(); } ) );
 		cl.def_static("magnitude", (char (*)(char)) &Teuchos::ScalarTraits<char>::magnitude, "C++: Teuchos::ScalarTraits<char>::magnitude(char) --> char", pybind11::arg("a"));
 		cl.def_static("zero", (char (*)()) &Teuchos::ScalarTraits<char>::zero, "C++: Teuchos::ScalarTraits<char>::zero() --> char");
@@ -214,7 +173,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (char (*)(char)) &Teuchos::ScalarTraits<char>::log10, "C++: Teuchos::ScalarTraits<char>::log10(char) --> char", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:195
-		pybind11::class_<Teuchos::ScalarTraits<short>, Teuchos::RCP<Teuchos::ScalarTraits<short>>> cl(M("Teuchos"), "ScalarTraits_short_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<short>, std::shared_ptr<Teuchos::ScalarTraits<short>>> cl(M("Teuchos"), "ScalarTraits_short_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<short>(); } ) );
 		cl.def_static("magnitude", (short (*)(short)) &Teuchos::ScalarTraits<short>::magnitude, "C++: Teuchos::ScalarTraits<short>::magnitude(short) --> short", pybind11::arg("a"));
 		cl.def_static("zero", (short (*)()) &Teuchos::ScalarTraits<short>::zero, "C++: Teuchos::ScalarTraits<short>::zero() --> short");
@@ -232,7 +191,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (short (*)(short)) &Teuchos::ScalarTraits<short>::log10, "C++: Teuchos::ScalarTraits<short>::log10(short) --> short", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:231
-		pybind11::class_<Teuchos::ScalarTraits<unsigned short>, Teuchos::RCP<Teuchos::ScalarTraits<unsigned short>>> cl(M("Teuchos"), "ScalarTraits_unsigned_short_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<unsigned short>, std::shared_ptr<Teuchos::ScalarTraits<unsigned short>>> cl(M("Teuchos"), "ScalarTraits_unsigned_short_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<unsigned short>(); } ) );
 		cl.def_static("magnitude", (unsigned short (*)(unsigned short)) &Teuchos::ScalarTraits<unsigned short>::magnitude, "C++: Teuchos::ScalarTraits<unsigned short>::magnitude(unsigned short) --> unsigned short", pybind11::arg("a"));
 		cl.def_static("zero", (unsigned short (*)()) &Teuchos::ScalarTraits<unsigned short>::zero, "C++: Teuchos::ScalarTraits<unsigned short>::zero() --> unsigned short");
@@ -250,7 +209,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (unsigned short (*)(unsigned short)) &Teuchos::ScalarTraits<unsigned short>::log10, "C++: Teuchos::ScalarTraits<unsigned short>::log10(unsigned short) --> unsigned short", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:268
-		pybind11::class_<Teuchos::ScalarTraits<int>, Teuchos::RCP<Teuchos::ScalarTraits<int>>> cl(M("Teuchos"), "ScalarTraits_int_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<int>, std::shared_ptr<Teuchos::ScalarTraits<int>>> cl(M("Teuchos"), "ScalarTraits_int_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<int>(); } ) );
 		cl.def_static("magnitude", (int (*)(int)) &Teuchos::ScalarTraits<int>::magnitude, "C++: Teuchos::ScalarTraits<int>::magnitude(int) --> int", pybind11::arg("a"));
 		cl.def_static("zero", (int (*)()) &Teuchos::ScalarTraits<int>::zero, "C++: Teuchos::ScalarTraits<int>::zero() --> int");
@@ -268,7 +227,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (int (*)(int)) &Teuchos::ScalarTraits<int>::log10, "C++: Teuchos::ScalarTraits<int>::log10(int) --> int", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:305
-		pybind11::class_<Teuchos::ScalarTraits<unsigned int>, Teuchos::RCP<Teuchos::ScalarTraits<unsigned int>>> cl(M("Teuchos"), "ScalarTraits_unsigned_int_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<unsigned int>, std::shared_ptr<Teuchos::ScalarTraits<unsigned int>>> cl(M("Teuchos"), "ScalarTraits_unsigned_int_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<unsigned int>(); } ) );
 		cl.def_static("magnitude", (unsigned int (*)(unsigned int)) &Teuchos::ScalarTraits<unsigned int>::magnitude, "C++: Teuchos::ScalarTraits<unsigned int>::magnitude(unsigned int) --> unsigned int", pybind11::arg("a"));
 		cl.def_static("zero", (unsigned int (*)()) &Teuchos::ScalarTraits<unsigned int>::zero, "C++: Teuchos::ScalarTraits<unsigned int>::zero() --> unsigned int");
@@ -286,7 +245,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (unsigned int (*)(unsigned int)) &Teuchos::ScalarTraits<unsigned int>::log10, "C++: Teuchos::ScalarTraits<unsigned int>::log10(unsigned int) --> unsigned int", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:342
-		pybind11::class_<Teuchos::ScalarTraits<long>, Teuchos::RCP<Teuchos::ScalarTraits<long>>> cl(M("Teuchos"), "ScalarTraits_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<long>, std::shared_ptr<Teuchos::ScalarTraits<long>>> cl(M("Teuchos"), "ScalarTraits_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<long>(); } ) );
 		cl.def_static("magnitude", (long (*)(long)) &Teuchos::ScalarTraits<long>::magnitude, "C++: Teuchos::ScalarTraits<long>::magnitude(long) --> long", pybind11::arg("a"));
 		cl.def_static("zero", (long (*)()) &Teuchos::ScalarTraits<long>::zero, "C++: Teuchos::ScalarTraits<long>::zero() --> long");
@@ -304,7 +263,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (long (*)(long)) &Teuchos::ScalarTraits<long>::log10, "C++: Teuchos::ScalarTraits<long>::log10(long) --> long", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:381
-		pybind11::class_<Teuchos::ScalarTraits<unsigned long>, Teuchos::RCP<Teuchos::ScalarTraits<unsigned long>>> cl(M("Teuchos"), "ScalarTraits_unsigned_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<unsigned long>, std::shared_ptr<Teuchos::ScalarTraits<unsigned long>>> cl(M("Teuchos"), "ScalarTraits_unsigned_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<unsigned long>(); } ) );
 		cl.def_static("magnitude", (unsigned long (*)(unsigned long)) &Teuchos::ScalarTraits<unsigned long>::magnitude, "C++: Teuchos::ScalarTraits<unsigned long>::magnitude(unsigned long) --> unsigned long", pybind11::arg("a"));
 		cl.def_static("zero", (unsigned long (*)()) &Teuchos::ScalarTraits<unsigned long>::zero, "C++: Teuchos::ScalarTraits<unsigned long>::zero() --> unsigned long");
@@ -322,7 +281,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (unsigned long (*)(unsigned long)) &Teuchos::ScalarTraits<unsigned long>::log10, "C++: Teuchos::ScalarTraits<unsigned long>::log10(unsigned long) --> unsigned long", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:420
-		pybind11::class_<Teuchos::ScalarTraits<long long>, Teuchos::RCP<Teuchos::ScalarTraits<long long>>> cl(M("Teuchos"), "ScalarTraits_long_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<long long>, std::shared_ptr<Teuchos::ScalarTraits<long long>>> cl(M("Teuchos"), "ScalarTraits_long_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<long long>(); } ) );
 		cl.def_static("magnitude", (long long (*)(long long)) &Teuchos::ScalarTraits<long long>::magnitude, "C++: Teuchos::ScalarTraits<long long>::magnitude(long long) --> long long", pybind11::arg("a"));
 		cl.def_static("zero", (long long (*)()) &Teuchos::ScalarTraits<long long>::zero, "C++: Teuchos::ScalarTraits<long long>::zero() --> long long");
@@ -340,7 +299,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (long long (*)(long long)) &Teuchos::ScalarTraits<long long>::log10, "C++: Teuchos::ScalarTraits<long long>::log10(long long) --> long long", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:458
-		pybind11::class_<Teuchos::ScalarTraits<unsigned long long>, Teuchos::RCP<Teuchos::ScalarTraits<unsigned long long>>> cl(M("Teuchos"), "ScalarTraits_unsigned_long_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<unsigned long long>, std::shared_ptr<Teuchos::ScalarTraits<unsigned long long>>> cl(M("Teuchos"), "ScalarTraits_unsigned_long_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<unsigned long long>(); } ) );
 		cl.def_static("magnitude", (unsigned long long (*)(unsigned long long)) &Teuchos::ScalarTraits<unsigned long long>::magnitude, "C++: Teuchos::ScalarTraits<unsigned long long>::magnitude(unsigned long long) --> unsigned long long", pybind11::arg("a"));
 		cl.def_static("zero", (unsigned long long (*)()) &Teuchos::ScalarTraits<unsigned long long>::zero, "C++: Teuchos::ScalarTraits<unsigned long long>::zero() --> unsigned long long");
@@ -358,7 +317,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (unsigned long long (*)(unsigned long long)) &Teuchos::ScalarTraits<unsigned long long>::log10, "C++: Teuchos::ScalarTraits<unsigned long long>::log10(unsigned long long) --> unsigned long long", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:581
-		pybind11::class_<Teuchos::ScalarTraits<float>, Teuchos::RCP<Teuchos::ScalarTraits<float>>> cl(M("Teuchos"), "ScalarTraits_float_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<float>, std::shared_ptr<Teuchos::ScalarTraits<float>>> cl(M("Teuchos"), "ScalarTraits_float_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<float>(); } ) );
 		cl.def_static("eps", (float (*)()) &Teuchos::ScalarTraits<float>::eps, "C++: Teuchos::ScalarTraits<float>::eps() --> float");
 		cl.def_static("sfmin", (float (*)()) &Teuchos::ScalarTraits<float>::sfmin, "C++: Teuchos::ScalarTraits<float>::sfmin() --> float");
@@ -388,7 +347,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (float (*)(float)) &Teuchos::ScalarTraits<float>::log10, "C++: Teuchos::ScalarTraits<float>::log10(float) --> float", pybind11::arg("x"));
 	}
 	{ // Teuchos::ScalarTraits file:Teuchos_ScalarTraits.hpp line:679
-		pybind11::class_<Teuchos::ScalarTraits<double>, Teuchos::RCP<Teuchos::ScalarTraits<double>>> cl(M("Teuchos"), "ScalarTraits_double_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::ScalarTraits<double>, std::shared_ptr<Teuchos::ScalarTraits<double>>> cl(M("Teuchos"), "ScalarTraits_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ScalarTraits<double>(); } ) );
 		cl.def_static("eps", (double (*)()) &Teuchos::ScalarTraits<double>::eps, "C++: Teuchos::ScalarTraits<double>::eps() --> double");
 		cl.def_static("sfmin", (double (*)()) &Teuchos::ScalarTraits<double>::sfmin, "C++: Teuchos::ScalarTraits<double>::sfmin() --> double");
@@ -418,7 +377,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("log10", (double (*)(double)) &Teuchos::ScalarTraits<double>::log10, "C++: Teuchos::ScalarTraits<double>::log10(double) --> double", pybind11::arg("x"));
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:108
-		pybind11::class_<Teuchos::OrdinalTraits<char>, Teuchos::RCP<Teuchos::OrdinalTraits<char>>> cl(M("Teuchos"), "OrdinalTraits_char_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<char>, std::shared_ptr<Teuchos::OrdinalTraits<char>>> cl(M("Teuchos"), "OrdinalTraits_char_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<char>(); } ) );
 		cl.def_static("zero", (char (*)()) &Teuchos::OrdinalTraits<char>::zero, "C++: Teuchos::OrdinalTraits<char>::zero() --> char");
 		cl.def_static("one", (char (*)()) &Teuchos::OrdinalTraits<char>::one, "C++: Teuchos::OrdinalTraits<char>::one() --> char");
@@ -427,7 +386,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<char>::name, "C++: Teuchos::OrdinalTraits<char>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:118
-		pybind11::class_<Teuchos::OrdinalTraits<short>, Teuchos::RCP<Teuchos::OrdinalTraits<short>>> cl(M("Teuchos"), "OrdinalTraits_short_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<short>, std::shared_ptr<Teuchos::OrdinalTraits<short>>> cl(M("Teuchos"), "OrdinalTraits_short_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<short>(); } ) );
 		cl.def_static("zero", (short (*)()) &Teuchos::OrdinalTraits<short>::zero, "C++: Teuchos::OrdinalTraits<short>::zero() --> short");
 		cl.def_static("one", (short (*)()) &Teuchos::OrdinalTraits<short>::one, "C++: Teuchos::OrdinalTraits<short>::one() --> short");
@@ -436,7 +395,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<short>::name, "C++: Teuchos::OrdinalTraits<short>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:128
-		pybind11::class_<Teuchos::OrdinalTraits<int>, Teuchos::RCP<Teuchos::OrdinalTraits<int>>> cl(M("Teuchos"), "OrdinalTraits_int_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<int>, std::shared_ptr<Teuchos::OrdinalTraits<int>>> cl(M("Teuchos"), "OrdinalTraits_int_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<int>(); } ) );
 		cl.def_static("zero", (int (*)()) &Teuchos::OrdinalTraits<int>::zero, "C++: Teuchos::OrdinalTraits<int>::zero() --> int");
 		cl.def_static("one", (int (*)()) &Teuchos::OrdinalTraits<int>::one, "C++: Teuchos::OrdinalTraits<int>::one() --> int");
@@ -445,7 +404,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<int>::name, "C++: Teuchos::OrdinalTraits<int>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:138
-		pybind11::class_<Teuchos::OrdinalTraits<unsigned int>, Teuchos::RCP<Teuchos::OrdinalTraits<unsigned int>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_int_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<unsigned int>, std::shared_ptr<Teuchos::OrdinalTraits<unsigned int>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_int_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<unsigned int>(); } ) );
 		cl.def_static("zero", (unsigned int (*)()) &Teuchos::OrdinalTraits<unsigned int>::zero, "C++: Teuchos::OrdinalTraits<unsigned int>::zero() --> unsigned int");
 		cl.def_static("one", (unsigned int (*)()) &Teuchos::OrdinalTraits<unsigned int>::one, "C++: Teuchos::OrdinalTraits<unsigned int>::one() --> unsigned int");
@@ -454,7 +413,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<unsigned int>::name, "C++: Teuchos::OrdinalTraits<unsigned int>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:148
-		pybind11::class_<Teuchos::OrdinalTraits<long>, Teuchos::RCP<Teuchos::OrdinalTraits<long>>> cl(M("Teuchos"), "OrdinalTraits_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<long>, std::shared_ptr<Teuchos::OrdinalTraits<long>>> cl(M("Teuchos"), "OrdinalTraits_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<long>(); } ) );
 		cl.def_static("zero", (long (*)()) &Teuchos::OrdinalTraits<long>::zero, "C++: Teuchos::OrdinalTraits<long>::zero() --> long");
 		cl.def_static("one", (long (*)()) &Teuchos::OrdinalTraits<long>::one, "C++: Teuchos::OrdinalTraits<long>::one() --> long");
@@ -463,7 +422,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<long>::name, "C++: Teuchos::OrdinalTraits<long>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:158
-		pybind11::class_<Teuchos::OrdinalTraits<unsigned long>, Teuchos::RCP<Teuchos::OrdinalTraits<unsigned long>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<unsigned long>, std::shared_ptr<Teuchos::OrdinalTraits<unsigned long>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<unsigned long>(); } ) );
 		cl.def_static("zero", (unsigned long (*)()) &Teuchos::OrdinalTraits<unsigned long>::zero, "C++: Teuchos::OrdinalTraits<unsigned long>::zero() --> unsigned long");
 		cl.def_static("one", (unsigned long (*)()) &Teuchos::OrdinalTraits<unsigned long>::one, "C++: Teuchos::OrdinalTraits<unsigned long>::one() --> unsigned long");
@@ -472,7 +431,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<unsigned long>::name, "C++: Teuchos::OrdinalTraits<unsigned long>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:168
-		pybind11::class_<Teuchos::OrdinalTraits<long long>, Teuchos::RCP<Teuchos::OrdinalTraits<long long>>> cl(M("Teuchos"), "OrdinalTraits_long_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<long long>, std::shared_ptr<Teuchos::OrdinalTraits<long long>>> cl(M("Teuchos"), "OrdinalTraits_long_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<long long>(); } ) );
 		cl.def_static("zero", (long long (*)()) &Teuchos::OrdinalTraits<long long>::zero, "C++: Teuchos::OrdinalTraits<long long>::zero() --> long long");
 		cl.def_static("one", (long long (*)()) &Teuchos::OrdinalTraits<long long>::one, "C++: Teuchos::OrdinalTraits<long long>::one() --> long long");
@@ -481,7 +440,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def_static("name", (std::string (*)()) &Teuchos::OrdinalTraits<long long>::name, "C++: Teuchos::OrdinalTraits<long long>::name() --> std::string");
 	}
 	{ // Teuchos::OrdinalTraits file:Teuchos_OrdinalTraits.hpp line:178
-		pybind11::class_<Teuchos::OrdinalTraits<unsigned long long>, Teuchos::RCP<Teuchos::OrdinalTraits<unsigned long long>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_long_long_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::OrdinalTraits<unsigned long long>, std::shared_ptr<Teuchos::OrdinalTraits<unsigned long long>>> cl(M("Teuchos"), "OrdinalTraits_unsigned_long_long_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::OrdinalTraits<unsigned long long>(); } ) );
 		cl.def_static("zero", (unsigned long long (*)()) &Teuchos::OrdinalTraits<unsigned long long>::zero, "C++: Teuchos::OrdinalTraits<unsigned long long>::zero() --> unsigned long long");
 		cl.def_static("one", (unsigned long long (*)()) &Teuchos::OrdinalTraits<unsigned long long>::one, "C++: Teuchos::OrdinalTraits<unsigned long long>::one() --> unsigned long long");
@@ -537,7 +496,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 ;
 
 	{ // Teuchos::SerialDenseMatrix file:Teuchos_SerialDenseMatrix.hpp line:67
-		pybind11::class_<Teuchos::SerialDenseMatrix<int,double>, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double>>, PyCallBack_Teuchos_SerialDenseMatrix_int_double_t, Teuchos::CompObject> cl(M("Teuchos"), "SerialDenseMatrix_int_double_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::SerialDenseMatrix<int,double>, std::shared_ptr<Teuchos::SerialDenseMatrix<int,double>>, PyCallBack_Teuchos_SerialDenseMatrix_int_double_t, Teuchos::CompObject> cl(M("Teuchos"), "SerialDenseMatrix_int_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::SerialDenseMatrix<int,double>(); }, [](){ return new PyCallBack_Teuchos_SerialDenseMatrix_int_double_t(); } ) );
 		cl.def( pybind11::init( [](int const & a0, int const & a1){ return new Teuchos::SerialDenseMatrix<int,double>(a0, a1); }, [](int const & a0, int const & a1){ return new PyCallBack_Teuchos_SerialDenseMatrix_int_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<int, int, bool>(), pybind11::arg("numRows_in"), pybind11::arg("numCols_in"), pybind11::arg("zeroOut") );
@@ -580,7 +539,6 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("normOne", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normOne, "C++: Teuchos::SerialDenseMatrix<int, double>::normOne() const --> double");
 		cl.def("normInf", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normInf, "C++: Teuchos::SerialDenseMatrix<int, double>::normInf() const --> double");
 		cl.def("normFrobenius", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normFrobenius, "C++: Teuchos::SerialDenseMatrix<int, double>::normFrobenius() const --> double");
-		cl.def("print", (std::ostream & (Teuchos::SerialDenseMatrix<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseMatrix<int, double>::print, "C++: Teuchos::SerialDenseMatrix<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::Flops &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::Flops &) --> void", pybind11::arg("FlopCounter"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::CompObject &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::CompObject &) --> void", pybind11::arg("compObject"));
 		cl.def("unsetFlopCounter", (void (Teuchos::CompObject::*)()) &Teuchos::CompObject::unsetFlopCounter, "Set the internal Teuchos::Flops() pointer to 0 (no flops counted).\n\nC++: Teuchos::CompObject::unsetFlopCounter() --> void");
@@ -594,7 +552,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class Teuchos::CompObject & (Teuchos::CompObject::*)(const class Teuchos::CompObject &)) &Teuchos::CompObject::operator=, "C++: Teuchos::CompObject::operator=(const class Teuchos::CompObject &) --> class Teuchos::CompObject &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::SerialDenseVector file:Teuchos_SerialDenseVector.hpp line:60
-		pybind11::class_<Teuchos::SerialDenseVector<int,double>, Teuchos::RCP<Teuchos::SerialDenseVector<int,double>>, PyCallBack_Teuchos_SerialDenseVector_int_double_t, Teuchos::SerialDenseMatrix<int,double>> cl(M("Teuchos"), "SerialDenseVector_int_double_t", "", pybind11::module_local());
+		pybind11::class_<Teuchos::SerialDenseVector<int,double>, std::shared_ptr<Teuchos::SerialDenseVector<int,double>>, PyCallBack_Teuchos_SerialDenseVector_int_double_t, Teuchos::SerialDenseMatrix<int,double>> cl(M("Teuchos"), "SerialDenseVector_int_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::SerialDenseVector<int,double>(); }, [](){ return new PyCallBack_Teuchos_SerialDenseVector_int_double_t(); } ) );
 		cl.def( pybind11::init( [](int const & a0){ return new Teuchos::SerialDenseVector<int,double>(a0); }, [](int const & a0){ return new PyCallBack_Teuchos_SerialDenseVector_int_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<int, bool>(), pybind11::arg("length_in"), pybind11::arg("zeroOut") );
@@ -616,7 +574,6 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("__getitem__", (double & (Teuchos::SerialDenseVector<int,double>::*)(int)) &Teuchos::SerialDenseVector<int, double>::operator[], "C++: Teuchos::SerialDenseVector<int, double>::operator[](int) --> double &", pybind11::return_value_policy::automatic, pybind11::arg("index"));
 		cl.def("dot", (double (Teuchos::SerialDenseVector<int,double>::*)(const class Teuchos::SerialDenseVector<int, double> &) const) &Teuchos::SerialDenseVector<int, double>::dot, "C++: Teuchos::SerialDenseVector<int, double>::dot(const class Teuchos::SerialDenseVector<int, double> &) const --> double", pybind11::arg("x"));
 		cl.def("length", (int (Teuchos::SerialDenseVector<int,double>::*)() const) &Teuchos::SerialDenseVector<int, double>::length, "C++: Teuchos::SerialDenseVector<int, double>::length() const --> int");
-		cl.def("print", (std::ostream & (Teuchos::SerialDenseVector<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseVector<int, double>::print, "C++: Teuchos::SerialDenseVector<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("shape", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::shape, "C++: Teuchos::SerialDenseMatrix<int, double>::shape(int, int) --> int", pybind11::arg("numRows_in"), pybind11::arg("numCols_in"));
 		cl.def("shapeUninitialized", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::shapeUninitialized, "C++: Teuchos::SerialDenseMatrix<int, double>::shapeUninitialized(int, int) --> int", pybind11::arg("numRows"), pybind11::arg("numCols"));
 		cl.def("reshape", (int (Teuchos::SerialDenseMatrix<int,double>::*)(int, int)) &Teuchos::SerialDenseMatrix<int, double>::reshape, "C++: Teuchos::SerialDenseMatrix<int, double>::reshape(int, int) --> int", pybind11::arg("numRows_in"), pybind11::arg("numCols_in"));
@@ -645,7 +602,6 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("normOne", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normOne, "C++: Teuchos::SerialDenseMatrix<int, double>::normOne() const --> double");
 		cl.def("normInf", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normInf, "C++: Teuchos::SerialDenseMatrix<int, double>::normInf() const --> double");
 		cl.def("normFrobenius", (double (Teuchos::SerialDenseMatrix<int,double>::*)() const) &Teuchos::SerialDenseMatrix<int, double>::normFrobenius, "C++: Teuchos::SerialDenseMatrix<int, double>::normFrobenius() const --> double");
-		cl.def("print", (std::ostream & (Teuchos::SerialDenseMatrix<int,double>::*)(std::ostream &) const) &Teuchos::SerialDenseMatrix<int, double>::print, "C++: Teuchos::SerialDenseMatrix<int, double>::print(std::ostream &) const --> std::ostream &", pybind11::return_value_policy::automatic, pybind11::arg("os"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::Flops &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::Flops &) --> void", pybind11::arg("FlopCounter"));
 		cl.def("setFlopCounter", (void (Teuchos::CompObject::*)(const class Teuchos::CompObject &)) &Teuchos::CompObject::setFlopCounter, "Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.\n\nC++: Teuchos::CompObject::setFlopCounter(const class Teuchos::CompObject &) --> void", pybind11::arg("compObject"));
 		cl.def("unsetFlopCounter", (void (Teuchos::CompObject::*)()) &Teuchos::CompObject::unsetFlopCounter, "Set the internal Teuchos::Flops() pointer to 0 (no flops counted).\n\nC++: Teuchos::CompObject::unsetFlopCounter() --> void");

@@ -1,34 +1,36 @@
 #include <ROL_AugmentedLagrangianObjective.hpp>
 #include <ROL_BoundConstraint.hpp>
+#include <ROL_BoundConstraint_Partitioned.hpp>
+#include <ROL_Bounds.hpp>
 #include <ROL_ColemanLiModel.hpp>
 #include <ROL_Constraint.hpp>
+#include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_Constraint_SimOpt.hpp>
 #include <ROL_ElasticObjective.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_KelleySachsModel.hpp>
+#include <ROL_LinMoreModel.hpp>
 #include <ROL_Objective.hpp>
+#include <ROL_PartitionedVector.hpp>
 #include <ROL_Ptr.hpp>
 #include <ROL_Secant.hpp>
+#include <ROL_SlacklessObjective.hpp>
 #include <ROL_TrustRegionModel.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
-#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <deque>
 #include <ios>
 #include <iterator>
-#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream> // __str__
@@ -41,56 +43,70 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	// ROL::makePtrFromRef(std::ostream &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<std::ostream > (*)(std::ostream &)) &ROL::makePtrFromRef<std::ostream>, "C++: ROL::makePtrFromRef(std::ostream &) --> class Teuchos::RCP<std::ostream >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(const class ROL::Vector<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::Vector<double> > (*)(const class ROL::Vector<double> &)) &ROL::makePtrFromRef<const ROL::Vector<double>>, "C++: ROL::makePtrFromRef(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(const class ROL::Vector<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<const class ROL::Vector<double> > (*)(const class ROL::Vector<double> &)) &ROL::makePtrFromRef<const ROL::Vector<double>>, "C++: ROL::makePtrFromRef(const class ROL::Vector<double> &) --> class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::Constraint_SimOpt<double> > (*)(class ROL::Constraint_SimOpt<double> &)) &ROL::makePtrFromRef<ROL::Constraint_SimOpt<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) --> class std::shared_ptr<class ROL::Constraint_SimOpt<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > (*)(class ROL::Constraint_SimOpt<double> &)) &ROL::makePtrFromRef<ROL::Constraint_SimOpt<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint_SimOpt<double> &) --> class Teuchos::RCP<class ROL::Constraint_SimOpt<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::Objective<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::Objective<double> > (*)(class ROL::Objective<double> &)) &ROL::makePtrFromRef<ROL::Objective<double>>, "C++: ROL::makePtrFromRef(class ROL::Objective<double> &) --> class std::shared_ptr<class ROL::Objective<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::Objective<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Objective<double> > (*)(class ROL::Objective<double> &)) &ROL::makePtrFromRef<ROL::Objective<double>>, "C++: ROL::makePtrFromRef(class ROL::Objective<double> &) --> class Teuchos::RCP<class ROL::Objective<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::Constraint<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::Constraint<double> > (*)(class ROL::Constraint<double> &)) &ROL::makePtrFromRef<ROL::Constraint<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint<double> &) --> class std::shared_ptr<class ROL::Constraint<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::Constraint<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Constraint<double> > (*)(class ROL::Constraint<double> &)) &ROL::makePtrFromRef<ROL::Constraint<double>>, "C++: ROL::makePtrFromRef(class ROL::Constraint<double> &) --> class Teuchos::RCP<class ROL::Constraint<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::Vector<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::Vector<double> > (*)(class ROL::Vector<double> &)) &ROL::makePtrFromRef<ROL::Vector<double>>, "C++: ROL::makePtrFromRef(class ROL::Vector<double> &) --> class std::shared_ptr<class ROL::Vector<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::Vector<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::Vector<double> > (*)(class ROL::Vector<double> &)) &ROL::makePtrFromRef<ROL::Vector<double>>, "C++: ROL::makePtrFromRef(class ROL::Vector<double> &) --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::BoundConstraint<double> > (*)(class ROL::BoundConstraint<double> &)) &ROL::makePtrFromRef<ROL::BoundConstraint<double>>, "C++: ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) --> class std::shared_ptr<class ROL::BoundConstraint<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::BoundConstraint<double> > (*)(class ROL::BoundConstraint<double> &)) &ROL::makePtrFromRef<ROL::BoundConstraint<double>>, "C++: ROL::makePtrFromRef(class ROL::BoundConstraint<double> &) --> class Teuchos::RCP<class ROL::BoundConstraint<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) file:ROL_Ptr.hpp line:77
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<class ROL::ElasticObjective<double> > (*)(class ROL::ElasticObjective<double> &)) &ROL::makePtrFromRef<ROL::ElasticObjective<double>>, "C++: ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) --> class std::shared_ptr<class ROL::ElasticObjective<double> >", pybind11::arg("obj"));
 
-	// ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) file:ROL_Ptr.hpp line:88
-	M("ROL").def("makePtrFromRef", (class Teuchos::RCP<class ROL::ElasticObjective<double> > (*)(class ROL::ElasticObjective<double> &)) &ROL::makePtrFromRef<ROL::ElasticObjective<double>>, "C++: ROL::makePtrFromRef(class ROL::ElasticObjective<double> &) --> class Teuchos::RCP<class ROL::ElasticObjective<double> >", pybind11::arg("obj"));
+	// ROL::makePtrFromRef(const class ROL::Vector<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::Vector<double> > (*)(const class ROL::Vector<double> &)) &ROL::makePtrFromRef<ROL::Vector<double>>, "C++: ROL::makePtrFromRef(const class ROL::Vector<double> &) --> class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("obj"));
 
-	// ROL::staticPtrCast(const class Teuchos::RCP<const struct ROL::TypeB::AlgorithmState<double> > &) file:ROL_Ptr.hpp line:94
-	M("ROL").def("staticPtrCast", (class Teuchos::RCP<const struct ROL::TypeB::AlgorithmState<double> > (*)(const class Teuchos::RCP<const struct ROL::TypeB::AlgorithmState<double> > &)) &ROL::staticPtrCast<const ROL::TypeB::AlgorithmState<double>,const ROL::TypeB::AlgorithmState<double>>, "C++: ROL::staticPtrCast(const class Teuchos::RCP<const struct ROL::TypeB::AlgorithmState<double> > &) --> class Teuchos::RCP<const struct ROL::TypeB::AlgorithmState<double> >", pybind11::arg("r"));
+	// ROL::makePtrFromRef(const class ROL::Constraint_SimOpt<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::Constraint_SimOpt<double> > (*)(const class ROL::Constraint_SimOpt<double> &)) &ROL::makePtrFromRef<ROL::Constraint_SimOpt<double>>, "C++: ROL::makePtrFromRef(const class ROL::Constraint_SimOpt<double> &) --> class std::shared_ptr<const class ROL::Constraint_SimOpt<double> >", pybind11::arg("obj"));
 
-	// ROL::constPtrCast(const class Teuchos::RCP<const class ROL::Vector<double> > &) file:ROL_Ptr.hpp line:100
-	M("ROL").def("constPtrCast", (class Teuchos::RCP<class ROL::Vector<double> > (*)(const class Teuchos::RCP<const class ROL::Vector<double> > &)) &ROL::constPtrCast<ROL::Vector<double>,const ROL::Vector<double>>, "C++: ROL::constPtrCast(const class Teuchos::RCP<const class ROL::Vector<double> > &) --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("r"));
+	// ROL::makePtrFromRef(const class ROL::Objective<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::Objective<double> > (*)(const class ROL::Objective<double> &)) &ROL::makePtrFromRef<ROL::Objective<double>>, "C++: ROL::makePtrFromRef(const class ROL::Objective<double> &) --> class std::shared_ptr<const class ROL::Objective<double> >", pybind11::arg("obj"));
 
-	// ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:106
-	M("ROL").def("dynamicPtrCast", (class Teuchos::RCP<class ROL::KelleySachsModel<double> > (*)(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::KelleySachsModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) --> class Teuchos::RCP<class ROL::KelleySachsModel<double> >", pybind11::arg("r"));
+	// ROL::makePtrFromRef(const class ROL::Constraint<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::Constraint<double> > (*)(const class ROL::Constraint<double> &)) &ROL::makePtrFromRef<ROL::Constraint<double>>, "C++: ROL::makePtrFromRef(const class ROL::Constraint<double> &) --> class std::shared_ptr<const class ROL::Constraint<double> >", pybind11::arg("obj"));
 
-	// ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:106
-	M("ROL").def("dynamicPtrCast", (class Teuchos::RCP<class ROL::ColemanLiModel<double> > (*)(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::ColemanLiModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) --> class Teuchos::RCP<class ROL::ColemanLiModel<double> >", pybind11::arg("r"));
+	// ROL::makePtrFromRef(const class ROL::BoundConstraint<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::BoundConstraint<double> > (*)(const class ROL::BoundConstraint<double> &)) &ROL::makePtrFromRef<ROL::BoundConstraint<double>>, "C++: ROL::makePtrFromRef(const class ROL::BoundConstraint<double> &) --> class std::shared_ptr<const class ROL::BoundConstraint<double> >", pybind11::arg("obj"));
 
-	// ROL::is_nullPtr(const class Teuchos::RCP<class ROL::Secant<double> > &) file:ROL_Ptr.hpp line:130
-	M("ROL").def("is_nullPtr", (bool (*)(const class Teuchos::RCP<class ROL::Secant<double> > &)) &ROL::is_nullPtr<ROL::Secant<double>>, "C++: ROL::is_nullPtr(const class Teuchos::RCP<class ROL::Secant<double> > &) --> bool", pybind11::arg("x"));
+	// ROL::makePtrFromRef(const class ROL::ElasticObjective<double> &) file:ROL_Ptr.hpp line:83
+	M("ROL").def("makePtrFromRef", (class std::shared_ptr<const class ROL::ElasticObjective<double> > (*)(const class ROL::ElasticObjective<double> &)) &ROL::makePtrFromRef<ROL::ElasticObjective<double>>, "C++: ROL::makePtrFromRef(const class ROL::ElasticObjective<double> &) --> class std::shared_ptr<const class ROL::ElasticObjective<double> >", pybind11::arg("obj"));
+
+	// ROL::staticPtrCast(const class std::shared_ptr<const struct ROL::TypeB::AlgorithmState<double> > &) file:ROL_Ptr.hpp line:89
+	M("ROL").def("staticPtrCast", (class std::shared_ptr<const struct ROL::TypeB::AlgorithmState<double> > (*)(const class std::shared_ptr<const struct ROL::TypeB::AlgorithmState<double> > &)) &ROL::staticPtrCast<const ROL::TypeB::AlgorithmState<double>,const ROL::TypeB::AlgorithmState<double>>, "C++: ROL::staticPtrCast(const class std::shared_ptr<const struct ROL::TypeB::AlgorithmState<double> > &) --> class std::shared_ptr<const struct ROL::TypeB::AlgorithmState<double> >", pybind11::arg("r"));
+
+	// ROL::constPtrCast(const class std::shared_ptr<const class ROL::Vector<double> > &) file:ROL_Ptr.hpp line:95
+	M("ROL").def("constPtrCast", (class std::shared_ptr<class ROL::Vector<double> > (*)(const class std::shared_ptr<const class ROL::Vector<double> > &)) &ROL::constPtrCast<ROL::Vector<double>,const ROL::Vector<double>>, "C++: ROL::constPtrCast(const class std::shared_ptr<const class ROL::Vector<double> > &) --> class std::shared_ptr<class ROL::Vector<double> >", pybind11::arg("r"));
+
+	// ROL::dynamicPtrCast(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:101
+	M("ROL").def("dynamicPtrCast", (class std::shared_ptr<class ROL::KelleySachsModel<double> > (*)(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::KelleySachsModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &) --> class std::shared_ptr<class ROL::KelleySachsModel<double> >", pybind11::arg("r"));
+
+	// ROL::dynamicPtrCast(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:101
+	M("ROL").def("dynamicPtrCast", (class std::shared_ptr<class ROL::ColemanLiModel<double> > (*)(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::ColemanLiModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class std::shared_ptr<class ROL::TrustRegionModel<double> > &) --> class std::shared_ptr<class ROL::ColemanLiModel<double> >", pybind11::arg("r"));
+
+	// ROL::is_nullPtr(const class std::shared_ptr<class ROL::Secant<double> > &) file:ROL_Ptr.hpp line:125
+	M("ROL").def("is_nullPtr", (bool (*)(const class std::shared_ptr<class ROL::Secant<double> > &)) &ROL::is_nullPtr<ROL::Secant<double>>, "C++: ROL::is_nullPtr(const class std::shared_ptr<class ROL::Secant<double> > &) --> bool", pybind11::arg("x"));
 
 	// ROL::NumberToString(int) file:ROL_Types.hpp line:81
 	M("ROL").def("NumberToString", (std::string (*)(int)) &ROL::NumberToString<int>, "C++: ROL::NumberToString(int) --> std::string", pybind11::arg("Number"));
@@ -126,7 +142,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("EExitStatusToString", (std::string (*)(enum ROL::EExitStatus)) &ROL::EExitStatusToString, "C++: ROL::EExitStatusToString(enum ROL::EExitStatus) --> std::string", pybind11::arg("tr"));
 
 	{ // ROL::AlgorithmState file:ROL_Types.hpp line:143
-		pybind11::class_<ROL::AlgorithmState<double>, Teuchos::RCP<ROL::AlgorithmState<double>>> cl(M("ROL"), "AlgorithmState_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::AlgorithmState<double>, std::shared_ptr<ROL::AlgorithmState<double>>> cl(M("ROL"), "AlgorithmState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::AlgorithmState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::AlgorithmState<double> const &o){ return new ROL::AlgorithmState<double>(o); } ) );
 		cl.def_readwrite("iter", &ROL::AlgorithmState<double>::iter);
@@ -150,7 +166,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 		cl.def("assign", (struct ROL::AlgorithmState<double> & (ROL::AlgorithmState<double>::*)(const struct ROL::AlgorithmState<double> &)) &ROL::AlgorithmState<double>::operator=, "C++: ROL::AlgorithmState<double>::operator=(const struct ROL::AlgorithmState<double> &) --> struct ROL::AlgorithmState<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::StepState file:ROL_Types.hpp line:203
-		pybind11::class_<ROL::StepState<double>, Teuchos::RCP<ROL::StepState<double>>> cl(M("ROL"), "StepState_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::StepState<double>, std::shared_ptr<ROL::StepState<double>>> cl(M("ROL"), "StepState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::StepState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::StepState<double> const &o){ return new ROL::StepState<double>(o); } ) );
 		cl.def_readwrite("gradientVec", &ROL::StepState<double>::gradientVec);
@@ -166,7 +182,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 		cl.def("reset", (void (ROL::StepState<double>::*)(const double)) &ROL::StepState<double>::reset, "C++: ROL::StepState<double>::reset(const double) --> void", pybind11::arg("searchSizeInput"));
 	}
 	{ // ROL::removeSpecialCharacters file:ROL_Types.hpp line:243
-		pybind11::class_<ROL::removeSpecialCharacters, Teuchos::RCP<ROL::removeSpecialCharacters>> cl(M("ROL"), "removeSpecialCharacters", "", pybind11::module_local());
+		pybind11::class_<ROL::removeSpecialCharacters, std::shared_ptr<ROL::removeSpecialCharacters>> cl(M("ROL"), "removeSpecialCharacters", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::removeSpecialCharacters(); } ) );
 		cl.def( pybind11::init( [](ROL::removeSpecialCharacters const &o){ return new ROL::removeSpecialCharacters(o); } ) );
 		cl.def("__call__", (bool (ROL::removeSpecialCharacters::*)(char)) &ROL::removeSpecialCharacters::operator(), "C++: ROL::removeSpecialCharacters::operator()(char) --> bool", pybind11::arg("c"));
@@ -346,7 +362,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("ECGFlagToString", (std::string (*)(enum ROL::ECGFlag)) &ROL::ECGFlagToString, "C++: ROL::ECGFlagToString(enum ROL::ECGFlag) --> std::string", pybind11::arg("cgf"));
 
 	{ // ROL::TypeCaster file:ROL_Types.hpp line:895
-		pybind11::class_<ROL::TypeCaster<double,float>, Teuchos::RCP<ROL::TypeCaster<double,float>>> cl(M("ROL"), "TypeCaster_double_float_t", "", pybind11::module_local());
+		pybind11::class_<ROL::TypeCaster<double,float>, std::shared_ptr<ROL::TypeCaster<double,float>>> cl(M("ROL"), "TypeCaster_double_float_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::TypeCaster<double,float>(); } ) );
 		cl.def_static("ElementToReal", (double (*)(const float &)) &ROL::TypeCaster<double, float>::ElementToReal, "C++: ROL::TypeCaster<double, float>::ElementToReal(const float &) --> double", pybind11::arg("val"));
 	}

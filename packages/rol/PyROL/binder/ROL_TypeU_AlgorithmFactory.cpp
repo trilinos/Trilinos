@@ -26,14 +26,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 void bind_ROL_TypeU_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M)
@@ -58,6 +57,6 @@ void bind_ROL_TypeU_AlgorithmFactory(std::function< pybind11::module &(std::stri
 	M("ROL::TypeU").def("StringToEAlgorithmU", (enum ROL::TypeU::EAlgorithmU (*)(std::string)) &ROL::TypeU::StringToEAlgorithmU, "C++: ROL::TypeU::StringToEAlgorithmU(std::string) --> enum ROL::TypeU::EAlgorithmU", pybind11::arg("s"));
 
 	// ROL::TypeU::AlgorithmFactory(class Teuchos::ParameterList &) file:ROL_TypeU_AlgorithmFactory.hpp line:125
-	M("ROL::TypeU").def("AlgorithmFactory", (class Teuchos::RCP<class ROL::TypeU::Algorithm<double> > (*)(class Teuchos::ParameterList &)) &ROL::TypeU::AlgorithmFactory<double>, "C++: ROL::TypeU::AlgorithmFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::TypeU::Algorithm<double> >", pybind11::arg("parlist"));
+	M("ROL::TypeU").def("AlgorithmFactory", (class std::shared_ptr<class ROL::TypeU::Algorithm<double> > (*)(class Teuchos::ParameterList &)) &ROL::TypeU::AlgorithmFactory<double>, "C++: ROL::TypeU::AlgorithmFactory(class Teuchos::ParameterList &) --> class std::shared_ptr<class ROL::TypeU::Algorithm<double> >", pybind11::arg("parlist"));
 
 }

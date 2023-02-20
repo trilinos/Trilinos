@@ -6,15 +6,10 @@
 #include <ROL_PartitionedVector.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
-#include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
-#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <fstream>
 #include <ios>
 #include <iterator>
-#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream> // __str__
@@ -27,14 +22,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::PartitionedVector file:ROL_PartitionedVector.hpp line:60
@@ -119,16 +113,16 @@ struct PyCallBack_ROL_PartitionedVector_double_t : public ROL::PartitionedVector
 		}
 		return PartitionedVector::norm();
 	}
-	class Teuchos::RCP<class ROL::Vector<double> > clone() const override {
+	class std::shared_ptr<class ROL::Vector<double> > clone() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PartitionedVector<double> *>(this), "clone");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::RCP<class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<class Teuchos::RCP<class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<class std::shared_ptr<class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<class std::shared_ptr<class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<class std::shared_ptr<class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<class std::shared_ptr<class ROL::Vector<double> >>(std::move(o));
 		}
 		return PartitionedVector::clone();
 	}
@@ -158,16 +152,16 @@ struct PyCallBack_ROL_PartitionedVector_double_t : public ROL::PartitionedVector
 		}
 		return PartitionedVector::apply(a0);
 	}
-	class Teuchos::RCP<class ROL::Vector<double> > basis(const int a0) const override {
+	class std::shared_ptr<class ROL::Vector<double> > basis(const int a0) const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PartitionedVector<double> *>(this), "basis");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::RCP<class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<class Teuchos::RCP<class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<class std::shared_ptr<class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<class std::shared_ptr<class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<class std::shared_ptr<class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<class std::shared_ptr<class ROL::Vector<double> >>(std::move(o));
 		}
 		return PartitionedVector::basis(a0);
 	}
@@ -261,19 +255,6 @@ struct PyCallBack_ROL_PartitionedVector_double_t : public ROL::PartitionedVector
 			else return pybind11::detail::cast_safe<void>(std::move(o));
 		}
 		return PartitionedVector::randomize(a0, a1);
-	}
-	void print(std::ostream & a0) const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PartitionedVector<double> *>(this), "print");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		return PartitionedVector::print(a0);
 	}
 };
 
@@ -385,32 +366,6 @@ struct PyCallBack_ROL_Constraint_Partitioned_double_t : public ROL::Constraint_P
 		}
 		return Constraint::applyAdjointJacobian(a0, a1, a2, a3, a4);
 	}
-	double checkAdjointConsistencyJacobian(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const bool a3, std::ostream & a4) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Constraint_Partitioned<double> *>(this), "checkAdjointConsistencyJacobian");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4);
-			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
-				static pybind11::detail::override_caster_t<double> caster;
-				return pybind11::detail::cast_ref<double>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<double>(std::move(o));
-		}
-		return Constraint::checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4);
-	}
-	double checkAdjointConsistencyJacobian(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4, const bool a5, std::ostream & a6) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Constraint_Partitioned<double> *>(this), "checkAdjointConsistencyJacobian");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4, a5, a6);
-			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
-				static pybind11::detail::override_caster_t<double> caster;
-				return pybind11::detail::cast_ref<double>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<double>(std::move(o));
-		}
-		return Constraint::checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4, a5, a6);
-	}
 };
 
 void bind_PyROL_stream(std::function< pybind11::module &(std::string const &namespace_) > &M)
@@ -421,11 +376,8 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 	// ROL::closeOfstream(class std::basic_ofstream<char> &) file:PyROL_stream.hpp line:16
 	M("ROL").def("closeOfstream", (void (*)(class std::basic_ofstream<char> &)) &ROL::closeOfstream, "C++: ROL::closeOfstream(class std::basic_ofstream<char> &) --> void", pybind11::arg("outdata"));
 
-	// ROL::getCout() file:PyROL_stream.hpp line:20
-	M("ROL").def("getCout", (class Teuchos::RCP<std::ostream > (*)()) &ROL::getCout, "C++: ROL::getCout() --> class Teuchos::RCP<std::ostream >");
-
 	{ // ROL::PartitionedVector file:ROL_PartitionedVector.hpp line:60
-		pybind11::class_<ROL::PartitionedVector<double>, Teuchos::RCP<ROL::PartitionedVector<double>>, PyCallBack_ROL_PartitionedVector_double_t, ROL::Vector<double>> cl(M("ROL"), "PartitionedVector_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::PartitionedVector<double>, std::shared_ptr<ROL::PartitionedVector<double>>, PyCallBack_ROL_PartitionedVector_double_t, ROL::Vector<double>> cl(M("ROL"), "PartitionedVector_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_PartitionedVector_double_t const &o){ return new PyCallBack_ROL_PartitionedVector_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::PartitionedVector<double> const &o){ return new ROL::PartitionedVector<double>(o); } ) );
 		cl.def("set", (void (ROL::PartitionedVector<double>::*)(const class ROL::Vector<double> &)) &ROL::PartitionedVector<double>::set, "C++: ROL::PartitionedVector<double>::set(const class ROL::Vector<double> &) --> void", pybind11::arg("x"));
@@ -434,10 +386,10 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 		cl.def("axpy", (void (ROL::PartitionedVector<double>::*)(const double, const class ROL::Vector<double> &)) &ROL::PartitionedVector<double>::axpy, "C++: ROL::PartitionedVector<double>::axpy(const double, const class ROL::Vector<double> &) --> void", pybind11::arg("alpha"), pybind11::arg("x"));
 		cl.def("dot", (double (ROL::PartitionedVector<double>::*)(const class ROL::Vector<double> &) const) &ROL::PartitionedVector<double>::dot, "C++: ROL::PartitionedVector<double>::dot(const class ROL::Vector<double> &) const --> double", pybind11::arg("x"));
 		cl.def("norm", (double (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::norm, "C++: ROL::PartitionedVector<double>::norm() const --> double");
-		cl.def("clone", (class Teuchos::RCP<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::clone, "C++: ROL::PartitionedVector<double>::clone() const --> class Teuchos::RCP<class ROL::Vector<double> >");
+		cl.def("clone", (class std::shared_ptr<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::clone, "C++: ROL::PartitionedVector<double>::clone() const --> class std::shared_ptr<class ROL::Vector<double> >");
 		cl.def("dual", (const class ROL::Vector<double> & (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::dual, "C++: ROL::PartitionedVector<double>::dual() const --> const class ROL::Vector<double> &", pybind11::return_value_policy::automatic);
 		cl.def("apply", (double (ROL::PartitionedVector<double>::*)(const class ROL::Vector<double> &) const) &ROL::PartitionedVector<double>::apply, "C++: ROL::PartitionedVector<double>::apply(const class ROL::Vector<double> &) const --> double", pybind11::arg("x"));
-		cl.def("basis", (class Teuchos::RCP<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)(const int) const) &ROL::PartitionedVector<double>::basis, "C++: ROL::PartitionedVector<double>::basis(const int) const --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("i"));
+		cl.def("basis", (class std::shared_ptr<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)(const int) const) &ROL::PartitionedVector<double>::basis, "C++: ROL::PartitionedVector<double>::basis(const int) const --> class std::shared_ptr<class ROL::Vector<double> >", pybind11::arg("i"));
 		cl.def("dimension", (int (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::dimension, "C++: ROL::PartitionedVector<double>::dimension() const --> int");
 		cl.def("zero", (void (ROL::PartitionedVector<double>::*)()) &ROL::PartitionedVector<double>::zero, "C++: ROL::PartitionedVector<double>::zero() --> void");
 		cl.def("applyUnary", (void (ROL::PartitionedVector<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::PartitionedVector<double>::applyUnary, "C++: ROL::PartitionedVector<double>::applyUnary(const class ROL::Elementwise::UnaryFunction<double> &) --> void", pybind11::arg("f"));
@@ -447,21 +399,20 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 		cl.def("randomize", [](ROL::PartitionedVector<double> &o) -> void { return o.randomize(); }, "");
 		cl.def("randomize", [](ROL::PartitionedVector<double> &o, const double & a0) -> void { return o.randomize(a0); }, "", pybind11::arg("l"));
 		cl.def("randomize", (void (ROL::PartitionedVector<double>::*)(const double, const double)) &ROL::PartitionedVector<double>::randomize, "C++: ROL::PartitionedVector<double>::randomize(const double, const double) --> void", pybind11::arg("l"), pybind11::arg("u"));
-		cl.def("print", (void (ROL::PartitionedVector<double>::*)(std::ostream &) const) &ROL::PartitionedVector<double>::print, "C++: ROL::PartitionedVector<double>::print(std::ostream &) const --> void", pybind11::arg("outStream"));
 		cl.def("__getitem__", (class ROL::Vector<double> & (ROL::PartitionedVector<double>::*)(unsigned long)) &ROL::PartitionedVector<double>::operator[], "C++: ROL::PartitionedVector<double>::operator[](unsigned long) --> class ROL::Vector<double> &", pybind11::return_value_policy::automatic, pybind11::arg("i"));
-		cl.def("get", (class Teuchos::RCP<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)(unsigned long)) &ROL::PartitionedVector<double>::get, "C++: ROL::PartitionedVector<double>::get(unsigned long) --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("i"));
+		cl.def("get", (class std::shared_ptr<class ROL::Vector<double> > (ROL::PartitionedVector<double>::*)(unsigned long)) &ROL::PartitionedVector<double>::get, "C++: ROL::PartitionedVector<double>::get(unsigned long) --> class std::shared_ptr<class ROL::Vector<double> >", pybind11::arg("i"));
 		cl.def("set", (void (ROL::PartitionedVector<double>::*)(unsigned long, const class ROL::Vector<double> &)) &ROL::PartitionedVector<double>::set, "C++: ROL::PartitionedVector<double>::set(unsigned long, const class ROL::Vector<double> &) --> void", pybind11::arg("i"), pybind11::arg("x"));
 		cl.def("zero", (void (ROL::PartitionedVector<double>::*)(unsigned long)) &ROL::PartitionedVector<double>::zero, "C++: ROL::PartitionedVector<double>::zero(unsigned long) --> void", pybind11::arg("i"));
 		cl.def("numVectors", (unsigned long (ROL::PartitionedVector<double>::*)() const) &ROL::PartitionedVector<double>::numVectors, "C++: ROL::PartitionedVector<double>::numVectors() const --> unsigned long");
-		cl.def_static("create", (class Teuchos::RCP<class ROL::PartitionedVector<double> > (*)(const class ROL::Vector<double> &, unsigned long)) &ROL::PartitionedVector<double>::create, "C++: ROL::PartitionedVector<double>::create(const class ROL::Vector<double> &, unsigned long) --> class Teuchos::RCP<class ROL::PartitionedVector<double> >", pybind11::arg("x"), pybind11::arg("N"));
+		cl.def_static("create", (class std::shared_ptr<class ROL::PartitionedVector<double> > (*)(const class ROL::Vector<double> &, unsigned long)) &ROL::PartitionedVector<double>::create, "C++: ROL::PartitionedVector<double>::create(const class ROL::Vector<double> &, unsigned long) --> class std::shared_ptr<class ROL::PartitionedVector<double> >", pybind11::arg("x"), pybind11::arg("N"));
 		cl.def("plus", (void (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::plus, "C++: ROL::Vector<double>::plus(const class ROL::Vector<double> &) --> void", pybind11::arg("x"));
 		cl.def("scale", (void (ROL::Vector<double>::*)(const double)) &ROL::Vector<double>::scale, "C++: ROL::Vector<double>::scale(const double) --> void", pybind11::arg("alpha"));
 		cl.def("dot", (double (ROL::Vector<double>::*)(const class ROL::Vector<double> &) const) &ROL::Vector<double>::dot, "C++: ROL::Vector<double>::dot(const class ROL::Vector<double> &) const --> double", pybind11::arg("x"));
 		cl.def("norm", (double (ROL::Vector<double>::*)() const) &ROL::Vector<double>::norm, "C++: ROL::Vector<double>::norm() const --> double");
-		cl.def("clone", (class Teuchos::RCP<class ROL::Vector<double> > (ROL::Vector<double>::*)() const) &ROL::Vector<double>::clone, "C++: ROL::Vector<double>::clone() const --> class Teuchos::RCP<class ROL::Vector<double> >");
+		cl.def("clone", (class std::shared_ptr<class ROL::Vector<double> > (ROL::Vector<double>::*)() const) &ROL::Vector<double>::clone, "C++: ROL::Vector<double>::clone() const --> class std::shared_ptr<class ROL::Vector<double> >");
 		cl.def("axpy", (void (ROL::Vector<double>::*)(const double, const class ROL::Vector<double> &)) &ROL::Vector<double>::axpy, "Compute \n where \n.\n\n             \n is the scaling of \n             \n\n     is a vector.\n\n             On return \n.\n             Uses #clone, #set, #scale and #plus for the computation.\n             Please overload if a more efficient implementation is needed.\n\n             ---\n\nC++: ROL::Vector<double>::axpy(const double, const class ROL::Vector<double> &) --> void", pybind11::arg("alpha"), pybind11::arg("x"));
 		cl.def("zero", (void (ROL::Vector<double>::*)()) &ROL::Vector<double>::zero, "Set to zero vector.\n\n             Uses #scale by zero for the computation.\n             Please overload if a more efficient implementation is needed.\n\n             ---\n\nC++: ROL::Vector<double>::zero() --> void");
-		cl.def("basis", (class Teuchos::RCP<class ROL::Vector<double> > (ROL::Vector<double>::*)(const int) const) &ROL::Vector<double>::basis, "Return i-th basis vector.\n\n             \n is the index of the basis function.\n             \n\n A reference-counted pointer to the basis vector with index \n\n             Overloading the basis is only required if the default gradient implementation\n             is used, which computes a finite-difference approximation.\n\n             ---\n\nC++: ROL::Vector<double>::basis(const int) const --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("i"));
+		cl.def("basis", (class std::shared_ptr<class ROL::Vector<double> > (ROL::Vector<double>::*)(const int) const) &ROL::Vector<double>::basis, "Return i-th basis vector.\n\n             \n is the index of the basis function.\n             \n\n A reference-counted pointer to the basis vector with index \n\n             Overloading the basis is only required if the default gradient implementation\n             is used, which computes a finite-difference approximation.\n\n             ---\n\nC++: ROL::Vector<double>::basis(const int) const --> class std::shared_ptr<class ROL::Vector<double> >", pybind11::arg("i"));
 		cl.def("dimension", (int (ROL::Vector<double>::*)() const) &ROL::Vector<double>::dimension, "Return dimension of the vector space.\n\n             \n The dimension of the vector space, i.e., the total number of basis vectors.\n\n             Overload if the basis is overloaded.\n\n             ---\n\nC++: ROL::Vector<double>::dimension() const --> int");
 		cl.def("set", (void (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::set, "Set \n where \n.\n\n             \n     is a vector.\n\n             On return \n.\n             Uses #zero and #plus methods for the computation.\n             Please overload if a more efficient implementation is needed.\n\n             ---\n\nC++: ROL::Vector<double>::set(const class ROL::Vector<double> &) --> void", pybind11::arg("x"));
 		cl.def("dual", (const class ROL::Vector<double> & (ROL::Vector<double>::*)() const) &ROL::Vector<double>::dual, "Return dual representation of \n, for example,\n             the result of applying a Riesz map, or change of basis, or\n             change of memory layout.\n\n             \n         A const reference to dual representation.\n\n             By default, returns the current object.\n             Please overload if you need a dual representation.\n\n             ---\n\nC++: ROL::Vector<double>::dual() const --> const class ROL::Vector<double> &", pybind11::return_value_policy::automatic);
@@ -469,7 +420,6 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 		cl.def("applyUnary", (void (ROL::Vector<double>::*)(const class ROL::Elementwise::UnaryFunction<double> &)) &ROL::Vector<double>::applyUnary, "C++: ROL::Vector<double>::applyUnary(const class ROL::Elementwise::UnaryFunction<double> &) --> void", pybind11::arg("f"));
 		cl.def("applyBinary", (void (ROL::Vector<double>::*)(const class ROL::Elementwise::BinaryFunction<double> &, const class ROL::Vector<double> &)) &ROL::Vector<double>::applyBinary, "C++: ROL::Vector<double>::applyBinary(const class ROL::Elementwise::BinaryFunction<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("f"), pybind11::arg("x"));
 		cl.def("reduce", (double (ROL::Vector<double>::*)(const class ROL::Elementwise::ReductionOp<double> &) const) &ROL::Vector<double>::reduce, "C++: ROL::Vector<double>::reduce(const class ROL::Elementwise::ReductionOp<double> &) const --> double", pybind11::arg("r"));
-		cl.def("print", (void (ROL::Vector<double>::*)(std::ostream &) const) &ROL::Vector<double>::print, "C++: ROL::Vector<double>::print(std::ostream &) const --> void", pybind11::arg("outStream"));
 		cl.def("setScalar", (void (ROL::Vector<double>::*)(const double)) &ROL::Vector<double>::setScalar, "Set \n where \n.\n\n             \n     is a scalar.\n\n             On return \n.\n             Uses #applyUnary methods for the computation.\n             Please overload if a more efficient implementation is needed.\n\n             ---\n\nC++: ROL::Vector<double>::setScalar(const double) --> void", pybind11::arg("C"));
 		cl.def("randomize", [](ROL::Vector<double> &o) -> void { return o.randomize(); }, "");
 		cl.def("randomize", [](ROL::Vector<double> &o, const double & a0) -> void { return o.randomize(a0); }, "", pybind11::arg("l"));
@@ -477,13 +427,13 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 		cl.def("assign", (class ROL::Vector<double> & (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::operator=, "C++: ROL::Vector<double>::operator=(const class ROL::Vector<double> &) --> class ROL::Vector<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Constraint_Partitioned file:ROL_Constraint_Partitioned.hpp line:56
-		pybind11::class_<ROL::Constraint_Partitioned<double>, Teuchos::RCP<ROL::Constraint_Partitioned<double>>, PyCallBack_ROL_Constraint_Partitioned_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_Partitioned_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Constraint_Partitioned<double>, std::shared_ptr<ROL::Constraint_Partitioned<double>>, PyCallBack_ROL_Constraint_Partitioned_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_Partitioned_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_Constraint_Partitioned_double_t const &o){ return new PyCallBack_ROL_Constraint_Partitioned_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Constraint_Partitioned<double> const &o){ return new ROL::Constraint_Partitioned<double>(o); } ) );
 		cl.def("applyAdjointJacobian", [](ROL::Constraint_Partitioned<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, double & a4) -> void { return o.applyAdjointJacobian(a0, a1, a2, a3, a4); }, "", pybind11::arg("ajv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualv"), pybind11::arg("tol"));
 		cl.def("getNumberConstraintEvaluations", (int (ROL::Constraint_Partitioned<double>::*)() const) &ROL::Constraint_Partitioned<double>::getNumberConstraintEvaluations, "C++: ROL::Constraint_Partitioned<double>::getNumberConstraintEvaluations() const --> int");
-		cl.def("get", [](ROL::Constraint_Partitioned<double> const &o) -> Teuchos::RCP<class ROL::Constraint<double> > { return o.get(); }, "");
-		cl.def("get", (class Teuchos::RCP<class ROL::Constraint<double> > (ROL::Constraint_Partitioned<double>::*)(int) const) &ROL::Constraint_Partitioned<double>::get, "C++: ROL::Constraint_Partitioned<double>::get(int) const --> class Teuchos::RCP<class ROL::Constraint<double> >", pybind11::arg("ind"));
+		cl.def("get", [](ROL::Constraint_Partitioned<double> const &o) -> std::shared_ptr<class ROL::Constraint<double> > { return o.get(); }, "");
+		cl.def("get", (class std::shared_ptr<class ROL::Constraint<double> > (ROL::Constraint_Partitioned<double>::*)(int) const) &ROL::Constraint_Partitioned<double>::get, "C++: ROL::Constraint_Partitioned<double>::get(int) const --> class std::shared_ptr<class ROL::Constraint<double> >", pybind11::arg("ind"));
 		cl.def("update", [](ROL::Constraint_Partitioned<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", (void (ROL::Constraint_Partitioned<double>::*)(const class ROL::Vector<double> &, enum ROL::UpdateType, int)) &ROL::Constraint_Partitioned<double>::update, "C++: ROL::Constraint_Partitioned<double>::update(const class ROL::Vector<double> &, enum ROL::UpdateType, int) --> void", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
 		cl.def("update", [](ROL::Constraint_Partitioned<double> &o, const class ROL::Vector<double> & a0) -> void { return o.update(a0); }, "", pybind11::arg("x"));
@@ -508,12 +458,6 @@ void bind_PyROL_stream(std::function< pybind11::module &(std::string const &name
 		cl.def("activate", (void (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::activate, "Turn on constraints \n\nC++: ROL::Constraint<double>::activate() --> void");
 		cl.def("deactivate", (void (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::deactivate, "Turn off constraints\n\nC++: ROL::Constraint<double>::deactivate() --> void");
 		cl.def("isActivated", (bool (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::isActivated, "Check if constraints are on\n\nC++: ROL::Constraint<double>::isActivated() --> bool");
-		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"));
-		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const bool & a3) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("printToStream"));
-		cl.def("checkAdjointConsistencyJacobian", (double (ROL::Constraint<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &)) &ROL::Constraint<double>::checkAdjointConsistencyJacobian, "C++: ROL::Constraint<double>::checkAdjointConsistencyJacobian(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &) --> double", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("printToStream"), pybind11::arg("outStream"));
-		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"));
-		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4, const bool & a5) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4, a5); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"), pybind11::arg("printToStream"));
-		cl.def("checkAdjointConsistencyJacobian", (double (ROL::Constraint<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &)) &ROL::Constraint<double>::checkAdjointConsistencyJacobian, "C++: ROL::Constraint<double>::checkAdjointConsistencyJacobian(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &) --> double", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"), pybind11::arg("printToStream"), pybind11::arg("outStream"));
 		cl.def("assign", (class ROL::Constraint<double> & (ROL::Constraint<double>::*)(const class ROL::Constraint<double> &)) &ROL::Constraint<double>::operator=, "C++: ROL::Constraint<double>::operator=(const class ROL::Constraint<double> &) --> class ROL::Constraint<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 }

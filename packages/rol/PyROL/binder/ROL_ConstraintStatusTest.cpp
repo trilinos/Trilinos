@@ -1,18 +1,19 @@
 #include <ROL_AugmentedLagrangianObjective.hpp>
 #include <ROL_ConstraintStatusTest.hpp>
+#include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_Objective.hpp>
+#include <ROL_PartitionedVector.hpp>
+#include <ROL_SlacklessObjective.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <cwchar>
 #include <deque>
@@ -30,14 +31,13 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
+	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
 #endif
 
 // ROL::ConstraintStatusTest file:ROL_ConstraintStatusTest.hpp line:58
@@ -172,7 +172,7 @@ struct PyCallBack_ROL_AugmentedLagrangianObjective_double_t : public ROL::Augmen
 void bind_ROL_ConstraintStatusTest(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::ConstraintStatusTest file:ROL_ConstraintStatusTest.hpp line:58
-		pybind11::class_<ROL::ConstraintStatusTest<double>, Teuchos::RCP<ROL::ConstraintStatusTest<double>>, PyCallBack_ROL_ConstraintStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "ConstraintStatusTest_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::ConstraintStatusTest<double>, std::shared_ptr<ROL::ConstraintStatusTest<double>>, PyCallBack_ROL_ConstraintStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "ConstraintStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](){ return new ROL::ConstraintStatusTest<double>(); }, [](){ return new PyCallBack_ROL_ConstraintStatusTest_double_t(); } ), "doc");
@@ -189,10 +189,10 @@ void bind_ROL_ConstraintStatusTest(std::function< pybind11::module &(std::string
 		cl.def("assign", (class ROL::StatusTest<double> & (ROL::StatusTest<double>::*)(const class ROL::StatusTest<double> &)) &ROL::StatusTest<double>::operator=, "C++: ROL::StatusTest<double>::operator=(const class ROL::StatusTest<double> &) --> class ROL::StatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::AugmentedLagrangianObjective file:ROL_AugmentedLagrangianObjective.hpp line:88
-		pybind11::class_<ROL::AugmentedLagrangianObjective<double>, Teuchos::RCP<ROL::AugmentedLagrangianObjective<double>>, PyCallBack_ROL_AugmentedLagrangianObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "AugmentedLagrangianObjective_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("parlist") );
+		pybind11::class_<ROL::AugmentedLagrangianObjective<double>, std::shared_ptr<ROL::AugmentedLagrangianObjective<double>>, PyCallBack_ROL_AugmentedLagrangianObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "AugmentedLagrangianObjective_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("parlist") );
 
-		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const int>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("scaleLagrangian"), pybind11::arg("HessianApprox") );
+		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const int>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("scaleLagrangian"), pybind11::arg("HessianApprox") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_AugmentedLagrangianObjective_double_t const &o){ return new PyCallBack_ROL_AugmentedLagrangianObjective_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::AugmentedLagrangianObjective<double> const &o){ return new ROL::AugmentedLagrangianObjective<double>(o); } ) );
@@ -205,8 +205,8 @@ void bind_ROL_ConstraintStatusTest(std::function< pybind11::module &(std::string
 		cl.def("gradient", (void (ROL::AugmentedLagrangianObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::gradient, "C++: ROL::AugmentedLagrangianObjective<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("hessVec", (void (ROL::AugmentedLagrangianObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::hessVec, "C++: ROL::AugmentedLagrangianObjective<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("getObjectiveValue", (double (ROL::AugmentedLagrangianObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::getObjectiveValue, "C++: ROL::AugmentedLagrangianObjective<double>::getObjectiveValue(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("getObjectiveGradient", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::AugmentedLagrangianObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::getObjectiveGradient, "C++: ROL::AugmentedLagrangianObjective<double>::getObjectiveGradient(const class ROL::Vector<double> &, double &) --> const class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("getConstraintVec", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::AugmentedLagrangianObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::getConstraintVec, "C++: ROL::AugmentedLagrangianObjective<double>::getConstraintVec(const class ROL::Vector<double> &, double &) --> const class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("getObjectiveGradient", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::AugmentedLagrangianObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::getObjectiveGradient, "C++: ROL::AugmentedLagrangianObjective<double>::getObjectiveGradient(const class ROL::Vector<double> &, double &) --> const class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("getConstraintVec", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::AugmentedLagrangianObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::AugmentedLagrangianObjective<double>::getConstraintVec, "C++: ROL::AugmentedLagrangianObjective<double>::getConstraintVec(const class ROL::Vector<double> &, double &) --> const class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("getNumberConstraintEvaluations", (int (ROL::AugmentedLagrangianObjective<double>::*)() const) &ROL::AugmentedLagrangianObjective<double>::getNumberConstraintEvaluations, "C++: ROL::AugmentedLagrangianObjective<double>::getNumberConstraintEvaluations() const --> int");
 		cl.def("getNumberFunctionEvaluations", (int (ROL::AugmentedLagrangianObjective<double>::*)() const) &ROL::AugmentedLagrangianObjective<double>::getNumberFunctionEvaluations, "C++: ROL::AugmentedLagrangianObjective<double>::getNumberFunctionEvaluations() const --> int");
 		cl.def("getNumberGradientEvaluations", (int (ROL::AugmentedLagrangianObjective<double>::*)() const) &ROL::AugmentedLagrangianObjective<double>::getNumberGradientEvaluations, "C++: ROL::AugmentedLagrangianObjective<double>::getNumberGradientEvaluations() const --> int");
