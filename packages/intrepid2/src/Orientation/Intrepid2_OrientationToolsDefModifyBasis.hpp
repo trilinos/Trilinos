@@ -94,6 +94,7 @@ namespace Intrepid2 {
 
     const dataViewType matData;
     const ordinal_type cellDim, numVerts, numEdges, numFaces, numPoints, dimBasis;
+    const bool leftMultiply;
 
     F_modifyBasisByOrientation(ortViewType orts_,
                                OutputViewType output_,
@@ -106,7 +107,8 @@ namespace Intrepid2 {
                                const ordinal_type numEdges_,
                                const ordinal_type numFaces_,
                                const ordinal_type numPoints_,
-                               const ordinal_type dimBasis_)
+                               const ordinal_type dimBasis_,
+                               const bool leftMultiply_ = true)
     : orts(orts_),
       output(output_),
       input(input_),
@@ -118,7 +120,8 @@ namespace Intrepid2 {
       numEdges(numEdges_),
       numFaces(numFaces_),
       numPoints(numPoints_),
-      dimBasis(dimBasis_)
+      dimBasis(dimBasis_),
+      leftMultiply(leftMultiply_)
     {}
 
     KOKKOS_INLINE_FUNCTION
@@ -155,9 +158,11 @@ namespace Intrepid2 {
                   input_value_type temp = 0.0;
                   for (ordinal_type l=0;l<ndofEdge;++l) {
                     const ordinal_type ll = tagToOrdinal(1, edgeId, l);
-                    temp += mat(i,l)*in(ll, j, k);
+                    auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                    temp += mat(i,l)*input;
                   }
-                  out(ii, j, k) = temp;
+                  auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                  output = temp;
                 }
               }
           }
@@ -187,9 +192,11 @@ namespace Intrepid2 {
                   input_value_type temp = 0.0;
                   for (ordinal_type l=0;l<ndofFace;++l) {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
-                    temp += mat(i,l)*in(ll, j, k);
+                    auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                    temp += mat(i,l)*input;
                   }
-                  out(ii, j, k) = temp;
+                  auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                  output = temp;
                 }
               }
           }
@@ -216,9 +223,11 @@ namespace Intrepid2 {
                 input_value_type temp = 0.0;
                 for (ordinal_type l=0;l<ndofFace;++l) {
                   const ordinal_type ll = tagToOrdinal(2, 0, l);
-                  temp += mat(i,l)*in(ll, j, k);
+                  auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                  temp += mat(i,l)*input;
                 }
-                out(ii, j, k) = temp;
+                auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                output = temp;
               }
             }
         }
@@ -242,9 +251,11 @@ namespace Intrepid2 {
                 input_value_type temp = 0.0;
                 for (ordinal_type l=0;l<ndofEdge;++l) {
                   const ordinal_type ll = tagToOrdinal(1, 0, l);
-                  temp += mat(i,l)*in(ll, j, k);
+                  auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                  temp += mat(i,l)*input;
                 }
-                out(ii, j, k) = temp;
+                auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                output = temp;
               }
             }
         }
@@ -269,7 +280,7 @@ namespace Intrepid2 {
       {
         for (size_type i=0;i<input.rank();++i)
           INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
-                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
+                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimensions do not match.");
       }
       else if (input.rank() == output.rank() - 1)
       {
@@ -333,6 +344,24 @@ namespace Intrepid2 {
                      numPoints, dimBasis));
     }
   }
-}
+
+  template<typename DT>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties,
+           typename OrientationViewType,
+           typename BasisTypeLeft,
+           typename BasisTypeRight>
+  void
+  OrientationTools<DT>::
+  modifyMatrixByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                            const OrientationViewType orts,
+                            const BasisTypeLeft* basisLeft,
+                            const BasisTypeRight* basisRight)
+  {
+    
+  }
+
+} // namespace Intrepid2
 
 #endif
