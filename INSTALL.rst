@@ -8,7 +8,7 @@ This document is intended to be a very concise set of examples of how to
 configure, build, install, and build downstream code against Trilinos. The
 intended audience is those who need a quick refresher on Trilinos CMake build
 system or those wanting a quick install without worrying about all the
-features and options that are available.  For a more indepth document on what
+features and options that are available.  For a more in-depth document on what
 features and options are available and how to use them, see the document:
 
   https://trilinos.org/docs/files/TrilinosBuildReference.html
@@ -156,3 +156,16 @@ For information on how to build against an installation of Trilinos, see
 `demos/simpleBuildAgainstTrilinos`_
 
 .. _demos/simpleBuildAgainstTrilinos: demos/simpleBuildAgainstTrilinos/README.md
+
+
+Support for Different Compilers/MPIs
+====================================
+
+Trilinos tests with all Compiler/MPI combinations listed at:
+
+  https://github.com/trilinos/Trilinos/wiki/Pull-Request-Testing-Interface
+
+Compilers/MPIs that are not part of our automated process will not receive support.
+We are happy to accept Pull Requests enhancing support for other compilers/MPIs as
+needed by our customers, with the understanding that said configurations cannot be
+guaranteed to work.
