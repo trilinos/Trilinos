@@ -164,6 +164,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
   if(verbose && rank == 0) {
+    std::cout<<"********************************************************"<<std::endl;
+    std::cout<<"Performance model results on "<<nproc<<" ranks"<<std::endl;
     std::cout<<"****** Launch Latency Table ******"<<std::endl;
     PM.print_launch_latency_table(std::cout);
     std::cout<<"****** Stream Table ******"<<std::endl;
@@ -1043,6 +1045,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool verbose = true;
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    int numProc = comm->getSize();
 
     // =========================================================================
     // Convenient definitions
@@ -1231,6 +1234,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
         << "Vector:        " << Teuchos::demangleName(typeid(MultiVector).name()) << endl
         << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
+        << "========================================================" << endl
+        << " MPI Ranks:    " << numProc <<endl
         << "========================================================" << endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)

@@ -73,7 +73,7 @@ namespace MueLu {
       Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
       Kokkos::parallel_for("stream/fill",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t i) {
-          a(i) = ONE * i;
+          a(i) = ONE * (double)i;
           b(i) = a(i);
         });
       exec_space().fence();
