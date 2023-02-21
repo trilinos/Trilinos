@@ -213,6 +213,10 @@ main (int argc, char *argv[])
   }
 
   Thyra::initializePrec (*factory, thyraA, prec.ptr ()); // segfault!
+  
+  // If this test starts failing, please check ifpack2/adapters/thyra/Thyra_Ifpack2PreconditionerFactory_def.hpp
+  // and corresponding spot in stratimikos/adapters/belos/tpetra/Thyra_BelosTpetraPreconditionerFactory_def.hpp
+  // See PR #11222 for most recent adjustments to these files. -JAL
 
   *out << "End Result: TEST PASSED" << endl;
   return EXIT_SUCCESS;

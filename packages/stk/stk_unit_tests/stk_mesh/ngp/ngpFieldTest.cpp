@@ -230,7 +230,7 @@ public:
 
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
-    Kokkos::parallel_for(numElems,
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numElems),
                          KOKKOS_LAMBDA(const int& elemIdx) {
                            stk::mesh::Entity elem = ngpElements.device_get(elemIdx);
                            auto meshIndex = ngpMesh.fast_mesh_index(elem);
@@ -1793,6 +1793,13 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
   ngpFieldByRef.sync_to_device();
 
   check_field_data_on_device<int>(ngpFieldByRef, stkField);
+}
+
+TEST(NgpField, checkSizeof)
+{
+  size_t expectedNumBytes = 400;
+  std::cout << "sizeof(stk::mesh::NgpField<double>): " << sizeof(stk::mesh::NgpField<double>) << std::endl;
+  EXPECT_TRUE(expectedNumBytes >= sizeof(stk::mesh::NgpField<double>));
 }
 
 }

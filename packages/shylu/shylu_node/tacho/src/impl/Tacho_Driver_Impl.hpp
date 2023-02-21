@@ -424,7 +424,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       std::stringstream ss;
       ss << "Error: the solution method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str().c_str());
-      break;
     }
     }
     t_factor = timer.seconds();

@@ -1,5 +1,16 @@
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
+# Unit test static library containing 'int main' that initializes:
+#   - Teuchos MPI Comm
+#   - Kokkos
+TRIBITS_ADD_LIBRARY(
+  Stokhos_UnitTestBaseLib
+  TESTONLY
+  STATIC
+  SOURCES 
+      Stokhos_UnitTestBase.cpp
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LegendreBasisUnitTest
   SOURCES Stokhos_LegendreBasisUnitTest.cpp
@@ -154,6 +165,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExponentialRandomFieldUnitTest
   SOURCES Stokhos_ExponentialRandomFieldUnitTest.cpp
+  TESTONLYLIBS Stokhos_UnitTestBaseLib
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
@@ -380,6 +392,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoUQPCEUnitTest
       SOURCES Stokhos_SacadoUQPCEUnitTest.cpp
+      TESTONLYLIBS Stokhos_UnitTestBaseLib
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
@@ -388,6 +401,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoUQPCESerializationTests
       SOURCES Stokhos_SacadoUQPCESerializationTests.cpp ${UTILS_SOURCES}
+      TESTONLYLIBS Stokhos_UnitTestBaseLib
       ARGS
       COMM serial mpi
       NUM_MPI_PROCS 1
@@ -397,6 +411,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoUQPCECommTests
       SOURCES Stokhos_SacadoUQPCECommTests.cpp ${UTILS_SOURCES}
+      TESTONLYLIBS Stokhos_UnitTestBaseLib
       ARGS
       COMM serial mpi
       NUM_MPI_PROCS 1
@@ -420,6 +435,7 @@ IF(Stokhos_ENABLE_Sacado)
         KokkosViewUQPCEUnitTest_Serial
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
                 Stokhos_KokkosViewUQPCEUnitTest_Serial.cpp
+        TESTONLYLIBS Stokhos_UnitTestBaseLib
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
@@ -469,6 +485,7 @@ IF(Stokhos_ENABLE_Sacado)
           KokkosCrsMatrixUQPCEUnitTest_Serial
           SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest.hpp
                   Stokhos_KokkosCrsMatrixUQPCEUnitTest_Serial.cpp
+          TESTONLYLIBS Stokhos_UnitTestBaseLib
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
@@ -508,7 +525,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Threads.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -520,7 +537,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Serial.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             )
         ENDIF()
 
@@ -531,7 +548,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_OpenMP.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -543,7 +560,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Cuda.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -558,6 +575,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorUnitTest
       SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
+      TESTONLYLIBS Stokhos_UnitTestBaseLib
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
@@ -566,6 +584,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorUnitTestMaskTraits
       SOURCES Stokhos_SacadoMPVectorUnitTest_MaskTraits.cpp
+      TESTONLYLIBS Stokhos_UnitTestBaseLib
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
@@ -606,6 +625,7 @@ IF(Stokhos_ENABLE_Sacado)
         KokkosViewMPVectorUnitTest_Serial
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
                 Stokhos_KokkosViewMPVectorUnitTest_Serial.cpp
+        TESTONLYLIBS Stokhos_UnitTestBaseLib
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
@@ -665,6 +685,7 @@ IF(Stokhos_ENABLE_Sacado)
           KokkosCrsMatrixMPVectorUnitTest_Serial
           SOURCES Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp
                   Stokhos_KokkosCrsMatrixMPVectorUnitTest_Serial.cpp
+          TESTONLYLIBS Stokhos_UnitTestBaseLib
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
@@ -674,6 +695,7 @@ IF(Stokhos_ENABLE_Sacado)
           KokkosViewFadMPVectorUnitTest_Serial
           SOURCES Stokhos_KokkosViewFadMPVectorUnitTest.hpp
                   Stokhos_KokkosViewFadMPVectorUnitTest_Serial.cpp
+          TESTONLYLIBS Stokhos_UnitTestBaseLib
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
@@ -734,7 +756,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -746,7 +768,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             )
         ENDIF()
 
@@ -757,7 +779,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_OpenMP.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -769,7 +791,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -846,7 +868,7 @@ IF (Stokhos_ENABLE_Tpetra)
     SOURCES tpetra_mat_vec.cpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 4
+    #NUM_MPI_PROCS 4
     RUN_SERIAL
     )
 ENDIF()

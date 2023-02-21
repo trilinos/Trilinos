@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Field.h> // for Field, Field::RoleType
 #include <cstddef>      // for size_t
@@ -29,7 +31,7 @@ namespace Ioss {
 
   /** \brief A collection of Ioss::Field objects.
    */
-  class FieldManager
+  class IOSS_EXPORT FieldManager
   {
   public:
     FieldManager() = default;

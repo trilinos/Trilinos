@@ -56,8 +56,8 @@ namespace percept {
     // const stk::mesh::MetaData & meta_data = bulkData_.mesh_meta_data();
     // //STK Fields
     // coordinatesField_ = &bulkData_.current_stk_coordinates();
-    // controlVolumeField_ = meta_data.get_field<GeneralField>(stk::topology::NODE_RANK, sName.control_volume);
-    // scVolumeField_ = meta_data.get_field<GeneralField>(stk::topology::ELEMENT_RANK, sName.subcontrol_volume);
+    // controlVolumeField_ = meta_data.get_field<GeneralField_type>(stk::topology::NODE_RANK, sName.control_volume);
+    // scVolumeField_ = meta_data.get_field<GeneralField_type>(stk::topology::ELEMENT_RANK, sName.subcontrol_volume);
 
   }
 

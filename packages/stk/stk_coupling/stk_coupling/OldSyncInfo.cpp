@@ -73,20 +73,11 @@ OldSyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
 
   { // Then broadcast on the local communicator
     stk::CommBroadcast comm(local, 0);
-
-    if (localRank == 0)
-    {
-      recvInfo.pack(comm.send_buffer());
-    }
-
-    comm.allocate_buffer();
-
-    if (localRank == 0)
-    {
-      recvInfo.pack(comm.send_buffer());
-    }
-
-    comm.communicate();
+    stk::pack_and_communicate(comm, [&](){
+      if (localRank == 0) {
+        recvInfo.pack(comm.send_buffer());
+      }
+    });
 
     if (localRank != 0)
     {

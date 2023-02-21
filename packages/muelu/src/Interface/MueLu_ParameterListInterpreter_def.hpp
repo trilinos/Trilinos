@@ -85,6 +85,7 @@
 #endif
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
+#include "MueLu_ReplicatePFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RAPShiftFactory.hpp"
@@ -321,16 +322,15 @@ namespace MueLu {
 
     (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
+    // Generic data saving (this saves the data on all levels)
+    if(paramList.isParameter("save data"))
+      this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
+
     // Save level data
     if (paramList.isSublist("export data")) {
       ParameterList printList = paramList.sublist("export data");
 
-      if (printList.isParameter("A"))
-        this->matricesToPrint_     = Teuchos::getArrayFromStringParameter<int>(printList, "A");
-      if (printList.isParameter("P"))
-        this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "P");
-      if (printList.isParameter("R"))
-        this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
+      // Vectors, aggregates and other things that need special handling
       if (printList.isParameter("Nullspace"))
         this->nullspaceToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
       if (printList.isParameter("Coordinates"))
@@ -339,9 +339,17 @@ namespace MueLu {
         this->aggregatesToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Aggregates");
       if (printList.isParameter("pcoarsen: element to node map"))
         this->elementToNodeMapsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "pcoarsen: element to node map");
+
+      // If we asked for an arbitrary matrix to be printed, we do that here
+      for(auto iter = printList.begin(); iter != printList.end(); iter++) {
+        const std::string & name = printList.name(iter);
+        // Ignore the special cases
+        if(name == "Nullspace" || name == "Coordinates" || name == "Aggregates" || name == "pcoarsen: element to node map")
+          continue;
+
+        this->matricesToPrint_[name] = Teuchos::getArrayFromStringParameter<int>(printList, name);
+      }
     }
-    if(paramList.isParameter("save data"))
-      this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
 
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
@@ -585,7 +593,7 @@ namespace MueLu {
         Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical","smoothed reitzinger","unsmoothed reitzinger"}).count(multigridAlgo) == 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical","smoothed reitzinger","unsmoothed reitzinger","replicate"}).count(multigridAlgo) == 0,
         Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -662,6 +670,9 @@ namespace MueLu {
     } else if (multigridAlgo == "emin") {
       // Energy minimization
       UpdateFactoryManager_Emin(paramList, defaultList, manager, levelID, keeps);
+
+    } else if (multigridAlgo == "replicate") {
+      UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
 
     } else if (multigridAlgo == "pg") {
       // Petrov-Galerkin
@@ -1012,13 +1023,16 @@ namespace MueLu {
      ParameterList rParams;
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: constant column sums", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, rParams);
 
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
      rFactory->SetParameterList(rParams);
      
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
-     rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+     rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
+     //rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
 
      if(levelID > 1)
        rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));
@@ -1079,7 +1093,8 @@ namespace MueLu {
      else {
        MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
        ParameterList dropParams;
-       dropParams.set("lightweight wrap", true);
+       if (!rcp_dynamic_cast<CoalesceDropFactory>(dropFactory).is_null())
+         dropParams.set("lightweight wrap", true);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: row sum drop tol",        double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
@@ -2143,6 +2158,23 @@ namespace MueLu {
     manager.SetFactory("P", P);
   }
 
+  // =====================================================================================================
+  // ================================= Algorithm: Replicate       ========================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  UpdateFactoryManager_Replicate(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const
+  {
+    auto P = rcp(new MueLu::ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
+
+    ParameterList Pparams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "replicate: npdes", int, Pparams);
+
+    P->SetParameterList(Pparams);
+    manager.SetFactory("P", P);
+
+  }
+
 
   // =====================================================================================================
   // ====================================== Algorithm: Matlab ============================================
@@ -2379,13 +2411,16 @@ namespace MueLu {
         ParameterList foo = hieraList.sublist("DataToWrite");
         std::string dataName = "Matrices";
         if (foo.isParameter(dataName))
-          this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["A"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
         dataName = "Prolongators";
         if (foo.isParameter(dataName))
-          this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["P"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
         dataName = "Restrictors";
         if (foo.isParameter(dataName))
-          this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["R"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        dataName = "D0";
+        if (foo.isParameter(dataName))
+          this->matricesToPrint_["D0"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
       }
 
       // Get level configuration

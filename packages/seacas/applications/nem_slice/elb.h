@@ -5,9 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _EXOIILB_CONST_H_
-#define _EXOIILB_CONST_H_
+#pragma once
 
 #include "elb_elem.h"
 #include <cstdio>
@@ -37,7 +35,9 @@
 
 #define MAX_INP_LINE 10240
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
+#if (__cplusplus >= 201703L)
+#define FALL_THROUGH [[fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
@@ -271,5 +271,3 @@ template <typename INT> struct Graph_Description
 #define EDGE_WGT  4
 #define TIME_INDX 5
 #define VAR_NAME  6
-
-#endif /* _EXOIILB_CONST_H_ */

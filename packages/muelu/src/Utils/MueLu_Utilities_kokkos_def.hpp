@@ -134,11 +134,11 @@ namespace MueLu {
     using Vector            = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using VectorFactory     = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using local_matrix_type = typename Matrix::local_matrix_type;
-    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    // using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using value_type        = typename local_matrix_type::value_type;
     using ordinal_type      = typename local_matrix_type::ordinal_type;
     using execution_space   = typename local_matrix_type::execution_space;
-    using memory_space      = typename local_matrix_type::memory_space;
+    // using memory_space      = typename local_matrix_type::memory_space;
     // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
     // you are likely to run into errors when handling std::complex<>
     // a good way to work around that is to use the following:
@@ -377,10 +377,10 @@ namespace MueLu {
       auto b_graph      = Am.getCrsGraph().getLocalGraphDevice();
       auto b_rowptr     = Am.getCrsGraph().getLocalRowPtrsDevice();
       auto values       = Am.getValuesDevice();
-      LO   numBlockRows = Am.getLocalNumRows();      
+      LO   numBlockRows = Am.getLocalNumRows();
       const LO stride   = Am.getBlockSize() * Am.getBlockSize();
 
-      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numBlockRows);      
+      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numBlockRows);
 
       if (count_twos_as_dirichlet)
         throw Exceptions::RuntimeError("BlockCrs does not support counting twos as Dirichlet");
@@ -409,14 +409,14 @@ namespace MueLu {
                            });
 
       return boundaryNodes;
-#else 
+#else
       throw Exceptions::RuntimeError("BlockCrs requires Tpetra");
 #endif
-    } 
+    }
     else {
       auto localMatrix = A.getLocalMatrixDevice();
       LO   numRows     = A.getLocalNumRows();
-      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);      
+      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
 
       if (count_twos_as_dirichlet)
         Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows_Twos_As_Dirichlet", range_type(0,numRows),

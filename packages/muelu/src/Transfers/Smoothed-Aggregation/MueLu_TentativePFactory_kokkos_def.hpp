@@ -985,7 +985,7 @@ namespace MueLu {
                   RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
 #ifdef HAVE_MUELU_TPETRA
-  /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
+  /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
        2) QR is not supported:  Under assumption #1, this shouldn't cause problems.
@@ -1000,8 +1000,8 @@ namespace MueLu {
     //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType Magnitude;
+    // typedef Teuchos::ScalarTraits<SC> STS;
+    // typedef typename STS::magnitudeType Magnitude;
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
@@ -1032,7 +1032,7 @@ namespace MueLu {
                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                       numCoarseBlockRows,
                                                       coarsePointMap->getIndexBase(),
-                                                      coarsePointMap->getComm());    
+                                                      coarsePointMap->getComm());
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     //    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
@@ -1080,7 +1080,7 @@ namespace MueLu {
       aggDofSizes = AggSizeType("agg_dof_sizes", numAggregates+1);
 
       Kokkos::deep_copy(Kokkos::subview(aggDofSizes, Kokkos::make_pair(static_cast<size_t>(1), numAggregates+1)), aggSizes);
-    } 
+    }
 
     // Find maximum dof size for aggregates
     // Later used to reserve enough scratch space for local QR decompositions
@@ -1133,7 +1133,7 @@ namespace MueLu {
     typedef typename Xpetra::Matrix<SC,LO,GO,NO>::local_matrix_type    local_matrix_type;
     typedef typename local_matrix_type::row_map_type::non_const_type   rows_type;
     typedef typename local_matrix_type::index_type::non_const_type     cols_type;
-    typedef typename local_matrix_type::values_type::non_const_type    vals_type;
+    // typedef typename local_matrix_type::values_type::non_const_type    vals_type;
 
 
     // Device View for status (error messages...)
@@ -1148,7 +1148,7 @@ namespace MueLu {
 
     // BlockCrs requires that we build the (block) graph first, so let's do that...
 
-    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one 
+    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one
     // block non-zero per row in the matrix;
     rows_type ia(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_rowptr"), numFineBlockRows+1);
     cols_type ja(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_colind"), numFineBlockRows);
@@ -1190,7 +1190,7 @@ namespace MueLu {
       LO nnz=0;
       Kokkos::parallel_scan("MueLu:TentativePF:BlockCrs:compress_rows", range_type(0,numFineBlockRows),
                             KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-                              if(final) 
+                              if(final)
                                 i_temp[i] = upd;
                               for (auto j = ia[i]; j < ia[i+1]; j++)
                                 if (ja[j] != INVALID)
@@ -1211,7 +1211,7 @@ namespace MueLu {
                                  j_temp[rowStart+lnnz] = ja[j];
                                  lnnz++;
                                }
-                           });     
+                           });
       
       ia = i_temp;
       ja = j_temp;
@@ -1274,7 +1274,7 @@ namespace MueLu {
 
                            // R = norm
                            for(LO j=0; j<(LO)NSDim; j++)
-                             coarseNS(offset+j,j) = one;                                                    
+                             coarseNS(offset+j,j) = one;
                          });
 
   Ptentative = P_wrap;

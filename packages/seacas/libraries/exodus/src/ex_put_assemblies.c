@@ -172,6 +172,7 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
       free(entlst_id);
       EX_FUNC_LEAVE(EX_FATAL);
     }
+    in_define = false;
   }
 
   /* Update the maximum_name_length attribute on the file. */

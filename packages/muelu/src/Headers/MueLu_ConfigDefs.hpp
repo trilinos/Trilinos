@@ -51,7 +51,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 
 // Kokkos
-#include <Kokkos_DefaultNode.hpp> // default template parameter of many MueLu classes
+#include <KokkosCompat_DefaultNode.hpp> // default template parameter of many MueLu classes
 
 // Memory management
 #include <Teuchos_Array.hpp>

@@ -500,7 +500,7 @@ int main (int argc, char* argv[])
       try {
         clp.parse(argc, argv);
       } catch (...) {
-        Kokkos::finalize_all();
+        Kokkos::finalize();
         return -1;
       }
 
@@ -560,7 +560,7 @@ int main (int argc, char* argv[])
       mesh_factory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
       mesh->writeToExodus("output.exo");
       out << "Stopping after writing mesh because --generate-mesh-only was requested.\n";
-      Kokkos::finalize_all();
+      Kokkos::finalize();
       return 0;
     }
 

@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "iotm_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
@@ -37,7 +39,7 @@ namespace Iotm {
   using SplitType      = text_mesh::SplitType;
   using AssemblyType   = text_mesh::AssemblyType;
 
-  struct BlockPartition
+  struct IOTM_EXPORT BlockPartition
   {
     size_t            offset;
     std::string       name;
@@ -51,10 +53,11 @@ namespace Iotm {
     }
   };
 
-  class TextMesh
+  class IOTM_EXPORT TextMesh
   {
   public:
-    explicit TextMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
+    explicit TextMesh(const std::string &parameters, int proc_count = 1,
+                      int my_proc = 0);
     TextMesh(int proc_count = 1, int my_proc = 0);
     TextMesh();
     TextMesh(const TextMesh &)            = delete;
@@ -309,7 +312,6 @@ namespace Iotm {
 
     std::set<std::string> get_blocks_touched_by_sideset(const SidesetData *sideset) const;
 
-    size_t m_processorCount{0};
     size_t m_myProcessor{0};
 
     size_t                             m_timestepCount{0};

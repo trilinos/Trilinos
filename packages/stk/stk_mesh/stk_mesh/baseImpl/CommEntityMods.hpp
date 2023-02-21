@@ -45,6 +45,7 @@ namespace stk {
 namespace mesh {
 
 class BulkData;
+class EntityCommDatabase;
 
 namespace impl {
 
@@ -54,6 +55,7 @@ public:
   enum PackOption { PACK_SHARED = 0, PACK_GHOSTED = 1, PACK_ALL = 2 };
 
   CommEntityMods(const BulkData& bulkData,
+                 const EntityCommDatabase& commDB,
                  const EntityCommListInfoVector& commList);
   virtual ~CommEntityMods();
 
@@ -71,10 +73,13 @@ private:
   const BulkData& m_bulkData;
   CommSparse m_commSparse;
   const EntityCommListInfoVector& m_commList;
+  const EntityCommDatabase& m_commDB;
   PackOption m_packOption;
   std::vector<EntityParallelState> m_sharedMods; 
   std::vector<EntityParallelState> m_ghostedMods; 
 };
+
+void make_unique(std::vector<EntityParallelState>& pllStates);
 
 }}} // end namepsace stk mesh impl
 

@@ -42,6 +42,7 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternBlocking.hpp"  // for DataExchangeUnknownPatternBlocking
 #include "stk_util/parallel/CommBuffer.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
+#include <stddef.h>
 #include <cstddef>                          // for size_t, ptrdiff_t
 #include <map>                              // for map
 #include <stdexcept>                        // for runtime_error
@@ -57,6 +58,7 @@ public:
   ParallelMachine parallel()      const { return m_comm ; }
   int             parallel_size() const { return m_size ; }
   int             parallel_rank() const { return m_rank ; }
+  int             root_rank() const { return m_root_rank; }
 
   /** Obtain the message buffer for the root_rank processor */
   CommBuffer & send_buffer();
@@ -87,6 +89,17 @@ private:
   CommBuffer      m_buffer ;
 };
 
+template<typename PACK_ALGORITHM>
+bool pack_and_communicate(CommBroadcast & comm, const PACK_ALGORITHM & algorithm)
+{
+  algorithm();
+  comm.allocate_buffer();
+  algorithm();
+  comm.communicate();
+
+  return (comm.parallel_rank() == comm.root_rank() && comm.send_buffer().capacity() > 0)
+      || (comm.parallel_rank() != comm.root_rank() && comm.recv_buffer().capacity() > 0);
+}
 
 std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
 
@@ -147,8 +160,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &sendLists,
     }
     for(int iproc = 0; iproc < num_procs; ++iproc) {
       if(recvLists[iproc].size() > 0) {
-        MPI_Status status;
-        MPI_Wait( &recv_handles[iproc], &status );
+        MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
       }
     }
   }
@@ -197,8 +209,7 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   }
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
     }
   }
 #endif
@@ -244,8 +255,7 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
     if(recvSize > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
     }
   }
 #endif
@@ -289,8 +299,7 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
   }
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
       recv_lists[iproc].resize(recv_msg_sizes[iproc]);
     }
   }
@@ -316,8 +325,7 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
   }
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
     }
   }
 #endif
@@ -339,7 +347,6 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   std::vector<std::vector<T> > recv_data(num_comm_procs);
   std::vector<MPI_Request> send_requests(num_comm_procs);
   std::vector<MPI_Request> recv_requests(num_comm_procs);
-  std::vector<MPI_Status> statuses(num_comm_procs);
 
   for(int i=0; i<num_comm_procs; ++i) {
     int iproc = comm_procs[i];
@@ -353,19 +360,18 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
   }
 
-  MPI_Status status;
   for(int i = 0; i < num_comm_procs; ++i) {
       int idx = i;
       if (deterministic) {
-          MPI_Wait(&recv_requests[i], &status);
+          MPI_Wait(&recv_requests[i], MPI_STATUS_IGNORE);
       }   
       else {
-          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
+          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, MPI_STATUS_IGNORE);
       }   
       unpack_msg(comm_procs[idx], recv_data[idx]);
   }
 
-  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
+  MPI_Waitall(num_comm_procs, send_requests.data(), MPI_STATUSES_IGNORE);
 #endif
 }
 

@@ -241,18 +241,10 @@ namespace Stokhos {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
-    typedef Tpetra::Map<LO,GO,N> Map;
-
     typedef typename MatrixType::local_matrix_device_type KokkosMatrixType;
-
-    typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
     typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
 
-    RCP< const Map > rmap = A.getRowMap();
-    RCP< const Map > cmap = A.getColMap();
-
     KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
-    KokkosGraphType kokkos_graph = kokkos_matrix.graph;
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
     const size_t ncols = kokkos_matrix.numCols();
     typedef GetMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
@@ -263,10 +255,9 @@ namespace Stokhos {
     // From here on we are assuming that
     // KokkosMeanMatrixValuesType == KokkosMatrixValuestype
 
-    KokkosMatrixType mean_kokkos_matrix(
-      "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
     RCP < MatrixType > mean_matrix =
-      rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
+      rcp( new MatrixType(A.getCrsGraph(), mean_matrix_values) );
+    mean_matrix->fillComplete();
     return mean_matrix;
   }
 
@@ -279,21 +270,12 @@ namespace Stokhos {
     typedef typename Scalar::value_type BaseScalar;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
     typedef Tpetra::CrsMatrix<BaseScalar,LO,GO,N> ScalarMatrixType;
-    typedef Tpetra::Map<LO,GO,N> Map;
-
     typedef typename MatrixType::local_matrix_device_type KokkosMatrixType;
     typedef typename ScalarMatrixType::local_matrix_device_type ScalarKokkosMatrixType;
-
-    typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
     typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
 
-    RCP< const Map > rmap = A.getRowMap();
-    RCP< const Map > cmap = A.getColMap();
-
     KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
-    KokkosGraphType kokkos_graph = kokkos_matrix.graph;
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
-    const size_t ncols = kokkos_matrix.numCols();
     typedef GetScalarMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
     typedef typename MeanFunc::MeanViewType KokkosMeanMatrixValuesType;
     MeanFunc meanfunc(matrix_values);
@@ -302,10 +284,9 @@ namespace Stokhos {
     // From here on we are assuming that
     // KokkosMeanMatrixValuesType == ScalarKokkosMatrixValuesType
 
-    ScalarKokkosMatrixType mean_kokkos_matrix(
-      "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
     RCP < ScalarMatrixType > mean_matrix =
-      rcp( new ScalarMatrixType(rmap, cmap, mean_kokkos_matrix) );
+      rcp( new ScalarMatrixType(A.getCrsGraph(), mean_matrix_values) );
+    mean_matrix->fillComplete();
     return mean_matrix;
   }
 
@@ -550,18 +531,24 @@ namespace Stokhos {
           Y_s->getNumVectors() != Y.getNumVectors()*pce_size)
         Y_s = Teuchos::rcp(new scalar_mv_type(Y.getMap(),
                                               Y.getNumVectors()*pce_size));
-      auto xv_s = X_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
-      auto yv_s = Y_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
       base_scalar_type alpha_s = alpha.fastAccessCoeff(0);
       base_scalar_type beta_s = beta.fastAccessCoeff(0);
 
-      copy_pce_to_scalar(xv_s, xv);
-      if (beta_s != 0.0)
-        copy_pce_to_scalar(yv_s, yv);
+      {
+        auto xv_s = X_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        auto yv_s = Y_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+        copy_pce_to_scalar(xv_s, xv);
+        if (beta_s != 0.0)
+          copy_pce_to_scalar(yv_s, yv);
+      }
 
       mb_op->apply(*X_s, *Y_s, mode, alpha_s, beta_s);
 
-      copy_scalar_to_pce(yv, yv_s);
+      {
+        auto yv_s = Y_s->getLocalViewDevice(Tpetra::Access::ReadOnly);
+        copy_scalar_to_pce(yv, yv_s);
+      }
     }
 
     virtual bool hasTransposeApply() const {

@@ -48,7 +48,7 @@
 #include "Teuchos_dyn_cast.hpp"
 
 #include "PanzerDiscFE_config.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_LocalMap.h"
 #endif
 
@@ -71,7 +71,7 @@ scatterResponse()
 
   value = glbValue;
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   // built data in vectors
   if(this->useEpetra()) {
     // use epetra
@@ -149,7 +149,7 @@ scatterResponse()
   value = glbValue;
 
   // copy data in vectors
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   if(this->useEpetra()) {
     // use epetra
     Epetra_MultiVector& deriv = this->getEpetraMultiVector();

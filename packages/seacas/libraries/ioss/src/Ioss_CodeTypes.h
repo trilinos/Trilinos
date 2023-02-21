@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,16 +45,27 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #include <mutex>
 #endif
 
+#if (__cplusplus >= 201703L)
+#define IOSS_MAYBE_UNUSED [[maybe_unused]]
+#else
+#define IOSS_MAYBE_UNUSED
+#endif
+
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
-#define PAR_UNUSED(x)
 using Ioss_MPI_Comm = MPI_Comm;
+#define IOSS_PAR_UNUSED(x)
 #else
-#define PAR_UNUSED(x)                                                                              \
+using Ioss_MPI_Comm = int;
+#if (__cplusplus >= 201703L)
+// For C++17, we rely on IOSS_MAYBE_UNUSED instead.  Can eventually remove all IOSS_PAR_UNUSED...
+#define IOSS_PAR_UNUSED(x)
+#else
+#define IOSS_PAR_UNUSED(x)                                                                         \
   do {                                                                                             \
     (void)(x);                                                                                     \
   } while (0)
-using Ioss_MPI_Comm  = int;
+#endif
 #endif
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -93,3 +104,15 @@ using Kokkos_Complex = Kokkos::complex<double>;
 #ifndef IOSS_DEBUG_OUTPUT
 #define IOSS_DEBUG_OUTPUT 0
 #endif
+
+// For use to create a no-op get or put_field_internal function...
+#define IOSS_NOOP_GFI(type)                                                                        \
+  int64_t get_field_internal(const type *, const Ioss::Field &, void *, size_t) const override     \
+  {                                                                                                \
+    return -1;                                                                                     \
+  }
+#define IOSS_NOOP_PFI(type)                                                                        \
+  int64_t put_field_internal(const type *, const Ioss::Field &, void *, size_t) const override     \
+  {                                                                                                \
+    return -1;                                                                                     \
+  }

@@ -237,7 +237,7 @@ namespace MueLu {
         RCP<TpetraCrsMatrix> At = rcp_dynamic_cast<TpetraCrsMatrix>(Acrs);
         if(At.is_null()) {
           if(!Xpetra::Helpers<Scalar,LO,GO,Node>::isTpetraBlockCrs(matA))
-            throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix or BlockCrsMatrix from matrix A.");          
+            throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix or BlockCrsMatrix from matrix A.");
           this->GetOStream(Statistics0) << "Ifpack2Smoother: Using (native) BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
           paramList.remove("smoother: use blockcrsmatrix storage");
         }
@@ -283,7 +283,7 @@ namespace MueLu {
              type_ == "TRIDIRELAXATION" ||
              type_ == "TRIDIAGONAL_RELAXATION" ||
              type_ == "TRIDIAGONAL RELAXATION" ||
-             type_ == "TRIDIAGONALRELAXATION") 
+             type_ == "TRIDIAGONALRELAXATION")
       SetupBlockRelaxation(currentLevel);
 
     else if (type_ == "CHEBYSHEV")
@@ -297,10 +297,10 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
 #endif
     }
-    else if (type_ == "AGGREGATE") 
+    else if (type_ == "AGGREGATE")
       SetupAggregate(currentLevel);
 
-    else if (type_ == "HIPTMAIR") 
+    else if (type_ == "HIPTMAIR")
       SetupHiptmair(currentLevel);
 
     else
@@ -361,8 +361,8 @@ namespace MueLu {
         std::string partName = "partitioner: type";
         // Pretty sure no one has been using this. Unfortunately, old if
         // statement (which checked for equality with "user") prevented
-        // anyone from employing other types of Ifpack2 user partition 
-        // options. Leaving this and switching if to "vanka user" just 
+        // anyone from employing other types of Ifpack2 user partition
+        // options. Leaving this and switching if to "vanka user" just
         // in case some day someone might want to use this.
         if (subList.isParameter(partName) && subList.get<std::string>(partName) == "vanka user") {
           isBlockedMatrix = true;
@@ -436,7 +436,7 @@ namespace MueLu {
 
     if (this->IsSetup() == true) {
       this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): Setup() has already been called" << std::endl;
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;    
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;
     }
 
     this->GetOStream(Statistics0) << "Ifpack2Smoother: Using Aggregate Smoothing"<<std::endl;
@@ -456,7 +456,7 @@ namespace MueLu {
       dof_ids.resize(aggregate_ids.size() * blocksize);
       for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
         for(LO j=0; j<(LO)blocksize; j++)
-          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+          dof_ids[i*blocksize+j] = aggregate_ids[i];
       }
     }
     else {
@@ -792,12 +792,12 @@ namespace MueLu {
 
     if(smoother1 == "CHEBYSHEV") {
       ParameterList & list1 = paramList.sublist("hiptmair: smoother list 1");
-      //lambdaMax11 = 
+      //lambdaMax11 =
       SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
     }
     if(smoother2 == "CHEBYSHEV") {
       ParameterList & list2 = paramList.sublist("hiptmair: smoother list 2");
-      //lambdaMax22 = 
+      //lambdaMax22 =
       SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
     }
 
@@ -805,8 +805,8 @@ namespace MueLu {
     // the regular SetupChebyshev
 
     // Grab the auxillary matrices and stick them on the list
-    RCP<Matrix> NodeMatrix = currentLevel.Get<RCP<Matrix> >("NodeMatrix");
-    RCP<Matrix> D0         = currentLevel.Get<RCP<Matrix> >("D0");
+    RCP<Operator> NodeMatrix = currentLevel.Get<RCP<Operator> >("NodeMatrix");
+    RCP<Operator> D0         = currentLevel.Get<RCP<Operator> >("D0");
 
     RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
     RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);
@@ -837,7 +837,7 @@ namespace MueLu {
     std::string maxEigString   = "chebyshev: max eigenvalue";
     std::string eigRatioString = "chebyshev: ratio eigenvalue";
     
-    // Get/calculate the maximum eigenvalue      
+    // Get/calculate the maximum eigenvalue
     if (paramList.isParameter(maxEigString)) {
       if (paramList.isType<double>(maxEigString))
         lambdaMax = paramList.get<double>(maxEigString);

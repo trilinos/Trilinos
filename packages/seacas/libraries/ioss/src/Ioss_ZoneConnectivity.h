@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <array>
@@ -24,7 +26,7 @@ using IOSS_ZC_INT = int;
 namespace Ioss {
   class Region;
 
-  struct ZoneConnectivity
+  struct IOSS_EXPORT ZoneConnectivity
   {
     // cereal requires a default constructor when de-serializing vectors of objects.  Because
     // StructuredBlock contains a vector of ZoneConnectivity objects, this default constructor is
@@ -60,7 +62,8 @@ namespace Ioss {
       m_isActive = has_faces();
     }
 
-    ZoneConnectivity(const ZoneConnectivity &copy_from) = default;
+    ZoneConnectivity(const ZoneConnectivity &copy_from)            = default;
+    ZoneConnectivity &operator=(const ZoneConnectivity &copy_from) = default;
 
     // Return number of nodes in the connection shared with the donor zone.
     size_t get_shared_node_count() const
@@ -141,5 +144,6 @@ namespace Ioss {
   private:
     bool equal_(const Ioss::ZoneConnectivity &rhs, bool quiet) const;
   };
-} // namespace Ioss
 
+  IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
+} // namespace Ioss

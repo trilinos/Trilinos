@@ -113,7 +113,7 @@ namespace MueLu {
     
     const ParameterList& pL = GetParameterList();
     bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
-    if(use_color_graph) 
+    if(use_color_graph)
       Input(currentLevel, "Coloring Graph");
   }
 
@@ -195,16 +195,16 @@ namespace MueLu {
         // Use A's rowmap and hope it matches
         mv = Xpetra::IO<real_type, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVector(color_file,A->getRowMap());
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(mv.is_null(),std::invalid_argument,"Coloring on disk cannot be read");      
+      TEUCHOS_TEST_FOR_EXCEPTION(mv.is_null(),std::invalid_argument,"Coloring on disk cannot be read");
       fc_splitting = LocalOrdinalVectorFactory::Build(A->getRowMap());
       TEUCHOS_TEST_FOR_EXCEPTION(mv->getLocalLength() != fc_splitting->getLocalLength(),std::invalid_argument,"Coloring map mismatch");
 
       // Overlay the Dirichlet Points (and copy out the rest)
       auto boundaryNodes = graph->GetBoundaryNodeMap();
       ArrayRCP<const real_type> mv_data= mv->getData(0);
-      ArrayRCP<LO> fc_data= fc_splitting->getDataNonConst(0);     
+      ArrayRCP<LO> fc_data= fc_splitting->getDataNonConst(0);
       for(LO i=0; i<(LO)fc_data.size(); i++) {
-        if(boundaryNodes[i]) 
+        if(boundaryNodes[i])
           fc_data[i] = DIRICHLET_PT;
         else
           fc_data[i] = Teuchos::as<LO>(mv_data[i]);
@@ -299,7 +299,7 @@ namespace MueLu {
     }
         
     Set(currentLevel, "FC Splitting",fc_splitting);
-    Set(currentLevel, "CoarseMap", coarseMap);    
+    Set(currentLevel, "CoarseMap", coarseMap);
    
   }
 
@@ -319,7 +319,7 @@ namespace MueLu {
                                          fineMap.getIndexBase(),
                                          stridingInfo_,
                                          fineMap.getComm(),
-                                         domainGIDOffset);  
+                                         domainGIDOffset);
   }
 
 /* ************************************************************************* */
@@ -341,7 +341,7 @@ namespace MueLu {
     kh.create_graph_coloring_handle();
     
     // Get the distance-1 graph coloring handle
-    auto coloringHandle = kh.get_graph_coloring_handle();      
+    auto coloringHandle = kh.get_graph_coloring_handle();
     
     // Set the distance-1 coloring algorithm to use
     if(pL.get<bool>("aggregation: deterministic") == true) {
@@ -382,8 +382,8 @@ namespace MueLu {
       // Assume that the graph is symmetric so row map/entries and col map/entries are the same
 
     if(graphLWK) {
-      KokkosGraph::Experimental::graph_color(&kh, 
-                                             numRows, 
+      KokkosGraph::Experimental::graph_color(&kh,
+                                             numRows,
                                              numRows, // FIXME: This should be the number of columns
                                              graphLWK->getLocalLWGraph().getRowPtrs(),
                                              graphLWK->getLocalLWGraph().getEntries(),
@@ -397,14 +397,14 @@ namespace MueLu {
       std::copy(rowptrs.begin(),rowptrs.end(),rowptrs_s.begin());
       Kokkos::View<const size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v(rowptrs_s.data(),(size_t)rowptrs.size());
       Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(entries.getRawPtr(),(size_t)entries.size());
-      KokkosGraph::Experimental::graph_color(&kh, 
-                                             numRows, 
+      KokkosGraph::Experimental::graph_color(&kh,
+                                             numRows,
                                              numRows, // FIXME: This should be the number of columns
                                              rowptrs_v,
                                              entries_v,
                                              true);
     }
-    else if(graphG) {  
+    else if(graphG) {
       // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
       RCP<const CrsGraph> graphC = graphG->GetGraph();
       size_t numEntries = graphC->getLocalNumEntries();
@@ -412,15 +412,15 @@ namespace MueLu {
       graphC->getLocalRowView(0,indices);
       Kokkos::View<size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v("rowptrs_v",graphC->getLocalNumRows()+1);
       rowptrs_v[0]=0;
-      for(LO i=0; i<(LO)graphC->getLocalNumRows()+1; i++) 
+      for(LO i=0; i<(LO)graphC->getLocalNumRows()+1; i++)
         rowptrs_v[i+1] = rowptrs_v[i] + graphC->getNumEntriesInLocalRow(i);
-      Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(&indices[0],numEntries);    
-      KokkosGraph::Experimental::graph_color(&kh, 
-                                             numRows, 
+      Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(&indices[0],numEntries);
+      KokkosGraph::Experimental::graph_color(&kh,
+                                             numRows,
                                              numRows, // FIXME: This should be the number of columns
                                              rowptrs_v,
                                              entries_v,
-                                             true);       
+                                             true);
     }
 
     
@@ -464,12 +464,12 @@ namespace MueLu {
       bool has_colored_neighbor=false;
       for(LO j=0; !has_colored_neighbor && j<(LO)indices.size(); j++) {
         // FIXME: This does not handle ghosting correctly
-        if(myColors[indices[j]] == MIS) 
+        if(myColors[indices[j]] == MIS)
           has_colored_neighbor=true;
       }
       if(!has_colored_neighbor)
-        myColors[row] = MIS;   
-    } 
+        myColors[row] = MIS;
+    }
     numColors=1;
   }
 
@@ -501,7 +501,7 @@ namespace MueLu {
 
     // Assign the Array RCP or Copy Out
     // FIXME:  This probably won't work if LO!=int
-    if(std::is_same<LO,int>::value) 
+    if(std::is_same<LO,int>::value)
       myColors_out = colors;
     else {
       myColors_out.resize(colors.size());
@@ -512,7 +512,7 @@ namespace MueLu {
     /*
 
     printf("CMS: numColors = %d\ncolors = ",numColors);
-    for(int i=0;i<colors.size(); i++) 
+    for(int i=0;i<colors.size(); i++)
       printf("%d ",colors[i]);
     printf("\n");
 

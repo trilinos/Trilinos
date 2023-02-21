@@ -280,7 +280,7 @@ namespace MueLu {
                           RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
 #ifdef HAVE_MUELU_TPETRA
 
-    /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
+    /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
        2) QR is not supported:  Under assumption #1, this shouldn't cause problems.
@@ -296,7 +296,7 @@ namespace MueLu {
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType Magnitude;
+    // typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
     const SC     one       = STS::one();
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
@@ -314,7 +314,7 @@ namespace MueLu {
                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                       numCoarseBlockRows,
                                                       coarsePointMap->getIndexBase(),
-                                                      coarsePointMap->getComm());    
+                                                      coarsePointMap->getComm());
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
@@ -356,7 +356,7 @@ namespace MueLu {
     }
 
     // BlockCrs requires that we build the (block) graph first, so let's do that...
-    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one 
+    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one
     // block non-zero per row in the matrix;
     RCP<CrsGraph> BlockGraph = CrsGraphFactory::Build(rowMap,coarseBlockMap,0);
     ArrayRCP<size_t>  iaPtent;
@@ -381,7 +381,7 @@ namespace MueLu {
         const LO localRow = aggToRowMapLO[aggStart[agg]+j];
         const size_t rowStart = ia[localRow];
         ja[rowStart] = offset;
-      }      
+      }
     }
 
     // Compress storage (remove all INVALID, which happen when we skip zeros)
@@ -454,7 +454,7 @@ namespace MueLu {
 
         for (size_t r = 0; r < NSDim; r++) {
           LO localPointRow = localBlockRow*NSDim + r;
-          for (size_t c = 0; c < NSDim; c++) 
+          for (size_t c = 0; c < NSDim; c++)
             block[r*NSDim+c] = fineNS[c][localPointRow];
         }
         // NOTE: Assumes columns==aggs and are ordered sequentially

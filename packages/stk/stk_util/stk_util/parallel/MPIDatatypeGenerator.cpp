@@ -9,9 +9,7 @@ const std::vector<MPI_Datatype> MPIDatatypeGenerator::m_candidateTypes = {MPI_LO
 const std::vector<size_t> MPIDatatypeGenerator::m_candidateSizes       = {sizeof(long long), sizeof(long), sizeof(int), sizeof(short), 1};
 const size_t MPIDatatypeGenerator::m_numTypesForContiguous = 3;
 
-MPIDatatypeGenerator::MPIDatatypeGenerator() :
-  m_destructor( [=](){destructor();} )
-{}
+MPIDatatypeGenerator::MPIDatatypeGenerator() : m_destructor([this]() { destructor(); }) {}
 
 MPIDatatypeGenerator::~MPIDatatypeGenerator() 
 { 

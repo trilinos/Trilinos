@@ -14,6 +14,9 @@
 class CatalystTestFixture
 {
 public:
+  typedef std::vector<std::pair<std::string, int>> VarAndCompCountVec;
+  typedef std::vector<std::string>                 StringVec;
+
   CatalystTestFixture();
   ~CatalystTestFixture();
 
@@ -27,10 +30,25 @@ public:
   void runPhactoriJSONTestTwoGrid(const std::string &jsonFile, const std::string &inputFileA,
                                   const std::string &inputFileB);
 
+  void runPhactoriJSONTestTwoGridTwoPipe(const std::string &jsonFileA,
+                                         const std::string &inputFileA,
+                                         const std::string &jsonFileB,
+                                         const std::string &inputFileB);
+
   void runParaViewGuiScriptTest(const std::string &pythonScript, const std::string &inputFile);
 
   void runCatalystLoggingTest(Ioss::PropertyManager *logging_properties,
                               const std::string &jsonFile, const std::string &inputFile);
+
+  void runCatalystMultiBlockMeshTest(const std::string &inputFile);
+
+  void checkMeshOutputVariables(const std::string &inputFile, const VarAndCompCountVec &cellVars,
+                                const VarAndCompCountVec &pointVars,
+                                const VarAndCompCountVec &globalVars, const std::string &blockPath);
+
+  void checkPartitionedDataSetCollectionStructure(const std::string &inputFile,
+                                                  const StringVec &partitions, int numCells,
+                                                  const StringVec &searchQueries);
 
   static bool isFileExists(const char *fileName);
   static void checkTestOutputFileExists(const char *fileName);

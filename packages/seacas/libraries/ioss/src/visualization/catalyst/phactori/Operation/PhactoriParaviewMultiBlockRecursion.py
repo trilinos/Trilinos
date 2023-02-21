@@ -92,7 +92,7 @@ def DebugPrintBlockName(csData, blockIndex):
         myDebugPrint3("oneBlockMetaData is None (2)\n")
 
 def PhactoriRecusivelyDoMethodPerBlockFromParaViewFilter(inRecursionControlItem,  inPvFilter):
-  """grab client side data object, and use that to do recursion"""
+  """grab client side data object, and use that to do recursion"""  
   pvClientSideData = inPvFilter.GetClientSideObject().GetOutputDataObject(0)
   if pvClientSideData == None:
     if PhactoriDbg(100):

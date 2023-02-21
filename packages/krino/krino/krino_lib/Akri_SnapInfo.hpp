@@ -55,16 +55,12 @@ public:
     int get_snap_rank() const { return mSnapRank; }
     const std::vector<ExclusionIdentifierType> &get_conflicting_ids() const { return mGlobalIdsOfSnapNodeElems; }
 
-    class ConflictFinder
-    {
-    public:
-        std::vector<size_t> get_other_conflicting_infos(const SnapInfo& info) const {return {};}
-    };
     class Comparator
     {
     public:
         Comparator(const QualityMetric &qualityMetric) : mQualityMetric{qualityMetric}{}
         bool is_first_higher_priority_than_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
+        bool does_first_win_priority_tie_with_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
 
     private:
         const QualityMetric &mQualityMetric;

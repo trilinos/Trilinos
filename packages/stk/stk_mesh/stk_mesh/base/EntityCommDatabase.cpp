@@ -122,11 +122,9 @@ void pack_entity_info(const BulkData& mesh,
           ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
-          if (bucket.has_permutation(irank)) {
+          if (should_store_permutations(bucket.entity_rank(),irank)) {
             ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
-          } else {
-            buf.pack<unsigned>(0u);
           }
         }
       }
@@ -168,7 +166,9 @@ void unpack_entity_info(
     unsigned rel_attr = 0 ;
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
-    buf.unpack<unsigned>( rel_attr );
+    if (should_store_permutations(key.rank(), rel_key.rank())) {
+      buf.unpack<unsigned>( rel_attr );
+    }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {
@@ -342,6 +342,60 @@ bool unpack_field_values(const BulkData& mesh,
 
 //----------------------------------------------------------------------
 
+EntityCommDatabase::EntityCommDatabase()
+ : m_comm_map(),
+   m_last_lookup(m_comm_map.end()),
+   m_comm_map_change_listener(nullptr),
+   m_entityCommInfo(0, EntityCommInfo(InvalidOrdinal, -1)),
+   m_removedEntityCommIndices()
+{
+}
+
+PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
+{
+  if (!cached_find(key)) return PairIterEntityComm();
+
+  unsigned entityCommIndex = m_last_lookup->second;
+  return shared_comm_info_range(m_entityCommInfo.items(entityCommIndex));
+}
+
+PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key ) const
+{
+  if (!cached_find(key)) return PairIterEntityComm();
+
+  return m_entityCommInfo.items(m_last_lookup->second);
+}
+
+PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosting & sub ) const
+{
+  if (!cached_find(key)) return PairIterEntityComm();
+
+  PairIterEntityComm comm_map = m_entityCommInfo.items(m_last_lookup->second);
+
+  const EntityCommInfo s_begin( sub.ordinal() ,     0 );
+  const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
+
+  const EntityCommInfo* i = comm_map.begin();
+  const EntityCommInfo* e = comm_map.end();
+
+  i = std::lower_bound( i , e , s_begin );
+  e = std::lower_bound( i , e , s_end );
+
+  return PairIterEntityComm( i , e );
+}
+
+PairIterEntityComm EntityCommDatabase::comm(unsigned entityCommIndex) const
+{
+  return m_entityCommInfo.items(entityCommIndex);
+}
+
+int EntityCommDatabase::entity_comm( const EntityKey & key ) const
+{
+  if (!cached_find(key)) return -1;
+
+  return m_last_lookup->second;
+}
+
 // A cached find function that stores the result in m_last_lookup if successful and returns true.
 // Otherwise, the find failed and it returns false.
 bool EntityCommDatabase::cached_find(const EntityKey& key) const
@@ -360,145 +414,61 @@ bool EntityCommDatabase::cached_find(const EntityKey& key) const
   }
 }
 
+unsigned EntityCommDatabase::get_new_entity_comm_index()
+{
+  if (!m_removedEntityCommIndices.empty()) {
+    unsigned newEntityCommIndex = m_removedEntityCommIndices.back();
+    m_removedEntityCommIndices.pop_back();
+    return newEntityCommIndex;
+  }
 
-const EntityComm* EntityCommDatabase::insert(const EntityKey& key)
+  unsigned newEntityCommIndex = m_entityCommInfo.num_rows();
+  m_entityCommInfo.add_row();
+  return newEntityCommIndex;
+}
+
+int EntityCommDatabase::insert(const EntityKey& key)
 {
   if (!cached_find(key)) {
-    m_last_lookup = m_comm_map.insert(std::make_pair(key, EntityComm())).first;
+    int newEntityCommIndex = static_cast<int>(get_new_entity_comm_index());
+    std::pair<EntityKey,int> keyAndEntityComm(key, newEntityCommIndex);
+    m_last_lookup = m_comm_map.insert(keyAndEntityComm).first;
   }
-  return &(m_last_lookup->second);
+  return m_last_lookup->second;
 }
 
-
-PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
-{
-  if (!cached_find(key)) return PairIterEntityComm();
-
-  return shared_comm_info_range(m_last_lookup->second.comm_map);
-}
-
-
-PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key ) const
-{
-  if (!cached_find(key)) return PairIterEntityComm();
-
-  const EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-  return PairIterEntityComm(comm_map);
-}
-
-const EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key ) const
-{
-  if (!cached_find(key)) return NULL;
-
-  return &(m_last_lookup->second);
-}
-
-EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key )
-{
-  if (!cached_find(key)) return NULL;
-
-  return &(m_last_lookup->second);
-}
-
-
-PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosting & sub ) const
-{
-  if (!cached_find(key)) return PairIterEntityComm();
-
-  const EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-
-  const EntityCommInfo s_begin( sub.ordinal() ,     0 );
-  const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
-
-  EntityCommInfoVector::const_iterator i = comm_map.begin();
-  EntityCommInfoVector::const_iterator e = comm_map.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  return PairIterEntityComm( i , e );
-}
-
-
-std::pair<EntityComm*,bool> EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int /*owner*/ )
+std::pair<int,bool> EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int /*owner*/ )
 {
   insert(key);
 
-  if (val.ghost_id == 0) {
-    m_last_lookup->second.isShared = true;
-  }
-  else {
-    m_last_lookup->second.isGhost = true;
-  }
-
-  EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-
-  EntityCommInfoVector::iterator i =
-    std::lower_bound( comm_map.begin() , comm_map.end() , val );
-
-  const bool didInsert = ((i == comm_map.end()) || (val != *i));
-  std::pair<EntityComm*,bool> result = std::make_pair(&(m_last_lookup->second), didInsert);
-
-  if ( didInsert ) {
-    comm_map.insert( i , val );
-  }
+  int entityCommIndex = m_last_lookup->second;
+  const bool didInsert = m_entityCommInfo.add_item(entityCommIndex, val);
+  std::pair<int,bool> result = std::make_pair(m_last_lookup->second, didInsert);
 
   return result;
-}
-
-void EntityCommDatabase::internal_update_shared_ghosted(bool removedSharingProc)
-{
-  EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-  if (removedSharingProc) {
-    m_last_lookup->second.isShared = (!comm_map.empty() && comm_map.front().ghost_id==0);
-  }
-  else {
-    bool isStillGhost = false;
-    for(const EntityCommInfo& info : comm_map) {
-      if (info.ghost_id > 0) {
-        isStillGhost = true;
-        break;
-      }
-    }
-    m_last_lookup->second.isGhost = isStillGhost;
-  }
 }
 
 bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & val )
 {
   if (!cached_find(key)) return false;
 
-  EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-
-  EntityCommInfoVector::iterator i =
-    std::lower_bound( comm_map.begin() , comm_map.end() , val );
-
-  const bool result = ( (i != comm_map.end()) && (val == *i) ) ;
+  int entityCommIndex = m_last_lookup->second;
+  const bool result = m_entityCommInfo.remove_item(entityCommIndex, val);
 
   if ( result ) {
     if (m_comm_map_change_listener != nullptr) {
-      m_comm_map_change_listener->removedGhost(key, i->ghost_id, i->proc);
+      m_comm_map_change_listener->removedGhost(key, val.ghost_id, val.proc);
     }
-    comm_map.erase( i );
-    bool deleted = false;
-    if (comm_map.empty()) {
-      m_last_lookup->second.isShared = false;
-      m_last_lookup->second.isGhost = false;
-      deleted = true;
 
+    if (comm(entityCommIndex).empty()) {
       m_last_lookup = m_comm_map.erase(m_last_lookup);
+      m_removedEntityCommIndices.push_back(entityCommIndex);
 
       if (m_comm_map_change_listener != nullptr) {
           m_comm_map_change_listener->removedKey(key);
       }
     }
-
-    if (!deleted) {
-      const bool removedSharingProc = (val.ghost_id == 0);
-      internal_update_shared_ghosted(removedSharingProc);
-    }
   }
-
 
   return result ;
 }
@@ -508,43 +478,26 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 {
   if (!cached_find(key)) return false;
 
-  EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
+  int entityCommIndex = m_last_lookup->second;
 
-  const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
-  const EntityCommInfo s_end(   ghost.ordinal() + 1 , 0 );
-
-  EntityCommInfoVector::iterator i = comm_map.begin();
-  EntityCommInfoVector::iterator e = comm_map.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  const bool result = i != e ;
+  bool result = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
+    if (info.ghost_id == ghost.ordinal()) {
+      if (m_comm_map_change_listener != nullptr) {
+        m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
+      }
+      return true;
+    }
+    return false;
+  });
 
   if ( result ) {
-    if (m_comm_map_change_listener != nullptr) {
-      for(EntityCommInfoVector::iterator it = i; it != e; ++it) {
-        m_comm_map_change_listener->removedGhost(key, it->ghost_id, it->proc);
-      }
-    }
-
-    comm_map.erase( i , e );
-    bool deleted = false;
-    if (comm_map.empty()) {
-      m_last_lookup->second.isShared = false;
-      m_last_lookup->second.isGhost = false;
-      deleted = true;
-
+    if (comm(entityCommIndex).empty()) {
       m_last_lookup = m_comm_map.erase(m_last_lookup);
+      m_removedEntityCommIndices.push_back(entityCommIndex);
 
       if (m_comm_map_change_listener != nullptr) {
-          m_comm_map_change_listener->removedKey(key);
+        m_comm_map_change_listener->removedKey(key);
       }
-    }
-
-    if (!deleted) {
-      const bool removedSharingProc = (ghost.ordinal() == 0);
-      internal_update_shared_ghosted(removedSharingProc);
     }
   }
 
@@ -554,42 +507,42 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 
 bool EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 {
-  bool did_clear_ghosting = false;
-  if (!cached_find(key)) return did_clear_ghosting;
+  if (!cached_find(key)) return false;
 
-  EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-  m_last_lookup->second.isGhost = false;
-
-  EntityCommInfoVector::iterator j = comm_map.begin();
-  while ( j != comm_map.end() && j->ghost_id == 0 ) { ++j ; }
-  if (j != comm_map.end())
-  {
-      comm_map.erase( j , comm_map.end() );
-      did_clear_ghosting = true;
-  }
-
-  if (comm_map.empty()) {
-    m_last_lookup = m_comm_map.erase(m_last_lookup);
+  int entityCommIndex = m_last_lookup->second;
+  bool did_clear_ghosting = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
+    if (info.ghost_id >= 1) {
       if (m_comm_map_change_listener != nullptr) {
-          m_comm_map_change_listener->removedKey(key);
+        m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
       }
+      return true;
+    }
+    return false;
+  });
+
+  if (comm(entityCommIndex).empty()) {
+    m_last_lookup = m_comm_map.erase(m_last_lookup);
+    m_removedEntityCommIndices.push_back(entityCommIndex);
+    if (m_comm_map_change_listener != nullptr) {
+        m_comm_map_change_listener->removedKey(key);
+    }
   }
   return did_clear_ghosting;
 }
 
 bool EntityCommDatabase::comm_clear(const EntityKey & key)
 {
-    bool did_clear = false;
-    if (!cached_find(key)) return did_clear;
+  if (!cached_find(key)) return false;
 
-    m_last_lookup->second.isShared = false;
-    m_last_lookup->second.isGhost = false;
-    m_last_lookup = m_comm_map.erase(m_last_lookup);
-    did_clear = true;
-    if (m_comm_map_change_listener != nullptr) {
-      m_comm_map_change_listener->removedKey(key);
-    }
-    return did_clear;
+  int entityCommIndex = m_last_lookup->second;
+  m_entityCommInfo.remove_items(entityCommIndex);
+  m_last_lookup = m_comm_map.erase(m_last_lookup);
+  m_removedEntityCommIndices.push_back(entityCommIndex);
+  bool did_clear = true;
+  if (m_comm_map_change_listener != nullptr) {
+    m_comm_map_change_listener->removedKey(key);
+  }
+  return did_clear;
 }
 
 } // namespace mesh

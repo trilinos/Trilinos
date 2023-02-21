@@ -465,10 +465,12 @@ namespace Ioss {
     int64_t total_es_edges    = get_entity_count(get_edgesets());
     int64_t total_es_elements = get_entity_count(get_elementsets());
 
-    int64_t                       total_sides = 0;
-    const Ioss::SideSetContainer &sss         = get_sidesets();
-    for (auto &fs : sss) {
-      total_sides += get_entity_count(fs->get_side_blocks());
+    int64_t total_sides = 0;
+    {
+      const Ioss::SideSetContainer &sss = get_sidesets();
+      for (auto &fs : sss) {
+        total_sides += get_entity_count(fs->get_side_blocks());
+      }
     }
 
     int64_t total_nodes    = get_property("node_count").get_int();
@@ -478,7 +480,7 @@ namespace Ioss {
 
     int64_t num_ts = get_property("state_count").get_int();
     auto    max_sb = std::max(
-           {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
+        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
             get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
             get_property("element_block_count").get_int(),
             get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
@@ -513,11 +515,17 @@ namespace Ioss {
     size_t num_asm_red_vars  = get_reduction_variable_count(get_assemblies());
     size_t num_blob_red_vars = get_reduction_variable_count(get_blobs());
 
-    size_t                       num_ss_vars = 0;
-    const Ioss::SideSetContainer fss         = get_sidesets();
-    for (auto &fs : fss) {
-      num_ss_vars += get_variable_count(fs->get_side_blocks());
+    size_t                        num_ss_vars = 0;
+    Ioss::NameList                names;
+    const Ioss::SideSetContainer &sss = get_sidesets();
+    for (auto &ss : sss) {
+      const auto &sbs = ss->get_side_blocks();
+      for (const auto &sb : sbs) {
+        sb->field_describe(Ioss::Field::TRANSIENT, &names);
+      }
     }
+    Ioss::Utils::uniquify(names);
+    num_ss_vars = names.size();
 
     auto max_vr    = std::max({num_glo_vars,     num_nod_vars,     num_ele_vars,     num_str_vars,
                                num_ns_vars,      num_ss_vars,      num_edg_vars,     num_fac_vars,
@@ -663,7 +671,6 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
 
-      break;
       default: {
         std::ostringstream errmsg;
         fmt::print(errmsg, "Invalid nesting of begin/end pairs in {}",
@@ -1370,6 +1377,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(sideset);
+
+      // Also add "sideset_{id}" as an alias.
+      auto id = sideset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ss_alias = fmt::format("sideset_{}", id);
+        add_alias__(sideset->name(), ss_alias, sideset->type());
+      }
       sideSets.push_back(sideset);
       return true;
     }
@@ -1390,6 +1404,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(nodeset);
+
+      // Also add "nodeset_{id}" as an alias.
+      auto id = nodeset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ns_alias = fmt::format("nodeset_{}", id);
+        add_alias__(nodeset->name(), ns_alias, nodeset->type());
+      }
       nodeSets.push_back(nodeset);
       return true;
     }
@@ -1647,7 +1668,7 @@ namespace Ioss {
                "\n\nERROR: The entity named '{}' of type {} which is being aliased to '{}' does "
                "not exist in "
                "region '{}'.\n",
-               db_name, type, alias, name());
+               db_name, static_cast<int>(type), alias, name());
     IOSS_ERROR(errmsg);
   }
 
@@ -1868,7 +1889,6 @@ namespace Ioss {
           "that does not support duplicate names.",
           nfound, my_name, filename);
       IOSS_ERROR(errmsg);
-      return nullptr;
     }
     return entity;
   }

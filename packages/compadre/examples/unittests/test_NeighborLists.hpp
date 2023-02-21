@@ -49,10 +49,10 @@ TEST_F (NeighborListsTest, 2D_to_CompressedRow) {
     ASSERT_EQ (2, nl_f_2d.getNumberOfNeighborsHost(1));
     ASSERT_EQ (3, nl_f_2d.getNumberOfNeighborsHost(2));
     ASSERT_EQ (1, nl_f_2d.getNumberOfNeighborsHost(3));
-    ASSERT_EQ (0, nl_f_2d.getRowOffsetHost(0));
-    ASSERT_EQ (1, nl_f_2d.getRowOffsetHost(1));
-    ASSERT_EQ (3, nl_f_2d.getRowOffsetHost(2));
-    ASSERT_EQ (6, nl_f_2d.getRowOffsetHost(3));
+    ASSERT_EQ ((size_t)0, nl_f_2d.getRowOffsetHost(0));
+    ASSERT_EQ ((size_t)1, nl_f_2d.getRowOffsetHost(1));
+    ASSERT_EQ ((size_t)3, nl_f_2d.getRowOffsetHost(2));
+    ASSERT_EQ ((size_t)6, nl_f_2d.getRowOffsetHost(3));
     ASSERT_EQ (0, nl_f_2d.getNeighborHost(0,0));
     ASSERT_EQ (1, nl_f_2d.getNeighborHost(1,0));
     ASSERT_EQ (2, nl_f_2d.getNeighborHost(1,1));
@@ -61,7 +61,7 @@ TEST_F (NeighborListsTest, 2D_to_CompressedRow) {
     ASSERT_EQ (5, nl_f_2d.getNeighborHost(2,2));
     ASSERT_EQ (6, nl_f_2d.getNeighborHost(3,0));
     ASSERT_EQ (3, nl_f_2d.getMaxNumNeighbors());
-    ASSERT_EQ (7, nl_f_2d.getTotalNeighborsOverAllListsHost());
+    ASSERT_EQ ((size_t)7, nl_f_2d.getTotalNeighborsOverAllListsHost());
 }
 
 #ifdef COMPADRE_EXTREME_DEBUG

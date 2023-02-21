@@ -71,6 +71,7 @@ public:
   }
 
   bool empty() const { return my_nodes.empty(); }
+  size_t size() const { return my_nodes.size(); }
   size_t storage_size() const { return my_nodes.size() * sizeof(SearchTreeNode<EntityType>); }
 
 private:

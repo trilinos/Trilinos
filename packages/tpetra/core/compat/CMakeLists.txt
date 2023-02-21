@@ -11,13 +11,42 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
 SET(SOURCES "")
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+
 APPEND_GLOB(HEADERS ${DIR}/*.h)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+
+# NOTE: Once the deprecated code is removed this entire block should be replaced with
+# APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+# APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+  APPEND_SET(HEADERS KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  APPEND_SET(HEADERS KokkosCompat_DefaultNode.hpp)
+
+  APPEND_SET(SOURCES KokkosCompat_ClassicNodeAPI_Wrapper.cpp)
+ELSE()
+
+
+  APPEND_SET(HEADERS Kokkos_BufferMacros.hpp 
+    KokkosCompat_ClassicNodeAPI_Wrapper.hpp 
+    Kokkos_ConfigDefs.hpp
+    Kokkos_DefaultNode.hpp
+    Kokkos_LinAlgVersion.hpp
+    Kokkos_MultiVectorKernelOps.hpp
+    Kokkos_NodeAPIConfigDefs.hpp
+    Kokkos_Version.hpp
+    )
+  APPEND_SET(HEADERS 
+    KokkosCompat_ClassicNodeAPI_Wrapper.cpp
+    Kokkos_DefaultNode.cpp
+    Kokkos_Version.cpp
+    )
+
+ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 
@@ -148,7 +177,7 @@ SET(Tpetra_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
 SET(KokkosClassic_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
 
 CONFIGURE_FILE(cmake/KokkosClassic_DefaultNode_config.h.in  KokkosClassic_DefaultNode_config.h)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 APPEND_SET(HEADERS  ${CMAKE_CURRENT_BINARY_DIR}/KokkosClassic_DefaultNode_config.h)
 
 

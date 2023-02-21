@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "GetLongOpt.h" // for GetLongOption
 #include "Tolerance.h"  // for Tolerance, etc
@@ -41,6 +40,10 @@ public:
   int time_step_start{1};     // First step to compare (1-based)
   int time_step_stop{-1};     // Last step to compare
   int time_step_increment{1}; // Step increment
+
+  // Offset/Scale time values on input database -- Time_mod = Scale * Time_db + Offset
+  double time_value_offset{0.0}; // Add offset to time values on first database
+  double time_value_scale{1.0};  // Scale time values on first database
 
   std::pair<int, int> explicit_steps{}; // Only compare these two steps (db1:db2) if nonzero.
 
@@ -141,4 +144,3 @@ private:
 };
 
 extern SystemInterface interFace;
-#endif

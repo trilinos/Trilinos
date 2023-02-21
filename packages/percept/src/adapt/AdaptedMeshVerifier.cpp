@@ -303,8 +303,8 @@ namespace percept
     const unsigned p_rank = bulk.parallel_rank();
     (void)p_rank;
 
-    // stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
-    //   meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+    // stk::mesh::Field<double> *coord_field =
+    //   meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
     stk::mesh::Selector select_owned( meta.locally_owned_part() );
     const stk::mesh::BucketVector & buckets = bulk.buckets( eMesh.element_rank() );
@@ -675,8 +675,8 @@ namespace percept
                               eMesh.getChildren(neigh, children_of_neighbor, true, false);
                               if (children_of_neighbor.size() == 0)
                                 {
-                                  RefineLevelType *refine_level_field = eMesh.get_fem_meta_data()->  get_field<RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
-                                  RefineFieldType *refine_field = eMesh.get_fem_meta_data()-> get_field<RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field");
+                                  RefineLevelType *refine_level_field = eMesh.get_fem_meta_data()->  get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
+                                  RefineFieldType *refine_field = eMesh.get_fem_meta_data()-> get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
                                   TransitionElementType *transition_element_field = eMesh.get_transition_element_field();
 
                                   int *parent_refine_field = stk::mesh::field_data( *refine_field , parent );

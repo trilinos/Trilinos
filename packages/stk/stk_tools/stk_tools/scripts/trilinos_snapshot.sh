@@ -42,7 +42,6 @@ export SIERRA_BRANCH=master
 export TRILINOS=${TRILINOS:-/fgs/$USER/trilinos-snapshot/Trilinos}
 export TRILINOS_BRANCH=develop
 
-export COMMIT_MESSAGE="STK: Snapshot $(date +'%m-%d-%y %H:%M')"
 export SNAPSHOT_BRANCH=stk-snapshot
 
 echo "SIERRA: $SIERRA"
@@ -78,5 +77,6 @@ if [[ -v UPDATE_KRINO ]]; then
 fi
 
 set_stk_version $STK_VERSION_STRING
+export COMMIT_MESSAGE="STK: Snapshot $(date +'%m-%d-%y %H:%M') from Sierra $STK_VERSION_STRING"
 exe git commit -am '"'$COMMIT_MESSAGE'"'
 exe git push --force origin $SNAPSHOT_BRANCH

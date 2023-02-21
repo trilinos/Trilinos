@@ -18,6 +18,15 @@
 
 namespace mock {
 
+constexpr static unsigned maxNodesPerSide = 4;
+
+struct SparcSide
+{
+  uint64_t key;
+  unsigned numNodes;
+  double nodeCoords[maxNodesPerSide][3];
+};
+
 class SparcMesh
 {
 public:
@@ -29,76 +38,106 @@ public:
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
   using BoundingSphere = std::pair<stk::search::Sphere<double>, EntityProc>;
 
-  SparcMesh(MPI_Comm mpiComm)
-  : m_comm(mpiComm), m_owning_rank(0), m_sourceEntityKey(3), m_destEntityKey(5)
+  SparcMesh(MPI_Comm mpiComm, const std::vector<SparcSide>& inputSides)
+  : m_comm(mpiComm), m_sides(inputSides)
   {
   }
 
   MPI_Comm comm() const {return m_comm;}
 
-  int owning_rank() const { return m_owning_rank; }
-
   double get_sparc_field_value(const EntityKey & entityKey,
                          const std::string & fieldName)
   {
-    if (entityKey == m_sourceEntityKey) {
-      return get_value_from_map(fieldName, m_sourceEntityFieldValues, -99.9);
-    }
-    if (entityKey == m_destEntityKey) {
-      return get_value_from_map(fieldName, m_destEntityFieldValues, -99.9);
-    }
-    return -99.9;
+    KeyAndField keyAndField(entityKey, fieldName);
+    return get_value_from_map(keyAndField, m_entityFieldValues, -99.9);
   }
 
   void set_sparc_field_value(const EntityKey & entityKey,
                        const std::string & fieldName,
                        const double & fieldValue)
   {
-    if (entityKey == m_sourceEntityKey) {
-      m_sourceEntityFieldValues[fieldName] = fieldValue;
-    }
-    if (entityKey == m_destEntityKey) {
-      m_destEntityFieldValues[fieldName] = fieldValue;
+    KeyAndField keyAndField(entityKey, fieldName);
+    m_entityFieldValues[keyAndField] = fieldValue;
+  }
+
+  void set_sparc_field_values(const std::string & fieldName,
+                              const double & fieldValue)
+  {
+    for(const SparcSide& side : m_sides) {
+      KeyAndField keyAndField(side.key, fieldName);
+      m_entityFieldValues[keyAndField] = fieldValue;
     }
   }
 
   unsigned get_field_size() const { return 1; }
 
-  EntityKey get_sparc_source_entity_key() const { return m_sourceEntityKey; }
-  EntityKey get_sparc_dest_entity_key() const { return m_destEntityKey; }
+  stk::search::Box<double> get_box(const SparcSide& side) const
+  {
+    constexpr double maxDouble = std::numeric_limits<double>::max();
+    double minXYZ[3] = {maxDouble, maxDouble, maxDouble};
+    double maxXYZ[3] = {0.0, 0.0, 0.0};
 
-  stk::search::Box<double> get_source_box() const { return stk::search::Box<double>(0., 0., 0., 1., 1., 1.); }
-  Point get_dest_point() const {return Point(0.5, 0.5, 0.5);}
+    const unsigned numNodes = side.numNodes;
+    for(unsigned i=0; i<numNodes; ++i) {
+      for(unsigned d=0; d<3; ++d) {
+        minXYZ[d] = std::min(minXYZ[d], side.nodeCoords[i][d]);
+        maxXYZ[d] = std::max(maxXYZ[d], side.nodeCoords[i][d]);
+      }
+    }
+
+    constexpr double tol = 1.e-5;
+    return stk::search::Box<double>(minXYZ[0]-tol, minXYZ[1]-tol, minXYZ[2]-tol,
+                                    maxXYZ[0]+tol, maxXYZ[1]+tol, maxXYZ[2]+tol);
+  }
+
+  Point get_centroid(const SparcSide& side) const
+  {
+    double sumXYZ[3] = {0.0, 0.0, 0.0};
+
+    const unsigned numNodes = side.numNodes;
+    for(unsigned i=0; i<numNodes; ++i) {
+      for(unsigned d=0; d<3; ++d) {
+        sumXYZ[d] += side.nodeCoords[i][d];
+      }
+    }
+    return Point(sumXYZ[0]/numNodes, sumXYZ[1]/numNodes, sumXYZ[2]/numNodes);
+  }
 
   void sparc_source_bounding_boxes(std::vector<BoundingBox> & domain_vector) const
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      EntityProc entityProc(m_sourceEntityKey, owning_rank());
-      domain_vector.emplace_back(get_source_box(), entityProc);
+    domain_vector.clear();
+    const int thisProc = stk::parallel_machine_rank(comm());
+    for(const SparcSide& side : m_sides) {
+      EntityProc entityProc(side.key, thisProc);
+      domain_vector.emplace_back(get_box(side), entityProc);
     }
   }
 
   void sparc_dest_bounding_boxes(std::vector<BoundingSphere>& range_vector) const
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      EntityProc entityProc(m_destEntityKey, owning_rank());
-      const double radius = 1.e-6;
-      range_vector.emplace_back(stk::search::Sphere<double>(get_dest_point(), radius), entityProc);
+    range_vector.clear();
+    constexpr double radius = 1.e-6;
+    const int thisProc = stk::parallel_machine_rank(comm());
+    for(const SparcSide& side : m_sides) {
+      EntityProc entityProc(side.key, thisProc);
+      range_vector.emplace_back(stk::search::Sphere<double>(get_centroid(side), radius), entityProc);
     }
   }
 
   void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
   {
-    if (stk::parallel_machine_rank(m_comm) == owning_rank()) {
-      to_points.push_back(get_dest_point());
+    to_points.clear();
+    for(const SparcSide& side : m_sides) {
+      to_points.push_back(get_centroid(side));
     }
   }
 
 private:
-  using FieldValues = std::map<std::string,double>;
-  double get_value_from_map(const std::string& name, const FieldValues& fieldValues, const double& defaultIfNotFound)
+  using KeyAndField = std::pair<EntityKey,std::string>;
+  using FieldValues = std::map<KeyAndField,double>;
+  double get_value_from_map(const KeyAndField& keyAndField, const FieldValues& fieldValues, const double& defaultIfNotFound)
   {
-    FieldValues::const_iterator iter = fieldValues.find(name);
+    FieldValues::const_iterator iter = fieldValues.find(keyAndField);
     if (iter != fieldValues.end()) {
       return iter->second;
     }
@@ -106,11 +145,8 @@ private:
   }
 
   MPI_Comm m_comm;
-  int m_owning_rank = 0;
-  EntityKey m_sourceEntityKey;
-  EntityKey m_destEntityKey;
-  FieldValues m_sourceEntityFieldValues;
-  FieldValues m_destEntityFieldValues;
+  FieldValues m_entityFieldValues;
+  std::vector<SparcSide> m_sides;
 };
 
 }

@@ -17,7 +17,9 @@
 
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Panzer_NodeType.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
@@ -110,9 +112,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);
    Teko::LinearOp Q_E   = Teko::getBlock(1,1,blo);
 
-   // nodal mass matrix
-   Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
-
    // discrete curl and its transpose
    Teko::LinearOp C, Ct;
    if (use_discrete_curl_) {
@@ -124,13 +123,12 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
-     S_E = Teko::explicitAdd(Q_E, CurlCurl);
+     S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
    }
 
    // Check whether we are using Tpetra or Epetra
-   RCP<const Thyra::EpetraLinearOp> EOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Q_rho);
-   bool useTpetra = (EOp == Teuchos::null);
+   RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > checkTpetra = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(Q_E);
+   bool useTpetra = nonnull(checkTpetra);
 
    /////////////////////////////////////////////////
    // Debug and matrix dumps                      //
@@ -141,7 +139,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      writeOut("K.mm",*K);
      writeOut("Kt.mm",*Kt);
      writeOut("Q_E.mm",*Q_E);
-     writeOut("Q_rho.mm",*Q_rho);
      writeOut("S_E.mm",*S_E);
 
      if (C != Teuchos::null) {
@@ -178,7 +175,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    describeMatrix("K",*K,debug);
    describeMatrix("Kt",*Kt,debug);
    describeMatrix("Q_E",*Q_E,debug);
-   describeMatrix("Q_rho",*Q_rho,debug);
    if (C != Teuchos::null)
      describeMatrix("C",*C,debug);
    describeMatrix("S_E",*S_E,debug);
@@ -209,6 +205,12 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
      if (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra" || S_E_prec_type_ == "MueLuRefMaxwell" || S_E_prec_type_ == "ML") {// refMaxwell
 
+       // nodal mass matrix
+       Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
+       describeMatrix("Q_rho",*Q_rho,debug);
+       if (dump)
+         writeOut("Q_rho.mm",*Q_rho);
+
        // Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
        // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
        // TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
@@ -227,6 +229,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 #endif
            RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Coordinates = S_E_prec_pl.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
            S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+#ifdef PANZER_HAVE_EPETRA_STACK
 #ifndef PANZER_HIDE_DEPRECATED_CODE
          } else if (!useTpetra && ((S_E_prec_type_ == "MueLuRefMaxwell") || (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra"))) {
 #else
@@ -234,6 +237,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 #endif
            RCP<Epetra_MultiVector> Coordinates = S_E_prec_pl.get<RCP<Epetra_MultiVector> >("Coordinates");
            S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+
          } else if (S_E_prec_type_ == "ML") {
            double* x_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("x-coordinates");
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates",x_coordinates);
@@ -244,6 +248,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
            double* z_coordinates = S_E_prec_pl.sublist("ML Settings").get<double*>("z-coordinates");
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates",z_coordinates);
            S_E_prec_pl.sublist("ML Settings").sublist("refmaxwell: 22list").set("z-coordinates",z_coordinates);
+#endif // PANZER_HAVE_EPETRA_STACK
          } else
            TEUCHOS_ASSERT(false);
        }
@@ -265,11 +270,15 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        {
          Teko::InverseLibrary myInvLib = invLib;
          if (S_E_prec_type_ == "ML") {
+#ifdef PANZER_HAVE_EPETRA_STACK
            RCP<const Epetra_CrsMatrix> eInvDiagQ_rho = get_Epetra_CrsMatrix(*invDiagQ_rho,get_Epetra_CrsMatrix(*Q_B)->RowMap().Comm());
            S_E_prec_pl.sublist("ML Settings").set("M0inv",eInvDiagQ_rho);
 
            S_E_prec_pl.set("Type",S_E_prec_type_);
            myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl);
+#else
+           TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: MiniEM_FullMaxwellPreconditionerFactory: ML is not supported in this build! Requires Epetra support be enabled!");
+#endif
          } else {
            S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M0inv",invDiagQ_rho);
 
@@ -443,16 +452,23 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 
      // add discrete gradient and edge mass matrix
      Teko::LinearOp Q_E_aux = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE"));
+     Teko::LinearOp Q_E_aux_weighted = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE"));
      Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
      if (S_E_prec_type_ == "ML") {
+#ifdef PANZER_HAVE_EPETRA_STACK
        RCP<const Epetra_CrsMatrix> eT = get_Epetra_CrsMatrix(*T);
        RCP<const Epetra_CrsMatrix> eQ_E_aux = get_Epetra_CrsMatrix(*Q_E_aux);
+       RCP<const Epetra_CrsMatrix> eQ_E_aux_weighted = get_Epetra_CrsMatrix(*Q_E_aux_weighted);
        S_E_prec_pl.sublist("ML Settings").set("D0",eT);
        S_E_prec_pl.sublist("ML Settings").set("M1",eQ_E_aux);
-       S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E_aux);
+       S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E_aux_weighted);
+#else
+       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: MiniEM_FullMaxwellPreconditionerFactory: ML is not supported in this build! Requires Epetra support be enabled!");
+#endif
      } else {
        S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("D0",T);
        S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E_aux);
+       S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Ms",Q_E_aux_weighted);
      }
 
      if (dump) {

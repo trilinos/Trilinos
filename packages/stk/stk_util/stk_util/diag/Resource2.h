@@ -154,7 +154,7 @@ class ResourceList {
     {
     }
 
-    bool operator()(const Resource& resource) { return resource.name() == m_name; }
+    bool operator()(const Resource& resource) { return resource.name().size() == m_name.size() && resource.name() == m_name; }
 
     const String& m_name;
   };
@@ -166,10 +166,7 @@ class ResourceList {
 
   Resource front() const { return m_resourceVector.front(); }
 
-  void insert(Resource resource)
-  {
-    m_resourceVector.insert(std::lower_bound(m_resourceVector.begin(), m_resourceVector.end(), resource), resource);
-  }
+  void insert(Resource resource);
 
   iterator find(const String& resource_name) { return std::find_if(begin(), end(), find_pred(resource_name)); }
 

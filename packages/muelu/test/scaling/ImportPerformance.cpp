@@ -482,7 +482,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     bool        printTimings      = true;             clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
     std::string timingsFormat     = "table-fixed";    clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
     int         numImports        = 100;              clp.setOption("numImport",             &numImports,        "#times to test");
-    int         MM_TAFC_OptCoreCnt=3000;              clp.setOption("MM_TAFC_OptimizationCoreCount",       &MM_TAFC_OptCoreCnt, "Num Cores above which Optimized MatrixMatrix transferAndFillComplete is used"); 
+    int         MM_TAFC_OptCoreCnt=3000;              clp.setOption("MM_TAFC_OptimizationCoreCount",       &MM_TAFC_OptCoreCnt, "Num Cores above which Optimized MatrixMatrix transferAndFillComplete is used");
 
     switch (clp.parse(argc, argv)) {
         case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -494,7 +494,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
-    ParameterList& mmlist = paramList.sublist("matrixmatrix: kernel params",false);  
+    ParameterList& mmlist = paramList.sublist("matrixmatrix: kernel params",false);
     int commandcc = mmlist.get("MM_TAFC_OptimizationCoreCount",MM_TAFC_OptCoreCnt);
     commandcc = paramList.get("MM_TAFC_OptimizationCoreCount",commandcc);
     paramList.remove("MM_TAFC_OptimizationCoreCount",false);
@@ -527,7 +527,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     RCP<RealValuedMultiVector> coordinates;
     typedef typename RealValuedMultiVector::scalar_type Real;
     RCP<MultiVector> nullspace;
-    std::string matrixType = galeriParameters.GetMatrixType();  
+    std::string matrixType = galeriParameters.GetMatrixType();
   
     RCP<TimeMonitor>  globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
     {
@@ -594,7 +594,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     }
 
     comm->barrier();
-    tm = Teuchos::null; 
+    tm = Teuchos::null;
     }
 
 

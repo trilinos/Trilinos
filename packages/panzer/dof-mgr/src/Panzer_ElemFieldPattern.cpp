@@ -71,7 +71,7 @@ int ElemFieldPattern::getSubcellCount(int dim) const
 
 const std::vector<int> & ElemFieldPattern::getSubcellIndices(int dim,int cellIndex) const
 {
-   if(dim==3)
+   if(dim==getDimension())
       return ElemIndices_[cellIndex];
    
    // only Elems

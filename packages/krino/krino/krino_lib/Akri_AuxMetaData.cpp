@@ -37,6 +37,12 @@ AuxMetaData::get(const stk::mesh::MetaData & stk_meta)
   return *aux_meta;
 }
 
+bool AuxMetaData::has(const stk::mesh::MetaData & stk_meta)
+{
+  AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
+  return aux_meta != nullptr;
+}
+
 AuxMetaData &
 AuxMetaData::create(stk::mesh::MetaData & stk_meta)
 {
@@ -336,14 +342,14 @@ AuxMetaData::register_field(
   {
     auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
     stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
-    stk::io::set_field_output_type(field, "Vector_2D");
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_2D);
     return FieldRef(field);
   }
   else if (field_type.name() == FieldType::VECTOR_3D.name())
   {
     auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
     stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
-    stk::io::set_field_output_type(field, "Vector_3D");
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_3D);
     return FieldRef(field);
   }
 

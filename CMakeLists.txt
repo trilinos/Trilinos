@@ -69,8 +69,43 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-## set an env so we know we are in configure
+# Set up to use ccache
+if($ENV{CCACHE_NODISABLE})
+# ccache must be requested explicitly by setting env-var CCACHE_NODISABLE
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    # Set up wrapper scripts
+    set(C_LAUNCHER   "${CCACHE_PROGRAM}")
+    set(CXX_LAUNCHER "${CCACHE_PROGRAM}")
+    configure_file(launch-c.in   launch-c)
+    configure_file(launch-cxx.in launch-cxx)
+    execute_process(COMMAND chmod a+rx
+                     "${CMAKE_BINARY_DIR}/launch-c"
+                     "${CMAKE_BINARY_DIR}/launch-cxx"
+    )
+
+    if(CMAKE_GENERATOR STREQUAL "Xcode")
+        # Set Xcode project attributes to route compilation and linking
+        # through our scripts
+        set(CMAKE_XCODE_ATTRIBUTE_CC         "${CMAKE_BINARY_DIR}/launch-c")
+        set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/launch-cxx")
+        set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/launch-c")
+        set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/launch-cxx")
+    else()
+        # Support Unix Makefiles and Ninja
+        set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_BINARY_DIR}/launch-c")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/launch-cxx")
+    endif()
+else()
+    message(WARNING "ccache requested but not found")
+endif()
+endif()
+
+# Set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
+
+# Don't define TriBITS override of include_directories()
+set(TRIBITS_HIDE_DEPRECATED_INCLUDE_DIRECTORIES_OVERRIDE TRUE)
 
 #
 # B) Pull in the TriBITS system and execute
@@ -86,8 +121,8 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
 # Set up C++ language standard selection (rest is handled by TriBITS)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 14)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(14|17|20)")
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 17)
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(17|20|23)")
 ADVANCED_SET(CMAKE_CXX_STANDARD ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT}
   CACHE STRING
   "C++ standard number with values ${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED} (default ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT})")

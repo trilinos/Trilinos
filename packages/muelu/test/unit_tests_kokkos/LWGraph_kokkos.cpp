@@ -155,7 +155,7 @@ namespace MueLuTests {
       int result=0;
       auto lclLWGraph = graph->getLocalLWGraph();
       Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			      KOKKOS_LAMBDA(const LO i, int &incorrect) { 
+			      KOKKOS_LAMBDA(const LO i, int &incorrect) {
 				if (lclLWGraph.GetNodeNumVertices() != numrows)
 				  incorrect++;
 				if (lclLWGraph.GetNodeNumEdges() != nument)

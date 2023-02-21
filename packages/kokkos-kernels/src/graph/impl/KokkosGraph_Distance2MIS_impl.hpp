@@ -1226,7 +1226,7 @@ struct D2_MIS_Aggregation {
     labels_t labelsOld("old", numVerts);
     Kokkos::deep_copy(labelsOld, labels);
     labels_t connectivities(Kokkos::ViewAllocateWithoutInitializing("connect"),
-                            numVerts);
+        numVerts);
     labels_t aggSizes("Phase3 Agg Sizes", numAggs);
     Kokkos::parallel_for(
         range_pol(0, numVerts),

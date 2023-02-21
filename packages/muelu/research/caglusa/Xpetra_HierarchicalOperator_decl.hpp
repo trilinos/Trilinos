@@ -2,6 +2,7 @@
 #define XPETRA_HIERARCHICALOPERATOR_DECL_HPP
 
 #include <Tpetra_HierarchicalOperator_decl.hpp>
+#include <Tpetra_HierarchicalOperator_def.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MultiVector.hpp>
@@ -33,7 +34,8 @@ namespace Xpetra {
     HierarchicalOperator(const RCP<matrix_type>& nearField,
                          const RCP<blocked_matrix_type>& kernelApproximations,
                          const RCP<matrix_type>& basisMatrix,
-                         std::vector<RCP<blocked_matrix_type> >& transferMatrices);
+                         std::vector<RCP<blocked_matrix_type> >& transferMatrices,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const map_type> getDomainMap() const {
@@ -93,7 +95,19 @@ namespace Xpetra {
     RCP<const Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const { return op_; }
 
     void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
-      op_->describe(out, verbLevel);
+      describe(out, verbLevel, true);
+    }
+
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel, const bool printHeader) const {
+      op_->describe(out, verbLevel, printHeader);
+    }
+
+    bool hasFarField() const {
+      return op_->hasFarField();
+    }
+
+    bool denserThanDenseMatrix() const {
+      return op_->denserThanDenseMatrix();
     }
 
   private:

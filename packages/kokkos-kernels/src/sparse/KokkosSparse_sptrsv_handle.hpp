@@ -50,7 +50,7 @@
 #define KOKKOSSPARSE_SPTRSVHANDLE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
+#include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && \
@@ -108,6 +108,8 @@ class SPTRSVHandle {
   typedef typename nnz_row_view_t::HostMirror host_nnz_row_view_t;
   typedef typename Kokkos::View<int *, HandlePersistentMemorySpace>
       int_row_view_t;
+  typedef typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>
+      int64_row_view_t;
   // typedef typename row_lno_persistent_work_view_t::HostMirror
   // row_lno_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<
@@ -154,6 +156,42 @@ class SPTRSVHandle {
       mtx_scalar_view_t;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if (CUDA_VERSION >= 11030)
+  struct cuSparseHandleType {
+    cusparseHandle_t handle;
+    cusparseOperation_t transpose;
+    cusparseSpMatDescr_t matDescr;
+    cusparseDnVecDescr_t vecBDescr, vecBDescr_dummy;
+    cusparseDnVecDescr_t vecXDescr, vecXDescr_dummy;
+    cusparseSpSVDescr_t spsvDescr;
+    void *pBuffer{nullptr};
+
+    cuSparseHandleType(bool transpose_, bool is_lower) {
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
+
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
+
+      if (transpose_) {
+        transpose = CUSPARSE_OPERATION_TRANSPOSE;
+      } else {
+        transpose = CUSPARSE_OPERATION_NON_TRANSPOSE;
+      }
+
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_createDescr(&spsvDescr));
+    }
+
+    ~cuSparseHandleType() {
+      if (pBuffer != nullptr) {
+        KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(pBuffer));
+        pBuffer = nullptr;
+      }
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
+    }
+  };
+#else  // CUDA_VERSION < 11030
   struct cuSparseHandleType {
     cusparseHandle_t handle;
     cusparseOperation_t transpose;
@@ -202,6 +240,7 @@ class SPTRSVHandle {
       cusparseDestroy(handle);
     }
   };
+#endif
 
   typedef cuSparseHandleType SPTRSVcuSparseHandleType;
 #endif
@@ -337,6 +376,7 @@ class SPTRSVHandle {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SPTRSVcuSparseHandleType *cuSPARSEHandle;
   int_row_view_t tmp_int_rowmap;
+  int64_row_view_t tmp_int64_rowmap;
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
@@ -443,7 +483,8 @@ class SPTRSVHandle {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         ,
         cuSPARSEHandle(nullptr),
-        tmp_int_rowmap()
+        tmp_int_rowmap(),
+        tmp_int64_rowmap()
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
         ,
@@ -851,6 +892,18 @@ class SPTRSVHandle {
   }
   int_row_view_t get_int_rowmap_view() { return tmp_int_rowmap; }
   int *get_int_rowmap_ptr() { return tmp_int_rowmap.data(); }
+
+  void allocate_tmp_int64_rowmap(size_type N) {
+    tmp_int64_rowmap = int64_row_view_t(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int64_rowmap"), N);
+  }
+  template <typename RowViewType>
+  int64_t *get_int64_rowmap_ptr_copy(const RowViewType &rowmap) {
+    Kokkos::deep_copy(tmp_int64_rowmap, rowmap);
+    Kokkos::fence();
+    return tmp_int64_rowmap.data();
+  }
+  int64_t *get_int64_rowmap_ptr() { return tmp_int64_rowmap.data(); }
 #endif
 
   bool algm_requires_symb_lvlsched() const {

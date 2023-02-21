@@ -85,7 +85,7 @@ namespace percept {
     elementOp.init_elementOp();
 
     // FIXME consider caching the coords_field in FieldFunction
-    //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+    //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::EntityRank rank = stk::topology::ELEMENT_RANK;
     if (is_surface_norm) rank = bulkData.mesh_meta_data().side_rank();
 

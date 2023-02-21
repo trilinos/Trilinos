@@ -628,8 +628,7 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
 %include "Kokkos_Macros.hpp"
 %ignore KokkosClassic::ESweepDirection;
-%include "Kokkos_ConfigDefs.hpp"
-%include "Kokkos_DefaultNode.cpp"
+%include "KokkosCompat_DefaultNode.cpp"
 %include "TpetraCore_config.h"
 %include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
@@ -1144,7 +1143,7 @@ public:
   template<class TargetDeviceType>
   void modify();
   template<class TargetDeviceType>
-  typename Kokkos::Impl::if_c<
+  typename std::conditional<
     std::is_same<
       typename execution_space::memory_space,
       typename TargetDeviceType::memory_space>::value,

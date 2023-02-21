@@ -97,7 +97,7 @@ void create_mesh_without_time_steps(const std::string & filename, MPI_Comm commu
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(communicator, stk::mesh::BulkData::AUTO_AURA);
     stk::io::StkMeshIoBroker stkIoWriter(communicator);
-    stk::unit_test_util::write_mesh_data__field_1__field_2__field_3(filename, communicator, *bulk, stkIoWriter);
+    write_mesh_data__field_1__field_2__field_3(filename, communicator, *bulk, stkIoWriter);
 }
 
 void create_mesh_with__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator)

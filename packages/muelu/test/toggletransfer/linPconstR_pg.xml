@@ -142,8 +142,8 @@
       <Parameter name="Smoother"                            type="string"   value="myJacobi"/>
 
       <Parameter name="P"                                   type="string"   value="myTogglePFact1"/> <!-- TogglePFact provides the prolongator from the generating factories -->
-      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/> 
-      <Parameter name="A"                                   type="string"   value="myRAPFact"/> 
+      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
+      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
       <Parameter name="Nullspace"                           type="string"   value="myTogglePFact1"/> <!-- TogglePFact provides the coarse null space from the generating factories -->
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
     </ParameterList>

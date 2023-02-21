@@ -45,7 +45,7 @@
 
 // Panzer
 #include "Panzer_ConnManager.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
 #endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
@@ -323,7 +323,7 @@ buildReadOnlyDomainContainer() const
   return ged;
 } // end of buildReadOnlyDomainContainer()
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  buildWriteDomainContainer()
@@ -342,7 +342,7 @@ buildWriteDomainContainer() const
   TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT IMPLEMENTED YET")
   return ged;
 } // end of buildWriteDomainContainer()
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::

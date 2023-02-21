@@ -102,6 +102,8 @@ namespace Details {
 /// https://github.com/kokkos/kokkos-tools/wiki
 class ProfilingRegion {
 public:
+  //! Default constructor does not construct a region.
+  ProfilingRegion();
   //! Open region to profile; name the region \c name.
   ProfilingRegion (const char name[]);
   //! Open region to profile, if the group name \c group is enabled by the
@@ -111,6 +113,7 @@ public:
   ~ProfilingRegion ();
 
 private:
+  bool kokkos_region_active_;
   Teuchos::RCP<Teuchos::TimeMonitor> tm;
 
 };

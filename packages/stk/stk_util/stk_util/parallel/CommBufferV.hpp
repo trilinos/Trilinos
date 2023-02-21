@@ -35,6 +35,7 @@
 #ifndef CommBufferV_hpp
 #define CommBufferV_hpp
 
+#include <stddef.h>
 #include <cstddef>
 #include <cstring>
 #include <vector>

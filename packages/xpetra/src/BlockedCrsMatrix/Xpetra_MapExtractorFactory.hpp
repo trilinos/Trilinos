@@ -47,7 +47,7 @@
 #ifndef XPETRA_MAPEXTRACTORFACTORY_HPP_
 #define XPETRA_MAPEXTRACTORFACTORY_HPP_
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include <Xpetra_MapExtractor.hpp>
 

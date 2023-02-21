@@ -109,9 +109,9 @@ namespace {
     }
   }
 
+#if defined(SEACAS_HAVE_EXODUS)
   int print_groups(int exoid, std::string prefix)
   {
-#if defined(SEACAS_HAVE_EXODUS)
     int   idum;
     float rdum;
     char  group_name[33];
@@ -126,9 +126,9 @@ namespace {
     for (int i = 0; i < num_children; i++) {
       print_groups(children[i], prefix);
     }
-#endif
     return 0;
   }
+#endif
 
   void group_info(Info::Interface &interFace)
   {
@@ -205,9 +205,9 @@ namespace {
     if (!nb.is_nonglobal_nodeblock()) {
       info_aliases(region, &nb, false, true);
     }
-    Ioss::Utils::info_fields(&nb, Ioss::Field::MAP, prefix + "\tMap Fields: ");
-    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
-    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::MAP, prefix + "\tMap Fields: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ", "\n\t\t" + prefix);
 
     if (interFace.compute_bbox()) {
       print_bbox(nb);
@@ -433,8 +433,9 @@ namespace {
         fmt::print("\t{}, {:8} sides, {:3d} attributes, {:8} distribution factors.\n", name(fb),
                    fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
         info_df(fb, "\t\t");
-        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
-        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ", "\n\t\t");
+        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION,
+                                 "\t\tTransient (Reduction):  ", "\n\t\t");
       }
     }
   }

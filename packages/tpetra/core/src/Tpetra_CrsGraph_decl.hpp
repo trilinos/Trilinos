@@ -2143,6 +2143,16 @@ public:
                        typename row_ptrs_device_view_type::host_mirror_space(),
                        dview);
     }
+
+    // There are common cases where both packed and unpacked views are set to the same array.
+    // Doing this in a single call can reduce dataspace on host, and reduce runtime by
+    // removing a deep_copy from device to host.
+
+    void setRowPtrs(const row_ptrs_device_view_type &dview) {
+      setRowPtrsUnpacked(dview);
+      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
+      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
+    }
     
     //TODO:  Make private -- matrix shouldn't access directly the guts of graph
   

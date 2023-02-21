@@ -123,16 +123,16 @@ template <typename value_type>
 class MKLSparseMatrix {
   sparse_matrix_t mtx;
 
-  static_assert(mkl_is_supported_value_type<value_type>::value,
-                "Scalar type used in MKLSparseMatrix<value_type> is NOT "
-                "supported by MKL");
-
  public:
   inline MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
 
   // Constructs MKL sparse matrix from KK sparse views (m rows x n cols)
   inline MKLSparseMatrix(const MKL_INT num_rows, const MKL_INT num_cols,
-                         MKL_INT *xadj, MKL_INT *adj, value_type *values);
+                         MKL_INT *xadj, MKL_INT *adj, value_type *values) {
+    throw std::runtime_error(
+        "Scalar type used in MKLSparseMatrix<value_type> is NOT "
+        "supported by MKL");
+  }
 
   // Allows using MKLSparseMatrix directly in MKL calls
   inline operator sparse_matrix_t() const { return mtx; }
@@ -140,7 +140,11 @@ class MKLSparseMatrix {
   // Exports MKL sparse matrix contents into KK views
   inline void export_data(MKL_INT &num_rows, MKL_INT &num_cols,
                           MKL_INT *&rows_start, MKL_INT *&columns,
-                          value_type *&values);
+                          value_type *&values) {
+    throw std::runtime_error(
+        "Scalar type used in MKLSparseMatrix<value_type> is NOT "
+        "supported by MKL");
+  }
 
   inline void destroy() {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mtx));

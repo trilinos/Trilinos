@@ -144,21 +144,29 @@ void generate_parallel_ids_above_existing_max(ParallelMachine comm,
 std::vector<uint64_t> generate_parallel_unique_ids(const uint64_t maxAllowedId,
                                                    const std::vector<uint64_t>& existingIds,
                                                    uint64_t numNewIdsLocal,
-                                                   ParallelMachine comm)
+                                                   ParallelMachine comm,
+                                                   uint64_t localMaxExistingId)
 {
   std::vector<uint64_t> newIds;
   //
   //  Extract global max existing id.  For basic use case just start generating ids starting
   //  at the previous max_id + 1.
   //
-  uint64_t localMaxId = existingIds.empty() ? 0 : *std::max_element(existingIds.begin(), existingIds.end());
+  uint64_t globalMaxId     = 0;
+  uint64_t maxIdsRequested = 0;
+  uint64_t localMaxId = localMaxExistingId;
+  if (localMaxId == 0) {
+    localMaxId = existingIds.empty() ? 0 : *std::max_element(existingIds.begin(), existingIds.end());
+  }
 
-  uint64_t globalMaxId = 0;
-  stk::all_reduce_max(comm, &localMaxId, &globalMaxId, 1);
+  const unsigned numMax = 2;
+  uint64_t locals[numMax] = {localMaxId, numNewIdsLocal};
+  uint64_t globals[numMax] = {0, 0};
+  stk::all_reduce_max(comm, locals, globals, numMax);
+  globalMaxId = globals[0];
+  maxIdsRequested = globals[1];
 
-  uint64_t globalNumIdsRequested = 0;
-  uint64_t maxIdsRequested       = 0;
-  compute_global_sum_and_max(comm, numNewIdsLocal, globalNumIdsRequested, maxIdsRequested);
+  uint64_t globalNumIdsRequested = stk::get_global_sum(comm, numNewIdsLocal);
 
   if(globalNumIdsRequested == 0) {
     return newIds;

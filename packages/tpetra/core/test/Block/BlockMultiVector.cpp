@@ -428,7 +428,7 @@ namespace {
     {
       auto X_overlap =
         X.getLocalBlockHost (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), 
-                         colToModify, Tpetra::Access::OverwriteAll);
+                         colToModify, Tpetra::Access::ReadWrite);
       TEST_ASSERT( X_overlap.data () != NULL );
       TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)),
                            static_cast<size_t> (blockSize) );
@@ -466,6 +466,7 @@ namespace {
              localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
           auto Y_cur = Y.getLocalBlockHost (localMeshRow, col,
                                         Tpetra::Access::ReadOnly);
+
           if (col != colToModify) {
             TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
                          equal (zeroLittleVector, Y_cur) );

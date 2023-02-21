@@ -26,10 +26,10 @@
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
 #endif
 #else
-#include <sys/unistd.h>
+#include <unistd.h>
 #if defined(__APPLE__) && defined(__MACH__)
-#include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/param.h>
 #else
 #include <sys/statfs.h>
 #endif
@@ -41,9 +41,6 @@
 
 #include <cstdio>
 #include <sys/stat.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
 
 namespace {
   bool internal_access(const std::string &name, int mode);
@@ -88,10 +85,11 @@ namespace Ioss {
   //: Returns TRUE if the file exists (is readable)
   bool FileInfo::exists() const { return exists_; }
 
-  int FileInfo::parallel_exists(Ioss_MPI_Comm communicator, std::string &where) const
+  int FileInfo::parallel_exists(IOSS_MAYBE_UNUSED Ioss_MPI_Comm communicator,
+                                IOSS_MAYBE_UNUSED std::string &where) const
   {
-    PAR_UNUSED(communicator);
-    PAR_UNUSED(where);
+    IOSS_PAR_UNUSED(communicator);
+    IOSS_PAR_UNUSED(where);
     int sum = exists_ ? 1 : 0;
 
 #ifdef SEACAS_HAVE_MPI
@@ -172,11 +170,11 @@ namespace Ioss {
   bool FileInfo::is_nfs() const
   {
 #if !defined(__IOSS_WINDOWS__)
-#define NFS_FS	0x6969  /* statfs defines that 0x6969 is NFS filesystem */
+#define NFS_FS 0x6969 /* statfs defines that 0x6969 is NFS filesystem */
     auto tmp_path = pathname();
     if (tmp_path.empty()) {
-      char *current_cwd   = getcwd(nullptr, 0);
-      tmp_path = std::string(current_cwd);
+      char *current_cwd = getcwd(nullptr, 0);
+      tmp_path          = std::string(current_cwd);
       free(current_cwd);
     }
 #if defined(__IOSS_WINDOWS__)
@@ -189,10 +187,10 @@ namespace Ioss {
       struct statfs stat_fs;
       // We want to run `statfs` on the path; not the filename since it might not exist.
       if (statfs(path, &stat_fs) == -1) {
-	free(path);
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
-	IOSS_ERROR(errmsg);
+        free(path);
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
+        IOSS_ERROR(errmsg);
       }
       free(path);
       return (stat_fs.f_type == NFS_FS);
@@ -383,9 +381,10 @@ namespace Ioss {
     }
   }
 
-  void FileInfo::create_path(const std::string &filename, Ioss_MPI_Comm communicator)
+  void FileInfo::create_path(const std::string              &filename,
+                             IOSS_MAYBE_UNUSED Ioss_MPI_Comm communicator)
   {
-    PAR_UNUSED(communicator);
+    IOSS_PAR_UNUSED(communicator);
 #ifdef SEACAS_HAVE_MPI
     int                error_found = 0;
     std::ostringstream errmsg;

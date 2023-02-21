@@ -146,7 +146,9 @@
 #include <sstream>
 
 
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
 
 using namespace std;
 using namespace Intrepid;

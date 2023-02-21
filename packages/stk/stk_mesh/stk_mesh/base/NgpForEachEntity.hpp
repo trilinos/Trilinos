@@ -107,7 +107,7 @@ struct ThreadFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
 template <typename Mesh, typename AlgorithmPerEntity>
 struct TeamFunctor
 {
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
 
   TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
     mesh(m),
@@ -136,7 +136,7 @@ struct TeamFunctor
 template <typename AlgorithmPerEntity>
 struct TeamFunctor<stk::mesh::DeviceMesh, AlgorithmPerEntity> {
   using Mesh = stk::mesh::DeviceMesh;
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
 
   KOKKOS_FUNCTION
   TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
@@ -164,7 +164,7 @@ struct TeamFunctor<stk::mesh::DeviceMesh, AlgorithmPerEntity> {
 template <typename AlgorithmPerEntity>
 struct TeamFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
   using Mesh = stk::mesh::DeviceMesh;
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>::member_type;
 
   KOKKOS_FUNCTION
   TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
@@ -194,7 +194,7 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
 {
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
   unsigned numBuckets = bucketIds.size();
-  Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
+  Kokkos::parallel_for(stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
                        TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
 }
 

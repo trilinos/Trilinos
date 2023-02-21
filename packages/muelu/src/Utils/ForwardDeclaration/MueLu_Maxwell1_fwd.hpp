@@ -43,17 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MAXWELL_UTILS_FWD_HPP
-#define MUELU_MAXWELL_UTILS_FWD_HPP
+#ifndef MUELU_MAXWELL1_FWD_HPP
+#define MUELU_MAXWELL1_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+
+
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Maxwell_Utils;
+  class Maxwell1;
 }
 
-#ifndef MUELU_MAXWELL_UTILS_SHORT
-#define MUELU_MAXWELL_UTILS_SHORT
+#ifndef MUELU_MAXWELL1_SHORT
+#define MUELU_MAXWELL1_SHORT
 #endif
 
-#endif // MUELU_MAXWELL_UTILS_FWD_HPP
+
+
+#endif // MUELU_MAXWELL1_FWD_HPP

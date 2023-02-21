@@ -27,7 +27,7 @@ using ordinal_type = Tacho::ordinal_type;
 
 template <typename value_type> int driver(int argc, char *argv[]) {
   int nthreads = 1;
-  bool verbose = true;
+  bool verbose = false;
   bool sanitize = false;
   bool duplicate = false;
   std::string file = "test.mtx";
@@ -41,6 +41,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int device_solve_thres = 128;
   int variant = 0;
   int nstreams = 8;
+  int nfacts = 2;
+  int nsolves = 10;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
@@ -59,6 +61,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
+  opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse)
@@ -82,8 +86,13 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
 
+  std::cout << std::endl << "    --------------------- " << std::endl;
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
+  std::cout << "     Method Name:: " << method_name << std::endl;
+  std::cout << "     Solver Type:: " << variant << std::endl;
+  std::cout << "       # Streams:: " << nstreams;
+  std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
 
   int r_val = 0;
   try {
@@ -177,11 +186,16 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
 
     /// create numeric tools and levelset tools
+    Kokkos::Timer timer;
     solver.initialize();
+    double initi_time = timer.seconds();
 
     /// symbolic structure can be reused
-    for (int i = 0; i < 2; ++i)
+    timer.reset();
+    for (int i = 0; i < nfacts; ++i) {
       solver.factorize(values_on_device);
+    }
+    double facto_time = timer.seconds();
 
     DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
         x("x", A.NumRows(), nrhs),                  // solution multivector
@@ -192,14 +206,23 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       Kokkos::fill_random(b, random, value_type(1));
     }
 
-    for (int i = 0; i < 3; ++i)
+    std::cout << std::endl;
+    double solve_time = 0.0;
+    for (int i = 0; i < nsolves; ++i) {
+      timer.reset();
       solver.solve(x, b, t);
-
-    const double res = solver.computeRelativeResidual(values_on_device, x, b);
-
-    std::cout << "TachoSolver: residual = " << res << "\n\n";
-
+      solve_time += timer.seconds();
+      const double res = solver.computeRelativeResidual(values_on_device, x, b);
+      std::cout << "TachoSolver: residual = " << res << "\n";
+    }
+    std::cout << std::endl;
     solver.release();
+
+    std::cout << std::endl;
+    std::cout << " Initi Time " << initi_time << std::endl;
+    std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
+    std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
+    std::cout << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   }

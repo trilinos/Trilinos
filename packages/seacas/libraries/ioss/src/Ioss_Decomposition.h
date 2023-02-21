@@ -1,11 +1,13 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Map.h>
@@ -34,9 +36,9 @@
 #endif
 
 namespace Ioss {
-  const std::vector<std::string> &valid_decomp_methods();
+  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods();
 
-  class BlockDecompositionData
+  class IOSS_EXPORT BlockDecompositionData
   {
   public:
     BlockDecompositionData() = default;
@@ -83,7 +85,7 @@ namespace Ioss {
     std::vector<int> importIndex;
   };
 
-  class SetDecompositionData
+  class IOSS_EXPORT SetDecompositionData
   {
   public:
     SetDecompositionData()                             = default;

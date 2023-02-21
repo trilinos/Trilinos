@@ -47,7 +47,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <vector>
 #include <string>
@@ -230,7 +230,7 @@ public:
   static constexpr double beta = 0.3333333;
   static constexpr double gamma = 3.14159;
 
-  stk::performance_tests::BatchTimer batchTimer;
+  stk::unit_test_util::BatchTimer batchTimer;
   stk::mesh::FieldDataManager * m_fieldDataManager;
 
   DoubleVecField * dispField;
@@ -247,13 +247,13 @@ TEST_F(NgpFieldAccessPerformance, pureHost_vectorSum_DefaultFieldDataManager)
   const int weKnowThereAreFiveRanks = 5;
   m_fieldDataManager = new stk::mesh::DefaultFieldDataManager(weKnowThereAreFiveRanks);
 
+  batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     testPureHostVectorFieldSum(NUM_ITERS);
@@ -272,13 +272,13 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
   const int weKnowThereAreFiveRanks = 5;
   m_fieldDataManager = new stk::mesh::DefaultFieldDataManager(weKnowThereAreFiveRanks);
 
+  batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     testHostVectorFieldSum(NUM_ITERS);
@@ -289,6 +289,18 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
   checkHostResult();
 }
 
+void fill_mesh(stk::mesh::BulkData& bulk, unsigned numElemsPerDim)
+{
+  stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
+  stkIo.set_bulk_data(bulk);
+  stkIo.add_mesh_database(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  const bool delayFieldDataAllocation = true;
+  stkIo.populate_mesh(delayFieldDataAllocation);
+  stkIo.populate_field_data();
+}
+
 TEST_F(NgpFieldAccessPerformance, vectorSum_DefaultFieldDataManager)
 {
   if (get_parallel_size() != 1) return;
@@ -297,13 +309,13 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_DefaultFieldDataManager)
   const int weKnowThereAreFiveRanks = 5;
   m_fieldDataManager = new stk::mesh::DefaultFieldDataManager(weKnowThereAreFiveRanks);
 
+  batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
   createNodalVectorFields();
-  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
+  fill_mesh(*bulkData, numElemsPerDim);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     testVectorFieldSum(NUM_ITERS);
@@ -318,16 +330,16 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_ContiguousFieldDataManager)
 {
   if (get_parallel_size() != 1) return;
 
-  unsigned numElemsPerDim = 25;
+  unsigned numElemsPerDim = 100;
   m_fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
 
+  batchTimer.initialize_batch_timer();
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
   createNodalVectorFields();
-  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
+  fill_mesh(*bulkData, numElemsPerDim);
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 50000;
-  batchTimer.initialize_batch_timer();
+  const unsigned NUM_ITERS = 2000;
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     testVectorFieldSum(NUM_ITERS);
@@ -338,8 +350,5 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_ContiguousFieldDataManager)
   checkResult();
 }
 
-
-
-
-
 }
+

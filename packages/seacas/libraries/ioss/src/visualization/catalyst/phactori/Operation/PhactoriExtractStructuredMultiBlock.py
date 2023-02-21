@@ -255,7 +255,7 @@ def FigureBlockIndicesFromBlockList(includeBlockList, inInputFilter):
   listOfBlockIndicesToInclude = []
   FigureBlockIndicesFromBlockListRecurse1(listOfBlockIndicesToInclude,
          includeBlockList, csdata, None, flatIndexCounter, 0)
-
+  
   #if PhactoriDbg(100):
   #  myDebugPrint3("number of times existing block names found:\n")
   #  for blknm, count in gDuplicateNameCounter.items():
@@ -373,7 +373,7 @@ class PhactoriExtractStructuredMultiBlock(PhactoriOperationSpecifics):
   def MakeExtractBlockFilter(self, inInputFilter, blockName):
     if PhactoriDbg(100):
       myDebugPrint3("MakeExtractBlockFilter entered: " + str(blockName) + "\n")
-    newPvExtractBlockFilter = ExtractBlock(inInputFilter)
+    newPvExtractBlockFilter = ExtractBlock(inInputFilter) 
     #newParaViewFilter.PruneOutput = 1
     #newParaViewFilter.MaintainStructure = 0
     #newParaViewFilter.MaintainStructure = 1
@@ -404,7 +404,7 @@ class PhactoriExtractStructuredMultiBlock(PhactoriOperationSpecifics):
       rngFunc = [0,0,0,0,0,0]
 
     if rngFuncAllAbsolute:
-      retIjkRange = ijkJson["ijkrange"]
+      retIjkRange = ijkJson["ijkrange"] 
       if PhactoriDbg(100):
         myDebugPrint3("rngFunc is [0,0,0,0,0,0], all absolute, "
           "so just return explicit ijkrange:\nretIjkRange: \n" + \
@@ -417,7 +417,7 @@ class PhactoriExtractStructuredMultiBlock(PhactoriOperationSpecifics):
         return [0,-1,0,-1,0,-1]
 
     if "ijkrange" in ijkJson:
-      ijkRangeFromJson = ijkJson["ijkrange"]
+      ijkRangeFromJson = ijkJson["ijkrange"] 
     else:
       ijkRangeFromJson = [0,0,0,0,0,0]
 
@@ -458,22 +458,22 @@ class PhactoriExtractStructuredMultiBlock(PhactoriOperationSpecifics):
     if hadToCorrect:
       if PhactoriDbg(100):
         myDebugPrint3("return ijkrange had to be corrected because it was outside block extent"
-          "\nblockExtent: " + str(blockExtent) +
-          "\nijkRangeFromJson: " + str(retIjkRange) +
-          "\nrngFunc (from json): " + str(rngFunc) +
+          "\nblockExtent: " + str(blockExtent) + 
+          "\nijkRangeFromJson: " + str(retIjkRange) + 
+          "\nrngFunc (from json): " + str(rngFunc) + 
           "\nuncorrectedIjkRange: " + str(uncorrectedIjkRange) +
           "\nretIjkRange: " + str(retIjkRange) + "\n")
     else:
       if PhactoriDbg(100):
         myDebugPrint3("return ijkrange did not need correction"
-          "\nblockExtent: " + str(blockExtent) +
+          "\nblockExtent: " + str(blockExtent) + 
           "\nijkRangeFromJson: " + str(retIjkRange) +
-          "\nrngFunc (from json): " + str(rngFunc) +
+          "\nrngFunc (from json): " + str(rngFunc) + 
           "\nretIjkRange: " + str(retIjkRange) + "\n")
 
     return retIjkRange
-
-
+    
+  
   def MakeExtractSubsetFilter(self, extractBlockFilter, oneBlockExtractSubsetJson, oneBlockExtents):
     if PhactoriDbg(100):
       myDebugPrint3("MakeOneExtractBlockExtractSubsetFilter entered\n")
@@ -523,7 +523,7 @@ class PhactoriExtractStructuredMultiBlock(PhactoriOperationSpecifics):
 
     if PhactoriDbg(100):
       myDebugPrint3("MakeGroupAllExtractSubsetsFilter returning\n")
-
+    
   def CreateParaViewFilter(self, inInputFilter):
     """create the PhactoriExtractStructuredMultiBlock filter for ParaView"""
     if PhactoriDbg(100):

@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 
 #ifndef __Panzer_STK_Utilities_hpp__
 #define __Panzer_STK_Utilities_hpp__
@@ -131,4 +131,4 @@ void sorted_permutation(const RAContainer & cont,std::vector<std::size_t> & perm
 
 #endif
 
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK

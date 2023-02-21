@@ -9,7 +9,7 @@
 
 #include <string>
 
-class vtkMultiBlockDataSet;
+class vtkDataObject;
 
 namespace Iovs {
 
@@ -26,8 +26,8 @@ public:
     bool outputCatalystMeshFilePerProcON();
     void setOutputCatalystMeshFilePerProcPrefix(std::string & prefix);
 
-    void writeCatalystMeshOneFile(vtkMultiBlockDataSet* mbds, int timeStep);
-    void writeCatalystMeshFilePerProc(vtkMultiBlockDataSet* mbds, int timeStep);
+    void writeCatalystMeshOneFile(vtkDataObject* dobj, int timeStep);
+    void writeCatalystMeshFilePerProc(vtkDataObject* dobj, int timeStep);
 
 private:
 

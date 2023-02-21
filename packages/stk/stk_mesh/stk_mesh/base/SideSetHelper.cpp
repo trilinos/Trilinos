@@ -24,7 +24,6 @@ void SideSetHelper::remove_element_entries_from_sidesets(SideSetVector& sidesets
 
       sideset->erase(lowerBound, upperBound);
 
-
       if(nullptr != touchedSidesetParts) {
         const Part* part = sideset->get_part();
 
@@ -42,25 +41,33 @@ void SideSetHelper::remove_element_entries_from_sidesets(const Entity entity, st
   remove_element_entries_from_sidesets(sidesets, entity, touchedSidesetParts);
 }
 
+void SideSetHelper::remove_side_entry_from_sideset(SideSet* sideset, const SideSetEntry& entry,
+                                                   std::set<const Part*> *touchedSidesetParts)
+{
+  ThrowAssert(entry.side != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(entry.element) == stk::topology::ELEM_RANK);
+
+  std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), entry);
+
+  if(lowerBound != sideset->end() && *lowerBound == entry) {
+    sideset->erase(lowerBound);
+  }
+
+  if(nullptr != touchedSidesetParts) {
+    const Part* part = sideset->get_part();
+
+    if(nullptr != part) {
+      touchedSidesetParts->insert(part);
+    }
+  }
+}
+
 void SideSetHelper::remove_side_entry_from_sidesets(SideSetVector& sidesets, Entity elem, ConnectivityOrdinal ordinal,
-                                     std::set<const Part*> *touchedSidesetParts)
+                                                    std::set<const Part*> *touchedSidesetParts)
 {
   if(ordinal != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(elem) == stk::topology::ELEM_RANK) {
     SideSetEntry entry(elem, ordinal);
     for (SideSet* sideset : sidesets) {
-      std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), entry);
-
-      if(lowerBound != sideset->end() && *lowerBound == entry) {
-        sideset->erase(lowerBound);
-      }
-
-      if(nullptr != touchedSidesetParts) {
-        const Part* part = sideset->get_part();
-
-        if(nullptr != part) {
-          touchedSidesetParts->insert(part);
-        }
-      }
+      remove_side_entry_from_sideset(sideset, entry, touchedSidesetParts);
     }
   }
 }

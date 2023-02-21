@@ -35,6 +35,7 @@
 #ifndef stk_mesh_base_FieldBase_hpp
 #define stk_mesh_base_FieldBase_hpp
 
+#include <any>
 #include <stddef.h>                     // for NULL
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
@@ -52,13 +53,12 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
 #include <stk_util/util/CSet.hpp>
-#include "Teuchos_any.hpp"
 #include <type_traits>
 
 namespace shards { class ArrayDimTag; }
 
-namespace stk {
-namespace mesh {
+namespace stk::mesh 
+{
 
 class BulkData;
 class MetaData;
@@ -257,14 +257,14 @@ public:
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
-    if (m_stkFieldSyncDebugger.empty()) {
-      m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    if (!(m_stkFieldSyncDebugger.has_value())) {
+      m_stkFieldSyncDebugger = std::any(StkDebugger(this));
     }
   }
 
   template <typename StkDebugger>
   StkDebugger & get_field_sync_debugger() const {
-    return Teuchos::any_cast<StkDebugger>(m_stkFieldSyncDebugger);
+    return std::any_cast<StkDebugger&>(m_stkFieldSyncDebugger);
   }
 
   void rotate_multistate_data();
@@ -410,7 +410,7 @@ private:
   mutable bool                 m_modifiedOnHost;
   mutable bool                 m_modifiedOnDevice;
   mutable stk::ngp::ExecSpace  m_execSpace;
-  mutable Teuchos::any m_stkFieldSyncDebugger;
+  mutable std::any m_stkFieldSyncDebugger;
 };
 
 /** \brief  Print the field type, text name, and number of states. */
@@ -522,76 +522,48 @@ struct FieldBasePtrLess {
 //
 
 template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, EmptyStkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const Entity & entity,
-                                const char * fileName, int lineNumber)
+void debug_stale_access_entity_check(const FieldBase& stkField, const Entity& entity, const char* fileName, int lineNumber)
 {
-}
-
-template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, StkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const Entity & entity,
-                                const char * fileName, int lineNumber)
-{
-  if (stkField.has_ngp_field()) {
-    stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(entity, fileName, lineNumber);
+  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
+  {
+    if (stkField.has_ngp_field()) {
+      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(entity, fileName, lineNumber);
+    }
   }
 }
 
-
 template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, EmptyStkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, unsigned bucketOrd,
-                                const char * fileName, int lineNumber)
+void debug_stale_access_entity_check(const FieldBase& stkField, const unsigned bucketId, unsigned bucketOrd, const char* fileName, int lineNumber)
 {
-}
-
-template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, StkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, unsigned bucketOrd,
-                                const char * fileName, int lineNumber)
-{
-  if (stkField.has_ngp_field()) {
-    stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(bucketId, bucketOrd, fileName, lineNumber);
+  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
+  {
+    if (stkField.has_ngp_field()) {
+      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(bucketId, bucketOrd, fileName, lineNumber);
+    }
   }
 }
 
-
 template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, EmptyStkFieldSyncDebugger>::value, void>::type
-debug_stale_access_bucket_check(const FieldBase & stkField, const Bucket & bucket,
-                                const char * fileName, int lineNumber)
+void debug_stale_access_bucket_check(const FieldBase& stkField, const Bucket& bucket, const char* fileName, int lineNumber)
 {
-}
-
-template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, StkFieldSyncDebugger>::value, void>::type
-debug_stale_access_bucket_check(const FieldBase & stkField, const Bucket & bucket,
-                                const char * fileName, int lineNumber)
-{
-  if (stkField.has_ngp_field()) {
-    stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucket, fileName, lineNumber);
+  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
+  {
+    if (stkField.has_ngp_field()) {
+      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucket, fileName, lineNumber);
+    }
   }
 }
 
-
 template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, EmptyStkFieldSyncDebugger>::value, void>::type
-debug_stale_access_bucket_check(const FieldBase & stkField, const unsigned & bucketId,
-                                const char * fileName, int lineNumber)
+void debug_stale_access_bucket_check(const FieldBase& stkField, const unsigned& bucketId, const char* fileName, int lineNumber)
 {
-}
-
-template <typename StkDebugger>
-typename std::enable_if<std::is_same<StkDebugger, StkFieldSyncDebugger>::value, void>::type
-debug_stale_access_bucket_check(const FieldBase & stkField, const unsigned & bucketId,
-                                const char * fileName, int lineNumber)
-{
-  if (stkField.has_ngp_field()) {
-    stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucketId, fileName, lineNumber);
+  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
+  {
+    if (stkField.has_ngp_field()) {
+      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucketId, fileName, lineNumber);
+    }
   }
 }
-
 
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
@@ -683,7 +655,6 @@ field_data(const FieldType & f, Entity e,
                                                                        field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
 }
 
-} //namespace mesh
-} //namespace stk
+} //namespace stk::mesh
 
 #endif //stk_mesh_base_FieldBase_hpp

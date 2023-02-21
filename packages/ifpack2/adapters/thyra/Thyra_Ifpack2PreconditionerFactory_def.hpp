@@ -76,7 +76,6 @@
 
 namespace Thyra {
 
-
 // Constructors/initializers/accessors
 
 
@@ -93,17 +92,13 @@ bool Ifpack2PreconditionerFactory<MatrixType>::isCompatible(
   const LinearOpSourceBase<scalar_type> &fwdOpSrc
   ) const
 {
-  const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc.getOp();
-
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
 
-  typedef Thyra::TpetraLinearOp<scalar_type, local_ordinal_type, global_ordinal_type, node_type> ThyraTpetraLinOp;
-  const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
-
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
-  const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = Teuchos::nonnull(thyraTpetraFwdOp) ? thyraTpetraFwdOp->getConstTpetraOperator() : Teuchos::null;
+  const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc.getOp();
+  using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
 
   const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
 
@@ -126,6 +121,9 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   const ESupportSolveUse /* supportSolveUse */
   ) const
 {
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+
   // Check precondition
 
   TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
@@ -135,7 +133,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
@@ -144,22 +142,19 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // Retrieve wrapped concrete Tpetra matrix from FwdOp
 
-  const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc->getOp();
+  const RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc->getOp();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
 
-  typedef Thyra::TpetraLinearOp<scalar_type, local_ordinal_type, global_ordinal_type, node_type> ThyraTpetraLinOp;
-  const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraTpetraFwdOp));
-
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
-  const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = thyraTpetraFwdOp->getConstTpetraOperator();
+  using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
-  const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
+  const RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdMatrix));
 
   // Retrieve concrete preconditioner object
@@ -168,51 +163,49 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     Teuchos::ptr(dynamic_cast<DefaultPreconditioner<scalar_type> *>(prec));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-  // Process parameter list
+  // This check needed to address Issue #535. 
+  // Corresponding fix exists in stratimikos/adapters/belos/tpetra/Thyra_BelosTpetraPreconditionerFactory_def.hpp
+  RCP<Teuchos::ParameterList> innerParamList;
+  if (paramList_.is_null ()) {
+    innerParamList = rcp(new Teuchos::ParameterList(*getValidParameters()));
+  }
+  else {
+    innerParamList = paramList_;
+  }
 
   bool useHalfPrecision = false;
-  if (paramList_->isParameter("half precision"))
-    useHalfPrecision = paramList_->get<bool>("half precision");
+  if (innerParamList->isParameter("half precision"))
+    useHalfPrecision = Teuchos::getParameter<bool>(*innerParamList, "half precision");
 
-  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
-  if (constParamList.is_null ()) {
-    constParamList = getValidParameters ();
-  }
-  const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
-  const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
+  const std::string preconditionerType = Teuchos::getParameter<std::string>(*innerParamList, "Prec Type");
+  const RCP<Teuchos::ParameterList> packageParamList = Teuchos::rcpFromRef(innerParamList->sublist("Ifpack2 Settings"));
 
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
-  if (precTypeUpper.size () > 0) {
-    for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-      precTypeUpper[k] = ::toupper(precTypeUpper[k]);
-    }
-  }
+  std::transform(precTypeUpper.begin(), precTypeUpper.end(),precTypeUpper.begin(), ::toupper);
   
   // mfh 09 Nov 2013: If the Ifpack2 list doesn't already have the
   // "schwarz: overlap level" parameter, then override it with the
   // value of "Overlap".  This avoids use of the newly deprecated
   // three-argument version of Ifpack2::Factory::create() that takes
   // the overlap as an integer.
-  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
+  if (innerParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
       precTypeUpper == "SCHWARZ") {
-    const int overlap = constParamList->get<int> ("Overlap");
-    Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList =
-      Teuchos::sublist (paramList_, "Ifpack2 Settings");
-    nonconstPackageParamList->set ("schwarz: overlap level", overlap);
+    const int overlap = innerParamList->get<int> ("Overlap");
+    packageParamList->set ("schwarz: overlap level", overlap);
   }
 
   // Create the initial preconditioner
 
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
+  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
     *out << "\nCreating a new Ifpack2::Preconditioner object...\n";
   }
   timer.start(true);
 
-  Teuchos::RCP<LinearOpBase<scalar_type> > thyraPrecOp;
+  RCP<LinearOpBase<scalar_type> > thyraPrecOp;
 
   typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> Ifpack2Prec;
-  Teuchos::RCP<Ifpack2Prec> concretePrecOp;
+  RCP<Ifpack2Prec> concretePrecOp;
 
 #ifdef THYRA_IFPACK2_ENABLE_HALF_PRECISION
   // CAG: There is nothing special about the combination double-float,
@@ -220,7 +213,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   //      with both scalar types.
   typedef typename Teuchos::ScalarTraits<scalar_type>::halfPrecision half_scalar_type;
   typedef Ifpack2::Preconditioner<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> HalfIfpack2Prec;
-  Teuchos::RCP<HalfIfpack2Prec> concretePrecOpHalf;
+  RCP<HalfIfpack2Prec> concretePrecOpHalf;
 #endif
 
   if (useHalfPrecision) {
@@ -236,7 +229,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     concretePrecOpHalf =
       Ifpack2::Factory::create<row_matrix_type> (preconditionerType, tpetraFwdMatrixHalf);
 #else
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Ifpack2 does not have correct precisions enabled to use half precision.")
 #endif
   } else {
     typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
@@ -268,7 +261,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     concretePrecOp->compute();
 
     // Wrap concrete preconditioner
-    thyraPrecOp = Thyra::createLinearOp(Teuchos::RCP<TpetraLinOp>(concretePrecOp));
+    thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(concretePrecOp));
   }
 
   defaultPrec->initializeUnspecified(thyraPrecOp);
@@ -325,7 +318,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::setParameterList(
 {
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
 
-  const Teuchos::RCP<const Teuchos::ParameterList> validParamList = this->getValidParameters();
+  const auto validParamList = this->getValidParameters();
   paramList->validateParametersAndSetDefaults(*validParamList, 0);
   paramList->validateParameters(*validParamList, 1);
 

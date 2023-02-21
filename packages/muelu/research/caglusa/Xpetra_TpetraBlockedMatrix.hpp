@@ -6,6 +6,9 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 
+#include <Tpetra_BlockedMatrix_decl.hpp>
+#include <Tpetra_BlockedMatrix_def.hpp>
+
 
 namespace Xpetra {
 

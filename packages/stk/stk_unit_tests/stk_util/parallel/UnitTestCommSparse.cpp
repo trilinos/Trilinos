@@ -339,4 +339,18 @@ TEST(ParallelComm, CommSparse_communicate_with_unpack)
   });
 }
 
+TEST(ParallelComm, serialConstructCommSparse_forMemoryLeakCheck)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  {
+    stk::CommSparse comm(MPI_COMM_WORLD);
+    EXPECT_EQ(1, comm.parallel_size());
+  }
+  {
+    stk::CommSparse comm(MPI_COMM_WORLD);
+    EXPECT_EQ(1, comm.parallel_size());
+  }
+}
+
 #endif

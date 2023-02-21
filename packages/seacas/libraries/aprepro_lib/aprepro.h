@@ -7,9 +7,7 @@
 // Might be good to add a callback function which would be called
 // when there was output -- In LexerOutput for example.  Default
 // could be to just write to std::cout or to resultsOutput stringstream...
-
-#ifndef SEAMS_DRIVER_H
-#define SEAMS_DRIVER_H
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -237,6 +235,9 @@ namespace SEAMS {
     // For substitution history.
     std::vector<history_data> history{};
 
+    // For repeatble and user-friendly help/dump output.
+    std::vector<SEAMS::symrec *> get_sorted_sym_table() const;
+
     mutable int parseErrorCount{0};
     mutable int parseWarningCount{0};
 
@@ -268,5 +269,3 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-
-#endif // SEAMS_DRIVER_H

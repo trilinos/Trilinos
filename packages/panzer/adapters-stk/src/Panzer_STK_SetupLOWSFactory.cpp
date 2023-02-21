@@ -42,8 +42,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
-
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
@@ -52,11 +50,11 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
-
-#include "ml_rbm.h"
+#endif // PANZER_HAVE_EPETRA_STACK
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -278,6 +276,7 @@ namespace {
           }
 
           if(writeCoordinates) {
+#ifdef PANZER_HAVE_EPETRA_STACK
              // force parameterlistcallback to build coordinates
              callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
@@ -308,9 +307,12 @@ namespace {
              default:
                 TEUCHOS_ASSERT(false);
              }
+#else
+             TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory.cpp - writeCoordinates not implemented for Tpetra yet!");
+#endif
           }
 
-          #ifdef PANZER_HAVE_MUELU
+#ifdef PANZER_HAVE_MUELU
           if(rcp_dynamic_cast<const panzer::GlobalIndexer>(globalIndexer)!=Teuchos::null
              && useCoordinates) {
              if(!writeCoordinates)
@@ -379,6 +381,7 @@ namespace {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
        if(writeCoordinates) {
+#ifdef PANZER_HAVE_EPETRA_STACK
           RCP<const panzer::BlockedDOFManager> blkDofs =
              rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer);
 
@@ -466,6 +469,9 @@ namespace {
             #endif
 
           } /* end loop over all physical fields */
+#else // PANZER_HAVE EPETRA
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory - writeCoordinates not implemented for Tpetra yet!")
+#endif
        }
 
        if(writeTopo) {
@@ -528,5 +534,3 @@ namespace {
     return Teuchos::null;
   }
 }
-
-#endif // PANZER_HAVE_EPETRA

@@ -51,7 +51,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 
 /*! @class MergedSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
 */
 
 namespace MueLu {

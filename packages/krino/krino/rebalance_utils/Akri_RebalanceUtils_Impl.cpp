@@ -25,11 +25,13 @@
 #include <utility>
 #include <vector>
 
+#include <Akri_RefinementInterface.hpp>
+
 namespace krino {
 namespace rebalance_utils {
 namespace impl {
 
-void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp_changes, const stk::mesh::BulkData & bulk_data)
+void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp_changes, const RefinementInterface& refinement, const stk::mesh::BulkData & bulk_data)
 {
   // At this point decomp_changes has all adaptivity parent + child elements that are moving
   // and their dest procs match.
@@ -62,7 +64,7 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
     const auto dest_proc = change.second;
 
     if (bulk_data.entity_rank(elem) != stk::topology::ELEMENT_RANK ||
-        is_refinement_child(bulk_data, elem) || !has_refinement_children(bulk_data, elem))
+        refinement.is_child(elem) || !refinement.is_parent(elem))
       continue;
 
     const auto * root_sides = bulk_data.begin(elem, side_rank);
@@ -71,7 +73,7 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
     {
       if (!bulk_data.bucket(root_sides[i]).owned()) continue;
 
-      get_refinement_all_children(bulk_data, root_sides[i], child_sides);
+      fill_all_children(refinement, root_sides[i], child_sides);
       child_sides.push_back(root_sides[i]);
 
       for (auto && child_side : child_sides)
@@ -95,17 +97,17 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
 
 void
 update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_changes,
+    const RefinementInterface& refinement,
     const stk::mesh::BulkData & bulk_data)
 {
   auto all_changes = decomp_changes.get_all_partition_changes();
 
-  // First pass remove all refinement children from the list of changes.
-  // Second pass will set their destinations all to the destination of their root parent
-  // if it is moving.
+  // First pass remove all constrained entities from the list of changes.
+  // Second pass will set their destinations according to their dependence
   for(auto && change : all_changes)
   {
     stk::mesh::Entity entity = change.first;
-    if(is_refinement_child(bulk_data, entity))
+    if(refinement.has_rebalance_constraint(entity))
     {
       decomp_changes.delete_entity(entity);
     }
@@ -118,14 +120,14 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
     stk::mesh::Entity entity = change.first;
     const auto dest = change.second;
 
-    get_refinement_all_children(bulk_data, entity, adapt_children);
+    refinement.fill_dependents(entity, adapt_children);
     for(auto && child : adapt_children)
     {
       decomp_changes.set_entity_destination(child, dest);
     }
   }
 
-  set_family_tree_destinations(decomp_changes, bulk_data);
+  set_family_tree_destinations(decomp_changes, refinement, bulk_data);
 
   all_changes = decomp_changes.get_all_partition_changes();
   for(auto && change : all_changes)
@@ -223,25 +225,25 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
 }
 
 void accumulate_adaptivity_child_weights_to_parents(
-    const stk::mesh::BulkData & bulk_data, stk::mesh::Field<double> & element_weights_field)
+    const stk::mesh::BulkData & bulk_data, const RefinementInterface& refinement, stk::mesh::Field<double> & element_weights_field)
 {
   auto selector = stk::mesh::selectField(element_weights_field) &
       bulk_data.mesh_meta_data().locally_owned_part();
-  std::vector<stk::mesh::Entity> all_children;
+  std::vector<stk::mesh::Entity> all_dependents;
   const auto & buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, selector);
   for (auto && b_ptr : buckets)
   {
     for (auto && elem : *b_ptr)
     {
-      if (is_refinement_child(bulk_data, elem)) continue;
+      if (!refinement.is_parent(elem)) continue;
 
-      all_children.clear();
-      get_refinement_all_children(bulk_data, elem, all_children);
+      all_dependents.clear();
+      refinement.fill_dependents(elem, all_dependents);
 
       double child_weights_sum = 0.;
-      for (auto && child : all_children)
+      for (auto && dep : all_dependents)
       {
-        double & child_weight = *stk::mesh::field_data(element_weights_field, child);
+        double & child_weight = *stk::mesh::field_data(element_weights_field, dep);
         child_weights_sum += child_weight;
         child_weight = 0.;
       }

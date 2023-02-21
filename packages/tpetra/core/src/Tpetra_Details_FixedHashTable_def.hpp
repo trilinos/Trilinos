@@ -77,7 +77,7 @@ namespace FHT {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-    return ExecSpace::concurrency() > 1;
+    return ExecSpace().concurrency() > 1;
 }
 
 //
@@ -542,43 +542,12 @@ private:
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable () :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  minVal_ (::Kokkos::Details::ArithTraits<ValueType>::max ()),
-  maxVal_ (::Kokkos::Details::ArithTraits<ValueType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<ValueType>::min () :
-           -::Kokkos::Details::ArithTraits<ValueType>::max ()),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  contiguousValues_ (true), // trivially
-  checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
-  hasDuplicateKeys_ (false)
-{
-}
-
-template<class KeyType, class ValueType, class DeviceType>
-FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()), // to be set in init()
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()), // to be set in init()
   minVal_ (0),
   maxVal_ (keys.size () == 0 ?
            static_cast<ValueType> (0) :
            static_cast<ValueType> (keys.size () - 1)),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   const ValueType startingValue = static_cast<ValueType> (0);
   const KeyType initMinKey = this->minKey_;
@@ -590,21 +559,11 @@ FixedHashTable (const keys_type& keys) :
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()), // to be set in init()
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()), // to be set in init()
   minVal_ (0),
   maxVal_ (keys.size () == 0 ?
            static_cast<ValueType> (0) :
            static_cast<ValueType> (keys.size () - 1)),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   typedef typename keys_type::non_const_type nonconst_keys_type;
 
@@ -629,21 +588,11 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const ValueType startingValue) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
   minVal_ (startingValue),
   maxVal_ (keys.size () == 0 ?
            startingValue :
            static_cast<ValueType> (startingValue + keys.size () - 1)),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   typedef typename keys_type::non_const_type nonconst_keys_type;
 
@@ -656,7 +605,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
   // DEEP_COPY REVIEW - HOST-TO_DEVICE
-  using execution_space = typename device_type::execution_space;
   Kokkos::deep_copy (execution_space(), keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -686,19 +634,13 @@ FixedHashTable (const keys_type& keys,
                 const KeyType firstContigKey,
                 const KeyType lastContigKey,
                 const ValueType startingValue) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
   minVal_ (startingValue),
   maxVal_ (keys.size () == 0 ?
            startingValue :
            static_cast<ValueType> (startingValue + keys.size () - 1)),
   firstContigKey_ (firstContigKey),
   lastContigKey_ (lastContigKey),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
@@ -726,19 +668,13 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const KeyType firstContigKey,
                 const KeyType lastContigKey,
                 const ValueType startingValue) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
   minVal_ (startingValue),
   maxVal_ (keys.size () == 0 ?
            startingValue :
            static_cast<ValueType> (startingValue + keys.size () - 1)),
   firstContigKey_ (firstContigKey),
   lastContigKey_ (lastContigKey),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   typedef typename keys_type::non_const_type nonconst_keys_type;
 
@@ -777,21 +713,11 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys,
                 const ValueType startingValue) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
   minVal_ (startingValue),
   maxVal_ (keys.size () == 0 ?
            startingValue :
            static_cast<ValueType> (startingValue + keys.size () - 1)),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  contiguousValues_ (true),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
@@ -817,21 +743,8 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const Teuchos::ArrayView<const ValueType>& vals) :
-  minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  maxKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<KeyType>::min () :
-           -::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  minVal_ (::Kokkos::Details::ArithTraits<ValueType>::max ()),
-  maxVal_ (::Kokkos::Details::ArithTraits<ValueType>::is_integer ?
-           ::Kokkos::Details::ArithTraits<ValueType>::min () :
-           -::Kokkos::Details::ArithTraits<ValueType>::max ()),
-  firstContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
-  lastContigKey_ (::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                  ::Kokkos::Details::ArithTraits<KeyType>::min () :
-                  -::Kokkos::Details::ArithTraits<KeyType>::max ()),
   contiguousValues_ (false),
-  checkedForDuplicateKeys_ (false),
-  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+  checkedForDuplicateKeys_ (false)
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -996,7 +909,6 @@ init (const keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
-    using execution_space = typename counts_type::execution_space;
     using range_type = Kokkos::RangePolicy<execution_space, offset_type>;
     const char kernelLabel[] = "Tpetra::Details::FixedHashTable CountBuckets";
     if (debug) {

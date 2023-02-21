@@ -31,6 +31,7 @@
 #include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Transform.h>
+#include <transform/Iotr_Factory.h>
 
 #include "EJ_CodeTypes.h"
 #include "EJ_SystemInterface.h"
@@ -770,7 +771,7 @@ namespace {
   {
     // copy values to master sideset value information
     T *local_values = &values[0];
-    for (int j = 0; j < entity_count; j++) {
+    for (size_t j = 0; j < entity_count; j++) {
       global_values[j + loffset] = local_values[j];
     }
   }

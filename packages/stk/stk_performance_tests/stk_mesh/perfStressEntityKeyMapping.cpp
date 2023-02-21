@@ -39,7 +39,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <cstdlib>
 
 using EntityIdPair = std::pair<stk::mesh::EntityId,stk::mesh::EntityId>;
@@ -115,7 +115,7 @@ TEST_F( StressEntityKeyMapping, Timing )
   const int numElementsToChange = 10;
   const int numGetEntityQueries = 1000000;
 
-  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     setup_host_mesh();

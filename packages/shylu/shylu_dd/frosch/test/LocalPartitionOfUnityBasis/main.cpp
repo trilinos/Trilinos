@@ -115,12 +115,13 @@ int main(int argc, char *argv[])
         dofs3[i] = 3*i+2;
     }
 
-    RCP<Map<LO,GO,NO> > nodesMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,nodes(),0,SerialComm);
-    RCP<Map<LO,GO,NO> > dofsMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,dofs(),0,SerialComm);
+    const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    RCP<Map<LO,GO,NO> > nodesMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,nodes(),0,SerialComm);
+    RCP<Map<LO,GO,NO> > dofsMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,dofs(),0,SerialComm);
     ArrayRCP<RCP<Map<LO,GO,NO> > > dofsMaps (3);
-    dofsMaps[0] = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,dofs1(),0,SerialComm);
-    dofsMaps[1] = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,dofs2(),0,SerialComm);
-    dofsMaps[2] = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,dofs3(),0,SerialComm);
+    dofsMaps[0] = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,dofs1(),0,SerialComm);
+    dofsMaps[1] = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,dofs2(),0,SerialComm);
+    dofsMaps[2] = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,dofs3(),0,SerialComm);
 
     ArrayRCP<RCP<const MultiVector<SC,LO,GO,NO> > > partitionOfUnity(2);
 
@@ -168,8 +169,8 @@ int main(int argc, char *argv[])
     partitionOfUnityMapVec1[0] = 0;
 
     ArrayRCP<RCP<const Map<LO,GO,NO> > > partitionOfUnityMaps(2);
-    partitionOfUnityMaps[0] = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,partitionOfUnityMapVec1(),0,SerialComm);
-    partitionOfUnityMaps[1] = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,partitionOfUnityMapVec2(),0,SerialComm);
+    partitionOfUnityMaps[0] = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,partitionOfUnityMapVec1(),0,SerialComm);
+    partitionOfUnityMaps[1] = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,partitionOfUnityMapVec2(),0,SerialComm);
 
     RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
 

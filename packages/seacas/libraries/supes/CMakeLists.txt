@@ -9,7 +9,7 @@ SET(SUPES_VERSION_PATCH "0")
 SET(SUPES_VERSION "${SUPES_VERSION_MAJOR}.${SUPES_VERSION_MINOR}")
 SET(SUPES_VERSION_FULL "${SUPES_VERSION}.${SUPES_VERSION_PATCH}")
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/mem_mgr"
   "${CMAKE_CURRENT_SOURCE_DIR}/ext_lib"
@@ -18,7 +18,7 @@ INCLUDE_DIRECTORIES(
 
 SET(SOURCES
 	ext_lib/exmemy.c      ext_lib/extime.c      ext_lib/ixlchr.c
-	ext_lib/README        ext_lib/exname.c      ext_lib/exupcs.c  ext_lib/ixlnum.c
+	ext_lib/exname.c      ext_lib/exupcs.c      ext_lib/ixlnum.c
 	ext_lib/excpus.c      ext_lib/exparm.c      ext_lib/getline_int.c
 	ext_lib/exdate.c      ext_lib/exread.c
 	fre_fld/ffistr.f      fre_fld/frefld.f      fre_fld/getinp.f  fre_fld/gsupev.f

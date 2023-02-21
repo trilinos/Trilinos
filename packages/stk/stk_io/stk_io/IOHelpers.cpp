@@ -67,7 +67,6 @@
 #include "ProcessSetsOrBlocks.hpp"             // for get_part_for_grouping_...
 #include "StkIoUtils.hpp"                      // for part_primary_entity_rank
 #include "Teuchos_RCP.hpp"                     // for RCP::operator->, RCP::...
-#include "Teuchos_any.hpp"                     // for any
 #include "stk_io/OutputParams.hpp"             // for OutputParams
 #include "stk_mesh/base/Bucket.hpp"            // for Bucket
 #include "stk_mesh/base/Entity.hpp"            // for Entity
@@ -80,7 +79,7 @@
 #include "stk_topology/topology.hpp"           // for topology, topology::NO...
 #include "stk_util/parallel/CommSparse.hpp"    // for CommSparse, pack_and_c...
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
-#include "stk_util/util/ParameterList.hpp"     // for STK_ANY_NAMESPACE, Par...
+#include "stk_util/util/ParameterList.hpp"     // for Par...
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -237,44 +236,44 @@ void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
 }
 
 void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const STK_ANY_NAMESPACE::any &any_value,
+                              const std::string &name, const std::any &any_value,
                               stk::util::ParameterType::Type type)
 {
     try {
         switch(type)
         {
             case stk::util::ParameterType::INTEGER: {
-                int value = STK_ANY_NAMESPACE::any_cast<int>(any_value);
+                int value = std::any_cast<int>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::INT64: {
-                int64_t value = STK_ANY_NAMESPACE::any_cast<int64_t>(any_value);
+                int64_t value = std::any_cast<int64_t>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLE: {
-                double value = STK_ANY_NAMESPACE::any_cast<double>(any_value);
+                double value = std::any_cast<double>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLEVECTOR: {
-                std::vector<double> vec = STK_ANY_NAMESPACE::any_cast<std::vector<double> >(any_value);
+                std::vector<double> vec = std::any_cast<std::vector<double> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INTEGERVECTOR: {
-                std::vector<int> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int> >(any_value);
+                std::vector<int> vec = std::any_cast<std::vector<int> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INT64VECTOR: {
-                std::vector<int64_t> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int64_t> >(any_value);
+                std::vector<int64_t> vec = std::any_cast<std::vector<int64_t> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
@@ -298,7 +297,7 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
 {
     for (size_t i=0; i < global_any_fields.size(); i++) {
         const std::string &name = global_any_fields[i].m_name;
-        const STK_ANY_NAMESPACE::any *value = global_any_fields[i].m_value;
+        const std::any *value = global_any_fields[i].m_value;
         stk::util::ParameterType::Type type = global_any_fields[i].m_type;
         internal_write_parameter(region, name, *value, type);
     }
@@ -314,7 +313,7 @@ bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
 
 bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
                              const std::string &globalVarName,
-                             STK_ANY_NAMESPACE::any &any_value, stk::util::ParameterType::Type type,
+                             std::any &any_value, stk::util::ParameterType::Type type,
                              bool abort_if_not_found)
 {
     bool success = false;
@@ -543,7 +542,11 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
                 }
                 else {
                     std::ostringstream os;
-                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side {"<<elemSidePairs[is*2]<<","<<(elemSidePairs[is*2+1]-1)<<"} not valid."<<std::endl;
+                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side "
+                      <<elemSidePairs[is*2]<<" on element "<<(elemSidePairs[is*2+1]-1)
+                      <<" in sideset: " << sset->name()
+                      <<" does not have a corresponding face entity in the current mesh database"
+                      <<" (possibly referenced by a reduced restart file)."<<std::endl;
                     std::cerr<<os.str();
                 }
             }

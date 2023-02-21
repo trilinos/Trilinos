@@ -81,7 +81,7 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "AztecOO.h"
@@ -205,7 +205,7 @@ int main(int argc,char * argv[])
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
    if(!useTpetra){
-#ifndef PANZER_HAVE_EPETRA
+#ifndef PANZER_HAVE_EPETRA_STACK
         throw std::runtime_error("Trying to run Panzer MixedPoisson Test with Epetra, but Epetra is disabled!");
 #endif
    }
@@ -351,7 +351,7 @@ int main(int argc,char * argv[])
 
    // build the connection manager
    if(!useTpetra) {
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
      panzer::DOFManagerFactory globalIndexerFactory;
@@ -617,7 +617,7 @@ int main(int argc,char * argv[])
 
 void solveEpetraSystem(panzer::LinearObjContainer & container)
 {
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    // convert generic linear object container to epetra container
    panzer::EpetraLinearObjContainer & ep_container
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);

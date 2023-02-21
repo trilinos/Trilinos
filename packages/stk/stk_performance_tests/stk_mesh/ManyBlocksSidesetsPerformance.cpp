@@ -48,7 +48,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/ExodusTranslator.hpp"
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
 #include <stk_mesh/base/SkinBoundary.hpp>
@@ -153,7 +153,7 @@ protected:
     }
   }
 
-  stk::performance_tests::BatchTimer batchTimer;
+  stk::unit_test_util::BatchTimer batchTimer;
 };
 
 TEST_F(ManyBlocksSidesets, timing)

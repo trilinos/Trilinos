@@ -90,6 +90,9 @@ int main(int argc, char **argv)
   double drda_ad = arad.adj();  // dr/da
   double drdb_ad = brad.adj();  // dr/db
 
+  // Free Rad's memory to avoid memory leaks
+  Sacado::Rad::ADcontext< double >::free_all();
+
   // Print the results
   int p = 4;
   int w = p+7;

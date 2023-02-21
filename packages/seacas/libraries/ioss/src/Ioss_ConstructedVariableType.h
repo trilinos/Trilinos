@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_VariableType.h> // for VariableType
 #include <string>              // for string
 
 namespace Ioss {
-  class ConstructedVariableType : public VariableType
+  class IOSS_EXPORT ConstructedVariableType : public VariableType
   {
   public:
     std::string label(int which, char suffix_sep = '_') const override;

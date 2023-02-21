@@ -11,7 +11,8 @@ namespace Xpetra {
   HierarchicalOperator(const Teuchos::RCP<matrix_type>& nearField,
                        const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                        const Teuchos::RCP<matrix_type>& basisMatrix,
-                       std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices) {
+                       std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
+                       const Teuchos::RCP<Teuchos::ParameterList>& params) {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using TpCrs = TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -27,7 +28,8 @@ namespace Xpetra {
     op_ = rcp(new tHOp(Teuchos::rcp_dynamic_cast<TpCrs>(Teuchos::rcp_dynamic_cast<CrsWrap>(nearField)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
                        kernelApproximations->getTpetra_BlockedMatrix(),
                        Teuchos::rcp_dynamic_cast<TpCrs>(Teuchos::rcp_dynamic_cast<CrsWrap>(basisMatrix)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
-                       tTransferMatrices));
+                       tTransferMatrices,
+                       params));
   }
 
 }

@@ -289,8 +289,8 @@ namespace Iotm {
         split_by_criterion(sideset, elementData, criterion);
       }
 
-      void split_by_no_split(const SidesetData<EntityId, Topology>              &sideset,
-                             const std::vector<ElementData<EntityId, Topology>> &elementData)
+      void split_by_no_split(const SidesetData<EntityId, Topology> &sideset,
+                             const std::vector<ElementData<EntityId, Topology>> & /* elementData */)
       {
         std::vector<size_t> splitIndex(sideset.data.size());
         std::iota(std::begin(splitIndex), std::end(splitIndex), 0);

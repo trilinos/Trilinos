@@ -832,7 +832,7 @@ static void dgeev_interface(double **H, int n,
 	    &ldvl, vr, &ldvr, work, &lwork, &info);
   
   for( i=0 ; i<n ; i++ )
-    if( abs(Er[i])>largest_inv_A2 ) largest_inv_A2 = abs(Er[i]);
+    if( fabs(Er[i])>largest_inv_A2 ) largest_inv_A2 = fabs(Er[i]);
   
   largest_inv_A2 = sqrt(largest_inv_A2);
 

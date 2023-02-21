@@ -174,7 +174,6 @@ void LU2x2InverseOp::describe(Teuchos::FancyOStream & out_arg,
                 << ",domainDim=" << this->domain()->dim()
                 << "}\n";
            {
-              OSTab tab(out);
               *out << "[invS]:\n";
               *out << Teuchos::describe(*invS_,verbLevel);
 

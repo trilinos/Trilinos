@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "GetLongOpt.h"
 
@@ -115,4 +114,3 @@ private:
   StringIdVector nsetVarNames_;
   StringIdVector ssetVarNames_;
 };
-#endif

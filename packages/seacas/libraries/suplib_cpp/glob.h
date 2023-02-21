@@ -436,11 +436,7 @@ namespace glob {
       case Type::AT:
       case Type::ANY:
       case Type::STAR:
-      case Type::PLUS: {
-        std::tie(r, std::ignore) = BasicCheck(str, pos);
-        break;
-      }
-
+      case Type::PLUS:
       case Type::NEG: {
         std::tie(r, std::ignore) = BasicCheck(str, pos);
         break;

@@ -6,7 +6,7 @@
       <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
     </ParameterList>
     <ParameterList name="myMatlabPtentFactory">
-      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/> 
+      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/>
       <Parameter name="Provides" type="string" value="P, Nullspace"/>
       <Parameter name="Needs Fine" type="string" value="Aggregates"/>
       <Parameter name="Needs Coarse" type="string" value=""/>

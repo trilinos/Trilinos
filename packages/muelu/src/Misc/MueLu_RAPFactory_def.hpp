@@ -247,10 +247,14 @@ namespace MueLu {
         if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
-        APparams->set("graph", AP);
-        Set(coarseLevel, "AP reuse data",  APparams);
-        RAPparams->set("graph", Ac);
-        Set(coarseLevel, "RAP reuse data", RAPparams);
+        if (!isGPU) {
+          APparams->set("graph", AP);
+          Set(coarseLevel, "AP reuse data",  APparams);
+        }
+        if (!isGPU) {
+          RAPparams->set("graph", Ac);
+          Set(coarseLevel, "RAP reuse data", RAPparams);
+        }
       } else {
         RCP<ParameterList> RAPparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
@@ -282,7 +286,7 @@ namespace MueLu {
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
                         doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
-                        RAPparams);         
+                        RAPparams);
         } else {
           RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
           Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LO>(0));
@@ -324,8 +328,10 @@ namespace MueLu {
         if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
-        RAPparams->set("graph", Ac);
-        Set(coarseLevel, "RAP reuse data", RAPparams);
+        if (!isGPU) {
+          RAPparams->set("graph", Ac);
+          Set(coarseLevel, "RAP reuse data", RAPparams);
+        }
       }
 
 

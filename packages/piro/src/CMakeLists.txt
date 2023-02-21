@@ -10,8 +10,8 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 #
 
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.hpp
   )
@@ -34,7 +34,7 @@ APPEND_SET(HEADERS
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
 APPEND_SET(HEADERS
   Piro_Epetra_MatrixFreeDecorator.hpp
   Piro_Epetra_InvertMassMatrixDecorator.hpp
@@ -46,7 +46,7 @@ APPEND_SET(SOURCES
   Piro_StratimikosUtils.cpp
   Piro_Version.cpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
 APPEND_SET(SOURCES
   Piro_Epetra_MatrixFreeDecorator.cpp
   Piro_Epetra_InvertMassMatrixDecorator.cpp
@@ -69,7 +69,6 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
-    Piro_Reduced_Objective_SimOpt.hpp
     Piro_ThyraProductME_Objective_SimOpt.hpp
     Piro_ThyraProductME_Constraint_SimOpt.hpp
     Piro_NOXSolver.hpp
@@ -85,7 +84,7 @@ IF (Piro_ENABLE_NOX)
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp
   )
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
   APPEND_SET(HEADERS
     Piro_Epetra_NOXSolver.hpp
     Piro_Epetra_LOCASolver.hpp
@@ -103,7 +102,7 @@ ENDIF()
     Piro_LOCAAdaptiveSolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
     )
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
   APPEND_SET(SOURCES
     Piro_Epetra_NOXSolver.cpp
     Piro_Epetra_LOCASolver.cpp
@@ -126,7 +125,7 @@ IF (Piro_ENABLE_Rythmos)
     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp
     )
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
   APPEND_SET(HEADERS
     Piro_Epetra_RythmosSolver.hpp
   )
@@ -152,7 +151,7 @@ IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
 ENDIF()
 
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
-IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND Piro_ENABLE_Epetra)
+IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
   APPEND_SET(HEADERS
     Piro_Epetra_StokhosNOXObserver.hpp
     Piro_Epetra_StokhosSolverFactory.hpp
@@ -171,8 +170,8 @@ ENDIF()
 
 # Add rol/adapters/thyra directories if Rol is enabled
 IF (Piro_ENABLE_ROL)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector)
 ENDIF()
 #
 
@@ -190,7 +189,7 @@ APPEND_SET(HEADERS
   )
 APPEND_SET(SOURCES Piro_PerformSolve.cpp)
 
-IF(Piro_ENABLE_Epetra)
+IF(PIRO_HAVE_EPETRA_STACK)
 APPEND_SET(HEADERS Piro_Epetra_PerformSolve.hpp)
 APPEND_SET(SOURCES Piro_Epetra_PerformSolve.cpp)
 APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)
@@ -200,7 +199,7 @@ ENDIF()
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 
-IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND Piro_ENABLE_Epetra)
+IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
   APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp)
   APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
 ENDIF()

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -18,10 +18,6 @@
 
 #if !defined(NO_ZOLTAN_SUPPORT)
 extern "C" int Zoltan_get_global_id_type(char **name);
-#endif
-
-#if defined(SEACAS_HAVE_CGNS)
-#include <cgns/Iocgns_IOFactory.h>
 #endif
 
 namespace {
@@ -144,7 +140,7 @@ namespace {
 
 namespace Ioss {
 
-  const std::vector<std::string> &valid_decomp_methods()
+  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods()
   {
     static const std::vector<std::string> valid_methods
     {
@@ -165,10 +161,10 @@ namespace Ioss {
     return valid_methods;
   }
 
-  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props,
-                                             Ioss_MPI_Comm                comm);
-  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props,
-                                                 Ioss_MPI_Comm                comm);
+  template IOSS_EXPORT Decomposition<int>::Decomposition(const Ioss::PropertyManager &props,
+                                                         Ioss_MPI_Comm                comm);
+  template IOSS_EXPORT Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props,
+                                                             Ioss_MPI_Comm                comm);
 
   template <typename INT>
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm)
@@ -193,10 +189,12 @@ namespace Ioss {
     }
   }
 
-  template void Decomposition<int>::generate_entity_distributions(size_t globalNodeCount,
-                                                                  size_t globalElementCount);
-  template void Decomposition<int64_t>::generate_entity_distributions(size_t globalNodeCount,
-                                                                      size_t globalElementCount);
+  template IOSS_EXPORT void
+  Decomposition<int>::generate_entity_distributions(size_t globalNodeCount,
+                                                    size_t globalElementCount);
+  template IOSS_EXPORT void
+  Decomposition<int64_t>::generate_entity_distributions(size_t globalNodeCount,
+                                                        size_t globalElementCount);
 
   template <typename INT>
   void Decomposition<INT>::generate_entity_distributions(size_t globalNodeCount,
@@ -285,12 +283,12 @@ namespace Ioss {
 
   // ========================================================================
   // Decompose model function (confusing with all the #if...
-  template void Decomposition<int>::decompose_model(
+  template IOSS_EXPORT void Decomposition<int>::decompose_model(
 #if !defined(NO_ZOLTAN_SUPPORT)
       Zoltan &zz,
 #endif
       std::vector<BlockDecompositionData> &element_blocks);
-  template void Decomposition<int64_t>::decompose_model(
+  template IOSS_EXPORT void Decomposition<int64_t>::decompose_model(
 #if !defined(NO_ZOLTAN_SUPPORT)
       Zoltan &zz,
 #endif
@@ -380,12 +378,10 @@ namespace Ioss {
     show_progress("\tIoss::decompose model finished");
   }
 
-  template void Decomposition<int>::calculate_element_centroids(const std::vector<double> &x,
-                                                                const std::vector<double> &y,
-                                                                const std::vector<double> &z);
-  template void Decomposition<int64_t>::calculate_element_centroids(const std::vector<double> &x,
-                                                                    const std::vector<double> &y,
-                                                                    const std::vector<double> &z);
+  template IOSS_EXPORT void Decomposition<int>::calculate_element_centroids(
+      const std::vector<double> &x, const std::vector<double> &y, const std::vector<double> &z);
+  template IOSS_EXPORT void Decomposition<int64_t>::calculate_element_centroids(
+      const std::vector<double> &x, const std::vector<double> &y, const std::vector<double> &z);
 
   template <typename INT>
   void Decomposition<INT>::calculate_element_centroids(const std::vector<double> &x,
@@ -1146,8 +1142,8 @@ namespace Ioss {
   }
 #endif
 
-  template void Decomposition<int>::build_global_to_local_elem_map();
-  template void Decomposition<int64_t>::build_global_to_local_elem_map();
+  template IOSS_EXPORT void Decomposition<int>::build_global_to_local_elem_map();
+  template IOSS_EXPORT void Decomposition<int64_t>::build_global_to_local_elem_map();
 
   template <typename INT> void Decomposition<INT>::build_global_to_local_elem_map()
   {

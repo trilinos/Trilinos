@@ -107,7 +107,6 @@ namespace FROSch {
                                                bool reuseInitialize)
     {
         FROSCH_ASSERT(false,"FROSch::ThyraSolver: updateMatrix() is not implemented for the ThyraSolver yet.");
-        return 0;
     }
 
     template<class SC,class LO,class GO,class NO>

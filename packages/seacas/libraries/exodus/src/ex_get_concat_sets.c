@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -118,7 +118,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   }
 
   for (i = 0; i < num_sets; i++) {
-    int set_id;
+    int64_t set_id;
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       set_id = ((int64_t *)set_specs->sets_ids)[i];
     }

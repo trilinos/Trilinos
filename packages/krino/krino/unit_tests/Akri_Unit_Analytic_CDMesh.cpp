@@ -82,36 +82,32 @@ public:
   {
     NodeToCapturedDomainsMap nodesToCapturedDomains;
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+    {
+      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
           cdfemSupport.get_interpolation_fields(),
           interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees());
-    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
-
-    if(!krino_mesh->my_old_mesh)
-    {
-      krino_mesh->my_old_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
-      krino_mesh->my_old_mesh->generate_nonconformal_elements();
+          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
+          minIntPtWeightForEstimatingCutQuality);
     }
+    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
     krino_mesh->generate_nonconformal_elements();
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
       krino_mesh->snap_nearby_intersections_to_nodes(interfaceGeometry, nodesToCapturedDomains);
     krino_mesh->set_phase_of_uncut_elements(interfaceGeometry);
     krino_mesh->triangulate(interfaceGeometry);
-    krino_mesh->my_old_mesh->stash_field_data(-1, *krino_mesh);
-
-
     krino_mesh->decompose(interfaceGeometry);
+    krino_mesh->stash_field_data(-1);
     krino_mesh->modify_mesh();
     krino_mesh->prolongation();
   }
 
   void commit()
   {
-    krino_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
+    krino_mesh = std::make_unique<CDMesh>(fixture.bulk_data());
   }
 
   void write_results(const std::string & filename)
@@ -170,7 +166,7 @@ public:
   MESH_FIXTURE fixture;
   FieldRef coord_field;
   CDFEM_Support & cdfemSupport;
-  std::shared_ptr<CDMesh> krino_mesh;
+  std::unique_ptr<CDMesh> krino_mesh;
   LogRedirecter log;
   Surface_Identifier surfaceIdentifier{0};
 };
@@ -181,7 +177,7 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
-    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&mySphere}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
@@ -250,7 +246,7 @@ public:
       myCube.add( std::move(facet) );
     }
 
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }

@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
       matrixParams.set("matrixType","Laplace1D");
       matrixParams.set("nx",(GlobalOrdinal)300);// needs to be even
 
-      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixParams,Xpetra::UseTpetra);  
+      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixParams,Xpetra::UseTpetra);
       out<<"Matrix Size (block) = "<<A->getGlobalNumRows()<<" (point) "<<A->getRangeMap()->getGlobalNumElements()<<std::endl;
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
         mueluFactory.SetupHierarchy(*H);
 
         // Test to make sure all of the matrices in the Hierarchy are actually Block Matrices
-        using helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;        
+        using helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
         for(int j=0; j<H->GetNumLevels(); j++) {
           RCP<Level> level = H->GetLevel(j);
 
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
             RCP<Matrix> P = level->Get<RCP<Matrix> >("P");
             TEST_EQUALITY(helpers::isTpetraBlockCrs(P),true);
             RCP<Matrix> R = level->Get<RCP<Matrix> >("R");
-            TEST_EQUALITY(helpers::isTpetraBlockCrs(R),true);          
+            TEST_EQUALITY(helpers::isTpetraBlockCrs(R),true);
           }
         }
         
@@ -170,7 +170,7 @@ MT compare_matrices(RCP<Matrix> & Ap, RCP<Matrix> &Ab) {
 
   RCP<const CRS> Ap_t = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraCrs(Ap);
   auto Ab_t = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraBlockCrs(Ab);
-  RCP<CRS> Ab_as_point = Tpetra::convertToCrsMatrix<SC,LO,GO,NO>(*Ab_t);  
+  RCP<CRS> Ab_as_point = Tpetra::convertToCrsMatrix<SC,LO,GO,NO>(*Ab_t);
 
   RCP<CRS> diff = rcp(new CRS(Ap_t->getCrsGraph()));
   diff->setAllToScalar(zero);
@@ -195,13 +195,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
       matrixParams.set("matrixType","Laplace1D");
       matrixParams.set("nx",(GlobalOrdinal)300);// needs to be even
       
-      RCP<Matrix> PointA = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);  
+      RCP<Matrix> PointA = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);
       RCP<Matrix> BlockA;
       {
         using XCRS = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
 
         auto tA = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraCrs(PointA);
-        auto bA = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*tA,1);      
+        auto bA = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*tA,1);
         RCP<XCRS> AA   = rcp(new XCRS(bA));
         BlockA = rcp(new CrsMatrixWrap(rcp_implicit_cast<CrsMatrix>(AA)));
       }
@@ -222,13 +222,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
         // Point Hierarchy
         ParameterListInterpreter mueluFactory1("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
         RCP<Hierarchy> PointH = mueluFactory1.CreateHierarchy();
-        PointH->GetLevel(0)->Set("A", PointA);       
+        PointH->GetLevel(0)->Set("A", PointA);
         mueluFactory1.SetupHierarchy(*PointH);
 
         // Block Hierachy
         ParameterListInterpreter mueluFactory2("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
         RCP<Hierarchy> BlockH = mueluFactory2.CreateHierarchy();
-        BlockH->GetLevel(0)->Set("A", BlockA);       
+        BlockH->GetLevel(0)->Set("A", BlockA);
         mueluFactory2.SetupHierarchy(*BlockH);
 
         // Check to see that we get the same matrices in both hierarchies
@@ -246,19 +246,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
           RCP<Matrix> Ap = Plevel->Get<RCP<Matrix> >("A");
           RCP<Matrix> Ab = Blevel->Get<RCP<Matrix> >("A");
           MT norm = compare_matrices<Matrix,MT>(Ap,Ab);
-          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
 
           // Compare P, R
           if(j>0) {
             RCP<Matrix> Pp = Plevel->Get<RCP<Matrix> >("P");
             RCP<Matrix> Pb = Blevel->Get<RCP<Matrix> >("P");
             norm = compare_matrices<Matrix,MT>(Pp,Pb);
-            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
 
             RCP<Matrix> Rp = Plevel->Get<RCP<Matrix> >("R");
             RCP<Matrix> Rb = Blevel->Get<RCP<Matrix> >("R");
             norm = compare_matrices<Matrix,MT>(Rp,Rb);
-            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
           }
         }
 

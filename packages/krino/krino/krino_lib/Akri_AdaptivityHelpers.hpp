@@ -17,9 +17,8 @@
 namespace krino {
 
 class CDFEM_Support;
+class RefinementInterface;
 
-stk::mesh::Part & get_refinement_active_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank);
-stk::mesh::Part & get_refinement_inactive_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank);
 stk::mesh::Selector cdfem_do_not_refine_or_unrefine_selector(const CDFEM_Support & cdfem_support);
 
 enum Refinement_Marker
@@ -30,10 +29,9 @@ enum Refinement_Marker
   };
 
 void
-perform_multilevel_adaptivity(stk::mesh::BulkData & mesh,
-    const std::string & marker_field_name,
-    const std::function<void(const std::string &, int)> & marker_function,
-    const std::function<void(const std::string &, int)> & adapt_function,
+perform_multilevel_adaptivity(RefinementInterface & refinement,
+    stk::mesh::BulkData & mesh,
+    const std::function<void(int)> & marker_function,
     const stk::mesh::Selector & do_not_refine_selector = stk::mesh::Selector());
 
 }

@@ -47,6 +47,8 @@
 #ifndef BLASWRAPPER_COPY_HPP_
 #define BLASWRAPPER_COPY_HPP_
 
+#include <stdexcept>
+
 #include<BlasWrapper_copy_spec.hpp>
 #include<KokkosKernels_helpers.hpp>
 
@@ -85,13 +87,13 @@ copy (const XMV& X, const YMV& Y)
     os << "BlasWrapper::copy (MV): Dimensions of Y and X do not match: "
        << "Y: " << Y.extent(0) << " x " << Y.extent(1)
        << ", X: " << X.extent(0) << " x " << X.extent(1);
-    Kokkos::Impl::throw_runtime_exception (os.str ());
+    throw std::runtime_error (os.str ());
   }
 
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
+    typename std::conditional<
       YMV::rank == 1,
       typename YMV::non_const_value_type*,
       typename YMV::non_const_value_type** >::type,
@@ -99,7 +101,7 @@ copy (const XMV& X, const YMV& Y)
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
+    typename std::conditional<
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,

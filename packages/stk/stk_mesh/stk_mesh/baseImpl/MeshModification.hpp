@@ -116,11 +116,16 @@ public:
     const DeletedEntityCache& get_deleted_entity_cache() const { return m_deleted_entity_cache; }
     void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing);
 private:
+    bool remote_owner_destroyed(EntityKey key, const std::vector<EntityParallelState>& pllStates) const;
     void reset_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = false; }
-    void internal_establish_new_owner(stk::mesh::Entity entity);
-    void internal_update_parts_for_shared_entity(stk::mesh::Entity entity,
+    void process_changed_ownership_and_sharing(bool remoteOwnerDestroyed,
+                                               Entity entity,
+                                               bool shouldRemoveAuraPart = false);
+    void internal_establish_new_owner(Entity entity);
+    void internal_update_parts_for_shared_entity(Entity entity,
                                                  const bool is_entity_shared,
-                                                 const bool did_i_just_become_owner);
+                                                 const bool did_i_just_become_owner,
+                                                 const bool should_remove_aura_part = false);
     void destroy_dependent_ghosts(Entity entity,
                                   EntityProcVec& entitiesToRemoveFromSharing,
                                   EntityVector& auraEntitiesToDestroy);
@@ -130,9 +135,6 @@ private:
     void internal_resolve_formerly_shared_entities(const EntityVector& entitiesNoLongerShared);
     void reset_undeleted_entity_states_to_unchanged();
     void ensure_meta_data_is_committed();
-
-    bool internal_resolve_node_sharing(modification_optimization opt);
-    bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
 
     stk::mesh::BulkData &m_bulkData;
     std::vector<stk::mesh::EntityState> m_entity_states;

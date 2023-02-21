@@ -91,7 +91,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   std::vector<MPI_Request> recvRequests(num_comm_procs);
   std::vector<MPI_Status> statuses(num_comm_procs);
 
-  Kokkos::parallel_for(num_comm_procs, KOKKOS_LAMBDA(size_t iproc)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, num_comm_procs), KOKKOS_LAMBDA(size_t iproc)
   {
                          const size_t dataBegin = bufferOffsets[iproc];
                          const size_t dataEnd   = bufferOffsets[iproc+1];
@@ -108,17 +108,16 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     MPI_Isend((deviceSendData.data()+dataBegin), bufSize, MPI_CHAR, iproc, msgTag, mpi_communicator, &sendRequests[proc]);
   }
 
-  MPI_Status status;
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     int idx = static_cast<int>(proc);
     if (deterministic) {
-      MPI_Wait(&recvRequests[proc], &status);
+      MPI_Wait(&recvRequests[proc], MPI_STATUS_IGNORE);
     }
     else {
-      MPI_Waitany(static_cast<int>(num_comm_procs), recvRequests.data(), &idx, &status);
+      MPI_Waitany(static_cast<int>(num_comm_procs), recvRequests.data(), &idx, MPI_STATUS_IGNORE);
     }
 
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t)
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(size_t)
     {
                            const size_t dataBegin = bufferOffsets[idx];
                            const size_t dataEnd   = bufferOffsets[idx+1];

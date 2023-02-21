@@ -4,7 +4,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 
 /* Tpetra provides official support for the following nodes */
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 /* Tpetra provides official support for dd_real and qd_real */
 #if defined(HAVE_TPETRA_QD)

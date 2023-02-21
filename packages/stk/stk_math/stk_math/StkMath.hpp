@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
+#include <type_traits>
 #include <Kokkos_Macros.hpp>
 
 #define STK_MATH_FORCE_INLINE KOKKOS_FORCEINLINE_FUNCTION

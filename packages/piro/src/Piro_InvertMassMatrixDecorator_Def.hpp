@@ -347,8 +347,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
         //IKT, 5/31/17: adding the following logic which checks invDiag vector for nans
         //and throws an exception if nans are found.
-        typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType ScalarMag;
-        typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+        typedef Teuchos::ScalarTraits<typename Thyra::ModelEvaluator<Scalar>::ScalarMag> SMT;
         const Scalar sumInvDiag = sum(*invDiag);
         bool isNanInvDiag = SMT::isnaninf(sumInvDiag);
         if (isNanInvDiag) {

@@ -1187,13 +1187,13 @@ public:
   typedef typename A::size_type size_type;
   typedef typename A::difference_type difference_type;
 
-  typedef typename A::pointer pointer;
-  typedef typename A::const_pointer const_pointer;
-  typedef typename A::reference reference;
-  typedef typename A::const_reference const_reference;
+  typedef value_type * pointer;
+  typedef const value_type * const_pointer;
+  typedef value_type & reference;
+  typedef const value_type & const_reference;
 
-  typedef typename A::pointer iterator;
-  typedef typename A::const_pointer const_iterator;
+  typedef pointer iterator;
+  typedef const_pointer const_iterator;
 
   typedef typename std::reverse_iterator<iterator> reverse_iterator;
   typedef typename std::reverse_iterator<const_iterator> const_reverse_iterator;

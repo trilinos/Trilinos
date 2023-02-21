@@ -217,14 +217,7 @@ namespace { // (anonymous)
          << ".  Please report this bug to the Tpetra developers.");
     }
 
-    dual_view_type dv (d_view, Kokkos::create_mirror_view (d_view));
-    // Whether or not the user cares about the initial contents of the
-    // MultiVector, the device and host views are out of sync.  We
-    // prefer to work in device memory.  The way to ensure this
-    // happens is to mark the device view as modified.
-    dv.modify_device ();
-
-    return wrapped_dual_view_type(dv);
+    return wrapped_dual_view_type(d_view);
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -242,7 +235,7 @@ namespace { // (anonymous)
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
     //
-    typedef typename Kokkos::Impl::if_c<
+    typedef typename std::conditional<
       Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,
@@ -1791,8 +1784,8 @@ namespace Tpetra {
     // - The number of vectors needs to be 1, otherwise we need to
     //   reorder the received data.
     if ((dual_view_type::impl_dualview_is_single_device::value ||
-         (Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_device()) ||
-         (!Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_host())) &&
+         (Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_device()) ||
+         (!Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_host())) &&
         areRemoteLIDsContiguous &&
         (CM == INSERT || CM == REPLACE) &&
         (getNumVectors() == 1) &&
@@ -2008,8 +2001,8 @@ namespace Tpetra {
 
       // This fixes GitHub Issue #4418.
       const bool use_atomic_updates = unpackOnHost ?
-        host_exec_space::concurrency () != 1 :
-        dev_exec_space::concurrency () != 1;
+        host_exec_space().concurrency () != 1 :
+        dev_exec_space().concurrency () != 1;
 
       if (printDebugOutput) {
         std::ostringstream os;

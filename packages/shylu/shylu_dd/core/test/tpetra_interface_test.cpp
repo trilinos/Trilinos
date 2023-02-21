@@ -78,17 +78,18 @@ int main(int argc, char** argv)
 
   Tpetra::ScopeGuard mpiSession(&argc, &argv);
   Teuchos::RCP <const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-    int myPID = comm->getRank();
-  if(myPID == 0)
-    {
-      cout << "Starting Tpetra interface test" << endl;
-    }
-
+  int myPID = comm->getRank();
 
   bool success = true;
   string pass = "End Result: TEST PASSED";
-  string fail = "End Result: TEST PASSED";
+  string fail = "End Result: TEST FAILED";
 
+#if !defined(HAVE_TPETRA_INST_INT_INT)
+  if(myPID == 0)
+    {
+      cout << "Tpetra was not instantiated with INT_INT" << endl;
+    }
+#else
   typedef double scalar_type;
   typedef int local_o_type;
   typedef int global_o_type;
@@ -99,6 +100,10 @@ int main(int argc, char** argv)
   typedef Tpetra::CrsMatrix<scalar_type, local_o_type, global_o_type, node_type> Matrix_t;
   typedef Tpetra::MultiVector<scalar_type, local_o_type, global_o_type, node_type> Vector_t;
 
+  if(myPID == 0)
+    {
+      cout << "Starting Tpetra interface test" << endl;
+    }
 
   Teuchos::ParameterList defaultParameters;
 
@@ -108,11 +113,6 @@ int main(int argc, char** argv)
   //Get Matrix
   Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm);
 
-  if( &A == NULL)
-    {
-      success = false;
-    }
-
 
   //Note:: Tpetra::MatrixMarket::Reader is providing A->getColMap() wrong and equal A->row
   Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
@@ -120,14 +120,16 @@ int main(int argc, char** argv)
   b->randomize();
   x->randomize();
 
-    cout << "num_vector: " << b->getNumVectors() << " "
-       << x->getNumVectors() << endl;
-  cout << "length: " << b->getGlobalLength() << " "
-       << x->getGlobalLength() << endl;
+  if(myPID == 0)
+    {
+      cout << "num_vector     : " << b->getNumVectors() << " "
+           << x->getNumVectors() << endl;
+      cout << "length         : " << b->getGlobalLength() << " "
+           << x->getGlobalLength() << endl;
 
-  cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
-
+      cout << "A length       : " << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
+      cout << "A local length : " << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
+    }
 
   /*-----------------have_interface-----------------*/
   /*---The have_interface checks is all the parameter list makes sense---*/
@@ -146,8 +148,11 @@ int main(int argc, char** argv)
   pLUList->set("Zoltan2 Input", ptemp);
 
 
-  cout << " \n\n--------------------BIG BREAK --------------\n\n";
-  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+  if(myPID == 0)
+    {
+      cout << " \n\n--------------------BIG BREAK --------------\n\n";
+      Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+    }
 
 
 #ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
@@ -155,8 +160,10 @@ int main(int argc, char** argv)
   ShyLU::PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
   partI3.partition();
 
-  cout << "Done with graph - parmetis" << endl;
-
+  if(myPID == 0)
+    {
+      cout << "Done with graph - parmetis" << endl;
+    }
 #else
 
   success = false;
@@ -177,17 +184,19 @@ int main(int argc, char** argv)
   pLUList->set("Amesos2 Input", ptemp);
 
 
-  cout << " \n\n--------------------BIG BREAK --------------\n\n";
-  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+  if(myPID == 0)
+    {
+      cout << " \n\n--------------------BIG BREAK --------------\n\n";
+      Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
-  cout << "num_vector: " << b->getNumVectors() << " "
-       << x->getNumVectors() << endl;
-  cout << "length: " << b->getGlobalLength() << " "
-       << x->getGlobalLength() << endl;
+      cout << "num_vector: " << b->getNumVectors() << " "
+           << x->getNumVectors() << endl;
+      cout << "length: " << b->getGlobalLength() << " "
+           << x->getGlobalLength() << endl;
 
-  cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
-
+      cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
+      cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
+    }
 
 
   ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
@@ -196,13 +205,15 @@ int main(int argc, char** argv)
 
 //Note: should multiple to set b and x for success
 
-  cout << "Done with Amesos2-SuperLU" << endl;
-
+  if(myPID == 0)
+    {
+      cout << "Done with Amesos2-SuperLU" << endl;
+    }
 #else
 
   success = false;
 
-
+#endif
 #endif
 
   if(myPID == 0)
@@ -213,6 +224,6 @@ int main(int argc, char** argv)
         cout << fail << endl;
     }
 
-
+  return 0;
 }
 

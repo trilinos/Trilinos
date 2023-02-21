@@ -475,8 +475,6 @@ namespace MueLu {
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
-    validParamList->set< bool >                  ("lightweight wrap",            true, "Experimental option for lightweight graph access");
-
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
@@ -490,10 +488,8 @@ namespace MueLu {
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
-        Input(currentLevel, "Coordinates");
-    }
+    if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
+      Input(currentLevel, "Coordinates");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -521,9 +517,9 @@ namespace MueLu {
 
        If numPDEs>1
          If matrix uses point storage, then storageblocksize=1  and blkSize=numPDEs.
-         If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.  
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.
          Thus far, only storageblocksize=numPDEs and blkSize=1 has been tested.
-      */      
+      */
  
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
     LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
@@ -531,11 +527,6 @@ namespace MueLu {
     auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-
-    bool doLightWeightWrap = pL.get<bool>("lightweight wrap");
-    GetOStream(Warnings0) << "lightweight wrap is deprecated" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(!doLightWeightWrap, Exceptions::RuntimeError,
-                               "MueLu KokkosRefactor only supports \"lightweight wrap\"=\"true\"");
 
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
 

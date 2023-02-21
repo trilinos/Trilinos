@@ -524,7 +524,7 @@ int main(int argc, char *argv[]) {
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
-          int ielem = i + j * NX + k * NX * NY;
+          ielem = i + j * NX + k * NX * NY;
           for (int m=0; m<numNodesPerElem; m++){
               fe2nout << elemToNode(ielem,m) <<"  ";
            }
@@ -573,7 +573,7 @@ int main(int argc, char *argv[]) {
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
-          int ielem = i + j * NX + k * NX * NY;
+          ielem = i + j * NX + k * NX * NY;
           double midElemX = nodeCoord(elemToNode(ielem,0),0) + hx/2.0;
           double midElemY = nodeCoord(elemToNode(ielem,0),1) + hy/2.0;
           double midElemZ = nodeCoord(elemToNode(ielem,0),2) + hz/2.0;

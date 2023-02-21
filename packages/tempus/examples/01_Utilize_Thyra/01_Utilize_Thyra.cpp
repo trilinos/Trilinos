@@ -37,7 +37,11 @@ using Teuchos::RCP;
  *  In the following table, code snippets from the \ref 00_Basic_Problem.cpp
  *  "Basic Problem" tutorial are replaced with snippets using Thyra to create
  *  01_Utilize_Thyra.cpp for the \ref 01_Utilize_Thyra.cpp "Utilize Thyra"
- *  tutorial.
+ *  tutorial.  This is similar to performing a diff between
+ *  00_Basic_Problem.cpp and 01_Utilize_Thyra.cpp, but the first column
+ *  provides comments related to the changes.  You may want to to do a
+ *  diff (e.g., vimdiff or tkdiff) to see these changes within main
+ *  (e.g., vimdiff 00_Basic_Problem/00_Basic_Problem.cpp 01_Utilize_Thyra/01_Utilize_Thyra.cpp).
  *
  *  <table>
  *    <tr> <th> Comments <th> Original "Basic Problem" Code Snippet
@@ -45,7 +49,10 @@ using Teuchos::RCP;
  *    <tr VALIGN=TOP>
  *    <td>
  *      We first need to replace the C++ double arrays with a vector space
- *      to construct the Thyra::Vector.
+ *      to construct the Thyra::Vector.  We additionally have introduced
+ *      the use of Teuchos Reference-Counted Pointers (Teuchos:RCP), which
+ *      are Trilinos's smart pointers.  Details on RCP can be found
+ *      at https://www.osti.gov/servlets/purl/919177.
  *    <td>
  *      @code
  *        // Solution and its time-derivative.
@@ -193,7 +200,7 @@ using Teuchos::RCP;
  *
  *  - Back to: \ref tutorials
  *  - Previous: \ref example-00
- *  - Next: Use ModelEvaluator
+ *  - Next: \ref example-02
  */
 int main(int argc, char *argv[])
 {

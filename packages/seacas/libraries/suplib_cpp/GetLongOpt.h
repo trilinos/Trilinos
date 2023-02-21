@@ -6,9 +6,7 @@
  * See packages/seacas/LICENSE for details
  */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-
-#ifndef _GetLongOption_h_
-#define _GetLongOption_h_
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -110,4 +108,3 @@ public:
     return value;
   }
 };
-#endif /* _GetLongOption_h_ */

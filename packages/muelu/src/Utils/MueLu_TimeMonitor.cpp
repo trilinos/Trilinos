@@ -51,6 +51,27 @@
 
 namespace MueLu {
 
+  namespace {
+    //! Certain output formats must be observed
+    std::string cleanupLabel(const std::string& label) {
+      // Our main interest is to remove double quotes from the label
+      // since tracing formats can be written in JSON/YAML
+      auto clean_label = label;
+      std::vector<std::string> bad_values =  {"\""};
+      std::vector<std::string> good_values = {"'"};
+      for(size_t i=0; i<bad_values.size(); ++i){
+        const auto & bad_value = bad_values[i];
+        const auto & good_value = good_values[i];
+        size_t pos = 0;
+        while ( ( pos = clean_label.find( bad_value, pos ) ) != std::string::npos ){
+          clean_label.replace( pos, bad_value.size(), good_value );
+          pos += good_value.size();
+        }
+      }
+      return clean_label;
+    }
+  }
+
   TimeMonitor::TimeMonitor(const BaseClass& object, const std::string& msg, MsgType timerLevel) {
     // Inherit props from 'object'
     SetVerbLevel      (object.GetVerbLevel());
@@ -61,9 +82,9 @@ namespace MueLu {
 
       if (!IsPrint(NoTimeReport)) {
         // TODO: there is no function to register a timer in Teuchos::TimeMonitor after the creation of the timer. But would be useful...
-        timer_ = Teuchos::TimeMonitor::getNewTimer("MueLu: " + msg);
+        timer_ = Teuchos::TimeMonitor::getNewTimer(cleanupLabel("MueLu: " + msg));
       } else {
-        timer_ = rcp(new Teuchos::Time("MueLu: " + msg));
+        timer_ = rcp(new Teuchos::Time(cleanupLabel("MueLu: " + msg)));
       }
 
       // Start the timer (this is what is done by Teuchos::TimeMonitor)

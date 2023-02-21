@@ -49,7 +49,7 @@
 #include "Tpetra_Directory_fwd.hpp"
 #include "Tpetra_TieBreak_fwd.hpp"
 #include "Tpetra_Details_LocalMap.hpp"
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"

@@ -1,5 +1,23 @@
 # Change Log
 
+## [3.7.01](https://github.com/kokkos/kokkos-kernels/tree/3.7.01) (2022-12-01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.00...3.7.01)
+
+### Bug Fixes:
+
+- Use CRS matrix sort, instead of Kokkos::sort on each row [\#1553](https://github.com/kokkos/kokkos-kernels/pull/1553)
+- Change template type for StaticCrsGraph in BsrMatrix [\#1531](https://github.com/kokkos/kokkos-kernels/pull/1531)
+- Remove listing of undefined TPL deps [\#1568](https://github.com/kokkos/kokkos-kernels/pull/1568)
+- Fix using SpGEMM with nonstandard scalar type, with MKL enabled [\#1591](https://github.com/kokkos/kokkos-kernels/pull/1591)
+- Move destroying dense vector descriptors out of cuSparse sptrsv handle [\#1590](https://github.com/kokkos/kokkos-kernels/pull/1590)
+- Fix `cuda_data_type_from` to return `CUDA_C_64F` for `Kokkos::complex<double>` [\#1604](https://github.com/kokkos/kokkos-kernels/pull/1604)
+- Disable compile-time check in cuda_data_type_from on supported scalar types for cuSPARSE [\#1605](https://github.com/kokkos/kokkos-kernels/pull/1605)
+- Reduce register pressure in batched dense algorithms [\#1588](https://github.com/kokkos/kokkos-kernels/pull/1588)
+
+### Implemented enhancements:
+
+- Use new cusparseSpSV TPL for SPTRSV when cuSPARSE is enabled with CUDA >= 11.3 [\#1574](https://github.com/kokkos/kokkos-kernels/pull/1574)
+
 ## [3.7.00](https://github.com/kokkos/kokkos-kernels/tree/3.7.00) (2022-08-18)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.6.01...3.7.00)
 

@@ -52,7 +52,7 @@ class PhactoriGlyphOperation(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriGlyphOperation.ParseParametersFromJson "
           "entered\n", 100)
-
+ 
     key1 = "scale factor"
     if key1 in inJson:
       self.scaleFactor = inJson[key1]

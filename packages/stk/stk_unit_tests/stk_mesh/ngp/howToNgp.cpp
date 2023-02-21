@@ -112,8 +112,8 @@ void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldTy
                                   stk::mesh::PartOrdinal partThatDoesntHaveField)
 {
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,
@@ -204,8 +204,8 @@ void run_connected_node_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,
@@ -268,8 +268,8 @@ void run_id_test(const stk::mesh::BulkData& bulk)
 {
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,
@@ -328,8 +328,8 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,
@@ -409,7 +409,7 @@ void run_constraint_node_test(const stk::mesh::BulkData& bulk,
   const unsigned expectedNumNodes = bulk.num_nodes(constraint);
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const unsigned& i) {
                          stk::mesh::FastMeshIndex constraintMeshIndex = ngpMesh.fast_mesh_index(constraint);
 
@@ -468,8 +468,8 @@ void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy, KOKKOS_LAMBDA (const TeamHandleType& team)
@@ -546,8 +546,8 @@ void run_connected_face_permutation_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,
@@ -620,8 +620,8 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
   Kokkos::parallel_for(teamPolicy,
                        KOKKOS_LAMBDA(const TeamHandleType& team)
@@ -680,7 +680,7 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   FieldViewType fields(Kokkos::ViewAllocateWithoutInitializing("fields"),2);
   FieldViewType::HostMirror hostFields = Kokkos::create_mirror_view(fields);
 
-  Kokkos::parallel_for(2,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 2),
                        KOKKOS_LAMBDA(const unsigned& i)
                        {
                          new (&fields(i)) stk::mesh::NgpField<double>();
@@ -694,7 +694,7 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   unsigned numResults = 2;
   IntDualViewType result = ngp_unit_test_utils::create_dualview<IntDualViewType>("result",numResults);
 
-  Kokkos::parallel_for(2,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 2),
                        KOKKOS_LAMBDA(const unsigned& i)
                        {
                          result.d_view(i) = fields(i).get_ordinal() == i ? 1 : 0;
@@ -1228,8 +1228,8 @@ void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOr
 {
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
-  const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
+  typedef stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>::member_type TeamHandleType;
+  const auto& teamPolicy = stk::ngp::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
   Kokkos::parallel_for(teamPolicy,

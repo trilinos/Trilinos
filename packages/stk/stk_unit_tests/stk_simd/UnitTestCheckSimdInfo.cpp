@@ -34,6 +34,15 @@
 #include "gtest/gtest.h"
 
 #include "SimdDeviceWidths.hpp"
+#include <stk_simd_view/simd_parallel.hpp>
+
+using ExeHost = Kokkos::DefaultHostExecutionSpace;
+using ExeDev = Kokkos::DefaultExecutionSpace;
+
+template <typename ExecSpace>
+struct FuncWithExecPolicy {
+  using execution_policy = Kokkos::RangePolicy<ExecSpace>;
+};
 
 #ifdef KOKKOS_ENABLE_CUDA
 TEST( SimdInfo, checkDeviceWidths )
@@ -41,6 +50,23 @@ TEST( SimdInfo, checkDeviceWidths )
   EXPECT_EQ(stk::unit_test_util::get_float_width_on_device(), 1);
   EXPECT_EQ(stk::unit_test_util::get_double_width_on_device(), 1);
 }
+
+void do_device_test()
+{
+  const int N = 5;
+  int returnedVal = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& localVal)
+  {
+    localVal = stk::simd::get_simd_loop_size<float,FuncWithExecPolicy<ExeDev>>(N);
+  }, returnedVal);
+  EXPECT_EQ(N, returnedVal);
+}
+
+TEST( SimdInfo, checkDeviceLoopLength )
+{
+  do_device_test();
+}
+
 #endif
 
 using FloatDataNative = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::native>;
@@ -54,3 +80,12 @@ TEST( SimdInfo, checkTypes )
   stk::simd::Double d;
   EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataNative>::value));
 }
+
+TEST( SimdInfo, checkHostLoopLength )
+{
+  const int N = 19;
+  int loopSize = stk::simd::get_simd_loop_size<float,FuncWithExecPolicy<ExeHost>>(N);
+  const int expectedLoopSize = (N%stk::simd::nfloats==0 ? 0 : 1) + N/stk::simd::nfloats;
+  EXPECT_EQ(expectedLoopSize, loopSize);
+}
+

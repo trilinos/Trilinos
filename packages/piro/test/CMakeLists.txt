@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/../TriKota/Dakota/install/lib/)
 
 # Required for Dakota
@@ -13,6 +13,8 @@ IF (Piro_ENABLE_NOX)
     Main_ThyraSolver_Tpetra.cpp
     MockModelEval_A_Tpetra.cpp
     MockModelEval_A_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -25,12 +27,15 @@ IF (Piro_ENABLE_NOX)
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
     SOURCES
     Main_AnalysisDriver_Tpetra.cpp
     MockModelEval_A_Tpetra.cpp
     MockModelEval_A_Tpetra.hpp
     MockModelEval_B_Tpetra.cpp
     MockModelEval_B_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -80,14 +85,16 @@ ENDIF (Piro_ENABLE_Tempus)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
   DEST_FILES   
-        input_Solve_NOX_Thyra.xml
-        input_Analysis_ROL_Tpetra.xml
-        input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml
-        input_Analysis_ROL_ReducedSpace_Tpetra.xml
-        input_Analysis_ROL_FullSpace_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml
+        input_Solve_NOX_ForwardSensitivities_Thyra.xml
+        input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
+        input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
+        input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
         input_Tempus_BackwardEuler_SinCos.xml 
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
@@ -95,7 +102,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
 )
 
 
-IF (Piro_ENABLE_Epetra)
+IF (PIRO_HAVE_EPETRA_STACK)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnitTests
@@ -318,4 +325,4 @@ IF (Piro_ENABLE_Epetra)
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver UnitTests NOXSolver_UnitTests
   )
 
-ENDIF(Piro_ENABLE_Epetra)
+ENDIF(PIRO_HAVE_EPETRA_STACK)

@@ -128,7 +128,7 @@ namespace MueLu {
     }
     if(mode == "size" || mode =="both") {
       RCP<LocalOrdinalVector> aggregate_sizes = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map);
-      ComputeAggregateSizes(A,aggregates,aggregate_sizes);      
+      ComputeAggregateSizes(A,aggregates,aggregate_sizes);
       Set(currentLevel, "AggregateSizes",aggregate_sizes);
       OutputAggSizes(currentLevel, aggregate_sizes);
     }
@@ -367,7 +367,7 @@ namespace MueLu {
         for (int i=LO_ZERO;i<aggSize;++i) {
           // NOTE: In theory, the eigenvalues should be nearly real
           //TEUCHOS_ASSERT(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-          maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);          
+          maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
         }
         
         (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE)*maxEigenVal;
@@ -391,7 +391,7 @@ namespace MueLu {
             if (minEigenVal == MT_ZERO) minEigenVal = ev;
             else minEigenVal = std::min(minEigenVal,ev);
           }
-        }        
+        }
         if(minEigenVal == MT_ZERO)  (agg_qualities->getDataNonConst(0))[aggId] = Teuchos::ScalarTraits<MT>::rmax();
         else (agg_qualities->getDataNonConst(0))[aggId] = (MT_ONE+MT_ONE) / minEigenVal;
       }
@@ -486,7 +486,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     // Iterate over each node in the aggregate
     auto data = agg_sizes->getDataNonConst(0);
     for (LO i=0; i<(LO)aggSizes.size(); i++)
-      data[i] = aggSizes[i];      
+      data[i] = aggSizes[i];
 }
 
 

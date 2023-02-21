@@ -18,8 +18,8 @@
 int ex_get_assemblies(int exoid, ex_assembly *assembly)
 {
   /* Determine number of assemblies on database */
-  int num_assembly        = ex_inquire_int(exoid, EX_INQ_ASSEMBLY);
-  int max_use_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  int num_assembly        = (int)ex_inquire_int(exoid, EX_INQ_ASSEMBLY);
+  int max_use_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
 
   if (num_assembly < 0) {
     char errmsg[MAX_ERR_LENGTH];

@@ -300,6 +300,15 @@ RCP<T>::RCP(const RCP<T2>& r_ptr)
 
 
 template<class T>
+template<class T2>
+inline
+RCP<T>::RCP(const RCP<T2>& r_ptr, T* ptr)
+  : ptr_(ptr), 
+    node_(r_ptr.access_private_node())
+{}
+
+
+template<class T>
 inline
 RCP<T>::~RCP()
 {}

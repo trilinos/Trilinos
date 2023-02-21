@@ -41,6 +41,7 @@ public:
   void commit() { meta->commit(); }
   void write_results(const std::string & filename) { write_results(filename, *bulk); }
   static void write_results(const std::string & filename, stk::mesh::BulkData & mesh, const bool use64bitIds = true);
+  const stk::mesh::MetaData & meta_data() const { return *meta; }
   stk::mesh::MetaData & meta_data() { return *meta; }
   stk::mesh::BulkData & bulk_data() { return *bulk; }
 

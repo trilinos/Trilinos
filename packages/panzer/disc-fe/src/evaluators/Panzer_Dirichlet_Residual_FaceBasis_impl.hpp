@@ -142,27 +142,45 @@ evaluateFields(
                                                                   pointValues.jac.get_view(),
                                                                   subcellOrd,
                                                                   parentCell);
+    PHX::Device().fence();
 
     const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
     TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Triangle<>::key ||
                    subcellTopo.getBaseKey() == shards::Quadrilateral<>::key);
 
     const WorksetDetails & details = workset;
+    const auto subcellVertexCount = static_cast<Intrepid2::ordinal_type>(subcellTopo.getVertexCount());
 
-    int faceOrts[6] = {};
-    for(index_t c=0;c<workset.num_cells;c++) {
-      const auto ort = orientations->at(details.cell_local_ids[c]);
+    // Copy orientations to device.
+    Kokkos::View<Intrepid2::Orientation*,PHX::Device> orientations_device(Kokkos::view_alloc("orientations_device",Kokkos::WithoutInitializing),orientations->size());
+    auto orientations_host = Kokkos::create_mirror_view(Kokkos::WithoutInitializing,orientations_device);
+    for (size_t i=0; i < orientations_host.extent(0); ++i)
+      orientations_host(i) = orientations->at(i);
+    Kokkos::deep_copy(orientations_device,orientations_host);
+
+    // Local temporaries for device lambda capture
+    const auto cell_local_ids_k = details.cell_local_ids_k;
+    auto residual_local = residual;
+    auto dof_local = dof;
+    auto value_local = value;
+    auto faceNormal_local = faceNormal;
+
+    Kokkos::parallel_for("panzer::DirichletRsidual_FaceBasis::evalauteFields",
+                         workset.num_cells,
+                         KOKKOS_LAMBDA(const index_t c) {
+      const auto ort = orientations_device(cell_local_ids_k[c]);
+      Intrepid2::ordinal_type faceOrts[6] = {};
       ort.getFaceOrientation(faceOrts, numFaces); 
 
       // vertex count represent rotation count before it flips
-      const double ortVal = faceOrts[subcellOrd] < static_cast<int>(subcellTopo.getVertexCount()) ? 1.0 : -1.0;
+      const double ortVal = faceOrts[subcellOrd] < subcellVertexCount ? 1.0 : -1.0;
       for(int b=0;b<numFaceDofs;b++) {
-        residual(c,b) = ScalarT(0.0);
+        residual_local(c,b) = 0.0;
         for(int d=0;d<cellDim;d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
-        residual(c,b) *= ortVal;
-      } 
-    }
+          residual_local(c,b) += (dof_local(c,b,d)-value_local(c,b,d))*faceNormal_local(c,b,d);
+        residual_local(c,b) *= ortVal;
+      }
+    });
   }
 }
 

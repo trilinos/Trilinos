@@ -5,13 +5,10 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef SEACAS_Version_h
-#define SEACAS_Version_h
+#pragma once
 
 static char const *qainfo[] = {
     "cpup",
-    "0.93 beta",
-    "2022/02/18",
+    "0.94 beta",
+    "2022/10/31",
 };
-
-#endif // SEACAS_Version_h

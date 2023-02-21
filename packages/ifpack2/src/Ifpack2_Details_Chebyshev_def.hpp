@@ -306,6 +306,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false),
+  computeSpectralRadius_(true),
+  ckUseNativeSpMV_(false),
   debug_ (false)
 {
   checkConstructorInput ();
@@ -337,6 +339,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false),
+  computeSpectralRadius_(true),
+  ckUseNativeSpMV_(false),
   debug_ (false)
 {
   checkConstructorInput ();
@@ -382,6 +386,8 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
+  const bool defaultComputeSpectralRadius = true;
+  const bool defaultCkUseNativeSpMV = false;
   const bool defaultDebug = false;
 
   // We'll set the instance data transactionally, after all reads
@@ -403,6 +409,8 @@ setParameters (Teuchos::ParameterList& plist)
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
+  bool computeSpectralRadius = defaultComputeSpectralRadius;
+  bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
   bool debug = defaultDebug;
 
   // Fetch the parameters from the ParameterList.  Defer all
@@ -480,6 +488,10 @@ setParameters (Teuchos::ParameterList& plist)
     // would be the proper place to compute the range Map version of
     // userInvDiag.
   }
+
+  // Load the kernel fuse override from the parameter list
+  if (plist.isParameter ("chebyshev: use native spmv"))
+    ckUseNativeSpMV = plist.get("chebyshev: use native spmv", ckUseNativeSpMV);
 
   // Don't fill in defaults for the max or min eigenvalue, because
   // this class uses the existence of those parameters to determine
@@ -632,6 +644,9 @@ setParameters (Teuchos::ParameterList& plist)
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
+  if (plist.isParameter ("chebyshev: compute spectral radius")) {
+    computeSpectralRadius = plist.get<bool> ("chebyshev: compute spectral radius");
+  }
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -686,6 +701,8 @@ setParameters (Teuchos::ParameterList& plist)
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
+  computeSpectralRadius_ = computeSpectralRadius;
+  ckUseNativeSpMV_ = ckUseNativeSpMV;
   debug_ = debug;
 
   if (debug_) {
@@ -886,7 +903,8 @@ Chebyshev<ScalarType, MV>::compute ()
       
       Teuchos::RCP<Teuchos::FancyOStream> stream = (debug_ ? out_ : Teuchos::null);
       computedLambdaMax = PowerMethod::powerMethodWithInitGuess (*A_, *D_, eigMaxIters_, x, y, 
-                                                                 eigRelTolerance_, eigNormalizationFreq_, stream);
+                                                                 eigRelTolerance_, eigNormalizationFreq_, stream,
+                                                                 computeSpectralRadius_);
     }
     else
       computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);
@@ -1075,12 +1093,12 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
   RCP<V> D_rowMap;
   if (!D_.is_null() &&
-      D_->getMap()->isSameAs(*(A.getGraph ()->getRowMap ()))) {
+      D_->getMap()->isSameAs(*(A.getRowMap ()))) {
     if (debug_)
       *out_ << "Reusing pre-existing vector for diagonal extraction" << std::endl;
     D_rowMap = Teuchos::rcp_const_cast<V>(D_);
   } else {
-    D_rowMap = Teuchos::rcp(new V (A.getGraph ()->getRowMap (), /*zeroOut=*/false));
+    D_rowMap = Teuchos::rcp(new V (A.getRowMap (), /*zeroOut=*/false));
     if (debug_)
       *out_ << "Allocated new vector for diagonal extraction" << std::endl;
   }
@@ -1123,8 +1141,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
-      typedef Kokkos::Details::ArithTraits<IST> STS;
-      typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+      typedef Kokkos::Details::ArithTraits<IST> ATS;
+      typedef Kokkos::Details::ArithTraits<typename ATS::mag_type> STM;
 
       const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
       for (LO i = 0; i < lclNumRows; ++i) {
@@ -1355,7 +1373,7 @@ ifpackApplyImpl (const op_type& A,
 
     if (ck_.is_null ()) {
       Teuchos::RCP<const op_type> A_op = A_;
-      ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op));
+      ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
     }
     // W := (1/theta)*D_inv*(B-A*X) and X := X + W.
     // X := X + W
@@ -1374,7 +1392,7 @@ ifpackApplyImpl (const op_type& A,
 
   if (numIters > 1 && ck_.is_null ()) {
     Teuchos::RCP<const op_type> A_op = A_;
-    ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op));
+    ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
   }
 
   // The rest of the iterations.
@@ -1421,7 +1439,6 @@ cgMethodWithInitGuess (const op_type& A,
                           V& r)
 {
   using std::endl;
-  using STS = Teuchos::ScalarTraits<ST>;
   using MagnitudeType = typename STS::magnitudeType;
   if (debug_) {
     *out_ << " cgMethodWithInitGuess:" << endl;

@@ -449,7 +449,7 @@ namespace MueLu {
 
       vectorTimer1_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vectors CPU->GPU");
       vectorTimer2_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vector  GPU->CPU");
-      solverTimer_  = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: Solve (total)"); 
+      solverTimer_  = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: Solve (total)");
     }
 
     //! Destructor.

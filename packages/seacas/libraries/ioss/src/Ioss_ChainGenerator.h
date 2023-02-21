@@ -4,6 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
+#pragma once
+
 #include <string>
 #include <vector>
 

@@ -1214,7 +1214,7 @@ namespace Tpetra {
     using lclinds_1d_type = typename Graph::local_graph_device_type::entries_type::non_const_type;
     using values_type = typename local_matrix_device_type::values_type;
     Details::ProfilingRegion regionFLGAM
-      ("Tpetra::CrsGraph::fillLocalGraphAndMatrix");
+      ("Tpetra::CrsMatrix::fillLocalGraphAndMatrix");
 
     const char tfecfFuncName[] = "fillLocalGraphAndMatrix (called from "
       "fillComplete or expertStaticFillComplete): ";
@@ -1454,7 +1454,9 @@ namespace Tpetra {
     }
     else { // We don't have to pack, so just set the pointers.
       // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
-      myGraph_->setRowPtrsPacked(myGraph_->rowPtrsUnpacked_dev_);
+      // FIXME? This is already done in the graph fill call - need to avoid the memcpy to host
+      myGraph_->rowPtrsPacked_dev_ = myGraph_->rowPtrsUnpacked_dev_;
+      myGraph_->rowPtrsPacked_host_ = myGraph_->rowPtrsUnpacked_host_;
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
@@ -1496,13 +1498,13 @@ namespace Tpetra {
     if (debug) {
       const char myPrefix[] = "After packing, ";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (size_t (myGraph_->rowPtrsUnpacked_host_.extent (0)) != size_t (lclNumRows + 1),
-         std::logic_error, myPrefix << "myGraph_->rowPtrsUnpacked_host_.extent(0) = "
-         << myGraph_->rowPtrsUnpacked_host_.extent (0) << " != lclNumRows+1 = " <<
+        (size_t (myGraph_->rowPtrsPacked_host_.extent (0)) != size_t (lclNumRows + 1),
+         std::logic_error, myPrefix << "myGraph_->rowPtrsPacked_host_.extent(0) = "
+         << myGraph_->rowPtrsPacked_host_.extent (0) << " != lclNumRows+1 = " <<
          (lclNumRows+1) << ".");
-      if (myGraph_->rowPtrsUnpacked_host_.extent (0) != 0) {
-        const size_t numOffsets (myGraph_->rowPtrsUnpacked_host_.extent (0));
-        const size_t valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets-1);
+      if (myGraph_->rowPtrsPacked_host_.extent (0) != 0) {
+        const size_t numOffsets (myGraph_->rowPtrsPacked_host_.extent (0));
+        const size_t valToCheck = myGraph_->rowPtrsPacked_host_(numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (valToCheck != size_t (valuesPacked_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
@@ -1547,7 +1549,9 @@ namespace Tpetra {
 
       // Keep the new 1-D packed allocations.
       // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
-      myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
+      // We directly set the memory spaces to avoid a memcpy from device to host
+      myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
+      myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
 
@@ -3423,7 +3427,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       // DEEP_COPY REVIEW - VALUE-TO-DEVICE
-      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
@@ -3438,6 +3441,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                 const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
                 const typename local_matrix_device_type::values_type& values)
   {
+    using ProfilingRegion=Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::CrsMatrix::setAllValues");
     const char tfecfFuncName[] = "setAllValues: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (columnIndices.size () != values.size (), std::invalid_argument,
@@ -3454,6 +3459,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         (true, std::runtime_error, "myGraph_->setAllIndices() threw an "
          "exception: " << e.what ());
     }
+
     // Make sure that myGraph_ now has a local graph.  It may not be
     // fillComplete yet, so it's important to check.  We don't care
     // whether setAllIndices() did a shallow copy or a deep copy, so a
@@ -3537,7 +3543,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // The input ArrayRCP must always be a host pointer.  Thus, if
     // device_type::memory_space is Kokkos::HostSpace, it's OK for us
     // to write to that allocation directly as a Kokkos::View.
-    typedef typename device_type::memory_space memory_space;
     if (std::is_same<memory_space, Kokkos::HostSpace>::value) {
       // It is always syntactically correct to assign a raw host
       // pointer to a device View, so this code will compile correctly
@@ -7664,7 +7669,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef node_type NT;
-    typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
+    typedef CrsMatrix<Scalar, LO, GO, NT> this_CRS_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
     using Teuchos::as;
 
@@ -7911,7 +7916,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // If the user gave us a null destMat, then construct the new
     // destination matrix.  We will replace its column Map later.
     if (destMat.is_null ()) {
-      destMat = rcp (new this_type (MyRowMap, 0, matrixparams));
+      destMat = rcp (new this_CRS_type (MyRowMap, 0, matrixparams));
     }
 
     /***************************************************/
@@ -8916,9 +8921,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
-                CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
+  template class CrsMatrix< SCALAR , LO , GO , NODE >;
 
 #define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
   \

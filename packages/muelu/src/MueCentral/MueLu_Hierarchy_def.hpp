@@ -360,7 +360,7 @@ namespace MueLu {
     if (isDumpingEnabled_ && (dumpLevel_ == 0 || dumpLevel_ == -1) && coarseLevelID == 1)
       DumpCurrentGraph(0);
 
-    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> coarseFact;
     RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
 
     int nextLevelID = coarseLevelID + 1;
@@ -403,9 +403,12 @@ namespace MueLu {
       //   during request for data "      Nullspace" on level 2 by factory NullspacePresmoothFactory
       //   during request for data "      Nullspace" on level 2 by factory ProjectorSmoother
       //   during request for data "    PreSmoother" on level 2 by factory NoFactory
+      if (coarseFact.is_null())
+        coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
       level.Request(*coarseFact);
     }
 
+    GetOStream(Runtime0) << std::endl;
     PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(Runtime0 | Test));
 
     // Build coarse level hierarchy
@@ -474,6 +477,8 @@ namespace MueLu {
         // We did not expect to finish this early so we did request a smoother.
         // We need a coarse solver instead. Do the magic.
         level.Release(*smootherFact);
+        if (coarseFact.is_null())
+          coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
         level.Request(*coarseFact);
       }
 
@@ -1229,7 +1234,8 @@ namespace MueLu {
       std::vector<Xpetra::global_size_t> nnzPerLevel;
       std::vector<Xpetra::global_size_t> rowsPerLevel;
       std::vector<int>                   numProcsPerLevel;
-      bool aborted = false;
+      bool someOpsNotMatrices = false;
+      const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       for (int i = 0; i < numLevels; i++) {
         TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
                                    "Operator A is not available on level " << i);
@@ -1240,19 +1246,22 @@ namespace MueLu {
 
         RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
         if (Am.is_null()) {
-          GetOStream(Warnings0) << "Some level operators are not matrices, statistics calculation aborted" << std::endl;
-          aborted = true;
-          break;
+          someOpsNotMatrices = true;
+          nnzPerLevel     .push_back(INVALID);
+          rowsPerLevel    .push_back(A->getDomainMap()->getGlobalNumElements());
+          numProcsPerLevel.push_back(A->getDomainMap()->getComm()->getSize());
+        } else {
+          LO storageblocksize=Am->GetStorageBlockSize();
+          Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
+          nnzPerLevel     .push_back(nnz);
+          rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
+          numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
         }
-
-        LO storageblocksize=Am->GetStorageBlockSize();
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
-        nnzPerLevel     .push_back(nnz);
-        rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
-        numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
+      if (someOpsNotMatrices)
+        GetOStream(Warnings0) << "Some level operators are not matrices, statistics calculation are incomplete" << std::endl;
 
-      if (!aborted) {
+      {
         std::string label = Levels_[0]->getObjectLabel();
         std::ostringstream oss;
         oss << std::setfill(' ');
@@ -1262,8 +1271,11 @@ namespace MueLu {
         if (verbLevel & Parameters1)
           oss << "Scalar              = " << Teuchos::ScalarTraits<Scalar>::name() << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
-        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-            << GetOperatorComplexity() << std::endl;
+        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+        if (!someOpsNotMatrices)
+          oss << GetOperatorComplexity() << std::endl;
+        else
+          oss << "not available (Some operators in hierarchy are not matrices.)" << std::endl;
 
         if(smoother_comp!=-1.0) {
           oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
@@ -1286,7 +1298,12 @@ namespace MueLu {
 
         Xpetra::global_size_t tt = rowsPerLevel[0];
         int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
-        tt = nnzPerLevel[0];
+        for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
+          tt = nnzPerLevel[i];
+          if (tt != INVALID)
+            break;
+          tt = 100;  // This will get used if all levels are operators.
+        }
         int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
         tt = numProcsPerLevel[0];
         int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
@@ -1294,9 +1311,15 @@ namespace MueLu {
         for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
           oss << "  " << i << "  ";
           oss << std::setw(rowspacer) << rowsPerLevel[i];
-          oss << std::setw(nnzspacer) << nnzPerLevel[i];
-          oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
-          oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          if (nnzPerLevel[i] != INVALID) {
+            oss << std::setw(nnzspacer) << nnzPerLevel[i];
+            oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+            oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          } else {
+            oss << std::setw(nnzspacer) << "Operator";
+            oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+            oss << std::setw(9) << "     ";
+          }
           if (i) oss << std::setw(9) << as<double>(rowsPerLevel[i-1])/rowsPerLevel[i];
           else   oss << std::setw(9) << "     ";
           oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
@@ -1408,11 +1431,11 @@ namespace MueLu {
     RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
     RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
     if(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A) != Teuchos::null) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
       return;
     }
 
@@ -1421,7 +1444,7 @@ namespace MueLu {
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
     if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
     }
 

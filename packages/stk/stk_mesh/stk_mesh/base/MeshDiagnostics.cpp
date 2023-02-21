@@ -51,7 +51,10 @@ SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::B
 {
     impl::ElemSideProcVector elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
     SharedSidesCommunication sharedSidesCommunication(bulkData, elementSideIdsToSend);
-    return sharedSidesCommunication.get_received_element_sides();
+    sharedSidesCommunication.communicate_element_sides();
+    SideNodeToReceivedElementDataMap elementSidesReceived;
+    sharedSidesCommunication.unpack_side_data_map(elementSidesReceived);
+    return elementSidesReceived;
 }
 
 SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(stk::mesh::BulkData& bulkData, const impl::ElementLocalIdMapper & localIdMapper, SideNodeToReceivedElementDataMap & elementSidesReceived)

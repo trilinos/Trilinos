@@ -86,12 +86,12 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
       }
     }
     else { /* default: status is true */
-      for (int i = 0; i < num_sets; i++) {
+      for (size_t i = 0; i < num_sets; i++) {
         stat_vals[i] = 1;
       }
     }
 
-    for (int i = 0; i < num_sets; i++) {
+    for (size_t i = 0; i < num_sets; i++) {
       if (stat_vals[i] == 0) { /* is this object null? */
         continue;
       }
@@ -211,9 +211,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
       flt_cvt(ret_float, version);
     }
 
-    if (ret_int) {
-      *ret_int = EX_API_VERS_NODOT;
-    }
+    *ret_int = EX_API_VERS_NODOT;
     break;
 
   case EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH:

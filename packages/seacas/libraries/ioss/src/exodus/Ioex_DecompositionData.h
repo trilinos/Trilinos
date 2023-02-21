@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "ioex_export.h"
+
 #include <exodusII.h>
 #if defined PARALLEL_AWARE_EXODUS
 
@@ -29,7 +31,7 @@ namespace Ioss {
 }
 namespace Ioex {
 
-  class DecompositionDataBase
+  class IOEX_EXPORT DecompositionDataBase
   {
   public:
     DecompositionDataBase(Ioss_MPI_Comm comm) : comm_(comm) {}

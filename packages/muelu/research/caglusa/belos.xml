@@ -1,0 +1,10 @@
+<ParameterList name="Belos">
+  <ParameterList name="Pseudoblock CG">
+    <Parameter name="Maximum Iterations" type="int" value="1000"/>
+    <Parameter name="Convergence Tolerance" type="double" value="1e-5"/>
+    <Parameter name="Implicit Residual Scaling" type="string" value="Norm of RHS"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+  </ParameterList>
+</ParameterList>

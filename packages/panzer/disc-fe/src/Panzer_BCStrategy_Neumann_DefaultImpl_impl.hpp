@@ -61,7 +61,7 @@
 // Evaluators
 #include "Panzer_Neumann_Residual.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_ScatterResidual_Epetra.hpp"
 #endif

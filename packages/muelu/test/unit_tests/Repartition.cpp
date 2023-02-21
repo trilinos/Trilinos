@@ -1054,7 +1054,7 @@ namespace MueLuTests {
     galeriList.set("ny", ny);
     RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
 
-    // build coordinates 
+    // build coordinates
     RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", map, galeriList);
 
     galeriList.set("right boundary" , "Neumann");

@@ -1,11 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef STRINGX_H
-#define STRINGX_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -45,5 +43,3 @@ char first_character(const std::string &s);
 //! will be ignored if the last argument is true.  Returns the index of the
 //! string in the vector if found, otherwise returns -1.
 int find_string(const std::vector<std::string> &lst, const std::string &s, bool nocase);
-
-#endif

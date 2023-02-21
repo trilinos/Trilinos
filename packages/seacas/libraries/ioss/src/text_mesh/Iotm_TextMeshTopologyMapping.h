@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
 
@@ -28,7 +30,7 @@
 #include "Iotm_TextMeshDataTypes.h"
 
 namespace Iotm {
-  class TopologyMapEntry
+  class IOTM_EXPORT TopologyMapEntry
   {
   public:
     using Ordinal     = uint16_t;
@@ -54,7 +56,8 @@ namespace Iotm {
       set_valid_spatial_dimensions({false, false, false, false});
     }
 
-    TopologyMapEntry(const TopologyMapEntry &topo) = default;
+    TopologyMapEntry(const TopologyMapEntry &topo)            = default;
+    TopologyMapEntry &operator=(const TopologyMapEntry &topo) = default;
 
     bool operator==(const Ioss::ElementTopology *topo) const { return topo == topology; }
 
@@ -934,7 +937,7 @@ namespace Iotm {
     return out << t.name();
   }
 
-  class IossTopologyMapping : public text_mesh::TopologyMapping<TopologyMapEntry>
+  class IOTM_EXPORT IossTopologyMapping : public text_mesh::TopologyMapping<TopologyMapEntry>
   {
   public:
     TopologyMapEntry invalid_topology() const override { return TopologyMapEntry(); }

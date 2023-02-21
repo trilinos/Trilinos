@@ -70,8 +70,16 @@ pipeline such as a clip or a slice or a contour.
 
   def __init__(self):
     PhactoriOperationSpecifics.__init__(self)
+    self.mergePoints = True
+    self.mergePartitionsOnly = False
 
   def ParseParametersFromJson(self, inJson):
+    key1 = "merge points"
+    if key1 in inJson:
+      self.mergePoints = inJson[key1]
+    key1 = "merge partitions only"
+    if key1 in inJson:
+      self.mergePartitionsOnly = inJson[key1]
     dummy = 0
 
   def CreateParaViewFilter(self, inInputFilter):
@@ -84,6 +92,14 @@ pipeline such as a clip or a slice or a contour.
 
     UpdatePipelineWithCurrentTimeArgument(inInputFilter)
     newParaViewFilter = MergeBlocks(inInputFilter)
+    if self.mergePoints:
+      newParaViewFilter.MergePoints = 1
+    else:
+      newParaViewFilter.MergePoints = 0
+    if self.mergePartitionsOnly:
+      newParaViewFilter.MergePartitionsOnly = 1
+    else:
+      newParaViewFilter.MergePartitionsOnly = 0
 
     SetActiveSource(newParaViewFilter)
     UpdatePipelineWithCurrentTimeArgument(newParaViewFilter)

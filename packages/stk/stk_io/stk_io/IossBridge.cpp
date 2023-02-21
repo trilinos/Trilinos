@@ -57,6 +57,7 @@
 #include <stk_util/environment/RuntimeWarning.hpp>  // for RuntimeWarning
 #include <stk_util/parallel/ParallelReduce.hpp>     // for all_reduce_sum
 #include <stk_util/util/SortAndUnique.hpp>          // for sort_and_unique
+#include <stk_util/util/string_case_compare.hpp>
 #include <stk_util/util/tokenize.hpp>               // for tokenize
 #include <typeinfo>                                 // for type_info
 #include "Ioss_Assembly.h"                          // for Assembly
@@ -217,7 +218,7 @@ namespace {
   void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const Ioss::Field &ioField,
                                      const stk::mesh::FieldBase *field,
-                                     std::vector<stk::mesh::Entity> &entities,
+                                     const std::vector<stk::mesh::Entity> &entities,
                                      Ioss::GroupingEntity *ioEntity)
   {
     size_t iossNumFieldComponents = ioField.transformed_storage()->component_count();
@@ -259,7 +260,7 @@ namespace {
   void internal_subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                                const Ioss::Field &ioField,
                                                const stk::mesh::FieldBase *field,
-                                               std::vector<stk::mesh::Entity> &entities,
+                                               const std::vector<stk::mesh::Entity> &entities,
                                                Ioss::GroupingEntity *ioEntity,
                                                const stk::mesh::Part *stkPart)
   {
@@ -306,6 +307,12 @@ namespace {
                                    std::vector<stk::mesh::Entity> &entities,
                                    Ioss::GroupingEntity *ioEntity)
   {
+    auto io_db = ioEntity->get_database();
+    const auto supports = io_db->entity_field_support();
+    
+    if (!(ioEntity->type() & supports)) {
+      return;
+    }
     size_t iossFieldLength = ioField.transformed_storage()->component_count();
     size_t entityCount = entities.size();
 
@@ -467,6 +474,20 @@ namespace io {
 
 namespace impl {
 
+const Ioss::VariableType * get_variable_type_from_factory(const std::string & typeName)
+{
+  static Ioss::StorageInitializer initializeStorage;
+
+  const Ioss::VariableType * variableType = nullptr;
+  try {
+    variableType = Ioss::VariableType::factory(typeName);
+  }
+  catch (...) {
+  }
+
+  return variableType;
+}
+
 void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type)
 {
   mesh::MetaData & meta = mesh::MetaData::get(field);
@@ -482,6 +503,45 @@ void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableTyp
       meta.declare_attribute_no_delete(field, type);
     }
   }
+}
+
+void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
+{
+  const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
+
+  if (not variableType) {
+    ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
+                  "  - scalar\n"
+                  "  - vector_2d      [x, y]\n"
+                  "  - vector_3d      [x, y, z]\n"
+                  "  - full_tensor_36 [xx, yy, zz, xy, yz, zx, yx, zy, xz]\n"
+                  "  - full_tensor_32 [xx, yy, zz, xy, yx]\n"
+                  "  - full_tensor_22 [xx, yy, xy, yx]\n"
+                  "  - full_tensor_16 [xx, xy, yz, zx, yx, zy, xz]\n"
+                  "  - full_tensor_12 [xx, xy, yx]\n"
+                  "  - sym_tensor_33  [xx, yy, zz, xy, yz, zx]\n"
+                  "  - sym_tensor_31  [xx, yy, zz, xy]\n"
+                  "  - sym_tensor_21  [xx, yy, xy]\n"
+                  "  - sym_tensor_13  [xx, xy, yz, zx]\n"
+                  "  - sym_tensor_11  [xx, xy]\n"
+                  "  - sym_tensor_10  [xx]\n"
+                  "  - asym_tensor_03 [xy, yz, zx]\n"
+                  "  - asym_tensor_02 [xy, yz]\n"
+                  "  - asym_tensor_01 [xy]\n"
+                  "  - matrix_22      [xx, xy, yx, yy]\n"
+                  "  - matrix_33      [xx, xy, xz, yx, yy, yz, zx, zy, zz]\n"
+                  "  - quaternion_2d  [s, q]\n"
+                  "  - quaternion_3d  [x, y, z, q]\n"
+                  "  - Custom named-suffix output type [user-defined]\n"
+                  "Default if unspecified: Scalar or generic array [1, 2, 3, ...]");
+  }
+
+  impl::set_field_output_type(field, variableType);
+}
+
+const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field)
+{
+  return field.attribute<Ioss::VariableType>();
 }
 
 template<typename ArrayTag>
@@ -529,7 +589,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       stk::mesh::Field<double> & field = meta.declare_field<double>(entityRank, name);
       stk::mesh::put_field_on_mesh(field, part, numComponents, numCopies, nullptr);
 
-      const int oldVarTypeSize = has_field_output_type(field) ? get_field_output_type(field)->component_count() : 0;
+      const int oldVarTypeSize = has_field_output_type(field) ? get_field_output_variable_type(field)->component_count() : 0;
       const int newVarTypeSize = varType->component_count();
 
       if (newVarTypeSize > oldVarTypeSize) {
@@ -713,6 +773,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName)
     {
       stk::mesh::impl::set_unique_part_attribute<IossAlternatePartName>(part, altPartName);
+
+      mesh::MetaData & meta = mesh::MetaData::get(part);
+      meta.add_part_alias(part, altPartName);
     }
 
     bool has_alternate_part_name(const stk::mesh::Part& part)
@@ -779,19 +842,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
       else
         return part.name();
-    }
-
-    stk::mesh::Part *getPart(const stk::mesh::MetaData& metaData, const std::string& name)
-    {
-      const mesh::PartVector & parts = metaData.get_parts();
-      for (unsigned ii=0; ii < parts.size(); ++ii)
-        {
-          stk::mesh::Part *pp = parts[ii];
-          std::string altName = getPartName(*pp);
-          if (altName == name)
-            return pp;
-        }
-      return 0;
     }
 
     Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, const stk::mesh::Part& part)
@@ -952,7 +1002,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       result->copies = 1;
 
       if (has_field_output_type(*field)) {
-        const Ioss::VariableType * variableType = get_field_output_type(*field);
+        const Ioss::VariableType * variableType = get_field_output_variable_type(*field);
         const std::string variableTypeName = Ioss::Utils::lowercase(variableType->name());
 
         if (variableTypeName == vector_3d || variableTypeName == vector_2d) {
@@ -1039,52 +1089,98 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       Ioss::VariableType::create_named_suffix_field_type(typeName, suffices);
     }
 
-    const Ioss::VariableType * get_variable_type_from_factory(const std::string & typeName)
+    void set_named_suffix_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
     {
-      static Ioss::StorageInitializer initializeStorage;
-
-      const Ioss::VariableType * variableType = nullptr;
-      try {
-        variableType = Ioss::VariableType::factory(typeName);
-      }
-      catch (...) {
-      }
-
-      return variableType;
-    }
-
-    void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
-    {
-      const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
+      const Ioss::VariableType * variableType = impl::get_variable_type_from_factory(typeName);
 
       if (not variableType) {
-        ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
-                      "  - Scalar\n"
-                      "  - Vector_2D      [x, y]\n"
-                      "  - Vector_3D      [x, y, z]\n"
-                      "  - Full_Tensor_36 [xx, yy, zz, xy, yz, zx, yx, zy, xz]\n"
-                      "  - Full_Tensor_32 [xx, yy, zz, xy, yx]\n"
-                      "  - Full_Tensor_22 [xx, yy, xy, yx]\n"
-                      "  - Full_Tensor_16 [xx, xy, yz, zx, yx, zy, xz]\n"
-                      "  - Full_Tensor_12 [xx, xy, yx]\n"
-                      "  - Sym_Tensor_33  [xx, yy, zz, xy, yz, zx]\n"
-                      "  - Sym_Tensor_31  [xx, yy, zz, xy]\n"
-                      "  - Sym_Tensor_21  [xx, yy, xy]\n"
-                      "  - Sym_Tensor_13  [xx, xy, yz, zx]\n"
-                      "  - Sym_Tensor_11  [xx, xy]\n"
-                      "  - Sym_Tensor_10  [xx]\n"
-                      "  - Asym_Tensor_03 [xy, yz, zx]\n"
-                      "  - Asym_Tensor_02 [xy, yz]\n"
-                      "  - Asym_Tensor_01 [xy]\n"
-                      "  - Matrix_22      [xx, xy, yx, yy]\n"
-                      "  - Matrix_33      [xx, xy, xz, yx, yy, yz, zx, zy, zz]\n"
-                      "  - Quaternion_2D  [s, q]\n"
-                      "  - Quaternion_3D  [x, y, z, q]\n"
-                      "  - Custom named-suffix output type [user-defined]\n"
-                      "Default if unspecified: Scalar or generic array [1, 2, 3, ...]");
+        ThrowErrorMsg("Unrecognized custom named suffix Field output type '" + typeName + "'.\n"
+                      "Please be sure to pre-register your custom output type with a call to:\n"
+                      "  stk::io::create_named_suffix_field_output_type()");
       }
 
-      impl::set_field_output_type(field, variableType);
+      for (unsigned i = 0; i < field.number_of_states(); ++i) {
+        stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(i);
+        stk::mesh::FieldBase * fieldOfState = field.field_state(state);
+
+        impl::set_field_output_type(*fieldOfState, variableType);
+      }
+    }
+
+    void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType)
+    {
+      for (unsigned i = 0; i < field.number_of_states(); ++i) {
+        stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(i);
+        stk::mesh::FieldBase * fieldOfState = field.field_state(state);
+
+        switch (fieldOutputType) {
+          case (FieldOutputType::SCALAR)         : impl::set_field_output_type(*fieldOfState, "scalar"); break;
+          case (FieldOutputType::VECTOR_2D)      : impl::set_field_output_type(*fieldOfState, "vector_2d"); break;
+          case (FieldOutputType::VECTOR_3D)      : impl::set_field_output_type(*fieldOfState, "vector_3d"); break;
+          case (FieldOutputType::FULL_TENSOR_36) : impl::set_field_output_type(*fieldOfState, "full_tensor_36"); break;
+          case (FieldOutputType::FULL_TENSOR_32) : impl::set_field_output_type(*fieldOfState, "full_tensor_32"); break;
+          case (FieldOutputType::FULL_TENSOR_22) : impl::set_field_output_type(*fieldOfState, "full_tensor_22"); break;
+          case (FieldOutputType::FULL_TENSOR_16) : impl::set_field_output_type(*fieldOfState, "full_tensor_16"); break;
+          case (FieldOutputType::FULL_TENSOR_12) : impl::set_field_output_type(*fieldOfState, "full_tensor_12"); break;
+          case (FieldOutputType::SYM_TENSOR_33)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_33"); break;
+          case (FieldOutputType::SYM_TENSOR_31)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_31"); break;
+          case (FieldOutputType::SYM_TENSOR_21)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_21"); break;
+          case (FieldOutputType::SYM_TENSOR_13)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_13"); break;
+          case (FieldOutputType::SYM_TENSOR_11)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_11"); break;
+          case (FieldOutputType::SYM_TENSOR_10)  : impl::set_field_output_type(*fieldOfState, "sym_tensor_10"); break;
+          case (FieldOutputType::ASYM_TENSOR_03) : impl::set_field_output_type(*fieldOfState, "asym_tensor_03"); break;
+          case (FieldOutputType::ASYM_TENSOR_02) : impl::set_field_output_type(*fieldOfState, "asym_tensor_02"); break;
+          case (FieldOutputType::ASYM_TENSOR_01) : impl::set_field_output_type(*fieldOfState, "asym_tensor_01"); break;
+          case (FieldOutputType::MATRIX_22)      : impl::set_field_output_type(*fieldOfState, "matrix_22"); break;
+          case (FieldOutputType::MATRIX_33)      : impl::set_field_output_type(*fieldOfState, "matrix_33"); break;
+          case (FieldOutputType::QUATERNION_2D)  : impl::set_field_output_type(*fieldOfState, "quaternion_2d"); break;
+          case (FieldOutputType::QUATERNION_3D)  : impl::set_field_output_type(*fieldOfState, "quaternion_3d"); break;
+          case (FieldOutputType::CUSTOM) : {
+            ThrowErrorMsg("To set a custom FieldOutputType, please call stk::io::create_named_suffix_field_output_type()"
+                          " and stk::io::set_named_suffix_field_output_type() instead");
+            break;
+          }
+          default:
+            ThrowErrorMsg("Unsupported FieldOutputType for Field " << field.name() << ": "
+                          << static_cast<int>(fieldOutputType));
+        }
+      }
+    }
+
+    FieldOutputType get_field_output_type(const stk::mesh::FieldBase & field)
+    {
+      const Ioss::VariableType * variableType = field.attribute<Ioss::VariableType>();
+
+      if (variableType == nullptr) {
+        return FieldOutputType::SCALAR;
+      }
+
+      const std::string variableTypeName = variableType->name();
+
+      if (variableTypeName == "scalar")              return FieldOutputType::SCALAR;
+      else if (variableTypeName == "vector_2d")      return FieldOutputType::VECTOR_2D;
+      else if (variableTypeName == "vector_3d")      return FieldOutputType::VECTOR_3D;
+      else if (variableTypeName == "full_tensor_36") return FieldOutputType::FULL_TENSOR_36;
+      else if (variableTypeName == "full_tensor_32") return FieldOutputType::FULL_TENSOR_32;
+      else if (variableTypeName == "full_tensor_22") return FieldOutputType::FULL_TENSOR_22;
+      else if (variableTypeName == "full_tensor_16") return FieldOutputType::FULL_TENSOR_16;
+      else if (variableTypeName == "full_tensor_12") return FieldOutputType::FULL_TENSOR_12;
+      else if (variableTypeName == "sym_tensor_33")  return FieldOutputType::SYM_TENSOR_33;
+      else if (variableTypeName == "sym_tensor_31")  return FieldOutputType::SYM_TENSOR_31;
+      else if (variableTypeName == "sym_tensor_21")  return FieldOutputType::SYM_TENSOR_21;
+      else if (variableTypeName == "sym_tensor_13")  return FieldOutputType::SYM_TENSOR_13;
+      else if (variableTypeName == "sym_tensor_11")  return FieldOutputType::SYM_TENSOR_11;
+      else if (variableTypeName == "sym_tensor_10")  return FieldOutputType::SYM_TENSOR_10;
+      else if (variableTypeName == "asym_tensor_03") return FieldOutputType::ASYM_TENSOR_03;
+      else if (variableTypeName == "asym_tensor_02") return FieldOutputType::ASYM_TENSOR_02;
+      else if (variableTypeName == "asym_tensor_01") return FieldOutputType::ASYM_TENSOR_01;
+      else if (variableTypeName == "matrix_22")      return FieldOutputType::MATRIX_22;
+      else if (variableTypeName == "matrix_33")      return FieldOutputType::MATRIX_33;
+      else if (variableTypeName == "quaternion_2d")  return FieldOutputType::QUATERNION_2D;
+      else if (variableTypeName == "quaternion_3d")  return FieldOutputType::QUATERNION_3D;
+      else {
+        return FieldOutputType::CUSTOM;
+      }
     }
 
     bool has_field_output_type(const stk::mesh::FieldBase & field)
@@ -1092,8 +1188,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return (field.attribute<Ioss::VariableType>() != nullptr);
     }
 
-    const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field)
+    void set_field_output_variable_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type)
     {
+      if (type != nullptr) {
+        for (unsigned i = 0; i < field.number_of_states(); ++i) {
+          stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(i);
+          stk::mesh::FieldBase * fieldOfState = field.field_state(state);
+
+          impl::set_field_output_type(*fieldOfState, type);
+        }
+      }
+    }
+
+    const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field) {
       return field.attribute<Ioss::VariableType>();
     }
 
@@ -1331,6 +1438,27 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
+    void declare_stk_aliases(stk::mesh::Part& part, Ioss::GroupingEntity *ge, stk::mesh::MetaData &meta)
+    {
+      meta.add_part_alias(part, part.name());
+
+      if(nullptr != ge && ge->get_database() != nullptr) {
+        Ioss::Region* region = ge->get_database()->get_region();
+
+        if(ge->property_exists("db_name")) {
+          std::string canonName = ge->get_property("db_name").get_string();
+          meta.add_part_alias(part, canonName);
+        }
+
+        const Ioss::AliasMap& ioss_alias_map = region->get_alias_map(ge->type());
+        for(auto&& alias : ioss_alias_map) {
+          if(stk::equal_case(alias.second, part.name())) {
+            meta.add_part_alias(part, alias.first);
+          }
+        }
+      }
+    }
+
     stk::mesh::Part& declare_stk_part(Ioss::GroupingEntity* entity, stk::mesh::MetaData& meta)
     {
       if (entity->type() == Ioss::ASSEMBLY) {
@@ -1345,6 +1473,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     {
       if (include_entity(entity)) {
         stk::mesh::Part & part = declare_stk_part(entity, meta);
+        declare_stk_aliases(part, entity, meta);
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
@@ -1358,6 +1487,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         mesh::EntityRank type = get_entity_rank(entity, meta);
         stk::mesh::Part * part = nullptr;
         part = &meta.declare_part(entity->name(), type);
+        declare_stk_aliases(*part, entity, meta);
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
         }
@@ -1713,11 +1843,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     }
 
     template <typename INT>
-    void get_entity_list(Ioss::GroupingEntity *ioEntity,
-                         stk::mesh::EntityRank partType,
-                         const stk::mesh::BulkData &bulk,
-                         std::vector<stk::mesh::Entity> &entities)
+    std::vector<stk::mesh::Entity> get_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                   stk::mesh::EntityRank partType,
+                                                   const stk::mesh::BulkData &bulk)
     {
+      std::vector<stk::mesh::Entity> entities;
+
       if (ioEntity->type() == Ioss::SIDEBLOCK) {
         std::vector<INT> elemSide ;
         ioEntity->get_field_data("element_side", elemSide);
@@ -1736,18 +1867,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           entities.push_back(bulk.get_entity( partType, ids[i] ));
         }
       }
+
+      return entities;
     }
 
-    void get_input_entity_list(Ioss::GroupingEntity *ioEntity,
-                         stk::mesh::EntityRank partType,
-                         const stk::mesh::BulkData &bulk,
-                         std::vector<stk::mesh::Entity> &entities)
+    std::vector<stk::mesh::Entity> get_input_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                         stk::mesh::EntityRank partType,
+                                                         const stk::mesh::BulkData &bulk)
     {
       ThrowRequireMsg(ioEntity->get_database()->is_input(), "Database is output type");
       if (db_api_int_size(ioEntity) == 4) {
-          get_entity_list<int>(ioEntity, partType, bulk, entities);
+          return get_entity_list<int>(ioEntity, partType, bulk);
       } else {
-          get_entity_list<int64_t>(ioEntity, partType, bulk, entities);
+          return get_entity_list<int64_t>(ioEntity, partType, bulk);
       }
     }
 
@@ -1843,7 +1975,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                          const stk::mesh::FieldBase *field,
-                                         std::vector<stk::mesh::Entity> &entityList,
+                                         const std::vector<stk::mesh::Entity> &entityList,
                                          Ioss::GroupingEntity *ioEntity,
                                          const std::string &name,
                                          const size_t stateCount,
@@ -1873,7 +2005,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                                    const stk::mesh::FieldBase *field,
-                                                   std::vector<stk::mesh::Entity> &entityList,
+                                                   const std::vector<stk::mesh::Entity> &entityList,
                                                    Ioss::GroupingEntity *ioEntity,
                                                    const stk::mesh::Part *stkPart,
                                                    const std::string &name,
@@ -1905,7 +2037,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                               const stk::mesh::FieldBase *field,
-                              std::vector<stk::mesh::Entity> &entities,
+                              const std::vector<stk::mesh::Entity> &entities,
                               Ioss::GroupingEntity *ioEntity,
                               const std::string &ioFieldName)
     {
@@ -1948,7 +2080,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                         const stk::mesh::FieldBase *field,
-                                        std::vector<stk::mesh::Entity> &entities,
+                                        const std::vector<stk::mesh::Entity> &entities,
                                         Ioss::GroupingEntity *ioEntity,
                                         const stk::mesh::Part *stkPart,
                                         const std::string &ioFieldName)
@@ -3151,7 +3283,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = block->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
@@ -3262,7 +3394,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = ns->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
 
         // If part is null, then it is possible that this nodeset is a "viz nodeset" which
         // means that it is a nodeset containing the nodes of an element block.
@@ -3271,7 +3403,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         if (part == nullptr) {
           if (ns->property_exists(base_stk_part_name)) {
             std::string baseName = ns->get_property(base_stk_part_name).get_string();
-            part = getPart( metaData, baseName);
+            part = metaData.get_part(baseName);
           }
           if (part == nullptr) {
             std::ostringstream msg ;
@@ -3369,7 +3501,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         for (size_t i=0; i < blockCount; i++) {
           Ioss::SideBlock *block = ss->get_block(i);
           if (stk::io::include_entity(block)) {
-            stk::mesh::Part * part = getPart(meta, block->name());
+            stk::mesh::Part * part = meta.get_part(block->name());
             const Ioss::ElementTopology *parent_topology = block->parent_element_topology();
             stk::io::write_side_data_to_ioss<INT>(params, *block, part, parent_topology);
           }
@@ -3382,7 +3514,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = fb->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
@@ -3442,7 +3574,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
         const std::string& name = eb->name();
-        mesh::Part* part = getPart( metaData, name);
+        mesh::Part* part = metaData.get_part(name);
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
@@ -3533,21 +3665,31 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     void write_output_db_for_entitysets_and_comm_map(stk::io::OutputParams &params)
     {
         Ioss::Region &ioRegion = params.io_region();
+        auto *dbo = ioRegion.get_database();
+        const auto supports = dbo->entity_field_support();
 
-        for(Ioss::NodeSet *ns : ioRegion.get_nodesets()) {
+        if (supports & Ioss::NODESET) {
+          for(Ioss::NodeSet *ns : ioRegion.get_nodesets()) {
             output_node_set<T>(params, ns);
+          }
         }
 
-        for(Ioss::SideSet *ss : ioRegion.get_sidesets()) {
+        if (supports & Ioss::SIDESET) {
+          for(Ioss::SideSet *ss : ioRegion.get_sidesets()) {
             output_side_set<T>(params, ss);
+          }
         }
 
-        for(Ioss::EdgeBlock *eb: ioRegion.get_edge_blocks()) {
+        if (supports & Ioss::EDGEBLOCK) {
+          for(Ioss::EdgeBlock *eb: ioRegion.get_edge_blocks()) {
             output_edge_block<T>(params, eb);
+          }
         }
 
-        for(Ioss::FaceBlock *fb: ioRegion.get_face_blocks()) {
+        if (supports & Ioss::FACEBLOCK) {
+          for(Ioss::FaceBlock *fb: ioRegion.get_face_blocks()) {
             output_face_block<T>(params, fb);
+          }
         }
 
         output_communication_maps<T>(params);
@@ -4085,14 +4227,14 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                         if(elementBlock != nullptr && is_part_io_part(*elementBlock))
                             parentElementBlock = elementBlock;
                     }
-                } else {
-                    parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
                 }
             }
-            else {
-                parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
-            }
         }
+
+        if(parentElementBlock == nullptr) {
+          parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
+        }
+
         return parentElementBlock;
     }
 

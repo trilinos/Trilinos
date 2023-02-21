@@ -134,7 +134,7 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
    ModifiableLinearOp & S = state.getModifiableOp("S");
    {
       Teko_DEBUG_SCOPE("Building S",5);
-      Teuchos::TimeMonitor timer(*opsTimer_,true);
+      Teuchos::TimeMonitor timerS(*opsTimer_,true);
 
       LinearOp diagA00 = getInvDiagonalOp(A00,a00InverseType_);
    
@@ -148,7 +148,7 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
    /////////////////////////////////////////////
    {
       Teko_DEBUG_SCOPE("Building inverse(S)",5);
-      Teuchos::TimeMonitor timer(*invSTimer_,true);
+      Teuchos::TimeMonitor timerInvS(*invSTimer_,true);
 
       ModifiableLinearOp & invS = state.getModifiableOp("invS"); 
       if(invS==Teuchos::null)
@@ -161,7 +161,7 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
    /////////////////////////////////////////////
    {
       Teko_DEBUG_SCOPE("Building inverse(A00)",5);
-      Teuchos::TimeMonitor timer(*invA00Timer_,true);
+      Teuchos::TimeMonitor timerInvA00(*invA00Timer_,true);
 
       ModifiableLinearOp & invA00 = state.getModifiableOp("invA00"); 
       *getOutputStream() << "(LU2x2) invA00 pointer = " << invA00 << std::endl;

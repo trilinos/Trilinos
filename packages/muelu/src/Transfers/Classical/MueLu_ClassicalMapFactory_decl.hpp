@@ -131,11 +131,11 @@ namespace MueLu {
   protected:
     virtual void GenerateCoarseMap(const Map & fineMap, LO num_c_points, Teuchos::RCP<const Map> & coarseMap) const;
 
-    virtual void DoGraphColoring(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;    
+    virtual void DoGraphColoring(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;
 
-    virtual void DoMISNaive(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;    
+    virtual void DoMISNaive(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;
 
-    virtual void DoDistributedGraphColoring(RCP<const GraphBase> & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;    
+    virtual void DoDistributedGraphColoring(RCP<const GraphBase> & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;
 
   }; //class ClassicalMapFactory
 

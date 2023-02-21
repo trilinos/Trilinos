@@ -81,7 +81,7 @@ namespace Kokkos {
     Kokkos::View<T*,D>
     getKokkosViewDeepCopy (const Teuchos::ArrayView<T>& a)
     {
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
@@ -101,7 +101,7 @@ namespace Kokkos {
     Kokkos::View<const T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const T>& a)
     {
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;

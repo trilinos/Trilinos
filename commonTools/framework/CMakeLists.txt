@@ -1,6 +1,9 @@
 TRIBITS_PACKAGE(TrilinosFrameworkTests)
 
 
+add_subdirectory(github_issue_creator)
+
+
 TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
@@ -59,7 +62,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
         ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../packages/framework/pr_tools
         SKIP_CLEAN_WORKING_DIRECTORY
-        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed in"
+        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed"
         #ALWAYS_FAIL_ON_NONZERO_RETURN
 )
 # Note: pytest output looks like this:

@@ -1205,7 +1205,7 @@ namespace Ioex {
         // an empty type which is invalid and will throw an
         // exception in the XBlock constructor. Try to discern
         // the correct X type based on the block_name.
-        std::vector<std::string> tokens = Ioss::tokenize(block_name, "_");
+        auto tokens = Ioss::tokenize(block_name, "_");
         if (tokens.size() >= 2) {
           // Check whether last token names an X topology type...
           const Ioss::ElementTopology *topology =
@@ -1600,7 +1600,7 @@ namespace Ioex {
             topo_map[std::make_pair(std::string("unknown"), mixed_topo)] = number_sides;
           }
           else if (in_fs_map) {
-            std::vector<std::string> tokens = Ioss::tokenize(side_set_name, "_");
+            auto tokens = Ioss::tokenize(side_set_name, "_");
             SMART_ASSERT(tokens.size() >= 4)(tokens.size());
             // The sideset should have only a single topology which is
             // given by the sideset name...
@@ -1779,7 +1779,7 @@ namespace Ioex {
               fmt::print(errmsg,
                          "INTERNAL ERROR: Invalid setting for `split_type` {}. Something is wrong "
                          "in the Ioex::DatabaseIO class. Please report.\n",
-                         split_type);
+                         static_cast<int>(split_type));
               IOSS_ERROR(errmsg);
             }
             assert(elem_topo != nullptr);
@@ -2418,21 +2418,19 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
           }
         }
         else if (field.get_name() == "connectivity_face") {
-          int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The element_face index varies fastest
           if (my_element_count > 0) {
-            get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
+	    int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+	    get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
             get_map(EX_FACE_BLOCK).map_data(data, field, num_to_get * face_count);
           }
         }
         else if (field.get_name() == "connectivity_edge") {
-          int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The element_edge index varies fastest
           if (my_element_count > 0) {
+	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
@@ -2584,34 +2582,33 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
         // (The 'genesis' portion)
 
         if (field.get_name() == "connectivity") {
-          int face_nodes = eb->topology()->number_nodes();
-          assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
-
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
+	    int face_nodes = eb->topology()->number_nodes();
+	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
+
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
             get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get * face_nodes);
           }
         }
         else if (field.get_name() == "connectivity_edge") {
-          int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-
           // The connectivity is stored in a 1D array.
           // The face_edge index varies fastest
           if (my_face_count > 0) {
+	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
         }
         else if (field.get_name() == "connectivity_raw") {
-          // "connectivity_raw" has nodes in local id space (1-based)
-          assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
-                 eb->topology()->number_nodes());
-
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
+	    // "connectivity_raw" has nodes in local id space (1-based)
+	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
+                 eb->topology()->number_nodes());
+
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
           }
         }
@@ -3670,6 +3667,9 @@ int64_t DatabaseIO::read_ss_transient_field(const Ioss::Field &field, int64_t id
 
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
+    if (lowerCaseVariableNames) {
+      Ioss::Utils::fixup_name(var_name);
+    }
 
     // Read the variable...
     int  ierr     = 0;
@@ -4684,8 +4684,8 @@ void DatabaseIO::write_nodal_transient_field(const Ioss::Field &field,
           ex_put_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0, num_out, temp.data());
       if (ierr < 0) {
         std::ostringstream errmsg;
-        fmt::print(errmsg, "Problem outputting nodal variable '{}' with index = {}\n", var_name,
-                   var_index);
+        fmt::print(errmsg, "Problem outputting nodal variable '{}' with index = {} to file '{}'\n",
+                   var_name, var_index, decoded_filename());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, errmsg.str());
       }
     }

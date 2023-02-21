@@ -1,6 +1,6 @@
 
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,7 +31,7 @@
 #endif
 
 #include <termios.h>
-struct termios new_termios, old_termios;
+struct termios gl_new_termios, gl_old_termios;
 #endif
 
 /********************* C library headers ********************************/
@@ -114,21 +114,21 @@ static char *copy_string(char *dest, char const *source, long int elements)
 static void gl_char_init(void) /* turn off input echo */
 {
 #ifdef __unix__
-  tcgetattr(0, &old_termios);
-  new_termios = old_termios;
-  new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
-  new_termios.c_iflag |= (IGNBRK | IGNPAR);
-  new_termios.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
-  new_termios.c_cc[VMIN]  = 1;
-  new_termios.c_cc[VTIME] = 0;
-  tcsetattr(0, TCSANOW, &new_termios);
+  tcgetattr(0, &gl_old_termios);
+  gl_new_termios = gl_old_termios;
+  gl_new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
+  gl_new_termios.c_iflag |= (IGNBRK | IGNPAR);
+  gl_new_termios.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
+  gl_new_termios.c_cc[VMIN]  = 1;
+  gl_new_termios.c_cc[VTIME] = 0;
+  tcsetattr(0, TCSANOW, &gl_new_termios);
 #endif /* __unix__ */
 }
 
 static void gl_char_cleanup(void) /* undo effects of gl_char_init */
 {
 #ifdef __unix__
-  tcsetattr(0, TCSANOW, &old_termios);
+  tcsetattr(0, TCSANOW, &gl_old_termios);
 #endif /* __unix__ */
 }
 

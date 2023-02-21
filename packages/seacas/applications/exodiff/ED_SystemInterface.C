@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -367,8 +367,15 @@ void SystemInterface::enroll_options()
                   "Interpolate times on file2 to match times on file1.", nullptr);
   options_.enroll(
       "final_time_tolerance", GetLongOption::MandatoryValue,
-      "Tolerance on matching of final times on database when interpolate option specified\n."
+      "Tolerance on matching of final times on database when interpolate option specified.\n"
       "\t\tIf final times do not match within this tolerance, files are different.",
+      nullptr, nullptr, true);
+
+  options_.enroll("time_scale", GetLongOption::MandatoryValue,
+                  "Scale the time values on the input database by the specified value.", nullptr);
+  options_.enroll(
+      "time_offset", GetLongOption::MandatoryValue,
+      "Offset the (possibly scaled) time values on the input database by the specified value.",
       nullptr, nullptr, true);
 
   options_.enroll("map", GetLongOption::NoValue,
@@ -481,6 +488,8 @@ void SystemInterface::enroll_options()
 
   options_.enroll("maxnames", GetLongOption::MandatoryValue, "[deprecated -- no longer needed]",
                   "1000");
+  options_.enroll("t", GetLongOption::MandatoryValue, "Backward-compatible option for -tolerance",
+                  "1.0E-6");
   options_.enroll("m", GetLongOption::NoValue, "Backward-compatible option for -map", nullptr);
   options_.enroll("p", GetLongOption::NoValue, "Backward-compatible option for -partial.", nullptr);
   options_.enroll("s", GetLongOption::NoValue, "Backward-compatible option for -short", nullptr);
@@ -512,7 +521,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
         tolerance_help();
       }
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
-      fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
+      fmt::print("\n\t\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
       fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
@@ -521,7 +531,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("Help") != nullptr) {
     options_.usage();
     fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
-    fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
+    fmt::print("\n\t\tDocumentation: "
+               "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
     fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
@@ -599,10 +610,23 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  default_tol.value    = options_.get_option_value("tolerance", default_tol.value);
+  {
+    auto t1 = options_.get_option_value("t", default_tol.value);
+    auto t2 = options_.get_option_value("tolerance", default_tol.value);
+    if (t1 != default_tol.value) {
+      default_tol.value = t1;
+    }
+    else if (t2 != default_tol.value) {
+      default_tol.value = t2;
+    }
+  }
+
   coord_tol.value      = options_.get_option_value("coordinate_tolerance", coord_tol.value);
   default_tol.floor    = options_.get_option_value("Floor", default_tol.floor);
   final_time_tol.value = options_.get_option_value("final_time_tolerance", final_time_tol.value);
+
+  time_value_offset = options_.get_option_value("time_offset", time_value_offset);
+  time_value_scale  = options_.get_option_value("time_scale", time_value_scale);
 
   {
     const char *temp = options_.retrieve("TimeStepOffset");
@@ -1537,7 +1561,8 @@ namespace {
     cmd_file.getline(line, 256);
     xline = line;
     while (!cmd_file.eof()) {
-      if (xline.empty() || (xline[0] != '\t' && first_character(xline) != '#')) {
+      if (xline.empty() ||
+          ((xline[0] != '\t' && xline[0] != ' ') && first_character(xline) != '#')) {
         break;
       }
 

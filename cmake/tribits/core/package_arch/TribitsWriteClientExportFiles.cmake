@@ -178,125 +178,11 @@ function(tribits_write_flexible_package_client_export_files)
     print_var(EXPORT_FILE_VAR_PREFIX)
   endif()
 
-  #
-  # B) Get the set of upstream packages for this package that are enabled,
-  # libraries, library dirs, and include dirs
-  #
-
-  set(FULL_PACKAGE_SET "")
-  set(FULL_LIBRARY_SET "")
-
-
-  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    print_var(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
-  endif()
-
-  foreach(TRIBITS_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
-
-    if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-      print_var(TRIBITS_PACKAGE)
-      if (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-        print_var(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      endif()
-    endif()
-
-    set(APPEND_THE_PACKAGE TRUE)
-    set(APPEND_THE_PACKAGE_LIBS TRUE)
-
-    if (NOT ${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      set(APPEND_THE_PACKAGE_LIBS FALSE)
-    endif()
-
-    if (APPEND_THE_PACKAGE)
-      list(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
-      if (APPEND_THE_PACKAGE_LIBS)
-        append_set(FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
-      else()
-        if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-          message("-- " "Skipping adding the package libs!")
-        endif()
-      endif()
-    else()
-      if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-        message("-- " "Skipping adding the package!")
-      endif()
-    endif()
-
-    if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-      print_var(FULL_PACKAGE_SET)
-      print_var(FULL_LIBRARY_SET)
-    endif()
-
-  endforeach()
-
-  # Must prepend the current package and its libraries itself so that we get
-  # its TPLs libraries. However, if the current package has no native
-  # libraries (yet), then there is no point in listing the package or its
-  # TPLs.  Why would a package list TPLs (with actual libraries) if itself
-  # does not have libraries to export?  Note, this does not affect internal
-  # tests and examples which could have TPLs but no native libraries.
-  if (${PACKAGE_NAME}_LIBRARIES AND ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-    prepend_set(FULL_PACKAGE_SET ${PACKAGE_NAME})
-    prepend_set(FULL_LIBRARY_SET ${${PACKAGE_NAME}_LIBRARIES})
-  endif()
-
-  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    message("-- " "*** Final sets of packages, libs, include dirs, and lib dirs:")
-    print_var(FULL_PACKAGE_SET)
-    print_var(FULL_LIBRARY_SET)
-  endif()
-
-  #
-  # C) Get the set of TPLs for this package that are enabled
-  #
-
-  # C.1) Get the set of enabled TPLs
-
-  set(FULL_TPL_SET "")
-  foreach(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
-    list(APPEND FULL_TPL_SET ${${TRIBITS_PACKAGE}_LIB_REQUIRED_DEP_TPLS})
-    set(OPTIONAL_TPLS ${${TRIBITS_PACKAGE}_LIB_OPTIONAL_DEP_TPLS})
-    foreach(TPL ${OPTIONAL_TPLS})
-      # Only add if support for the optional TPL is enabled in this
-      # package.  Don't just check if the TPL is enabled!
-      if(${TRIBITS_PACKAGE}_ENABLE_${TPL})
-        list(APPEND FULL_TPL_SET ${TPL})
-      endif()
-    endforeach()
-  endforeach()
-  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    print_var(FULL_TPL_SET)
-  endif()
-
-  # C.2) Sort the TPLs according to the master TPL list
-
-  #We will use the complete list of supported tpls for the project
-  #to help us create a properly ordered list of tpls.
-  if (FULL_TPL_SET)
-    set(ORDERED_FULL_TPL_SET ${FULL_TPL_SET})
-    tribits_sort_list_according_to_master_list("${${PROJECT_NAME}_REVERSE_DEFINED_TPLS}"
-      ORDERED_FULL_TPL_SET)
-  endif()
-
-  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    print_var(ORDERED_FULL_TPL_SET)
-  endif()
-
-  #
-  # D) Get the libraries, library dirs, and the include dirs for the
-  # upstream enabled TPLs
-  #
-
-  set(${PACKAGE_NAME}_TPL_LIBRARIES "")
-  foreach(TPL ${ORDERED_FULL_TPL_SET})
-    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL}::all_libs)
-  endforeach()
-
   # Generate a note discouraging editing of the <package>Config.cmake file
   set(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
 
   #
-  # E) Deal with the library rpath issues with shared libs
+  # B) Deal with the library rpath issues with shared libs
   #
 
   # Write the specification of the rpath if necessary. This is only needed if
@@ -309,14 +195,14 @@ function(tribits_write_flexible_package_client_export_files)
   endif()
 
   #
-  # F) Create the contents of the <Package>Config.cmake file for the build tree
+  # C) Create the contents of the <Package>Config.cmake file for the build tree
   #
 
   tribits_generate_package_config_file_for_build_tree(${PACKAGE_NAME}
     EXPORT_FILE_VAR_PREFIX ${EXPORT_FILE_VAR_PREFIX})
 
   #
-  # G) Create <Package>Config_install.cmake file for the install tree
+  # D) Create <Package>Config_install.cmake file for the install tree
   #
 
   tribits_generate_package_config_file_for_install_tree(${PACKAGE_NAME}
@@ -787,28 +673,6 @@ function(tribits_write_project_client_export_files)
   # Custom code in configuration file.
   set(PROJECT_CONFIG_CODE "")
 
-  #  # Export targets from the build tree.
-  #  if(FULL_LIBRARY_SET)
-  #    list(SORT FULL_LIBRARY_SET)
-  #    list(REMOVE_DUPLICATES FULL_LIBRARY_SET)
-  #    set(FULL_LIBRARY_TARGET_SET)
-  #    foreach(LIB_ELE ${FULL_LIBRARY_SET})
-  #      if (TARGET ${LIB_ELE})
-  #        list(APPEND FULL_LIBRARY_TARGET_SET ${LIB_ELE})
-  #      endif()
-  #    endforeach()
-  #    export(TARGETS ${FULL_LIBRARY_TARGET_SET} FILE
-  #      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
-  #    # Import the targets in applications.
-  #    set(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}
-  ## Import ${PROJECT_NAME} targets
-  #if(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
-  #  set(${PROJECT_NAME}_TARGETS_IMPORTED 1)
-  #  include(\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")
-  #endif()
-  #")
-  #  endif()
-
   # Appending the logic to include each package's config file.
   set(LOAD_CODE "# Load configurations from enabled packages")
   foreach(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
@@ -914,7 +778,6 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     )
 
 endfunction()
-
 
 
 macro(tribits_set_compiler_var_for_config_file LANG FOR_DIR)

@@ -165,7 +165,7 @@ namespace MueLu {
 	  pointsAndIndex[i] = std::make_pair(myVec2(xCoords[aggNodes[i]], yCoords[aggNodes[i]]),i);
 	}
 
-	// Sort by x coordinate    
+	// Sort by x coordinate
 	std::sort(pointsAndIndex.begin(),pointsAndIndex.end(),[](const MyPair &a, const MyPair &b) {
 	    return a.first.x < b.first.x || (a.first.x == b.first.x && a.first.y < b.first.y);
 	  });
@@ -185,7 +185,7 @@ namespace MueLu {
 	  vertices.push_back(aggNodes[pointsAndIndex.back().second]);
 	  geomSizes.push_back(2);
 	}
-	else {      
+	else {
 	  std::vector<int> hull(2*N);
 	  int count=0;
 	  

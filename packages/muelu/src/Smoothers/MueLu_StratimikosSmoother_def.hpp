@@ -156,7 +156,7 @@ system(mystring);
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void StratimikosSmoother<double, LocalOrdinal, GlobalOrdinal, Node>::ExperimentalDropVertConnections(RCP<Matrix> & filteredA, Level& currentLevel) {
 
-    // strip out the veritcal connections. 
+    // strip out the veritcal connections.
     //
     // There is some code, which is currently turned off (via sumDropped). That
     // makes things more complicated. I want to keep it for now, and so it is
@@ -164,10 +164,10 @@ system(mystring);
     // of the horizontal stencil by summing dropped entries appropriately.
     // However, this does not correspond to plane relexation, and so I am
     // not sure it is really justified. Anyway, the picture below
-    // gives a situation with a 15-pt stencil 
+    // gives a situation with a 15-pt stencil
     //
     //                              a
-    //                             / 
+    //                             /
     //                            /
     //                     b ----c----- d
     //                          /
@@ -188,17 +188,17 @@ system(mystring);
     //                         /
     //                        p
     // To do this, we use umap to record locations within the middle layer associated
-    // with each line ID (e.g. g corresponds to the 13th line). Then, when dropping (in a 2nd pass) we 
-    // use lineId and umap to find where dropped entries should be summed (e.g., b corresponds to the 
+    // with each line ID (e.g. g corresponds to the 13th line). Then, when dropping (in a 2nd pass) we
+    // use lineId and umap to find where dropped entries should be summed (e.g., b corresponds to the
     // 13th line and umap[13] points at location for g).
-    using TST = typename Teuchos::ScalarTraits<SC>;
+    // using TST = typename Teuchos::ScalarTraits<SC>;
 
-    bool sumDropped = false;           
+    bool sumDropped = false;
 
     LO dofsPerNode = A_->GetFixedBlockSize();
 
 
-    RCP<ParameterList> fillCompleteParams(new ParameterList);    // This code taken from Build method 
+    RCP<ParameterList> fillCompleteParams(new ParameterList);    // This code taken from Build method
     fillCompleteParams->set("No Nonlocal Changes", true);        // within MueLu_FilteredAFactory_def
     filteredA = MatrixFactory::Build(A_->getCrsGraph());
     filteredA->resumeFill();
@@ -231,7 +231,7 @@ system(mystring);
           jdof  = inds[j];
           jnode = jdof/dofsPerNode;
           jdof_offset = jdof - jnode*dofsPerNode;
-          if ( LayerId[jnode]  == LayerId[inode] ) umap[dofsPerNode*VertLineId[jnode]+jdof_offset] = j;  
+          if ( LayerId[jnode]  == LayerId[inode] ) umap[dofsPerNode*VertLineId[jnode]+jdof_offset] = j;
         }
       }
 
@@ -242,14 +242,14 @@ system(mystring);
         jdof_offset = jdof - jnode*dofsPerNode;
         if ( LayerId[jnode]  != LayerId[inode] ) {
           if (sumDropped) {
-            if (umap.find(dofsPerNode*VertLineId[jnode + jdof_offset]) != umap.end()) 
+            if (umap.find(dofsPerNode*VertLineId[jnode + jdof_offset]) != umap.end())
               vals[umap[dofsPerNode*VertLineId[jnode + jdof_offset]]] +=  vals[j];
           }
           vals[j] = ZERO;
         }
       }
     }
-    filteredA->fillComplete(fillCompleteParams);   
+    filteredA->fillComplete(fillCompleteParams);
 
   }
 

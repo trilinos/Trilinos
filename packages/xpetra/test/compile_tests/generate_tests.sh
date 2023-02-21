@@ -23,9 +23,8 @@ not_a_templated_class=$(find ../.. -name "*Epetra*.hpp" -exec basename {} \;)
 not_a_templated_class="
 $not_a_templated_class
 
-Kokkos_ConfigDefs.hpp
-Kokkos_DefaultNode.hpp
-Kokkos_DefaultNode.hpp
+TpetraCore_config.h
+KokkosCompat_DefaultNode.hpp
 Xpetra_ConfigDefs.hpp
 Xpetra_Exceptions.hpp
 Xpetra_UseDefaultTypes.hpp

@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
     std::cerr << "Output file already exists.  This utility\ndoes not clobber existing files.";
   }
 
-  auto                                      readStart = std::chrono::steady_clock::now();
-  std::unique_ptr<NasModules::N2ENasReader> reader(new NasModules::N2ENasReader(inFile));
+  auto readStart = std::chrono::steady_clock::now();
+  auto reader    = std::make_unique<NasModules::N2ENasReader>(inFile);
   if (!reader->processFile()) {
 
     std::cerr

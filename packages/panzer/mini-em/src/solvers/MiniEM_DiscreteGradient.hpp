@@ -1,7 +1,12 @@
+#ifndef _MiniEM_DiscreteGradient_hpp_
+#define _MiniEM_DiscreteGradient_hpp_
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 #include "Tpetra_Import.hpp"
 
 class GradientRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
@@ -48,12 +53,16 @@ void addDiscreteGradientToRequestHandler(
   using Teuchos::rcp_dynamic_cast;
 
   typedef double Scalar;
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef int LocalOrdinalEpetra;
+#endif
   typedef int LocalOrdinalTpetra;
   typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraBlockedLinObjFactory;
+#ifdef PANZER_HAVE_EPETRA_STACK
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraBlockedLinObjFactory;
+#endif
 
   typedef PHX::Device DeviceSpace;
 
@@ -63,7 +72,9 @@ void addDiscreteGradientToRequestHandler(
       
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof  = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
+#ifdef PANZER_HAVE_EPETRA_STACK
   RCP<const epetraBlockedLinObjFactory > eblof  = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
+#endif
   if (tblof != Teuchos::null) {
     typedef LocalOrdinalTpetra LocalOrdinal;
     typedef GlobalOrdinalTpetra GlobalOrdinal;
@@ -158,6 +169,7 @@ void addDiscreteGradientToRequestHandler(
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
+#ifdef PANZER_HAVE_EPETRA_STACK
   } else if (eblof != Teuchos::null) {
     typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
@@ -260,7 +272,10 @@ void addDiscreteGradientToRequestHandler(
 
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
+#endif
   } else
     TEUCHOS_ASSERT(false);
   
 }
+
+#endif

@@ -188,7 +188,7 @@ namespace MueLuTests {
     out << "Skipping test because some required packages are not enabled (Tpetra)." << std::endl;
 #   endif
 
-  } 
+  }
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ScaledNullspaceFactory, Test0, SC, LO, GO, Node)

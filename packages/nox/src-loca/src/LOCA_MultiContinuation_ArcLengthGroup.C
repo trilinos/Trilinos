@@ -60,12 +60,12 @@
 LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
       const Teuchos::RCP<LOCA::GlobalData>& global_data,
       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& _continuationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const std::vector<int>& paramIDs)
   : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams,
-                       continuationParams,
+                       _continuationParams,
                        grp, pred, paramIDs),
     theta(paramIDs.size(), 1.0),
     doArcLengthScaling(true),

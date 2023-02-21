@@ -354,7 +354,7 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
   {
     int offset = m_comm_data.offset_and_num_keys_to_mesh[ii].first;
     for(int jj =0; jj < m_comm_data.offset_and_num_keys_to_mesh[ii].second; ++jj){
-      ThrowRequire(offset+jj < (int)to_points_distance_on_to_mesh.size());
+      ThrowRequireMsg(offset+jj < (int)to_points_distance_on_to_mesh.size(),"'offset+jj' ("<<offset<<"+"<<jj<<") required to be less than to_points_distance_on_to_mesh.size() ("<<to_points_distance_on_to_mesh.size()<<")");
       std::pair<double,int> dist_and_to_entity_index = std::make_pair(to_points_distance_on_to_mesh[offset+jj], offset+jj);
       auto key = to_entity_keys[offset+jj].id();
       if ( filterMap.find(key) == filterMap.end() )

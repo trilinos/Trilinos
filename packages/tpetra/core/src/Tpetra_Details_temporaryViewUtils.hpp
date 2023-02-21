@@ -98,7 +98,7 @@ toLayout(const SrcView& src)
 {
   static_assert(!std::is_same<Kokkos::LayoutStride, Layout>::value,
       "TempView::toLayout: Layout must be contiguous (not LayoutStride)");
-  Layout layout(src.extent(0), src.extent(1), src.extent(2), src.extent(3), src.extent(4), src.extent(5), src.extent(6), src.extent(7)); 
+  Layout layout(src.extent(0), src.extent(1));
   Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type> dst(Kokkos::ViewAllocateWithoutInitializing(src.label()), layout);
   Kokkos::deep_copy(dst, src);
   return dst;
@@ -115,7 +115,7 @@ toLayout(const SrcView& src)
   else
   {
     //Even though the layout is already correct, it's not contiguous.
-    Layout layout(src.extent(0), src.extent(1), src.extent(2), src.extent(3), src.extent(4), src.extent(5), src.extent(6), src.extent(7)); 
+    Layout layout(src.extent(0), src.extent(1));
     Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type>
       result(Kokkos::ViewAllocateWithoutInitializing(src.label()), layout);
     Kokkos::deep_copy(result, src);

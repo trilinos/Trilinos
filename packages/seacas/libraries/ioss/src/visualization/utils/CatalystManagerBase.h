@@ -7,6 +7,12 @@
 #ifndef __CATALYST_MANAGER_BASE_H
 #define __CATALYST_MANAGER_BASE_H
 
+#ifndef __CATALYST_PLUGIN_BUILD
+#include "iovs_export.h"
+#else
+#define IOVS_EXPORT
+#endif
+
 #include "visualization/cgns/CatalystCGNSMeshBase.h"
 #include "visualization/exodus/CatalystExodusMeshBase.h"
 #include <memory>
@@ -15,7 +21,7 @@
 
 namespace Iovs {
 
-  class CatalystManagerBase
+  class IOVS_EXPORT CatalystManagerBase
   {
 
   public:
@@ -33,6 +39,8 @@ namespace Iovs {
     virtual void parsePhactoriString(const std::string &phactori, ParseResult &pres) = 0;
 
     virtual int getCatalystOutputIDNumber() = 0;
+
+    virtual std::string getCatalystPluginVersion() = 0;
 
     // Parameters:
     //   cataystPythonFilename - Python file with instructions for Catalyst.

@@ -85,7 +85,7 @@ namespace Xpetra {
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
     template<class TargetDeviceType, class AccessType>
-     typename Kokkos::Impl::if_c<
+     typename std::conditional<
        std::is_same<
          typename dual_view_type::t_dev_um::execution_space::memory_space,
          typename TargetDeviceType::memory_space>::value,

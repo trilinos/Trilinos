@@ -152,10 +152,10 @@ namespace MueLu {
       // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
-      GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
+      GetOStream(Runtime0) << "Only one partition: Skip call to the repartitioner." << std::endl;
     } else if (numPartitions == -1) {
       // No repartitioning necessary: decomposition should be Teuchos::null
-      GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+      GetOStream(Runtime0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }
@@ -375,7 +375,7 @@ namespace MueLu {
       SubFactoryMonitor m1(*this, "Blocking newRowMap and Importer", currentLevel);
       RCP<const BlockedMap> blockedTargetMap = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GeneratedBlockedTargetMap(*blockedRowMap,*rowMapImporter);
 
-      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to 
+      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to
       // build sub-importers rather than generating new ones ex nihilo
       size_t numBlocks = blockedRowMap->getNumMaps();
       std::vector<RCP<const Import> > subImports(numBlocks);

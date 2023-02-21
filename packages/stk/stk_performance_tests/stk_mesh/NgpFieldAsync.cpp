@@ -49,7 +49,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 #include <Kokkos_Core.hpp>
 #include <cstdlib>
@@ -146,8 +146,8 @@ public:
 
   void pass_time_on_device(const stk::ngp::ExecSpace& space, unsigned iterationSpent = 100)
   {
-    typedef typename Kokkos::TeamPolicy<stk::ngp::ExecSpace>::member_type TeamHandleType;
-    const auto& teamPolicy = Kokkos::TeamPolicy<stk::ngp::ExecSpace>(space, 10, Kokkos::AUTO);
+    typedef typename stk::ngp::DeviceTeamPolicy::member_type TeamHandleType;
+    const auto& teamPolicy = stk::ngp::DeviceTeamPolicy(space, 10, Kokkos::AUTO);
 
     Kokkos::parallel_for("run_with_team_policy", teamPolicy,
                         KOKKOS_LAMBDA(const TeamHandleType & team) {
@@ -315,9 +315,11 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
-  
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
+
   setup_simple_mesh_with_fields(numElemsPerDim);
 
   stk::mesh::FieldBase* intField1 = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField1");
@@ -329,7 +331,6 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
   stk::mesh::FieldVector fields{intField1, intField2, intField3};
   std::vector<stk::mesh::NgpField<int>*> ngpFields = {&ngpIntField1, &ngpIntField2, &ngpIntField3};
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
 
@@ -351,7 +352,6 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
     batchTimer.stop_batch_timer();
   }
   
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer2.start_batch_timer();
 
@@ -398,9 +398,11 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
-  
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
+
   setup_simple_mesh_with_fields(numElemsPerDim);
 
   stk::mesh::FieldBase* intField1 = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField1");
@@ -412,7 +414,6 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
   stk::mesh::FieldVector fields{intField1, intField2, intField3};
   std::vector<stk::mesh::NgpField<int>*> ngpFields = {&ngpIntField1, &ngpIntField2, &ngpIntField3};
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
 
@@ -437,7 +438,6 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer2.start_batch_timer();
 
@@ -488,8 +488,10 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
   
   setup_simple_mesh_with_fields(numElemsPerDim);
 
@@ -502,7 +504,6 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
   stk::mesh::FieldVector fields{intField1, intField2, intField3};
   std::vector<stk::mesh::NgpField<int>*> ngpFields = {&ngpIntField1, &ngpIntField2, &ngpIntField3};
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
 
@@ -525,7 +526,6 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer2.start_batch_timer();
 
@@ -578,8 +578,10 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
 
   setup_multi_block_mesh_with_field_per_block(numElemsPerDim, numBlocks, numFields);
 
@@ -600,7 +602,6 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
     selector = selector | stk::mesh::Selector(*get_meta().get_part("block_" + std::to_string(i)));
   }
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
 
@@ -621,7 +622,6 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer2.start_batch_timer();
 
@@ -673,8 +673,10 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
 
   setup_multi_block_mesh_with_field_per_block(numElemsPerDim, numBlocks, numFields);
 
@@ -695,7 +697,6 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
     selector = selector | stk::mesh::Selector(*get_meta().get_part("block_" + std::to_string(i)));
   }
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
 
@@ -719,7 +720,6 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer2.start_batch_timer();
 
@@ -773,9 +773,12 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 100);
   unsigned sleepTime = stk::unit_test_util::simple_fields::get_command_line_option("-m", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 20);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer3(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer3(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  batchTimer2.initialize_batch_timer();
+  batchTimer3.initialize_batch_timer();
 
   setup_multi_block_mesh_with_field_per_block(numElemsPerDim, numBlocks, numFields);
 
@@ -797,7 +800,6 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
     spaces.push_back(space);
   }
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
 
     reset_fields_values_on_host(fields);
@@ -822,7 +824,6 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer2.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
 
     reset_fields_values_on_host(fields);
@@ -846,7 +847,6 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
     batchTimer2.stop_batch_timer();
   }
 
-  batchTimer3.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
 
     reset_fields_values_on_host(fields);

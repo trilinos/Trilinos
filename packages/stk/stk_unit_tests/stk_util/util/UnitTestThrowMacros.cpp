@@ -35,6 +35,7 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for set_assert_handler, ThrowRequireMsg, set_erro...
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <iostream>                         // for basic_ostream::operator<<, operator<<, ostrin...
 #include <stdexcept>                        // for logic_error, runtime_error, invalid_argument
 #include <string>                           // for string
@@ -247,7 +248,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
 void testNGPThrowRequireMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowRequireMsg(test == true, "Error testing whatever");
   });
@@ -265,8 +266,10 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
   // Also, OpenMP seems to produce an abort (in adddition to a throw?).
   //
   // testNGPThrowRequireMsg();
+  std::cout<<"NGP_ThrowRequireMsg: #if cuda, openmp or hip"<<std::endl;
 #else
 #ifdef NEW_ENOUGH_GCC
+  std::cout<<"NGP_ThrowRequireMsg: #ifdef new-enough-gcc"<<std::endl;
 //For now, only test this on gcc compilers more recent than major version 4.
 //A Trilinos pre-push test platform, 4.8.4 seems to produce an abort instead
 //of a throw for this test.
@@ -279,6 +282,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
                                "Error occurred at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
     std::string expectedMsg2 = "Error: Error testing whatever\n";
     std::string message = ex.what();
+  std::cout<<"NGP_ThrowRequireMsg: caught, comparing strings"<<std::endl;
     EXPECT_NE(message.find(expectedMsg1), std::string::npos);
     EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
@@ -291,7 +295,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 
 void testNGPThrowRequire()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowRequire(test == true);
   });
@@ -304,8 +308,10 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   // inside Kokkos::finalize().
   //
   // testNGPThrowRequire();
+  std::cout<<"NGP_ThrowRequire: #if cuda, openmp or hip"<<std::endl;
 #else
 #ifdef NEW_ENOUGH_GCC
+  std::cout<<"NGP_ThrowRequire: #ifdef new-enough-gcc"<<std::endl;
   try {
     testNGPThrowRequire();
   }
@@ -313,6 +319,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
                                "Error occurred at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
     std::string message = ex.what();
+  std::cout<<"NGP_ThrowRequire: caught, comparing strings"<<std::endl;
     EXPECT_NE(message.find(expectedMsg), std::string::npos);
   }
 #endif
@@ -323,7 +330,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 #ifndef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
     NGP_ThrowAssertMsg(test == true, "Error testing whatever");
   });
@@ -358,7 +365,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 #ifdef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     NGP_ThrowAssertMsg(false, "Error testing whatever");
   });
 }
@@ -380,7 +387,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 
 void testNGPThrowErrorMsgIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
     NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
   });
@@ -412,7 +419,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 
 void testNGPThrowErrorIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
     NGP_ThrowErrorIf(test == true);
   });
@@ -442,7 +449,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 
 void testNGPThrowErrorMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     NGP_ThrowErrorMsg("Error testing whatever");
   });
 }

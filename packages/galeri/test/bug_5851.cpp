@@ -8,7 +8,7 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;

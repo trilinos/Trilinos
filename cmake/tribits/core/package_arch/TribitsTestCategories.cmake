@@ -40,6 +40,7 @@
 include(FindListElement)
 include(MessageWrapper)
 include(Join)
+include(TribitsDeprecatedHelpers)
 
 
 # Define the valid categories that will be recognized in the CATEGORIES keyword
@@ -97,7 +98,7 @@ function(tribits_filter_and_assert_categories  CATEGORIES_VAR_INOUT)
   set(CATEGORIES_OUT)
   foreach(CATEGORY  ${${CATEGORIES_VAR_INOUT}})
     if (CATEGORY STREQUAL "WEEKLY")
-      message_wrapper(WARNING "Warning: The test category 'WEEKLY' is deprecated"
+      tribits_deprecated("The test category 'WEEKLY' is deprecated"
         " and is replaced with 'HEAVY'.  Please change to use 'HEAVY' instead.")
       list(APPEND  CATEGORIES_OUT  "HEAVY")
     else()

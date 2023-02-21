@@ -86,8 +86,8 @@ namespace ROL {
             }
 
             KOKKOS_INLINE_FUNCTION
-            void join(volatile Real &globalMin,
-                      const volatile Real &localMin) const {
+            void join(Real &globalMin,
+                      const Real &localMin) const {
                 if(localMin<globalMin) {
                     globalMin = localMin;
                 }
@@ -122,8 +122,8 @@ namespace ROL {
             }
 
             KOKKOS_INLINE_FUNCTION
-            void join(volatile int &globalFeasible,
-                      const volatile int &localFeasible) const {
+            void join(int &globalFeasible,
+                      const int &localFeasible) const {
                 globalFeasible *= localFeasible;
             }
 

@@ -498,20 +498,7 @@ namespace Stokhos {
 
 }
 
-namespace Sacado {
-  template <typename ordinal_t, typename value_t, typename device_t>
-  struct StringName< Stokhos::DynamicStorage<ordinal_t,
-                                             value_t,
-                                             device_t> > {
-    static std::string eval() {
-      std::stringstream ss;
-      ss << "Stokhos::DynamicStorage<"
-         << StringName<ordinal_t>::eval() << ","
-         << StringName<value_t>::eval() << ","
-         << StringName<device_t>::eval() << ">";
-      return ss.str();
-    }
-  };
-}
+#include "Stokhos_StorageHelpers.hpp"
+STOKHOS_STORAGE_HELPER_STRINGNAME_DYNAMIC(DynamicStorage)
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP

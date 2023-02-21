@@ -93,7 +93,7 @@
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "KokkosCompat_DefaultNode.hpp"
 
 #include <list>
 

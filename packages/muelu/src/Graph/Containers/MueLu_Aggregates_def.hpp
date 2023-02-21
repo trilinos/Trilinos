@@ -181,7 +181,7 @@ namespace MueLu {
     LO currNumUnaggregated=0;
 
     // Construct the "rowptr" and the counter
-    aggPtr[0] = 0; 
+    aggPtr[0] = 0;
     for(LO i=0; i<numAggs; i++) {
       aggPtr[i+1] = aggSizes[i] + aggPtr[i];
       aggCurr[i] = aggPtr[i];

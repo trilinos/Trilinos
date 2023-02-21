@@ -29,17 +29,12 @@
 
 // Options for generating hash function key...
 #define USE_MURMUR
-//#define USE_RANDOM
+// #define USE_RANDOM
 
 #define DO_TIMING 0
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
-#define FALL_THROUGH [[gnu::fallthrough]]
-#else
-#define FALL_THROUGH ((void)0)
-#endif /* __GNUC__ >= 7 */
-
 namespace {
+#ifdef SEACAS_HAVE_MPI
   template <typename T> void generate_index(std::vector<T> &index)
   {
     T sum = 0;
@@ -49,6 +44,7 @@ namespace {
       sum += cnt;
     }
   }
+#endif
 
 #if defined(USE_MURMUR)
   uint64_t MurmurHash64A(const size_t key);
@@ -116,12 +112,13 @@ namespace {
   }
 
   template <typename INT>
-  void resolve_parallel_faces(Ioss::Region &region, Ioss::FaceUnorderedSet &faces,
-                              const std::vector<size_t> &hash_ids, INT /*dummy*/)
+  void resolve_parallel_faces(IOSS_MAYBE_UNUSED Ioss::Region &region,
+                              IOSS_MAYBE_UNUSED Ioss::FaceUnorderedSet &faces,
+                              IOSS_MAYBE_UNUSED const std::vector<size_t> &hash_ids, INT /*dummy*/)
   {
-    PAR_UNUSED(region);
-    PAR_UNUSED(faces);
-    PAR_UNUSED(hash_ids);
+    IOSS_PAR_UNUSED(region);
+    IOSS_PAR_UNUSED(faces);
+    IOSS_PAR_UNUSED(hash_ids);
 
 #ifdef SEACAS_HAVE_MPI
     size_t proc_count = region.get_database()->util().parallel_size();
@@ -337,8 +334,8 @@ namespace Ioss {
 
   FaceGenerator::FaceGenerator(Ioss::Region &region) : region_(region) {}
 
-  template void FaceGenerator::generate_faces(int, bool, bool);
-  template void FaceGenerator::generate_faces(int64_t, bool, bool);
+  template IOSS_EXPORT void FaceGenerator::generate_faces(int, bool, bool);
+  template IOSS_EXPORT void FaceGenerator::generate_faces(int64_t, bool, bool);
 
   template <typename INT>
   void FaceGenerator::generate_faces(INT /*dummy*/, bool block_by_block, bool local_ids)

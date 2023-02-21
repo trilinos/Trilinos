@@ -462,7 +462,7 @@ namespace Amesos2 {
 
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-    int default_nprocs = Kokkos::DefaultHostExecutionSpace::concurrency();
+    int default_nprocs = Kokkos::DefaultHostExecutionSpace().concurrency();
     data_.options.nprocs = parameterList->get<int>("nprocs", default_nprocs);
 
     data_.options.trans = this->control_.useTranspose_ ? SLUMT::TRANS : SLUMT::NOTRANS;
@@ -521,7 +521,7 @@ namespace Amesos2 {
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-      int default_nprocs = Kokkos::DefaultHostExecutionSpace::concurrency();
+      int default_nprocs = Kokkos::DefaultHostExecutionSpace().concurrency();
       Teuchos::RCP<EnhancedNumberValidator<int> > nprocs_validator
         = Teuchos::rcp( new EnhancedNumberValidator<int>() );
       nprocs_validator->setMin(default_nprocs);

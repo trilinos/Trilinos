@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -51,14 +51,12 @@
 #include "Teuchos_RCP.hpp"
 
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
@@ -75,7 +73,7 @@
 #include <vector>
 
 // This whole test rig is based on inverting the matrix
-// 
+//
 //      [  1  2  1 -1 ]
 //  A = [  2  1 -3  1 ]
 //      [  1 -3  0  0 ]
@@ -118,7 +116,7 @@ void tLSCStablePreconditionerFactory_tpetra::initializeTest()
    ptrF->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices),Teuchos::ArrayView<ST>(row1));
    ptrF->fillComplete();
    F_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrF->getRangeMap()),ptrF);
-   
+
    // build B matrix
    row0[0] =  1.0; row0[1] = -3.0;
    row1[0] = -1.0; row1[1] =  1.0;
@@ -171,53 +169,53 @@ int tLSCStablePreconditionerFactory_tpetra::runTest(int verbosity,std::ostream &
    failstrm << "tLSCStablePreconditionerFactory_tpetra";
 
    status = test_createPrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatable(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_identity(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_diagonal(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_result(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLSCStablePreconditionedFactory...PASSED","tLSCStablePreconditionedFactory...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLSCStablePreconditionedFactory...PASSED","tLSCStablePreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCStablePreconditionedFactory...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLSCStablePreconditionedFactory...FAILED");
    }
 
    return failcount;
@@ -249,9 +247,9 @@ bool tLSCStablePreconditionerFactory_tpetra::test_initializePrec(int verbosity,s
    bool allPassed = true;
 
    // Build block2x2 preconditioner
-   //RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
+   //RCP<Thyra::PreconditionerFactoryBase<double> > precFactory
    //      = rcp(new LSCStablePreconditionerFactory(invF_,invBQBt_));
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(invF_,invBQBt_,Teuchos::null));
    RCP<Thyra::PreconditionerBase<ST> > prec = precFactory->createPrec();
 
@@ -311,7 +309,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    LinearOp invBQBt = Ip;
 
    LinearOp A = Thyra::block2x2(Iu,Ip,Iu,Zp);
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(Iu,invBQBt,Teuchos::null));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
@@ -324,7 +322,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // test vector [0 1 1 3]
    ea.replaceGlobalValue(0,0.0);
@@ -339,7 +337,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = (Teko::Test::Difference(y,z)<tolerance_);
-   if(not status || verbosity>=10) { 
+   if(not status || verbosity>=10) {
       os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -360,7 +358,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = (Teko::Test::Difference(y,z)<tolerance_);
-   if(not status || verbosity>=10) { 
+   if(not status || verbosity>=10) {
       os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -381,7 +379,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = (Teko::Test::Difference(y,z)<tolerance_);
-   if(not status || verbosity>=10) { 
+   if(not status || verbosity>=10) {
       os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -402,7 +400,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_identity(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = (Teko::Test::Difference(y,z)<tolerance_);
-   if(not status || verbosity>=10) { 
+   if(not status || verbosity>=10) {
       os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -447,11 +445,11 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    LinearOp iF = Teko::Test::DiagMatrix_tpetra(2,vec);
 
    // S = -C+D*iF*G
-   vec[0] = 0.028571428571429; vec[1] = 0.020833333333333; 
+   vec[0] = 0.028571428571429; vec[1] = 0.020833333333333;
    LinearOp iBBt = Teko::Test::DiagMatrix_tpetra(2,vec);
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(iF,iBBt,Teuchos::null));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A);
 
@@ -464,7 +462,7 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A->range(),1);
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -482,8 +480,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -504,8 +502,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -526,8 +524,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -548,8 +546,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_diagonal(int verbosity,std::os
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -565,11 +563,11 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    bool status = false;
    bool allPassed = true;
    ST diff;
- 
+
    // Build block2x2 preconditioner
-   //RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
+   //RCP<Thyra::PreconditionerFactoryBase<double> > precFactory
    //      = rcp(new LSCStablePreconditionerFactory(invF_,invBQBt_,invMass_));
-   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory 
+   const RCP<const Thyra::PreconditionerFactoryBase<ST> > precFactory
          = rcp(new LSCPreconditionerFactory(invF_,invBQBt_,invMass_));
    RCP<Thyra::PreconditionerBase<ST> > prec = Thyra::prec<ST>(*precFactory,A_);
 
@@ -580,10 +578,10 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
    // construct a couple of vectors
    Tpetra::Vector<ST,LO,GO,NT> ea(map),eb(map);
    Tpetra::Vector<ST,LO,GO,NT> ef(map),eg(map);
-   
+
    const RCP<const Thyra::MultiVectorBase<ST> > x = BlockVector(ea,eb,A_->domain());
    const RCP<const Thyra::MultiVectorBase<ST> > z = BlockVector(ef,eg,A_->domain());
-   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A_->range(),1); 
+   const RCP<Thyra::MultiVectorBase<ST> > y = Thyra::createMembers(A_->range(),1);
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
 
@@ -603,8 +601,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -625,8 +623,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -647,8 +645,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -669,8 +667,8 @@ bool tLSCStablePreconditionerFactory_tpetra::test_result(int verbosity,std::ostr
 
    Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
-   if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+   if(not status || verbosity>=10 ) {
+      os << std::endl << "   tLSCStablePreconditionerFactory_tpetra::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);

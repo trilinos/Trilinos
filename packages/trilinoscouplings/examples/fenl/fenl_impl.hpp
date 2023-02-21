@@ -63,7 +63,7 @@
 #include <BoxElemFixture.hpp>
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <KokkosCompat_DefaultNode.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include "Tpetra_MultiVector.hpp"

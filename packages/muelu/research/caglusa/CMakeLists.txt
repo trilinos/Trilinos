@@ -1,5 +1,5 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../test/unit_tests)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../test/unit_tests)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
@@ -13,17 +13,15 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(caglusa_cp
     SOURCE_FILES
-    muelu.xml auxiliary.xml ${FILES}
+    belos.xml muelu.xml auxiliary.xml ${FILES}
     )
 
   TRIBITS_ADD_TEST(
     HierarchicalDriver
     NAME "HierarchicalDriver-fractionalLaplacian1D"
     ARGS
-    "--xml=1d-mm-global/hierarchical.xml"
-    "--xml=1d-mm-local/hierarchical.xml"
-    "--xml=1d-binary-global/hierarchical.xml"
-    "--xml=1d-binary-local/hierarchical.xml"
+    "--xml=1d-mm/hierarchical.xml --xmlProblem=1d-mm/problem.xml"
+    "--xml=1d-binary/hierarchical.xml --xmlProblem=1d-binary/problem.xml"
     COMM mpi
     NUM_MPI_PROCS 4
     )
