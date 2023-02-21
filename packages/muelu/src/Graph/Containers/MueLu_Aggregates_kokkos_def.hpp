@@ -62,6 +62,7 @@ namespace MueLu {
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(LWGraph_kokkos graph) {
     numAggregates_  = 0;
+    numGlobalAggregates_  = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -80,6 +81,7 @@ namespace MueLu {
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(const RCP<const Map>& map) {
     numAggregates_ = 0;
+    numGlobalAggregates_  = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(map);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -182,7 +184,7 @@ namespace MueLu {
   }
   
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void
+  void 
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
     LO numAggs  = GetNumAggregates();
     LO numNodes = vertex2AggId_->getLocalLength();
@@ -212,8 +214,8 @@ namespace MueLu {
     // Preallocate unaggregated to the correct size
     LO numUnaggregated = 0;
     Kokkos::parallel_reduce("MueLu:Aggregates:ComputeNodesInAggregate:unaggregatedSize", range_type(0,numNodes),
-      KOKKOS_LAMBDA(const LO nodeIdx, LO & count) {
-        if(vertex2AggId(nodeIdx,0)==INVALID)
+      KOKKOS_LAMBDA(const LO nodeIdx, LO & count) { 
+        if(vertex2AggId(nodeIdx,0)==INVALID) 
           count++;
       }, numUnaggregated);
     unaggregated = LO_view("unaggregated",numUnaggregated);
@@ -235,23 +237,30 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
-    return BaseClass::description() + "{nGlobalAggregates = " + toString(GetNumGlobalAggregates()) + "}";
+    if (numGlobalAggregates_ == -1) return BaseClass::description() + "{nGlobalAggregates = not computed}"; 
+    else                            return BaseClass::description() + "{nGlobalAggregates = " + toString(numGlobalAggregates_) + "}";
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Statistics1)
-      out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
+    if (verbLevel & Statistics1) {
+      if (numGlobalAggregates_ == -1) out0 << "Global number of aggregates: not computed " << std::endl;
+      else                            out0 << "Global number of aggregates: " << numGlobalAggregates_ << std::endl;
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetNumGlobalAggregates() const {
-    LO nAggregates = GetNumAggregates();
-    GO nGlobalAggregates;
-    MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
-    return nGlobalAggregates;
+  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetNumGlobalAggregatesComputeIfNeeded() {
+
+    if (numGlobalAggregates_ != -1) {
+      LO nAggregates = GetNumAggregates();
+      GO nGlobalAggregates;
+      MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
+      SetNumGlobalAggregates(nGlobalAggregates);
+    }
+    return numGlobalAggregates_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>

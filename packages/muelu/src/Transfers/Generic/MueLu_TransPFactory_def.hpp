@@ -86,6 +86,10 @@ namespace MueLu {
     std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
+    // If we failed to create a valid P (e.g., # of global aggregates is zero), then we just bail here
+    //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if (P == Teuchos::null) return;
+
     const Teuchos::ParameterList& pL = GetParameterList();
 
     // Reuse pattern if available (multiple solve)
