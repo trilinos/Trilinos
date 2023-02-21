@@ -24,7 +24,7 @@
 #include <SL_tokenize.h>
 
 namespace {
-  void Parse_Die(const char *line)
+  [[noreturn]] void Parse_Die(const char *line)
   {
     std::string sline = line;
     chop_whitespace(sline);

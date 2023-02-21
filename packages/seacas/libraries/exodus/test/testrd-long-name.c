@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -394,7 +394,7 @@ int main(int argc, char **argv)
       printf("name = '%s'\n", nset_names[i]);
       free(nset_names[i]);
       node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
-      dist_fact = (float *)calloc(num_nodes_in_set, sizeof(float));
+      dist_fact = (float *)calloc(num_df_in_set, sizeof(float));
 
       error = ex_get_set(exoid, EX_NODE_SET, ids[i], node_list, NULL);
       printf("\nafter ex_get_node_set, error = %3d\n", error);

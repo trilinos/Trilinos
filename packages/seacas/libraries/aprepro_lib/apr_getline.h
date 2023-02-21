@@ -17,10 +17,8 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
-namespace Ioss {
-  IOSS_EXPORT char *getline_int(const char *); /* read a line of input */
-  IOSS_EXPORT void  gl_setwidth(int);          /* specify width of screen */
-  IOSS_EXPORT void  gl_histadd(const char *);  /* adds entries to hist */
-} // namespace Ioss
+namespace SEAMS {
+  char *getline_int(const char *); /* read a line of input */
+  void  gl_setwidth(int);          /* specify width of screen */
+  void  gl_histadd(const char *);  /* adds entries to hist */
+} // namespace SEAMS

@@ -414,15 +414,20 @@ static void gl_addchar(int c)
 
 /* adds the character c to the input buffer at current location */
 {
-  if (gl_cnt >= GL_BUF_SIZE - 1)
-    gl_error("\n*** Error: getline(): input buffer overflow\n");
   if (gl_overwrite == 0 || gl_pos == gl_cnt) {
-    for (int i = gl_cnt; i >= gl_pos; i--)
+    if (gl_cnt > GL_BUF_SIZE - 2) {
+      gl_error("\n*** Error: getline(): input buffer overflow\n");
+    }
+    for (int i = gl_cnt; i >= gl_pos; i--) {
       gl_buf[i + 1] = gl_buf[i];
+    }
     gl_buf[gl_pos] = (char)c;
     gl_fixup(gl_prompt, gl_pos, gl_pos + 1);
   }
   else {
+    if (gl_pos > GL_BUF_SIZE - 1) {
+      gl_error("\n*** Error: getline(): input buffer overflow\n");
+    }
     gl_buf[gl_pos] = (char)c;
     gl_extent      = 1;
     gl_fixup(gl_prompt, gl_pos, gl_pos + 1);
@@ -435,22 +440,27 @@ static void gl_yank(void)
   int len = strlen(gl_killbuf);
   if (len > 0) {
     if (gl_overwrite == 0) {
-      if (gl_cnt + len >= GL_BUF_SIZE - 1)
+      if (gl_cnt + len >= GL_BUF_SIZE) {
         gl_error("\n*** Error: getline(): input buffer overflow\n");
-      for (int i = gl_cnt; i >= gl_pos; i--)
+      }
+      for (int i = gl_cnt; i >= gl_pos; i--) {
         gl_buf[i + len] = gl_buf[i];
-      for (int i = 0; i < len; i++)
+      }
+      for (int i = 0; i < len; i++) {
         gl_buf[gl_pos + i] = gl_killbuf[i];
+      }
       gl_fixup(gl_prompt, gl_pos, gl_pos + len);
     }
     else {
-      if (gl_pos + len > gl_cnt) {
-        if (gl_pos + len >= GL_BUF_SIZE - 1)
-          gl_error("\n*** Error: getline(): input buffer overflow\n");
-        gl_buf[gl_pos + len] = 0;
+      if (gl_pos + len >= GL_BUF_SIZE) {
+        gl_error("\n*** Error: getline(): input buffer overflow\n");
       }
-      for (int i = 0; i < len; i++)
+      if (gl_pos + len > gl_cnt) {
+        gl_buf[gl_pos + len] = '\0';
+      }
+      for (int i = 0; i < len; i++) {
         gl_buf[gl_pos + i] = gl_killbuf[i];
+      }
       gl_extent = len;
       gl_fixup(gl_prompt, gl_pos, gl_pos + len);
     }
@@ -462,15 +472,16 @@ static void gl_yank(void)
 static void gl_transpose(void)
 /* switch character under cursor and to left of cursor */
 {
-  if (gl_pos > 0 && gl_cnt > gl_pos) {
+  if (gl_pos > 0 && gl_cnt > gl_pos && gl_pos < GL_BUF_SIZE) {
     int c              = gl_buf[gl_pos - 1];
     gl_buf[gl_pos - 1] = gl_buf[gl_pos];
     gl_buf[gl_pos]     = (char)c;
     gl_extent          = 2;
     gl_fixup(gl_prompt, gl_pos - 1, gl_pos);
   }
-  else
+  else {
     gl_beep();
+  }
 }
 
 static void gl_newline(void)
@@ -483,10 +494,12 @@ static void gl_newline(void)
   int len    = gl_cnt;
   int loc    = gl_width - 5; /* shifts line back to start position */
 
-  if (gl_cnt >= GL_BUF_SIZE - 1)
+  if (gl_cnt >= GL_BUF_SIZE - 1) {
     gl_error("\n*** Error: getline(): input buffer overflow\n");
-  if (loc > len)
+  }
+  if (loc > len) {
     loc = len;
+  }
   gl_fixup(gl_prompt, change, loc); /* must do this before appending \n */
   gl_buf[len]     = '\n';
   gl_buf[len + 1] = '\0';
@@ -558,42 +571,39 @@ static void gl_fixup(const char *prompt, int change, int cursor)
   static int  off_left;  /* true if more text left of screen */
   static char last_prompt[80] = "";
   int         left = 0, right = -1; /* bounds for redraw */
-  int         pad;                  /* how much to erase at end of line */
-  int         backup;               /* how far to backup before fixing */
-  int         new_shift;            /* value of shift based on cursor */
-  int         i;
-  int         new_right = -1; /* alternate right bound, using gl_extent */
-  int         l1, l2;
+  int         new_right = -1;       /* alternate right bound, using gl_extent */
 
   if (change == -2) { /* reset */
     gl_pos = gl_cnt = gl_shift = off_right = off_left = 0;
     gl_putc('\r');
     gl_puts(prompt);
-    copy_string(last_prompt, prompt, 80 - 1);
+    copy_string(last_prompt, prompt, 80);
     change   = 0;
     gl_width = gl_termw - strlen(prompt);
   }
   else if (strcmp(prompt, last_prompt) != 0) {
-    l1     = strlen(last_prompt);
-    l2     = strlen(prompt);
+    int l1 = strlen(last_prompt);
+    int l2 = strlen(prompt);
     gl_cnt = gl_cnt + l1 - l2;
-    copy_string(last_prompt, prompt, 80 - 1);
+    copy_string(last_prompt, prompt, 80);
     gl_putc('\r');
     gl_puts(prompt);
     gl_pos   = gl_shift;
     gl_width = gl_termw - l2;
     change   = 0;
   }
-  pad    = (off_right) ? gl_width - 1 : gl_cnt - gl_shift; /* old length */
-  backup = gl_pos - gl_shift;
+  /* how much to erase at end of line */
+  int pad    = (off_right) ? gl_width - 1 : gl_cnt - gl_shift; /* old length */
+  int backup = gl_pos - gl_shift;                              /* how far to backup before fixing */
   if (change >= 0) {
     gl_cnt = strlen(gl_buf);
-    if (change > gl_cnt)
+    if (change > gl_cnt) {
       change = gl_cnt;
+    }
   }
   if (cursor > gl_cnt) {
     if (cursor != GL_BUF_SIZE) { /* GL_BUF_SIZE means end of line */
-      if (gl_ellipses_during_completion == 0) {
+      if (gl_ellipses_during_completion) {
         gl_beep();
       }
     }
@@ -607,13 +617,14 @@ static void gl_fixup(const char *prompt, int change, int cursor)
   if (off_right || (off_left && cursor < gl_shift + gl_width - gl_scroll / 2)) {
     extra = 2; /* shift the scrolling boundary */
   }
-  new_shift = cursor + extra + gl_scroll - gl_width;
+  int new_shift = cursor + extra + gl_scroll - gl_width;
   if (new_shift > 0) {
     new_shift /= gl_scroll;
     new_shift *= gl_scroll;
   }
-  else
+  else {
     new_shift = 0;
+  }
   if (new_shift != gl_shift) { /* scroll occurs */
     gl_shift  = new_shift;
     off_left  = (gl_shift) ? 1 : 0;
@@ -636,33 +647,43 @@ static void gl_fixup(const char *prompt, int change, int cursor)
   pad -= (off_right) ? gl_width - 1 : gl_cnt - gl_shift;
   pad = (pad < 0) ? 0 : pad;
   if (left <= right) { /* clean up screen */
-    for (i = 0; i < backup; i++)
+    for (int i = 0; i < backup; i++) {
       gl_putc('\b');
+    }
     if (left == gl_shift && off_left) {
       gl_putc('$');
       left++;
     }
-    for (i = left; i < new_right; i++)
+    for (int i = left; i < new_right; i++) {
       gl_putc(gl_buf[i]);
+    }
     gl_pos = new_right;
     if (off_right && new_right == right) {
       gl_putc('$');
       gl_pos++;
     }
     else {
-      for (i = 0; i < pad; i++) /* erase remains of prev line */
+      for (int i = 0; i < pad; i++) { /* erase remains of prev line */
         gl_putc(' ');
+      }
       gl_pos += pad;
     }
   }
-  i = gl_pos - cursor; /* move to final cursor location */
+  int i = gl_pos - cursor; /* move to final cursor location */
   if (i > 0) {
-    while (i--)
+    while (i--) {
       gl_putc('\b');
+    }
   }
   else {
-    for (i = gl_pos; i < cursor; i++)
-      gl_putc(gl_buf[i]);
+    if (cursor < GL_BUF_SIZE) {
+      for (int ii = gl_pos; ii < cursor; ii++) {
+        gl_putc(gl_buf[ii]);
+      }
+    }
+    else {
+      gl_error("\n*** Error: getline(): logic error in gl_fixup().\n");
+    }
   }
   gl_pos = cursor;
 }

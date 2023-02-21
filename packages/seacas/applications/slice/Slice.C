@@ -1718,7 +1718,12 @@ namespace {
 
     size_t proc_count = proc_region.size();
 
-    size_t                        node_count = region.get_property("node_count").get_int();
+    size_t node_count = region.get_property("node_count").get_int();
+    if (node_count == 0) {
+      // Should never happen, but makes static analyzers happy...
+      return;
+    }
+
     std::vector<std::vector<int>> proc_node(node_count);
 
     // Assume that the majority of nodes will be on 2 or less

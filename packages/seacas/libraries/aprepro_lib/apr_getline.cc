@@ -19,7 +19,7 @@
  * Note:  This version has been updated by Mike Gleason <mgleason@ncftp.com>
  */
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
-    defined(__MINGW32__) || defined(_WIN64)
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 
 #define __windows__ 1
 #include <conio.h>
@@ -51,7 +51,7 @@ struct termios io_new_termios, io_old_termios;
 #include <unistd.h>
 #endif
 
-#include "Ioss_Getline.h"
+#include "apr_getline.h"
 
 namespace {
   const int GL_BUF_SIZE{1024};
@@ -268,7 +268,7 @@ namespace {
       if (cp != nullptr) {
         int w = strtol(cp, nullptr, 10);
         if (w > 20)
-          Ioss::gl_setwidth(w);
+          SEAMS::gl_setwidth(w);
       }
       hist_init();
     }
@@ -292,7 +292,7 @@ namespace {
   }
 } // namespace
 
-namespace Ioss {
+namespace SEAMS {
   void gl_setwidth(int w)
   {
     if (w > 250) {
@@ -420,7 +420,7 @@ namespace Ioss {
     gl_buf[0] = '\0';
     return gl_buf;
   }
-} // namespace Ioss
+} // namespace SEAMS
 namespace {
   void gl_addchar(int c)
 
@@ -727,7 +727,7 @@ namespace {
   }
 } // namespace
 
-namespace Ioss {
+namespace SEAMS {
   void gl_histadd(const char *buf)
   {
     static char *prev = nullptr;
@@ -758,7 +758,7 @@ namespace Ioss {
     }
     hist_pos = hist_last;
   }
-} // namespace Ioss
+} // namespace SEAMS
 namespace {
   char *hist_prev(void)
   /* loads previous hist entry into input buffer, sticks on first */
