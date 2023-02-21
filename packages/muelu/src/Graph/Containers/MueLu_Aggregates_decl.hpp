@@ -207,6 +207,15 @@ namespace MueLu {
      */
     void ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes,Array<LO> & unaggregated) const;
 
+    /*! @brief List all aggregates and their nodes
+
+    @param out [in] Output stream to be used for printing
+    @param useGlobalNodeIds [in] Identify nodes by global IDs (if true, default) or local IDs (if false)
+
+    \warning Use this for debugging only, as this will generate a ton of screen output.
+    */
+    void PrintAllNodesPerAggregate(Teuchos::FancyOStream& out, bool useGlobalNodeIds = true) const;
+
     //! @name Overridden from Teuchos::Describable
     //@{
 

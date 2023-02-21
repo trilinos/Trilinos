@@ -180,7 +180,7 @@ namespace MueLu {
 
     return graph_;
   }
-  
+
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
@@ -230,7 +230,7 @@ namespace MueLu {
           unaggregated(Kokkos::atomic_fetch_add(&aggCurr(numAggs),1)) = nodeIdx;
         }
       });
-    
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -258,6 +258,54 @@ namespace MueLu {
   const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> >
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetMap() const {
     return vertex2AggId_->getMap();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::PrintAllNodesPerAggregate(
+    Teuchos::FancyOStream& out, bool useGlobalNodeIds) const
+  {
+    // Compute list of nodes per aggregate
+    LO_view aggPtr;
+    LO_view aggNodes;
+    LO_view unaggregated;
+    ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+
+    // Loop aggregates and their nodes and print them
+    const int myRank = vertex2AggId_->getMap()->getComm()->getRank();
+    const LO numAggregates = GetNumAggregates();
+    const auto aggSizes = ComputeAggregateSizes(true);
+    TEUCHOS_ASSERT(static_cast<size_t>(numAggregates)==aggSizes.size());
+
+    // Get the data over to host (just for printing)
+    {
+      auto h_aggPtr = Kokkos::create_mirror_view(aggPtr);
+      auto h_aggNodes = Kokkos::create_mirror_view(aggNodes);
+      auto h_aggSizes = Kokkos::create_mirror_view(aggSizes);
+
+      Kokkos::deep_copy(h_aggPtr, aggPtr);
+      Kokkos::deep_copy(h_aggNodes, aggNodes);
+      Kokkos::deep_copy(h_aggSizes, aggSizes);
+
+      std::stringstream myStream;
+      myStream << "\n";
+      for (LO lAggId = Teuchos::OrdinalTraits<LO>::zero(); lAggId < numAggregates; ++lAggId)
+      {
+        myStream << "p = " << myRank << " | lAggId = " << lAggId << " with " << h_aggSizes[lAggId] << " nodes:";
+        for (LO lNodeId = h_aggPtr[lAggId]; lNodeId < h_aggPtr[lAggId+1]; ++lNodeId)
+        {
+          if (useGlobalNodeIds)
+          {
+            const GO gNodeId = vertex2AggId_->getMap()->getGlobalElement(h_aggNodes[lNodeId]);
+            myStream << "  " << gNodeId;
+          }
+          else
+            myStream << "  " << h_aggNodes[lNodeId];
+        }
+        myStream << "\n";
+      }
+      out << myStream.str();
+    }
   }
 
 } //namespace MueLu
