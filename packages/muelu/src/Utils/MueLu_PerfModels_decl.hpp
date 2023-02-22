@@ -46,10 +46,13 @@
 #ifndef MUELU_PERFMODELS_HPP
 #define MUELU_PERFMODELS_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #include <vector>
 #include <ostream>
 #include <Teuchos_DefaultComm.hpp>
 
+#include "MueLu_PerfModels_fwd.hpp"
 
 namespace MueLu {
 
