@@ -553,10 +553,6 @@ namespace Ifpack2 {
 
       local_ordinal_type_1d_view dm2cm; // permutation
 
-#if defined(KOKKOS_ENABLE_CUDA)
-      //using cuda_stream_1d_std_vector = std::vector<cudaStream_t>;
-      //cuda_stream_1d_std_vector stream;    
-#endif
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       using exec_instance_1d_std_vector = std::vector<execution_space>;
       exec_instance_1d_std_vector exec_instances;  
@@ -669,15 +665,9 @@ namespace Ifpack2 {
 
       void createExecutionSpaceInstances() {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-        const local_ordinal_type num_streams = 8;
+        //The following line creates 8 streams:
         exec_instances =
           Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1, 1, 1, 1, 1);
-#endif
-      }
-
-      void destroyExecutionSpaceInstances() {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-        //exec_instances.clear();
 #endif
       }
 
@@ -701,10 +691,6 @@ namespace Ifpack2 {
         createMpiRequests(import);
         createSendRecvIDs(import);
         createExecutionSpaceInstances();
-      }
-
-      ~AsyncableImport() {
-        destroyExecutionSpaceInstances();
       }
 
       void createDataBuffer(const local_ordinal_type &num_vectors) {
