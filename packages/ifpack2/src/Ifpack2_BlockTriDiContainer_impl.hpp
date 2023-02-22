@@ -553,12 +553,9 @@ namespace Ifpack2 {
 
       local_ordinal_type_1d_view dm2cm; // permutation
 
-#if defined(KOKKOS_ENABLE_CUDA)
-      using cuda_stream_1d_std_vector = std::vector<cudaStream_t>;
-      cuda_stream_1d_std_vector stream;
-
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       using exec_instance_1d_std_vector = std::vector<execution_space>;
-      exec_instance_1d_std_vector exec_instances;      
+      exec_instance_1d_std_vector exec_instances;  
 #endif
 
       // for cuda
@@ -659,7 +656,7 @@ namespace Ifpack2 {
           const auto pid_send_value = pids.send[i];
           for (local_ordinal_type j=0,jend=epids.size();j<jend;++j)
             if (epids[j] == pid_send_value) lids_send_host[cnt++] = elids[j];
-#if !defined(__CUDA_ARCH__)
+#if !defined(__HIP_DEVICE_COMPILE__) && !defined(__CUDA_ARCH__)
           TEUCHOS_ASSERT(static_cast<size_t>(cnt) == offset_host.send[i+1]);
 #endif
         }
@@ -667,30 +664,10 @@ namespace Ifpack2 {
       }
 
       void createExecutionSpaceInstances() {
-#if defined(KOKKOS_ENABLE_CUDA)
-        const local_ordinal_type num_streams = 8;
-        {
-          stream.clear();
-          stream.resize(num_streams);
-          exec_instances.clear();
-          exec_instances.resize(num_streams);
-          for (local_ordinal_type i=0;i<num_streams;++i) {
-            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
-            ExecutionSpaceFactory<execution_space>::createInstance(stream[i], exec_instances[i]);
-          }
-        }
-#endif
-      }
-
-      void destroyExecutionSpaceInstances() {
-#if defined(KOKKOS_ENABLE_CUDA)
-        {
-          const local_ordinal_type num_streams = stream.size();
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
-        }
-        stream.clear();
-        exec_instances.clear();
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        //The following line creates 8 streams:
+        exec_instances =
+          Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1, 1, 1, 1, 1);
 #endif
       }
 
@@ -714,10 +691,6 @@ namespace Ifpack2 {
         createMpiRequests(import);
         createSendRecvIDs(import);
         createExecutionSpaceInstances();
-      }
-
-      ~AsyncableImport() {
-        destroyExecutionSpaceInstances();
       }
 
       void createDataBuffer(const local_ordinal_type &num_vectors) {
@@ -750,7 +723,7 @@ namespace Ifpack2 {
       // - cuda only with kokkos develop branch
       // ======================================================================
 
-#if defined(KOKKOS_ENABLE_CUDA) 
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       template<typename PackTag>
       static
       void copy(const local_ordinal_type_1d_view &lids_,
@@ -925,8 +898,8 @@ namespace Ifpack2 {
             });
 #endif
         } else {
-#if defined(__CUDA_ARCH__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
 #else
           {
             const Kokkos::RangePolicy<execution_space> policy(0, idiff*num_vectors);
@@ -1010,7 +983,7 @@ namespace Ifpack2 {
       /// front interface
       ///
       void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 #if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
         asyncSendRecvVar1(mv);
 #else
@@ -1021,7 +994,7 @@ namespace Ifpack2 {
 #endif
       }
       void syncRecv() {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 #if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
         syncRecvVar1();
 #else
@@ -1601,7 +1574,7 @@ namespace Ifpack2 {
         const auto dommap = g.getDomainMap();
         TEUCHOS_ASSERT( !(rowmap.is_null() || colmap.is_null() || dommap.is_null()));
 
-#if !defined(__CUDA_ARCH__)
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
         const Kokkos::RangePolicy<host_execution_space> policy(0,nrows);
         Kokkos::parallel_for
           ("performSymbolicPhase::RangePolicy::col2row",
@@ -2569,7 +2542,7 @@ namespace Ifpack2 {
 
       // copy to multivectors : damping factor and Y_scalar_multivector
       Unmanaged<impl_scalar_type_2d_view_tpetra> Y_scalar_multivector;
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
       AtomicUnmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
 #else
       /* */ Unmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
