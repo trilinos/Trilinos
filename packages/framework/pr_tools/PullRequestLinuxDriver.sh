@@ -12,17 +12,12 @@ on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
 function configure_ccache() {
     print_banner "Configuring ccache"
 
-    # Identify the path to the trilinos repository root
-    REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
-    test -d ${REPO_ROOT:?}/.git || REPO_ROOT=`readlink -f ${WORKSPACE:?}/Trilinos`
-
     envvar_set_or_create CCACHE_NODISABLE true
     envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
-    envvar_set_or_create CCACHE_BASEDIR "$REPO_ROOT"
+    envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
     envvar_set_or_create CCACHE_NOHARDLINK true
     envvar_set_or_create CCACHE_UMASK 077
     envvar_set_or_create CCACHE_MAXSIZE 100G
-    envvar_set_or_create CCACHE_DEBUG true
 
     message_std "PRDriver> " "$(ccache --show-stats --verbose)"
 }
