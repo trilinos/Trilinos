@@ -46,6 +46,7 @@
 
 #include "ROL_TypeG_Algorithm.hpp"
 #include "ROL_AugmentedLagrangianObjective.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeG::AugmentedLagrangianAlgorithm
     \brief Provides an interface to run general constrained optimization algorithms
@@ -59,6 +60,7 @@ namespace TypeG {
 template<typename Real>
 class AugmentedLagrangianAlgorithm : public TypeG::Algorithm<Real> {
 private:
+  const Ptr<Secant<Real>> secant_;
   ParameterList list_;
   bool useRelTol_;
   // Lagrange multiplier update
@@ -111,7 +113,7 @@ private:
 
 public:
 
-  AugmentedLagrangianAlgorithm(ParameterList &list);
+  AugmentedLagrangianAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   using TypeG::Algorithm<Real>::run;
   void run( Vector<Real>          &x,

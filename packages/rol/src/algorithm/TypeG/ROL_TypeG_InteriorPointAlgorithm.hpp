@@ -46,6 +46,7 @@
 
 #include "ROL_TypeG_Algorithm.hpp"
 #include "ROL_InteriorPointObjective.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeG::InteriorPointAlgorithm
     \brief Provides an interface to run the interior point algorithm.
@@ -57,6 +58,8 @@ namespace TypeG {
 template<typename Real>
 class InteriorPointAlgorithm : public TypeG::Algorithm<Real> {
 private:
+  const Ptr<Secant<Real>> secant_;
+
   Real mumin_;
   Real mumax_;
   Real rho_;
@@ -106,7 +109,7 @@ private:
                    std::ostream                 &outStream = std::cout);
 public:
 
-  InteriorPointAlgorithm(ParameterList &list);
+  InteriorPointAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant_ = nullPtr);
 
   using TypeG::Algorithm<Real>::run;
   void run( Vector<Real>          &x,
