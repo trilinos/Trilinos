@@ -419,7 +419,7 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
   {
     using DataScalar  = double;
     using PointScalar = double;
-    const int meshWidth = 1;
+    const int meshWidth = 2;
     const int spaceDim = DimTag::spaceDim;
     const int polyOrder = PolyOrderTag::polyOrder;
     const int worksetSize = meshWidth;
@@ -520,6 +520,27 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D2, P2)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D2, P2)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D2, P2)
+  // 2D, p=3 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D2, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D2, P3)
 
   // 3D, p=1 tests:
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D3, P1)
