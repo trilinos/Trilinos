@@ -137,7 +137,7 @@ namespace Sacado {
 #endif
       }
 
-#if defined(DESUL_HAVE_CUDA_ATOMICS)
+#if defined(KOKKOS_ENABLE_CUDA)
 
       // Our implementation of Kokkos::atomic_oper_fetch() and
       // Kokkos::atomic_fetch_oper() for Sacado types on device
@@ -241,7 +241,7 @@ namespace Sacado {
         }
       }
 
-#elif defined(DESUL_HAVE_HIP_ATOMICS)
+#elif defined(KOKKOS_ENABLE_HIP)
 
       // Our implementation of Kokkos::atomic_oper_fetch() and
       // Kokkos::atomic_fetch_oper() for Sacado types on device
