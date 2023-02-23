@@ -89,7 +89,7 @@ buildClosureModels(const std::string& model_id,
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << model_id 
+    msg << "Failed to find requested model, \"" << model_id 
 	<< "\", for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
@@ -135,9 +135,9 @@ buildClosureModels(const std::string& model_id,
     if (plist.isType<std::string>("Type")) {
       std::string type = plist.get<std::string>("Type");
       if(type=="SIMPLE SOURCE") {
-	      RCP< Evaluator<panzer::Traits> > e = 
-	        rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir,curvilinear));
-	      evaluators->push_back(e);
+        RCP< Evaluator<panzer::Traits> > e = 
+          rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir,curvilinear));
+        evaluators->push_back(e);
 
         found = true;
       }
@@ -148,19 +148,6 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
-      //else if(type=="AREA") {
-      //  Teuchos::ParameterList p;
-      //  p.set("Name", "Unit Value");
-      //  p.set("Value", 1.0);
-      //  p.set("Data Layout",ir->dl_scalar);
-
-      //  RCP< Evaluator<panzer::Traits> > e = 
-      //           rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-  
-      //  evaluators->push_back(e);
-
-      //  found = true;
-      //}
       else if(type=="L2 ERROR_CALC") {
         {
           std::vector<std::string> values(2);

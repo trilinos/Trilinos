@@ -111,15 +111,15 @@ panzer::buildWorksets(const WorksetNeeds & needs,
      // Need to create all combinations of basis/ir pairings
      for (std::size_t j=0;j<needs.int_rules.size();j++) {
        for (std::size_t b=0;b<needs.bases.size();b++) {
-	       RCP<panzer::BasisIRLayout> b_layout
+         RCP<panzer::BasisIRLayout> b_layout
              = rcp(new panzer::BasisIRLayout(needs.bases[b],*needs.int_rules[j]));
 
-	       RCP<panzer::BasisValues2<double> > bv2
+         RCP<panzer::BasisValues2<double> > bv2
              = rcp(new panzer::BasisValues2<double>("",true,true));
-	       bv2->setupArrays(b_layout);
-	       i->bases.push_back(bv2);
+         bv2->setupArrays(b_layout);
+         i->bases.push_back(bv2);
 
-	       basis_names->push_back(b_layout->name());
+         basis_names->push_back(b_layout->name());
        }
 
      }
