@@ -517,7 +517,7 @@ namespace MueLu {
 
         if (!setLastLevelviaMaxCoarseSize) {
           if   (Levels_[nextLevelID-1]->IsAvailable("P"))  {
-            if (Levels_[nextLevelID-1]->Get<RCP<Matrix> >("P") == Teuchos::null)   actualNumLevels = nextLevelID-1;
+            if (Levels_[nextLevelID-1]->template Get<RCP<Matrix> >("P") == Teuchos::null)   actualNumLevels = nextLevelID-1;
           }
           else actualNumLevels = nextLevelID-1;
         }
@@ -531,7 +531,7 @@ namespace MueLu {
          if (coarseFact.is_null())
            coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
          Levels_[nextLevelID-2]->Request(*coarseFact);
-         if ( !(Levels_[nextLevelID-2]->Get<RCP<Matrix> >("A").is_null() ))
+         if ( !(Levels_[nextLevelID-2]->template Get<RCP<Matrix> >("A").is_null() ))
            coarseFact->Build( *(Levels_[nextLevelID-2]));
          Levels_[nextLevelID-2]->Release(*coarseFact);
        }
