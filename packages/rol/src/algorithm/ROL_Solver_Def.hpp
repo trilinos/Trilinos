@@ -48,13 +48,14 @@ namespace ROL {
 
 template<typename Real>
 Solver<Real>::Solver( const Ptr<Problem<Real>> &opt,
-                      ParameterList            &parlist )
+                      ParameterList            &parlist,
+                      const Ptr<Secant<Real>>  &secant )
   : opt_(opt), problemType_(opt_->getProblemType()) {
   switch (problemType_) {
-    case TYPE_U:  algoU_ = TypeU::AlgorithmFactory<Real>(parlist); break;
-    case TYPE_B:  algoB_ = TypeB::AlgorithmFactory<Real>(parlist); break;
-    case TYPE_E:  algoE_ = TypeE::AlgorithmFactory<Real>(parlist); break;
-    case TYPE_EB: algoG_ = TypeG::AlgorithmFactory<Real>(parlist); break;
+    case TYPE_U:  algoU_ = TypeU::AlgorithmFactory<Real>(parlist,secant); break;
+    case TYPE_B:  algoB_ = TypeB::AlgorithmFactory<Real>(parlist,secant); break;
+    case TYPE_E:  algoE_ = TypeE::AlgorithmFactory<Real>(parlist,secant); break;
+    case TYPE_EB: algoG_ = TypeG::AlgorithmFactory<Real>(parlist,secant); break;
     case TYPE_LAST:
       ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         "Error in Solver::solve() : Unsupported problem type");
