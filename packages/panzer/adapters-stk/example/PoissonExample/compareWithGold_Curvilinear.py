@@ -19,6 +19,8 @@ try:
   q2_errors = []
   q1_errors = []
 
+  tol = 1e-14 
+
   with open(q2gold) as f:
     for line in f:
       match = ErrorPat.match(line)
@@ -41,11 +43,11 @@ try:
         q1_errors.append(float(match.group(1)))
 
   for i in range(len(q2gold_errors)):
-    if q2gold_errors[i] != q2_errors[i]:
+    if abs(q2gold_errors[i] - q2_errors[i]) > tol:
       print( 'Poisson example using a Q2 mesh does not pass regression check' )
       raise 'Exception'
 
-    if q1gold_errors[i] != q1_errors[i]:
+    if abs(q1gold_errors[i] - q1_errors[i]) > tol:
       print( 'Poisson example using a Q1 mesh does not pass regression check' )
       raise 'Exception'
 

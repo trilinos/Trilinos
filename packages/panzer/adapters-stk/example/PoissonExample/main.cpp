@@ -118,6 +118,7 @@ int main(int argc,char * argv[])
    int x_elements=10,y_elements=10,basis_order=1;
    std::string celltype = "Quad"; // or "Tri"
    std::string mesh_name = "";
+   std::string problem_name = "rectangle";
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves a Poisson problem with Quad and Tri inline mesh on a square domain" 
@@ -128,11 +129,19 @@ int main(int argc,char * argv[])
    clp.setOption("y-elements",&y_elements); // ignored if mesh file is supplied
    clp.setOption("basis-order",&basis_order); 
    clp.setOption("mesh-filename",&mesh_name);
+   clp.setOption("problem",&problem_name);
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+   // two problems are supported -- one on a rectangular domain, one on an annular domain
+   bool curvilinear = false;
+   if      (problem_name == "rectangle") {}
+   else if (problem_name == "annulus") {curvilinear = true;}
+   else
+     throw std::runtime_error("Problem not supported: try rectangle or annulus");
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -143,7 +152,6 @@ int main(int argc,char * argv[])
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-   bool curvilinear = false; 
    if (mesh_name == "") {
     if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
     else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
@@ -161,7 +169,6 @@ int main(int argc,char * argv[])
     mesh_factory->setParameterList(pl);
    } else {
     mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(mesh_name));
-    curvilinear = true;
    }
    
    // other declarations
@@ -426,6 +433,7 @@ int main(int argc,char * argv[])
       // the same celltype/order are ok as they are staged one after
       // another in the ADD_ADVANCED_TEST cmake macro.
       std::ostringstream filename;
+      if (curvilinear) filename << "annulus_";
       filename << "output_" << celltype << "_p" << basis_order << ".exo";
       mesh->writeToExodus(filename.str());
    }
@@ -436,7 +444,6 @@ int main(int argc,char * argv[])
    if(true) {
       Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
       lout.setOutputToRootOnly(0);
-      lout.precision(16);
 
       panzer::AssemblyEngineInArgs respInput(ghostCont,container);
       respInput.alpha = 0;
@@ -459,6 +466,8 @@ int main(int argc,char * argv[])
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
       h1_resp_func->setVector(h1_respVec);
+      double area_exact = 1.;
+      if (curvilinear) area_exact = M_PI * 1.0 * 1.0 - M_PI * .5 * .5;
 
       exampleResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       exampleResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
@@ -469,8 +478,8 @@ int main(int argc,char * argv[])
       lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
       lout << "This is the H1 Error" << std::endl;
       lout << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
-      lout << "This is the computed area" << std::endl;
-      lout << "Area = " << area_resp_func->value << std::endl;
+      lout << "This is the error in area" << std::endl;
+      lout << "Area Error = " << abs(area_resp_func->value - area_exact) << std::endl;
    }
 
    // all done!
