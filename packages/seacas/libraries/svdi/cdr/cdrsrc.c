@@ -841,13 +841,13 @@ void cdrofs_(int *ifilcd)
     symbol[i] = '\0';
   }
   else {
-    sprintf(symbol, "file%d", *ifilcd);
+    snprintf(symbol, 1024, "file%d", *ifilcd);
   }
 
   /* check the environment to see if a file name has been assigned */
   char *env = getenv(symbol);
   if (env != NULL && strlen(env) < 1024) {
-    sprintf(symbol, "%s", env);
+    snprintf(symbol, 1024, "%s", env);
   }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
@@ -856,7 +856,7 @@ void cdrofs_(int *ifilcd)
     int  errnum = 722;
     int  errsev = 10;
     char err[50];
-    sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
+    snprintf(err, 50, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
   else {
@@ -883,7 +883,7 @@ void cdroab_(int *ifilcd, int *frame)
   len = 4;
   cdri2c_(frame, &len, ic);
   ic[len] = '\0';
-  sprintf(cdrcm2_.KGNAME, "%s.RGB", ic);
+  snprintf(cdrcm2_.KGNAME, 80, "%s.RGB", ic);
 
   cdrofs_(ifilcd);
 }
@@ -1046,8 +1046,8 @@ void cdrtim_(float *tim) {}
 
 void cdrtod_(void)
 {
-  sprintf((char *)vcjob_.KJTIME, "%02d:%02d:%02d\\", 11, 11, 11);
-  sprintf((char *)vcjob_.KJDATE, "%02d-%02d-%02d\\", 5, 5, 5);
+  snprintf((char *)vcjob_.KJTIME, sizeof(vcjob_.KJTIME), "%02d:%02d:%02d\\", 11, 11, 11);
+  snprintf((char *)vcjob_.KJDATE, sizeof(vcjob_.KJDATE), "%02d-%02d-%02d\\", 5, 5, 5);
 }
 
 /*  *** CDRUPR ***

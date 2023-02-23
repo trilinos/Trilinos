@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -8381,52 +8381,6 @@ class ExodusModel(object):
             return [float('nan')] * 2
         return [minimum, total / edge_count]
 
-        # delete any element blocks which are not of dimension 3
-        new_ids = []
-        for id_ in element_block_ids:
-            if self.get_element_block_dimension(id_) != 3:
-                self._warning('Unexpected element block dimension',
-                              'Element blocks used to determine element edge '
-                              'length are expected to be of dimension 3.')
-            else:
-                new_ids.append(id_)
-        element_block_ids = new_ids
-        # create a side set with all element block faces
-        members = self._get_element_faces(element_block_ids)
-        side_set_id = self._new_side_set_id()
-        self.create_side_set(side_set_id, members)
-        # create element blocks from this side set
-        face_element_block_ids = self._create_element_blocks_from_side_sets(
-            side_set_id)
-        # create a side set with all element face faces
-        members = self._get_element_faces(face_element_block_ids)
-        edge_set_id = self._new_side_set_id()
-        self.create_side_set(edge_set_id, members)
-        # create element blocks from this side set
-        edge_element_block_ids = self._create_element_blocks_from_side_sets(
-            edge_set_id)
-        # calculate element 'volume' (i.e. edge length) on this side set
-        field_name = self._new_element_field_name()
-        self.calculate_element_volumes(field_name, edge_element_block_ids)
-        # find average and minimum values
-        total = sum(sum(self.get_element_field_values(field_name, id_))
-                    for id_ in edge_element_block_ids)
-        total_edges = sum(self.get_element_count(id_)
-                          for id_ in edge_element_block_ids)
-        average = total / total_edges
-        minimum = min(min(self.get_element_field_values(field_name, id_))
-                      for id_ in edge_element_block_ids)
-        # delete temporary entities
-        self.delete_element_field(field_name, edge_element_block_ids)
-        self.delete_element_block(edge_element_block_ids,
-                                  delete_orphaned_nodes=False)
-        self.delete_side_set(edge_set_id)
-        self.delete_element_block(face_element_block_ids,
-                                  delete_orphaned_nodes=False)
-        self.delete_side_set(side_set_id)
-        # return the result
-        return [minimum, average]
-
     def _get_closest_point_distance_brute(self, points):
         """Return the distance between the two closest points."""
         point_count = len(points)
@@ -8489,36 +8443,6 @@ class ExodusModel(object):
         # create list of all nodes
         point_list = list(tuple(x) for x in self.nodes)
         return self._get_closest_point_distance(point_list)
-        # First, we sort all nodes along a vector, then sift through them.
-        sorting_vector = [math.pi, 2.0, 0.5 * math.sqrt(2)]
-        scale = math.sqrt(sum([x * x for x in sorting_vector]))
-        sorting_vector = [x / scale for x in sorting_vector]
-        # each element holds (distance, index)
-        sorted_nodal_distances = sorted([(self._dot(x, sorting_vector), x)
-                                         for i, x in enumerate(self.nodes)])
-        node_count = len(self.nodes)
-        if node_count < 2:
-            return float('nan')
-        lower_index = 0
-        upper_index = 1
-        closest_distance = float('inf')
-        while lower_index < node_count:
-            if (upper_index >= node_count or
-                    sorted_nodal_distances[upper_index][0] -
-                    sorted_nodal_distances[lower_index][0] > closest_distance):
-                lower_index += 1
-                upper_index = lower_index + 1
-                continue
-            lower_element = sorted_nodal_distances[lower_index]
-            upper_element = sorted_nodal_distances[upper_index]
-            distance = self._distance_between(lower_element[1],
-                                              upper_element[1])
-            if distance < closest_distance:
-                closest_distance = distance
-            upper_index += 1
-        if closest_distance == float('inf'):
-            closest_distance = float('nan')
-        return closest_distance
 
     def _input_check_error(self, argument, format):
         """

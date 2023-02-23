@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,6 +32,7 @@ namespace Info {
     bool ints_64_bit() const { return ints64Bit_; }
     bool list_groups() const { return listGroups_; }
     bool show_config() const { return showConfig_; }
+    bool query_timesteps_only() const { return queryTimeOnly_; }
 
     int         surface_split_scheme() const { return surfaceSplitScheme_; }
     char        field_suffix_separator() const { return fieldSuffixSeparator_; }
@@ -65,6 +66,7 @@ namespace Info {
     bool disableFieldRecognition_{false};
     bool showConfig_{false};
     bool summary_{false};
+    bool queryTimeOnly_{false};
 
     char fieldSuffixSeparator_{'_'};
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -73,8 +73,8 @@ int     quote        = 1;    /* 1 is do quote. */
 int     alternative  = 0;    /* 0 is getopt_long, 1 is getopt_long_only */
 
 /* Function prototypes */
-void *      our_malloc(size_t size);
-void *      our_realloc(void *ptr, size_t size);
+void       *our_malloc(size_t size);
+void       *our_realloc(void *ptr, size_t size);
 const char *normalize(const char *arg);
 int  generate_output(char *argv[], int argc, const char *optstr, const struct option *longopts);
 int  main(int argc, char *argv[]);
@@ -117,8 +117,8 @@ void *our_realloc(void *ptr, size_t size)
 const char *normalize(const char *arg)
 {
   static char *BUFFER = NULL;
-  const char * argptr = arg;
-  char *       bufptr;
+  const char  *argptr = arg;
+  char        *bufptr;
 
   if (BUFFER != NULL) {
     free(BUFFER);
@@ -187,16 +187,15 @@ const char *normalize(const char *arg)
  */
 int generate_output(char *argv[], int argc, const char *optstr, const struct option *longopts)
 {
-  int         exit_code = 0; /* We assume everything will be OK */
-  int         opt;
-  int         longindex;
-  const char *charptr;
+  int exit_code = 0; /* We assume everything will be OK */
+  int opt       = 0;
 
   if (quiet_errors) { /* No error reporting from getopt(3) */
     opterr = 0;
   }
   optind = 0; /* Reset getopt(3) */
 
+  int longindex = 0;
   while ((opt = (alternative ? getopt_long_only(argc, argv, optstr, longopts, &longindex)
                              : getopt_long(argc, argv, optstr, longopts, &longindex))) != EOF) {
     if (opt == '?' || opt == ':') {
@@ -214,7 +213,7 @@ int generate_output(char *argv[], int argc, const char *optstr, const struct opt
       }
       else {
         printf(" -%c", opt);
-        charptr = strchr(optstr, opt);
+        const char *charptr = strchr(optstr, opt);
         if (charptr != NULL && *++charptr == ':') {
           printf(" %s", normalize(optarg ? optarg : ""));
         }
@@ -250,7 +249,7 @@ static struct option *long_options        = NULL;
 static int            long_options_length = 0; /* Length of array */
 static int            long_options_nr     = 0; /* Nr of used elements in array */
 #define LONG_OPTIONS_INCR 10
-#define init_longopt() add_longopt(NULL, 0)
+#define init_longopt()    add_longopt(NULL, 0)
 
 /* Register a long option. The contents of name is copied. */
 void add_longopt(const char *name, int has_arg)

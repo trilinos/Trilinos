@@ -298,14 +298,14 @@ void IossApplication::setOutputCopyOfInputDatabase(bool status) { copyDatabase =
 
 bool IossApplication::outputCatalystMeshOneFileON() { return writeCatalystMeshOneFile; }
 
-bool IossApplication::setOutputCatalystMeshOneFile(bool status)
+void IossApplication::setOutputCatalystMeshOneFile(bool status)
 {
   writeCatalystMeshOneFile = status;
 }
 
 bool IossApplication::outputCatalystMeshFilePerProcON() { return writeCatalystMeshFilePerProc; }
 
-bool IossApplication::setOutputCatalystMeshFilePerProc(bool status)
+void IossApplication::setOutputCatalystMeshFilePerProc(bool status)
 {
   writeCatalystMeshFilePerProc = status;
 }
@@ -372,11 +372,11 @@ void IossApplication::setCatalystStopTimeStep(int timeStep)
 
 bool IossApplication::forceCGNSOutputON() { return forceCGNSOutput; }
 
-bool IossApplication::setForceCGNSOutput(bool status) { forceCGNSOutput = status; }
+void IossApplication::setForceCGNSOutput(bool status) { forceCGNSOutput = status; }
 
 bool IossApplication::forceExodusOutputON() { return forceExodusOutput; }
 
-bool IossApplication::setForceExodusOutput(bool status) { forceExodusOutput = status; }
+void IossApplication::setForceExodusOutput(bool status) { forceExodusOutput = status; }
 
 bool IossApplication::useIOSSInputDBTypeON() { return useIOSSInputDBType; }
 

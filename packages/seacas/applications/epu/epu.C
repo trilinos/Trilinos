@@ -115,7 +115,7 @@ namespace {
     }
   }
 
-  void exodus_error(int lineno)
+  [[noreturn]] void exodus_error(int lineno)
   {
     std::ostringstream errmsg;
     fmt::print(errmsg,
@@ -3895,6 +3895,7 @@ namespace {
           size_t maximum_nodes = edgeblocks[p][b].entity_count();
           maximum_nodes *= edgeblocks[p][b].nodesPerEdge;
           std::vector<INT> local_linkage(maximum_nodes);
+          SMART_ASSERT(block_linkage != nullptr);
 
           ex_entity_id bid = edgeblocks[p][b].id;
           error = ex_get_conn(id, EX_EDGE_BLOCK, bid, local_linkage.data(), nullptr, nullptr);
@@ -4271,6 +4272,7 @@ namespace {
           size_t maximum_nodes = faceblocks[p][b].entity_count();
           maximum_nodes *= faceblocks[p][b].nodesPerFace;
           std::vector<INT> local_linkage(maximum_nodes);
+          SMART_ASSERT(block_linkage != nullptr);
 
           ex_entity_id bid = faceblocks[p][b].id;
           error = ex_get_conn(id, EX_FACE_BLOCK, bid, local_linkage.data(), nullptr, nullptr);
