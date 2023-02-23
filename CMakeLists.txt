@@ -131,9 +131,8 @@ IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOW
     "CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} is not in the allowed set "
     "${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}")
 ENDIF ()
-# ToDo: We may want to warn about using a non-default version of C++ but
-# really Trilinos should support bulding with every newer C++ standard so we
-# should just be doing that instead.
+
+message(STATUS "The Current CXX Standard is : " ${CMAKE_CXX_STANDARD})
 
 # Force off support for Makefile.export.* files while TriBITS is refactored to
 # remove this (#8498)
