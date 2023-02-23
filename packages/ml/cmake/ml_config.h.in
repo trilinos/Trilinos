@@ -98,8 +98,8 @@
 /* Define if want to build with ml_parpack enabled */
 #cmakedefine HAVE_ML_PARPACK
 
-/* Define if want to build with ml_superlu enabled */
-#cmakedefine HAVE_ML_SUPERLU
+/* Define if want to build with ml_superlu1 enabled */
+#cmakedefine HAVE_ML_SUPERLU1_0
 
 /* Define if want to build with ml_superlu2 enabled */
 #cmakedefine HAVE_ML_SUPERLU2_0
