@@ -359,7 +359,35 @@ namespace Intrepid2 {
                             const BasisTypeLeft* basisLeft,
                             const BasisTypeRight* basisRight)
   {
-    
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      if (input.rank() == output.rank())
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
+                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimensions do not match.");
+      }
+      else if (input.rank() == output.rank() - 1)
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i+1), std::invalid_argument,
+                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input dimensions must match output dimensions exactly, or else match all but the first dimension (in the case that input does not have a 'cell' dimension).");
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): input and output ranks must either match, or input rank must be one less than that of output.")
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(1)) != basisLeft->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): First field dimension of input/output does not match left basis cardinality.");
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(2)) != basisRight->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Second field dimension of input/output does not match right basis cardinality.");
+    }
+#endif
+    //Initialize output with values from input
+    Kokkos::deep_copy(output, input);
+    // TODO: apply orientations on left and right
   }
 
 } // namespace Intrepid2
