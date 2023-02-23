@@ -84,6 +84,8 @@ buildClosureModels(const std::string& model_id,
   RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
+  const bool curvilinear = models.get<bool>("Curvilinear");
+
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
@@ -133,19 +135,32 @@ buildClosureModels(const std::string& model_id,
     if (plist.isType<std::string>("Type")) {
       std::string type = plist.get<std::string>("Type");
       if(type=="SIMPLE SOURCE") {
-	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir));
-	evaluators->push_back(e);
+	      RCP< Evaluator<panzer::Traits> > e = 
+	        rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir,curvilinear));
+	      evaluators->push_back(e);
 
         found = true;
       }
       else if(type=="TEMPERATURE_EXACT") {
         RCP< Evaluator<panzer::Traits> > e = 
-          rcp(new Example::SimpleSolution<EvalT,panzer::Traits>(key,*ir));
+          rcp(new Example::SimpleSolution<EvalT,panzer::Traits>(key,*ir,curvilinear));
         evaluators->push_back(e);
 
         found = true;
       }
+      //else if(type=="AREA") {
+      //  Teuchos::ParameterList p;
+      //  p.set("Name", "Unit Value");
+      //  p.set("Value", 1.0);
+      //  p.set("Data Layout",ir->dl_scalar);
+
+      //  RCP< Evaluator<panzer::Traits> > e = 
+      //           rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
+  
+      //  evaluators->push_back(e);
+
+      //  found = true;
+      //}
       else if(type=="L2 ERROR_CALC") {
         {
           std::vector<std::string> values(2);
