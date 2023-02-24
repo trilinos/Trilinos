@@ -399,7 +399,9 @@ namespace Intrepid2 {
   struct has_rank_member<T, decltype((void)T::rank, void())> : std::true_type {};
 
   static_assert(! has_rank_member<Kokkos::DynRankView<double> >::value, "DynRankView does not have a member rank, so this assert should pass -- if not, something may be wrong with has_rank_member.");
+#if KOKKOS_VERSION < 40099
   static_assert(  has_rank_member<Kokkos::View<double*> >::value,        "View has a member rank -- if this assert fails, something may be wrong with has_rank_member.");
+#endif
 
   /**
     \brief \return functor.rank if the functor has a static rank member; returns specified default_value otherwise.
@@ -764,7 +766,9 @@ namespace Intrepid2 {
   };
 
   static_assert(  has_rank_method<Kokkos::DynRankView<double> >::value, "DynRankView implements rank(), so this assert should pass -- if not, something may be wrong with has_rank_method.");
-  static_assert(! has_rank_method<Kokkos::View<double> >::value,        "View does not implement rank() -- if this assert fails, something may be wrong with has_rank_method.");
+#if KOKKOS_VERSION < 40099
+  static_assert(  has_rank_member<Kokkos::View<double*> >::value,        "View has a member rank -- if this assert fails, something may be wrong with has_rank_member.");
+#endif
 
   /**
     \brief \return functor.rank() if the functor implements rank(); functor.rank otherwise.
