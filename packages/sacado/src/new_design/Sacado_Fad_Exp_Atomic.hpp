@@ -124,8 +124,9 @@ namespace Sacado {
       }
 
       // Helper function to decide if we are using team-based parallelism
-      SACADO_INLINE_FUNCTION
-      bool atomics_use_team() {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+      __device__
+      inline bool atomics_use_team() {
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
         // It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
         // SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
@@ -136,6 +137,7 @@ namespace Sacado {
         return false;
 #endif
       }
+#endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
 
