@@ -97,7 +97,7 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
     if (curv) {
       source_v(cell,point) = 0.0;
     } else{
-	    source_v(cell,point) = 8.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2.0*M_PI*y);
+      source_v(cell,point) = 8.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2.0*M_PI*y);
     }
       }
     });
