@@ -139,37 +139,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureGRADGRAD(Intre
     FunctionSpaceTools::HGRADtransformGRAD(unorientedTransformedGradValues, jacobianInverse, basisGradValues);
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedGradValues, unorientedTransformedGradValues,
                                                            orientationsWorkset, basis.get());
-    {
-    // DEBUGGING:
-      bool changed = false;
-      for (int i=0; i<transformedGradValues.extent_int(0); i++)
-      {
-        for (int j=0; j<transformedGradValues.extent_int(1); j++)
-        {
-          for (int k=0; k<transformedGradValues.extent_int(2); k++)
-          {
-            for (int l=0; l<transformedGradValues.extent_int(3); l++)
-            {
-              const double diff = std::abs(transformedGradValues(i,j,k,l) - unorientedTransformedGradValues(i,j,k,l));
-              if (diff > 1e-8)
-              {
-                std::cout << "diff for field ordinal " << j << " = " << diff << std::endl;
-                changed = true;
-              }
-            }
-          }
-        }
-      }
-      if (changed)
-      {
-        std::cout << "modifyBasisByOrientation() DID change values.\n";
-      }
-      else
-      {
-        std::cout << "modifyBasisByOrientation() DID NOT change values.\n";
-      }
-    }
-    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, jacobianInverse, basisGradValues);
+    
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
