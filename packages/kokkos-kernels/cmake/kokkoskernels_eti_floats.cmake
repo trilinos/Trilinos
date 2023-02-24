@@ -32,6 +32,9 @@ KOKKOSKERNELS_ADD_OPTION(
         "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::bhalf_t.  Disabling this may increase build times. Default: OFF"
 )
 
+SET(REAL_FLOATS
+  FLOAT
+  DOUBLE)
 SET(FLOATS
   FLOAT
   DOUBLE

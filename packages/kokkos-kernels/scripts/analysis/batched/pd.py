@@ -23,9 +23,6 @@ pdhelp="""Process data.
    Right now, this is probably the best format:
      ./pd.py -t --kkt-parse --kkt-plot-vs-nthreads-linlog -s foo -f KokkosKernels_Test_Gemm.txt --per-thread
 
-   Parse KokkosKernels_Test_BlockCrs_* example line:
-     ./pd.py --bcrs-parse --bcrs-plot-vs-nthreads-linlog --gflops -f KokkosKernels_Test_BlockCrs_SPARC.txt -s foo
-
    Plots for workset size:
      ./pd.py --kkt-parse --kkt-plot-workset -f KokkosKernels_Test_Gemm.workset.txt -s foo
    To show speedup w.r.t. OpenMP MKL, add --speedup:
@@ -391,209 +388,6 @@ def kkt_plot_workset(d, fn_prefix, speedup=False, wide=False):
 
     dispfig(fn_prefix)
 
-#> Line solver analysis.
-
-def bcrs_is_line_blksz(ln): return strleq(ln, '>>> bsz')
-def bcrs_get_blksz(ln): return sscanf(ln, 's,s,i')[2]
-
-def bcrs_is_line_nthread(ln): return strleq(ln, '>> nthread')
-def bcrs_get_nthread(ln): return sscanf(ln, 's,s,i')[2]
-
-def bcrs_is_I_line(ln): return strleq(ln, '<I>')
-def bcrs_get_I_line(ln):
-    o = sscanf(ln, 's,s,i,s,i,s,i,s,i,s,i,s,i')
-    return (o[2], o[4], o[6], o[8], o[10])
-
-def bcrs_is_kk_trumpet(ln): return ln == '> kk'
-def bcrs_is_bcrs_trumpet(ln): return ln == '> sparc'
-
-def bcrs_is_kk_perf_test(ln): return strleq(ln, ' Perf Test')
-def bcrs_get_kk_alg(ln): return get_first_word(ln[12:])
-
-def bcrs_parse(text):
-    "Parse output from bcrs performance test drivers."
-    def insert_time(lineno, time):
-        scale = 1
-        if lineno == 0: subalg = 'matvec'; scale = 0.02;
-        elif lineno == 1: subalg = 'extract'
-        elif lineno == 2: subalg = 'Factor'
-        elif lineno == 3: subalg = 'Solve'; scale = 0.02;
-        d[nthread][alg][sz][subalg] = time*scale
-    lns = text.split('\n')
-    d = {}
-    state = -1
-    for ln in lns:
-        if bcrs_is_line_blksz(ln):
-            bs = bcrs_get_blksz(ln)
-        elif bcrs_is_line_nthread(ln):
-            nthread = bcrs_get_nthread(ln)
-            if not d.has_key(nthread): d[nthread] = {}
-        elif bcrs_is_kk_trumpet(ln):
-            state = 0
-        elif bcrs_is_bcrs_trumpet(ln):
-            state = 1
-            lineno = 0
-            alg = 'Native'
-            if not d[nthread].has_key(alg): d[nthread][alg] = {}
-        elif bcrs_is_I_line(ln):
-            sz = bcrs_get_I_line(ln)
-            if not d[nthread][alg].has_key(sz): d[nthread][alg][sz] = {}
-        elif state == 0:
-            # kk output
-            if bcrs_is_kk_perf_test(ln):
-                alg = bcrs_get_kk_alg(ln)
-                lineno = 0
-                if not d[nthread].has_key(alg): d[nthread][alg] = {}
-            if get_first_word(ln) != 'KokkosKernels::Timer::': continue
-            time = float(ln.split()[-2])
-            # skip first three
-            if lineno - 3 >= 0:
-                insert_time(lineno - 3, time)
-            lineno += 1
-        elif state == 1:
-            # bcrs output
-            if get_first_word(ln) != '+': continue
-            time = float(get_last_word(ln))
-            insert_time(lineno, time);
-            lineno += 1
-    return d
-
-def bcrs_get_nthreads(d):
-    a = d.keys()
-    a.sort()
-    return a
-
-def bcrs_get_algorithms(d):
-    'Return list of algorithm names.'
-    a = d.values()[0].keys()
-    a.sort()
-    return a
-
-def bcrs_get_problems(d):
-    'Return list of problem names.'
-    a = d.values()[0].values()[0].values()[0].keys()
-    a.sort(cmp)
-    a.remove('matvec')  # we're not studying this problem right now
-    a.remove('extract') # nor this one
-    return a
-
-def bcrs_get_sizes(d):
-    'Return list of problem sizes.'
-    a = d.values()[0].values()[0].keys()
-    def cmp(x, y):
-        i = 3
-        if x[i] < y[i]: return -1
-        if x[i] > y[i]: return  1
-        return 0
-    a.sort(cmp=cmp)
-    return a
-
-def bcrs_plot_vs_nthreads(d, fn_prefix, xlinear=False, ylinear=False, perthread=False, gflops=False, wide=False):
-    nthreads = bcrs_get_nthreads(d)
-    algs = bcrs_get_algorithms(d)
-    probs = bcrs_get_problems(d)
-    szs = bcrs_get_sizes(d)
-
-    corecnt = max(nthreads) == 68
-    fs = 12 if wide else 15
-    ival = 1
-    patmap = patternmap()
-    scale = 1.0
-    x = [1, 2, 4, 8, 16, 34, 68, 136, 272]
-    if xlinear:
-        x.remove(2)
-        xfn = lambda x: x
-    else:
-        xfn = np.log2
-    pl.figure(num=1, figsize=(16,7) if wide else (16,16))
-    probs.reverse()
-    for ibs, bs in enumerate(szs):
-        for ipfwd, prob in enumerate(probs):
-            ip = len(probs) - ipfwd - 1
-            if wide:
-                pl.subplot(len(probs), len(szs), len(szs)*ip + ibs + 1)
-            else:
-                pl.subplot(len(szs), len(probs), len(probs)*ibs + ip + 1)
-            ymin = 10
-            ymax = 0
-            for ialg, alg in enumerate(algs):
-                if prob == 'Solve' and strleq(alg, 'MKL'):
-                    continue
-                y = []
-                pat = patmap[rename(alg)] if patmap.has_key(rename(alg)) else ''
-                for i, nthr in enumerate(nthreads):
-                    f = scale
-                    if perthread: 
-                        f /= nthr
-                    try:
-                        y.append(f / d[nthr][alg][bs][prob])
-                    except:
-                        pass
-                if len(y) == 0:
-                    continue
-
-                ymin = min(min(y), ymin)
-                ymax = max(max(y), ymax)
-
-                if ylinear:
-                    pl.plot(xfn(nthreads), y, pat, linewidth=2.0, label=rename(alg), **plot_styles())
-                else:
-                    pl.semilogy(xfn(nthreads), y, pat, linewidth=2.0, label=rename(alg), **plot_styles())
-            pl.xticks(xfn(x), [str(i) for i in x], fontsize=fs)
-            pl.yticks(fontsize=fs)
-            ymin *= 0.96
-            if ylinear: ymin = 0
-            ymax *= 1.04
-            xmin = 4;
-            xmax = nthreads[-1]
-            if xlinear: 
-                xmin -= 1
-                xmax += 1
-            else:
-                xmin = np.log2(xmin) - 0.1
-                xmax = np.log2(xmax) + 0.1
-            pl.axis([xmin, xmax, ymin, ymax])
-            pl.grid(True)
-
-            perthread_str = ''
-            if perthread: perthread_str = ' / Core' if corecnt else ' / Thread'
-            if wide:
-                if ibs == 0: pl.ylabel('{0}\nOperations/s{1}'.format(prob, perthread_str), fontsize=fs)
-                if ip == 0:
-                    pl.title(r'Block Size {3} (${0}\times\ {1}\times\ {2}$)'.format(bs[0], bs[1], bs[2], bs[3]),
-                             fontsize=fs)
-                if ip == len(probs) - 1:
-                    pl.xlabel('# Cores' if corecnt else '# Threads', fontsize=fs)
-            else:
-                if ip == 0:
-                    pl.ylabel('Operations/s{0}\n{1}'.format(perthread_str, bs), fontsize=fs)
-                if ibs == 0:
-                    pl.title('{0}'.format(prob))
-                if ibs == len(szs) - 1:
-                    pl.xlabel('# Cores' if corecnt else '# Threads', fontsize=fs)
-            if ibs == 0 and ip == 0:
-                pl.legend(loc='lower left', fontsize=fs-1, bbox_to_anchor=(-0.03,-0.5))
-
-            if gflops:
-                yl = pl.ylim()
-                yt = pl.yticks()[0]
-                ax = pl.gca().twinx()
-                N = bs[0]*bs[1]
-                n = bs[2]
-                if prob == 'Factor':
-                    nflop = N*flop_tridiag_factor(n, bs[3])
-                elif prob == 'Solve':
-                    nflop = N*flop_tridiag_solve(n, bs[3], 1)
-                gfs = [nflop*nop*1e-9 for nop in yt]
-                gf = [('{0:1.1f}' if gf < 100 else '{0:1.0f}').format(gf) for gf in gfs]
-                pl.yticks(yt, gf, fontsize=fs)
-                ax.set_ylim(yl)
-                if (not wide and ip == len(probs)-1) or (wide and ibs == len(szs)-1):
-                    ax.set_ylabel('GFLOPS{0}'.format(perthread_str), rotation=270, fontsize=fs,
-                                  verticalalignment='bottom')
-
-    dispfig(fn_prefix)
-
 #> Driver.
 
 def run_tests():
@@ -624,11 +418,6 @@ def get_optparser():
     p.add_option('--kkt-plot-vs-nthreads-linlog', dest='kkt_plot_vs_nthreads_linlog', action='store_true', default=False)
     p.add_option('--kkt-plot-workset', dest='kkt_plot_workset', action='store_true', default=False)
 
-    p.add_option('--bcrs-parse', dest='bcrs_parse', action='store_true', default=False, help='Parse KokkosKernels_Test_BlockCrs_* files.')
-    p.add_option('--bcrs-plot-vs-nthreads-loglog', dest='bcrs_plot_vs_nthreads_loglog', action='store_true', default=False)
-    p.add_option('--bcrs-plot-vs-nthreads-linlin', dest='bcrs_plot_vs_nthreads_linlin', action='store_true', default=False)
-    p.add_option('--bcrs-plot-vs-nthreads-linlog', dest='bcrs_plot_vs_nthreads_linlog', action='store_true', default=False)
-
     p.add_option('--per-thread', dest='perthread', action='store_true', default=False)
     p.add_option('--gflops', dest='gflops', action='store_true', default=False)
     p.add_option('--speedup', dest='speedup', action='store_true', default=False)
@@ -642,7 +431,7 @@ if __name__ == '__main__':
     (opts, args) = p.parse_args()
     if opts.test: run_tests()
 
-    if opts.kkt_parse or opts.bcrs_parse:
+    if opts.kkt_parse:
         text = readall(opts.filename)
         if len(text) == 0:
             print "Empty file '" + opts.filename + "'; exiting."
@@ -661,15 +450,3 @@ if __name__ == '__main__':
                                  perthread=opts.perthread, wide=opts.wide)
         elif opts.kkt_plot_workset:
             kkt_plot_workset(d, opts.save_prefix, speedup=opts.speedup, wide=opts.wide)
-
-    if opts.bcrs_parse:
-        d = bcrs_parse(text)
-        if opts.bcrs_plot_vs_nthreads_loglog:
-            bcrs_plot_vs_nthreads(d, opts.save_prefix, xlinear=False, ylinear=False,
-                                  perthread=opts.perthread, gflops=opts.gflops, wide=opts.wide)
-        elif opts.bcrs_plot_vs_nthreads_linlin:
-            bcrs_plot_vs_nthreads(d, opts.save_prefix, xlinear=True, ylinear=True,
-                                  perthread=opts.perthread, gflops=opts.gflops, wide=opts.wide)
-        elif opts.bcrs_plot_vs_nthreads_linlog:
-            bcrs_plot_vs_nthreads(d, opts.save_prefix, xlinear=False, ylinear=True,
-                                  perthread=opts.perthread, gflops=opts.gflops, wide=opts.wide)
