@@ -520,6 +520,26 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_NOTHROW( eye->setAllValues(rowptr,colind,values) );
     TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
 
+    // test that it's possible to call setAllValues on a fillComplete'd matrix
+    TEST_NOTHROW( eye->resumeFill() );
+    TEST_NOTHROW( eye->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
+
+    // test that it's possible to call setAllValues using a KokkosSparse::CrsMatrix
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > eye2 = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( eye2->fillComplete(map,map) );
+
+    TEST_EQUALITY(eye2->getGlobalNumEntries()  , 0);
+    TEST_EQUALITY(eye2->getLocalNumEntries()      , 0);
+    auto pupil = eye->getLocalMatrixDevice();
+    TEST_NOTHROW( eye2->resumeFill() );
+    TEST_NOTHROW( eye2->setAllValues(pupil) );
+    TEST_NOTHROW( eye2->expertStaticFillComplete(map,map) );
+    TEST_EQUALITY(eye2->getGlobalNumEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye2->getLocalNumEntries()      , numLocal);
+    
+    
+
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
@@ -549,6 +569,52 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
     }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, RemoveZeros, LO, GO, Scalar, Node )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t numImages = comm->getSize();
+
+    const size_t numLocal = 10;
+    const size_t numVecs  = 5;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+    mvrand.randomize();
+
+    // create the identity matrix, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = i;
+      colind[i] = Teuchos::as<LO>(i);
+      values[i] = ScalarTraits<Scalar>::one();
+    }
+    values[numLocal-1] = MT::eps();
+    rowptr[numLocal]=numLocal;
+
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > eye = rcp(new MAT(map,map,0));
+    TEST_NOTHROW( eye->setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
+
+    TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
+
+    TEST_NOTHROW(removeCrsMatrixZeros(*eye));
+    TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
+    Mag threshold = 10*MT::eps();
+    TEST_NOTHROW(removeCrsMatrixZeros(*eye,threshold));
+    TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*(numLocal-1));
+
   }
 
 
@@ -1118,7 +1184,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 #define UNIT_TEST_GROUP_NO_ORDINAL_SCALAR( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal,      LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal_Forward,     LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal_Transpose,     LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal_Transpose,     LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, RemoveZeros,       LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
