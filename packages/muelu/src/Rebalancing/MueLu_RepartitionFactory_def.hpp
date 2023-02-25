@@ -116,6 +116,10 @@ namespace MueLu {
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    if (A == Teuchos::null) {
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
+    }
     RCP<const Map>            rowMap = A->getRowMap();
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();

@@ -457,6 +457,13 @@ namespace MueLu {
     }
 
     RCP<Matrix>      Ptentative;
+    // No coarse DoFs so we need to bail by setting Ptentattive to null and returning
+    // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if ( aggregates->GetNumGlobalAggregatesComputeIfNeeded() == 0) {
+      Ptentative = Teuchos::null;
+      Set(coarseLevel, "P", Ptentative);
+      return;
+    }
     RCP<MultiVector> coarseNullspace;
     RCP<RealValuedMultiVector> coarseCoords;
 

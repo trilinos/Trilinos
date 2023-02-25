@@ -192,14 +192,14 @@ after ex_get_elem_blk_ids, error =   0
 
 after ex_get_elem_block, error = 0
 element block id = 10
-element type = 'quad'
+element type = 'shell'
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  3
 
 after ex_get_elem_block, error = 0
 element block id = 11
-element type = 'quad'
+element type = 'shell'
 num_elem_in_block =  2
 num_nodes_per_elem =  4
 num_attr =  3
@@ -465,8 +465,8 @@ element list for side set 30
   3
   3
 side list for side set 30
+  6
   4
-  2
 node list for side set 30
   8
   5
@@ -492,8 +492,8 @@ element list for side set 31
   1
   3
 side list for side set 31
-  2
-  3
+  4
+  5
 node list for side set 31
   2
   3
@@ -686,10 +686,10 @@ elem_list =
   6
   7
 side_list = 
+  6
   4
-  2
-  2
-  3
+  4
+  5
   5
   3
   3

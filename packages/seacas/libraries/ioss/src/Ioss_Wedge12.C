@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -114,6 +114,7 @@ int Ioss::Wedge12::number_edges_face(int face) const
 
 Ioss::IntVector Ioss::Wedge12::edge_connectivity(int edge_number) const
 {
+  assert(edge_number > 0 && edge_number <= number_edges());
   Ioss::IntVector connectivity(number_nodes_edge(edge_number));
 
   for (int i = 0; i < number_nodes_edge(edge_number); i++) {

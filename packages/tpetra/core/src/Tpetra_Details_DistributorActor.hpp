@@ -488,6 +488,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           packOffset(sendArray, exports, sendArrayOffset, plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
+        typename ExpView::execution_space().fence();
+
         ImpView tmpSend =
           subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
 
@@ -847,6 +849,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
               indicesOffsets[j], numExportPacketsPerLID[j]);
           sendArrayOffset += numExportPacketsPerLID[j];
         }
+        typename ExpView::execution_space().fence();
+
         if (numPacketsTo_p > 0) {
           ImpView tmpSend =
             subview_offset(sendArray, size_t(0), numPacketsTo_p);

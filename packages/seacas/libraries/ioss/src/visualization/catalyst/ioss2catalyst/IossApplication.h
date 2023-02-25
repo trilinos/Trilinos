@@ -35,16 +35,16 @@ public:
   void setOutputCopyOfInputDatabase(bool status);
 
   bool outputCatalystMeshOneFileON();
-  bool setOutputCatalystMeshOneFile(bool status);
+  void setOutputCatalystMeshOneFile(bool status);
 
   bool outputCatalystMeshFilePerProcON();
-  bool setOutputCatalystMeshFilePerProc(bool status);
+  void setOutputCatalystMeshFilePerProc(bool status);
 
   bool forceCGNSOutputON();
-  bool setForceCGNSOutput(bool status);
+  void setForceCGNSOutput(bool status);
 
   bool forceExodusOutputON();
-  bool setForceExodusOutput(bool status);
+  void setForceExodusOutput(bool status);
 
   bool        useIOSSInputDBTypeON();
   std::string getIOSSInputDBType();

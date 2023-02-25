@@ -13,17 +13,17 @@ TRIBITS_PACKAGE(Pliris)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
   ZCPLX
   "Enable double precision complex functionality."
-  OFF )
+  OFF NONCACHE)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SCPLX
   SCPLX
   "Enable single precision complex functionality."
-  OFF )
+  OFF NONCACHE)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SREAL
   SREAL
   "Set reals to single precision."
-  OFF )
+  OFF NONCACHE)
 
 #
 # C) Add the libraries, tests, and examples
@@ -41,7 +41,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DREAL
   DREAL
   "Set reals to double precision."
-  ${${PACKAGE_NAME}_ENABLE_DREAL_DEFAULT} )
+  ${${PACKAGE_NAME}_ENABLE_DREAL_DEFAULT} NONCACHE )
 
 ADD_SUBDIRECTORY(src)
 

@@ -9,7 +9,7 @@
 @FUNCTION: tribits_add_executable() +
 @FUNCTION: tribits_add_executable_and_test() +
 @FUNCTION: tribits_add_library() +
-@MACRO:    tribits_add_option_and_define() +
+@FUNCTION:    tribits_add_option_and_define() +
 @MACRO:    tribits_add_show_deprecated_warnings_option() +
 @FUNCTION: tribits_add_test() +
 @MACRO:    tribits_add_test_directories() +

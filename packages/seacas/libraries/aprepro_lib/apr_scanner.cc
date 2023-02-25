@@ -992,7 +992,7 @@ static yyconst flex_int16_t yy_rule_linenum[102] = {
 #include <string.h>
 #include <unistd.h>
 
-#include "apr_getline_int.h"
+#include "apr_getline.h"
 #include "apr_scanner.h"
 #include "apr_util.h"
 #include "aprepro.h"
@@ -3241,7 +3241,7 @@ namespace SEAMS {
     }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin && isatty(0) != 0 && isatty(1) != 0) {
-      char *line = ap_getline_int(nullptr);
+      char *line = SEAMS::getline_int(nullptr);
 
       if (strlen(line) == 0) {
         return 0;
@@ -3252,7 +3252,7 @@ namespace SEAMS {
                 "be parsed incorrectly.");
       }
 
-      ap_gl_histadd(line);
+      SEAMS::gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
         yyerror("input line is too long");

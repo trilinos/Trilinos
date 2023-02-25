@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,7 @@
 // ========================================================================
 
 namespace {
+  void info_timesteps(Ioss::Region &region);
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace);
   void info_edgeblock(Ioss::Region &region);
   void info_faceblock(Ioss::Region &region);
@@ -150,10 +151,6 @@ namespace {
     std::string inpfile    = interFace.filename();
     std::string input_type = interFace.type();
 
-    //========================================================================
-    // INPUT ...
-    // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
-    //========================================================================
     Ioss::PropertyManager properties = set_properties(interFace);
 
     const auto custom_field = interFace.custom_field();
@@ -164,14 +161,24 @@ namespace {
       }
     }
 
-    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
+    //========================================================================
+    // INPUT ...
+    // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
+    //========================================================================
+    auto mode = interFace.query_timesteps_only() ? Ioss::QUERY_TIMESTEPS_ONLY : Ioss::READ_RESTART;
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, mode,
                                                     Ioss::ParallelUtils::comm_world(), properties);
 
     Ioss::io_info_set_db_properties(interFace, dbi);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    Ioss::io_info_file_info(interFace, region);
+    if (interFace.query_timesteps_only()) {
+      info_timesteps(region);
+    }
+    else {
+      Ioss::io_info_file_info(interFace, region);
+    }
   }
 
   void info_nodeblock(Ioss::Region &region, const Ioss::NodeBlock &nb,
@@ -206,8 +213,10 @@ namespace {
       info_aliases(region, &nb, false, true);
     }
     Ioss::Utils::info_fields(&nb, Ioss::Field::MAP, prefix + "\tMap Fields: ", "\n\t\t" + prefix);
-    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ", "\n\t\t" + prefix);
-    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE,
+                             prefix + "\tAttributes: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT,
+                             prefix + "\tTransient:  ", "\n\t\t" + prefix);
 
     if (interFace.compute_bbox()) {
       print_bbox(nb);
@@ -542,6 +551,23 @@ namespace {
         fmt::print("\n");
       }
     }
+  }
+
+  void info_timesteps(Ioss::Region &region)
+  {
+    int                 step_count = (int)region.get_property("state_count").get_int();
+    std::vector<double> steps(step_count);
+
+    for (int step = 0; step < step_count; step++) {
+      double db_time = region.get_state_time(step + 1);
+      steps[step]    = db_time;
+    }
+    auto mm = std::minmax_element(steps.begin(), steps.end());
+
+    fmt::print("\nThere are {} time steps on the database.\n", step_count);
+    fmt::print("\tMinimum Time = {:12.6e}, Maximum Time = {:12.6e}\n\n", *mm.first, *mm.second);
+
+    fmt::print("\tStep Times: {:12.6e}\n", fmt::join(steps, ", "));
   }
 
 } // namespace

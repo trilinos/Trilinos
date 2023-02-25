@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -74,26 +74,20 @@
 namespace {
   const size_t max_line_length = MAX_LINE_LENGTH;
 
-  std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
-  const char *complex_suffix[] = {".re", ".im"};
+  const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
+  const std::array<std::string, 2> complex_suffix{".re", ".im"};
 
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id,
                              int position)
   {
     int ierr = 0;
     if ((ex_int64_status(exoid) & EX_BULK_INT64_API) != 0) {
-      int64_t *conn[3];
-      conn[0]        = nullptr;
-      conn[1]        = nullptr;
-      conn[2]        = nullptr;
+      std::array<int64_t *, 3> conn{nullptr, nullptr, nullptr};
       conn[position] = static_cast<int64_t *>(data);
       ierr           = ex_get_conn(exoid, type, id, conn[0], conn[1], conn[2]);
     }
     else {
-      int *conn[3];
-      conn[0]        = nullptr;
-      conn[1]        = nullptr;
-      conn[2]        = nullptr;
+      std::array<int *, 3> conn{nullptr, nullptr, nullptr};
       conn[position] = static_cast<int *>(data);
       ierr           = ex_get_conn(exoid, type, id, conn[0], conn[1], conn[2]);
     }
@@ -164,8 +158,8 @@ namespace Ioex {
           open_create_behavior() == Ioss::DB_APPEND_GROUP ||
           open_create_behavior() == Ioss::DB_MODIFY) {
         // Append to file if it already exists -- See if the file exists.
-        Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
-        fileExists          = file.exists();
+        auto file  = Ioss::FileInfo(decoded_filename());
+        fileExists = file.exists();
       }
     }
 
@@ -479,7 +473,7 @@ namespace Ioex {
     // of the output database should be the same except we don't write
     // anything since it is already there.  We do need the number of
     // steps though...
-    if (open_create_behavior() == Ioss::DB_APPEND) {
+    if (open_create_behavior() == Ioss::DB_APPEND || dbUsage == Ioss::QUERY_TIMESTEPS_ONLY) {
       get_step_times__();
       return;
     }
@@ -2421,8 +2415,8 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
           // The connectivity is stored in a 1D array.
           // The element_face index varies fastest
           if (my_element_count > 0) {
-	    int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-	    get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
+            int face_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+            get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
             get_map(EX_FACE_BLOCK).map_data(data, field, num_to_get * face_count);
           }
         }
@@ -2430,7 +2424,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
           // The connectivity is stored in a 1D array.
           // The element_edge index varies fastest
           if (my_element_count > 0) {
-	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+            int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
@@ -2585,8 +2579,8 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
-	    int face_nodes = eb->topology()->number_nodes();
-	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
+            int face_nodes = eb->topology()->number_nodes();
+            assert(field.get_component_count(Ioss::Field::InOut::INPUT) == face_nodes);
 
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
             get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get * face_nodes);
@@ -2596,7 +2590,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
           // The connectivity is stored in a 1D array.
           // The face_edge index varies fastest
           if (my_face_count > 0) {
-	    int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+            int edge_count = field.get_component_count(Ioss::Field::InOut::INPUT);
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
             get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get * edge_count);
           }
@@ -2605,9 +2599,9 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
           // The connectivity is stored in a 1D array.
           // The face_node index varies fastet
           if (my_face_count > 0) {
-	    // "connectivity_raw" has nodes in local id space (1-based)
-	    assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
-                 eb->topology()->number_nodes());
+            // "connectivity_raw" has nodes in local id space (1-based)
+            assert(field.get_component_count(Ioss::Field::InOut::INPUT) ==
+                   eb->topology()->number_nodes());
 
             get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
           }

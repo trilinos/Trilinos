@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,6 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   void_int    *side_set_elem_list = NULL;
   void_int    *side_set_side_list = NULL;
   size_t       elem_ctr;
-  int          int_size, ids_size;
   int          status;
 
   struct ex__elem_blk_parm *elem_blk_parms = NULL;
@@ -89,13 +88,11 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    int_size = sizeof(int64_t);
-  }
+  bool ints_64  = ex_int64_status(exoid) & EX_BULK_INT64_API;
+  int  int_size = ints_64 ? sizeof(int64_t) : sizeof(int);
 
   /* Allocate space for the element block ids */
-  ids_size = sizeof(int);
+  int ids_size = sizeof(int);
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     ids_size = sizeof(int64_t);
   }
@@ -253,7 +250,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       int64_t elem_ndx;
       int64_t elem;
       int64_t side;
-      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+      if (ints_64) {
         elem_ndx = ((int64_t *)ss_elem_ndx)[ii];
         elem     = ((int64_t *)side_set_elem_list)[elem_ndx];
         side     = ((int64_t *)side_set_side_list)[elem_ndx] - 1;

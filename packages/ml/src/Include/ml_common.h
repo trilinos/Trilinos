@@ -76,7 +76,7 @@
 #endif
 #endif
 
-#ifdef HAVE_ML_SUPERLU
+#ifdef HAVE_ML_SUPERLU1_0
 #define SUPERLU
 #endif
 
