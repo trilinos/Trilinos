@@ -416,5 +416,42 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
   return sqrt(diff / norm);
 }
 
+template <typename ValueType, typename DeviceType>
+inline void computeSpMV(const CrsMatrixBase<ValueType, DeviceType> &A,
+                        const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &x,
+                              Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b) {
+  const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
+                     size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
+  if (test)
+    throw std::logic_error("A,x and b dimensions are not compatible");
+
+  typedef ValueType value_type;
+  typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
+  typedef typename host_device_type::memory_space host_memory_space;
+
+  CrsMatrixBase<value_type, host_device_type> h_A;
+  h_A.createMirror(A);
+  h_A.copy(A);
+
+  auto h_x = Kokkos::create_mirror_view(host_memory_space(), x);
+  Kokkos::deep_copy(h_x, x);
+  auto h_b = Kokkos::create_mirror_view(host_memory_space(), b);
+
+  const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
+  for (ordinal_type i = 0; i < m; ++i) {
+    for (ordinal_type p = 0; p < k; ++p) {
+      value_type s = 0;
+      const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
+      for (ordinal_type j = jbeg; j < jend; ++j) {
+        const ordinal_type col = h_A.Col(j);
+        s += h_A.Value(j) * h_x(col, p);
+      }
+      h_b(i,p) = s;
+    }
+  }
+  Kokkos::deep_copy(b, h_b);
+  return;
+}
+
 } // namespace Tacho
 #endif

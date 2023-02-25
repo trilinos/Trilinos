@@ -545,6 +545,14 @@ double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const
   return Tacho::computeRelativeResidual(A, x, b);
 }
 
+template <typename VT, typename DT>
+void Driver<VT, DT>::computeSpMV(const value_type_array &ax, const value_type_matrix &x, value_type_matrix &b) {
+  CrsMatrixBase<value_type, device_type> A;
+  A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
+
+  return Tacho::computeSpMV(A, x, b);
+}
+
 template <typename VT, typename DT> int Driver<VT, DT>::exportFactorsToCrsMatrix(crs_matrix_type &A) {
   if (_m < _small_problem_thres) {
     typedef ArithTraits<value_type> ats;
