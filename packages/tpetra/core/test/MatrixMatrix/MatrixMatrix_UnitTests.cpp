@@ -1059,10 +1059,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       diags.get1dCopy(diagonal());
 
       for(size_t i = 0; i < diagLength; ++i) {
-	if(diagonal[i] == Teuchos::ScalarTraits<SC>::zero()) {
-	  diagExists = false;
-	  break;
-	}
+        if(diagonal[i] == Teuchos::ScalarTraits<SC>::zero()) {
+          diagExists = false;
+          break;
+        }
       }
 
       // Do we try Jacobi?
@@ -1134,8 +1134,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       //declare E with enough entries to receive A + B
       size_t n = 0;
       for (size_t i = 0; i < B->getLocalNumRows(); i++) {
-	if (n < B->getNumEntriesInLocalRow(i))
-	  n = B->getNumEntriesInLocalRow(i);
+        if (n < B->getNumEntriesInLocalRow(i))
+          n = B->getNumEntriesInLocalRow(i);
       }
       n += A->getLocalMaxNumRowEntries();
 
@@ -1582,9 +1582,9 @@ void build_C_matrix (const RCP<BlockCrsMatrixType>& C) {
         Scalar vals_for_col[3];
         if (globalrow==1) {
           vals_for_col[0] = 4; vals_for_col[1] = 26; vals_for_col[2] = 24;
-	} else if (globalrow==2) {
+        } else if (globalrow==2) {
           vals_for_col[0] = 24; vals_for_col[1] = 82; vals_for_col[2] = 60;
-	}
+        }
         int start = local_indx*blocksize*blocksize;
         for (size_t b=0; b<blocksize*blocksize; ++b) {
           values[start+b] = vals_for_col[local_indx];
@@ -1691,12 +1691,12 @@ bool matrices_are_same(const RCP<BlockCrsMatrixType>& A1,
 
     // Loop over each local col entry of A1, find the corresponding col index of A2, and compare these value.
     for (size_type a1_k = 0; a1_k < static_cast<size_type> (A1NumEntries); ++a1_k) {
-      LO a2_k;
+      LO a2_k=0;
       for (size_type i = 0; i < static_cast<size_type> (A2NumEntries); ++i) {
-	if (A1LocalColInds[a1_k] == A2LocalColInds[i]) {
+        if (A1LocalColInds[a1_k] == A2LocalColInds[i]) {
           a2_k = i;
-	  break;
-	}
+          break;
+        }
       }
       const int a1_start = a1_k*blocksize*blocksize;
       const int a2_start = a2_k*blocksize*blocksize;
@@ -1704,7 +1704,7 @@ bool matrices_are_same(const RCP<BlockCrsMatrixType>& A1,
         const magnitude_type rel_err = ST::magnitude(A1LocalRowVals[a1_start+b] - A2LocalRowVals[a2_start+b]);
         if(rel_err > tol) {
           if (my_rank==0) std::cout << "Error: Matrices have different values!" << std::endl;
-	  return false;
+          return false;
         }
       }
     }
@@ -1763,12 +1763,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatMult, BlockCrsMult, SC,LO, GO, NT
   // Create row maps
   RCP<const map_type> row_map_A =
     rcp (new map_type (INVALID,
-		       num_local_elements_A,
-		       indexBase, comm));
+                       num_local_elements_A,
+                       indexBase, comm));
   RCP<const map_type> row_map_B =
     rcp (new map_type (INVALID,
-		       num_local_elements_B,
-		       indexBase, comm));
+                       num_local_elements_B,
+                       indexBase, comm));
 
   // Build graphs                                                        
   Teuchos::RCP<crs_graph_type> graph_A =
@@ -1780,7 +1780,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatMult, BlockCrsMult, SC,LO, GO, NT
   {
     Array<GO> cols_A(2);
     for (LO localrow = row_map_A->getMinLocalIndex ();
-	 localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
+         localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
       const GO globalrow = row_map_A->getGlobalElement(localrow);
       if (globalrow==0) {
         cols_A.resize(1);
@@ -1799,7 +1799,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatMult, BlockCrsMult, SC,LO, GO, NT
   {
     Array<GO> cols_B(2);
     for (LO localrow = row_map_B->getMinLocalIndex ();
-	 localrow <= row_map_B->getMaxLocalIndex (); ++localrow) {
+         localrow <= row_map_B->getMaxLocalIndex (); ++localrow) {
       const GO globalrow = row_map_B->getGlobalElement(localrow);
       cols_B.resize(2);
       cols_B[0] = globalrow; cols_B[1] = globalrow+1;
@@ -1810,7 +1810,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatMult, BlockCrsMult, SC,LO, GO, NT
   {
     Array<GO> cols_C(2);
     for (LO localrow = row_map_A->getMinLocalIndex ();
-	 localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
+         localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
       const GO globalrow = row_map_A->getGlobalElement(localrow);
       if (globalrow==0) {
         cols_C.resize(2);
