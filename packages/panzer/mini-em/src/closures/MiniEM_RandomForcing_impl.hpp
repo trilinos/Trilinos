@@ -36,20 +36,16 @@ RandomForcing<EvalT,Traits>::RandomForcing(const std::string & name,
     ir_degree = ir.cubature_degree;
     ir_dim = ir.spatial_dimension;
 
-    currentVector = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
-    this->addEvaluatedField(currentVector);
+    forcingVector = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
+    this->addEvaluatedField(forcingVector);
   } else {
     Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
     ir_degree = ir.cubature_degree;
     ir_dim = ir.spatial_dimension;
 
-    currentScalar = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
-    this->addEvaluatedField(currentScalar);
+    forcingScalar = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+    this->addEvaluatedField(forcingScalar);
   }
-
-  const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
-  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates);
-  this->addDependentField(coords);
 
   std::string n = "Random Forcing";
   this->setName(n);
@@ -74,13 +70,13 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
   const IST min = static_cast<IST>(rangeMax_);
 
   if (vectorBasis_) {
-    auto tmp_current = currentVector.get_static_view();
+    auto tmp_forcing = forcingVector.get_static_view();
 
-    Kokkos::fill_random(tmp_current, rand_pool_, min, max);
+    Kokkos::fill_random(tmp_forcing, rand_pool_, min, max);
   } else {
-    auto tmp_current = currentScalar.get_static_view();
+    auto tmp_forcing = forcingScalar.get_static_view();
 
-    Kokkos::fill_random(tmp_current, rand_pool_, min, max);
+    Kokkos::fill_random(tmp_forcing, rand_pool_, min, max);
   }
 }
 
