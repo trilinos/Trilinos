@@ -56,10 +56,8 @@
 
 #include "Xpetra_Map.hpp"
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
-#endif
 #endif
 
 namespace Xpetra {
@@ -231,7 +229,6 @@ namespace Xpetra {
 
     //! @name Tpetra-specific routines
     //@{
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename node_type::execution_space execution_space;
     typedef typename node_type::device_type device_type;
@@ -250,7 +247,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

@@ -47,7 +47,6 @@
 #define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
@@ -98,5 +97,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP

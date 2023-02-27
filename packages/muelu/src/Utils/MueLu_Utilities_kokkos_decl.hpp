@@ -47,7 +47,6 @@
 #define MUELU_UTILITIES_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
 #include <string>
 
@@ -796,7 +795,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_UTILITIES_KOKKOS_SHORT
-
-#endif // #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
 #endif // MUELU_UTILITIES_KOKKOS_DECL_HPP

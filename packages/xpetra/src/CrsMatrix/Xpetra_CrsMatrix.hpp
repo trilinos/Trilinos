@@ -55,11 +55,9 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_Vector.hpp"
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 #endif
 
 namespace Xpetra {
@@ -309,7 +307,6 @@ namespace Xpetra {
 
     //! @name Xpetra-specific routines
     //@{
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
     using execution_space   = typename node_type::device_type;
@@ -335,7 +332,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

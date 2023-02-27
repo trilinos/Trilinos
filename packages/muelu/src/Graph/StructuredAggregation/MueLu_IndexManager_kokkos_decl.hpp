@@ -49,7 +49,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_OrdinalTraits.hpp"
@@ -186,5 +185,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_INDEXMANAGER_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_INDEXMANAGER_KOKKOS_DECL_HPP

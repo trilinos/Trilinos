@@ -115,7 +115,6 @@ namespace Xpetra {
     CreateDefaultView();
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params)
@@ -143,7 +142,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 
@@ -444,7 +442,6 @@ namespace Xpetra {
     matrixData_->setObjectLabel(objectLabel);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
@@ -459,7 +456,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

@@ -101,7 +101,6 @@
 #endif
 
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
@@ -110,7 +109,6 @@
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
-#endif
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"

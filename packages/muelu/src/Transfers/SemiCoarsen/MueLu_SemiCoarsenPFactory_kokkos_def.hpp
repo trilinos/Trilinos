@@ -46,8 +46,6 @@
 #ifndef MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <stdlib.h>
 
 #include <Kokkos_Core.hpp>
@@ -697,5 +695,4 @@ void SemiCoarsenPFactory_kokkos<
 } // namespace MueLu
 
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP

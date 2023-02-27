@@ -69,35 +69,33 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-      MUELU_ADD_SERIAL_AND_MPI_TEST(
-        Structured
-        NAME "Structured_Interp_Laplace2D_kokkos"
-        ARGS "--linAlgebra=Tpetra --xml=structured_interp_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Structured
+      NAME "Structured_Interp_Laplace2D_kokkos"
+      ARGS "--linAlgebra=Tpetra --xml=structured_interp_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+    )
 
-      MUELU_ADD_SERIAL_AND_MPI_TEST(
-        Structured
-        NAME "Structured_Interp_SA_Laplace2D_kokkos"
-        ARGS "--linAlgebra=Tpetra --xml=structured_interp_sa_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Structured
+      NAME "Structured_Interp_SA_Laplace2D_kokkos"
+      ARGS "--linAlgebra=Tpetra --xml=structured_interp_sa_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+    )
 
-      MUELU_ADD_SERIAL_AND_MPI_TEST(
-        Structured
-        NAME "Structured_Tentative_Laplace2D_kokkos"
-        ARGS "--linAlgebra=Tpetra --xml=structured_tentative_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
-    ENDIF()
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Structured
+      NAME "Structured_Tentative_Laplace2D_kokkos"
+      ARGS "--linAlgebra=Tpetra --xml=structured_tentative_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+    )
 
   ENDIF()
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor))
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Laplace2D_Epetra"
