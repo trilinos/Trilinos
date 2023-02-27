@@ -88,8 +88,10 @@ ELSE()
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
   SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
 
-  # Make sure EpetraExt is turned off
+  MESSAGE(" - NOTE: Setting Xpetra_ENABLE_EpetraExt=OFF since"
+    " Xpetra_ENABLE_Epetra='${Xpetra_ENABLE_Epetra}'" )
   DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
+  DUAL_SCOPE_SET(HAVE_XPETRA_EPETRAEXT OFF)
 ENDIF()
 
 #
