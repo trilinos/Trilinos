@@ -54,11 +54,13 @@ export CTEST_CONFIGURATION="default"
 module purge
 module load sems-gcc/10.1.0
 module load sems-openmpi/4.0.5
-module load sems-cmake/3.21.1
+module load sems-cmake
 module load sems-superlu/4.3
-module load sems-zlib/1.2.11
-module load sems-boost/1.74.0
-module load sems-netcdf-c/4.7.3
+module load sems-zlib
+module load sems-boost
+module load sems-hdf5
+module load sems-netcdf-c
+module load sems-parallel-netcdf
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -81,9 +83,11 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_avatar_lightsaber.cmake
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_float_lightsaber.cmake
 
-module load sems-netcdf-c
-module load sems-boost
-module load sems-zlib
+module unload sems-parallel-netcdf
+module unload sems-netcdf-c
+module unload sems-hdf5
+module unload sems-boost
+module unload sems-zlib
 module unload sems-superlu
 module unload sems-cmake
 module unload sems-openmpi
