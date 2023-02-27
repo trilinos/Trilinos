@@ -33,10 +33,6 @@ DarcyAnalyticForcing<EvalT,Traits>::DarcyAnalyticForcing(const std::string & nam
   source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
   this->addEvaluatedField(source);
 
-  const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
-  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates);
-  this->addDependentField(coords);
-
   std::string n = "Darcy Analytic Forcing";
   this->setName(n);
 

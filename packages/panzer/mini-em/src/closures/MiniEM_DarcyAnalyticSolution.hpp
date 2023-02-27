@@ -44,7 +44,6 @@ private:
 
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point> source;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
   int ir_degree, ir_index, ir_dim;
 
   using device_type = PHX::Device;
