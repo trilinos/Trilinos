@@ -50,7 +50,9 @@
 #include <chrono>
 #include <iomanip>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Kokkos_ArithTraits.hpp>
 #include "MueLu_PerfModels_decl.hpp"
+
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -61,16 +63,19 @@ namespace MueLu {
   namespace PerfDetails {
     template<class Scalar,class Node>
     double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+      // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
+      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
       using range_policy = Kokkos::RangePolicy<exec_space>;
 
-      Kokkos::View<Scalar*,memory_space> a("a", VECTOR_SIZE);
-      Kokkos::View<Scalar*,memory_space> b("b", VECTOR_SIZE);
-      Kokkos::View<Scalar*,memory_space> c("c", VECTOR_SIZE);
+      Kokkos::View<impl_scalar_type*,memory_space> a("a", VECTOR_SIZE);
+      Kokkos::View<impl_scalar_type*,memory_space> b("b", VECTOR_SIZE);
+      Kokkos::View<impl_scalar_type*,memory_space> c("c", VECTOR_SIZE);
       double total_test_time = 0.0;
 
-      Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+      impl_scalar_type ONE = Teuchos::ScalarTraits<impl_scalar_type>::one();
 
       Kokkos::parallel_for("stream/fill",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t i) {
           a(i) = ONE * (double)i;
@@ -99,15 +104,18 @@ namespace MueLu {
 
     template<class Scalar,class Node>
     double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {      
+      // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
+      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
       using range_policy = Kokkos::RangePolicy<exec_space>;
 
-      Kokkos::View<Scalar*,memory_space> a("a", VECTOR_SIZE);
-      Kokkos::View<Scalar*,memory_space> b("b", VECTOR_SIZE);
+      Kokkos::View<impl_scalar_type*,memory_space> a("a", VECTOR_SIZE);
+      Kokkos::View<impl_scalar_type*,memory_space> b("b", VECTOR_SIZE);
       double total_test_time = 0.0;
 
-      Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+      impl_scalar_type ONE = Teuchos::ScalarTraits<impl_scalar_type>::one();
 
       Kokkos::parallel_for("stream/fill",range_policy(0,VECTOR_SIZE), KOKKOS_LAMBDA (const size_t i) {
           a(i) = ONE;
@@ -242,6 +250,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stream_vector_make_table(int KERNEL_REPEATS,  int LOG_MAX_SIZE) {
+
     // We need launch/waits latency estimates for corrected stream
     launch_latency_make_table(KERNEL_REPEATS);
     double latency = launch_latency_lookup();
