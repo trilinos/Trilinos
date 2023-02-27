@@ -74,228 +74,272 @@ namespace Sacado {
 
     namespace Impl {
       // Our implementation of Kokkos::atomic_oper_fetch() and
-      // Kokkos::atomic_fetch_oper() for Sacado types
+      // Kokkos::atomic_fetch_oper() for Sacado types on host
       template <typename Oper, typename DestPtrT, typename ValT, typename T>
-      SACADO_INLINE_FUNCTION
       typename Sacado::BaseExprType< Expr<T> >::type
-      atomic_oper_fetch_impl(const Oper& op, DestPtrT dest, ValT* dest_val,
+      atomic_oper_fetch_host(const Oper& op, DestPtrT dest, ValT* dest_val,
                              const Expr<T>& x)
       {
         typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
         const typename Expr<T>::derived_type& val = x.derived();
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-        while (!Kokkos::Impl::lock_address_host_space((void*)dest_val))
+#ifdef KOKKOS_INTERNAL_NOT_PARALLEL
+        auto scope = desul::MemoryScopeCaller();
+#else
+        auto scope = desul::MemoryScopeDevice();
+#endif
+
+        while (!desul::Impl::lock_address((void*)dest_val, scope))
           ;
-        Kokkos::memory_fence();
+        desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
         return_type return_val = op.apply(*dest, val);
         *dest                  = return_val;
-        Kokkos::memory_fence();
-        Kokkos::Impl::unlock_address_host_space((void*)dest_val);
+        desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+        desul::Impl::unlock_address((void*)dest_val, scope);
         return return_val;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
-	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
-	// kernel without Sacado hierarchical parallelism.  So use the
-	// team-based version only if blockDim.x > 1 (i.e., a team policy)
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-	const bool use_team = (blockDim.x > 1);
-#else
-	const bool use_team = false;
-#endif
-	if (use_team) {
-	  int go = 1;
-	  while (go) {
-	    if (threadIdx.x == 0)
-	      go = !Kokkos::Impl::lock_address_cuda_space((void*)dest_val);
-	    go = Kokkos::shfl(go, 0, blockDim.x);
-	  }
-	  Kokkos::memory_fence();
-	  return_type return_val = op.apply(*dest, val);
-	  *dest                  = return_val;
-	  Kokkos::memory_fence();
-	  if (threadIdx.x == 0)
-	    Kokkos::Impl::unlock_address_cuda_space((void*)dest_val);
-	  return return_val;
-	}
-	else {
-	  return_type return_val;
-	  // This is a way to (hopefully) avoid dead lock in a warp
-	  int done                 = 0;
-	  unsigned int mask        =  __activemask() ;
-	  unsigned int active      = __ballot_sync(mask, 1);
-	  unsigned int done_active = 0;
-	  while (active != done_active) {
-	    if (!done) {
-	      if (Kokkos::Impl::lock_address_cuda_space((void*)dest_val)) {
-		Kokkos::memory_fence();
-		return_val = op.apply(*dest, val);
-		*dest      = return_val;
-		Kokkos::memory_fence();
-		Kokkos::Impl::unlock_address_cuda_space((void*)dest_val);
-		done = 1;
-	      }
-	    }
-	    done_active = __ballot_sync(mask, done);
-	  }
-	  return return_val;
-	}
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
-	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
-	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
-	// kernel without Sacado hierarchical parallelism.  So use the
-	// team-based version only if blockDim.x > 1 (i.e., a team policy)
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-	const bool use_team = (blockDim.x > 1);
-#else
-	const bool use_team = false;
-#endif
-	if (use_team) {
-	  int go = 1;
-	  while (go) {
-	    if (threadIdx.x == 0)
-	      go = !Kokkos::Impl::lock_address_hip_space((void*)dest_val);
-	    go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
-	  }
-	  Kokkos::memory_fence();
-	  return_type return_val = op.apply(*dest, val);
-	  *dest                  = return_val;
-	  Kokkos::memory_fence();
-	  if (threadIdx.x == 0)
-	    Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-	  return return_val;
-	}
-	else {
-	  return_type return_val;
-	  int done                 = 0;
-	  unsigned int active      = __ballot(1);
-	  unsigned int done_active = 0;
-	  while (active != done_active) {
-	    if (!done) {
-	      if (Kokkos::Impl::lock_address_hip_space((void*)dest_val)) {
-		return_val = op.apply(*dest, val);
-		*dest      = return_val;
-		Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-		done = 1;
-	      }
-	    }
-	    done_active = __ballot(done);
-	  }
-	  return return_val;
-	}
-#endif
       }
 
       template <typename Oper, typename DestPtrT, typename ValT, typename T>
-      SACADO_INLINE_FUNCTION
       typename Sacado::BaseExprType< Expr<T> >::type
-      atomic_fetch_oper_impl(const Oper& op, DestPtrT dest, ValT* dest_val,
+      atomic_fetch_oper_host(const Oper& op, DestPtrT dest, ValT* dest_val,
                              const Expr<T>& x)
       {
         typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
         const typename Expr<T>::derived_type& val = x.derived();
 
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-        while (!Kokkos::Impl::lock_address_host_space((void*)dest_val))
+#ifdef KOKKOS_INTERNAL_NOT_PARALLEL
+        auto scope = desul::MemoryScopeCaller();
+#else
+        auto scope = desul::MemoryScopeDevice();
+#endif
+
+        while (!desul::Impl::lock_address((void*)dest_val, scope))
           ;
-        Kokkos::memory_fence();
+        desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
         return_type return_val = *dest;
         *dest                  = op.apply(return_val, val);
-        Kokkos::memory_fence();
-        Kokkos::Impl::unlock_address_host_space((void*)dest_val);
+        desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+        desul::Impl::unlock_address((void*)dest_val, scope);
         return return_val;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
-	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
-	// kernel without Sacado hierarchical parallelism.  So use the
-	// team-based version only if blockDim.x > 1 (i.e., a team policy)
+      }
+
+      // Helper function to decide if we are using team-based parallelism
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+      __device__
+      inline bool atomics_use_team() {
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-	const bool use_team = (blockDim.x > 1);
+        // It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
+        // SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
+        // kernel without Sacado hierarchical parallelism.  So use the
+        // team-based version only if blockDim.x > 1 (i.e., a team policy)
+        return (blockDim.x > 1);
 #else
-	const bool use_team = false;
-#endif
-	if (use_team) {
-	  int go = 1;
-	  while (go) {
-	    if (threadIdx.x == 0)
-	      go = !Kokkos::Impl::lock_address_cuda_space((void*)dest_val);
-	    go = Kokkos::shfl(go, 0, blockDim.x);
-	  }
-	  Kokkos::memory_fence();
-	  return_type return_val = *dest;
-	  *dest                  = op.apply(return_val, val);
-	  Kokkos::memory_fence();
-	  if (threadIdx.x == 0)
-	    Kokkos::Impl::unlock_address_cuda_space((void*)dest_val);
-	  return return_val;
-	}
-	else {
-	  return_type return_val;
-	  // This is a way to (hopefully) avoid dead lock in a warp
-	  int done                 = 0;
-	  unsigned int mask        =  __activemask() ;
-	  unsigned int active      = __ballot_sync(mask, 1);
-	  unsigned int done_active = 0;
-	  while (active != done_active) {
-	    if (!done) {
-	      if (Kokkos::Impl::lock_address_cuda_space((void*)dest_val)) {
-		Kokkos::memory_fence();
-		return_val = *dest;
-		*dest      = op.apply(return_val, val);
-		Kokkos::memory_fence();
-		Kokkos::Impl::unlock_address_cuda_space((void*)dest_val);
-		done = 1;
-	      }
-	    }
-	    done_active = __ballot_sync(mask, done);
-	  }
-	  return return_val;
-	}
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
-	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
-	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
-	// kernel without Sacado hierarchical parallelism.  So use the
-	// team-based version only if blockDim.x > 1 (i.e., a team policy)
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-	const bool use_team = (blockDim.x > 1);
-#else
-	const bool use_team = false;
-#endif
-	if (use_team) {
-	  int go = 1;
-	  while (go) {
-	    if (threadIdx.x == 0)
-	      go = !Kokkos::Impl::lock_address_hip_space((void*)dest_val);
-	    go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
-	  }
-	  Kokkos::memory_fence();
-	  return_type return_val = *dest;
-	  *dest                  = op.apply(return_val, val);
-	  Kokkos::memory_fence();
-	  if (threadIdx.x == 0)
-	    Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-	  return return_val;
-	}
-	else {
-	  return_type return_val;
-	  int done                 = 0;
-	  unsigned int active      = __ballot(1);
-	  unsigned int done_active = 0;
-	  while (active != done_active) {
-	    if (!done) {
-	      if (Kokkos::Impl::lock_address_hip_space((void*)dest_val)) {
-		return_val = *dest;
-		*dest      = op.apply(return_val, val);
-		Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-		done = 1;
-	      }
-	    }
-	    done_active = __ballot(done);
-	  }
-	  return return_val;
-	}
+        return false;
 #endif
       }
+#endif
+
+#if defined(KOKKOS_ENABLE_CUDA)
+
+      // Our implementation of Kokkos::atomic_oper_fetch() and
+      // Kokkos::atomic_fetch_oper() for Sacado types on device
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      __device__
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_oper_fetch_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+        auto scope = desul::MemoryScopeDevice();
+
+        if (atomics_use_team()) {
+          int go = 1;
+          while (go) {
+            if (threadIdx.x == 0)
+              go = !desul::Impl::lock_address_cuda((void*)dest_val, scope);
+            go = Kokkos::shfl(go, 0, blockDim.x);
+          }
+          desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+          return_type return_val = op.apply(*dest, val);
+          *dest                  = return_val;
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          if (threadIdx.x == 0)
+            desul::Impl::unlock_address_cuda((void*)dest_val, scope);
+          return return_val;
+        }
+        else {
+          return_type return_val;
+          // This is a way to avoid dead lock in a warp
+          int done                 = 0;
+          unsigned int mask        =  __activemask() ;
+          unsigned int active      = __ballot_sync(mask, 1);
+          unsigned int done_active = 0;
+          while (active != done_active) {
+            if (!done) {
+              if (desul::Impl::lock_address_cuda((void*)dest_val, scope)) {
+                desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+                return_val = op.apply(*dest, val);
+                *dest      = return_val;
+                desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+                desul::Impl::unlock_address_cuda((void*)dest_val, scope);
+                done = 1;
+              }
+            }
+            done_active = __ballot_sync(mask, done);
+          }
+          return return_val;
+        }
+      }
+
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      __device__
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_fetch_oper_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+        auto scope = desul::MemoryScopeDevice();
+
+        if (atomics_use_team()) {
+          int go = 1;
+          while (go) {
+            if (threadIdx.x == 0)
+              go = !desul::Impl::lock_address_cuda((void*)dest_val, scope);
+            go = Kokkos::shfl(go, 0, blockDim.x);
+          }
+          desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+          return_type return_val = *dest;
+          *dest                  = op.apply(return_val, val);
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          if (threadIdx.x == 0)
+            desul::Impl::unlock_address_cuda((void*)dest_val, scope);
+          return return_val;
+        }
+        else {
+          return_type return_val;
+          // This is a way to (hopefully) avoid dead lock in a warp
+          int done                 = 0;
+          unsigned int mask        =  __activemask() ;
+          unsigned int active      = __ballot_sync(mask, 1);
+          unsigned int done_active = 0;
+          while (active != done_active) {
+            if (!done) {
+              if (desul::Impl::lock_address_cuda((void*)dest_val, scope)) {
+                desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+                return_val = *dest;
+                *dest      = op.apply(return_val, val);
+                desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+                desul::Impl::unlock_address_cuda((void*)dest_val, scope);
+                done = 1;
+              }
+            }
+            done_active = __ballot_sync(mask, done);
+          }
+          return return_val;
+        }
+      }
+
+#elif defined(KOKKOS_ENABLE_HIP)
+
+      // Our implementation of Kokkos::atomic_oper_fetch() and
+      // Kokkos::atomic_fetch_oper() for Sacado types on device
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      __device__
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_oper_fetch_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+        auto scope = desul::MemoryScopeDevice();
+
+        if (atomics_use_team()) {
+          int go = 1;
+          while (go) {
+            if (threadIdx.x == 0)
+              go = !desul::Impl::lock_address_hip((void*)dest_val, scope);
+            go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+          }
+          desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+          return_type return_val = op.apply(*dest, val);
+          *dest                  = return_val;
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          if (threadIdx.x == 0)
+            desul::Impl::unlock_address_hip((void*)dest_val, scope);
+          return return_val;
+        }
+        else {
+          return_type return_val;
+          int done                 = 0;
+          unsigned int active      = __ballot(1);
+          unsigned int done_active = 0;
+          while (active != done_active) {
+            if (!done) {
+              if (desul::Impl::lock_address_hip((void*)dest_val, scope)) {
+                return_val = op.apply(*dest, val);
+                *dest      = return_val;
+                desul::Impl::unlock_address_hip((void*)dest_val, scope);
+                done = 1;
+              }
+            }
+            done_active = __ballot(done);
+          }
+          return return_val;
+        }
+      }
+
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      __device__
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_fetch_oper_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+        auto scope = desul::MemoryScopeDevice();
+
+        if (atomics_use_team()) {
+          int go = 1;
+          while (go) {
+            if (threadIdx.x == 0)
+              go = !desul::Impl::lock_address_hip((void*)dest_val, scope);
+            go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+          }
+          desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+          return_type return_val = *dest;
+          *dest                  = op.apply(return_val, val);
+          desul:atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          if (threadIdx.x == 0)
+            desul::Impl::unlock_address_hip((void*)dest_val, scope);
+          return return_val;
+        }
+        else {
+          return_type return_val;
+          int done                 = 0;
+          unsigned int active      = __ballot(1);
+          unsigned int done_active = 0;
+          while (active != done_active) {
+            if (!done) {
+              if (desul::Impl::lock_address_hip((void*)dest_val, scope)) {
+                return_val = *dest;
+                *dest      = op.apply(return_val, val);
+                desul::Impl::unlock_address_hip((void*)dest_val, scope);
+                done = 1;
+              }
+            }
+            done_active = __ballot(done);
+          }
+          return return_val;
+        }
+      }
+
+#endif
 
       // Overloads of Kokkos::atomic_oper_fetch/Kokkos::atomic_fetch_oper
       // for Sacado types
@@ -304,7 +348,8 @@ namespace Sacado {
       atomic_oper_fetch(const Oper& op, GeneralFad<S>* dest,
                         const GeneralFad<S>& val)
       {
-        return Impl::atomic_oper_fetch_impl(op, dest, &(dest->val()), val);
+        KOKKOS_IF_ON_HOST(return Impl::atomic_oper_fetch_host(op, dest, &(dest->val()), val);)
+        KOKKOS_IF_ON_DEVICE(return Impl::atomic_oper_fetch_device(op, dest, &(dest->val()), val);)
       }
       template <typename Oper, typename ValT, unsigned sl, unsigned ss,
                 typename U, typename T>
@@ -312,7 +357,8 @@ namespace Sacado {
       atomic_oper_fetch(const Oper& op, ViewFadPtr<ValT,sl,ss,U> dest,
                         const Expr<T>& val)
       {
-        return Impl::atomic_oper_fetch_impl(op, dest, &dest.val(), val);
+        KOKKOS_IF_ON_HOST(return Impl::atomic_oper_fetch_host(op, dest, &dest.val(), val);)
+        KOKKOS_IF_ON_DEVICE(return Impl::atomic_oper_fetch_device(op, dest, &dest.val(), val);)
       }
 
       template <typename Oper, typename S>
@@ -320,7 +366,8 @@ namespace Sacado {
       atomic_fetch_oper(const Oper& op, GeneralFad<S>* dest,
                         const GeneralFad<S>& val)
       {
-        return Impl::atomic_fetch_oper_impl(op, dest, &(dest->val()), val);
+        KOKKOS_IF_ON_HOST(return Impl::atomic_fetch_oper_host(op, dest, &(dest->val()), val);)
+        KOKKOS_IF_ON_DEVICE(return Impl::atomic_fetch_oper_device(op, dest, &(dest->val()), val);)
       }
       template <typename Oper, typename ValT, unsigned sl, unsigned ss,
                 typename U, typename T>
@@ -328,7 +375,8 @@ namespace Sacado {
       atomic_fetch_oper(const Oper& op, ViewFadPtr<ValT,sl,ss,U> dest,
                         const Expr<T>& val)
       {
-        return Impl::atomic_fetch_oper_impl(op, dest, &dest.val(), val);
+        KOKKOS_IF_ON_HOST(return Impl::atomic_fetch_oper_host(op, dest, &dest.val(), val);)
+        KOKKOS_IF_ON_DEVICE(return Impl::atomic_fetch_oper_device(op, dest, &dest.val(), val);)
       }
 
       // Our definition of the various Oper classes to be more type-flexible
