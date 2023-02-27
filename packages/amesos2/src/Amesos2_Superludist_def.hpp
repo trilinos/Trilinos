@@ -332,8 +332,33 @@ namespace Amesos2 {
     SLUD::SuperMatrix GA;      /* Global A in NC format */
     bool need_value = false;
     if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
-      SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
       need_value = true;
+
+      if( in_grid_ && data_.options.Equil == SLUD::YES ) {
+        // create a copy of A
+        SLUD::SuperMatrix Acopy;
+        SLUD::D::dClone_CompRowLoc_Matrix_dist(&(data_.A), &Acopy);
+        SLUD::D::dCopy_CompRowLoc_Matrix_dist(&(data_.A), &Acopy);
+
+        SLUD::int_t info = 0;
+
+        // Compute scaling
+        data_.R.resize(this->globalNumRows_);
+        data_.C.resize(this->globalNumCols_);
+        function_map::gsequ_loc(&Acopy, data_.R.getRawPtr(), data_.C.getRawPtr(),
+                                &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
+
+        // Apply the scaling to Acopy
+        std::vector<SLUD::DiagScale_t> equed(1);
+        function_map::laqgs_loc(&Acopy, data_.R.getRawPtr(), data_.C.getRawPtr(),
+                                data_.rowcnd, data_.colcnd, data_.amax,
+                                equed.data());
+
+        SLUD::D::pdCompRow_loc_to_CompCol_global(true, &Acopy, &data_.grid, &GA);
+        SLUD::Destroy_CompRow_Matrix_dist(&Acopy);
+      }
+      else
+        SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
     }
 
     if (data_.options.RowPerm == SLUD::NOROWPERM) {
@@ -484,13 +509,6 @@ namespace Amesos2 {
 
     if( in_grid_ ) {
       if( data_.options.Equil == SLUD::YES ) {
-        SLUD::int_t info = 0;
-
-        // Compute scaling
-        data_.R.resize(this->globalNumRows_);
-        data_.C.resize(this->globalNumCols_);
-        function_map::gsequ_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
-                                &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
 
         // Apply the scalings
         function_map::laqgs_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
@@ -501,6 +519,7 @@ namespace Amesos2 {
         data_.colequ = (data_.equed == SLUD::COL) || (data_.equed == SLUD::BOTH);
 
         // Apply row-permutation scaling
+        // Here we do it manually to bypass the threshold check in laqgs_loc
         if (data_.options.RowPerm == SLUD::LargeDiag_MC64 && data_.largediag_mc64_job == 5)
         {
           SLUD::NRformat_loc *Astore  = (SLUD::NRformat_loc*) data_.A.Store;
