@@ -444,6 +444,18 @@ class TrilinosPRConfigurationBase(object):
         return output
 
 
+    @property
+    def dashboard_model(self):
+        """
+        Generate the dashboard model for CDash
+
+        Nightly, Continuous, Experimental
+        """
+        if self.arg_pullrequest_cdash_track == "Pull Request":
+            return "Experimental"
+        return "Nightly"
+
+
     # --------------------
     # M E T H O D S
     # --------------------
