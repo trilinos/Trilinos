@@ -28,9 +28,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureGRADGRAD(Intre
     numVertices *= 2;
   }
   
-  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
-  geometry.orientations(orientations, 0, -1);
-  
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
   auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
   auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
@@ -45,6 +42,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureGRADGRAD(Intre
   // dimensions of the returned view are (C,F,F)
   auto fs = FUNCTION_SPACE_HGRAD;
 
+  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
+  geometry.orientations(orientations, 0, -1);
+  
   shards::CellTopology cellTopo = geometry.cellTopology();
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);

@@ -1,24 +1,60 @@
 //
-//  GRADGRADStructuredAssembly.hpp
+//  StructuredAssembly.hpp
 //  Trilinos
 //
-//  Created by Roberts, Nathan V on 7/2/21.
+//  Created by Roberts, Nathan V on 2/28/23.
 //
 
-#ifndef GRADGRADStructuredAssembly_h
-#define GRADGRADStructuredAssembly_h
+#ifndef StructuredAssembly_h
+#define StructuredAssembly_h
 
 #include "JacobianFlopEstimate.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
-/** \file   GRADGRADStructuredAssembly.hpp
-    \brief  Locally assembles a Poisson matrix -- an array of shape (C,F,F), with formulation (grad e_i, grad e_j), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
+/** \file   StructuredAssembly.hpp
+    \brief  Locally assembles a matrix of one basis integrated cell-wise against another -- an array of shape (C,F1,F2), with formulation (op1(e1_i), op2(e2_j)), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
  */
 
-//! Version that takes advantage of new structured integration support, including sum factorization.
+namespace {
+  template<class Scalar, typename DeviceType>
+  Intrepid2::TransformedBasisValues<Scalar,DeviceType>
+  transform(const Intrepid2::BasisValues<Scalar,DeviceType> &refValues,
+            const Intrepid2::EFunctionSpace &fs, const Intrepid2::EOperator &op,
+            const Intrepid2::Data<Scalar,DeviceType> &jacobian, const Intrepid2::Data<Scalar,DeviceType> &jacobianDet,
+            const Intrepid2::Data<Scalar,DeviceType> &jacobianInv)
+  {
+    using namespace Intrepid2;
+    using FST = Intrepid2::FunctionSpaceTools<DeviceType>;
+    switch (fs)
+    {
+      case EFunctionSpace::FUNCTION_SPACE_HGRAD:
+      {
+        switch (op)
+        {
+          case OPERATOR_VALUE:
+            return FST::getHGRADtransformVALUE(jacobian.extent_int(0), refValues); // jacobian.extent_int(0): numCells
+            break;
+          case OPERATOR_GRAD:
+            return FST::getHGRADtransformGRAD(jacobianInv, refValues);
+            break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
+        // TODO: add support for the other standard fs/op combinations
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+    }
+  }
+}
+
+//! General assembly for two arbitrary bases and ops that takes advantage of the new structured integration support, including support for sum factorization.
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
-Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                                                             double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &worksetSize,
+                                                                   const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
+                                                                   const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
   using namespace Intrepid2;
   
@@ -36,34 +72,35 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
   using FunctionSpaceTools = FunctionSpaceTools<DeviceType>;
   using IntegrationTools   = IntegrationTools<DeviceType>;
   // dimensions of the returned view are (C,F,F)
-  auto fs = FUNCTION_SPACE_HGRAD;
   
   Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
   geometry.orientations(orientations, 0, -1);
   
   shards::CellTopology cellTopo = geometry.cellTopology();
   
-  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
+  auto basis1 = getBasis< BasisFamily >(cellTopo, fs1, polyOrder1);
+  auto basis2 = getBasis< BasisFamily >(cellTopo, fs2, polyOrder2);
   
-  int numFields = basis->getCardinality();
+  int numFields1 = basis1->getCardinality();
+  int numFields2 = basis2->getCardinality();
   int numCells = geometry.numCells();
     
   // local stiffness matrix:
-  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-  ScalarView<Scalar,DeviceType> worksetCellStiffness("cell stiffness workset matrices",worksetSize,numFields,numFields);
+  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields1,numFields2);
+  ScalarView<Scalar,DeviceType> worksetCellStiffness("cell stiffness workset matrices",worksetSize,numFields1,numFields2);
 
-  auto cubature = DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
+  auto cubature = DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder1 + polyOrder2);
   auto tensorCubatureWeights = cubature->allocateCubatureWeights();
   TensorPoints<PointScalar,DeviceType> tensorCubaturePoints  = cubature->allocateCubaturePoints();
   
   cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
   
-  EOperator op = OPERATOR_GRAD;
-  BasisValues<Scalar,DeviceType> gradientValues = basis->allocateBasisValues(tensorCubaturePoints, op);
-  basis->getValues(gradientValues, tensorCubaturePoints, op);
+  BasisValues<Scalar,DeviceType> basis1Values = basis1->allocateBasisValues(tensorCubaturePoints, op1);
+  basis1->getValues(basis1Values, tensorCubaturePoints, op1);
   
-  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
-    
+  BasisValues<Scalar,DeviceType> basis2Values = basis2->allocateBasisValues(tensorCubaturePoints, op2);
+  basis1->getValues(basis2Values, tensorCubaturePoints, op2);
+      
   int cellOffset = 0;
   
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
@@ -74,9 +111,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
   Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
   
-  // lazily-evaluated transformed gradient values (temporary to allow integralData allocation)
-  auto transformedGradientValuesTemp = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues);
-  auto integralData = IntegrationTools::allocateIntegralData(transformedGradientValuesTemp, cellMeasures, transformedGradientValuesTemp);
+  // lazily-evaluated transformed basis values (temporary to allow integralData allocation)
+  auto transformedBasis1ValuesTemp = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv);
+  auto transformedBasis2ValuesTemp = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv);
+  auto integralData = IntegrationTools::allocateIntegralData(transformedBasis1ValuesTemp, cellMeasures, transformedBasis2ValuesTemp);
   
   const int numPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
   
@@ -108,7 +146,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
       jacobianDet.setExtent( CELL_DIM, numCellsInWorkset);
       jacobianInv.setExtent( CELL_DIM, numCellsInWorkset);
       integralData.setExtent(CELL_DIM, numCellsInWorkset);
-      Kokkos::resize(worksetCellStiffness, numCellsInWorkset, numFields, numFields);
+      Kokkos::resize(worksetCellStiffness, numCellsInWorkset, numFields1, numFields2);
       
       // cellMeasures is a TensorData object with separateFirstComponent_ = true; the below sets the cell dimension…
       cellMeasures.setFirstComponentExtentInDimension0(numCellsInWorkset);
@@ -119,7 +157,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
     CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
     
     // lazily-evaluated transformed gradient values:
-    auto transformedGradientValues = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues);
+    auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv);
+    auto transformedBasis2Values = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv);
     
     geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
     ExecutionSpace().fence();
@@ -128,7 +167,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
     bool sumInto = false;
     double approximateFlopCountIntegrateWorkset = 0;
     fstIntegrateCall->start();
-    IntegrationTools::integrate(integralData, transformedGradientValues, cellMeasures, transformedGradientValues, sumInto, &approximateFlopCountIntegrateWorkset);
+    IntegrationTools::integrate(integralData, transformedBasis1Values, cellMeasures, transformedBasis2Values, sumInto, &approximateFlopCountIntegrateWorkset);
     ExecutionSpace().fence();
     fstIntegrateCall->stop();
     
@@ -136,7 +175,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
     std::pair<int,int> cellRange = {startCell, endCell};
     auto orientationsWorkset = Kokkos::subview(orientations, cellRange);
     OrientationTools<DeviceType>::modifyMatrixByOrientation(worksetCellStiffness, integralData.getUnderlyingView(),
-                                                            orientationsWorkset, basis.get(), basis.get());
+                                                            orientationsWorkset, basis1.get(), basis2.get());
     
     // copy into cellStiffness container.
     auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
@@ -149,4 +188,4 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Int
   return cellStiffness;
 }
 
-#endif /* GRADGRADStructuredAssembly_h */
+#endif /* StructuredAssembly_h */

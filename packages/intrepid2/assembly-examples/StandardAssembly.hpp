@@ -48,7 +48,7 @@ namespace {
   }
 }
 
-//! Version that uses the classic, generic Intrepid2 paths.
+//! General assembly for two arbitrary bases and ops that uses the classic, generic Intrepid2 paths.
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
                                                                  const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
@@ -61,9 +61,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   {
     numVertices *= 2;
   }
-  
-  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
-  geometry.orientations(orientations, 0, -1);
   
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
   auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
@@ -79,6 +76,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   
   using namespace std;
   // dimensions of the returned view are (C,F1,F2)
+  
+  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
+  geometry.orientations(orientations, 0, -1);
+  
+  
   
   shards::CellTopology cellTopo = geometry.cellTopology();
   
