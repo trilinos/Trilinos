@@ -50,6 +50,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Tpetra_Details_nvtx.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -115,6 +116,7 @@ public:
 private:
   bool kokkos_region_active_;
   Teuchos::RCP<Teuchos::TimeMonitor> tm;
+  Range range_;
 
 };
 

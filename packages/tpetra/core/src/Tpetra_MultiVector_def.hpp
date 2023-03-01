@@ -1903,11 +1903,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
    const CombineMode CM,
    const execution_space &space)
   {
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": unpackAndCombine(..., ";
-    // Tpetra::Spaces::detail::print_space(space);
-    // std::cerr << ")\n";
-
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::unpack_array_multi_column;
@@ -1988,9 +1983,11 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     // whether communication buffers used were on host or device).
     const bool unpackOnHost = runKernelOnHost(imports);
     if (unpackOnHost) {
+      Tpetra::Details::mark("unpack on host");
       if (this->imports_.need_sync_host()) this->imports_.sync_host();
     }
     else {
+      Tpetra::Details::mark("unpack on device");
       if (this->imports_.need_sync_device()) this->imports_.sync_device();
     }
 
@@ -2113,9 +2110,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            // std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column(";
-            // Tpetra::Spaces::detail::print_space(space);
-            // std::cerr << ", ...)\n";
             unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,

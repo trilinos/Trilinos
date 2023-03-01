@@ -84,6 +84,8 @@
 #include <utility>
 #include <vector>
 
+#include "Tpetra_Details_nvtx.hpp"
+
 namespace Tpetra {
 
 namespace { // (anonymous)
@@ -4699,6 +4701,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Scalar alpha,
                      Scalar beta) const {
     CWP_CERR(__FILE__<<":"<<__LINE__<<" applyNonTranposeOverlapped()\n");
+    Tpetra::Details::Range range("applyNonTransposeOverlapped");
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4903,12 +4906,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Graph must be sorted for the off-rank offsets to be meaningful
     if (overlap && !getCrsGraph()->isSorted()) {
+      Tpetra::Details::mark("unsorted");
       overlap = false;
     }
 
     // if domain map has no local entries, there's no on-rank data in
     // X to overlap with
     if (overlap && 0 == getDomainMap()->getLocalNumElements()) {
+      Tpetra::Details::mark("no local work");
       overlap = false;
     }
 
@@ -4941,6 +4946,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // a subset of the colum map, are these the same things?
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: importer->isLocallyFitted");
       if (!importer.is_null() && !importer->isLocallyFitted()) {
+        Tpetra::Details::mark("not locally fitted");
         overlap = false;
       }
 #endif

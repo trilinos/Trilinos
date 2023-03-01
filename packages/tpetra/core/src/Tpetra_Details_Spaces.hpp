@@ -8,6 +8,7 @@
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_Behavior.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Tpetra_Details_nvtx.hpp"
 
 /*! \file
 
@@ -248,7 +249,7 @@ public:
             for (const rcp_type &rcp : instances[i]) {
                 if (rcp.is_valid_ptr() && !rcp.is_null()) {
                     // avoid throwing in dtor
-                    std::cerr << __FILE__ << ":" << __LINE__ << " execution space instance survived to ~InstanceLifetimeManager. strong_count() = " << rcp.strong_count() << ". Did a Tpetra object live too long?" << std::endl;
+                    std::cerr << __FILE__ << ":" << __LINE__ << " execution space instance survived to ~InstanceLifetimeManager. strong_count() = " << rcp.strong_count() << ". Did a Tpetra object live past Kokkos::finalize()?" << std::endl;
                 }
             }
         }
@@ -353,18 +354,18 @@ template <typename S1, typename S2
 , NotBothCuda<S1, S2> = true
 #endif
 >
-void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
+void exec_space_wait(const char *msg, const S1 &waitee, const S2 &/*waiter*/) {
+    Tpetra::Details::Range range(msg);
     lazy_init();
-    (void) waiter;
     waitee.fence(msg);
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename S1, typename S2,
 BothCuda<S1, S2> = true>
-void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
+void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
+    Tpetra::Details::Range range(msg);
     lazy_init();
-
 
     // TODO: add profiling hooks
     // if they are the same instance, no sync needed

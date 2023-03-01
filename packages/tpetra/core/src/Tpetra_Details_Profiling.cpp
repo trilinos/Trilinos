@@ -56,7 +56,7 @@ ProfilingRegion::ProfilingRegion ():
 
 }
 
-ProfilingRegion::ProfilingRegion (const char name[]) {
+ProfilingRegion::ProfilingRegion (const char name[]) : range_(name) {
   kokkos_region_active_ = false;
   if(Behavior::profilingRegionUseKokkosProfiling()){
     kokkos_region_active_ = true;
@@ -67,7 +67,7 @@ ProfilingRegion::ProfilingRegion (const char name[]) {
 
 }
 
-ProfilingRegion::ProfilingRegion (const char name[], const char group[]) {
+ProfilingRegion::ProfilingRegion (const char name[], const char group[]) : range_(name) {
   kokkos_region_active_ = false;
   const bool timeit = Behavior::timing(group);
   if (timeit)

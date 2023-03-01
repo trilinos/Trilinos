@@ -933,6 +933,12 @@ namespace Tpetra {
 
     // Do we need all communication buffers to live on host?
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
+    if (commOnHost) {
+      Tpetra::Details::mark("not GPU-aware");
+    } else {
+      Tpetra::Details::mark("GPU-aware");
+    }
+    
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "beginTransfer: Use new interface; "
