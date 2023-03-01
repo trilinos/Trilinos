@@ -52,7 +52,7 @@ class SolverManager : virtual public Teuchos::Describable {
   /// \brief clone the solver manager.
   ///
   /// Implements the DII inversion and injection pattern
-  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const = 0;
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const = 0;
   //@}
 
   //! @name Accessor methods
@@ -191,7 +191,7 @@ namespace Details {
   class RealSolverManager;
 
   // Specialization for isComplex = true adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP> //TODO
   class RealSolverManager<ScalarType, MV, OP, false> :
     public SolverManager<ScalarType, MV, OP> {
   public:
