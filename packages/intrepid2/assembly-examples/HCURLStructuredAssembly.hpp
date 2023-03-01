@@ -73,7 +73,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHCURL(Intrep
   Data<PointScalar,DeviceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
   Data<PointScalar,DeviceType> jacobianDet        = CellTools<DeviceType>::allocateJacobianDet(jacobian);
   Data<PointScalar,DeviceType> jacobianDetInverse = CellTools<DeviceType>::allocateJacobianDet(jacobian);
-  Data<PointScalar,DeviceType> jacobianDividedByJacobianDet = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize); // jacobianTimesJacobianDet has same underlying structure as jacobian
+  Data<PointScalar,DeviceType> jacobianDividedByJacobianDet = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize); // jacobianDividedByJacobianDet has same underlying structure as jacobian
   Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDetInverse, tensorCubatureWeights);
   
