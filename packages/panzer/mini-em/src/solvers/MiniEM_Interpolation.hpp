@@ -13,6 +13,99 @@
 #include "MiniEM_Utils.hpp"
 #include "MiniEM_MatrixFreeInterpolationOp.hpp"
 #include "MiniEM_MatrixFreeInterpolationOp.cpp"
+// #include "matrix_free_tpetra_operator.hpp"
+#include "matrix_free_em_tpetra_operator.hpp"
+
+// builds a vector given the specified map with a one at the specified global index
+template<class ST, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT> > generateUnitVector(const Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > map, const GO i)
+{
+  Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> unit_vector = Teuchos::rcp(new Tpetra::Vector<ST,LO,GO,NT>(map));
+  if(map->isNodeGlobalElement(i)) {
+    auto view = unit_vector->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    LO local_i = map->getLocalElement(i);
+    view(local_i,0) = 1;
+  }
+  return unit_vector;
+}
+
+
+// builds a vector given the specified map with ones at the specified global indices
+template<class ST, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT> > generateOnesVector(const Teuchos::RCP<Tpetra::Map<LO,GO,NT> > map, const std::vector<GO> &indices)
+{
+  Tpetra::Vector<ST,LO,GO,NT> ones_vector(map);
+  auto view = ones_vector.getLocalViewHost(Tpetra::Access::OverwriteAll);
+
+  for(unsigned int i=0; i<indices.size(); ++i) {
+    if(map->isNodeGlobalElement(indices(i))) {
+      LO local_idx = map->getLocalElement(indices(i));
+      view(local_idx,0) = 1;
+    }
+  }
+  return ones_vector;
+}
+
+// computes the action of a Tpetra::Operator against a vector with a one at the specified global index
+template<class ST, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> multiplyByUnitVector(Teuchos::RCP<Tpetra::Operator<ST,LO,GO,NT> > op, const GO i)
+{
+  Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> unit_vector = generateUnitVector<ST,LO,GO,NT>(op->getDomainMap(),i);
+  Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> result = Teuchos::rcp(new Tpetra::Vector<ST,LO,GO,NT>(op->getRangeMap()));
+  op->apply(*unit_vector,*result);
+  return result;
+}
+
+// computes the action of a Tpetra::Operator against a vector with ones at the specified global indices
+template<class ST, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> multiplyByUnitVector(Teuchos::RCP<Tpetra::Operator<ST,LO,GO,NT> > op, const std::vector<GO> &indices)
+{
+  Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> unit_vector = generateOnesVector<ST,LO,GO,NT>(op->getDomainMap(),indices);
+  Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> result = Teuchos::rcp(new Tpetra::Vector<ST,LO,GO,NT>(op->getRangeMap()));
+  op->apply(*unit_vector,*result);
+  return result;
+}
+
+// builds a Tpetra::CrsMatrix from a Tpetra::Operator by multiplying against all possible unit vectors
+template<class ST, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT>> build_matrix_from_operator(Teuchos::RCP<Tpetra::Operator<ST,LO,GO,NT> > op)
+{
+  // max for linear finite elements on a uniform grid is 3^dim
+  Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT>> matrix = Teuchos::rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(op->getDomainMap(),1000));
+
+  // loop over all rows
+  const size_t num_local_elements = op->getDomainMap()->getLocalNumElements();
+  for(LO row = 0; row < (LO)num_local_elements; ++row) {
+
+    const GO global_row = op->getDomainMap()->getGlobalElement(row);
+
+    // TODO: this assumes the operator is symmetric as it treats rows and columns the same
+    Teuchos::RCP<Tpetra::Vector<ST,LO,GO,NT>> column = multiplyByUnitVector(op,global_row);
+    std::vector<GO> nonzero_indices;
+    std::vector<ST> nonzero_values;
+
+    // find any resulting entries with magnitude above eps and log them
+    ST eps = 100.*Teuchos::ScalarTraits<ST>::eps();
+    auto col_view = column->getLocalViewHost(Tpetra::Access::ReadOnly);
+    for(unsigned int i=0; i<col_view.extent(0); ++i) {
+      if(Teuchos::ScalarTraits<ST>::magnitude(col_view(i,0)) > eps) {
+        nonzero_indices.push_back(op->getDomainMap()->getGlobalElement(i));
+        nonzero_values.push_back(col_view(i,0));
+      }
+    }
+
+    // wrap std::vectors as Teuchos::ArrayViews as arrayview
+    Teuchos::ArrayView<GO> indices_view(nonzero_indices);
+    Teuchos::ArrayView<ST> values_view(nonzero_values);
+
+    // insert the whole row at once
+    matrix->insertGlobalValues(global_row,indices_view,values_view);
+  }
+
+  // finish
+  matrix->fillComplete(op->getDomainMap(), op->getRangeMap());
+  return matrix;
+}
 
 
 Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
@@ -524,6 +617,128 @@ void addInterpolationToRequestHandler(
 
   // add interpolation callback to request handler
   reqHandler->addRequestCallback(Teuchos::rcp(new InterpolationRequestCallback(name, linObjFactory, lo_basis_name, ho_basis_name, op, waitForRequest, dump, worksetSize, matrixFree)));
+}
+
+
+class MatrixFreeRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
+private:
+
+  std::string name_;
+  const Teuchos::RCP<const panzer_stk::STK_Interface> mesh_;
+  const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory_;
+  const std::string basis_name_;
+  Teko::LinearOp interp_;
+  const size_t worksetSize_;
+
+public:
+
+  MatrixFreeRequestCallback(const std::string& name,
+                            const Teuchos::RCP<const panzer_stk::STK_Interface> mesh,
+                            const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                            const std::string& basis_name,
+                            const bool waitForRequest=true,
+                            const size_t worksetSize=1000,
+                            const bool matrixFree=false)
+    : name_(name), mesh_(mesh), linObjFactory_(linObjFactory), basis_name_(basis_name), worksetSize_(worksetSize)
+  {
+    if (!waitForRequest)
+      build();
+  };
+
+  void build()
+  {
+    {
+      typedef double Scalar;
+      typedef int LocalOrdinal;
+      typedef panzer::GlobalOrdinal GlobalOrdinal;
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
+
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcp_dynamic_cast;
+
+      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
+      typedef panzer::GlobalIndexer UGI;
+
+      RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory_);
+      RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
+      blockedDOFMngr = tblof->getGlobalIndexer();
+
+      // get global indexers for LO and HO dofs
+      std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
+      int fieldNum = blockedDOFMngr->getFieldNum(basis_name_);
+      int blockIndex = blockedDOFMngr->getFieldBlock(fieldNum);
+      RCP<panzer::DOFManager> dof_manager = rcp_dynamic_cast<panzer::DOFManager>(blockedDOFMngr->getFieldDOFManagers()[blockIndex],true);
+
+      auto fieldPattern = dof_manager->getFieldPattern(basis_name_);
+      auto basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(fieldPattern,true)->getIntrepidBasis();
+
+      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free setup ") + name_));
+
+      std::pair<Scalar,Scalar> coefficients;
+      Scalar epsilon = 8.854187817e-12;
+      Scalar dt = 2.22376e-09;
+      // coefficients = std::pair<Scalar,Scalar>(0.,epsilon/dt);
+      coefficients = std::pair<Scalar,Scalar>(1.,0.);
+
+      auto mfOp = rcp(new MatrixFreeEMOperator<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(mesh_, dof_manager, coefficients, basis, worksetSize_));
+      interp_ = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getRangeMap()),
+                                                                                                       Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getDomainMap()),
+                                                                                                       mfOp);
+#if 1
+      auto testX = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getDomainMap(), 1));
+      auto testY = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getRangeMap(), 1));
+      testX->putScalar(1.);
+      testY->putScalar(1.);
+      mfOp->apply(*testX, *testY, Teuchos::NO_TRANS);
+
+      static int counter2 = 0;
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >::writeDenseFile("YY_" + std::to_string(counter2)+".mm", *testY);
+
+      auto A = build_matrix_from_operator(Teuchos::rcp_dynamic_cast<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal>>(mfOp,true));
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >::writeSparseFile("AA_" + std::to_string(counter2)+".mm", *A);
+#endif
+    }
+  }
+
+  bool handlesRequest(const Teko::RequestMesg & rm)
+  {
+    std::string name = rm.getName();
+
+    return (name==name_);
+  };
+
+  Teko::LinearOp request(const Teko::RequestMesg & rm)
+  {
+    TEUCHOS_ASSERT(handlesRequest(rm));
+    std::string name = rm.getName();
+
+    if(name==name_) {
+      if (interp_.is_null()) {
+        build();
+      }
+      return interp_;
+    } else
+      TEUCHOS_ASSERT(false);
+  };
+
+  void preRequest(const Teko::RequestMesg & rm)
+  {
+    // checking for its existance is as good as pre requesting
+    TEUCHOS_ASSERT(handlesRequest(rm));
+  };
+};
+
+void addMatrixFreeOpToRequestHandler(const std::string& name,
+                                     const Teuchos::RCP<const panzer_stk::STK_Interface> mesh,
+                                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                                     const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
+                                     const std::string& basis_name,
+                                     const bool waitForRequest=true,
+                                     const size_t worksetSize=1000) {
+
+  // add interpolation callback to request handler
+  reqHandler->addRequestCallback(Teuchos::rcp(new MatrixFreeRequestCallback(name, mesh, linObjFactory, basis_name, waitForRequest, worksetSize)));
 }
 
 #endif

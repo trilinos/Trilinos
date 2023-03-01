@@ -477,12 +477,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       aux_block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
 
     std::string auxFieldOrder;
+    std::vector<int> pCoarsenSchedule;
     {
       auxFieldOrder = "blocked:";
 
       pCoarsenScheduleStr = assembly_pl.get<std::string>("p coarsen schedule", pCoarsenScheduleStr);
       std::vector<std::string> pCoarsenScheduleVecStr;
-      std::vector<int> pCoarsenSchedule;
       panzer::StringTokenizer(pCoarsenScheduleVecStr, pCoarsenScheduleStr, ",");
       panzer::TokensToInts(pCoarsenSchedule, pCoarsenScheduleVecStr);
       if (basis_order > 1)
@@ -554,15 +554,33 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         if (solver == MUELU_MAXWELL_HO) {
           // Projected Schur complement
           auto projectedSchurComplementPL = Teuchos::ParameterList();
-          projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
-          projectedSchurComplementPL.set("DOF Name", auxNodalField);
-          projectedSchurComplementPL.set("Basis Type", "HGrad");
-          projectedSchurComplementPL.set("Model ID", auxModelID);
-          projectedSchurComplementPL.set("Permittivity", "epsilon");
-          projectedSchurComplementPL.set("Conductivity", "sigma");
-          projectedSchurComplementPL.set("Basis Order", polynomialOrder);
-          projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
-          auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+
+          // Projected Schur complement
+          if (matrixFree && (polynomialOrder > 1)) {
+            // TODO: do not need this
+            // Nodal mass matrix
+            auto massNodePL = Teuchos::ParameterList();
+            massNodePL.set("Type", "Auxiliary Mass Matrix");
+            massNodePL.set("DOF Name", auxNodalField);
+            massNodePL.set("Basis Type", "HGrad");
+            massNodePL.set("Model ID", auxModelID);
+            // massNodePL.set("Field Multipliers", "mu,1/dt");
+            massNodePL.set("Basis Order", polynomialOrder);
+            massNodePL.set("Integration Order", 2*polynomialOrder);
+            auxPhysicsBlocksPL.sublist("Auxiliary Node Mass Physics"+opPostfix) = massNodePL;
+
+          } else {
+            auto projectedSchurComplementPL = Teuchos::ParameterList();
+            projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
+            projectedSchurComplementPL.set("DOF Name", auxNodalField);
+            projectedSchurComplementPL.set("Basis Type", "HGrad");
+            projectedSchurComplementPL.set("Model ID", auxModelID);
+            projectedSchurComplementPL.set("Permittivity", "epsilon");
+            projectedSchurComplementPL.set("Conductivity", "sigma");
+            projectedSchurComplementPL.set("Basis Order", polynomialOrder);
+            projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
+            auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+          }
         }
       }
 
@@ -788,6 +806,33 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           addInterpolationToRequestHandler(name, p->second, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size, useMatrixFree);
         }
       }
+
+      if (matrixFree) {
+        for (auto it = pCoarsenSchedule.begin(); it != pCoarsenSchedule.end(); ++it) {
+          std::string auxNodalField, auxEdgeField, opPostfix;
+          int polynomialOrder = *it;
+          // Are we setting up lower order operators?
+          if (polynomialOrder != basis_order) {
+            auxNodalField = "AUXILIARY_NODE_" + std::to_string(polynomialOrder);
+            auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(polynomialOrder);
+            opPostfix = " "+std::to_string(polynomialOrder);
+          } else {
+            auxNodalField = "AUXILIARY_NODE";
+            auxEdgeField = "AUXILIARY_EDGE";
+            opPostfix = "";
+          }
+
+          if (polynomialOrder > 1)
+            addMatrixFreeOpToRequestHandler("ProjectedSchurComplement "+auxNodalField,
+                                            mesh,
+                                            auxLinObjFactory,
+                                            req_handler,
+                                            auxNodalField,
+                                            true,
+                                            workset_size);
+        }
+      }
+
     } else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
       // add discrete gradient
       {

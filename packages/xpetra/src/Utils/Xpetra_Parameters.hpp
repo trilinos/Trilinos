@@ -57,10 +57,12 @@ namespace Xpetra {
 
   enum Instantiation {
     DOUBLE_INT_INT,
-    DOUBLE_INT_LONGINT,
-    DOUBLE_INT_LONGLONGINT,
+    DOUBLE_INT_LONG,
+    DOUBLE_INT_LONG_LONG,
     COMPLEX_INT_INT,
-    FLOAT_INT_INT
+    FLOAT_INT_INT,
+    COMPLEX_INT_LONG_LONG,
+    FLOAT_INT_LONG_LONG
   };
 
   class Parameters
@@ -109,7 +111,7 @@ namespace Xpetra {
 
 #if defined(HAVE_XPETRA_TPETRA)
       int nInstOptions=0;                                     // Gives the number of possible option values to select
-      const int   maxInstOptions=5;                           // No more than 5 instantiations are supported right now
+      const int   maxInstOptions=7;                           // No more than 7 instantiations are supported right now
       Xpetra::Instantiation instOptionValues[maxInstOptions]; // Array that gives the numeric values for each option.
       const char *          instOptionNames [maxInstOptions]; // Array that gives the name used in the commandline for each option.
 
@@ -122,16 +124,16 @@ namespace Xpetra {
       instOptionNames[nInstOptions] = "DOUBLE_INT_INT";
       nInstOptions++;
 #  endif
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-      inst_ = Xpetra::DOUBLE_INT_LONGINT;  // set default
-      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONGINT;
-      instOptionNames[nInstOptions] = "DOUBLE_INT_LONGINT";
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONG) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+      inst_ = Xpetra::DOUBLE_INT_LONG;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONG;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_LONG";
       nInstOptions++;
 #  endif
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      inst_ = Xpetra::DOUBLE_INT_LONGLONGINT;  // set default
-      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONGLONGINT;
-      instOptionNames[nInstOptions] = "DOUBLE_INT_LONGLONGINT";
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      inst_ = Xpetra::DOUBLE_INT_LONG_LONG;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONG_LONG;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_LONG_LONG";
       nInstOptions++;
 #  endif
 #  if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
@@ -144,6 +146,18 @@ namespace Xpetra {
       inst_ = Xpetra::FLOAT_INT_INT;  // set default
       instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_INT;
       instOptionNames[nInstOptions] = "FLOAT_INT_INT";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      inst_ = Xpetra::COMPLEX_INT_LONG_LONG;  // set default
+      instOptionValues[nInstOptions] = Xpetra::COMPLEX_INT_LONG_LONG;
+      instOptionNames[nInstOptions] = "COMPLEX_INT_LONG_LONG";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      inst_ = Xpetra::FLOAT_INT_LONG_LONG;  // set default
+      instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_LONG_LONG;
+      instOptionNames[nInstOptions] = "FLOAT_INT_LONG_LONG";
       nInstOptions++;
 #  endif
       std::stringstream instDocumentation; // documentation for the option
