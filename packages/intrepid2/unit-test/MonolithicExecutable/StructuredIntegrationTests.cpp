@@ -214,6 +214,49 @@ namespace
     static const int polyOrder = 4;
   };
 
+  class HGRAD
+  {
+  public:
+    static const EFunctionSpace functionSpace = FUNCTION_SPACE_HGRAD;
+  };
+  class HDIV
+  {
+  public:
+    static const EFunctionSpace functionSpace = FUNCTION_SPACE_HDIV;
+  };
+  class HCURL
+  {
+  public:
+    static const EFunctionSpace functionSpace = FUNCTION_SPACE_HCURL;
+  };
+  class HVOL
+  {
+  public:
+    static const EFunctionSpace functionSpace = FUNCTION_SPACE_HVOL;
+  };
+
+
+  class GRAD
+  {
+  public:
+    static const EOperator op = OPERATOR_GRAD;
+  };
+  class DIV
+  {
+  public:
+    static const EOperator op = OPERATOR_DIV;
+  };
+  class CURL
+  {
+  public:
+    static const EOperator op = OPERATOR_CURL;
+  };
+  class VALUE
+  {
+  public:
+    static const EOperator op = OPERATOR_VALUE;
+  };
+
   using namespace Intrepid2;
 
   template< typename PointScalar, int spaceDim, typename DeviceType >
@@ -663,9 +706,7 @@ void testStandardIntegration(int meshWidth, int polyOrder, int worksetSize,
       fs = EFunctionSpace::FUNCTION_SPACE_HDIV;
       break;
   }
-  
-  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
-  
+    
   double flopCountIntegration = 0, flopCountJacobian = 0;
   auto generalIntegrals = performStandardAssembly<Scalar,BasisFamily>(geometry, worksetSize,
                                                                       polyOrder, fs, op1,
@@ -772,9 +813,7 @@ void testStructuredIntegration(int meshWidth, int polyOrder, int worksetSize,
       fs = EFunctionSpace::FUNCTION_SPACE_HDIV;
       break;
   }
-  
-  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
-  
+    
   double flopCountIntegration = 0, flopCountJacobian = 0;
   auto generalIntegrals = performStructuredAssembly<Scalar,BasisFamily>(geometry, worksetSize,
                                                                         polyOrder, fs, op1,
@@ -826,6 +865,238 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(StructuredIntegration, GeneralStructuredIntegr
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D1, P1)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D2, P3)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStructuredIntegration, PoissonFormulation, D3, P3)
+
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+void testStandardVersusStructuredIntegration(const int &meshWidth, const int &worksetSize,
+                                             const EFunctionSpace &fs1, const EOperator &op1, const int &p1,
+                                             const EFunctionSpace &fs2, const EOperator &op2, const int &p2,
+                                             const double &relTol, const double &absTol,
+                                             Teuchos::FancyOStream &out, bool &success)
+{
+  // compare the integration in StructuredAssembly.hpp with that in StandardAssembly.hpp
+  
+  using namespace std;
+  
+  Kokkos::Array<int,spaceDim> gridCellCounts;
+  for (int d=0; d<spaceDim; d++)
+  {
+    gridCellCounts[d] = meshWidth;
+  }
+  
+  auto geometry = getMesh<PointScalar, spaceDim, DeviceType>(Standard, gridCellCounts);
+  shards::CellTopology cellTopo = geometry.cellTopology();
+  
+  double flopCountIntegration = 0, flopCountJacobian = 0;
+  auto structuredIntegrals = performStructuredAssembly<Scalar,BasisFamily>(geometry, worksetSize,
+                                                                           p1, fs1, op1,
+                                                                           p2, fs2, op2,
+                                                                           flopCountIntegration, flopCountJacobian);
+  
+  auto standardIntegrals = performStandardAssembly<Scalar,BasisFamily>(geometry, worksetSize,
+                                                                       p1, fs1, op1,
+                                                                       p2, fs2, op2,
+                                                                       flopCountIntegration, flopCountJacobian);
+    
+  out << "Comparing general standard assembly to structured integration path…\n";
+  testFloatingEquality3(standardIntegrals, structuredIntegrals, relTol, absTol, out, success, "standard integral", "structured formulation integral");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 1;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D1_P1_P2, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 1;
+  const int p1 = 1;
+  const int p2 = 2;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 1;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 2;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, fs2, op2, p2, relTol, absTol, out, success);
+}
+
+// asymmetric tests (mostly -- a couple symmetric ones tossed in as sanity checks on the test itself)
+
+// 1D tests: H(grad) and H(vol) bases defined
+// p1, p1:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, HGRAD, VALUE, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, HVOL,  VALUE, HGRAD, VALUE)
+// p1, p2:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P2, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P2, HGRAD, VALUE, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P2, HVOL,  VALUE, HGRAD, VALUE)
+// p2, p1:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HGRAD, VALUE, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P2_P1, HVOL,  VALUE, HGRAD, VALUE)
+
+// 2D tests: curls of H(curl) are scalars.
+// p1, p1:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, GRAD,  HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, VALUE, HDIV,  DIV)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, VALUE, HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HDIV,  DIV,   HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HCURL, CURL,  HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HVOL,  VALUE, HGRAD, VALUE)
+// p2, p1:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, GRAD,  HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, VALUE, HDIV,  DIV)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, VALUE, HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HDIV,  DIV,   HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HCURL, CURL,  HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HVOL,  VALUE, HGRAD, VALUE)
+// p1, p2:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HGRAD, GRAD,  HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HGRAD, VALUE, HDIV,  DIV)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HGRAD, VALUE, HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HDIV,  DIV,   HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HCURL, CURL,  HVOL,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HVOL,  VALUE, HGRAD, VALUE)
+
+// 3D tests: curls of H(curl) are vectors
 
 // #pragma mark StructuredIntegration: QuadratureSynthetic_AxisAlignedPath_Case1
 TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Case1 )
