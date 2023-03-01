@@ -43,7 +43,7 @@
 namespace Belos {
 
   template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
-  class MatOrthoManager : public OrthoManager<ScalarType,MV> { //TODO
+  class MatOrthoManager : public OrthoManager<ScalarType,MV,DM> { //TODO
   protected:
     Teuchos::RCP<const OP> _Op;
     bool _hasOp;
