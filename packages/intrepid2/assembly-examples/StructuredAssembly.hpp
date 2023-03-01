@@ -99,7 +99,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   basis1->getValues(basis1Values, tensorCubaturePoints, op1);
   
   BasisValues<Scalar,DeviceType> basis2Values = basis2->allocateBasisValues(tensorCubaturePoints, op2);
-  basis1->getValues(basis2Values, tensorCubaturePoints, op2);
+  basis2->getValues(basis2Values, tensorCubaturePoints, op2);
       
   int cellOffset = 0;
   
