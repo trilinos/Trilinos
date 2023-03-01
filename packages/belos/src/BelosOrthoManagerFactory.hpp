@@ -78,7 +78,7 @@ namespace Belos {
   /// multivector), MV is the multivector type, and OP is the operator
   /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
   /// OP=Epetra_Operator.
-  template<class Scalar, class MV, class OP>
+  template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, Scalar>>
   class OrthoManagerFactory {
   private:
     //! List of valid OrthoManager names.
@@ -199,7 +199,7 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return Belos::getICGSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getICGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
 	return Belos::getIMGSDefaultParameters<Scalar, MV, OP> ();
@@ -247,7 +247,7 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return Belos::getICGSFastParameters<Scalar, MV, OP> ();
+	return Belos::getICGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
 	return Belos::getIMGSFastParameters<Scalar, MV, OP> ();
@@ -288,7 +288,7 @@ namespace Belos {
     ///   parameter list with embedded documentation is available for
     ///   each MatOrthoManager subclass that this factory knows how to
     ///   make.
-    Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP> >
+    Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP, DM> >
     makeMatOrthoManager (const std::string& ortho, 
 			 const Teuchos::RCP<const OP>& M,
 			 const Teuchos::RCP<OutputManager<Scalar> >& /* outMan */,
@@ -315,7 +315,7 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
-	typedef ICGSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef ICGSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
       else if (ortho == "IMGS") {
@@ -352,7 +352,7 @@ namespace Belos {
     ///   setting up the specific OrthoManager subclass.
     ///
     /// \return OrthoManager instance.
-    Teuchos::RCP<Belos::OrthoManager<Scalar, MV> >
+    Teuchos::RCP<Belos::OrthoManager<Scalar, MV, DM> >
     makeOrthoManager (const std::string& ortho, 
 		      const Teuchos::RCP<const OP>& M,
 		      const Teuchos::RCP<OutputManager<Scalar> >& outMan,
