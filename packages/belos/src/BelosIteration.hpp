@@ -66,7 +66,7 @@ class OutputManager;
 template <class ScalarType, class MV, class OP>
 class StatusTest;
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class MatOrthoManager;
 
 template<class ScalarType, class MV, class OP>

@@ -78,7 +78,7 @@ namespace Belos {
 
   template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   class ICGSOrthoManager :
-    public MatOrthoManager<ScalarType,MV,OP> //TODO  
+    public MatOrthoManager<ScalarType,MV,OP,DM>
   {
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -97,7 +97,7 @@ namespace Belos {
                       const int max_ortho_steps = max_ortho_steps_default_,
                       const MagnitudeType blk_tol = blk_tol_default_,
                       const MagnitudeType sing_tol = sing_tol_default_ )
-      : MatOrthoManager<ScalarType,MV,OP>(Op), //TODO, DM>
+      : MatOrthoManager<ScalarType,MV,OP,DM>(Op),
       max_ortho_steps_( max_ortho_steps ),
       blk_tol_( blk_tol ),
       sing_tol_( sing_tol ),
@@ -125,7 +125,7 @@ namespace Belos {
     ICGSOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                       const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null) :
-      MatOrthoManager<ScalarType,MV,OP>(Op), //TODO, DM>
+      MatOrthoManager<ScalarType,MV,OP,DM>(Op),
       max_ortho_steps_ (max_ortho_steps_default_),
       blk_tol_ (blk_tol_default_),
       sing_tol_ (sing_tol_default_),
@@ -617,7 +617,7 @@ namespace Belos {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     DM xTx(rank,rank);
-    MatOrthoManager<ScalarType,MV,OP>::innerProd(X,X,MX,xTx); //TODO
+    MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X,X,MX,xTx);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -632,7 +632,7 @@ namespace Belos {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     DM xTx(r2,r1);
-    MatOrthoManager<ScalarType,MV,OP>::innerProd(X2,X1,MX1,xTx); //TODO
+    MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X2,X1,MX1,xTx);
     return xTx.normFrobenius();
   }
 
@@ -652,8 +652,6 @@ namespace Belos {
     using Teuchos::is_null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    //using Teuchos::SerialDenseMatrix; //TODO
-    //typedef SerialDenseMatrix< int, ScalarType > serial_dense_matrix_type; //TODO
     typedef typename Array< RCP< const MV > >::size_type size_type;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1066,7 +1064,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-            MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2); //TODO
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*Xj,MXj,P2);
           }
 
           // Xj <- Xj - prevX prevX^T MXj
@@ -1144,7 +1142,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-              MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*tempXj,tempMXj,product); //TODO
+              MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*tempXj,tempMXj,product);
             }
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1247,7 +1245,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]); //TODO
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
@@ -1287,7 +1285,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2); //TODO
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,C2);
         }
         *C[i] += C2;
         {
@@ -1354,7 +1352,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]); //TODO
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
@@ -1393,7 +1391,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2); //TODO
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,C2);
         }
         *C[i] += C2;
         {
@@ -1516,7 +1514,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,tempC);//TODO
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*Xj,MXj,tempC);
         }
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1556,7 +1554,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,C2);//TODO
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*Xj,MXj,C2);
           }
           tempC += C2;
           {
@@ -1639,7 +1637,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-            MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*tempXj,tempMXj,product); //TODO
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*tempXj,tempMXj,product);
             }
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
