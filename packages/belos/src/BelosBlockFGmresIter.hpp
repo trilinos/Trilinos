@@ -47,15 +47,15 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP>
-class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
   public:
 
   //
   // Convenience typedefs
   //
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -75,7 +75,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   BlockFGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                    Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -130,14 +130,14 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeGmres(GmresIterationState<ScalarType,MV>& newstate);
+  void initializeGmres(GmresIterationState<ScalarType,MV,DM>& newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
    */
   void initialize()
   {
-    GmresIterationState<ScalarType,MV> empty;
+    GmresIterationState<ScalarType,MV,DM> empty;
     initializeGmres(empty);
   }
 
@@ -148,8 +148,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    * \returns A GmresIterationState object containing const pointers to the current
    * solver state.
    */
-  GmresIterationState<ScalarType,MV> getState() const {
-    GmresIterationState<ScalarType,MV> state;
+  GmresIterationState<ScalarType,MV,DM> getState() const {
+    GmresIterationState<ScalarType,MV,DM> state;
     state.curDim = curDim_;
     state.V = V_;
     state.Z = Z_;
@@ -246,7 +246,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+  const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
 
   //
   // Algorithmic parameters
@@ -297,12 +297,12 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  BlockFGmresIter<ScalarType,MV,OP>::
+  template<class ScalarType, class MV, class OP, class DM>
+  BlockFGmresIter<ScalarType,MV,OP,DM>::
   BlockFGmresIter (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                    Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -328,8 +328,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class ScalarType, class MV, class OP>
-  void BlockFGmresIter<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks)
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockFGmresIter<ScalarType,MV,OP,DM>::setSize (int blockSize, int numBlocks)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -356,8 +356,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void BlockFGmresIter<ScalarType,MV,OP>::setStateSize ()
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockFGmresIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -451,9 +451,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   }
 
 
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<MV>
-  BlockFGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
+  BlockFGmresIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   {
     typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
 
@@ -490,9 +490,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   }
 
 
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV>
-  BlockFGmresIter<ScalarType,MV,OP>::
+  BlockFGmresIter<ScalarType,MV,OP,DM>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const
   {
     // NOTE: Make sure the incoming std::vector is the correct size!
@@ -512,9 +512,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   }
 
 
-  template <class ScalarType, class MV, class OP>
-  void BlockFGmresIter<ScalarType,MV,OP>::
-  initializeGmres (GmresIterationState<ScalarType,MV>& newstate)
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockFGmresIter<ScalarType,MV,OP,DM>::
+  initializeGmres (GmresIterationState<ScalarType,MV,DM>& newstate)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -609,8 +609,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   }
 
 
-  template <class ScalarType, class MV, class OP>
-  void BlockFGmresIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockFGmresIter<ScalarType,MV,OP,DM>::iterate()
   {
     using Teuchos::Array;
     using Teuchos::null;
@@ -697,8 +697,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   }
 
 
-  template<class ScalarType, class MV, class OP>
-  void BlockFGmresIter<ScalarType,MV,OP>::updateLSQR (int dim)
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockFGmresIter<ScalarType,MV,OP,DM>::updateLSQR (int dim)
   {
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef Teuchos::ScalarTraits<MagnitudeType> STM;
