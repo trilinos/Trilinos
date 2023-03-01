@@ -62,6 +62,7 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
+MultiVectorAggregationTransferFactory
 NotayAggregationFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspaceFactory
 NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
