@@ -59,7 +59,7 @@ namespace Belos {
    *
    * This struct is utilized by GmresIteration::initialize() and GmresIteration::getState().
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
   struct GmresIterationState {
     /*! \brief The current dimension of the reduction.
      *
@@ -137,8 +137,8 @@ namespace Belos {
   //@}
 
 
-template<class ScalarType, class MV, class OP>
-class GmresIteration : virtual public Iteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
