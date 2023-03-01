@@ -80,8 +80,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
   geometry.orientations(orientations, 0, -1);
   
-  
-  
   shards::CellTopology cellTopo = geometry.cellTopology();
   
   auto basis1 = getBasis< BasisFamily >(cellTopo, fs1, polyOrder1);
