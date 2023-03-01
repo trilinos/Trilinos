@@ -300,52 +300,131 @@ namespace MueLu {
       if(bA == Teuchos::null) {
         RCP<const Map> rowMap = rcpA->getRowMap();
         diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
-        ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-        Teuchos::Array<Scalar> regSum(diag->getLocalLength());
-        Teuchos::ArrayView<const LocalOrdinal> cols;
-        Teuchos::ArrayView<const Scalar> vals;
 
-        std::vector<int> nnzPerRow(rowMap->getLocalNumElements());
+	if(rowMap->lib() == Xpetra::UnderlyingLib::UseTpetra) {
+	  // Implement using Kokkos
+	  using local_vector_type = typename Vector::dual_view_type::t_dev_um;
+	  using local_matrix_type = typename Matrix::local_matrix_type;
+	  using execution_space   = typename local_vector_type::execution_space;
+	  using rowmap_type       = typename local_matrix_type::row_map_type;
+	  using entries_type      = typename local_matrix_type::index_type;
+	  using values_type       = typename local_matrix_type::values_type;
+	  using scalar_type       = typename values_type::non_const_value_type;
+	  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+	  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
+	  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
 
-        //FIXME 2021-10-22 JHU   If this is called with doReciprocal=false, what should the correct behavior be?  Currently,
-        //FIXME 2021-10-22 JHU   the diagonal entry is set to be the sum of the absolute values of the row entries.
+	  local_vector_type diag_dev = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+	  local_matrix_type local_mat_dev = rcpA->getLocalMatrixDevice();
+	  Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(diag_dev.extent(0)));
 
-        const Magnitude zeroMagn = TST::magnitude(zero);
-        Magnitude avgAbsDiagVal = TST::magnitude(zero);
-        int numDiagsEqualToOne = 0;
-        for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
-          nnzPerRow[i] = 0;
-          rcpA->getLocalRowView(i, cols, vals);
-          diagVals[i] = zero;
-          for (LocalOrdinal j = 0; j < cols.size(); ++j) {
-            regSum[i] += vals[j];
-            const Magnitude rowEntryMagn = TST::magnitude(vals[j]);
-            if (rowEntryMagn > zeroMagn)
-              nnzPerRow[i]++;
-            diagVals[i] += rowEntryMagn;
-            if (static_cast<size_t>(cols[j]) == i)
-              avgAbsDiagVal += rowEntryMagn;
-          }
-          if (nnzPerRow[i] == 1 && TST::magnitude(diagVals[i])==1.)
-            numDiagsEqualToOne++;
-        }
-        if (useAverageAbsDiagVal)
-          tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
-        if (doReciprocal) {
-          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
-            if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
-              diagVals[i] = zero;
-            else if ((diagVals[i] != zero) && (TST::magnitude(diagVals[i]) < TST::magnitude(two*regSum[i])))
-              diagVals[i] = one / TST::magnitude((two*regSum[i]));
-            else {
-              if(TST::magnitude(diagVals[i]) > tol)
-                diagVals[i] = one / diagVals[i];
-              else {
-                diagVals[i] = valReplacement;
-              }
-            }
-          }
-        }
+	  if(doReciprocal) {
+	    Kokkos::View<int*, execution_space> nnzPerRow("nnz per rows", diag_dev.extent(0));
+	    Kokkos::View<scalar_type*, execution_space> regSum("regSum", diag_dev.extent(0));
+	    Kokkos::View<mag_type, execution_space> avgAbsDiagVal_dev("avgAbsDiagVal");
+	    Kokkos::View<int, execution_space> numDiagsEqualToOne_dev("numDiagsEqualToOne");
+
+	    Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
+				 KOKKOS_LAMBDA(const int rowIdx) {
+				   diag_dev(rowIdx, 0) = KAT_S::zero();
+				   for(int entryIdx = local_mat_dev.graph.row_map(rowIdx);
+				       entryIdx < local_mat_dev.graph.row_map(rowIdx + 1);
+				       ++entryIdx) {
+				     regSum(rowIdx) += local_mat_dev.values(entryIdx);
+				     if(KAT_M::zero() < KAT_S::abs(local_mat_dev.values(entryIdx))) {
+				       ++nnzPerRow(rowIdx);
+				     }
+				     diag_dev(rowIdx, 0) += KAT_S::abs(local_mat_dev.values(entryIdx));
+				     if(rowIdx == local_mat_dev.graph.entries(entryIdx)) {
+				       avgAbsDiagVal_dev() += KAT_S::abs(local_mat_dev.values(entryIdx));
+				     }
+				   }
+
+				   if(nnzPerRow(rowIdx) == 1 && KAT_S::magnitude(diag_dev(rowIdx, 0)) == KAT_M::one()) {
+				     Kokkos::atomic_add(&numDiagsEqualToOne_dev(), 1);
+				   }
+				 });
+
+	    mag_type avgAbsDiagVal;
+	    Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
+	    int numDiagsEqualToOne;
+	    Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
+
+	    if (useAverageAbsDiagVal) {
+	      tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
+	    }
+
+	    Kokkos::parallel_for("ComputeLumpedDiagonalInverse", my_policy,
+				 KOKKOS_LAMBDA(const int rowIdx) {
+				   if (replaceSingleEntryRowWithZero && nnzPerRow(rowIdx) <= 1) {
+				     diag_dev(rowIdx, 0) = KAT_S::zero();
+				   } else if((diag_dev(rowIdx, 0) != KAT_S::zero()) && (KAT_S::magnitude(diag_dev(rowIdx, 0)) < KAT_S::magnitude(2*regSum(rowIdx)))) {
+				     diag_dev(rowIdx, 0) = KAT_S::one() / diag_dev(rowIdx, 0);
+				   } else {
+				     diag_dev(rowIdx, 0) = valReplacement;
+				   }
+				 });
+	  
+	  } else {
+	    Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
+				 KOKKOS_LAMBDA(const int rowIdx) {
+				   diag_dev(rowIdx, 0) = KAT_S::zero();
+				   for(int entryIdx = local_mat_dev.graph.row_map(rowIdx);
+				       entryIdx < local_mat_dev.graph.row_map(rowIdx + 1);
+				       ++entryIdx) {
+				     diag_dev(rowIdx, 0) += KAT_S::magnitude(local_mat_dev.values(entryIdx));
+				   }
+				 });
+	  }
+	} else {
+	  // Implement using Teuchos
+	  ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+	  Teuchos::Array<Scalar> regSum(diag->getLocalLength());
+	  Teuchos::ArrayView<const LocalOrdinal> cols;
+	  Teuchos::ArrayView<const Scalar> vals;
+
+	  std::vector<int> nnzPerRow(rowMap->getLocalNumElements());
+
+	  //FIXME 2021-10-22 JHU   If this is called with doReciprocal=false, what should the correct behavior be?  Currently,
+	  //FIXME 2021-10-22 JHU   the diagonal entry is set to be the sum of the absolute values of the row entries.
+
+	  const Magnitude zeroMagn = TST::magnitude(zero);
+	  Magnitude avgAbsDiagVal = TST::magnitude(zero);
+	  int numDiagsEqualToOne = 0;
+	  for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
+	    nnzPerRow[i] = 0;
+	    rcpA->getLocalRowView(i, cols, vals);
+	    diagVals[i] = zero;
+	    for (LocalOrdinal j = 0; j < cols.size(); ++j) {
+	      regSum[i] += vals[j];
+	      const Magnitude rowEntryMagn = TST::magnitude(vals[j]);
+	      if (rowEntryMagn > zeroMagn)
+		nnzPerRow[i]++;
+	      diagVals[i] += rowEntryMagn;
+	      if (static_cast<size_t>(cols[j]) == i)
+		avgAbsDiagVal += rowEntryMagn;
+	    }
+	    if (nnzPerRow[i] == 1 && TST::magnitude(diagVals[i])==1.)
+	      numDiagsEqualToOne++;
+	  }
+	  if (useAverageAbsDiagVal)
+	    tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
+	  if (doReciprocal) {
+	    for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
+	      if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
+		diagVals[i] = zero;
+	      else if ((diagVals[i] != zero) && (TST::magnitude(diagVals[i]) < TST::magnitude(two*regSum[i])))
+		diagVals[i] = one / TST::magnitude((two*regSum[i]));
+	      else {
+		if(TST::magnitude(diagVals[i]) > tol)
+		  diagVals[i] = one / diagVals[i];
+		else {
+		  diagVals[i] = valReplacement;
+		}
+	      }
+	    }
+	  }
+	}
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(doReciprocal, Xpetra::Exceptions::RuntimeError,
           "UtilitiesBase::GetLumpedMatrixDiagonal(): extracting reciprocal of diagonal of a blocked matrix is not supported");
