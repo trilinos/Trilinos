@@ -1,17 +1,17 @@
 Aggregates
-Aggregates_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+Aggregates_kokkos
 AggregationPhase1Algorithm
-AggregationPhase1Algorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationPhase1Algorithm_kokkos
 AggregationPhase2aAlgorithm
-AggregationPhase2aAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationPhase2aAlgorithm_kokkos
 AggregationPhase2bAlgorithm
-AggregationPhase2bAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationPhase2bAlgorithm_kokkos
 AggregationPhase3Algorithm
-AggregationPhase3Algorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationPhase3Algorithm_kokkos
 AggregationStructuredAlgorithm
-AggregationStructuredAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AggregationStructuredAlgorithm_kokkos
 AmalgamationInfo
-AmalgamationInfo_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AmalgamationInfo_kokkos
 CoupledAggregationCommHelper
 CoupledAggregationFactory
 GlobalLexicographicIndexManager
@@ -19,28 +19,28 @@ Graph
 GraphBase
 HybridAggregationFactory
 IndexManager
-IndexManager_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+IndexManager_kokkos
 InterfaceAggregationAlgorithm
 InterfaceMappingTransferFactory
 IsolatedNodeAggregationAlgorithm
-IsolatedNodeAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+IsolatedNodeAggregationAlgorithm_kokkos
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 LWGraph
-LWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-LocalLWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+LWGraph_kokkos
+LocalLWGraph_kokkos
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 LocalLexicographicIndexManager
 LocalOrdinalTransferFactory
 OnePtAggregationAlgorithm
-OnePtAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+OnePtAggregationAlgorithm_kokkos
 PreserveDirichletAggregationAlgorithm
-PreserveDirichletAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+PreserveDirichletAggregationAlgorithm_kokkos
 PRFactory
 RebalanceMapFactory
 RepartitionInterface
-StructuredAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+StructuredAggregationFactory_kokkos
 UncoupledAggregationFactory
-UncoupledAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+UncoupledAggregationFactory_kokkos
 UncoupledIndexManager
 UserAggregationFactory

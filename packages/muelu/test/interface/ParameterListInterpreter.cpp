@@ -98,9 +98,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string xmlForceFile = "";
   bool useKokkos = false;
   if(lib == Xpetra::UseTpetra) {
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkos = false;
@@ -117,7 +114,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos = true;
 # endif
-#endif
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
@@ -155,12 +151,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string prefix;
   if (useKokkos) {
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     prefix = "kokkos/";
-#else
-    std::cout << "No kokkos refactor available." << std::endl;
-    return EXIT_FAILURE;
-#endif
   } else {
     prefix = "default/";
   }

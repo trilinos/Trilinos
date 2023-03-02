@@ -264,7 +264,6 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getMap() const;
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     #ifdef HAVE_XPETRA_TPETRA
         using local_map_type = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
 
@@ -279,7 +278,6 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
               "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
         #endif      // __GNUC__
     #endif      // HAVE_XPETRA_TPETRA ELSE
-#endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
 
     //@}

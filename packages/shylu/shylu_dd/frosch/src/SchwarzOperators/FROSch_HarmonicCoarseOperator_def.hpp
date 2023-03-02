@@ -793,7 +793,7 @@ namespace FROSch {
                 }
             }
 
-            #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+            #if defined(HAVE_XPETRA_TPETRA)
             if (mVPhi->getMap()->lib() == UseTpetra) {
                 using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
                 using execution_space = typename XMap::local_map_type::execution_space;

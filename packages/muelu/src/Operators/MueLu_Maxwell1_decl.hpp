@@ -61,9 +61,7 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos_fwd.hpp"
-#endif
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
@@ -298,10 +296,8 @@ namespace MueLu {
     //! dump out boolean ArrayView
     void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     //! dump out boolean Kokkos::View
     void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
-#endif
 
     //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
@@ -316,9 +312,7 @@ namespace MueLu {
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_, GmhdA_Matrix_;
 
     //! Vectors for BCs
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
-#endif
     int BCedges_, BCnodes_;
     Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace

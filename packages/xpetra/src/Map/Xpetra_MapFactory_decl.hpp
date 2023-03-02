@@ -124,7 +124,6 @@ class MapFactory
           const GlobalOrdinal gidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero());
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     static Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
     Build(UnderlyingLib                                                         lib,
@@ -133,7 +132,6 @@ class MapFactory
           GlobalOrdinal                                                         indexBase,
           const Teuchos::RCP<const Teuchos::Comm<int>>&                         comm);
 #endif
-#endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
 
     //! Create a locally replicated Map with the default node.

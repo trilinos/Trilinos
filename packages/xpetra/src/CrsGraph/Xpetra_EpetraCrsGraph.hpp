@@ -80,12 +80,10 @@ class EpetraCrsGraphT
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -129,7 +127,6 @@ public:
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
@@ -160,7 +157,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -300,7 +296,6 @@ public:
   //! Return a const, nonpersisting view of local indices in the given row.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
@@ -324,7 +319,6 @@ public:
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
 
-#endif
 #endif
 
 
@@ -398,12 +392,10 @@ class EpetraCrsGraphT<int, EpetraNode>
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -459,7 +451,6 @@ public:
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
@@ -490,7 +481,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -737,7 +727,6 @@ public:
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
@@ -760,8 +749,6 @@ public:
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
-#endif
-
 #endif
 
   //! Force the computation of global constants if we don't have them
@@ -886,12 +873,10 @@ class EpetraCrsGraphT<long long, EpetraNode>
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -923,7 +908,6 @@ public:
     graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), true));
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
@@ -954,7 +938,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -1201,7 +1184,6 @@ public:
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
@@ -1222,7 +1204,6 @@ public:
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

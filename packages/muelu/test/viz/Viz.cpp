@@ -293,6 +293,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         stop = true;
       }
 
+      // AggregationExportFactory can't work with
+      // Aggregates_kokkos (yet)
+      mueluList.set("use kokkos refactor", false);
+
       if (nullspace.is_null()) {
         int blkSize = 1;
         if (mueluList.isSublist("Matrix")) {

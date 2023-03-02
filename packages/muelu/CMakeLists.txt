@@ -16,7 +16,6 @@ ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
-ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
 IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
 ENDIF()
@@ -226,17 +225,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   "Enable Boost"
   OFF)
 
-SET(Kokkos_Refactor_On_By_Default ON)
-MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable Xpetra code refactored to use Kokkos."
-  ${Kokkos_Refactor_On_By_Default})
-
-IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
+IF (DEFINED ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  MESSAGE(WARNING "MueLu no longer uses the option \'MueLu_ENABLE_Kokkos_Refactor\' and will always build with Kokkos code enabled. \'MueLu_ENABLE_Kokkos_Refactor\' can safely be removed from the CMake invocation.")
 ENDIF()
 
 # Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
