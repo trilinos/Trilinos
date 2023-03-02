@@ -313,7 +313,12 @@ main (int argc, char* argv[])
       // Read matrix
       if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
-      A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
+      if (comm->getSize() == 0)
+        A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
+      else {
+        if(rank0) std::cout<<"Using per-rank reader..."<<std::endl;
+        A = reader_type::readSparsePerRank(args.matrixFilename, ".mm", point_map, dummy_col_map, point_map, point_map,true,false,8,true);
+      }
       if (A.is_null()) {
         if (rank0) {
           cerr << "Failed to load sparse matrix A from file "
@@ -321,6 +326,8 @@ main (int argc, char* argv[])
         }
         return EXIT_FAILURE;
       }
+      if(rank0) std::cout<<"Matrix read complete..."<<std::endl;
+
 
       // Read right-hand side vector(s) B from Matrix Market file.
       if(rank0) std::cout<<"Reading rhs file..."<<std::endl;
