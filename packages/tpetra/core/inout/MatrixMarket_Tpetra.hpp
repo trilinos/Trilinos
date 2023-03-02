@@ -5988,16 +5988,12 @@ namespace Tpetra {
         // Call the matrix constructor and fill.  This isn't particularly efficient
         RCP<sparse_matrix_type> A;
         if(colMap.is_null()) {
-          GO index_base = rowMap->getIndexBase();
           A=rcp(new sparse_matrix_type(rowMap,numEntriesPerRow()));
           for(size_t i=0; i<rowMap->getLocalNumElements(); i++) {
             GO g_row = rowMap->getGlobalElement(i);
             size_t start = rowPtr[i];
             size_t size  = rowPtr[i+1] - rowPtr[i];
             if(size>0)  {
-              for(size_t j=start; j<start+size; j++)
-                colInd[j] += index_base;              
-
               A->insertGlobalValues(g_row,size,&values[start],&colInd[start]);
             }
           }
