@@ -614,6 +614,8 @@ namespace Intrepid2 {
 //        int flopsPerCellMeasuresAccess = cellMeasures_.numTensorComponents() - 1;
         
         constexpr int R = numTensorComponents - 1;
+
+        const int composedTransformRank = composedTransform_.rank();
         
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
@@ -658,9 +660,18 @@ namespace Intrepid2 {
               }
             });
             
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            if (composedTransformRank == 4)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
             
             // synchronize threads
@@ -1810,8 +1821,15 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
   const auto leftTransform = vectorDataLeft.transform();
   
   DimensionInfo combinedCellDimInfo = cellMeasureData.getDimensionInfo(CELL_DIM);
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo,  vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  // transforms may be invalid, indicating an identity transform.  If so, it will not constrain the output at all.
+  if (vectorDataLeft.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
+  }
+  if (vectorDataRight.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  }
 
   DataVariationType cellVariationType = combinedCellDimInfo.variationType;
   int cellDataExtent                  = combinedCellDimInfo.dataExtent;
