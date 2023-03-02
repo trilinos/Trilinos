@@ -452,7 +452,7 @@ namespace Intrepid2 {
         numOtherFields = output.extent(1),
         dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisLeft);
+      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisRight);
 
       ordinal_type numVerts(0), numEdges(0), numFaces(0);
 
