@@ -343,6 +343,8 @@ namespace Intrepid2 {
         
         constexpr int R = numTensorComponents - 1;
         
+        const int composedTransformRank = composedTransform_.rank();
+        
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
           const int a = a_offset_ + a_component;
@@ -401,16 +403,35 @@ namespace Intrepid2 {
             
             if (composedTransform_.underlyingMatchesLogical())
             {
-              const auto & composedTransformView = composedTransform_.getUnderlyingView4();
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if (composedTransformRank == 4) // (C,P,D,D)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView4();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else // rank 2, then: (C,P)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView2();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             else
             {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if  (composedTransformRank == 4) // (C,P,D,D)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else  // rank 2, then: (C,P)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
@@ -1261,6 +1282,8 @@ namespace Intrepid2 {
 
         // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
 
+        const int composedTransformRank = composedTransform_.rank();
+        
         // synchronize threads
         teamMember.team_barrier();
 
@@ -1335,10 +1358,19 @@ namespace Intrepid2 {
                 }
               }
             });
-                        
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            
+            if (composedTransformRank == 4) // (C,P,D,D)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else // (C,P)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
 
             // synchronize threads
             teamMember.team_barrier();
