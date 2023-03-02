@@ -21,7 +21,7 @@ features and options are available and how to use them, see the document:
 Requirements
 ============
 
-* CMake 3.17.1 or newer
+* CMake 3.23.0 or newer
 * C and C++ compiler
 * Optionally a Fortran compiler
 * Optionally an installation of MPI
