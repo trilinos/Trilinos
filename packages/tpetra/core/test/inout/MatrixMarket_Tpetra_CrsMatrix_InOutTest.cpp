@@ -604,9 +604,6 @@ testCrsMatrixPerFile (Teuchos::FancyOStream& out, const GlobalOrdinalType indexB
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
-  out << "Original sparse matrix:" << endl;
-  out << matrix_symRealSmall << endl;
-
   out << "Creating the row Map" << endl;
   const global_size_t globalNumElts = 5;
   RCP<const map_type> rowMap =
@@ -616,6 +613,11 @@ testCrsMatrixPerFile (Teuchos::FancyOStream& out, const GlobalOrdinalType indexB
   out << "Creating original matrix" << endl;
   RCP<crs_matrix_type> A_orig =
     createSymRealSmall<ST, LO, GO, NT> (rowMap, out, debug);
+
+  out << "Original sparse matrix:" << endl;
+  A_orig->describe(out, Teuchos::VERB_EXTREME);
+
+
 
   // We'll add the number of total MPI ranks to the suffix
   // so if ctest runs multiple jobs w/ different num procs at 
@@ -632,6 +634,9 @@ testCrsMatrixPerFile (Teuchos::FancyOStream& out, const GlobalOrdinalType indexB
   RCP<const map_type> row_map = rowMap;
   RCP<const map_type> col_map, domain_map = row_map, range_map = row_map;
   RCP<crs_matrix_type> A_new = reader_type::readSparsePerRank(prefix,suffix,row_map,col_map,domain_map,range_map);
+
+  out << "New sparse matrix:" << endl;
+  A_new->describe(out, Teuchos::VERB_EXTREME);
 
   out << "Comparing read-in matrix to original matrix" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_new, out);
@@ -666,20 +671,20 @@ testCrsMatrixPerFileNonContiguous (Teuchos::FancyOStream& out, const GlobalOrdin
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
-  out << "Original sparse matrix:" << endl;
-  out << matrix_symRealSmall << endl;
-
   // On row per rank, reverse numbered
   out << "Creating the non-contiguous row Map" << endl;
   GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-  Teuchos::Array my_gids(1);
+  Teuchos::Array<GO> my_gids(1);
   my_gids[0] =  comm->getSize() - comm->getRank() - 1 + indexBase;
   RCP<const map_type> rowMap =
-    rcp (new map_type (INVALID,my_gids(),indexBase,comm);
+    rcp (new map_type (INVALID,my_gids(),indexBase,comm));
 
   out << "Creating original matrix" << endl;
   RCP<crs_matrix_type> A_orig =
     createSymRealSmall<ST, LO, GO, NT> (rowMap, out, debug);
+
+  out << "Original sparse matrix:" << endl;
+  A_orig->describe(out, Teuchos::VERB_EXTREME);
 
   // We'll add the number of total MPI ranks to the suffix
   // so if ctest runs multiple jobs w/ different num procs at 
@@ -696,6 +701,9 @@ testCrsMatrixPerFileNonContiguous (Teuchos::FancyOStream& out, const GlobalOrdin
   RCP<const map_type> row_map = rowMap;
   RCP<const map_type> col_map, domain_map = row_map, range_map = row_map;
   RCP<crs_matrix_type> A_new = reader_type::readSparsePerRank(prefix,suffix,row_map,col_map,domain_map,range_map);
+
+  out << "New sparse matrix:" << endl;
+  A_new->describe(out, Teuchos::VERB_EXTREME);
 
   out << "Comparing read-in matrix to original matrix" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_new, out);
@@ -749,7 +757,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixPerFileNonContiguous, IndexBase0, ST
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixPerFileNonContiguous, IndexBase1, ST, LO, GO, NT )
 {
   const GO indexBase = 1;
-  success = testCrsMatrixPerFileNonContiguousNonContiguous<ST, LO, GO, NT> (out, indexBase);
+  success = testCrsMatrixPerFileNonContiguous<ST, LO, GO, NT> (out, indexBase);
 }
 
 
