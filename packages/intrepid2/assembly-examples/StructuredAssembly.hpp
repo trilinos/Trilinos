@@ -20,8 +20,9 @@ namespace {
   Intrepid2::TransformedBasisValues<Scalar,DeviceType>
   transform(const Intrepid2::BasisValues<Scalar,DeviceType> &refValues,
             const Intrepid2::EFunctionSpace &fs, const Intrepid2::EOperator &op,
-            const Intrepid2::Data<Scalar,DeviceType> &jacobian, const Intrepid2::Data<Scalar,DeviceType> &jacobianDet,
-            const Intrepid2::Data<Scalar,DeviceType> &jacobianInv)
+            const Intrepid2::Data<Scalar,DeviceType> &jacobian,    const Intrepid2::Data<Scalar,DeviceType> &jacobianDet,
+            const Intrepid2::Data<Scalar,DeviceType> &jacobianInv, const Intrepid2::Data<Scalar,DeviceType> &jacobianDetInv,
+            const Intrepid2::Data<Scalar,DeviceType> &jacobianDividedByJacobianDet)
   {
     using namespace Intrepid2;
     using FST = Intrepid2::FunctionSpaceTools<DeviceType>;
@@ -33,16 +34,59 @@ namespace {
         {
           case OPERATOR_VALUE:
             return FST::getHGRADtransformVALUE(jacobian.extent_int(0), refValues); // jacobian.extent_int(0): numCells
-            break;
           case OPERATOR_GRAD:
             return FST::getHGRADtransformGRAD(jacobianInv, refValues);
-            break;
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
         }
       }
         break;
-        // TODO: add support for the other standard fs/op combinations
+      case EFunctionSpace::FUNCTION_SPACE_HCURL:
+      {
+        switch(op)
+        {
+          case OPERATOR_CURL:
+          {
+            const int spaceDim = jacobian.extent_int(2); // jacobian has shape (C,P,D,D)
+            if (spaceDim == 2)
+            {
+              return FST::getHCURLtransformCURL2D(jacobianDetInv, refValues);
+            }
+            else
+            {
+              return FST::getHCURLtransformCURL(jacobianDividedByJacobianDet, refValues);
+            }
+          }
+          case OPERATOR_VALUE:
+            return FST::getHCURLtransformVALUE(jacobianInv, refValues);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
+      case EFunctionSpace::FUNCTION_SPACE_HDIV:
+      {
+        switch(op)
+        {
+          case OPERATOR_DIV:
+            return FST::getHDIVtransformDIV(jacobianDetInv, refValues);
+          case OPERATOR_VALUE:
+            return FST::getHDIVtransformVALUE(jacobianDividedByJacobianDet, refValues);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+      case EFunctionSpace::FUNCTION_SPACE_HVOL:
+      {
+        switch (op)
+        {
+          case OPERATOR_VALUE:
+            return FST::getHVOLtransformVALUE(jacobianDetInv, refValues );
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
     }
@@ -106,14 +150,25 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
   auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
   
-  Data<PointScalar,DeviceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
-  Data<PointScalar,DeviceType> jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
-  Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
+  Data<PointScalar,DeviceType> jacobian       = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
+  Data<PointScalar,DeviceType> jacobianDividedByJacobianDet = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize); // jacobianDividedByJacobianDet has same underlying structure as jacobian
+  Data<PointScalar,DeviceType> jacobianDet    = CellTools<DeviceType>::allocateJacobianDet(jacobian);
+  Data<PointScalar,DeviceType> jacobianDetInv = CellTools<DeviceType>::allocateJacobianDet(jacobian);
+  Data<PointScalar,DeviceType> jacobianInv    = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
   
+  Data<PointScalar,DeviceType> jacobianDetInvExtended; // container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
+  // set up jacobianDetInvExtended
+  {
+    auto variationTypes = jacobianDetInv.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
+    auto extents        = jacobian.getExtents();
+    
+    jacobianDetInvExtended = jacobianDetInv.shallowCopy(jacobian.rank(), extents, variationTypes);
+  }
+  
   // lazily-evaluated transformed basis values (temporary to allow integralData allocation)
-  auto transformedBasis1ValuesTemp = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv);
-  auto transformedBasis2ValuesTemp = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv);
+  auto transformedBasis1ValuesTemp = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
+  auto transformedBasis2ValuesTemp = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
   auto integralData = IntegrationTools::allocateIntegralData(transformedBasis1ValuesTemp, cellMeasures, transformedBasis2ValuesTemp);
   
   const int numPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
@@ -142,10 +197,12 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     if (numCellsInWorkset != worksetSize)
     {
       const int CELL_DIM = 0; // first dimension corresponds to cell
-      jacobian.setExtent(    CELL_DIM, numCellsInWorkset);
-      jacobianDet.setExtent( CELL_DIM, numCellsInWorkset);
-      jacobianInv.setExtent( CELL_DIM, numCellsInWorkset);
-      integralData.setExtent(CELL_DIM, numCellsInWorkset);
+      jacobian.setExtent                    (CELL_DIM, numCellsInWorkset);
+      jacobianDividedByJacobianDet.setExtent(CELL_DIM, numCellsInWorkset);
+      jacobianDet.setExtent                 (CELL_DIM, numCellsInWorkset);
+      jacobianDetInv.setExtent              (CELL_DIM, numCellsInWorkset);
+      jacobianInv.setExtent                 (CELL_DIM, numCellsInWorkset);
+      integralData.setExtent                (CELL_DIM, numCellsInWorkset);
       Kokkos::resize(worksetCellStiffness, numCellsInWorkset, numFields1, numFields2);
       
       // cellMeasures is a TensorData object with separateFirstComponent_ = true; the below sets the cell dimension…
@@ -153,12 +210,16 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     }
     
     geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
-    CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
-    CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
+    CellTools<DeviceType>::setJacobianDet   (jacobianDet,    jacobian);
+    CellTools<DeviceType>::setJacobianDetInv(jacobianDetInv, jacobian);
+    CellTools<DeviceType>::setJacobianInv   (jacobianInv,    jacobian);
+    
+    // compute the jacobian divided by its determinant
+    jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInvExtended);
     
     // lazily-evaluated transformed gradient values:
-    auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv);
-    auto transformedBasis2Values = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv);
+    auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
+    auto transformedBasis2Values = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
     
     geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
     ExecutionSpace().fence();

@@ -41,7 +41,60 @@ namespace {
         }
       }
         break;
-        // TODO: add support for the other standard fs/op combinations
+      case EFunctionSpace::FUNCTION_SPACE_HCURL:
+      {
+        switch (op)
+        {
+          case OPERATOR_VALUE:
+            FST::HCURLtransformVALUE(transformedValues, jacobianInv, refValues);
+            break;
+          case OPERATOR_CURL:
+          {
+            const int spaceDim = jacobian.extent_int(2); // jacobian has shape (C,P,D,D)
+            if (spaceDim == 2)
+            {
+              // 2D curl
+              FST::HCURLtransformCURL(transformedValues, jacobianDet, refValues);
+            }
+            else
+            {
+              // 3D curl
+              FST::HCURLtransformCURL(transformedValues, jacobian, jacobianDet, refValues);
+            }
+          }
+            break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
+      case EFunctionSpace::FUNCTION_SPACE_HDIV:
+      {
+        switch (op)
+        {
+          case OPERATOR_VALUE:
+            FST::HDIVtransformVALUE(transformedValues, jacobian, jacobianDet, refValues);
+            break;
+          case OPERATOR_DIV:
+            FST::HDIVtransformDIV(transformedValues, jacobianDet, refValues);
+            break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
+      case EFunctionSpace::FUNCTION_SPACE_HVOL:
+      {
+        switch (op)
+        {
+          case OPERATOR_VALUE:
+            FST::HVOLtransformVALUE(transformedValues, jacobianDet, refValues);
+            break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
+        }
+      }
+        break;
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported fs/op combination");
     }
