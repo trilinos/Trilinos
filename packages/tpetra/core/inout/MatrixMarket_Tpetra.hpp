@@ -8923,7 +8923,7 @@ namespace Tpetra {
                           const bool debug=false) {
         
         using ST = scalar_type;
-        using LO = local_ordinal_type;
+        //using LO = local_ordinal_type;
         using GO = global_ordinal_type;
         using STS = typename Teuchos::ScalarTraits<ST>;
         using Teuchos::RCP;
