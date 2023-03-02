@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #include <iostream>
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_default_types.hpp"
@@ -60,11 +32,11 @@ void print_options() {
                "[hipDeviceIndex]' --> if none are specified, Serial is used "
                "(if enabled)"
             << std::endl;
-  std::cerr << "\t[Optional] '--algorithm "
-               "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|"
-               "VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use "
-               "KKSPGEMM instead."
-            << std::endl;
+  std::cerr
+      << "\t[Optional] '--algorithm "
+         "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE]' --> to choose algorithm. "
+         "KKMEM is outdated, use KKSPGEMM instead."
+      << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB"
             << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> "
@@ -241,18 +213,8 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
         params.algorithm = KokkosSparse::SPGEMM_KK_DENSE;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKLP")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
-      } else if (0 == Test::string_compare_no_case(algoStr, "MKL")) {
-        params.algorithm = KokkosSparse::SPGEMM_MKL;
-      } else if (0 == Test::string_compare_no_case(algoStr, "CUSPARSE")) {
-        params.algorithm = KokkosSparse::SPGEMM_CUSPARSE;
-      } else if (0 == Test::string_compare_no_case(algoStr, "CUSP")) {
-        params.algorithm = KokkosSparse::SPGEMM_CUSP;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKDEBUG")) {
-        params.algorithm = KokkosSparse::SPGEMM_KK_LP;
-      } else if (0 == Test::string_compare_no_case(algoStr, "MKL2")) {
-        params.algorithm = KokkosSparse::SPGEMM_MKL2PHASE;
-      } else if (0 == Test::string_compare_no_case(algoStr, "VIENNA")) {
-        params.algorithm = KokkosSparse::SPGEMM_VIENNA;
+        params.algorithm = KokkosSparse::SPGEMM_DEBUG;
       }
 
       else {

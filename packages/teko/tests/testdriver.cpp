@@ -185,7 +185,8 @@ int main(int argc,char * argv[])
      Teko::Test::UnitTest::ClearTests();
    } 
 
-   Kokkos::finalize();
+   if (!Kokkos::is_finalized())
+     Kokkos::finalize();
 
    return status ? 0 : -1;
 }

@@ -481,7 +481,7 @@ Int KLU_flops           /* return TRUE if successful, FALSE otherwise */
     {
         return (FALSE) ;
     }
-    Common->flops = EMPTY ;
+    Common->flops = AMESOS2_KLU2_EMPTY ;
     if (Numeric == NULL || Symbolic == NULL)
     {
         Common->status = KLU_INVALID ;
