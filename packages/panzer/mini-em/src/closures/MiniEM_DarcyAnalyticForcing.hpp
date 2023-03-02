@@ -1,5 +1,5 @@
-#ifndef MINIEM_RANDOM_FORCING_DECL_HPP
-#define MINIEM_RANDOM_FORCING_DECL_HPP
+#ifndef MINIEM_DARCYANALYTICFORCING_HPP
+#define MINIEM_DARCYANALYTICFORCING_HPP
 
 #include "PanzerAdaptersSTK_config.hpp"
 
@@ -21,20 +21,21 @@ namespace mini_em {
   using panzer::Point;
   using panzer::Dim;
 
-/** Random current source
+/** Darcy source with know analytic solution
   */
 template<typename EvalT, typename Traits>
-class RandomForcing : public panzer::EvaluatorWithBaseImpl<Traits>,
+class DarcyAnalyticForcing : public panzer::EvaluatorWithBaseImpl<Traits>,
                       public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
-    RandomForcing(const std::string & name,
+    DarcyAnalyticForcing(const std::string & name,
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
-                  const unsigned int & seed,
-                  const double & rangeMin,
-                  const double & rangeMax,
-                  const std::string& basisName="E_edge");
+                  const double kappa,
+                  const std::string& basisName="u");
+
+    void postRegistrationSetup(typename Traits::SetupData d,
+                               PHX::FieldManager<Traits>& fm);
 
     void evaluateFields(typename Traits::EvalData d);
 
@@ -43,19 +44,15 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   // Simulation source
-  PHX::MDField<ScalarT,Cell,Point,Dim> forcingVector;
-  PHX::MDField<ScalarT,Cell,Point> forcingScalar;
+  PHX::MDField<ScalarT,Cell,Point> source;
   int ir_degree, ir_index, ir_dim;
-  double rangeMin_, rangeMax_;
-  bool vectorBasis_;
+  double kappa_;
 
   using device_type = PHX::Device;
-  using pool_type = Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> ;
-  pool_type rand_pool_;
 };
 
 }
 
-#include "MiniEM_RandomForcing_impl.hpp"
+#include "MiniEM_DarcyAnalyticForcing_impl.hpp"
 
 #endif
