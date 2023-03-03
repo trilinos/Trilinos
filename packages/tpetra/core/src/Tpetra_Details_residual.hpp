@@ -50,6 +50,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "KokkosSparse_spmv_impl.hpp"
+#include "Tpetra_Details_nvtx.hpp"
 
 /// \file Tpetra_Details_residual.hpp
 /// \brief Functions that allow for fused residual calculation.
@@ -587,6 +588,14 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
 
+  Tpetra::Details::Range range(residual);
+
+#if 1
+   SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();
+   Aop.apply(X_in,R_in,Teuchos::NO_TRANS, one, zero);
+   R_in.update(one,B_in,negone);
+   return;
+#else
   const bool debug = ::Tpetra::Details::Behavior::debug ();
   const bool skipCopyAndPermuteIfPossible = ::Tpetra::Details::Behavior::skipCopyAndPermuteIfPossible ();
   const bool overlapCommunicationAndComputation = ::Tpetra::Details::Behavior::overlapCommunicationAndComputation ();
@@ -769,6 +778,7 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     ProfilingRegion regionReduce ("Tpetra::CrsMatrix::residual: Reduce Y");
     R_in.reduce ();
   }
+#endif
 }
 
 
