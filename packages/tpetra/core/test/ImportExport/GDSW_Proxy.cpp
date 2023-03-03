@@ -37,15 +37,80 @@ importSquareMatrix(RCP<const CrsMatrix> inputMatrix,
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraFunctions<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+importSquareMatrixFromImporter(RCP<const CrsMatrix> inputMatrix, 
+                               RCP<const Import> importer,
+                               RCP<CrsMatrix> & outputMatrix)
+{
+  RCP<const Map> outputRowMap = importer->getTargetMap();
+  RCP<const Map> sourceMap = importer->getSourceMap();
+  RCP<Tpetra::Distributor> distributor = Teuchos::rcpFromRef(importer->getDistributor());
+  Teuchos::ArrayView<const LO> localRowsSend = importer->getExportLIDs();
+  Teuchos::ArrayView<const LO> localRowsRecv = importer->getRemoteLIDs();
+
+
+  // Scansum to get the begin arrays
+  size_t numSends = distributor->getNumSends();
+  size_t numRecvs = distributor->getNumReceives();
+  Teuchos::ArrayView<const size_t> lengthsTo = distributor->getLengthsTo();
+  Teuchos::ArrayView<const size_t> lengthsFrom = distributor->getLengthsFrom();
+  std::vector<LO> localRowsSendBegin(numSends+1);
+  std::vector<LO> localRowsRecvBegin(numRecvs+1);
+  for (size_t i=0; i<numSends; i++)
+    localRowsSendBegin[i+1] = localRowsSendBegin[i]  + lengthsTo[i];
+  for (size_t i=0; i<numRecvs; i++)
+    localRowsRecvBegin[i+1] = localRowsRecvBegin[i]  + lengthsFrom[i];
+
+
+  // Combine sames and permutes for ownedRowGIDs
+  // QUESTION: Does iSM handle permutes correctly?
+  size_t numSames = importer->getNumSameIDs();
+  size_t numPermutes = importer->getNumPermuteIDs();
+  Teuchos::ArrayView<const LO> permutes = importer->getPermuteFromLIDs();
+  std::vector<GO> ownedRowGIDs(numSames + numPermutes);
+  for(size_t i=0; i <numSames; i++)
+    ownedRowGIDs[i] = sourceMap->getGlobalElement(i);
+  for(size_t i=0; i <numPermutes; i++)
+    ownedRowGIDs[i] = numSames + sourceMap->getGlobalElement(permutes[i]);
+  
+
+
+  //    std::vector<LO> localRowsSend, localRowsSendBegin, localRowsRecv, localRowsRecvBegin;
+    // ownedRowGIDs = rows of inputMatrix contained in outputRowMap
+    // localRowsSend[indicesSend] = localRows of sending process i corresponding to
+    //                              localRowsRecv[indicesRecv], where
+    //               indicesSend = localRowsSendBegin[i]:localRowsSendBegin[i+1]-1
+    //               indicesRecv = localRowsRecvBegin[i]:localRowsRecvBegin[i+1]-1
+    //    constructDistributor(inputMatrix, outputRowMap, distributor, ownedRowGIDs,
+    //                         localRowsSend, localRowsSendBegin,
+    //                         localRowsRecv, localRowsRecvBegin);
+    std::vector<GO> targetMapGIDs;
+    std::vector<LO> targetMapGIDsBegin;
+    // targetMapGIDs[indices] = globalIDs of outputRowMap for the i'th process
+    //                          receiving matrix data
+    //         indices = targetMapGIDsBegin[i]:targetMapGIDsBegin[i+1]-1;
+    // Note: length of targetMapGIDsBegin is the number of processes receiving 
+    //       matrix data plus 1
+    communicateRowMap(outputRowMap, distributor, targetMapGIDs, targetMapGIDsBegin);
+    communicateMatrixData(inputMatrix, outputRowMap, distributor, targetMapGIDs, 
+                          targetMapGIDsBegin, ownedRowGIDs,
+                          localRowsSend, localRowsSendBegin, localRowsRecv,
+                          localRowsRecvBegin, outputMatrix);
+}
+
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template<class LOVector>
+void TpetraFunctions<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 communicateMatrixData(RCP<const CrsMatrix> inputMatrix, 
                       RCP<const Map> rowMap,
                       RCP<Tpetra::Distributor> distributor,
                       const std::vector<GO> & targetMapGIDs, 
                       const std::vector<LO> & targetMapGIDsBegin,
                       const std::vector<GO> & ownedRowGIDs,
-                      const std::vector<LO> & localRowsSend,
+                      const LOVector & localRowsSend,
                       const std::vector<LO> & localRowsSendBegin,
-                      const std::vector<LO> & localRowsRecv,
+                      const LOVector & localRowsRecv,
                       const std::vector<LO> & localRowsRecvBegin,
                       RCP<CrsMatrix> & outputMatrix)
 {

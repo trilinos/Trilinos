@@ -5,6 +5,7 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
 #include "Tpetra_Distributor.hpp"
 
 
@@ -19,6 +20,7 @@ class TpetraFunctions
   using GO = GlobalOrdinal;
   using NT = Node;
   using Map = Tpetra::Map<LO,GO,NT>;
+  using Import = Tpetra::Import<LO,GO,NT>;
   using CrsMatrix = Tpetra::CrsMatrix<SC,LO,GO,NT>;
   using IndicesViewT = typename CrsMatrix::local_inds_host_view_type;
   using ValuesViewT  = typename CrsMatrix::values_host_view_type;
@@ -33,17 +35,23 @@ public:
                             Teuchos::RCP<const Map> outputRowMap, 
                             Teuchos::RCP<CrsMatrix> & outputMatrix);
 
-private:
 
+  // CMS Hackery
+  void importSquareMatrixFromImporter(Teuchos::RCP<const CrsMatrix> inputMatrix, 
+                                      Teuchos::RCP<const Import> importer,
+                                      Teuchos::RCP<CrsMatrix> & outputMatrix);
+
+private:
+    template<class LOVector>
     void communicateMatrixData(Teuchos::RCP<const CrsMatrix> inputMatrix, 
                                Teuchos::RCP<const Map> rowMap,
                                Teuchos::RCP<Tpetra::Distributor> distributor,
                                const std::vector<GO> & targetMapGIDs, 
                                const std::vector<LO> & targetMapGIDsBegin,
                                const std::vector<GO> & ownedRowGIDs,
-                               const std::vector<LO> & localRowsSend,
+                               const LOVector & localRowsSend,
                                const std::vector<LO> & localRowsSendBegin,
-                               const std::vector<LO> & localRowsRecv,
+                               const LOVector & localRowsRecv,
                                const std::vector<LO> & localRowsRecvBegin,
                                Teuchos::RCP<CrsMatrix> & outputMatrix);
 

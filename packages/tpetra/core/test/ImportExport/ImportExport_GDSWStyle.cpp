@@ -293,10 +293,7 @@ size_t get_memory_usage_now()
 
     // create map
     RCP<const map_type > rowMap1to1 =  createContigMapWithNode<LO, GO, NT> (INVALID, 10000, comm);
-
-    comm->barrier();
     size_t mem0 = get_memory_usage_now();
-    comm->barrier();
 
 
     // Create matrix
@@ -306,32 +303,45 @@ size_t get_memory_usage_now()
     RCP<const map_type> regionMap = A->getColMap();
 
     size_t mem1 = get_memory_usage_now();
-    comm->barrier();
 
-    // Tpetra-based code duplication what is in GDSW
+
+    // 1) Tpetra-based code duplication what is in GDSW
     import_type Importer(rowMap1to1, regionMap);
+    size_t mem2a = get_memory_usage_now();
     RCP<crs_matrix_type> outputMatrix1 = rcp( new crs_matrix_type(regionMap, regionMap, 0) );
     outputMatrix1->doImport(*A, Importer, Tpetra::INSERT);
     outputMatrix1->fillComplete(rowMap1to1, rowMap1to1);
+    size_t mem2b = get_memory_usage_now();
 
-    comm->barrier();
-    size_t mem2 = get_memory_usage_now();
-    comm->barrier();
 
-    // GDSW Proxy code
+    // 2) GDSW Proxy code
     RCP<crs_matrix_type> outputMatrix2;
     TpetraFunctions<SC,LO,GO,NT> tFunctions;
     tFunctions.importSquareMatrix(A, regionMap, outputMatrix2);
-
-    comm->barrier();
     size_t mem3 = get_memory_usage_now();
-    comm->barrier();
 
-    std::cout<<"Breakdown Mem 0/1/2/3 = "<<mem0<<"/"<<mem1<<"/"<<mem2<<"/"<<mem3<<std::endl;
+    // 3) Import-and-FillComplete code
+    // NOTE: This will *NOT* generate the same matrix because we're not specifying the column map
+    // This is here only for memory use comparisons
+    RCP<crs_matrix_type> outputMatrix3 = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(A,Importer,rowMap1to1,rowMap1to1);
 
-    std::cout<<"Orig matrix  memory difference = "<< (mem1-mem0) <<std::endl;
-    std::cout<<"Tpetra-based memory difference = "<< (mem2-mem1) <<std::endl;
-    std::cout<<"GDSW-proxy memory difference   = "<< (mem3-mem2) <<std::endl;
+    size_t mem4 = get_memory_usage_now();
+
+    // 4) Import-based GDSW style
+    RCP<crs_matrix_type> outputMatrix4;
+    tFunctions.importSquareMatrixFromImporter(A, Teuchos::rcpFromRef(Importer), outputMatrix4);
+    size_t mem5 = get_memory_usage_now();
+
+
+    /***********************************************************************************/
+    //std::cout<<"Breakdown Mem 0/1/2a/2b/3/4 = "<<mem0<<"/"<<mem1<<"/"<<mem2a<<"/"<<mem2b<<"/"<<mem3<<"/"<<mem4<<std::endl;
+
+    std::cout<<"Orig matrix storage                           = "<< (mem1-mem0) <<std::endl;
+    std::cout<<"Importer storage                              = "<< (mem2a-mem1) <<std::endl;
+    std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem1) <<std::endl;
+    std::cout<<"2) GDSW-proxy storage                         = "<< (mem3-mem2b) <<std::endl;
+    std::cout<<"3) importAndFillComplete storage              = "<< (mem4-mem3) <<std::endl;
+    std::cout<<"4) Import-based GDSW-proxy                    = "<< (mem5-mem4) <<std::endl;
 
     // Compare the output matrices
     bool result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
@@ -341,11 +351,19 @@ size_t get_memory_usage_now()
       out<<"*** GDSW-proxy matrix ***"<<std::endl;
       outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
     }
-
-
     TEST_EQUALITY( result, true );
 
     
+    // Compare the output matrices
+    result = compareCrsMatrix(*outputMatrix1,*outputMatrix4);
+    if(!result) {
+      out<<"*** Tpetra-based matrix ***"<<std::endl;
+      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+      out<<"*** Import-based GDSW-proxy matrix ***"<<std::endl;
+      outputMatrix4->describe(out,Teuchos::VERB_EXTREME);
+    }
+    TEST_EQUALITY( result, true );
+
   }
 
 
