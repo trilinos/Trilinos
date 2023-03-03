@@ -1035,9 +1035,9 @@ namespace Tpetra {
         std::string line; // If read from stream successful: the Banner line
 
         // Try to read a line from the input stream.
-        const bool readFailed = ! getline(in, line);
+        const bool readFailed = ! getline(in, line);        
         TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
-          "Failed to get Matrix Market banner line from input.");
+                                   "Failed to get Matrix Market banner line from input.");
 
         // We read a line from the input stream.
         lineNumber++;
@@ -1046,10 +1046,12 @@ namespace Tpetra {
         try {
           pBanner = rcp (new Banner (line, tolerant));
         } catch (std::exception& e) {
+
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-            "Matrix Market banner line contains syntax error(s): "
-            << e.what());
+                                     "Matrix Market banner line contains syntax error(s): "
+                                     << e.what());
         }
+
         TEUCHOS_TEST_FOR_EXCEPTION(pBanner->objectType() != "matrix",
           std::invalid_argument, "The Matrix Market file does not contain "
           "matrix data.  Its Banner (first) line says that its object type is \""
@@ -5827,6 +5829,7 @@ namespace Tpetra {
         for(int base_rank = 0; base_rank < numProc; base_rank += rank_limit) {
           int stop = std::min(base_rank+rank_limit,numProc);
 
+          // Is my rank in this batch?
           if(base_rank <= myRank  && myRank < stop) {
             // My turn to read
             std::ifstream in(filename);
@@ -5866,35 +5869,12 @@ namespace Tpetra {
               }
             }
               
-            if (bannerIsCorrect) {
-              // Validate the Banner for the case of a sparse matrix.
-              // In intolerant mode, the matrix type must be "coordinate".
-              if (! tolerant && pBanner->matrixType() != "coordinate") {
-                bannerIsCorrect = 0;
-                errMsg << "The Matrix Market input file must contain a "
-                  "\"coordinate\"-format sparse matrix in order to create a "
-                  "Tpetra::CrsMatrix object from it, but the file's matrix "
-                  "type is \"" << pBanner->matrixType() << "\" instead.";
-              }
-              // In tolerant mode, we allow the matrix type to be
-              // anything other than "array" (which would mean that
-              // the file contains a dense matrix).
-              if (tolerant && pBanner->matrixType() == "array") {
-                bannerIsCorrect = 0;
-                errMsg << "Matrix Market file must contain a \"coordinate\"-"
-                  "format sparse matrix in order to create a Tpetra::CrsMatrix "
-                  "object from it, but the file's matrix type is \"array\" "
-                  "instead.  That probably means the file contains dense matrix "
-                  "data.";
-              }
-            }              
-
             // Unpacked coordinate matrix dimensions
             using Teuchos::MatrixMarket::readCoordinateDimensions;
             success = readCoordinateDimensions (in, numRows, numCols,
                                                 numNonzeros, lineNumber,
                                                 tolerant);
-            
+
             // Sanity checking of headers
             TEUCHOS_TEST_FOR_EXCEPTION(numRows != (LO)rowMap->getLocalNumElements(), std::invalid_argument,
                                        "# rows in file does not match rowmap.");
@@ -5921,6 +5901,8 @@ namespace Tpetra {
               
               // Read the sparse matrix entries.
               std::pair<bool, std::vector<size_t> > results = reader.read (in, lineNumber, tolerant_required, debug);
+
+
               readSuccess = results.first ? 1 : 0;
             }
             catch (std::exception& e) {
@@ -5942,11 +5924,12 @@ namespace Tpetra {
             const size_t numEntries = (size_t)entries.size();
             
             if (debug) {
-              std::cerr << "----- Proc 0: Matrix has numRows=" << numRows
-                   << " rows and numEntries=" << numEntries
+              std::cerr << "----- Proc "<<myRank<<": Matrix has numRows=" << numRows
+                        << " rows and numEntries=" << numEntries
                    << " entries." << std::endl;
             }
             
+
             // Make space for the CSR matrix data.  Converting to
             // CSR is easier if we fill numEntriesPerRow with zeros
             // at first.
@@ -5956,30 +5939,36 @@ namespace Tpetra {
             std::fill (rowPtr.begin(), rowPtr.end(), 0);
             colInd = arcp<global_ordinal_type> (numEntries);
             values = arcp<scalar_type> (numEntries);
-              
+
             // Convert from array-of-structs coordinate format to CSR
             // (compressed sparse row) format.
-            global_ordinal_type minIndex = rowMap->getMinGlobalIndex() - rowMap->getIndexBase();
-            global_ordinal_type prvRow = minIndex;
+            global_ordinal_type l_prvRow = 0;
             size_t curPos = 0;
+            LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
             rowPtr[0] = 0;
+            LO indexBase = rowMap->getIndexBase();
             for (curPos = 0; curPos < numEntries; ++curPos) {
               const element_type& curEntry = entries[curPos];
-              const global_ordinal_type curRow = curEntry.rowIndex();
-              TEUCHOS_TEST_FOR_EXCEPTION(curRow < prvRow, std::logic_error,      
+              const global_ordinal_type curRow = curEntry.rowIndex() + indexBase;
+              LO l_curRow = rowMap->getLocalElement(curRow);
+
+
+              TEUCHOS_TEST_FOR_EXCEPTION(l_curRow == INVALID,std::logic_error,
+                                         "Current global row "<< curRow << " is invalid.");
+                  
+              TEUCHOS_TEST_FOR_EXCEPTION(l_curRow < l_prvRow, std::logic_error,      
                                          "Row indices are out of order, even though they are supposed "
-                                         "to be sorted.  curRow = " << curRow << ", prvRow = "
-                                         << prvRow << ", at curPos = " << curPos << ".  Please report "
+                                         "to be sorted.  curRow = " << l_curRow << ", prvRow = "
+                                         << l_prvRow << ", at curPos = " << curPos << ".  Please report "
                                          "this bug to the Tpetra developers.");
-              if (curRow > prvRow) {
-                // NOTE: There's a subtle contiguous map assumption here
-                for (global_ordinal_type r = prvRow+1; r <= curRow; ++r) {
-                  rowPtr[r-minIndex] = curPos;
+              if (l_curRow > l_prvRow) {
+                for (LO r = l_prvRow+1; r <= l_curRow; ++r) {
+                  rowPtr[r] = curPos;
                 }
-                prvRow = curRow;
+                l_prvRow = l_curRow;
               }
-              numEntriesPerRow[curRow-minIndex]++;
-              colInd[curPos] = curEntry.colIndex();
+              numEntriesPerRow[l_curRow]++;
+              colInd[curPos] = curEntry.colIndex() + indexBase;
               values[curPos] = curEntry.value();
 
             }
@@ -5987,7 +5976,7 @@ namespace Tpetra {
             // last entry of rowPtr is the number of entries in
             // colInd and values.
             rowPtr[numRows] = numEntries;
-          
+
           }// end base_rank <= myRank < stop
 
           // Barrier between batches to keep the filesystem happy
@@ -5995,20 +5984,16 @@ namespace Tpetra {
 
         }//end outer rank loop
 
-       
+
         // Call the matrix constructor and fill.  This isn't particularly efficient
         RCP<sparse_matrix_type> A;
         if(colMap.is_null()) {
-          GO index_base = rowMap->getIndexBase();
           A=rcp(new sparse_matrix_type(rowMap,numEntriesPerRow()));
           for(size_t i=0; i<rowMap->getLocalNumElements(); i++) {
             GO g_row = rowMap->getGlobalElement(i);
             size_t start = rowPtr[i];
             size_t size  = rowPtr[i+1] - rowPtr[i];
             if(size>0)  {
-              for(size_t j=start; j<start+size; j++)
-                colInd[j] += index_base;              
-
               A->insertGlobalValues(g_row,size,&values[start],&colInd[start]);
             }
           }
@@ -6018,6 +6003,7 @@ namespace Tpetra {
         }       
         RCP<const map_type> myDomainMap = domainMap.is_null() ? rowMap : domainMap;
         RCP<const map_type> myRangeMap  = rangeMap.is_null() ? rowMap : rangeMap;
+
         A->fillComplete(myDomainMap,myRangeMap);
 
         if(!readSuccess)
@@ -8933,7 +8919,7 @@ namespace Tpetra {
                           const bool debug=false) {
         
         using ST = scalar_type;
-        using LO = local_ordinal_type;
+        //using LO = local_ordinal_type;
         using GO = global_ordinal_type;
         using STS = typename Teuchos::ScalarTraits<ST>;
         using Teuchos::RCP;
