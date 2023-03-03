@@ -84,10 +84,8 @@ namespace Xpetra {
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
     // The following typedefs are used by the Kokkos interface
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
-#endif
 #endif
 
   public:
@@ -140,7 +138,6 @@ namespace Xpetra {
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
@@ -186,7 +183,6 @@ namespace Xpetra {
         const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
         const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> >& exporter,
         const Teuchos::RCP<Teuchos::ParameterList>& params = null);
-#endif
 #endif
 
     //! Destructor.
@@ -434,7 +430,6 @@ namespace Xpetra {
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const; //TODO: remove
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     typename local_matrix_type::HostMirror getLocalMatrixHost () const {
@@ -450,7 +445,6 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val) {
       getTpetra_CrsMatrixNonConst()->setAllValues(ptr,ind,val);
     }
-#endif
 #endif
 
     //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
@@ -487,10 +481,8 @@ namespace Xpetra {
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
     // The following typedefs are used by the Kokkos interface
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
-#endif
 #endif
 
   public:
@@ -565,7 +557,6 @@ namespace Xpetra {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
@@ -604,7 +595,6 @@ namespace Xpetra {
         const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , "TpetraCrsMatrix<int,int>", "int", typeid(EpetraNode).name() );
     }
-#endif
 #endif
 
     //! Destructor.
@@ -850,7 +840,6 @@ namespace Xpetra {
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
@@ -860,7 +849,6 @@ namespace Xpetra {
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                        const typename local_matrix_type::values_type& val) {    }
-#endif
 #endif
 
     //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
@@ -893,10 +881,8 @@ namespace Xpetra {
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
     // The following typedefs are used by the Kokkos interface
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
-#endif
 #endif
 
   public:
@@ -971,7 +957,6 @@ namespace Xpetra {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
@@ -1010,7 +995,6 @@ namespace Xpetra {
         const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
-#endif
 #endif
 
     //! Destructor.
@@ -1256,7 +1240,6 @@ namespace Xpetra {
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
@@ -1275,7 +1258,6 @@ namespace Xpetra {
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                        const typename local_matrix_type::values_type& val) {    }
-#endif
 #endif
 
     //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix

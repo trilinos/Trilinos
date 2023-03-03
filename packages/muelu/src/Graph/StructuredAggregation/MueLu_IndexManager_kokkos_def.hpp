@@ -46,8 +46,6 @@
 #ifndef MUELU_INDEXMANAGER_DEF_KOKKOS_HPP
 #define MUELU_INDEXMANAGER_DEF_KOKKOS_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <utility>
 
 #include "Teuchos_OrdinalTraits.hpp"
@@ -232,6 +230,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #define MUELU_INDEXMANAGER_KOKKOS_SHORT
 #endif // MUELU_INDEXMANAGER_DEF_KOKKOS_HPP

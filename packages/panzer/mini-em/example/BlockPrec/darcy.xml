@@ -1,0 +1,200 @@
+<ParameterList>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Source" type="string" value="Inline Mesh" />
+    <!-- <Parameter name="Source" type="string" value="Pamgen Mesh" /> -->
+    <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
+
+    <ParameterList name="Exodus File">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Exodus Parameters">
+        <Parameter name="File Name" type="string" value="blob/blob.g" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Pamgen Mesh">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Pamgen Parameters">
+        <Parameter name="File Name" type="string" value="pamgen.gen"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Inline Mesh">
+      <Parameter name="Mesh Dimension" type="int" value="3"/>
+      <Parameter name="Mesh Type" type="string" value="quad"/>
+      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
+      <Parameter name="CFL" type="double" value="4.0"/>
+      <ParameterList name="Mesh Factory Parameter List">
+        <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
+        <!-- <Parameter name="Y Procs" type="int" value="-1" /> -->
+        <!-- <Parameter name="Z Procs" type="int" value="-1" /> -->
+        <Parameter name="X Blocks" type="int" value="1" />
+        <Parameter name="Y Blocks" type="int" value="1" />
+        <Parameter name="Z Blocks" type="int" value="1" />
+        <Parameter name="X Elements" type="int" value="15" />
+        <Parameter name="Y Elements" type="int" value="15" />
+        <Parameter name="Z Elements" type="int" value="15" />
+        <!-- <ParameterList name="Periodic BCs"> -->
+        <!--   <Parameter name="Count" type="int" value="3"/> -->
+        <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
+        <!--   <Parameter name="Periodic Condition 2" type="string" value="yz-all 1e-8: left;right"/> -->
+        <!--   <Parameter name="Periodic Condition 3" type="string" value="xy-all 1e-8: front;back"/> -->
+        <!-- </ParameterList> -->
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+
+  <ParameterList name="Block ID to Physics ID Mapping">
+    <Parameter name="eblock-0_0_0" type="string" value="Maxwell Physics"/>
+  </ParameterList>
+
+  <ParameterList name="Block ID to Auxiliary Physics ID Mapping">
+    <Parameter name="eblock-0_0_0" type="string" value="Auxiliary Physics Block"/>
+  </ParameterList>
+
+   <ParameterList name="Assembly">
+     <Parameter name="Field Order"  type="string" value="blocked: u sigma"/>
+   </ParameterList>
+
+  <ParameterList name="Physics Blocks">
+    <!-- The 2x2 Darcy system -->
+    <!-- Gets 1/kappa from closure model 'darcy' -->
+    <ParameterList name="Maxwell Physics">
+      <ParameterList name="Maxwell Physics">
+        <Parameter name="Type"                 type="string" value="Darcy"/>
+        <Parameter name="Model ID"             type="string" value="darcy"/>
+        <Parameter name="Inverse Diffusivity"  type="string" value="1/kappa"/>
+        <Parameter name="Forcing"              type="string" value="f"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Closure Models">
+    <!-- Quantities for the Darcy equation -->
+    <!-- Note: 1/dt is added at runtime -->
+    <ParameterList name="darcy">
+      <ParameterList name="f">
+        <Parameter name="Type" type="string" value="DARCY ANALYTIC FORCING"/>
+        <Parameter name="kappa" type="double" value="10.0"/>
+        <Parameter name="DoF Name" type="string" value="u"/>
+      </ParameterList>
+      <ParameterList name="EXACT u">
+        <Parameter name="Type" type="string" value="DARCY ANALYTIC SOLUTION"/>
+        <Parameter name="Field Type" type="string" value="u"/>
+      </ParameterList>
+      <ParameterList name="ERROR u">
+        <Parameter name="Type" type="string" value="ERROR"/>
+        <Parameter name="Field" type="string" value="u"/>
+        <Parameter name="Exact Field" type="string" value="EXACT u"/>
+      </ParameterList>
+      <ParameterList name="NORM u">
+        <Parameter name="Type" type="string" value="NORM"/>
+        <Parameter name="Field" type="string" value="u"/>
+      </ParameterList>
+      <ParameterList name="NORM u exact">
+        <Parameter name="Type" type="string" value="NORM"/>
+        <Parameter name="Field" type="string" value="EXACT u"/>
+      </ParameterList>
+      <!-- Inverse Diffusivity -->
+      <ParameterList name="1/kappa">
+        <Parameter name="Value" type="double" value="0.1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Responses">
+    <ParameterList name="L2 Norm u">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="NORM u"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
+    <ParameterList name="L2 Norm u exact">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="NORM u exact"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
+    <ParameterList name="L2 Error u">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="ERROR u"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Boundary Conditions">
+    <!-- Conditions on u-field -->
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="top"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="bottom"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="left"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="right"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="front"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList>
+      <Parameter name="Type" type="string" value="Dirichlet"/>
+      <Parameter name="Sideset ID" type="string" value="back"/>
+      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Equation Set Name" type="string" value="u"/>
+      <Parameter name="Strategy" type="string" value="Constant"/>
+      <ParameterList name="Data">
+        <Parameter name="Value" type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Auxiliary Boundary Conditions">
+    <!-- None -->
+  </ParameterList>
+
+
+</ParameterList>

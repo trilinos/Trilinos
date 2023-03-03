@@ -213,7 +213,7 @@ using PatternFactory [[maybe_unused]] = MueLu::PatternFactory<Scalar,LocalOrdina
 using PerfUtils [[maybe_unused]] = MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PERFMODELS_SHORT
-typedef MueLu::PerfModels<Scalar,LocalOrdinal,GlobalOrdinal,Node> PerfModels;
+using PerfModels [[maybe_unused]] = MueLu::PerfModels<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PERMUTATIONFACTORY_SHORT
 using PermutationFactory [[maybe_unused]] = MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -255,7 +255,7 @@ using RebalanceBlockRestrictionFactory [[maybe_unused]] = MueLu::RebalanceBlockR
 using RebalanceTransferFactory [[maybe_unused]] = MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REFMAXWELLSMOOTHER_SHORT
-typedef MueLu::RefMaxwellSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwellSmoother;
+using RefMaxwellSmoother [[maybe_unused]] = MueLu::RefMaxwellSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REGIONRFACTORY_SHORT
 using RegionRFactory [[maybe_unused]] = MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -279,7 +279,7 @@ using RepartitionBlockDiagonalFactory [[maybe_unused]] = MueLu::RepartitionBlock
 using RepartitionHeuristicFactory [[maybe_unused]] = MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REPLICATEPFACTORY_SHORT
-typedef MueLu::ReplicatePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReplicatePFactory;
+using ReplicatePFactory [[maybe_unused]] = MueLu::ReplicatePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
 using RigidBodyModeFactory [[maybe_unused]] = MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -426,16 +426,16 @@ using Zoltan2Interface [[maybe_unused]] = MueLu::Zoltan2Interface<Scalar,LocalOr
 using NodePartitionInterface [[maybe_unused]] = MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_XPETRAOPERATOR_SHORT
-typedef MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraOperator;
+using XpetraOperator [[maybe_unused]] = MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_REFMAXWELL_SHORT
-typedef MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwell;
+using RefMaxwell [[maybe_unused]] = MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MAXWELL1_SHORT
-typedef MueLu::Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell1;
+using Maxwell1 [[maybe_unused]] = MueLu::Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MAXWELL_UTILS_SHORT
-typedef MueLu::Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell_Utils;
+using Maxwell_Utils [[maybe_unused]] = MueLu::Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;

@@ -1,7 +1,7 @@
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
-AmalgamationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+AmalgamationFactory_kokkos
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
@@ -21,14 +21,14 @@ ClassicalMapFactory
 ClassicalPFactory
 CloneRepartitionInterface
 CoalesceDropFactory
-CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+CoalesceDropFactory_kokkos
 CoarseMapFactory
-CoarseMapFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+CoarseMapFactory_kokkos
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
-CoordinatesTransferFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+CoordinatesTransferFactory_kokkos
 CoupledRBMFactory
 DemoFactory
 DirectSolver
@@ -42,7 +42,7 @@ FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
-GeometricInterpolationPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+GeometricInterpolationPFactory_kokkos
 GMRESSolver
 Hierarchy
 HierarchyManager
@@ -62,9 +62,9 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
-NotayAggregationFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+NullspaceFactory_kokkos
 NullspacePresmoothFactory
 PatternFactory
 PerfUtils
@@ -83,8 +83,8 @@ RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
 RefMaxwellSmoother
-RegionRFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-RegionRFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+RegionRFactory
+RegionRFactory_kokkos
 ReitzingerPFactory
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
@@ -93,7 +93,7 @@ RepartitionHeuristicFactory - #ifdef HAVE_MPI
 ReplicatePFactory
 RigidBodyModeFactory
 SaPFactory
-SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+SaPFactory_kokkos
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
@@ -113,9 +113,9 @@ StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
-TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-MatrixFreeTentativeP_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-MatrixFreeTentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+TentativePFactory_kokkos
+MatrixFreeTentativeP_kokkos
+MatrixFreeTentativePFactory_kokkos
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
@@ -129,10 +129,10 @@ UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
-Utilities_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+Utilities_kokkos
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
-SemiCoarsenPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+SemiCoarsenPFactory_kokkos
 UzawaSmoother
 VisualizationHelpers
 ZeroSubBlockAFactory

@@ -48,7 +48,6 @@
 #define MUELU_AGGREGATES_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
@@ -332,8 +331,6 @@ namespace MueLu {
   };
 
 } //namespace MueLu
-
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 
 #define MUELU_AGGREGATES_KOKKOS_SHORT
 #endif // MUELU_AGGREGATES_KOKKOS_DECL_HPP

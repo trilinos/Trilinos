@@ -46,8 +46,6 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #ifdef out
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spgemm.hpp"
@@ -597,7 +595,6 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

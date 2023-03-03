@@ -45,6 +45,12 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
      if (matrix_output)
        mini_em::writeOut("SchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
+   else if(name.substr(0,20)=="DarcySchurComplement") {
+     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("DarcySchurComplement " + name.substr(21,name.length()-21)+" Scatter Container"),true)->getGlobalLOC();
+
+     if (matrix_output)
+       mini_em::writeOut("DarcySchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+   }
    else if(name.substr(0,24)=="ProjectedSchurComplement") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("ProjectedSchurComplement " + name.substr(25,name.length()-25)+" Scatter Container"),true)->getGlobalLOC();
 
@@ -76,6 +82,10 @@ bool OperatorRequestCallback::handlesRequest(const Teko::RequestMesg & rm)
    }
    else if(name.substr(0,15)=="SchurComplement") {
      if(gedc_->containsDataObject("SchurComplement " + name.substr(16,name.length()-16)+" Scatter Container"))
+       return true;
+   }
+   else if(name.substr(0,20)=="DarcySchurComplement") {
+     if(gedc_->containsDataObject("DarcySchurComplement " + name.substr(21,name.length()-21)+" Scatter Container"))
        return true;
    }
    else if(name.substr(0,24)=="ProjectedSchurComplement") {
