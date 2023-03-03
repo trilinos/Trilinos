@@ -19,6 +19,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only makes sense in an MPI build with > 1 processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ImportExport_GDSWStyle
+  SOURCES
+    ImportExport_GDSWStyle.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-4
+  STANDARD_PASS_OUTPUT
+  )
+
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
