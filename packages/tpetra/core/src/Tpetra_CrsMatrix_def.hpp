@@ -4786,7 +4786,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Incoming tpetra operations (we may depend on!) are in the default execution space instance
-    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
+    Details::Spaces::exec_space_wait("local SpMV waits previous op", defaultSpace, *onRankSpace);
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
@@ -4806,7 +4806,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Import from the domain Map MV to the column Map MV.
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTransposeOverlapped: beginImport/endImport");
       // make sure other incoming tpetra operations are done before import is started
-      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
+      Details::Spaces::exec_space_wait("import waits previous op", defaultSpace, *offRankSpace);
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
@@ -4815,8 +4815,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
-      Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
-      Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
+      Details::Spaces::exec_space_wait("export waits local SpMV", *onRankSpace, defaultSpace); // wait for local SpMV
+      Details::Spaces::exec_space_wait("export waits import", *offRankSpace, defaultSpace); // wait for import
       this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       {
         ProfilingRegion regionExport ("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Export");
@@ -4840,14 +4840,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
-        Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
-        Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
+        Details::Spaces::exec_space_wait("off-rank waits on-rank SpMV", *onRankSpace, defaultSpace); // wait for local SpMV
+        Details::Spaces::exec_space_wait("off-rank waits import", *offRankSpace, defaultSpace); // wait for import
         this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
-        Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
-        Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
+        Details::Spaces::exec_space_wait("off-rank waits on-rank SpMV", *onRankSpace, defaultSpace); // wait for local SpMV
+        Details::Spaces::exec_space_wait("off-rank waits import", *offRankSpace, defaultSpace); // wait for import
         this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       }
     }
