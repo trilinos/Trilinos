@@ -51,6 +51,7 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
 
@@ -1841,6 +1842,29 @@ namespace Tpetra {
     setAllValues (const typename local_graph_device_type::row_map_type& ptr,
                   const typename local_graph_device_type::entries_type::non_const_type& ind,
                   const typename local_matrix_device_type::values_type& val);
+
+    /// \brief Set the local matrix using an existing local matrix.
+    ///
+    /// \pre column indices are sorted within each row
+    /// \pre <tt>hasColMap() == true</tt>
+    /// \pre <tt>getGraph() != Teuchos::null</tt>
+    /// \pre No insert/sum routines have been called
+    ///
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    ///
+    /// This method simply calls the method setAllValues that accepts three
+    /// compressed sparse row arrays.
+    ///
+    /// The input argument might be used directly (shallow copy), or
+    /// it might be (deep) copied.
+    ///
+    /// \param ptr [in/out] Kokkos sparse local matrix
+    ///   This is in/out because the matrix reserves the right to take this argument by
+    ///   shallow copy.  Any method that changes the matrix's values
+    ///   may then change this.
+    void
+    setAllValues (const local_matrix_device_type& localMatrix);
 
     /// \brief Set the local matrix using three (compressed sparse row) arrays.
     ///
@@ -4102,6 +4126,25 @@ protected:
     Teuchos::RCP<CrsMatrixType> destMatrix;
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
+  }
+
+  /// \brief Remove zero entries from a matrix.
+  ///
+  /// \param matrix    [in/out] CrsMatrix
+  /// \param threshold [in]     magnitude threshold below which an entry is deemed to be zero
+  ///
+  /// \relatesalso CrsMatrix
+  template<class CrsMatrixType>
+  void
+  removeCrsMatrixZeros(CrsMatrixType& matrix,
+                       typename Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitudeType const & threshold =
+                       Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitude( Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::zero() ))
+  {
+    auto localMatrix = matrix.getLocalMatrixDevice();
+    localMatrix = KokkosSparse::removeCrsMatrixZeros(localMatrix,threshold);
+    matrix.resumeFill();
+    matrix.setAllValues(localMatrix);
+    matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
   }
 
 } // namespace Tpetra
