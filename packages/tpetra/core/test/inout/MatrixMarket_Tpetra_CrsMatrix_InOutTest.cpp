@@ -671,11 +671,12 @@ testCrsMatrixPerFileNonContiguous (Teuchos::FancyOStream& out, const GlobalOrdin
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
-  // On row per rank, reverse numbered
+  // Two rows per rank, reverse numbered
   out << "Creating the non-contiguous row Map" << endl;
   GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-  Teuchos::Array<GO> my_gids(1);
-  my_gids[0] =  comm->getSize() - comm->getRank() - 1 + indexBase;
+  Teuchos::Array<GO> my_gids(2);
+  my_gids[0] =  2*comm->getSize() - 2*comm->getRank() - 2 + indexBase;
+  my_gids[1] = my_gids[0] + 1;
   RCP<const map_type> rowMap =
     rcp (new map_type (INVALID,my_gids(),indexBase,comm));
 
