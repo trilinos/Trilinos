@@ -313,6 +313,7 @@ namespace MueLu {
 	  using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
 	  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
 	  using KAT_M             = typename Kokkos::ArithTraits<mag_type>;
+	  using size_type         = typename local_matrix_type::non_const_size_type;
 
 	  local_vector_type diag_dev = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 	  local_matrix_type local_mat_dev = rcpA->getLocalMatrixDevice();
@@ -327,7 +328,7 @@ namespace MueLu {
 	    Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
 				 KOKKOS_LAMBDA(const int rowIdx) {
 				   diag_dev(rowIdx, 0) = KAT_S::zero();
-				   for(int entryIdx = local_mat_dev.graph.row_map(rowIdx);
+				   for(size_type entryIdx = local_mat_dev.graph.row_map(rowIdx);
 				       entryIdx < local_mat_dev.graph.row_map(rowIdx + 1);
 				       ++entryIdx) {
 				     regSum(rowIdx) += local_mat_dev.values(entryIdx);
@@ -359,9 +360,13 @@ namespace MueLu {
 				   if (replaceSingleEntryRowWithZero && nnzPerRow(rowIdx) <= 1) {
 				     diag_dev(rowIdx, 0) = KAT_S::zero();
 				   } else if((diag_dev(rowIdx, 0) != KAT_S::zero()) && (KAT_S::magnitude(diag_dev(rowIdx, 0)) < KAT_S::magnitude(2*regSum(rowIdx)))) {
-				     diag_dev(rowIdx, 0) = KAT_S::one() / diag_dev(rowIdx, 0);
+				     diag_dev(rowIdx, 0) = KAT_S::one() / KAT_S::magnitude(2*regSum(rowIdx));
 				   } else {
-				     diag_dev(rowIdx, 0) = valReplacement;
+				     if(KAT_S::magnitude(diag_dev(rowIdx, 0)) > tol) {
+				       diag_dev(rowIdx, 0) = KAT_S::one() / diag_dev(rowIdx, 0);
+				     } else {
+				       diag_dev(rowIdx, 0) = valReplacement;
+				     }
 				   }
 				 });
 	  
@@ -369,7 +374,7 @@ namespace MueLu {
 	    Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
 				 KOKKOS_LAMBDA(const int rowIdx) {
 				   diag_dev(rowIdx, 0) = KAT_S::zero();
-				   for(int entryIdx = local_mat_dev.graph.row_map(rowIdx);
+				   for(size_type entryIdx = local_mat_dev.graph.row_map(rowIdx);
 				       entryIdx < local_mat_dev.graph.row_map(rowIdx + 1);
 				       ++entryIdx) {
 				     diag_dev(rowIdx, 0) += KAT_S::magnitude(local_mat_dev.values(entryIdx));
