@@ -296,6 +296,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
           if (mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") {
 
             FILE   *fp;
+            int    retVal;
             int    nBlks, nRows, nnzs, ch, row, col;
             int    procId = comm->getRank();
             double val;
@@ -305,18 +306,21 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             /* the Teuchos::Array for "partitioner: global ID parts"        */
 
             fp = fopen( &userBlkFileName[0],"r");
-            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
             while ( (ch= getc(fp) != '\n'))  ;  //read first line
 
-            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            retVal = fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            TEUCHOS_TEST_FOR_EXCEPTION(retVal != 3,
+                std::runtime_error,"unable to parse nBlks, nRows, nnzs in user file " + userBlkFileName);
+
             TEUCHOS_TEST_FOR_EXCEPTION(nRows != (int) A->getRowMap()->getGlobalNumElements(),
-                 std::runtime_error,"number of global rows in " + userBlkFileName + " does not match those in A");
+                std::runtime_error,"number of global rows in " + userBlkFileName + " does not match those in A");
 
             Teuchos::ArrayRCP<int> myOwnedRowsPerBlock(nBlks, 0);
 
             for (int i = 0; i < nnzs; i++) {
-              fscanf(fp,"%d %d %lf", &row, &col, &val); row--; col--;
+              retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); row--; col--;
               if (A->getRowMap()->getLocalElement( (GlobalOrdinal) col) != Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) (myOwnedRowsPerBlock[row])++;
             }
             fclose(fp);
@@ -361,12 +365,16 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             // reopen userBlkFilename and record block information in blockLists
 
             fp = fopen( &userBlkFileName[0],"r");
-            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
             while ( (ch= getc(fp) != '\n'))  ;
-            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
 
-            fscanf(fp,"%d %d %lf", &row, &col, &val); row=row-1; col=col-1;
+            retVal = fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            TEUCHOS_TEST_FOR_EXCEPTION(retVal != 3,
+                std::runtime_error,"unable to parse nBlks, nRows, nnzs in user file " + userBlkFileName);
+
+            retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); row=row-1; col=col-1;
+
             int jj = 1;
             while (jj <= nnzs ) {
               if (ownBlk[row] == true) {
@@ -379,13 +387,13 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
                     buffer.resize(maxDofsInAnyBlock);
                   }
                   buffer[i] = col; i++;
-                  fscanf(fp,"%d %d %lf", &row, &col, &val); jj++; row=row-1; col=col-1;
+                  retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); jj++; row=row-1; col=col-1;
                 }
                 blockLists[currentOwnedRow] = Teuchos::arcp<GlobalOrdinal>(i);
                 for (int k = 0; k < i; k++) { blockLists[currentOwnedRow][k] = (GlobalOrdinal) buffer[k];   }
                 currentOwnedRow++;
               }
-              else { fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
+              else { retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
             }
             fclose(fp);
             mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").set< Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > >("partitioner: global ID parts", blockLists);
