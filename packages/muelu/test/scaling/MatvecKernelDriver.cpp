@@ -244,14 +244,14 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   // rowptr = One read per row
   // colind = One read per entry
   // values = One read per entry
-  // x      = One read per entry in values array
+  // x      = One read per entry in values array (but we assume the cache will work its magic here)
   // y      = One write per row
  
   long unsigned int spmv_memory_bytes[NUM_TIMERS] = {
      (m+1) * sizeof(rowptr_type), //rowptr
      nnz * sizeof(LO), //colind
      nnz * sizeof(SC), // values
-     nnz * sizeof(SC), //x
+     n  * sizeof(SC), //x
      m * sizeof(SC), // y
      0
     };

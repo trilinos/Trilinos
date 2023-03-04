@@ -187,7 +187,6 @@ namespace mini_em {
     using Teuchos::rcp_dynamic_cast;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
-    typedef PHX::Device DeviceSpace;
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
     typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
@@ -406,7 +405,6 @@ namespace mini_em {
     using Teuchos::rcp_dynamic_cast;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
-    typedef PHX::Device DeviceSpace;
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
     typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;

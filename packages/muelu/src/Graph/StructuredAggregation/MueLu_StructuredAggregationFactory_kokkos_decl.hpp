@@ -51,7 +51,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
@@ -162,5 +161,4 @@ namespace MueLu {
 }
 
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP

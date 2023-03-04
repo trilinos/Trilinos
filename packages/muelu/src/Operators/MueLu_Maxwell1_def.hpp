@@ -68,9 +68,7 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 #include <MueLu_HierarchyUtils.hpp>
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 # include "MueLu_Utilities_kokkos.hpp"
-#endif
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
@@ -229,9 +227,6 @@ namespace MueLu {
 
 
     // Are we using Kokkos?
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos_ = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
@@ -245,7 +240,6 @@ namespace MueLu {
       useKokkos_ = true;
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
-#endif
 
     parameterList_ = list;
 
@@ -381,9 +375,7 @@ namespace MueLu {
     if (!reuse) {
       magnitudeType rowSumTol = precList11_.get("aggregation: row sum drop tol",-1.0);
       Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                                              useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
-#endif
                                                              BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
                                                              allEdgesBoundary_,allNodesBoundary_);
       if (IsPrint(Statistics2)) {
@@ -429,27 +421,19 @@ namespace MueLu {
       
       if(applyBCsTo22_) {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows/cols of D0" << std::endl;        
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_) {
           Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
         }
-#else
-        Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
-#endif
       }
       else {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows of D0" << std::endl;        
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_) {
           Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
         }
-#else
-        Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
-#endif
       }
 
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
@@ -705,7 +689,6 @@ namespace MueLu {
     }
   }
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const {
     if (dump_matrices_) {
@@ -717,7 +700,6 @@ namespace MueLu {
             out << vH[i] << "\n";
     }
   }
-#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::TimeMonitor> Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {

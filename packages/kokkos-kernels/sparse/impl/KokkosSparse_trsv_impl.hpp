@@ -1,0 +1,681 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
+#ifndef KOKKOSSPARSE_IMPL_TRSM_HPP_
+#define KOKKOSSPARSE_IMPL_TRSM_HPP_
+
+/// \file Kokkos_Sparse_impl_trsm.hpp
+/// \brief Implementation(s) of sparse triangular solve.
+
+#include <KokkosKernels_config.h>
+#include <Kokkos_ArithTraits.hpp>
+#include <vector>  // temporarily
+
+namespace KokkosSparse {
+namespace Impl {
+namespace Sequential {
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCsrUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A,
+                              DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows();
+  // const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type r = 0; r < numRows; ++r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current row r
+  }    // for each row r
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
+                      DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows = A.numRows();
+  // const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type r = 0; r < numRows; ++r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+
+    matrix_scalar_type A_rr = STS::zero();
+    const offset_type beg   = ptr(r);
+    const offset_type end   = ptr(r + 1);
+
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  The
+      // way to fix this would be for Tpetra::CrsMatrix to remember
+      // the local column index of the diagonal entry (if there is
+      // one) in each row, and pass that along to this function.
+      if (r == c) {
+        A_rr += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current row r
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = X(r, j) / A_rr;
+    }
+  }  // for each row r
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCsrUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A,
+                              DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows();
+  // const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  // If local_ordinal_type is unsigned and numRows is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numRows == 0) {
+    return;
+  }
+
+  // Don't use r >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do r == 0 (last
+  // iteration) below.
+  for (local_ordinal_type r = numRows - 1; r != 0; --r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current row r
+  }    // for each row r
+
+  // Last iteration: r = 0.
+  {
+    const local_ordinal_type r = 0;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current row r
+  }    // last iteration: r = 0
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
+                      DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows();
+  // const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  // If local_ordinal_type is unsigned and numRows is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numRows == 0) {
+    return;
+  }
+
+  // Don't use r >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do r == 0 (last
+  // iteration) below.
+  for (local_ordinal_type r = numRows - 1; r != 0; --r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg   = ptr(r);
+    const offset_type end   = ptr(r + 1);
+    matrix_scalar_type A_rr = STS::zero();
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      if (r == c) {
+        A_rr += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current row r
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = X(r, j) / A_rr;
+    }
+  }  // for each row r
+
+  // Last iteration: r = 0.
+  {
+    const local_ordinal_type r = 0;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg   = ptr(r);
+    const offset_type end   = ptr(r + 1);
+    matrix_scalar_type A_rr = STS::zero();
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c    = ind(k);
+      if (r == c)
+        A_rr += A_rc;
+      else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current row r
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = X(r, j) / A_rr;
+    }
+  }  // last iteration: r = 0
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A,
+                              DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type r    = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    const offset_type beg      = ptr(c);
+    const offset_type end      = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type r    = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
+                      DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = end - 1; k >= beg; --k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+        has equal local row and column indices.  That may not
+        necessarily hold, depending on the row and column Maps.  See
+       note above.*/
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        if (r == c) {
+          X(c, j) = X(c, j) / A_rc;
+        } else {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const offset_type beg         = ptr(0);
+    const matrix_scalar_type A_rc = val(beg);
+    /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+      has equal local row and column indices.  That may not
+      necessarily hold, depending on the row and column Maps.  See
+      note above.*/
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(0, j) = X(0, j) / A_rc;
+    }
+  }
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCscUnitDiag(RangeMultiVectorType X, const CrsMatrixType& A,
+                              DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCscUnitDiagConj(RangeMultiVectorType X,
+                                  const CrsMatrixType& A,
+                                  DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = STS::conj(val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    const offset_type beg      = ptr(c);
+    const offset_type end      = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = STS::conj(val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void upperTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A,
+                          DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = end - 1; k >= beg; --k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = STS::conj(val(k));
+      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+        has equal local row and column indices.  That may not
+        necessarily hold, depending on the row and column Maps.  See
+       note above.*/
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        if (r == c) {
+          X(c, j) = X(c, j) / A_rc;
+        } else {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const offset_type beg         = ptr(0);
+    const matrix_scalar_type A_rc = STS::conj(val(beg));
+    /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+      has equal local row and column indices.  That may not
+      necessarily hold, depending on the row and column Maps.  See
+      note above.*/
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(0, j) = X(0, j) / A_rc;
+    }
+  }
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
+                      DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+        has equal local row and column indices.  That may not
+        necessarily hold, depending on the row and column Maps.  See
+        note above.*/
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        if (r == c) {
+          X(c, j) = X(c, j) / A_rc;
+        } else {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCscUnitDiagConj(RangeMultiVectorType X,
+                                  const CrsMatrixType& A,
+                                  DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = STS::conj(val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+}
+
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
+void lowerTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A,
+                          DomainMultiVectorType Y) {
+  typedef
+      typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type
+      local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type
+      matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows         = A.numRows();
+  const local_ordinal_type numCols         = A.numCols();
+  const local_ordinal_type numVecs         = X.extent(1);
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind   = A.graph.entries;
+  typename CrsMatrixType::values_type val  = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c + 1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r    = ind(k);
+      const matrix_scalar_type A_rc = STS::conj(val(k));
+      /*(vqd 20 Jul 2020) This assumes that the diagonal entry
+        has equal local row and column indices.  That may not
+        necessarily hold, depending on the row and column Maps.  See
+        note above.*/
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        if (r == c) {
+          X(c, j) = X(c, j) / A_rc;
+        } else {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    }  // for each entry A_rc in the current column c
+  }    // for each column c
+}
+
+}  // namespace Sequential
+}  // namespace Impl
+}  // namespace KokkosSparse
+
+#endif  // KOKKOSSPARSE_IMPL_TRSM_HPP

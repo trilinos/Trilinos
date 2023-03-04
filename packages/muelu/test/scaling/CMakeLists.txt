@@ -413,15 +413,13 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         SOURCE_FILES spe10.xml A5submatrix.mm rhs5sub.mm
         )
 
-      IF(${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-        TRIBITS_ADD_TEST(
-          Driver
-          NAME "DriverTpetra_Distance2Coloring"
-          ARGS "--linAlgebra=Tpetra --xml=scaling_distance2_agg.xml"
-          NUM_MPI_PROCS 4
-          COMM mpi # HAVE_MPI required
-          )
-      ENDIF()
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverTpetra_Distance2Coloring"
+        ARGS "--linAlgebra=Tpetra --xml=scaling_distance2_agg.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+      )
 
     ENDIF()
 

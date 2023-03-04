@@ -216,7 +216,7 @@ public:
     const dim3 grid( nblock , 1 , 1 );
 
     const Cuda::size_type shared = m_config.shared;
-    CudaParallelLaunch< ParallelFor >( *this , grid , block , shared , m_policy.space().impl_internal_space_instance(), false );
+    CudaParallelLaunch< ParallelFor >( *this , grid , block , shared , m_policy.space().impl_internal_space_instance() );
   }
 };
 

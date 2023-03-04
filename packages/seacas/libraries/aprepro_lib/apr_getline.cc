@@ -36,9 +36,6 @@
 #ifndef __unix__
 #define __unix__ 1
 #endif
-
-#include <termios.h>
-struct termios io_new_termios, io_old_termios;
 #endif
 
 /********************* C library headers ********************************/
@@ -121,6 +118,11 @@ namespace {
 #endif
 
 namespace {
+#ifdef __unix__
+#include <termios.h>
+  struct termios io_new_termios, io_old_termios;
+#endif
+
   void gl_char_init(void) /* turn off input echo */
   {
 #ifdef __unix__

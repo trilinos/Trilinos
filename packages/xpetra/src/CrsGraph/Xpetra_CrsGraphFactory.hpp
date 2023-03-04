@@ -157,7 +157,6 @@ namespace Xpetra {
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -273,7 +272,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 #endif
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
@@ -416,7 +414,6 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -532,7 +529,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 #endif
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
@@ -676,7 +672,6 @@ namespace Xpetra {
     }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -792,7 +787,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 #endif
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.

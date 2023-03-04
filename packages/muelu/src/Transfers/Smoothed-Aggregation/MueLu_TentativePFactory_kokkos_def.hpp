@@ -46,8 +46,6 @@
 #ifndef MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include "Kokkos_UnorderedMap.hpp"
 #include "Xpetra_CrsGraphFactory.hpp"
 
@@ -1324,5 +1322,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP

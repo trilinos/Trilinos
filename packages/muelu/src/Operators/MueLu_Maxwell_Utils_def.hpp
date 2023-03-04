@@ -61,9 +61,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_Utilities_kokkos.hpp"
-#endif
 
 
 namespace MueLu {
@@ -73,12 +71,10 @@ namespace MueLu {
   void Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::detectBoundaryConditionsSM(RCP<Matrix> & SM_Matrix_,
                                                                                          RCP<Matrix> & D0_Matrix_,
                                                                                          magnitudeType rowSumTol,
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                                                                          bool useKokkos_,
                                                                                          Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos_,
                                                                                          Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos_,
                                                                                          Kokkos::View<bool*, typename Node::device_type> & BCdomainKokkos_,
-#endif
                                                                                          int & BCedges_,
                                                                                          int & BCnodes_,
                                                                                          Teuchos::ArrayRCP<bool> & BCrows_,
@@ -92,7 +88,6 @@ namespace MueLu {
     // BCcols_[i] is true, iff i is a boundary column
     int BCedgesLocal = 0;
     int BCnodesLocal = 0;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if (useKokkos_) {
       BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
 
@@ -115,7 +110,6 @@ namespace MueLu {
 	  ++sum;
 	}, BCnodesLocal);
     } else
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
     {
       BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
 

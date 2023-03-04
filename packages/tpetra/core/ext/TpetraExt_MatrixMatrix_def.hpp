@@ -40,6 +40,7 @@
 // @HEADER
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
+#include "KokkosSparse_Utils.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "TpetraExt_MatrixMatrix_decl.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -521,24 +522,15 @@ void Jacobi(Scalar omega,
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "jacobi_A_B_general not implemented");
-    // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
-    // commenting it out.
-// #ifdef HAVE_TPETRA_MMM_TIMINGS
-//     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: Jacobi FillComplete")));
-// #endif
-    // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
-    // commenting it out.
-    // if (call_FillComplete_on_result) {
-    //   //We'll call FillComplete on the C matrix before we exit, and give
-    //   //it a domain-map and a range-map.
-    //   //The domain-map will be the domain-map of B, unless
-    //   //op(B)==transpose(B), in which case the range-map of B will be used.
-    //   //The range-map will be the range-map of A, unless
-    //   //op(A)==transpose(A), in which case the domain-map of A will be used.
-    //   if (!C.isFillComplete()) {
-    //     C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-    //   }
-    // }
+  }
+
+  if(!params.is_null()) {
+    bool removeZeroEntries = params->get("remove zeros", false);
+    if (removeZeroEntries) {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typename STS::magnitudeType threshold = params->get("remove zeros threshold", STS::magnitude(STS::zero()));
+      removeCrsMatrixZeros(C, threshold);
+    }
   }
 }
 
@@ -3675,10 +3667,6 @@ addSorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    row_ptrs_array, col_inds_array>
     (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
   Cvals = values_array("C values", addHandle->get_c_nnz());
@@ -3722,10 +3710,6 @@ addUnsorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    row_ptrs_array, col_inds_array>
       (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
   Cvals = values_array("C values", addHandle->get_c_nnz());
@@ -3808,7 +3792,6 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());

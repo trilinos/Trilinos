@@ -293,9 +293,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     bool useKokkos = false;
     if(lib == Xpetra::UseTpetra) {
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-      useKokkos = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
         useKokkos = false;
@@ -312,7 +309,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
         useKokkos = true;
 # endif
-#endif
     }
     clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 
@@ -340,16 +336,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     std::string prefix;
     if (useKokkos) {
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
       if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
         prefix = "kokkos-complex/";
       } else {
         prefix = "kokkos/";
       }
-#else
-      out << "No kokkos refactor available." << std::endl;
-      return EXIT_FAILURE;
-#endif
     } else {
       if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
         prefix = "complex/";
