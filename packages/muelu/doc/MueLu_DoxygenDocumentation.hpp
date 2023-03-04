@@ -82,7 +82,7 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
 \section muelu_developers Current Developers
 
   - Jonathan Hu, Sandia National Labs
-  - Matthias Mayr, Sandia National Labs
+  - Matthias Mayr, University of the Bundeswehr Munich
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
   - Christian Glusa, Sandia National Labs
