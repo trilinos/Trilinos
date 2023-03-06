@@ -588,7 +588,7 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
 
-  Tpetra::Details::Range range(residual);
+  Tpetra::Details::Range range("residual");
 
 #if 1
    SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();

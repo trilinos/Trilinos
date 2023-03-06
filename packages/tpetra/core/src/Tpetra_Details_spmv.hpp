@@ -779,7 +779,7 @@ public:
         Kokkos::TeamPolicy<execution_space>(space, 
             rowsPerThread, Kokkos::AUTO, vectorLength)
             .team_size_recommended(op, Kokkos::ParallelForTag());
-    std::cerr << __FILE__<<":"<<__LINE__<<": teamSize=" << teamSize << " vectorLength=" << vectorLength << "\n";
+    CWP_CERR("teamSize=" << teamSize << " vectorLength=" << vectorLength << "\n");
     const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
     if (rowsPerTeam < 1) {
       throw std::runtime_error("rowsPerTeam < 1");
