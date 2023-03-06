@@ -1,9 +1,8 @@
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "Teuchos_ParameterList.hpp"
 
-
-namespace Kokkos {
-  namespace Compat {
+namespace Tpetra {
+namespace KokkosCompat {
 
 #ifdef KOKKOS_ENABLE_THREADS
     template<>
@@ -48,8 +47,8 @@ namespace Kokkos {
 #endif // KOKKOS_ENABLE_SYCL
 
 
-  } // namespace Compat
-} // namespace Kokkos
+} // namespace KokkosCompat
+} // namespace Tpetra
 
 
 

@@ -1038,7 +1038,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRACORE_CUDA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
-       std::is_same<Node, Kokkos::Compat::KokkosCudaWrapperNode>::value)
+       std::is_same<Node, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value)
     {
       if(this->ordinalRowptrs.data() == nullptr)
       {
