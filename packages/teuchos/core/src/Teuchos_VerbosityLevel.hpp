@@ -49,6 +49,7 @@
 
 
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_iostream_helpers.hpp"
 
 
@@ -67,6 +68,36 @@ enum EVerbosityLevel {
 	VERB_HIGH=3,      ///< Generate a high level of output
 	VERB_EXTREME=4    ///< Generate the most output possible
 };
+
+
+/** Number of valid EVerbosityLevel enum vaules */
+constexpr const int EVerbosityLevel_size = 6;
+
+
+/** Get static array view of verbosity levels enums.
+ *
+ * \ingroup teuchos_outputting_grp
+ */
+TEUCHOSCORE_LIB_DLL_EXPORT
+ArrayView<const EVerbosityLevel> getValidVerbLevels();
+
+
+/** Get static array view of verbosity levels string names as array of 
+ *  std::string strings.
+ *
+ * \ingroup teuchos_outputting_grp
+ */
+TEUCHOSCORE_LIB_DLL_EXPORT
+ArrayView<const std::string> getValidVerbLevelsNames();
+
+
+/** Get static array view of verbosity levels string names as array of 
+ *  null-terminated strings.
+ *
+ * \ingroup teuchos_outputting_grp
+ */
+TEUCHOSCORE_LIB_DLL_EXPORT
+ArrayView<const char * const> getValidVerbLevelsNamesRawStrings();
 
 
 /** Needed for serialization KLN 23/09/2010 */
