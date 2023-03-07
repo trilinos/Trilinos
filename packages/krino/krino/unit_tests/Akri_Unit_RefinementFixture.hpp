@@ -345,6 +345,7 @@ public:
       }
     }
     mMesh.change_entity_owner(entitiesToMove);
+    fix_node_owners_to_assure_active_owned_element_for_node(mMesh, this->get_aux_meta().active_part());
   }
 
 

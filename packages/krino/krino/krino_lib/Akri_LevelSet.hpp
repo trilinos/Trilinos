@@ -203,7 +203,11 @@ public:
   void redistance(const stk::mesh::Selector & selector);
   void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
 
-  void set_initial_volume(const double v) { my_initial_neg_vol = v; }
+  std::pair<double,double> get_conserved_negative_volume_and_time() const;
+  void set_conserved_negative_volume_and_time(const double vol, const double time);
+
+  double get_conserved_negative_volume() const { return myConservedNegVolume; }
+  void set_initial_volume(const double v) { myConservedNegVolume = v; }
   double constrained_redistance(const bool use_initial_vol = false, const double & signChangePurtubationTol = 0.5);
   void locally_conserved_redistance();
 
@@ -288,7 +292,8 @@ private:
   // used to increment file name for facet exoii database hack
   int my_facetFileIndex;
 
-  double my_initial_neg_vol;
+  double myConservedNegVolume{0.0};
+  double myConservedNegVolumeTime{0.0};
 
   bool my_needs_reinitialize_every_step;
 

@@ -747,7 +747,17 @@ field_type & put_field_on_mesh( field_type & field ,
                         unsigned     n2 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after March 15, 2023
+
+// STK Mesh doesn't properly support higher than two-dimensional Field registration,
+// so these are being removed to avoid confusion.  Any dimensions higher than
+// the second were folded into the second internally.  The intended interpretation
+// of the first two dimensions are:
+//   0: Number of values per Entity (e.g. 1 for scalar, 3 for vector, 9 for full tensor, etc.)
+//   1: Number of copies of this type per Entity
+
 template< class field_type >
+STK_DEPRECATED
 field_type & put_field_on_mesh( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
@@ -756,6 +766,7 @@ field_type & put_field_on_mesh( field_type & field ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
+STK_DEPRECATED
 field_type & put_field_on_mesh( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
@@ -764,6 +775,7 @@ field_type & put_field_on_mesh( field_type & field ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
+STK_DEPRECATED
 field_type & put_field_on_mesh(field_type & field ,
                                const Part & part ,
                                unsigned     n1 ,
@@ -773,6 +785,7 @@ field_type & put_field_on_mesh(field_type & field ,
                                const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
+STK_DEPRECATED
 field_type & put_field_on_mesh(field_type & field ,
                                const Part & part ,
                                unsigned     n1 ,
@@ -781,6 +794,7 @@ field_type & put_field_on_mesh(field_type & field ,
                                unsigned     n4 ,
                                unsigned     n5 ,
                                const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+#endif
 
 template< class field_type >
 field_type & put_field_on_entire_mesh_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
@@ -1157,130 +1171,136 @@ field_type & put_field_on_mesh(field_type & field,
   return field;
 }
 
-template< class field_type >
+template <class field_type>
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Part &part ,
-                        unsigned    n1 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Part &part,
+                               unsigned n1,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, part, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Selector &selector ,
-                        unsigned    n1 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Selector &selector,
+                               unsigned n1,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, selector, numScalarsPerEntity, firstDimension, init_value);
 
-return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Part &part ,
-                        unsigned    n1 ,
-                        unsigned    n2 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Part &part,
+                               unsigned n1,
+                               unsigned n2,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, part, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Selector &selector ,
-                        unsigned    n1 ,
-                        unsigned    n2 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Selector &selector,
+                               unsigned n1,
+                               unsigned n2,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, selector, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after March 15, 2023
+template <class field_type>
+STK_DEPRECATED
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Part &part ,
-                        unsigned    n1 ,
-                        unsigned    n2 ,
-                        unsigned    n3 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Part &part,
+                               unsigned n1,
+                               unsigned n2,
+                               unsigned n3,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2*n3;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, part, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
+STK_DEPRECATED
 inline
-field_type & put_field_on_mesh( field_type &field ,
-                        const Selector &selector ,
-                        unsigned    n1 ,
-                        unsigned    n2 ,
-                        unsigned    n3 ,
-                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Selector &selector,
+                               unsigned n1,
+                               unsigned n2,
+                               unsigned n3,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2*n3;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, selector, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
+STK_DEPRECATED
 inline
-field_type & put_field_on_mesh(field_type &field ,
-                               const Part &part ,
-                               unsigned    n1 ,
-                               unsigned    n2 ,
-                               unsigned    n3 ,
-                               unsigned    n4 ,
-                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+field_type & put_field_on_mesh(field_type &field,
+                               const Part &part,
+                               unsigned n1,
+                               unsigned n2,
+                               unsigned n3,
+                               unsigned n4,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, part, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
 
-template< class field_type >
+template <class field_type>
+STK_DEPRECATED
 inline
-field_type & put_field_on_mesh(field_type &field ,
-                               const Part &part ,
-                               unsigned    n1 ,
-                               unsigned    n2 ,
-                               unsigned    n3 ,
-                               unsigned    n4 ,
-                               unsigned    n5 ,
+field_type & put_field_on_mesh(field_type &field,
+                               const Part &part,
+                               unsigned n1,
+                               unsigned n2,
+                               unsigned n3,
+                               unsigned n4,
+                               unsigned n5,
                                const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4*n5;
   unsigned firstDimension = n1;
-  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+  MetaData::get(field).declare_field_restriction(field, part, numScalarsPerEntity, firstDimension, init_value);
 
-  return field ;
+  return field;
 }
+#endif
 
 inline
 stk::mesh::impl::FieldRepository &

@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>

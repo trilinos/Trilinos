@@ -13,4 +13,3 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>

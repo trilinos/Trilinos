@@ -14,7 +14,6 @@
 #include <tuple>
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <percept/FieldTypes.hpp>
 
 #include "Teuchos_RCP.hpp"
@@ -31,7 +30,7 @@ class BoundingRegion;
  *
  */
 //--------------------------------------------------------------------
-typedef std::tuple<double *, percept::RefineFieldType_type *, bool > ErrIndInfoTuple;
+typedef std::tuple<double *, percept::RefineFieldType::value_type *, bool > ErrIndInfoTuple;
 
 struct MarkerInfo
 {

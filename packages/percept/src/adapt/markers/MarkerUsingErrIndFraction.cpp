@@ -72,14 +72,14 @@ void MarkerUsingErrIndFraction::markUsing(double errIndRefineThreshold, std::vec
 
   for (unsigned i = 0; i < errIndRefFieldVec.size(); ++i) {
     // reset to 0, then check criterion
-    *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(0);
+    *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType::value_type>(0);
     if (*std::get<0>(errIndRefFieldVec[i]) < UF*g_maxErrorIndicator) {
-      *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(-1);
+      *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType::value_type>(-1);
     }
     if (do_refine) {
       if ((*std::get<0>(errIndRefFieldVec[i]) >  errIndRefineThreshold*g_maxErrorIndicator)
           && !std::get<2>(errIndRefFieldVec[i]))  {
-        *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType_type>(1);
+        *std::get<1>(errIndRefFieldVec[i]) = static_cast<percept::RefineFieldType::value_type>(1);
       }
     }
   }

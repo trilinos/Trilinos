@@ -61,7 +61,6 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/NgpUtils.hpp>
@@ -88,73 +87,34 @@ TEST(UnitTestField, testFieldMaxSize)
   typedef stk::mesh::Field<double> rank_zero_field;
   typedef stk::mesh::Field<double> rank_one_field;
   typedef stk::mesh::Field<double> rank_two_field;
-  typedef stk::mesh::Field<double> rank_three_field;
-  typedef stk::mesh::Field<double> rank_four_field;
-  typedef stk::mesh::Field<double> rank_five_field;
 
   const std::string name0("test_field_0");
   const std::string name1("test_field_1");
   const std::string name2("test_field_2");
-  const std::string name3("test_field_3");
-  const std::string name4("test_field_4");
-  const std::string name5("test_field_5");
 
   const int spatial_dimension = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm);
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
 
-  rank_zero_field  & f0 = meta_data.declare_field<double>( NODE_RANK, name0 );
-  rank_one_field   & f1 = meta_data.declare_field<double>( NODE_RANK, name1 );
-  rank_two_field   & f2 = meta_data.declare_field<double>( NODE_RANK, name2 );
-  rank_three_field & f3 = meta_data.declare_field<double>( NODE_RANK, name3 );
-  rank_four_field  & f4 = meta_data.declare_field<double>( NODE_RANK, name4 );
-  rank_five_field  & f5 = meta_data.declare_field<double>( NODE_RANK, name5 );
+  rank_zero_field & f0 = meta_data.declare_field<double>(NODE_RANK, name0);
+  rank_one_field  & f1 = meta_data.declare_field<double>(NODE_RANK, name1);
+  rank_two_field  & f2 = meta_data.declare_field<double>(NODE_RANK, name2);
 
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
-  stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
-  stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
-  stk::mesh::Part & p4 = meta_data.declare_part("P4", NODE_RANK );
-  stk::mesh::Part & p5 = meta_data.declare_part("P5", NODE_RANK );
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK);
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK);
+  stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK);
 
-  stk::mesh::put_field_on_mesh( f0, p0, nullptr);
-  stk::mesh::put_field_on_mesh( f1, p1, 10, nullptr);
-  stk::mesh::put_field_on_mesh( f2, p2, 10, 20, nullptr);
-  stk::mesh::put_field_on_mesh( f3, p3, 10, 20, 30, nullptr);
-  stk::mesh::put_field_on_mesh( f4, p4, 10, 20, 30, 40, nullptr);
-  stk::mesh::put_field_on_mesh( f5, p5, 10, 20, 30, 40, 50, nullptr);
+  stk::mesh::put_field_on_mesh(f0, p0, nullptr);
+  stk::mesh::put_field_on_mesh(f1, p1, 10, nullptr);
+  stk::mesh::put_field_on_mesh(f2, p2, 10, 20, nullptr);
 
   meta_data.commit();
 
-  EXPECT_EQ( f0.max_size(stk::topology::NODE_RANK), 1u );
-  EXPECT_EQ( f0.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f0.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f0.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f0.max_size(), 1u );
 
-  EXPECT_EQ( f1.max_size(stk::topology::NODE_RANK), 10u );
-  EXPECT_EQ( f1.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f1.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f1.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f1.max_size(), 10u );
 
-  EXPECT_EQ( f2.max_size(stk::topology::NODE_RANK), 200u );
-  EXPECT_EQ( f2.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f2.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f2.max_size(stk::topology::ELEMENT_RANK), 0u );
-
-  EXPECT_EQ( f3.max_size(stk::topology::NODE_RANK), 6000u );
-  EXPECT_EQ( f3.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f3.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f3.max_size(stk::topology::ELEMENT_RANK), 0u );
-
-  EXPECT_EQ( f4.max_size(stk::topology::NODE_RANK), 240000u );
-  EXPECT_EQ( f4.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f4.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f4.max_size(stk::topology::ELEMENT_RANK), 0u );
-
-  EXPECT_EQ( f5.max_size(stk::topology::NODE_RANK), 12000000u );
-  EXPECT_EQ( f5.max_size(stk::topology::EDGE_RANK), 0u );
-  EXPECT_EQ( f5.max_size(stk::topology::FACE_RANK), 0u );
-  EXPECT_EQ( f5.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f2.max_size(), 200u );
 }
 
 TEST(UnitTestField, fieldDataAccess_rankMustMatch)

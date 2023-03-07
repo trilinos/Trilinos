@@ -436,7 +436,7 @@ TEST(DeclareIossField_legacy, reRegisterWithDifferentNumCopies)
                                                                                    *iossField1copy, false);
 
   unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   numFieldCopiesPerEntity = 9;
   
@@ -445,7 +445,7 @@ TEST(DeclareIossField_legacy, reRegisterWithDifferentNumCopies)
   stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
 
   expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   delete iossField1copy;
   delete iossField9copies;
@@ -834,7 +834,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
                                                                                    *iossField1copy, false);
 
   unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   numFieldCopiesPerEntity = 9;
 
@@ -843,7 +843,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
   stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
 
   expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   delete iossField1copy;
   delete iossField9copies;

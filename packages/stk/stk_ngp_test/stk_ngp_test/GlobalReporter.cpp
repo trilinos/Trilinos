@@ -24,12 +24,14 @@ ReporterBase*& getDeviceReporterOnHost()
 
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU
+  KOKKOS_IF_ON_DEVICE((
     __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
-  #else
+    return deviceReporterOnDevice;
+  ))
+  KOKKOS_IF_ON_HOST((
     static ReporterBase* deviceReporterOnDevice = nullptr;
-  #endif
-  return deviceReporterOnDevice;
+    return deviceReporterOnDevice;
+  ))
 }
 
 inline
@@ -71,11 +73,12 @@ void finalize_reporters() {
 }
 
 NGP_TEST_INLINE ReporterBase* get_reporter() {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
-  return global::getDeviceReporterOnDevice();
-#else
-  return global::getHostReporter();
-#endif
+  KOKKOS_IF_ON_DEVICE((
+    return global::getDeviceReporterOnDevice();
+  ))
+  KOKKOS_IF_ON_HOST((
+    return global::getHostReporter();
+  ))
 }
 
 inline

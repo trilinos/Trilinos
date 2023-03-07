@@ -43,7 +43,6 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -221,11 +220,7 @@ void HAdaptImpl::setup(stk::mesh::Part & active_part, stk::diag::Timer & root_ti
 
   my_pMesh = std::make_unique<percept::PerceptMesh>(&my_meta, nullptr, false);
 
-  typedef stk::mesh::Field<double, stk::mesh::Cartesian> PerceptVector;
-  const stk::mesh::FieldBase & coordinates_base = *my_meta.coordinate_field();
-  PerceptVector & typed_coordinates =
-      reinterpret_cast<PerceptVector &>(const_cast<stk::mesh::FieldBase &>(coordinates_base));
-  my_pMesh->setCoordinatesField(&typed_coordinates);
+  my_pMesh->setCoordinatesField(const_cast<stk::mesh::FieldBase*>(my_meta.coordinate_field()));
 
   my_pMesh->register_and_set_refine_fields();
   my_pMesh->add_field_int("refine_field", stk::topology::NODE_RANK, 0);

@@ -35,6 +35,10 @@ IF(Trilinos_ENABLE_STKSearch)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_search)
 ENDIF()
 
+IF(Trilinos_ENABLE_STKMiddle_mesh)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_middle_mesh)
+ENDIF()
+
 IF(Trilinos_ENABLE_STKTransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
 ENDIF()

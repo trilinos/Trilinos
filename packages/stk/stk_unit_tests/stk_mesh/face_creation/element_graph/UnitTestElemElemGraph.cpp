@@ -12,7 +12,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>

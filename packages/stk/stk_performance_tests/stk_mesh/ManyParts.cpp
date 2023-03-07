@@ -36,7 +36,6 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 
 TEST(many_parts, many_parts)

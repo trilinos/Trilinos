@@ -70,7 +70,7 @@ void unpack_shared_entities(const stk::mesh::BulkData & mesh, std::vector<stk::m
 void update_node_activation(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void activate_all_entities(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void destroy_custom_ghostings(stk::mesh::BulkData & mesh);
-void delete_mesh_entities(stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & child_elems);
+bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::Entity entity);
 void debug_print_selector_parts(const stk::mesh::Selector & selector);
 stk::mesh::PartVector filter_non_io_parts(const stk::mesh::PartVector & all_parts);
 void activate_selected_sides_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::Selector & side_selector, stk::mesh::Part & active_part);
@@ -85,6 +85,8 @@ bool check_face_and_edge_relations(const stk::mesh::BulkData & mesh);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey remote_entity_key, std::vector<stk::mesh::EntityId> & remote_entity_node_ids);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh);
+bool bucket_has_entity_rank_part(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket);
+void delete_faces_and_edges_without_entity_rank_parts(stk::mesh::BulkData & mesh);
 void disconnect_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 bool disconnect_and_destroy_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 

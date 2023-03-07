@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, ASSERT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
@@ -189,9 +188,9 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   const unsigned num_states = 1;
   VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
-  const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
+  const double initial_value[2] = { 50.0, 99.0 };
 
-  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), 2, initial_value);
 
   meta_data.commit();
 
@@ -239,11 +238,11 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   const unsigned num_states = 1;
   VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
-  const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
+  const double initial_value[2] = { 50.0, 99.0 };
 
   Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
-  stk::mesh::put_field_on_mesh(vfield, node_part, stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, node_part, 2, initial_value);
 
   meta_data.commit();
 
@@ -303,9 +302,9 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   const unsigned num_states = 2;
   VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
-  const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
+  const double initial_value[2] = { 50.0, 99.0 };
 
-  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field_on_mesh(vfield, meta_data.universal_part(), 2, initial_value);
 
   meta_data.commit();
 

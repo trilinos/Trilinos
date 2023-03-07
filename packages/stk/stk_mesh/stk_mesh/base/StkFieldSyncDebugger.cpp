@@ -219,7 +219,7 @@ StkFieldSyncDebugger::detect_host_field_bucket_modification() const
   for (unsigned ordinal = 0; ordinal < m_lastFieldBucketEntities.size(); ++ordinal) {
     const stk::mesh::Entity & entity = m_lastFieldBucketEntities[ordinal];
     const MeshIndex & index = bulk.mesh_index(entity);
-    const unsigned bytesPerEntity = m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()].m_bytes_per_entity;
+    const unsigned bytesPerEntity = m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()].m_bytesPerEntity;
     const uint8_t * lastEntityValues = m_lastFieldBucketValues.data() + ordinal * bytesPerEntity;
 
     for (unsigned component = 0; component < get_num_components(entity);  ++component) {
@@ -236,7 +236,7 @@ StkFieldSyncDebugger::get_num_components(const Entity & entity) const
   BulkData & bulk = m_stkField->get_mesh();
   const MeshIndex & index = bulk.mesh_index(entity);
   const unsigned bytesPerScalar = m_stkField->data_traits().size_of;
-  return m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()].m_bytes_per_entity/bytesPerScalar;
+  return m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()].m_bytesPerEntity/bytesPerScalar;
 }
 
 bool
@@ -249,7 +249,7 @@ StkFieldSyncDebugger::last_accessed_entity_value_has_changed(const Entity & enti
     const MeshIndex & index = bulk.mesh_index(entity);
     const unsigned bytesPerScalar = m_stkField->data_traits().size_of;
     const FieldMetaData& field_meta_data = m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()];
-    const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
+    const unsigned entityOffset = field_meta_data.m_bytesPerEntity * index.bucket_ordinal;
     const unsigned componentOffset = bytesPerScalar * component;
 
     const uint8_t * currentValue = field_meta_data.m_data + entityOffset + componentOffset;
@@ -311,7 +311,7 @@ StkFieldSyncDebugger::check_stale_field_entity_access(const Entity& entity, cons
       const MeshIndex & index = bulk.mesh_index(entity);
       const unsigned bytesPerScalar = m_stkField->data_traits().size_of;
       const FieldMetaData& field_meta_data = m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()];
-      const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
+      const unsigned entityOffset = field_meta_data.m_bytesPerEntity * index.bucket_ordinal;
       const unsigned componentOffset = bytesPerScalar * component;
 
       uint8_t * data = field_meta_data.m_data + entityOffset + componentOffset;
@@ -383,10 +383,10 @@ StkFieldSyncDebugger::store_last_entity_access_location(const Entity & entity) c
   BulkData & bulk = m_stkField->get_mesh();
   const MeshIndex & index = bulk.mesh_index(entity);
   const FieldMetaData& field_meta_data = m_stkField->get_meta_data_for_field()[index.bucket->bucket_id()];
-  const uint8_t * data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
+  const uint8_t * data = field_meta_data.m_data + field_meta_data.m_bytesPerEntity * index.bucket_ordinal;
 
-  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity);
-  std::memcpy(m_lastFieldValue.data(), data, field_meta_data.m_bytes_per_entity);
+  m_lastFieldValue.resize(field_meta_data.m_bytesPerEntity);
+  std::memcpy(m_lastFieldValue.data(), data, field_meta_data.m_bytesPerEntity);
   m_lastFieldEntity = entity;
 }
 
@@ -394,9 +394,9 @@ void
 StkFieldSyncDebugger::store_last_bucket_access_location(const Bucket & bucket) const
 {
   const FieldMetaData& field_meta_data = m_stkField->get_meta_data_for_field()[bucket.bucket_id()];
-  m_lastFieldBucketValues.resize(field_meta_data.m_bytes_per_entity * bucket.capacity());
+  m_lastFieldBucketValues.resize(field_meta_data.m_bytesPerEntity * bucket.capacity());
 
-  std::memcpy(m_lastFieldBucketValues.data(), field_meta_data.m_data, field_meta_data.m_bytes_per_entity * bucket.size());
+  std::memcpy(m_lastFieldBucketValues.data(), field_meta_data.m_data, field_meta_data.m_bytesPerEntity * bucket.size());
   m_lastFieldBucketEntities.clear();
   for (const stk::mesh::Entity & entity : bucket) {
     m_lastFieldBucketEntities.push_back(entity);

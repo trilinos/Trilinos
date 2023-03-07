@@ -48,7 +48,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MemoryUsage.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
