@@ -63,6 +63,7 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Utilities_kokkos.hpp"
 
 #include <sstream>
@@ -188,9 +189,9 @@ namespace MueLu {
           Magnitude stopTol = 1e-4;
           invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
           if (useAbsValueRowSum)
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           else
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;

@@ -53,6 +53,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 
 #include "MueLu_TestHelpers_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Utilities_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
@@ -489,6 +490,7 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
     using TST = Teuchos::ScalarTraits<Scalar>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using RangeType = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
@@ -520,6 +522,7 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
     using TST = Teuchos::ScalarTraits<Scalar>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -541,19 +544,19 @@ namespace MueLuTests
       TEST_EQUALITY(mv.getData(0).size(), tpetraMV.getData(0).size());
     };
 
-    auto tpetraMV = Utils_Kokkos::MV2TpetraMV(vector);
+    auto tpetraMV = Utils::MV2TpetraMV(vector);
     compareMV(*vector, *tpetraMV);
 
-    auto tpetraMV2 = Utils_Kokkos::MV2TpetraMV(*vector);
+    auto tpetraMV2 = Utils::MV2TpetraMV(*vector);
     compareMV(*vector, tpetraMV2);
 
-    auto nonConstTpetraMV = Utils_Kokkos::MV2NonConstTpetraMV(vector);
+    auto nonConstTpetraMV = Utils::MV2NonConstTpetraMV(vector);
     compareMV(*vector, *nonConstTpetraMV);
 
-    auto nonConstTpetraMV2 = Utils_Kokkos::MV2NonConstTpetraMV2(*vector);
+    auto nonConstTpetraMV2 = Utils::MV2NonConstTpetraMV2(*vector);
     compareMV(*vector, *nonConstTpetraMV2);
 
-    auto nonConstTpetraMV3 = Utils_Kokkos::MV2NonConstTpetraMV(*vector);
+    auto nonConstTpetraMV3 = Utils::MV2NonConstTpetraMV(*vector);
     compareMV(*vector, nonConstTpetraMV3);
 
     using TpetraMat = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -569,21 +572,21 @@ namespace MueLuTests
       TEST_EQUALITY(xpetraMat.getGlobalNumEntries(), tpetraMat.getGlobalNumEntries());
     };
 
-    auto tpetraCrsMat = Utils_Kokkos::Op2TpetraCrs(A);
+    auto tpetraCrsMat = Utils::Op2TpetraCrs(A);
     compareMat(*A, *tpetraCrsMat);
 
-    auto nonConstTpetraCrs = Utils_Kokkos::Op2NonConstTpetraCrs(A);
+    auto nonConstTpetraCrs = Utils::Op2NonConstTpetraCrs(A);
     compareMat(*A, *nonConstTpetraCrs);
 
-    auto tpetraCrs = Utils_Kokkos::Op2TpetraCrs(*A);
+    auto tpetraCrs = Utils::Op2TpetraCrs(*A);
     compareMat(*A, tpetraCrs);
 
-    auto nonConstTpetraCrs2 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
+    auto nonConstTpetraCrs2 = Utils::Op2NonConstTpetraCrs(*A);
     compareMat(*A, nonConstTpetraCrs2);
 
     auto crsMat = CrsMatrixFactory::Build(map);
 
-    auto op = Utils_Kokkos::Crs2Op(crsMat);
+    auto op = Utils::Crs2Op(crsMat);
 
     TEST_EQUALITY(crsMat->getGlobalNumRows(), op->getGlobalNumRows());
     TEST_EQUALITY(crsMat->getLocalNumRows(), op->getLocalNumRows());
@@ -592,13 +595,13 @@ namespace MueLuTests
     TEST_EQUALITY(transposeRes->getGlobalNumRows(), A->getGlobalNumRows());
     TEST_EQUALITY(transposeRes->getLocalNumRows(), A->getLocalNumRows());
 
-    auto tpetraRow = Utils_Kokkos::Op2TpetraRow(A);
+    auto tpetraRow = Utils::Op2TpetraRow(A);
     compareMat(*A, *tpetraRow);
 
-    auto nonConstTpetraRow = Utils_Kokkos::Op2NonConstTpetraRow(A);
+    auto nonConstTpetraRow = Utils::Op2NonConstTpetraRow(A);
     compareMat(*A, *nonConstTpetraRow);
 
-    auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
+    auto tpetraMap = Utils::Map2TpetraMap(*map);
     TEST_INEQUALITY(tpetraMap, Teuchos::null);
     TEST_EQUALITY_CONST(tpetraMap->getGlobalNumElements(), map->getGlobalNumElements());
 
@@ -627,16 +630,16 @@ namespace MueLuTests
       vector2->putScalar(Scalar(3.0));
       vector->putScalar(Scalar(2.0));
 
-      auto residualNormRes = Utils_Kokkos::ResidualNorm((Operator &)(*A), *vector, *vector2);
+      auto residualNormRes = Utils::ResidualNorm((Operator &)(*A), *vector, *vector2);
       TEST_EQUALITY(residualNormRes.size(), 1);
     }
 
     // PowerMethod
     {
-      auto powerRes = Utils_Kokkos::PowerMethod(*A);
+      auto powerRes = Utils::PowerMethod(*A);
 
       auto inversDiag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
-      auto powerRes2 = Utils_Kokkos::PowerMethod(*A, inversDiag);
+      auto powerRes2 = Utils::PowerMethod(*A, inversDiag);
 
       TEST_INEQUALITY(powerRes, Scalar(0.0));
       TEST_INEQUALITY(powerRes2, Scalar(0.0));

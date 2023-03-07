@@ -283,10 +283,7 @@ namespace MueLu {
     }
     else if(Nullspace_ == null && Coords_ != null) {
       RCP<MultiVector> CoordsSC;
-      if (useKokkos_)
-        CoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(Coords_);
-      else
-        CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
+      CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
 

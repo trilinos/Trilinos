@@ -115,49 +115,6 @@ namespace MueLu {
     using CoordinateType        = typename TST::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
-#ifdef HAVE_MUELU_EPETRA
-    //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
-    // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2EpetraMV(vec); }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec)         { return Utilities::MV2EpetraMV(vec); }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2EpetraCrs(Op); }
-    static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op)              { return Utilities::Op2EpetraCrs(Op); }
-    static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_Map&                                Map2EpetraMap(const Map& map)               { return Utilities::Map2EpetraMap(map); }
-    // @}
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
-    //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
-    // @{
-    static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2TpetraMV(vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstTpetraMV(vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& vec)      { return Utilities::MV2NonConstTpetraMV2(vec); }
-
-    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& vec)         { return Utilities::MV2TpetraMV(vec); }
-    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstTpetraMV(vec); }
-
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2TpetraCrs(Op); }
-    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraCrs(Op); }
-
-    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2TpetraCrs(const Matrix& Op)              { return Utilities::Op2TpetraCrs(Op); }
-    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2NonConstTpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstTpetraCrs(Op); }
-
-    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2TpetraRow(RCP<const Matrix> Op)          { return Utilities::Op2TpetraRow(Op); }
-    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraRow(Op); }
-
-    static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map)               { return Utilities::Map2TpetraMap(map); }
-#endif
-
-    static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utilities::Crs2Op(Op); }
-
      /*! @brief Extract Matrix Diagonal
 
     Returns Matrix diagonal in RCP<Vector>.
@@ -185,52 +142,6 @@ namespace MueLu {
     */
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A); // FIXME
 
-    /*! @brief Return vector containing inverse of input vector
-     *
-     * @param[in] v: input vector
-     * @param[in] tol: tolerance. If entries of input vector are smaller than tolerance they are replaced by tolReplacement (see below). The default value for tol is 100*eps (machine precision)
-     * @param[in] tolReplacement: Value put in for undefined entries in output vector (default: 0.0)
-     * @ret: vector containing inverse values of input vector v
-    */
-    static Teuchos::RCP<Vector> GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(v,tol,tolReplacement); }
-
-    // TODO: should NOT return an Array. Definition must be changed to:
-    // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
-    // or
-    // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
-    static Teuchos::Array<Magnitude> ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
-      return Utilities::ResidualNorm(Op, X, RHS);
-    }
-
-    static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
-      return Utilities::Residual(Op, X, RHS);
-    }
-
-    /*! @brief Simple transpose for Tpetra::CrsMatrix types
-
-        Note:  This is very inefficient, as it inserts one entry at a time.
-    */
-
-    /*! @brief Power method.
-
-    @param A matrix
-    @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
-    @param niters maximum number of iterations
-    @param tolerance stopping tolerance
-    @verbose if true, print iteration information
-
-    (Shamelessly grabbed from tpetra/examples.)
-    */
-    static SC PowerMethod(const Matrix& A, bool scaleByDiag = true,
-                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
-      return Utilities::PowerMethod(A, scaleByDiag, niters, tolerance, verbose, seed);
-    }
-
-    static SC PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag,
-                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
-      return Utilities::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
-    }
-
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true); // FIXME
 
@@ -240,7 +151,7 @@ namespace MueLu {
     static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
                                             bool doFillComplete, bool doOptimizeStorage); // FIXME
 
-    static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os)       { return Utilities::MakeFancy(os); }
+    // static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os)       { return Utilities::MakeFancy(os); }
 
     /*! @brief Detect Dirichlet rows
 
@@ -298,32 +209,6 @@ namespace MueLu {
                                      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
                                      Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
 
-    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
-
-    /*! @brief Set seed for random number generator.
-
-      Distribute the seeds evenly in [1,INT_MAX-1].  This guarantees nothing
-      about where random number streams on difference processes will intersect.
-      This does avoid overflow situations in parallel when multiplying by a PID.
-      It also avoids the pathological case of having the *same* random number stream
-      on each process.
-    */
-
-    static void SetRandomSeed(const Teuchos::Comm<int> &comm)                       { return Utilities::SetRandomSeed(comm); }
-
-    /*! @brief Transpose a Xpetra::Matrix
-
-    Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
-    In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
-    */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string()) {
-      return Utilities::Transpose(Op, optimizeTranspose, label);
-    }
-
-    static RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
-      return Utilities::ExtractCoordinatesFromParameterList(paramList);
-    }
-
     /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
@@ -363,48 +248,6 @@ namespace MueLu {
 
   public:
 
-#ifdef HAVE_MUELU_EPETRA
-    //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
-    // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2EpetraMV(vec); }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec)         { return Utilities::MV2EpetraMV(vec); }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstEpetraMV(vec); }
-
-    static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2EpetraCrs(Op); }
-    static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op)              { return Utilities::Op2EpetraCrs(Op); }
-    static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstEpetraCrs(Op); }
-
-    static const Epetra_Map&                                Map2EpetraMap(const Map& map)               { return Utilities::Map2EpetraMap(map); }
-    // @}
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
-    //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
-    // @{
-    static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2TpetraMV(vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstTpetraMV(vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& vec)      { return Utilities::MV2NonConstTpetraMV2(vec); }
-
-    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& vec)         { return Utilities::MV2TpetraMV(vec); }
-    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstTpetraMV(vec); }
-
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2TpetraCrs(Op); }
-    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraCrs(Op); }
-
-    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2TpetraCrs(const Matrix& Op)              { return Utilities::Op2TpetraCrs(Op); }
-    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2NonConstTpetraCrs(Matrix& Op)            { return Utilities::Op2NonConstTpetraCrs(Op); }
-
-    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2TpetraRow(RCP<const Matrix> Op)          { return Utilities::Op2TpetraRow(Op); }
-    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraRow(Op); }
-
-    static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map)               { return Utilities::Map2TpetraMap(map); }
-#endif
-    static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utilities::Crs2Op(Op); }
-
     static RCP<Vector> GetMatrixDiagonal(const Matrix& A) {
       const auto rowMap = A.getRowMap();
       auto diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
@@ -414,28 +257,6 @@ namespace MueLu {
       return diag;
     }
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false);
-
-    static RCP<Vector> GetLumpedMatrixDiagonal(Matrix const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false, const bool useAverageAbsDiagVal = false) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero, useAverageAbsDiagVal);
-    }
-    static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
-      return UtilitiesBase::GetMatrixOverlappedDiagonal(A);
-    }
-    static RCP<Vector> GetInverse(RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, SC tolReplacement = Teuchos::ScalarTraits<SC>::zero()) {
-      return UtilitiesBase::GetInverse(v,tol,tolReplacement);
-    }
-    static Teuchos::Array<Magnitude> ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
-      return UtilitiesBase::ResidualNorm(Op,X,RHS);
-    }
-    static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
-      return UtilitiesBase::Residual(Op,X,RHS);
-    }
-    static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
-      return UtilitiesBase::MakeFancy(os);
-    }
-    static void SetRandomSeed(const Teuchos::Comm<int> &comm) {
-      UtilitiesBase::SetRandomSeed(comm);
-    }
 
     // todo: move this to UtilitiesBase::kokkos
     static Kokkos::View<bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
@@ -459,16 +280,6 @@ namespace MueLu {
     static void ApplyRowSumCriterion(const Matrix& A,
                                      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
                                      Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
-
-    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
-
-    static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
-      return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
-    }
-
-    static Scalar PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
-      return UtilitiesBase::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
-    }
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
         bool doFillComplete = true, bool doOptimizeStorage = true) {
@@ -505,7 +316,7 @@ namespace MueLu {
   #ifdef HAVE_MUELU_TPETRA
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
       try {
-        Tpetra::CrsMatrix<SC,LO,GO,NO>& tpOp = Op2NonConstTpetraCrs(Op);
+        Tpetra::CrsMatrix<SC,LO,GO,NO>& tpOp = Utilities::Op2NonConstTpetraCrs(Op);
 
         const RCP<const Tpetra::Map<LO,GO,NO> > rowMap    = tpOp.getRowMap();
         const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
@@ -588,7 +399,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRA
       try {
         //const Epetra_CrsMatrix& epOp = Utilities<double,int,int>::Op2NonConstEpetraCrs(Op);
-        const Epetra_CrsMatrix& epOp = Op2NonConstEpetraCrs(Op);
+        const Epetra_CrsMatrix& epOp = Utilities::Op2NonConstEpetraCrs(Op);
 
         Epetra_Map const &rowMap = epOp.RowMap();
         int nnz;

@@ -823,41 +823,6 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  RealValuedToScalarMultiVector(RCP<RealValuedMultiVector > X) {
-    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
-#if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-
-    // Need to cast the real-valued multivector to Scalar=complex
-    if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
-        (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
-      size_t numVecs = X->getNumVectors();
-      Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
-      auto XVec = X->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      auto XVecScalar = Xscalar->getDeviceLocalView(Xpetra::Access::ReadWrite);
-
-      Kokkos::parallel_for("MueLu:Utils::RealValuedToScalarMultiVector", range_type(0,X->getLocalLength()),
-                           KOKKOS_LAMBDA(const size_t i) {
-                             for (size_t j=0; j<numVecs; j++)
-                               XVecScalar(i,j) = XVec(i,j);
-                           });
-    } else
-#endif
-      Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
-    return Xscalar;
-  }
-
-  template <class Node>
-  RCP<Xpetra::MultiVector<double,int,int,Node> >
-  Utilities_kokkos<double,int,int,Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<Magnitude,int,int,Node> > X) {
-    return X;
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
     using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
