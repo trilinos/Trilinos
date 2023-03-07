@@ -10,8 +10,6 @@
 #define FieldTypes_hpp
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stdint.h>
 
 namespace percept {
@@ -42,21 +40,6 @@ namespace percept {
   using NodeRegistryFieldType           = GenericFieldType;
   using SGCellNodeIdsType               = ArrayEntityIdDimType;
 
-  using RefineFieldType_type                 = stk::mesh::FieldTraits<RefineFieldType>::data_type;
-  using RefineLevelType_type                 = stk::mesh::FieldTraits<RefineLevelType>::data_type;
-  using TransitionElementType_type           = stk::mesh::FieldTraits<TransitionElementType>::data_type;
-  using ParentElementType_type               = stk::mesh::FieldTraits<ParentElementType>::data_type;
-  using NewNodesType_type                    = stk::mesh::FieldTraits<NewNodesType>::data_type;
-  using ErrorFieldType_type                  = stk::mesh::FieldTraits<ErrorFieldType>::data_type;
-  using WallDistanceFieldType_type           = stk::mesh::FieldTraits<WallDistanceFieldType>::data_type;
-  using CoordinatesFieldType_type            = stk::mesh::FieldTraits<CoordinatesFieldType>::data_type;
-  using NodeRegistryFieldType_type           = stk::mesh::FieldTraits<NodeRegistryFieldType>::data_type;
-  using SGCellNodeIdsType_type               = stk::mesh::FieldTraits<SGCellNodeIdsType>::data_type;
-  using WeightsFieldType_type                = stk::mesh::FieldTraits<WeightsFieldType>::data_type;
-  using UnprojectedCoordinatesFieldType_type = stk::mesh::FieldTraits<UnprojectedCoordinatesFieldType>::data_type;
-  using GregoryControlPointsType_type        = stk::mesh::FieldTraits<GregoryControlPointsType>::data_type;
-  using NormalsFieldType_type                = stk::mesh::FieldTraits<NormalsFieldType>::data_type;
-  using ScalarFieldType_type                 = stk::mesh::FieldTraits<ScalarFieldType>::data_type;
 }
 
 #endif

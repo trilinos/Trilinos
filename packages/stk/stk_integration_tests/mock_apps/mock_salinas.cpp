@@ -70,6 +70,7 @@ public:
     stk::util::impl::set_error_on_reset(false);
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
+    m_splitComms.set_free_comms_in_destructor(true);
     const std::vector<int>& otherColors = m_splitComms.get_other_colors();
     if (otherColors.size() != 1) {
       if (otherColors.empty()) {

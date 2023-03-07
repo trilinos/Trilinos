@@ -172,8 +172,8 @@ public:
   void set_constrain_CDFEM_to_XFEM_space(bool flag) { my_flag_constrain_CDFEM_to_XFEM_space = flag; }
   void set_use_interpolation_to_unsnap_mesh(bool flag) { myFlagUseInterpolationToUnsnapMesh = flag; }
   bool get_use_interpolation_to_unsnap_mesh() const { return myFlagUseInterpolationToUnsnapMesh; }
-  void set_perform_volume_correction_during_decomposition(bool flag) { myFlagPerformVolumeCorrectionDuringDecomp = flag; }
-  bool get_perform_volume_correction_during_decomposition() const { return myFlagPerformVolumeCorrectionDuringDecomp; }
+  void set_perform_volume_correction_after_levelset_solve(bool flag) { myFlagPerformVolumeCorrectionAfterLsSolve = flag; }
+  bool get_perform_volume_correction_after_levelset_solve() const { return myFlagPerformVolumeCorrectionAfterLsSolve; }
 
   void set_constant_length_scale_for_interface_CFL(double lengthScale) { myConstantLengthScaleForInterfaceCFL = lengthScale; }
   double get_constant_length_scale_for_interface_CFL() const { return myConstantLengthScaleForInterfaceCFL; }
@@ -240,7 +240,7 @@ private:
   bool myFlagUseFacetsInsteadOfLsFields{false};
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
   bool myFlagUseInterpolationToUnsnapMesh{false};
-  bool myFlagPerformVolumeCorrectionDuringDecomp{false};
+  bool myFlagPerformVolumeCorrectionAfterLsSolve{false};
   mutable stk::diag::Timer my_timer_cdfem;
   std::set<std::string> my_user_prolongation_field_names;
 };

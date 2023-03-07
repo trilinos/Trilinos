@@ -610,6 +610,17 @@ void LevelSet::locally_conserved_redistance()
   }
 }
 
+std::pair<double,double> LevelSet::get_conserved_negative_volume_and_time() const
+{
+  return std::make_pair(myConservedNegVolume, myConservedNegVolumeTime);
+}
+
+void LevelSet::set_conserved_negative_volume_and_time(const double vol, const double time)
+{
+  myConservedNegVolume = vol;
+  myConservedNegVolumeTime = time;
+}
+
 double LevelSet::constrained_redistance(const bool use_initial_vol, const double & signChangePurturbationTol)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::constrained_redistance(const bool use_initial_vol)"); /* %TRACE% */
 
@@ -641,12 +652,12 @@ double LevelSet::constrained_redistance(const bool use_initial_vol, const double
   {
     krinolog << "Performing conserved redistancing..." << stk::diag::dendl;
 
-    if (my_initial_neg_vol <= 0.0)
+    if (myConservedNegVolume <= 0.0)
     {
-      my_initial_neg_vol = start_neg_vol;
+      myConservedNegVolume = start_neg_vol;
     }
-    start_pos_vol = start_neg_vol + start_pos_vol - my_initial_neg_vol;
-    start_neg_vol = my_initial_neg_vol;
+    start_pos_vol = start_neg_vol + start_pos_vol - myConservedNegVolume;
+    start_neg_vol = myConservedNegVolume;
   }
   else
   {
@@ -672,7 +683,7 @@ double LevelSet::constrained_redistance(const bool use_initial_vol, const double
 
   compute_sizes(area_i, neg_vol_i, pos_vol_i, 0);
 
-  return my_initial_neg_vol;
+  return myConservedNegVolume;
 }
 
 //--------------------------------------------------------------------------------
@@ -1728,7 +1739,6 @@ LevelSet::LevelSet(
     epsilon(1.0e-16),
     trackIsoSurface(false),
     my_facetFileIndex(1),
-    my_initial_neg_vol(0.0),
     my_needs_reinitialize_every_step(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::LevelSet(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
   my_coordinates_field = my_aux_meta.get_current_coordinates();

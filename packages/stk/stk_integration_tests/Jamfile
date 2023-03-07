@@ -63,6 +63,8 @@ local installed-developer-files =
   mock_salinas
   mock_fuego
   mock_sparc
+  mock_conservative_transfer_mpmd
+  mock_conservative_transfer_spmd
   ;
 
 #
@@ -190,3 +192,22 @@ exe mock_fuego
   : <tag>@sierra-exec-tag
   ;
 
+exe mock_conservative_transfer_mpmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_mpmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_conservative_transfer_spmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_spmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;

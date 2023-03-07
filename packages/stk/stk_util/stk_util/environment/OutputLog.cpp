@@ -44,6 +44,7 @@
 #include <stdexcept>                          // for runtime_error
 #include <string>                             // for string, operator<<, operator==, char_traits
 #include <utility>                            // for pair
+#include <memory>
 
 namespace stk {
 
@@ -708,16 +709,25 @@ tout() {
   return s_tout;
 }
 
+namespace {
+  static std::shared_ptr<stk::indent_streambuf> s_dwoutStreambuf;
+  static std::shared_ptr<std::ostream> s_dwout;
+} // anonymous namespace
+
+void configure_dwout(size_t indentSize, unsigned flags)
+{
+  s_dwoutStreambuf = std::make_shared<stk::indent_streambuf>(std::cout.rdbuf(), indentSize, flags);
+  s_dwout = std::make_shared<std::ostream>(s_dwoutStreambuf.get());
+}
 
 std::ostream &
 dwout() {
-  static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
-  static std::ostream s_dwout(&s_dwoutStreambuf);
+  if (s_dwout == nullptr) {
+    configure_dwout();
+  }
   
-  return s_dwout;
+  return *s_dwout;
 }
 
 } // namespace sierra
-
-
 

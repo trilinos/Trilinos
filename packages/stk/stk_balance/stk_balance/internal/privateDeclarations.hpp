@@ -44,7 +44,6 @@
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 #include <stk_util/environment/Env.hpp>
 

@@ -48,22 +48,16 @@ project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
     <include>$(stk_middle_mesh-root-inc)/stk
     <include>$(stk_middle_mesh-root-inc)/predicates
-#    <include>$(stk_middle_mesh-root)/CDT/CDT/include
-#    <include>"/usr/include/lapacke"
-#    <runtime-link>shared:<find-shared-library>"lapack"
-#    <runtime-link>shared:<find-shared-library>"lapacke"
   : usage-requirements
     <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
     <include>$(stk_middle_mesh-root-inc)/stk
     <include>$(stk_middle_mesh-root-inc)/predicates
-#    <include>$(stk_middle_mesh-root)/CDT/CDT/include
-#    <include>"/usr/include/lapacke"
-#    <runtime-link>shared:<find-shared-library>"lapack"
-#    <runtime-link>shared:<find-shared-library>"lapacke"
   : build-dir $(stk_middle_mesh-builddir)
   ;
 
@@ -79,12 +73,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files =
   stk_middle_mesh_utest
-  stk_middle_mesh_vtest
-  stk_vtest2
-  stk_vtest4
-  stk_vtest6
-  stk_vtest7
-  stk_vtest8
+  stk_middle_mesh_integration_tester
   stk_nc_generator
   ;
 
@@ -151,8 +140,8 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
+  : stk_middle_mesh
+    stk_middle_mesh_test_util
   : <location>$(install-root)/stk/stk_middle_mesh/lib
   ;
 
@@ -165,98 +154,49 @@ alias install-exe-targets : ;
 
 exe stk_middle_mesh_utest
   :
-    [ glob $(stk_middle_mesh-root)/test/*.cc ]
+    [ glob $(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
+    stk_middle_mesh
+    stk_middle_mesh_test_util
   :
-    <include>$(stk_middle_mesh-root)/test
+    <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
+    <include>$(stk_middle_mesh-root)/../stk_middle_mesh_util/stk_middle_mesh_util
     <tag>@sierra-exec-tag
   ;
 
-exe stk_middle_mesh_vtest
+exe stk_middle_mesh_integration_tester
   :
-    [ glob $(stk_middle_mesh-root)/test/verification_tests/*.cc ]
+    [ glob $(stk_middle_mesh-root)/../stk_integration_tests/stk_middle_mesh/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
+    stk_middle_mesh
+    stk_middle_mesh_test_util
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
   :
-    <include>$(stk_middle_mesh-root)/test
+    <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
+    <include>$(stk_middle_mesh-root)/../stk_middle_mesh_util/stk_middle_mesh_util
     <tag>@sierra-exec-tag
   ;
-
-exe stk_vtest2
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/test2.cc ]
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
-  :
-    <include>$(stk_middle_mesh-root)/stk_middle_mesh/test
-    <tag>@sierra-exec-tag
-  ;
-
-exe stk_vtest4
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/test4.cc ]
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
-  :
-    <include>$(stk_middle_mesh-root)/test
-    <tag>@sierra-exec-tag
-  ;
-
-exe stk_vtest6
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/test6.cc ]
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
-  :
-    <include>$(stk_middle_mesh-root)/test
-    <tag>@sierra-exec-tag
-  ;
-
-exe stk_vtest7
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/test7.cc ]
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
-  :
-    <include>$(stk_middle_mesh-root)/test
-    <tag>@sierra-exec-tag
-  ;
-
-exe stk_vtest8
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/test8.cc ]
-    stk_middle_mesh_lib
-    stk_middle_mesh_test_util_lib
-  :
-    <include>$(stk_middle_mesh-root)/test
-    <tag>@sierra-exec-tag
-  ;
-
 
 exe stk_nc_generator
   :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/nc_generator.cc ]
-    stk_middle_mesh_lib
+    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/nc_generator.cpp ]
+    stk_middle_mesh
   :
     <tag>@sierra-exec-tag
   ;
 
 
-lib stk_middle_mesh_lib
+lib stk_middle_mesh
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(stk_middle_mesh-root)/stk_middle_mesh/*.cc ]
-        [ glob $(stk_middle_mesh-root)/stk_middle_mesh/predicates/*.cc ]
-        [ glob $(stk_middle_mesh-root)/stk_middle_mesh/stk/*.cc ]
+        [ glob $(stk_middle_mesh-root)/stk_middle_mesh/*.cpp ]
+        [ glob $(stk_middle_mesh-root)/stk_middle_mesh/predicates/*.cpp ]
+        [ glob $(stk_middle_mesh-root)/stk_middle_mesh_utils/*.cpp ]
     ]
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
-    /sierra/stk_io//stk_io
     /mpi//mpi
     /tpl/cdt//cdt_header_only_libs
   :
@@ -272,16 +212,16 @@ lib stk_middle_mesh_lib
     ]
   ;
 
-lib stk_middle_mesh_test_util_lib
+lib stk_middle_mesh_test_util
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(stk_middle_mesh-root)/test/util/*.cc ]
+        [ glob $(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh/util/*.cpp ]
         /tpl/gtest//gtest
         /tpl/gtest//gmock  
     ]
-    stk_middle_mesh_lib
+    stk_middle_mesh
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -293,5 +233,7 @@ lib stk_middle_mesh_test_util_lib
         # builds only and will not be present for user builds.
         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
-  : <include>$(stk_middle_mesh-root)/test
+  :
+    <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
+    <include>$(stk_middle_mesh-root-inc)
   ;

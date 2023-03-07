@@ -40,7 +40,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
 

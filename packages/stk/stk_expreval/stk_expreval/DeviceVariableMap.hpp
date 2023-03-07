@@ -57,18 +57,25 @@ public:
     NGP_ThrowRequireMsg(parsedEval.get_num_variables() <= MAX_BOUND_VARIABLES,
                         "stk::expreval::DeviceVariableMap is not large enough to hold all variables");
 
-#ifndef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    const auto & deviceNodes = parsedEval.m_deviceNodes;
-#else
-    const auto & deviceNodes = parsedEval.m_hostNodes;
-#endif
-
-    for (unsigned nodeIndex = 0u; nodeIndex < deviceNodes.extent(0); ++nodeIndex) {
-      if (deviceNodes(nodeIndex).m_opcode == OPCODE_ASSIGN) {
-        m_deviceVariableMap[deviceNodes(nodeIndex).m_data.variable.variableIndex] = DeviceVariable(deviceNodes(nodeIndex).m_data.variable.variableType,
-                                                                                                   deviceNodes(nodeIndex).m_data.variable.variableSize);
+    KOKKOS_IF_ON_DEVICE((
+      const auto & deviceNodes = parsedEval.m_deviceNodes;
+      for (unsigned nodeIndex = 0u; nodeIndex < deviceNodes.extent(0); ++nodeIndex) {
+        if (deviceNodes(nodeIndex).m_opcode == OPCODE_ASSIGN) {
+          m_deviceVariableMap[deviceNodes(nodeIndex).m_data.variable.variableIndex] = DeviceVariable(deviceNodes(nodeIndex).m_data.variable.variableType,
+                                                                                                    deviceNodes(nodeIndex).m_data.variable.variableSize);
+        }
       }
-    }
+    ))
+
+    KOKKOS_IF_ON_HOST((
+      const auto & hostNodes = parsedEval.m_hostNodes;
+      for (unsigned nodeIndex = 0u; nodeIndex < hostNodes.extent(0); ++nodeIndex) {
+        if (hostNodes(nodeIndex).m_opcode == OPCODE_ASSIGN) {
+          m_deviceVariableMap[hostNodes(nodeIndex).m_data.variable.variableIndex] = DeviceVariable(hostNodes(nodeIndex).m_data.variable.variableType,
+                                                                                                   hostNodes(nodeIndex).m_data.variable.variableSize);
+        }
+      }
+    ))
   }
 
   KOKKOS_INLINE_FUNCTION

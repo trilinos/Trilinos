@@ -96,21 +96,24 @@ public:
     double nodeResultBuffer[RESULT_BUFFER_SIZE];
 
     int nodeIndex = m_firstNodeIndex;
-    while (nodeIndex >= 0) {
-#ifndef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-      NgpNode & node = m_deviceNodes[nodeIndex];
-#else
-      NgpNode & node = m_hostNodes[nodeIndex];
-#endif
-      node.eval(deviceVariableMap, nodeResultBuffer);
-      nodeIndex = node.getNextNodeIndex(nodeResultBuffer);
-    }
 
-#ifndef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    return (m_lastNodeIndex >= 0) ? m_deviceNodes[m_lastNodeIndex].getResult(nodeResultBuffer) : 0.0;
-#else
-    return (m_lastNodeIndex >= 0) ? m_hostNodes[m_lastNodeIndex].getResult(nodeResultBuffer) : 0.0;
-#endif
+    KOKKOS_IF_ON_DEVICE((
+      while (nodeIndex >= 0) {
+        NgpNode & node = m_deviceNodes[nodeIndex];
+        node.eval(deviceVariableMap, nodeResultBuffer);
+        nodeIndex = node.getNextNodeIndex(nodeResultBuffer);
+      }
+      return (m_lastNodeIndex >= 0) ? m_deviceNodes[m_lastNodeIndex].getResult(nodeResultBuffer) : 0.0;
+    ))
+
+    KOKKOS_IF_ON_HOST((
+      while (nodeIndex >= 0) {
+        NgpNode & node = m_hostNodes[nodeIndex];
+        node.eval(deviceVariableMap, nodeResultBuffer);
+        nodeIndex = node.getNextNodeIndex(nodeResultBuffer);
+      }
+      return (m_lastNodeIndex >= 0) ? m_hostNodes[m_lastNodeIndex].getResult(nodeResultBuffer) : 0.0;
+    ))
   }
 
 private:

@@ -145,6 +145,15 @@ void Phase_Support::check_phase_parts() const
   ThrowErrorMsgIf(error, "Error: Phases are not defined correctly.");
 }
 
+std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(const Surface_Identifier levelSetIdentifier) const
+{
+  std::vector<unsigned> negLevelsetInterfaceOrdinals;
+  for (auto&& phasePart : my_phase_parts)
+    if (phasePart.is_interface() && phasePart.get_touching_phase().contain(levelSetIdentifier, -1))
+      negLevelsetInterfaceOrdinals.push_back(phasePart.get_conformal_part_ordinal());
+  return negLevelsetInterfaceOrdinals;
+}
+
 Phase_Support::Phase_Support()
 : myMeta(nullptr),
   myAuxMeta(nullptr),
@@ -314,6 +323,16 @@ Phase_Support::get_conformal_parts() const
   {
     if(entry.second) result.push_back(const_cast<stk::mesh::Part *>(entry.first));
   }
+  return result;
+}
+
+stk::mesh::PartVector
+Phase_Support::get_conformal_parts_of_rank(const stk::mesh::EntityRank rank) const
+{
+  stk::mesh::PartVector result;
+  for (const auto & entry : part_is_conformal_map)
+    if (entry.second && entry.first->primary_entity_rank() == rank)
+      result.push_back(const_cast<stk::mesh::Part *>(entry.first));
   return result;
 }
 

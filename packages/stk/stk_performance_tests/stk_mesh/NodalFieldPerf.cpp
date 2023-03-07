@@ -44,7 +44,6 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_topology/topology.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/timer.hpp>

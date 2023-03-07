@@ -42,7 +42,6 @@
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/FieldState.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -50,7 +49,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
 #include <Ionit_Initializer.h>
@@ -444,8 +442,8 @@
       template<class FieldTypeDst, class FieldTypeSrc>
       void copy_element_field(FieldTypeDst* field_dest, FieldTypeSrc* field_src)
       {
-        typedef typename stk::mesh::FieldTraits<FieldTypeDst>::data_type data_type_dst;
-        typedef typename stk::mesh::FieldTraits<FieldTypeSrc>::data_type data_type_src;
+        typedef typename FieldTypeDst::value_type data_type_dst;
+        typedef typename FieldTypeSrc::value_type data_type_src;
 
         stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() ;
         const stk::mesh::BucketVector & buckets = get_bulk_data()->buckets( element_rank() );
@@ -933,7 +931,7 @@
       /// coordinates from a 3D coordinate field).  In that case, the dataStride argument can be set (to e.g. "2").
       template<class ArrayType>
       static void fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket &bucket,
-                                 //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+                                 //stk::mesh::Field<double>& coord_field,
                                  //CoordinatesFieldType& coord_field,
                                  stk::mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
@@ -941,7 +939,7 @@
       /// \brief see comment for fillCellNodes(Bucket& ...)
       template<class ArrayType>
       static void fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element,
-                                 //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+                                 //stk::mesh::Field<double>& coord_field,
                                  //CoordinatesFieldType& coord_field,
                                  stk::mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
@@ -1229,7 +1227,7 @@ private:
     // static
     template<class ArrayType>
     void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & bulkD, const stk::mesh::Bucket &bucket,
-                                  //stk::mesh::Cartesian>& coord_field,
+                                  //stk::mesh::Field<double>& coord_field,
                                   //CoordinatesFieldType& coord_field,
                                   stk::mesh::FieldBase* field,
                                   ArrayType& cellNodes, unsigned dataStrideArg)
@@ -1277,7 +1275,7 @@ private:
     // static
     template<class ArrayType>
     void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element,
-                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+                                  //stk::mesh::Field<double>& coord_field,
                                   //CoordinatesFieldType& coord_field,
                                   stk::mesh::FieldBase* field,
                                   ArrayType& cellNodes,

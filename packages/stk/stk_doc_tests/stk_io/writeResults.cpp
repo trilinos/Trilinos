@@ -46,7 +46,6 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetEntities.hpp>  // for get_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field

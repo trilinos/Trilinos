@@ -73,7 +73,7 @@ namespace percept{
       std::string name = "transition_element";
       if (meta_data.spatial_dimension() == 3)
         name = "transition_element_3";
-      markerInfo_.transitionElementField_ = meta_data.get_field<percept::TransitionElementType_type>(stk::topology::ELEMENT_RANK, name);
+      markerInfo_.transitionElementField_ = meta_data.get_field<percept::TransitionElementType::value_type>(stk::topology::ELEMENT_RANK, name);
     }
 }
 
@@ -130,10 +130,10 @@ Marker::mark()
 
     const stk::mesh::Bucket::size_type length = b.size();
     double * ei = stk::mesh::field_data(*markerInfo_.errorIndicator_, b);
-    percept::RefineFieldType_type * refField = stk::mesh::field_data(*markerInfo_.refineField_, b);
-    percept::RefineFieldType_type * refFieldOrig = stk::mesh::field_data(*markerInfo_.refineFieldOrig_, b);
+    percept::RefineFieldType::value_type * refField = stk::mesh::field_data(*markerInfo_.refineField_, b);
+    percept::RefineFieldType::value_type * refFieldOrig = stk::mesh::field_data(*markerInfo_.refineFieldOrig_, b);
 
-    percept::TransitionElementType_type * transitionElement = 0;
+    percept::TransitionElementType::value_type * transitionElement = 0;
     if (markerInfo_.transitionElementField_)
       transitionElement = stk::mesh::field_data(*markerInfo_.transitionElementField_, b);
 
@@ -271,7 +271,7 @@ static void printNref(stk::mesh::BulkData& bulkData_, const std::string& msg)
 {
   stk::mesh::MetaData & meta_data = bulkData_.mesh_meta_data();
   percept::PerceptMesh eMesh(&meta_data, &bulkData_, true);
-  percept::RefineFieldType *refine_field = eMesh.get_fem_meta_data()->  get_field<percept::RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+  percept::RefineFieldType *refine_field = eMesh.get_fem_meta_data()->  get_field<percept::RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
   stk::mesh::Selector on_locally_owned_part =  meta_data.locally_owned_part();
   const stk::mesh::BucketVector & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
@@ -584,8 +584,8 @@ void Marker::zero_refine_field()
     stk::mesh::Bucket & b = **ib ;
 
     const stk::mesh::Bucket::size_type length = b.size();
-    percept::RefineFieldType_type * refField = 0;
-    percept::RefineFieldType_type * refFieldOrig = 0;
+    percept::RefineFieldType::value_type * refField = 0;
+    percept::RefineFieldType::value_type * refFieldOrig = 0;
     refField = stk::mesh::field_data(*markerInfo_.refineField_, b);
     refFieldOrig = stk::mesh::field_data(*markerInfo_.refineFieldOrig_, b);
 

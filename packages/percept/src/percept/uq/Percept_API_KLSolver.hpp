@@ -13,7 +13,6 @@
 #include <percept/rfgen/RFGen_API_KLSolver.h>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk { namespace mesh { 
     class BulkData; 

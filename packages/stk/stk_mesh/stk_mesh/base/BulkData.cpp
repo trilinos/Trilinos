@@ -1934,12 +1934,12 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     {
         for(const FieldBase* field : *field_set) {
             const FieldMetaData& srcFieldMeta = field->get_meta_data_for_field()[src_bucket_id];
-            const int src_size = srcFieldMeta.m_bytes_per_entity;
+            const int src_size = srcFieldMeta.m_bytesPerEntity;
             unsigned char * const src = srcFieldMeta.m_data;
             const FieldMetaData& dstFieldMeta = field->get_meta_data_for_field()[dst_bucket_id];
             unsigned char * const dst = dstFieldMeta.m_data;
 
-            ThrowAssert(src_size == dstFieldMeta.m_bytes_per_entity);
+            ThrowAssert(src_size == dstFieldMeta.m_bytesPerEntity);
 
             std::memcpy(dst + src_size * dst_bucket_ord,
                     src + src_size * src_bucket_ord,
@@ -1956,14 +1956,14 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
         const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields(dst_rank);
         for(int i = 0, iend = allFields.size(); i < iend; ++i)
         {
-            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytesPerEntity;
             if(src_size == 0)
             {
                 continue;
             }
 
             unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
+            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytesPerEntity;
 
             if(dst_size)
             {

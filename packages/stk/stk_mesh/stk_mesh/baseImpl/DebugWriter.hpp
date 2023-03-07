@@ -38,7 +38,6 @@
 #include <stk_mesh/base/BulkData.hpp>                     // for BulkData
 #include <stddef.h>                                  // for size_t
 #include <fstream>                                   // for operator<<, etc
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/FieldBase.hpp>               // for FieldBase, etc
 #include <stk_mesh/base/Types.hpp>                   // for EntityVector, etc
 #include <vector>                                    // for vector

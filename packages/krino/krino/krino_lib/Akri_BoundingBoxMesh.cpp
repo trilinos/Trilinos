@@ -15,7 +15,6 @@
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>

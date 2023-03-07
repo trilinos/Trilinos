@@ -116,7 +116,7 @@ public:
   unsigned length() const
   {
     ThrowAssert(valid());
-    return my_field->max_size(my_field->entity_rank());
+    return my_field->max_size();
   }
 
   // testing

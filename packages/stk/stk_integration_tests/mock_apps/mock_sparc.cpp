@@ -63,6 +63,7 @@ public:
     stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
+    m_splitComms.set_free_comms_in_destructor(true);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     int myAppRank = stk::parallel_machine_rank(splitComm);
     m_iAmRootRank = myAppRank == 0;
