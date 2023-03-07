@@ -28,7 +28,7 @@ if (KokkosKernels_ENABLE_PERFTESTS)
 
     KOKKOSKERNELS_INCLUDE_DIRECTORIES(sparse)
     
-    if(Kokkos_ENABLE_TESTS_AND_PERFSUITE)
+    if(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
         #Add RPS implementations of KK perf tests here
         KOKKOSKERNELS_ADD_EXECUTABLE(
             tracked_testing
