@@ -337,7 +337,7 @@ namespace MueLu {
 				     }
 				     diag_dev(rowIdx, 0) += KAT_S::abs(local_mat_dev.values(entryIdx));
 				     if(rowIdx == local_mat_dev.graph.entries(entryIdx)) {
-				       avgAbsDiagVal_dev() += KAT_S::abs(local_mat_dev.values(entryIdx));
+				       Kokkos::atomic_add(&avgAbsDiagVal_dev(), KAT_S::abs(local_mat_dev.values(entryIdx)));
 				     }
 				   }
 
@@ -346,13 +346,13 @@ namespace MueLu {
 				   }
 				 });
 
-	    mag_type avgAbsDiagVal;
+	    typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
 	    Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
 	    int numDiagsEqualToOne;
 	    Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
 
 	    if (useAverageAbsDiagVal) {
-	      tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
+	      tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal()-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
 	    }
 
 	    Kokkos::parallel_for("ComputeLumpedDiagonalInverse", my_policy,
