@@ -44,7 +44,7 @@ GLOBAL Int TRILINOS_CAMD_order
     {
 	for (i = 0 ; i < TRILINOS_CAMD_INFO ; i++)
 	{
-	    Info [i] = EMPTY ;
+	    Info [i] = TRILINOS_CAMD_EMPTY ;
 	}
 	Info [TRILINOS_CAMD_N] = n ;
 	Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OK ;

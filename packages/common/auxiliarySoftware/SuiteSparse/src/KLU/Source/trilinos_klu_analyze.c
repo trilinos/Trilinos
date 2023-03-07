@@ -53,9 +53,9 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
-	P [k] = EMPTY ;
-	Q [k] = EMPTY ;
-	Pinv [k] = EMPTY ;
+	P [k] = TRILINOS_KLU_EMPTY ;
+	Q [k] = TRILINOS_KLU_EMPTY ;
+	Pinv [k] = TRILINOS_KLU_EMPTY ;
     }
 #endif
     for (k = 0 ; k < n ; k++)
@@ -64,13 +64,13 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 	Pinv [Pbtf [k]] = k ;
     }
 #ifndef NDEBUG
-    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
+    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != TRILINOS_KLU_EMPTY) ;
 #endif
     nzoff = 0 ;
     lnz = 0 ;
     maxnz = 0 ;
     flops = 0 ;
-    Symbolic->symmetry = EMPTY ;	/* only computed by AMD */
+    Symbolic->symmetry = TRILINOS_KLU_EMPTY ;	/* only computed by AMD */
 
     /* ---------------------------------------------------------------------- */
     /* order each block */
@@ -92,7 +92,7 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 	/* construct the kth block, C */
 	/* ------------------------------------------------------------------ */
 
-	Lnz [block] = EMPTY ;
+	Lnz [block] = TRILINOS_KLU_EMPTY ;
 	pc = 0 ;
 	for (k = k1 ; k < k2 ; k++)
 	{
@@ -180,8 +180,8 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 	     * and Ci allocated. */
 
 	    ok = TRILINOS_COLAMD (nk, nk, Cilen, Ci, Cp, NULL, cstats) ;
-	    lnz1 = EMPTY ;
-	    flops1 = EMPTY ;
+	    lnz1 = TRILINOS_KLU_EMPTY ;
+	    flops1 = TRILINOS_KLU_EMPTY ;
 
 	    /* copy the permutation from Cp to Pblk */
 	    for (k = 0 ; k < nk ; k++)
@@ -198,7 +198,7 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 	    /* -------------------------------------------------------------- */
 
 	    lnz1 = (Common->user_order) (nk, Cp, Ci, Pblk, Common) ;
-	    flops1 = EMPTY ;
+	    flops1 = TRILINOS_KLU_EMPTY ;
 	    ok = (lnz1 != 0) ;
 	}
 
@@ -212,8 +212,8 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 	/* ------------------------------------------------------------------ */
 
 	Lnz [block] = lnz1 ;
-	lnz = (lnz == EMPTY || lnz1 == EMPTY) ? EMPTY : (lnz + lnz1) ;
-	flops = (flops == EMPTY || flops1 == EMPTY) ? EMPTY : (flops + flops1) ;
+	lnz = (lnz == TRILINOS_KLU_EMPTY || lnz1 == TRILINOS_KLU_EMPTY) ? TRILINOS_KLU_EMPTY : (lnz + lnz1) ;
+	flops = (flops == TRILINOS_KLU_EMPTY || flops1 == TRILINOS_KLU_EMPTY) ? TRILINOS_KLU_EMPTY : (flops + flops1) ;
 
 	/* ------------------------------------------------------------------ */
 	/* combine the preordering with the TRILINOS_BTF ordering */
@@ -238,10 +238,10 @@ static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
     ASSERT (nzoff >= 0 && nzoff <= Ap [n]) ;
 
     /* return estimates of # of nonzeros in L including diagonal */
-    Symbolic->lnz = lnz ;	    /* EMPTY if TRILINOS_COLAMD used */
+    Symbolic->lnz = lnz ;	    /* TRILINOS_KLU_EMPTY if TRILINOS_COLAMD used */
     Symbolic->unz = lnz ;
     Symbolic->nzoff = nzoff ;
-    Symbolic->est_flops = flops ;   /* EMPTY if TRILINOS_COLAMD or user-ordering used */
+    Symbolic->est_flops = flops ;   /* TRILINOS_KLU_EMPTY if TRILINOS_COLAMD or user-ordering used */
     return (TRILINOS_KLU_OK) ;
 }
 
@@ -334,7 +334,7 @@ static TRILINOS_KLU_symbolic *order_and_analyze	/* returns NULL if error, or a v
     do_btf = (do_btf) ? TRUE : FALSE ;
     Symbolic->ordering = ordering ;
     Symbolic->do_btf = do_btf ;
-    Symbolic->structural_rank = EMPTY ;
+    Symbolic->structural_rank = TRILINOS_KLU_EMPTY ;
 
     /* ---------------------------------------------------------------------- */
     /* find the block triangular form (if requested) */
@@ -469,7 +469,7 @@ TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze	/* returns NULL if error, or a valid
 	return (NULL) ;
     }
     Common->status = TRILINOS_KLU_OK ;
-    Common->structural_rank = EMPTY ;
+    Common->structural_rank = TRILINOS_KLU_EMPTY ;
 
     /* ---------------------------------------------------------------------- */
     /* order and analyze */

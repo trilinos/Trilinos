@@ -125,7 +125,7 @@
  *
  * PARENT(i) is a macro the defines how the etree is accessed.  It is either:
  *	#define PARENT(i) Parent [i]
- *	#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : EMPTY
+ *	#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : TRILINOS_CHOLMOD_EMPTY
  */
 
 #define SUBTREE \
@@ -137,7 +137,7 @@
 	    /* scatter the column of A, or A*A' into Wx and Wz */ \
 	    SCATTER ; \
 	    /* start at node i and traverse up the subtree, stop at node k */ \
-	    for (len = 0 ; i < k && i != EMPTY && Flag [i] < mark ; i = parent) \
+	    for (len = 0 ; i < k && i != TRILINOS_CHOLMOD_EMPTY && Flag [i] < mark ; i = parent) \
 	    { \
 		/* L(k,i) is nonzero, and seen for the first time */ \
 		Stack [len++] = i ;	    /* place i on the stack */ \
@@ -464,7 +464,7 @@ int CHOLMOD(row_lsubtree)
     Flag [k] = mark ;		/* do not include diagonal entry in Stack */
 
 #define SCATTER			/* do not scatter numerical values */
-#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : EMPTY
+#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : TRILINOS_CHOLMOD_EMPTY
 
     if (stype != 0)
     {

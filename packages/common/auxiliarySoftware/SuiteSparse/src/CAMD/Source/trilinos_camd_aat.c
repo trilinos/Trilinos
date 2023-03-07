@@ -34,7 +34,7 @@ GLOBAL size_t TRILINOS_CAMD_aat	/* returns nz in A+A' */
 
 #ifndef NDEBUG
     TRILINOS_CAMD_debug_init ("CAMD AAT") ;
-    for (k = 0 ; k < n ; k++) Tp [k] = EMPTY ;
+    for (k = 0 ; k < n ; k++) Tp [k] = TRILINOS_CAMD_EMPTY ;
     ASSERT (TRILINOS_CAMD_valid (n, n, Ap, Ai) == TRILINOS_CAMD_OK) ;
 #endif
 
@@ -43,7 +43,7 @@ GLOBAL size_t TRILINOS_CAMD_aat	/* returns nz in A+A' */
 	/* clear the Info array, if it exists */
 	for (i = 0 ; i < TRILINOS_CAMD_INFO ; i++)
 	{
-	    Info [i] = EMPTY ;
+	    Info [i] = TRILINOS_CAMD_EMPTY ;
 	}
 	Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OK ;
     }
@@ -91,7 +91,7 @@ GLOBAL size_t TRILINOS_CAMD_aat	/* returns nz in A+A' */
 	    }
 	    /* scan lower triangular part of A, in column j until reaching
 	     * row k.  Start where last scan left off. */
-	    ASSERT (Tp [j] != EMPTY) ;
+	    ASSERT (Tp [j] != TRILINOS_CAMD_EMPTY) ;
 	    ASSERT (Ap [j] <= Tp [j] && Tp [j] <= Ap [j+1]) ;
 	    pj2 = Ap [j+1] ;
 	    for (pj = Tp [j] ; pj < pj2 ; )

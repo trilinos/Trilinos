@@ -99,7 +99,7 @@ static void trilinos_dfs
     Int timestamp = *p_timestamp ;
 
     /* ---------------------------------------------------------------------- */
-    /* start a DFS at node j (same as the recursive call dfs (EMPTY, j)) */
+    /* start a DFS at node j (same as the recursive call dfs (TRILINOS_BTF_EMPTY, j)) */
     /* ---------------------------------------------------------------------- */
 
     chead = 0 ;		    /* component stack is empty */
@@ -152,8 +152,8 @@ static void trilinos_dfs
 		/* Push i onto the stack and immediately break
 		 * so we can recurse on node i. */
 		Jstack [++jhead] = i ;
-		ASSERT (Time [i] == EMPTY) ;
-		ASSERT (Low [i] == EMPTY) ;
+		ASSERT (Time [i] == TRILINOS_BTF_EMPTY) ;
+		ASSERT (Low [i] == TRILINOS_BTF_EMPTY) ;
 		/* break here to do what the recursive call dfs (j,i) does */
 		break ;
 	    }
@@ -302,7 +302,7 @@ static void trilinos_dfs
 	nblocks++ ;	/* one more block has been found */
     }
     /* update Low [parent] */
-    if (parent != EMPTY)
+    if (parent != TRILINOS_BTF_EMPTY)
     {
 	/* Note that this could be done with Low[j] = MIN(Low[j],Low[i]) just
 	 * after the dfs (j,i) statement above, and then parent would not have
@@ -371,7 +371,7 @@ Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Wor
     Q = Q_in ;
     P = P_in ;
     R = R_in ;
-    chead = EMPTY ;
+    chead = TRILINOS_BTF_EMPTY ;
 #endif
 
     /* ---------------------------------------------------------------------- */
@@ -415,13 +415,13 @@ Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Wor
     for (j = 0 ; j < n ; j++)
     {
 	Flag [j] = UNVISITED ;
-	Low [j] = EMPTY ;
-	Time [j] = EMPTY ;
+	Low [j] = TRILINOS_BTF_EMPTY ;
+	Time [j] = TRILINOS_BTF_EMPTY ;
 #ifndef NDEBUG
-	Cstack [j] = EMPTY ;
+	Cstack [j] = TRILINOS_BTF_EMPTY ;
 #ifndef RECURSIVE
-	Jstack [j] = EMPTY ;
-	Pstack [j] = EMPTY ;
+	Jstack [j] = TRILINOS_BTF_EMPTY ;
+	Pstack [j] = TRILINOS_BTF_EMPTY ;
 #endif
 #endif
     }
@@ -445,9 +445,9 @@ Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Wor
 		    Cstack, Jstack, Pstack) ;
 #else
 	    /* recursive dfs (for illustration only) */
-	    ASSERT (chead == EMPTY) ;
-	    trilinos_dfs (EMPTY, j) ;
-	    ASSERT (chead == EMPTY) ;
+	    ASSERT (chead == TRILINOS_BTF_EMPTY) ;
+	    trilinos_dfs (TRILINOS_BTF_EMPTY, j) ;
+	    ASSERT (chead == TRILINOS_BTF_EMPTY) ;
 #endif
 	}
     }
@@ -489,7 +489,7 @@ Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Wor
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
-	P [k] = EMPTY ;
+	P [k] = TRILINOS_BTF_EMPTY ;
     }
 #endif
 
@@ -502,7 +502,7 @@ Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Wor
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
-	ASSERT (P [k] != EMPTY) ;
+	ASSERT (P [k] != TRILINOS_BTF_EMPTY) ;
     }
 #endif
 

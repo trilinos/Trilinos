@@ -185,7 +185,7 @@ static int TEMPLATE (cholmod_rowfac)
 	Flag [k] = mark ;	/* do not include diagonal entry in Stack */
 
 	/* use Li [Lp [i]+1] for etree */
-#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : EMPTY
+#define PARENT(i) (Lnz [i] > 1) ? (Li [Lp [i] + 1]) : TRILINOS_CHOLMOD_EMPTY
 
 	if (stype > 0)
 	{
