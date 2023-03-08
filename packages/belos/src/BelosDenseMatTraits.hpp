@@ -105,10 +105,23 @@ View(const pointer_type &ptr, const IntType&... indices)
 //TODO: What conditions should we have on this function? When does it work and not work?
 // Do we need details about the stride and/or layout? 
 // What corresponds to the Teuchos Copy or View parameter with Teuchos::SerialDenseMatrix? 
-    static Teuchos::RCP<DM> CreateFromPtr( ScalarType* &ptr, const int numrows, const int numcols)
+    static Teuchos::RCP<DM> ViewFromPtr( ScalarType* &ptr, const int numrows, const int numcols)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
+    //! \brief Returns a raw pointer to the data on the host.
+    // ....Expectations for data layout??
+    //TODO: Will we need this permanently? Yes, for LAPACK....
+    static ScalarType* GetRawHostPtr(const DM & dm )
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
+    //! \brief Returns an RCP to a DM which has a subview of the given DM.
+    //        Row and column indexing is zero-based.
+    //        Row and column ranges include the first index and exclude the second index.
+    //        So, for example, giving std::make_pair(5,7) for the rowRange will return rows 
+    //        in range [5,7), so rows 5 and 6. 
+    //        This follows the convention of Kokkos::subview.
+    static Teuchos::RCP<DM> Subview( const DM & dm, std::pair<int,int> rowRange, std::pair<int,int> colRange)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
     //@}
 
     //@{ \name Attribute methods
@@ -131,6 +144,7 @@ View(const pointer_type &ptr, const IntType&... indices)
     */
     
     // TODO Specify what should happen if matrix shrinks? Should new entries init to zero?
+    // No- new entries just get whatever is in memory. 
     // Are there Teuchos unit tests we can copy to verify this function?
     static int Reshape( DM& dm, const int numrows, const int numcols)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
@@ -143,15 +157,45 @@ View(const pointer_type &ptr, const IntType&... indices)
     static ScalarType & Value( DM& dm, const int i, const int j )
     { 
       UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
-      return Teuchos::ScalarTraits<ScalarType>::zero();
+      ScalarType * ptrz = new ScalarType;
+      return ptrz;
+      //return Teuchos::ScalarTraits<ScalarType>::zero();
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static const ScalarType & Value( const DM& dm, const int i, const int j )
     { 
       UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
-      return Teuchos::ScalarTraits<ScalarType>::zero();
+      ScalarType * ptrz = new ScalarType;
+      return ptrz;
+      //return Teuchos::ScalarTraits<ScalarType>::zero();
     }
+
+    static void SyncHostToDevice(DM & dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void SyncDeviceToHost(DM & dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+    //@}
+    //@{ \name Operator methods
+    
+    //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
+    static void Add( DM& thisDM, const DM& sourceDM)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Multiply all entries by a scalar. DM = value.*DM
+    static void Scale( DM& dm, ScalarType value)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Fill the DM with random entries.
+    //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
+    static void Randomize( DM& dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Copies entries of sourceDM to thisDM (deep copy). 
+    static void Assign( DM& thisDM, const DM& sourceDM)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+    //@}
   };
   
 } // namespace Belos
