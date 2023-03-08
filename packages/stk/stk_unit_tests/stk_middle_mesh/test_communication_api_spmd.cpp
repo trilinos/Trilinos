@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "communication_api_spmd.hpp"
+#include "communication_api.hpp"
 #include "create_mesh.hpp"
 
 using namespace stk::middle_mesh;
@@ -76,13 +76,13 @@ class CommunicationAPISPMDTest
     {
       auto remoteInfo1 = create_dest_field(m_mesh1);
       auto remoteInfo2 = create_dest_field(m_mesh2);
-      stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(m_mesh1, m_mesh2, remoteInfo1, remoteInfo2);
+      stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(m_comm, m_mesh1, m_mesh2, remoteInfo1, remoteInfo2);
         
       send_and_check_data(exchanger, remoteInfo1, remoteInfo2, true);
       send_and_check_data(exchanger, remoteInfo1, remoteInfo2, false);
     }
 
-    void send_and_check_data(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int>& exchanger, 
+    void send_and_check_data(stk::middle_mesh::MiddleMeshFieldCommunication<int>& exchanger, 
                              mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo1, 
                              mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo2, 
                              bool sendOneToTwo)
@@ -154,51 +154,26 @@ TEST(CommunicationAPISPMD, RemoteInfoWrongShape)
   auto remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(1, 0, 0), 1);
   auto remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 1);
 
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 
   remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 1, 0), 1);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 
   remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 1);
   remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(1, 0, 0), 1);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 
   remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 1, 0), 1);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 
   remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 2);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 
   remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 1);
   remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 2);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2));
 }
 
-TEST(CommunicationAPISPMD, DifferentCommunicators)
-{
-  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
-    GTEST_SKIP();
-
-  MPI_Comm comm = MPI_COMM_WORLD;
-  MPI_Comm comm2;
-  MPI_Comm_dup(comm, &comm2);
-  int commSize = utils::impl::comm_size(comm);
-  mesh::impl::MeshSpec spec;
-  spec.xmin = 0;          spec.ymin = 0;
-  spec.xmax = 1;          spec.ymax = 1;
-  spec.numelX = commSize, spec.numelY = commSize;
-
-  auto f = [](const utils::Point& pt) { return pt; };
-  auto mesh1 = create_mesh(spec, f, comm);
-  auto mesh2 = create_mesh(spec, f, comm2);
-
-  auto remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 1);
-  auto remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 1);
-
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2));
-
-  MPI_Comm_free(&comm2);
-}
 
 TEST(CommunicationAPISPMD, FieldsWrongShape)
 {
@@ -219,7 +194,7 @@ TEST(CommunicationAPISPMD, FieldsWrongShape)
   auto remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 1);
   auto remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 1);
 
-  stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2);
+  stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2);
 
   auto field1 = mesh::create_field<int>(mesh1, mesh::FieldShape(1, 0, 0), 1);
   auto field2 = mesh::create_field<int>(mesh2, mesh::FieldShape(0, 0, 1), 1);
@@ -257,7 +232,7 @@ TEST(CommunicationAPISPMD, FieldsDifferentShapes)
   auto remoteInfo1 = mesh::create_field<mesh::RemoteSharedEntity>(mesh1, mesh::FieldShape(0, 0, 1), 1);
   auto remoteInfo2 = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 1);
 
-  stk::middle_mesh::MiddleMeshFieldCommunicationSPMD<int> exchanger(mesh1, mesh2, remoteInfo1, remoteInfo2);
+  stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(comm, mesh1, mesh2, remoteInfo1, remoteInfo2);
 
   auto field1 = mesh::create_field<int>(mesh1, mesh::FieldShape(0, 0, 1), 2);
   auto field2 = mesh::create_field<int>(mesh2, mesh::FieldShape(0, 0, 1), 1);

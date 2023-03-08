@@ -1,7 +1,7 @@
 #include <stk_middle_mesh/application_interface.hpp>
 #include "util/nonconformal_interface_helpers.hpp"
 #include <stk_middle_mesh/utils.hpp>
-#include "stk_middle_mesh/communication_api_mpmd.hpp"
+#include "stk_middle_mesh/communication_api.hpp"
 #include "gtest/gtest.h"
 #include <utility>
 
@@ -50,17 +50,21 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
       int color = create_mesh_comm(nprocs1, nprocs2);
       create_input_meshes(color);
       bool amIMesh1 = color == 0;
+      std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1 = amIMesh1 ? inputMesh : nullptr;
+      std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2 = amIMesh1 ? nullptr   : inputMesh;
 
       auto xiPts = std::make_shared<XiCoordinatesForTest>();
-      auto interface = application_interface_mpmd_factory(stk::middle_mesh::ApplicationInterfaceType::FakeParallel, inputMesh, amIMesh1,
+      auto interface = application_interface_spmd_factory(stk::middle_mesh::ApplicationInterfaceType::FakeParallel, inputMesh1,
+                                                          inputMesh2,
                                                           m_unionComm, xiPts, parallelSearchOpts, volumeSnapOpts,
                                                           boundarySnapOpts, middleGridOpts);
 
-      middleGrid        = interface->create_middle_grid();
-      auto classification    = interface->get_mesh_classification();
-      auto invClassification = interface->compute_mesh_inverse_classification();
-      auto remoteInfo        = interface->get_remote_info();
-      auto xiPtsOnInputMesh  = interface->get_xi_points_on_input_mesh();
+      interface->create_middle_grid();
+      middleGrid             = amIMesh1 ? interface->get_middle_grid_for_mesh1() : interface->get_middle_grid_for_mesh2();
+      auto classification    = amIMesh1 ? interface->get_mesh1_classification() : interface->get_mesh2_classification();
+      auto invClassification = amIMesh1 ? interface->compute_mesh1_inverse_classification() : interface->compute_mesh2_inverse_classification();
+      auto remoteInfo        = amIMesh1 ? interface->get_remote_info_mesh_one_to_two() : interface->get_remote_info_mesh_two_to_one();
+      auto xiPtsOnInputMesh  = amIMesh1 ? interface->get_xi_points_on_mesh1() : interface->get_xi_points_on_mesh2();
 
       EXPECT_EQ(classification->get_mesh(), middleGrid);
       EXPECT_EQ(invClassification->get_mesh(), inputMesh);
@@ -118,15 +122,21 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
 
     void test_remote_info(stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::mesh::RemoteSharedEntity> remoteInfo, bool amISender)
     {
-      stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::utils::Point> centroidFieldPtr;
+      stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::utils::Point> centroidFieldSendPtr, centroidFieldRecvPtr;
       
       if (middleGrid)
-        centroidFieldPtr = stk::middle_mesh::mesh::create_field<stk::middle_mesh::utils::Point>(middleGrid,
-                                                                             stk::middle_mesh::mesh::impl::FieldShape(0, 0, 1), 1);
+      {
+        if (amISender)
+          centroidFieldSendPtr = stk::middle_mesh::mesh::create_field<stk::middle_mesh::utils::Point>(middleGrid,
+                                                           stk::middle_mesh::mesh::impl::FieldShape(0, 0, 1), 1);
+        else
+          centroidFieldRecvPtr = stk::middle_mesh::mesh::create_field<stk::middle_mesh::utils::Point>(middleGrid,
+                                                            stk::middle_mesh::mesh::impl::FieldShape(0, 0, 1), 1);                                                                             
+      }
 
       if (amISender && middleGrid)
       {
-        auto& centroidField = *centroidFieldPtr;
+        auto& centroidField = *centroidFieldSendPtr;
         for (auto el : middleGrid->get_elements())
           if (el)
           {
@@ -134,13 +144,13 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
           }
       }
 
-      stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<stk::middle_mesh::utils::Point> exchanger(m_unionComm, middleGrid, remoteInfo);
-      exchanger.start_exchange(centroidFieldPtr, amISender);
-      exchanger.finish_exchange(centroidFieldPtr, amISender);
+      stk::middle_mesh::MiddleMeshFieldCommunication<stk::middle_mesh::utils::Point> exchanger(m_unionComm, middleGrid, nullptr, remoteInfo, nullptr);
+      exchanger.start_exchange(centroidFieldSendPtr, centroidFieldRecvPtr);
+      exchanger.finish_exchange(centroidFieldRecvPtr);
 
       if (!amISender && middleGrid)
       {
-        auto& centroidField = *centroidFieldPtr;
+        auto& centroidField = *centroidFieldRecvPtr;
         for (auto el : middleGrid->get_elements())
           if (el)
           {

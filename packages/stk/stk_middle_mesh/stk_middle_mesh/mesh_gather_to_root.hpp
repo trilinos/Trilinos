@@ -73,6 +73,7 @@ class MeshGatherToRoot
         const static int DIMENSION        = 2;
         std::array<int, 4> edgeOwnerRanks = {-1, -1, -1, -1};
         std::array<int, 4> edgeOwnerIds   = {-1, -1, -1, -1};
+        EntityOrientation edge1Orient;
         int elementLocalId;
     };
 

@@ -1,7 +1,7 @@
 #include <stk_middle_mesh/application_interface.hpp>
 #include "util/nonconformal_interface_helpers.hpp"
 #include <stk_middle_mesh/utils.hpp>
-#include "stk_middle_mesh/communication_api_spmd.hpp"
+#include "stk_middle_mesh/communication_api.hpp"
 #include "gtest/gtest.h"
 
 namespace {
@@ -54,7 +54,8 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
 
         auto xiPts = std::make_shared<XiCoordinatesForTest>();
         auto interface =
-            application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, xiPts,
+            application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, inputMesh1->get_comm(),
+                                               xiPts,
                                                parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
 
         interface->create_middle_grid();
@@ -67,7 +68,7 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
         auto remoteInfoOneToTwo = interface->get_remote_info_mesh_one_to_two();
         auto remoteInfoTwoToOne = interface->get_remote_info_mesh_two_to_one();
         auto xiPtsOnMesh1       = interface->get_xi_points_on_mesh1();
-        auto xiPtsOnMesh2      = interface->get_xi_points_on_mesh2();
+        auto xiPtsOnMesh2       = interface->get_xi_points_on_mesh2();
 
 
         EXPECT_EQ(classification1->get_mesh(), middleGrid1);
@@ -148,8 +149,8 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
           centroidFieldSend(el, 0, 0) = mesh::compute_centroid(el);
         }
 
-      MiddleMeshFieldCommunicationSPMD<utils::Point> exchanger(middleGrid1, middleGrid2,
-                                                              remoteInfoOneToTwo, remoteInfoTwoToOne);
+      MiddleMeshFieldCommunication<utils::Point> exchanger(middleGrid1->get_comm(), middleGrid1, middleGrid2,
+                                                           remoteInfoOneToTwo, remoteInfoTwoToOne);
       exchanger.start_exchange(centroidFieldSendPtr, centroidFieldRecvPtr);
       exchanger.finish_exchange(centroidFieldRecvPtr);
 
@@ -258,31 +259,6 @@ TEST_F(ApplicationInterfaceSPMDTester, BoundarySnapThenQuality)
   }
 }
 
-TEST(ApplicationInterfaceSPMD, DifferentCommunicatorsError)
-{
-  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
-    GTEST_SKIP();
-
-  mesh::impl::MeshSpec spec1;
-  spec1.xmin   = 0;
-  spec1.xmax   = 1;
-  spec1.ymin   = 0;
-  spec1.ymax   = 1;
-  spec1.numelX = 4;
-  spec1.numelY = 4;
-
-  MPI_Comm comm1 = MPI_COMM_WORLD;
-  MPI_Comm comm2 = utils::impl::comm_dup(comm1);
-
-  auto f          = [](const utils::Point& pt) { return pt; };
-  auto inputMesh1 = mesh::impl::create_mesh(spec1, f, comm1);
-  auto inputMesh2 = mesh::impl::create_mesh(spec1, f, comm2);
-
-  EXPECT_ANY_THROW(application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2));
-
-  MPI_Comm_free(&comm2);
-}
-
 TEST(ApplicationInterfaceSPMD, MeshNotCreatedError)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -302,7 +278,7 @@ TEST(ApplicationInterfaceSPMD, MeshNotCreatedError)
   auto inputMesh1 = mesh::impl::create_mesh(spec1, f, comm1);
   auto inputMesh2 = mesh::impl::create_mesh(spec1, f, comm1);
 
-  auto interface = application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2);
+  auto interface = application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, comm1);
 
   EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh1());
   EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh2());

@@ -1,5 +1,5 @@
-#ifndef COMMUNICATION_API_SPMD_H
-#define COMMUNICATION_API_SPMD_H
+#ifndef STK_MIDDLE_MESH_COMMUNICATION_API_H
+#define STK_MIDDLE_MESH_COMMUNICATION_API_H
 
 #include "mesh.hpp"
 #include "field.hpp"
@@ -13,11 +13,11 @@ namespace stk {
 namespace middle_mesh {
 
 template <typename T>
-class MiddleMeshFieldCommunicationSPMD
+class MiddleMeshFieldCommunication
 {
   public:
-    MiddleMeshFieldCommunicationSPMD(std::shared_ptr<mesh::Mesh> middleMesh1, std::shared_ptr<mesh::Mesh> middleMesh2,
-                                     mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo1, mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo2);
+    MiddleMeshFieldCommunication(MPI_Comm unionComm, std::shared_ptr<mesh::Mesh> middleMesh1, std::shared_ptr<mesh::Mesh> middleMesh2,
+                                 mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo1, mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo2);
 
     void start_exchange(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv);
 
@@ -40,7 +40,11 @@ class MiddleMeshFieldCommunicationSPMD
 
     void check_field_shapes_same_locally(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv);
 
-    void check_field_shapes_same_globally_debug_only(mesh::FieldPtr<T> field);
+    void check_all_procs_on_field_provided_argument_debug_only(mesh::FieldPtr<T> field);
+
+    void check_field_shapes_same_globally_debug_only(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv);
+
+    mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info(mesh::FieldPtr<T> field);
 
     void set_recv_buffer_sizes(mesh::FieldPtr<T> fieldRecv);
 
@@ -48,7 +52,7 @@ class MiddleMeshFieldCommunicationSPMD
 
     void complete_receives(mesh::FieldPtr<T> fieldRecvPtr);
 
-    void unpack_buffer(int rank, const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldPtr);
+    void unpack_buffer(const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldPtr);
 
 
     MPI_Comm m_unionComm;
@@ -61,36 +65,55 @@ class MiddleMeshFieldCommunicationSPMD
 
 
 template <typename T>
-MiddleMeshFieldCommunicationSPMD<T>::MiddleMeshFieldCommunicationSPMD(
+MiddleMeshFieldCommunication<T>::MiddleMeshFieldCommunication(MPI_Comm unionComm,
                                     std::shared_ptr<mesh::Mesh> middleMesh1, std::shared_ptr<mesh::Mesh> middleMesh2,
                                     mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo1, mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo2) :
+  m_unionComm(unionComm),
   m_middleMesh1(middleMesh1),
   m_middleMesh2(middleMesh2),
   m_remoteInfo1(remoteInfo1),
   m_remoteInfo2(remoteInfo2),
-  m_exchanger(middleMesh1->get_comm())
+  m_exchanger(unionComm)
 {
+  if (middleMesh1)
+  {
+    ThrowRequireMsg(remoteInfo1, "When passing in middleMesh1, must also pass in remoteInfo1");
+    ThrowRequireMsg(remoteInfo1->get_mesh() == middleMesh1, "remoteInfo1 must be defined on middleMesh1");
+  }
+
+
+  if (middleMesh2)
+  {
+    ThrowRequireMsg(remoteInfo2, "When passing in middleMesh2, must also pass in remoteInfo2");
+    ThrowRequireMsg(remoteInfo2->get_mesh() == middleMesh2, "remoteInfo1 must be defined on middleMesh1");
+  }
+      
   for (int i=0; i < 3; ++i)
   {
-    ThrowRequire(remoteInfo1->get_field_shape().count[i] == mesh::FieldShape(0, 0, 1).count[i]);
-    ThrowRequire(remoteInfo2->get_field_shape().count[i] == mesh::FieldShape(0, 0, 1).count[i]);
+    if (remoteInfo1)
+      ThrowRequire(remoteInfo1->get_field_shape() == mesh::FieldShape(0, 0, 1));
+    
+    if (remoteInfo2)
+      ThrowRequire(remoteInfo2->get_field_shape() == mesh::FieldShape(0, 0, 1));
   }
-  ThrowRequire(remoteInfo1->get_num_comp() == 1);
-  ThrowRequire(remoteInfo2->get_num_comp() == 1);
 
-  ThrowRequireMsg(middleMesh1->get_comm() == middleMesh2->get_comm(), "Both middle meshes must be on same communicator");
+  if (remoteInfo1)
+    ThrowRequire(remoteInfo1->get_num_comp() == 1);
+
+  if (remoteInfo2)
+    ThrowRequire(remoteInfo2->get_num_comp() == 1);
 }
 
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::start_exchange(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
+void MiddleMeshFieldCommunication<T>::start_exchange(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
 {
+  check_all_procs_on_field_provided_argument_debug_only(fieldSend);
+  check_all_procs_on_field_provided_argument_debug_only(fieldRecv);
   check_fieldshape(fieldSend);
   check_fieldshape(fieldRecv);
   check_field_shapes_same_locally(fieldSend, fieldRecv);
-  check_field_shapes_same_globally_debug_only(fieldSend);
-  check_field_shapes_same_globally_debug_only(fieldRecv);
- 
+  check_field_shapes_same_globally_debug_only(fieldSend, fieldRecv); 
 
   m_exchanger.clear_send_bufs();
   m_exchanger.clear_recv_bufs();
@@ -103,14 +126,14 @@ void MiddleMeshFieldCommunicationSPMD<T>::start_exchange(mesh::FieldPtr<T> field
 
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::finish_exchange(mesh::FieldPtr<T> fieldRecv)
+void MiddleMeshFieldCommunication<T>::finish_exchange(mesh::FieldPtr<T> fieldRecv)
 {
   complete_receives(fieldRecv);
 }
  
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::check_fieldshape(mesh::FieldPtr<T> field)
+void MiddleMeshFieldCommunication<T>::check_fieldshape(mesh::FieldPtr<T> field)
 {
   if (!field)
     return;
@@ -128,28 +151,45 @@ void MiddleMeshFieldCommunicationSPMD<T>::check_fieldshape(mesh::FieldPtr<T> fie
 }
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::check_field_shapes_same_locally(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
+void MiddleMeshFieldCommunication<T>::check_field_shapes_same_locally(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
 {
-  for (size_t i=0; i < fieldSend->get_field_shape().count.size(); ++i)
+  if (fieldSend && fieldRecv)
   {
-    ThrowRequireMsg(fieldSend->get_field_shape().count[i] == fieldRecv->get_field_shape().count[i], "fieldSend and fieldRecv must have same FieldShape");;
+    ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "fieldSend and fieldRecv must have same FieldShape");
+    ThrowRequireMsg(fieldSend->get_num_comp() == fieldRecv->get_num_comp(), "fieldSend and FieldRecv must have same number of components");
   }
+}
 
-  ThrowRequireMsg(fieldSend->get_num_comp() == fieldRecv->get_num_comp(), "fieldSend and FieldRecv must have same number of components");
+template <typename T>
+void MiddleMeshFieldCommunication<T>::check_all_procs_on_field_provided_argument_debug_only(mesh::FieldPtr<T> field)
+{
+#ifndef NDEBUG
+  if (field)
+  {
+    MPI_Comm comm = field->get_mesh()->get_comm();
+    // this will hang if some processes on comm provided the field but others didn't
+    MPI_Barrier(comm);
+  }
+#endif
 }
 
 
+
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::check_field_shapes_same_globally_debug_only(mesh::FieldPtr<T> field)
+void MiddleMeshFieldCommunication<T>::check_field_shapes_same_globally_debug_only(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
 {
 #ifndef NDEBUG
-  MPI_Comm comm = field->get_mesh()->get_comm();
+  MPI_Comm comm = m_unionComm;
   const int root = 0;
   const int nprocs = utils::impl::comm_size(comm);
   mesh::FieldShape fshape;
 
-  if (field) {
-    fshape = field->get_field_shape();
+  if (fieldSend || fieldRecv) {
+    if (fieldSend && fieldRecv)
+      ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "send and receive fields must have same FieldShape");
+
+    
+    fshape = fieldSend ? fieldSend->get_field_shape() : fieldRecv->get_field_shape();
   } else
   {
     fshape = mesh::FieldShape(-1, -1, -1);
@@ -171,18 +211,35 @@ void MiddleMeshFieldCommunicationSPMD<T>::check_field_shapes_same_globally_debug
       }
 
     for (int i=0; i < nprocs; ++i)
-      for (int j=0; j < nvals; ++j)
-        if (recvBuf[i].count[j] != -1 && recvBuf[i].count[j] != fshapeValid.count[j])
-          throw std::runtime_error("fieldshape must be the same on all ranks");
+      if (recvBuf[i].count[0] != -1 && recvBuf[i] != fshapeValid)
+        throw std::runtime_error("fieldshape must be the same on all ranks");
   }
 #endif
 }
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::set_recv_buffer_sizes(mesh::FieldPtr<T> fieldRecv)
+mesh::FieldPtr<mesh::RemoteSharedEntity> MiddleMeshFieldCommunication<T>::get_remote_info(mesh::FieldPtr<T> field)
 {
-  std::vector<int> recvCounts(utils::impl::comm_size(fieldRecv->get_mesh()->get_comm()), 0);
-  auto& remoteInfo              = fieldRecv->get_mesh() == m_remoteInfo1->get_mesh() ? *m_remoteInfo1 : *m_remoteInfo2;
+  if (m_remoteInfo1 && field->get_mesh() == m_remoteInfo1->get_mesh())
+  {
+    return m_remoteInfo1;
+  } else if (m_remoteInfo2 && field->get_mesh() == m_remoteInfo2->get_mesh())
+  {
+    return m_remoteInfo2;
+  } else
+  {
+    throw std::runtime_error("cannot determine remoteInfo");
+  }
+}
+
+template <typename T>
+void MiddleMeshFieldCommunication<T>::set_recv_buffer_sizes(mesh::FieldPtr<T> fieldRecv)
+{
+  if (!fieldRecv)
+    return;
+
+  std::vector<int> recvCounts(utils::impl::comm_size(m_unionComm), 0);
+  auto& remoteInfo              = *(get_remote_info(fieldRecv));
   mesh::FieldShape fshape = fieldRecv->get_field_shape();
   int numCompPerNode            = fieldRecv->get_num_comp();
   int numNodesPerElement        = fshape.count[2];
@@ -200,10 +257,13 @@ void MiddleMeshFieldCommunicationSPMD<T>::set_recv_buffer_sizes(mesh::FieldPtr<T
 }
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::pack_send_buffers(mesh::FieldPtr<T> fieldSendPtr)
+void MiddleMeshFieldCommunication<T>::pack_send_buffers(mesh::FieldPtr<T> fieldSendPtr)
 {
+  if (!fieldSendPtr)
+    return;
+
   auto& field            = *fieldSendPtr;
-  auto& remoteInfo       = field.get_mesh() == m_remoteInfo1->get_mesh() ? *m_remoteInfo1 : *m_remoteInfo2;
+  auto& remoteInfo       = *(get_remote_info(fieldSendPtr));
   int numNodesPerElement = field.get_field_shape().count[2];
   int numCompPerNode     = field.get_num_comp();
   for (auto el : field.get_mesh()->get_elements())
@@ -218,11 +278,11 @@ void MiddleMeshFieldCommunicationSPMD<T>::pack_send_buffers(mesh::FieldPtr<T> fi
 
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::complete_receives(mesh::FieldPtr<T> fieldRecvPtr)
+void MiddleMeshFieldCommunication<T>::complete_receives(mesh::FieldPtr<T> fieldRecvPtr)
 {
   auto f = [&](int rank, const std::vector<DataPlusId>& buf)
   {
-    unpack_buffer(rank, buf, fieldRecvPtr);
+    unpack_buffer(buf, fieldRecvPtr);
   };
 
   m_exchanger.complete_receives(f);
@@ -231,7 +291,7 @@ void MiddleMeshFieldCommunicationSPMD<T>::complete_receives(mesh::FieldPtr<T> fi
 
 
 template <typename T>
-void MiddleMeshFieldCommunicationSPMD<T>::unpack_buffer(int rank, const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldRecvPtr)
+void MiddleMeshFieldCommunication<T>::unpack_buffer(const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldRecvPtr)
 {
   std::shared_ptr<mesh::Mesh> middleMeshRecv = fieldRecvPtr->get_mesh();
   int numNodesPerElement = fieldRecvPtr->get_field_shape().count[2];

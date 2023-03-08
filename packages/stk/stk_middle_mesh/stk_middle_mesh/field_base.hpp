@@ -20,6 +20,16 @@ struct FieldShape
     std::array<int, 3> count;
 };
 
+inline bool operator==(const FieldShape& lhs, const FieldShape& rhs)
+{
+  return lhs.count == rhs.count;
+}
+
+inline bool operator!=(const FieldShape& lhs, const FieldShape& rhs)
+{
+  return !(lhs == rhs);
+}
+
 namespace impl {
 
 
