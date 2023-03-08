@@ -146,7 +146,8 @@ namespace MueLu {
 
       NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero());
+    // static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero());
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol=Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool doLumped=false);
 
     /*! @brief Extract Matrix Diagonal of lumped matrix
 

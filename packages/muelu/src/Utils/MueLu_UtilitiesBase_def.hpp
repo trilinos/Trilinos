@@ -211,20 +211,105 @@ namespace MueLu {
   }
 
 
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  // UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  // GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, Magnitude tol, Scalar valReplacement) {
+  //   Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetMatrixDiagonalInverse");
+
+  //   RCP<const Map> rowMap = A.getRowMap();
+  //   RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+
+  //   A.getLocalDiagCopy(*diag);
+
+  //   RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, valReplacement);
+
+  //   return inv;
+  // }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, Magnitude tol, Scalar valReplacement) {
-    Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetMatrixDiagonalInverse");
+  GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                           typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol,
+                           Scalar valReplacement,
+                           const bool doLumped) {
+    Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities::GetMatrixDiagonalInverse");
 
+    RCP<const BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpFromRef(A));
+    if (!bA.is_null()) {
+      RCP<const Map> rowMap = A.getRowMap();
+      RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+      A.getLocalDiagCopy(*diag);
+      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, valReplacement);
+      return inv;
+    }
+
+    // Some useful type definitions
+    using local_matrix_type = typename Matrix::local_matrix_type;
+    // using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    using value_type        = typename local_matrix_type::value_type;
+    using ordinal_type      = typename local_matrix_type::ordinal_type;
+    using execution_space   = typename local_matrix_type::execution_space;
+    // using memory_space      = typename local_matrix_type::memory_space;
+    // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
+    // you are likely to run into errors when handling std::complex<>
+    // a good way to work around that is to use the following:
+    // using KAT = Kokkos::ArithTraits<Kokkos::ArithTraits<Scalar>::val_type> >
+    // here we have: value_type = Kokkos::ArithTraits<Scalar>::val_type
+    using KAT               = Kokkos::ArithTraits<value_type>;
+
+    // Get/Create distributed objects
     RCP<const Map> rowMap = A.getRowMap();
-    RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+    RCP<Vector> diag      = VectorFactory::Build(rowMap,false);
 
-    A.getLocalDiagCopy(*diag);
+    // Now generate local objects
+    local_matrix_type localMatrix = A.getLocalMatrixDevice();
+    auto diagVals = diag->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
-    RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, valReplacement);
+    ordinal_type numRows = localMatrix.graph.numRows();
 
-    return inv;
+    // Note: 2019-11-21, LBV
+    // This could be implemented with a TeamPolicy over the rows
+    // and a TeamVectorRange over the entries in a row if performance
+    // becomes more important here.
+    if (!doLumped)
+      Kokkos::parallel_for("Utilities::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             bool foundDiagEntry = false;
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               if(myRow.colidx(entryIdx) == rowIdx) {
+                                 foundDiagEntry = true;
+                                 if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
+                                   diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
+                                 } else {
+                                   diagVals(rowIdx, 0) = valReplacement;
+                                 }
+                                 break;
+                               }
+                             }
+
+                             if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
+                           });
+    else
+      Kokkos::parallel_for("Utilities::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               diagVals(rowIdx, 0) += KAT::magnitude(myRow.value(entryIdx));
+                             }
+                             if(KAT::magnitude(diagVals(rowIdx, 0)) > KAT::magnitude(tol))
+                               diagVals(rowIdx, 0) = KAT::one() / diagVals(rowIdx, 0);
+                             else
+                               diagVals(rowIdx, 0) = valReplacement;
+
+                           });
+
+    return diag;
   }
 
 
@@ -540,7 +625,7 @@ namespace MueLu {
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
 
     const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
-    if (crsOp != NULL) {
+    if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
        Teuchos::ArrayRCP<size_t> offsets;
        crsOp->getLocalDiagOffsets(offsets);
        crsOp->getLocalDiagCopy(*localDiag,offsets());

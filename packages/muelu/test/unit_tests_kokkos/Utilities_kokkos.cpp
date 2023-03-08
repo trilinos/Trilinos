@@ -54,7 +54,6 @@
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
 namespace MueLuTests
@@ -209,11 +208,11 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
     using TST = Teuchos::ScalarTraits<Scalar>;
-    using Utils_kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_kokkos::GetMatrixDiagonalInverse(*A);
+    auto diag = Utils::GetMatrixDiagonalInverse(*A);
     auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
     TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
@@ -231,11 +230,11 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
     using TST = Teuchos::ScalarTraits<Scalar>;
-    using Utils_kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_kokkos::GetMatrixOverlappedDiagonal(*A);
+    auto diag = Utils::GetMatrixOverlappedDiagonal(*A);
     auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
     for (size_t idx = 0; idx < diagView.extent(0); ++idx)
@@ -523,7 +522,7 @@ namespace MueLuTests
 
     using TST = Teuchos::ScalarTraits<Scalar>;
     using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using Utils_kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
@@ -638,7 +637,7 @@ namespace MueLuTests
     {
       auto powerRes = Utils::PowerMethod(*A);
 
-      auto inversDiag = Utils_kokkos::GetMatrixDiagonalInverse(*A);
+      auto inversDiag = Utils::GetMatrixDiagonalInverse(*A);
       auto powerRes2 = Utils::PowerMethod(*A, inversDiag);
 
       TEST_INEQUALITY(powerRes, Scalar(0.0));
@@ -668,14 +667,8 @@ namespace MueLuTests
     auto map = A->getMap();
     auto mvCoords = Xpetra::MultiVectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
     params.set("Coordinates", mvCoords);
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
     coords = Utils::ExtractCoordinatesFromParameterList(params);
     TEST_INEQUALITY(coords, Teuchos::null);
-#else
-    // When compiled with INST_INT_INT (Epetra) function will throw,
-    // as it expects "Coordinates" param to be of EpetraMultiVector type
-    TEST_THROW(Utils::ExtractCoordinatesFromParameterList(params), MueLu::Exceptions::RuntimeError);
-#endif
 
     auto comm = Parameters::getDefaultComm();
     TEST_NOTHROW(Utils::SetRandomSeed(*comm));

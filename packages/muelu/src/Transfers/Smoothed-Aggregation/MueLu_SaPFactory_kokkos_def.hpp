@@ -64,7 +64,6 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 #include <sstream>
 
@@ -187,7 +186,7 @@ namespace MueLu {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
           ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Magnitude stopTol = 1e-4;
-          invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
           if (useAbsValueRowSum)
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           else
@@ -210,7 +209,7 @@ namespace MueLu {
           if (useAbsValueRowSum)
             GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
           if (invDiag == Teuchos::null)
-            invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+            invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
         }
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");

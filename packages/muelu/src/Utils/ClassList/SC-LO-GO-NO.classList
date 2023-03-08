@@ -128,7 +128,6 @@ UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
-Utilities_kokkos
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
 SemiCoarsenPFactory_kokkos
