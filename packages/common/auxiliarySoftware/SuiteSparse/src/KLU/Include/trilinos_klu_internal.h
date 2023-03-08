@@ -69,12 +69,12 @@
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
 /* FLIP is a "negation about -1", and is used to mark an integer i that is
- * normally non-negative.  FLIP (EMPTY) is EMPTY.  FLIP of a number > EMPTY
+ * normally non-negative.  FLIP (TRILINOS_KLU_EMPTY) is TRILINOS_KLU_EMPTY.  FLIP of a number > TRILINOS_KLU_EMPTY
  * is negative, and FLIP of a number < EMTPY is positive.  FLIP (FLIP (i)) = i
- * for all integers i.  UNFLIP (i) is >= EMPTY. */
-#define EMPTY (-1)
+ * for all integers i.  UNFLIP (i) is >= TRILINOS_KLU_EMPTY. */
+#define TRILINOS_KLU_EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) (((i) < TRILINOS_KLU_EMPTY) ? FLIP (i) : (i))
 
 
 size_t TRILINOS_KLU_kernel   /* final size of LU on output */

@@ -84,12 +84,12 @@
 #endif
 
 /* FLIP is a "negation about -1", and is used to mark an integer i that is
- * normally non-negative.  FLIP (EMPTY) is EMPTY.  FLIP of a number > EMPTY
+ * normally non-negative.  FLIP (TRILINOS_CHOLMOD_EMPTY) is TRILINOS_CHOLMOD_EMPTY.  FLIP of a number > TRILINOS_CHOLMOD_EMPTY
  * is negative, and FLIP of a number < EMTPY is positive.  FLIP (FLIP (i)) = i
- * for all integers i.  UNFLIP (i) is >= EMPTY. */
-#define EMPTY (-1)
+ * for all integers i.  UNFLIP (i) is >= TRILINOS_CHOLMOD_EMPTY. */
+#define TRILINOS_CHOLMOD_EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) (((i) < TRILINOS_CHOLMOD_EMPTY) ? FLIP (i) : (i))
 
 /* MAX and MIN are not safe to use for NaN's */
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))

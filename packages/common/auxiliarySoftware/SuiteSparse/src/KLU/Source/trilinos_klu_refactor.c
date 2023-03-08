@@ -55,8 +55,8 @@ Int TRILINOS_KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 	return (FALSE) ;
     }
 
-    Common->numerical_rank = EMPTY ;
-    Common->singular_col = EMPTY ;
+    Common->numerical_rank = TRILINOS_KLU_EMPTY ;
+    Common->singular_col = TRILINOS_KLU_EMPTY ;
 
     Az = (Entry *) Ax ;
 
@@ -252,7 +252,7 @@ Int TRILINOS_KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 		    {
 			/* matrix is numerically singular */
 			Common->status = TRILINOS_KLU_SINGULAR ;
-			if (Common->numerical_rank == EMPTY)
+			if (Common->numerical_rank == TRILINOS_KLU_EMPTY)
 			{
 			    Common->numerical_rank = k+k1 ;
 			    Common->singular_col = Q [k+k1] ;
@@ -396,7 +396,7 @@ Int TRILINOS_KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 		    {
 			/* matrix is numerically singular */
 			Common->status = TRILINOS_KLU_SINGULAR ;
-			if (Common->numerical_rank == EMPTY)
+			if (Common->numerical_rank == TRILINOS_KLU_EMPTY)
 			{
 			    Common->numerical_rank = k+k1 ;
 			    Common->singular_col = Q [k+k1] ;

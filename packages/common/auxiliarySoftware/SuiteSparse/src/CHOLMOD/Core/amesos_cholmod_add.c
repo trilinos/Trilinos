@@ -205,7 +205,7 @@ cholmod_sparse *CHOLMOD(add)
 	    {
 		continue ;
 	    }
-	    Flag [i] = EMPTY ;
+	    Flag [i] = TRILINOS_CHOLMOD_EMPTY ;
 	    Ci [nz] = i ;
 	    if (values)
 	    {

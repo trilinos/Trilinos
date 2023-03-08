@@ -58,7 +58,7 @@
 
 #define TRUE 1
 #define FALSE 0
-#define EMPTY (-1)
+#define TRILINOS_BTF_EMPTY (-1)
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
 #endif

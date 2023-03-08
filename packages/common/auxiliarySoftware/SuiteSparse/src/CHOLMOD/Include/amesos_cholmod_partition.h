@@ -60,7 +60,7 @@ UF_long amesos_cholmod_nested_dissection	/* returns # of components */
     /* ---- output --- */
     int *Perm,		/* size A->nrow, output permutation */
     int *CParent,	/* size A->nrow.  On output, CParent [c] is the parent
-			 * of component c, or EMPTY if c is a root, and where
+			 * of component c, or TRILINOS_CHOLMOD_EMPTY if c is a root, and where
 			 * c is in the range 0 to # of components minus 1 */
     int *Cmember,	/* size A->nrow.  Cmember [j] = c if node j of A is
 			 * in component c */

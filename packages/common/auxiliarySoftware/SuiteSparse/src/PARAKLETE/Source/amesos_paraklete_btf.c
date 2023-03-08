@@ -31,8 +31,8 @@ static Int paraklete_btf_bcast_symbolic
     cm = &(Common->cm) ;
     km = &(Common->km) ;
 
-    n = EMPTY ;
-    nblocks = EMPTY ;
+    n = TRILINOS_CHOLMOD_EMPTY ;
+    nblocks = TRILINOS_CHOLMOD_EMPTY ;
 
     /* broadcast number of diagonal blocks in the TRILINOS_BTF form, or -1 if failure */
     if (Common->myid == 0)
@@ -56,7 +56,7 @@ static Int paraklete_btf_bcast_symbolic
     MPI (MPI_Bcast (&header, 2, MPI_Int, TAG0, MPI_COMM_WORLD)) ;
     n = header [0] ;
     nblocks = header [1] ;
-    if (n == EMPTY)
+    if (n == TRILINOS_CHOLMOD_EMPTY)
     {
 	return (FALSE) ;
     }

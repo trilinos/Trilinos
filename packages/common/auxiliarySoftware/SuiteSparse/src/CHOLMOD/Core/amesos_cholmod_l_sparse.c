@@ -433,9 +433,9 @@ UF_long CHOLMOD(nnz)
     /* get inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (A, EMPTY) ;
-    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (A, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, TRILINOS_CHOLMOD_EMPTY) ;
     Common->status = CHOLMOD_OK ;
 
     /* ---------------------------------------------------------------------- */
@@ -446,13 +446,13 @@ UF_long CHOLMOD(nnz)
     if (A->packed)
     {
 	Ap = A->p ;
-	RETURN_IF_NULL (Ap, EMPTY) ;
+	RETURN_IF_NULL (Ap, TRILINOS_CHOLMOD_EMPTY) ;
 	nz = Ap [ncol] ;
     }
     else
     {
 	Anz = A->nz ;
-	RETURN_IF_NULL (Anz, EMPTY) ;
+	RETURN_IF_NULL (Anz, TRILINOS_CHOLMOD_EMPTY) ;
 	nz = 0 ;
 	for (j = 0 ; j < ncol ; j++)
 	{
