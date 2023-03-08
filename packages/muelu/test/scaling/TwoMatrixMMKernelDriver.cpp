@@ -139,13 +139,13 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
   RCP<TimeMonitor> tm;
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
-    typedef typename KCRS::StaticCrsGraphType              graph_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+    typedef typename crs_matrix_type::local_matrix_device_type KCRS;
+    typedef typename KCRS::StaticCrsGraphType                  graph_t;
+    typedef typename graph_t::row_map_type::non_const_type     lno_view_t;
+    typedef typename graph_t::row_map_type::const_type         c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type     lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type         c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type         scalar_view_t;
     typedef Tpetra::Map<LO,GO,NO>                                     map_type;
     typedef typename map_type::local_map_type                         local_map_type;
 
@@ -156,19 +156,20 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     RCP<const crs_matrix_type> B1u = Utilities::Op2TpetraCrs(rcp(&B1,false));
     RCP<const crs_matrix_type> B2u = Utilities::Op2TpetraCrs(rcp(&B2,false));
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+    RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & B1mat = B1u->getLocalMatrix();
-    const KCRS & B2mat = B2u->getLocalMatrix();
-    KCRS Cmat = Cu->getLocalMatrix();
+    const KCRS & Amat = Au->getLocalMatrixDevice();
+    const KCRS & B1mat = B1u->getLocalMatrixDevice();
+    const KCRS & B2mat = B2u->getLocalMatrixDevice();
+
     if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, B1rowptr = B1mat.graph.row_map, B2rowptr = B2mat.graph.row_map;
     lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, B1colind = B1mat.graph.entries, B2colind = B2mat.graph.entries;
-    lno_nnz_view_t Ccolind = Cmat.graph.entries;
+    lno_nnz_view_t Ccolind;
     const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
-    scalar_view_t Cvals = Cmat.values;
+    scalar_view_t Cvals;
     RCP<const Tpetra::Map<LO,GO,Node> > Ccolmap_t = Xpetra::toTpetra(Ccolmap);
     local_map_type Bcolmap_local = B1u->getColMap()->getLocalMap();
     local_map_type Icolmap_local = B2u->getColMap()->getLocalMap();
@@ -233,39 +234,49 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     if(algorithm_name == "MULT_ADD" ) {
       // **********************************
       // Multiply #1 (A*B1)
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1")));
+      {
+      TimeMonitor tm1(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1"));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp1MKL);
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 1 failed: "+mkl_error(result));
+      }
 
       // **********************************
       // Multiply #2 (A*B2)
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2")));
+      {
+      TimeMonitor tm2(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2"));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp2MKL);
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 2 failed: "+mkl_error(result));
+      }
 
       // **********************************
       // Add (A*B1) + (A*B2)
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Add")));
+      {
+      TimeMonitor tm3(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Add"));
       result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,Temp1MKL,1.0,Temp2MKL,&CMKL);
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
+      }
     }
     else if(algorithm_name == "ADD_MULT" ) {
       // **********************************
       // Add B1 + B2
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add")));
+      {
+      TimeMonitor tm4(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add"));
       result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,B1MKL,1.0,B2MKL,&Temp1MKL);
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
+      }
 
       // **********************************
       // Multiply A*(B1+B2)
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Multiply")));
+      {
+      TimeMonitor tm5(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Multiply"));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, Temp1MKL, &CMKL);
-      KCRS::execution_space::fence();
+      typename KCRS::execution_space().fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed: "+mkl_error(result));
+      }
     }
     else
       throw std::runtime_error("Invalid MKL algorithm");
@@ -285,9 +296,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
 
-    Cmat.graph.row_map = Crowptr;
-    Cmat.graph.entries = Ccolind;
-    Cmat.values = Cvals;
+    Cnc->replaceColMap(Ccolmap_t);
+    Cnc->setAllValues(Crowptr,
+                      Ccolind,
+                      Cvals);
 
     mkl_sparse_destroy(AMKL);
     mkl_sparse_destroy(B1MKL);
