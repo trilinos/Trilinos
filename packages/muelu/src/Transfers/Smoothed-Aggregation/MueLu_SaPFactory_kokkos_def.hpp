@@ -140,7 +140,7 @@ namespace MueLu {
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
 
-      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitly
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
 
     //Build final prolongator
@@ -239,7 +239,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
+      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
       if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 

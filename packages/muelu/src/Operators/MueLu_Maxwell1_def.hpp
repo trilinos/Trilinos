@@ -68,7 +68,6 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 #include <MueLu_HierarchyUtils.hpp>
-# include "MueLu_Utilities_kokkos.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
@@ -422,7 +421,7 @@ namespace MueLu {
       if(applyBCsTo22_) {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows/cols of D0" << std::endl;        
         if (useKokkos_) {
-          Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
+          Utilities::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
         }
@@ -430,7 +429,7 @@ namespace MueLu {
       else {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows of D0" << std::endl;        
         if (useKokkos_) {
-          Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
+          Utilities::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
         }

@@ -54,6 +54,8 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include "Kokkos_ArithTraits.hpp"
+
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedMap_fwd.hpp>
 #include <Xpetra_BlockedVector_fwd.hpp>
@@ -75,13 +77,13 @@
 
 namespace MueLu {
 
-// MPI helpers
-#define MueLu_sumAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define MueLu_minAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define MueLu_maxAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
+  // MPI helpers
+#define MueLu_sumAll(rcpComm, in, out)                                  \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
+#define MueLu_minAll(rcpComm, in, out)                                  \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
+#define MueLu_maxAll(rcpComm, in, out)                                  \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
   /*!
     @class UtilitiesBase
@@ -106,41 +108,41 @@ namespace MueLu {
 
     /*! @brief Threshold a matrix
 
-    Returns matrix filtered with a threshold value.
+      Returns matrix filtered with a threshold value.
 
-    NOTE -- it's assumed that A has been fillComplete'd.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<CrsMatrixWrap> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Scalar threshold, const bool keepDiagonal=true, const GlobalOrdinal expectedNNZperRow=-1);
 
     /*! @brief Threshold a graph
 
-    Returns graph filtered with a threshold value.
+      Returns graph filtered with a threshold value.
 
-    NOTE -- it's assumed that A has been fillComplete'd.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow=-1);
 
     /*! @brief Extract Matrix Diagonal
 
-    Returns Matrix diagonal in ArrayRCP.
+      Returns Matrix diagonal in ArrayRCP.
 
-    NOTE -- it's assumed that A has been fillComplete'd.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal(const Matrix& A);
 
     /*! @brief Extract Matrix Diagonal
 
-    Returns inverse of the Matrix diagonal in ArrayRCP.
+      Returns inverse of the Matrix diagonal in ArrayRCP.
 
-    NOTE -- it's assumed that A has been fillComplete'd.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero());
 
     /*! @brief Extract Matrix Diagonal of lumped matrix
 
-    Returns Matrix diagonal of lumped matrix in RCP<Vector>.
+      Returns Matrix diagonal of lumped matrix in RCP<Vector>.
 
-    NOTE -- it's assumed that A has been fillComplete'd.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Matrix const & A, const bool doReciprocal = false,
                                                         Magnitude tol = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero()),
@@ -152,7 +154,7 @@ namespace MueLu {
      *
      * @param[in] A: input matrix
      * @ret: vector containing max_{i\not=k}(-a_ik)
-    */
+     */
 
     static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
 
@@ -164,25 +166,25 @@ namespace MueLu {
      * @param[in] tol: tolerance. If entries of input vector are smaller than tolerance they are replaced by valReplacement (see below). The default value for tol is 100*eps (machine precision)
      * @param[in] valReplacement: Value put in for undefined entries in output vector (default: 0.0)
      * @ret: vector containing inverse values of input vector v
-    */
+     */
     static Teuchos::RCP<Vector> GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero());
 
     /*! @brief Extract Overlapped Matrix Diagonal
 
-    Returns overlapped Matrix diagonal in ArrayRCP.
+      Returns overlapped Matrix diagonal in ArrayRCP.
 
-    The local overlapped diagonal has an entry for each index in A's column map.
-    NOTE -- it's assumed that A has been fillComplete'd.
+      The local overlapped diagonal has an entry for each index in A's column map.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A);
 
 
     /*! @brief Extract Overlapped Matrix Deleted Rowsum
 
-    Returns overlapped Matrix deleted Rowsum in ArrayRCP.
+      Returns overlapped Matrix deleted Rowsum in ArrayRCP.
 
-    The local overlapped deleted Rowsum has an entry for each index in A's column map.
-    NOTE -- it's assumed that A has been fillComplete'd.
+      The local overlapped deleted Rowsum has an entry for each index in A's column map.
+      NOTE -- it's assumed that A has been fillComplete'd.
     */
 
     static RCP<Vector> GetMatrixOverlappedDeletedRowsum(const Matrix& A);
@@ -208,28 +210,28 @@ namespace MueLu {
 
     /*! @brief Power method.
 
-    @param A matrix
-    @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
-    @param niters maximum number of iterations
-    @param tolerance stopping tolerance
-    @verbose if true, print iteration information
-    @seed  seed for randomizing initial guess
+      @param A matrix
+      @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
+      @param niters maximum number of iterations
+      @param tolerance stopping tolerance
+      @verbose if true, print iteration information
+      @seed  seed for randomizing initial guess
 
-    (Shamelessly grabbed from tpetra/examples.)
+      (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
 
     /*! @brief Power method.
 
-    @param A matrix
-    @param diagInvVec reciprocal of matrix diagonal
-    @param niters maximum number of iterations
-    @param tolerance stopping tolerance
-    @verbose if true, print iteration information
-    @seed  seed for randomizing initial guess
+      @param A matrix
+      @param diagInvVec reciprocal of matrix diagonal
+      @param niters maximum number of iterations
+      @param tolerance stopping tolerance
+      @verbose if true, print iteration information
+      @seed  seed for randomizing initial guess
 
-    (Shamelessly grabbed from tpetra/examples.)
+      (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(const Matrix& A, const RCP<Vector> &diagInvVec,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
@@ -238,43 +240,52 @@ namespace MueLu {
 
     /*! @brief Squared distance between two rows in a multivector
 
-       Used for coordinate vectors.
+      Used for coordinate vectors.
     */
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1);
 
     /*! @brief Weighted squared distance between two rows in a multivector
 
-       Used for coordinate vectors.
+      Used for coordinate vectors.
     */
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::ArrayView<double> & weight,const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1);
 
 
     /*! @brief Detect Dirichlet rows
 
-        The routine assumes, that if there is only one nonzero per row, it is on the diagonal and therefore a DBC.
-        This is safe for most of our applications, but one should be aware of that.
+      The routine assumes, that if there is only one nonzero per row, it is on the diagonal and therefore a DBC.
+      This is safe for most of our applications, but one should be aware of that.
 
-        There is an alternative routine (see DetectDirichletRowsExt)
+      There is an alternative routine (see DetectDirichletRowsExt)
 
-        @param[in] A matrix
-        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
+      @param[in] A matrix
+      @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
 
-        @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
+      @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero(), bool count_twos_as_dirichlet=false);
+
+    /*! @brief Detect Dirichlet rows
+
+      @param[in] A matrix
+      @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
+
+      @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
+    */
+    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows_kokkos(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero(), const bool count_twos_as_dirichlet=false);
 
 
     /*! @brief Detect Dirichlet rows (extended version)
 
-        Look at each matrix row and mark it as Dirichlet if there is only one
-        "not small" nonzero on the diagonal. In determining whether a nonzero
-        is "not small" use
-               \f abs(A(i,j)) / sqrt(abs(diag[i]*diag[j])) > tol
+      Look at each matrix row and mark it as Dirichlet if there is only one
+      "not small" nonzero on the diagonal. In determining whether a nonzero
+      is "not small" use
+      \f abs(A(i,j)) / sqrt(abs(diag[i]*diag[j])) > tol
 
-        @param[in] A matrix
-        @param[in/out] bHasZeroDiagonal Reference to boolean variable. Returns true if there is a zero on the diagonal in the local part of the Matrix. Otherwise it is false. Different processors might return a different value. There is no global reduction!
-        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
-        @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
+      @param[in] A matrix
+      @param[in/out] bHasZeroDiagonal Reference to boolean variable. Returns true if there is a zero on the diagonal in the local part of the Matrix. Otherwise it is false. Different processors might return a different value. There is no global reduction!
+      @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
+      @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRowsExt(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool & bHasZeroDiagonal, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero());
 
@@ -287,6 +298,15 @@ namespace MueLu {
     
     static void FindNonZeros(const Teuchos::ArrayRCP<const Scalar> vals,
                              Teuchos::ArrayRCP<bool> nonzeros);
+
+    /*! @brief Find non-zero values in an ArrayRCP
+      Compares the value to 2 * machine epsilon
+
+      @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
+      @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero
+    */
+    static void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                             Kokkos::View<bool*, typename Node::device_type> nonzeros);
 
     /*! @brief Detects Dirichlet columns & domains from a list of Dirichlet rows
 
@@ -301,40 +321,68 @@ namespace MueLu {
                                               Teuchos::ArrayRCP<bool> dirichletCols,
                                               Teuchos::ArrayRCP<bool> dirichletDomain);
 
+    /*! @brief Detects Dirichlet columns & domains from a list of Dirichlet rows
 
-   /*! @brief Apply Rowsum Criterion
+      @param[in] A - Matrix on which to apply Dirichlet column detection
+      @param[in] dirichletRows - View<bool> of indicators as to which rows are Dirichlet
+      @param[out] dirichletCols - View<bool> of indicators as to which cols are Dirichlet
+      @param[out] dirichletDomain - View<bool> of indicators as to which domains are Dirichlet
+    */
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletDomain);
 
-        Flags a row i as dirichlet if:
+
+    /*! @brief Apply Rowsum Criterion
+
+      Flags a row i as dirichlet if:
     
-        \sum_{j\not=i} A_ij > A_ii * tol
+      \sum_{j\not=i} A_ij > A_ii * tol
 
-        @param[in] A matrix
-        @param[in] rowSumTol See above
-        @param[in/out] dirichletRows boolean array.  The ith entry is true if the above criterion is satisfied (or if it was already set to true)
+      @param[in] A matrix
+      @param[in] rowSumTol See above
+      @param[in/out] dirichletRows boolean array.  The ith entry is true if the above criterion is satisfied (or if it was already set to true)
 
     */
     static void                                                                  ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows);
 
     static void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows);
 
+    static void ApplyRowSumCriterion(const Matrix& A,
+                                     const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                     Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
+
 
     /*! @brief Detect Dirichlet columns based on Dirichlet rows
 
-        The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
-        as returned by DetectDirichletRows.
+      The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
+      as returned by DetectDirichletRows.
 
-        @param[in] A matrix
-        @param[in] dirichletRows array of Dirichlet rows.
+      @param[in] A matrix
+      @param[in] dirichletRows array of Dirichlet rows.
 
-        @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
+      @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                                                              const Teuchos::ArrayRCP<const bool>& dirichletRows);
 
+    /*! @brief Detect Dirichlet columns based on Dirichlet rows
+
+      The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
+      as returned by DetectDirichletRows.
+
+      @param[in] A matrix
+      @param[in] dirichletRows array of Dirichlet rows.
+
+      @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
+    */
+    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
+
 
     /*! @brief Frobenius inner product of two matrices
 
-       Used in energy minimization algorithms
+      Used in energy minimization algorithms
     */
     static Scalar Frobenius(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B);
 
@@ -365,6 +413,8 @@ namespace MueLu {
     static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                      const Teuchos::ArrayRCP<const bool>& dirichletRows);
 
+    static void ApplyOAZToMatrixRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
     // Zeros out rows
     // Takes a vector containg Dirichlet row indices
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
@@ -383,16 +433,24 @@ namespace MueLu {
                                   const Teuchos::ArrayRCP<const bool>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero());
 
+    static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
     // Zeros out columns
     // Takes a Boolean vector
     static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
                                   const Teuchos::ArrayRCP<const bool>& dirichletCols,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero());
 
+    static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
     // Finds the OAZ Dirichlet rows for this matrix
     static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
                                                     Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
                                                     Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol);
+
+
 
     // This routine takes a BlockedMap and an Importer (assuming that the BlockedMap matches the source of the importer) and generates a BlockedMap corresponding
     // to the Importer's target map.  We assume that the targetMap is unique (which, is not a strict requirement of an Importer, but is here and no, we don't check)
@@ -405,7 +463,39 @@ namespace MueLu {
     static bool MapsAreNested(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& rowMap, const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& colMap);
 
 
+    /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
+      Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
+    */
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
+
+    /*! Perform a Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
+     */
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Matrix &Op);
+
   }; // class UtilitiesBase
+
+
+  // Useful Kokkos conversions
+  template < class View, unsigned AppendValue >
+  struct AppendTrait {
+    // static_assert(false, "Error: NOT a Kokkos::View");
+  };
+
+  template < class MT, unsigned T >
+  struct CombineMemoryTraits {
+    // empty
+  };
+
+  template < unsigned U, unsigned T>
+  struct CombineMemoryTraits<Kokkos::MemoryTraits<U>, T> {
+    typedef Kokkos::MemoryTraits<U|T> type;
+  };
+
+  template < class DataType, unsigned T, class... Pack >
+  struct AppendTrait< Kokkos::View< DataType, Pack... >, T> {
+    typedef Kokkos::View< DataType, Pack... > view_type;
+    using type = Kokkos::View< DataType, typename view_type::array_layout, typename view_type::device_type, typename CombineMemoryTraits<typename view_type::memory_traits,T>::type >;
+  };
 
 
   ///////////////////////////////////////////
