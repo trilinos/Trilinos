@@ -94,7 +94,7 @@ namespace MueLu {
 
     // FIXME: Don't know why, but in the MATLAB code we have D = I. Follow that for now.
 #if 0
-    ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal(*A);
+    ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal_arcp(*A);
 #else
     ArrayRCP<const SC> D(A->getLocalNumRows(), one);
 #endif

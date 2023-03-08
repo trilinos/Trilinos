@@ -114,18 +114,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonal(const Matrix& A) {
-    const auto rowMap = A.getRowMap();
-    auto diag = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
-
-    A.getLocalDiagCopy(*diag);
-
-    return diag;
-  } //GetMatrixDiagonal
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                            typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol, const bool doLumped) {
     Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
@@ -214,39 +202,6 @@ namespace MueLu {
   {
     return MueLu::GetMatrixDiagonalInverse<double, int, int, Node>(A,tol,doLumped);
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixOverlappedDiagonal(const Matrix& A) {
-    // FIXME_KOKKOS
-    RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
-    RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
-
-    const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
-    if (crsOp != NULL) {
-       Teuchos::ArrayRCP<size_t> offsets;
-       crsOp->getLocalDiagOffsets(offsets);
-       crsOp->getLocalDiagCopy(*localDiag,offsets());
-    }
-    else {
-      auto localDiagVals = localDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
-      const auto diagVals = GetMatrixDiagonal(A)->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      Kokkos::deep_copy(localDiagVals, diagVals);
-    }
-
-    RCP<Vector> diagonal = VectorFactory::Build(colMap);
-    RCP< const Import> importer;
-    importer = A.getCrsGraph()->getImporter();
-    if (importer == Teuchos::null) {
-      importer = ImportFactory::Build(rowMap, colMap);
-    }
-    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
-
-    return diagonal;
-  } //GetMatrixOverlappedDiagonal
-
-
 
 
 } //namespace MueLu

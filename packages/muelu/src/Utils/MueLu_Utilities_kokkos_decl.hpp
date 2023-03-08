@@ -115,13 +115,6 @@ namespace MueLu {
     using CoordinateType        = typename TST::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
-     /*! @brief Extract Matrix Diagonal
-
-    Returns Matrix diagonal in RCP<Vector>.
-
-    NOTE -- it's assumed that A has been fillComplete'd.
-    */
-    static RCP<Vector> GetMatrixDiagonal(const Matrix& A); // FIXME
 
     /*! @brief Extract Matrix Diagonal
 
@@ -131,16 +124,6 @@ namespace MueLu {
     */
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100, const bool doLumped = false); // FIXME
 
-
-
-    /*! @brief Extract Overlapped Matrix Diagonal
-
-    Returns overlapped Matrix diagonal in ArrayRCP.
-
-    The local overlapped diagonal has an entry for each index in A's column map.
-    NOTE -- it's assumed that A has been fillComplete'd.
-    */
-    static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A); // FIXME
 
   }; // class Utils
 
@@ -169,15 +152,6 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
-    static RCP<Vector> GetMatrixDiagonal(const Matrix& A) {
-      const auto rowMap = A.getRowMap();
-      auto diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
-
-      A.getLocalDiagCopy(*diag);
-
-      return diag;
-    }
 
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false);
 

@@ -186,11 +186,11 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
     using TST = Teuchos::ScalarTraits<Scalar>;
-    using Utils_kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Utils = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_kokkos::GetMatrixDiagonal(*A);
+    auto diag = Utils::GetMatrixDiagonal(*A);
     auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
     TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());

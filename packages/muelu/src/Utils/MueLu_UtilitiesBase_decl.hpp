@@ -64,6 +64,7 @@
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
@@ -128,7 +129,16 @@ namespace MueLu {
 
       NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal(const Matrix& A);
+    static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal_arcp(const Matrix& A);
+
+
+     /*! @brief Extract Matrix Diagonal
+
+    Returns Matrix diagonal in RCP<Vector>.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<Vector> GetMatrixDiagonal(const Matrix& A);
 
     /*! @brief Extract Matrix Diagonal
 

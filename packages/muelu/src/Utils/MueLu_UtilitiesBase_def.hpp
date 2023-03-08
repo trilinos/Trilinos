@@ -175,7 +175,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar>
   UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A) {
+  GetMatrixDiagonal_arcp(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A) {
     size_t numRows = A.getRowMap()->getLocalNumElements();
     Teuchos::ArrayRCP<Scalar> diag(numRows);
     Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -194,6 +194,19 @@ namespace MueLu {
         diag[i] = Teuchos::ScalarTraits<Scalar>::zero();
       }
     }
+    return diag;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetMatrixDiagonal(const Matrix& A) {
+    const auto rowMap = A.getRowMap();
+    auto diag = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
+
+    A.getLocalDiagCopy(*diag);
+
     return diag;
   }
 
@@ -479,41 +492,73 @@ namespace MueLu {
   }
 
 
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  // UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  // GetMatrixOverlappedDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A) {
+  //   RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+
+  //   // Undo block map (if we have one)
+  //   RCP<const BlockedMap> browMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
+  //   if(!browMap.is_null()) rowMap = browMap->getMap();
+
+  //   RCP<Vector> localDiag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+  //   try {
+  //     const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+  //     if (crsOp == NULL) {
+  //       throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
+  //     }
+  //     Teuchos::ArrayRCP<size_t> offsets;
+  //     crsOp->getLocalDiagOffsets(offsets);
+  //     crsOp->getLocalDiagCopy(*localDiag,offsets());
+  //   }
+  //   catch (...) {
+  //     ArrayRCP<Scalar>   localDiagVals = localDiag->getDataNonConst(0);
+  //     Teuchos::ArrayRCP<Scalar> diagVals = GetMatrixDiagonal(A);
+  //     for (LocalOrdinal i = 0; i < localDiagVals.size(); i++)
+  //       localDiagVals[i] = diagVals[i];
+  //     localDiagVals = diagVals = null;
+  //   }
+
+  //   RCP<Vector> diagonal = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap);
+  //   RCP< const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer;
+  //   importer = A.getCrsGraph()->getImporter();
+  //   if (importer == Teuchos::null) {
+  //     importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap);
+  //   }
+  //   diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
+  //   return diagonal;
+  // }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixOverlappedDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A) {
+  GetMatrixOverlappedDiagonal(const Matrix& A) {
+    // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+    RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
 
-    // Undo block map (if we have one)
-    RCP<const BlockedMap> browMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
-    if(!browMap.is_null()) rowMap = browMap->getMap();
-
-    RCP<Vector> localDiag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
-    try {
-      const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
-      if (crsOp == NULL) {
-        throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
-      }
-      Teuchos::ArrayRCP<size_t> offsets;
-      crsOp->getLocalDiagOffsets(offsets);
-      crsOp->getLocalDiagCopy(*localDiag,offsets());
+    const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+    if (crsOp != NULL) {
+       Teuchos::ArrayRCP<size_t> offsets;
+       crsOp->getLocalDiagOffsets(offsets);
+       crsOp->getLocalDiagCopy(*localDiag,offsets());
     }
-    catch (...) {
-      ArrayRCP<Scalar>   localDiagVals = localDiag->getDataNonConst(0);
-      Teuchos::ArrayRCP<Scalar> diagVals = GetMatrixDiagonal(A);
-      for (LocalOrdinal i = 0; i < localDiagVals.size(); i++)
-        localDiagVals[i] = diagVals[i];
-      localDiagVals = diagVals = null;
+    else {
+      auto localDiagVals = localDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
+      const auto diagVals = GetMatrixDiagonal(A)->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      Kokkos::deep_copy(localDiagVals, diagVals);
     }
 
-    RCP<Vector> diagonal = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap);
-    RCP< const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer;
+    RCP<Vector> diagonal = VectorFactory::Build(colMap);
+    RCP< const Import> importer;
     importer = A.getCrsGraph()->getImporter();
     if (importer == Teuchos::null) {
-      importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap);
+      importer = ImportFactory::Build(rowMap, colMap);
     }
     diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
+
     return diagonal;
   }
 
@@ -1769,7 +1814,7 @@ namespace MueLu {
 
     // Copy out and reorder data
     auto view1D = Kokkos::subview(retval->getDeviceLocalView(Xpetra::Access::ReadWrite),Kokkos::ALL (), 0);
-    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+    Kokkos::parallel_for("Utilities::ReverseCuthillMcKee",
                          Kokkos::RangePolicy<ordinal_type, execution_space>(0, localGraph.numRows()),
                          KOKKOS_LAMBDA(const ordinal_type rowIdx) {
                            view1D(rcmOrder(rowIdx)) = rowIdx;
@@ -1801,7 +1846,7 @@ namespace MueLu {
     // Copy out data
     auto view1D = Kokkos::subview(retval->getDeviceLocalView(Xpetra::Access::ReadWrite),Kokkos::ALL (), 0);
     // Since KokkosKernels produced RCM, also reverse the order of the view to get CM
-    Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
+    Kokkos::parallel_for("Utilities::ReverseCuthillMcKee",
                          Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
                          KOKKOS_LAMBDA(const ordinal_type rowIdx) {
                            view1D(rcmOrder(numRows - 1 - rowIdx)) = rowIdx;
