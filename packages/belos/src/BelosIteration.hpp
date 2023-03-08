@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 
 namespace Belos {
