@@ -59,7 +59,6 @@
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 #include "Xpetra_IO.hpp"
 

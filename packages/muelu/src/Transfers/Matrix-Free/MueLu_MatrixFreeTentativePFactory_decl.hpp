@@ -60,7 +60,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 namespace MueLu {
 

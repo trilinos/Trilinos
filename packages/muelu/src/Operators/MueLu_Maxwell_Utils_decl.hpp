@@ -60,7 +60,6 @@
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 
 namespace MueLu {

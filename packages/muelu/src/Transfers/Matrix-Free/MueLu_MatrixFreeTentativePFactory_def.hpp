@@ -58,7 +58,6 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MatrixFreeTentativeP.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 namespace MueLu {
 

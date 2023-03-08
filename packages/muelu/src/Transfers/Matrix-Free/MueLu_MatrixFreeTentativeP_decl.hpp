@@ -57,7 +57,6 @@
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "Xpetra_Operator.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 namespace MueLu {
 
