@@ -96,9 +96,6 @@ using Teuchos::TimeMonitor;
 // Stratimikos includes
 #include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
-#ifdef HAVE_MUELU_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#endif
 #endif
 
 // Support for ML interface
@@ -472,11 +469,6 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
     Stratimikos::enableMueLuMaxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
-#ifdef HAVE_MUELU_IFPACK2
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
     linearSolverBuilder.setParameterList(rcp(&stratimikosParams,false));              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.

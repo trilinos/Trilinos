@@ -71,8 +71,6 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-
 // Belos includes
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -102,15 +100,10 @@ int main(int argc,char * argv[])
    typedef TP_Vec::global_ordinal_type GO;
    typedef TP_Vec::node_type           NT;
 
-   typedef Thyra::PreconditionerFactoryBase<ST>        Base;
-   typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
-
    // calls MPI_Init and MPI_Finalize
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-   // tell Stratimikos => Teko about Ifpack2
    RCP<Stratimikos::DefaultLinearSolverBuilder> linearSolverBuilder = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder);
-   linearSolverBuilder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
    // Build the Tpetra matrices and vectors
    /////////////////////////////////////////////////////////

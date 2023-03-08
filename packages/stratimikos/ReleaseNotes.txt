@@ -4,8 +4,18 @@ Release Notes for Trilinos Package Stratimikos
 ----------------------------------------------
 
 
+Trilinos 14.0
+
+* Support for "Ifpack2" preconditioner factory officially added to the
+  Stratimikos::LinearSolverBuilder class when Ifapck2 support is enabled in
+  the Stratimikos package.  Therefore, any client code that was adding support
+  for the "Ifpack2" preconditioner to the Stratimikos::LinearSolverBuilder
+  object using a call to setPreconditioningStrategyFactory() will now result
+  in an exception being thrown.  The fix is to just remove the now redundant
+  call to setPreconditioningStrategyFactory().
+
+
 Trilinos 10.0:
 --------------
 
-
-(*) Support for newer Belos solvers have not be added yet
+* Support for newer Belos solvers have not be added yet
