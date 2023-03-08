@@ -36,6 +36,12 @@ void test_field(std::shared_ptr<Mesh> mesh, const FieldShape& fshape, Field<int>
           EXPECT_EQ(field(e, node, comp), get_value(field, e, node, comp));
 }
 
+TEST(FieldShape, operators)
+{
+  EXPECT_TRUE(FieldShape(1, 1, 1) == FieldShape(1, 1, 1));
+  EXPECT_FALSE(FieldShape(1, 1, 0) ==  FieldShape(1, 1, 1));
+}
+
 TEST(Field, Values)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)

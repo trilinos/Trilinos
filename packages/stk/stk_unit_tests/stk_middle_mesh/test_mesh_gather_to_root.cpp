@@ -1,4 +1,5 @@
 #include "create_mesh.hpp"
+#include "mesh.hpp"
 #include "mesh_gather_to_root.hpp"
 #include "util/mesh_comparer.hpp"
 #include "util/meshes.hpp"
@@ -245,6 +246,30 @@ TEST_F(MeshGatherToRootTester, BothCommsSameRootProc0Periodic)
 
   setup(MPI_COMM_WORLD, MPI_COMM_WORLD, rootRank, spec, func);
   runtest(1e-13);
+}
+
+TEST(MeshGatherToRoot, Edge1Reversed)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  auto mesh = mesh::make_empty_mesh();
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+  auto v3 = mesh->create_vertex(1, 1, 0);
+  auto v4 = mesh->create_vertex(0, 1, 0);
+  mesh->create_edge(v2, v1);  // reversed
+  mesh->create_edge(v2, v3);
+  mesh->create_edge(v3, v4);
+  mesh->create_edge(v4, v1);
+  auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  mesh::impl::MeshGatherToRoot gatherer(MPI_COMM_WORLD, 0, mesh);
+  std::shared_ptr<mesh::Mesh> meshGathered = gatherer.gather();
+
+  auto elGathered = meshGathered->get_elements()[0];
+  for (int i=0; i < 4; ++i)
+    EXPECT_EQ(el->get_down_orientation(i), elGathered->get_down_orientation(i));
 }
 
 } // namespace impl

@@ -256,6 +256,7 @@ void MeshGatherToRoot::get_info(MeshEntityPtr el, int myrank, ElementInfo& elInf
     elInfo.edgeOwnerIds[i]   = edgeInfo.edgeOwnerLocalId;
   }
 
+  elInfo.edge1Orient = el->get_down_orientation(0);
   elInfo.elementLocalId = el->get_id();
 }
 
@@ -283,10 +284,10 @@ void MeshGatherToRoot::unpack_info(utils::impl::ParallelExchange<ElementInfo>& e
       MeshEntityPtr el;
       if (elInfo.edgeOwnerRanks[3] != -1)
       {
-        el = m_outputMesh->create_quad(edges[0], edges[1], edges[2], edges[3]);
+        el = m_outputMesh->create_quad(edges[0], edges[1], edges[2], edges[3], elInfo.edge1Orient);
       } else
       {
-        el = m_outputMesh->create_triangle(edges[0], edges[1], edges[2]);
+        el = m_outputMesh->create_triangle(edges[0], edges[1], edges[2], elInfo.edge1Orient);
       }
 
       elementOrigins(el, 0, 0) = RemoteSharedEntity{inputCommRank, elInfo.elementLocalId};

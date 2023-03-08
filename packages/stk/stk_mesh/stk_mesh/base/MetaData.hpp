@@ -757,7 +757,6 @@ field_type & put_field_on_mesh( field_type & field ,
 //   1: Number of copies of this type per Entity
 
 template< class field_type >
-STK_DEPRECATED
 field_type & put_field_on_mesh( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
@@ -766,7 +765,6 @@ field_type & put_field_on_mesh( field_type & field ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
-STK_DEPRECATED
 field_type & put_field_on_mesh( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
@@ -775,7 +773,6 @@ field_type & put_field_on_mesh( field_type & field ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
-STK_DEPRECATED
 field_type & put_field_on_mesh(field_type & field ,
                                const Part & part ,
                                unsigned     n1 ,
@@ -785,7 +782,6 @@ field_type & put_field_on_mesh(field_type & field ,
                                const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 template< class field_type >
-STK_DEPRECATED
 field_type & put_field_on_mesh(field_type & field ,
                                const Part & part ,
                                unsigned     n1 ,
@@ -1231,7 +1227,6 @@ field_type & put_field_on_mesh(field_type &field,
 
 #ifndef STK_HIDE_DEPRECATED_CODE  // Delete after March 15, 2023
 template <class field_type>
-STK_DEPRECATED
 inline
 field_type & put_field_on_mesh(field_type &field,
                                const Part &part,
@@ -1248,7 +1243,6 @@ field_type & put_field_on_mesh(field_type &field,
 }
 
 template <class field_type>
-STK_DEPRECATED
 inline
 field_type & put_field_on_mesh(field_type &field,
                                const Selector &selector,
@@ -1265,7 +1259,6 @@ field_type & put_field_on_mesh(field_type &field,
 }
 
 template <class field_type>
-STK_DEPRECATED
 inline
 field_type & put_field_on_mesh(field_type &field,
                                const Part &part,
@@ -1283,7 +1276,6 @@ field_type & put_field_on_mesh(field_type &field,
 }
 
 template <class field_type>
-STK_DEPRECATED
 inline
 field_type & put_field_on_mesh(field_type &field,
                                const Part &part,

@@ -73,36 +73,6 @@ class XiCoordinates
     virtual std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType type) = 0;
 };
 
-// Class for constructing a middle grid when two non-overlapping sets of
-// processes have one mesh each.
-class ApplicationInterfaceMPMD
-{
-  public:
-    virtual ~ApplicationInterfaceMPMD() {}
-
-    // returns a parallel mesh that contains the middle grid elements
-    // classified on either mesh1 or mesh2, which ever was non-null when passed into
-    // the constructor
-    // If both are null, returns a nullptr
-    virtual std::shared_ptr<mesh::Mesh> create_middle_grid() = 0;
-
-    // returns a field that maps the elements of mesh_in to the elements of mesh1 or mesh 2, whichever
-    // was not null when passed into the constructor.
-    virtual mesh::FieldPtr<mesh::MeshEntityPtr> get_mesh_classification() = 0;
-
-    // returns a field that maps the elements of mesh1 or mesh 2, whichever was not null when passed
-    // into the constructor, to the elements of the middle grid.
-    virtual mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh_inverse_classification() = 0;
-
-    // returns a field that maps the elements of the middle grid on this process to
-    // the copy of the middle grid held by the other application
-    virtual mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info() = 0;
-
-    // if a XiCoordinates object was passed into the constructor, returns a field
-    // containing the xi coordinates of the middle mesh elements projected onto
-    // mesh1 or mesh2, whichever was not null when passed into the constructor
-    virtual mesh::FieldPtr<utils::Point> get_xi_points_on_input_mesh() = 0;
-};
 
 // Class for constructing a middle grid when a given set of processes has
 // two meshes
@@ -155,16 +125,9 @@ enum class ApplicationInterfaceType
   FakeParallel = 0
 };
 
-std::shared_ptr<ApplicationInterfaceMPMD> application_interface_mpmd_factory(
-    ApplicationInterfaceType type, std::shared_ptr<mesh::Mesh> mesh, bool isMesh1, MPI_Comm unionComm,
-    std::shared_ptr<XiCoordinates> xiPts = nullptr,
-    const ParallelSearchOpts& parallelSearchOpts                  = ParallelSearchOpts(),
-    const VolumeSnapOpts& volumeSnapOpts                          = VolumeSnapOpts(),
-    const BoundarySnapAndQualityImprovementOpts& boundarySnapOpts = BoundarySnapAndQualityImprovementOpts(),
-    const MiddleGridOpts& middleGridOpts                          = MiddleGridOpts());
-
 std::shared_ptr<ApplicationInterfaceSPMD> application_interface_spmd_factory(
     ApplicationInterfaceType type, std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
+    MPI_Comm unionComm,
     std::shared_ptr<XiCoordinates> xiPts = nullptr,
     const ParallelSearchOpts& parallelSearchOpts                  = ParallelSearchOpts(),
     const VolumeSnapOpts& volumeSnapOpts                          = VolumeSnapOpts(),

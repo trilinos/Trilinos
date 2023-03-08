@@ -1,7 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "communication_api_mpmd.hpp"
+#include "communication_api.hpp"
 #include "create_mesh.hpp"
+#include "mesh_entity.hpp"
 
 using namespace stk::middle_mesh;
 
@@ -18,7 +19,8 @@ class CommunicationAPIMPMDTest
 
     void runtest()
     {
-      send_and_check_data_both_directions();
+      send_and_check_data_both_directions(true);
+      send_and_check_data_both_directions(false);
     }
 
   private:
@@ -83,10 +85,15 @@ class CommunicationAPIMPMDTest
       return fieldPtr;
     }
 
-    void send_and_check_data_both_directions()
+    void send_and_check_data_both_directions(bool useFirstArg)
     {
       auto remoteInfo = create_dest_field();
-      stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(m_unionComm, m_mesh1, remoteInfo);
+      std::shared_ptr<mesh::Mesh> mesh1 = useFirstArg ? m_mesh1 : nullptr;
+      std::shared_ptr<mesh::Mesh> mesh2 = useFirstArg ? nullptr : m_mesh1;
+      mesh::FieldPtr<mesh::RemoteSharedEntity> remote1 = useFirstArg ? remoteInfo : nullptr;
+      mesh::FieldPtr<mesh::RemoteSharedEntity> remote2 = useFirstArg ? nullptr    : remoteInfo;
+
+      stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(m_unionComm, mesh1, mesh2, remote1, remote2);
 
       bool amISenderFirstRound = false;
       if (m_splitComm != MPI_COMM_NULL)
@@ -96,23 +103,26 @@ class CommunicationAPIMPMDTest
       send_and_check_data(exchanger, remoteInfo, !amISenderFirstRound);
     }
 
-    void send_and_check_data(stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int>& exchanger, 
+    void send_and_check_data(stk::middle_mesh::MiddleMeshFieldCommunication<int>& exchanger, 
                      mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfo, bool amISender)
     {
-      mesh::FieldPtr<int> field;
+      mesh::FieldPtr<int> fieldSend, fieldRecv;
       if (amISender) {
-        field = create_send_field(remoteInfo);
+        fieldSend = create_send_field(remoteInfo);
+        fieldRecv = nullptr;
       } else if (m_splitComm != MPI_COMM_NULL) {
-        field = mesh::create_field<int>(m_mesh1, mesh::FieldShape(0, 0, m_numNodesPerElement), m_numComponentsPerNode, -1);
+        fieldSend = nullptr;
+        fieldRecv = mesh::create_field<int>(m_mesh1, mesh::FieldShape(0, 0, m_numNodesPerElement), m_numComponentsPerNode, -1);
       } else {
-        field = nullptr;
+        fieldSend = nullptr;
+        fieldRecv = nullptr;
       }
 
-      exchanger.start_exchange(field, amISender);
-      exchanger.finish_exchange(field, amISender);
+      exchanger.start_exchange(fieldSend, fieldRecv);
+      exchanger.finish_exchange(fieldRecv);
 
       if (!amISender)
-        check_recv_field(field);
+        check_recv_field(fieldRecv);
     }
 
     void check_recv_field(mesh::FieldPtr<int> fieldPtr)
@@ -194,10 +204,10 @@ TEST(CommunicationAPIMPMD, RemoteInfoWrongShape)
   auto mesh = create_mesh(spec, f, MPI_COMM_SELF);
 
   auto remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh, mesh::FieldShape(1, 0, 0), 1);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(MPI_COMM_WORLD, mesh, nullptr, remoteInfo, nullptr));
 
   remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh, mesh::FieldShape(0, 0, 1), 2);
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(MPI_COMM_WORLD, mesh, nullptr, remoteInfo, nullptr));
 }
 
 TEST(CommunicationAPIMPMD, RemoteInfoNotOnMiddleMesh)
@@ -216,75 +226,5 @@ TEST(CommunicationAPIMPMD, RemoteInfoNotOnMiddleMesh)
 
   auto remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh2, mesh::FieldShape(0, 0, 1), 1);
 
-  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo));
+  EXPECT_ANY_THROW(stk::middle_mesh::MiddleMeshFieldCommunication<int> exchanger(MPI_COMM_WORLD, mesh, nullptr, remoteInfo, nullptr));
 }
-
-
-TEST(CommunicationAPIMPMD, FieldWrongShape)
-{
-  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
-    GTEST_SKIP();
-
-  mesh::impl::MeshSpec spec;
-  spec.xmin = 0;          spec.ymin = 0;
-  spec.xmax = 1;          spec.ymax = 1;
-  spec.numelX = 2, spec.numelY = 2;
-  bool amISender = utils::impl::comm_rank(MPI_COMM_WORLD) == 0;
-
-  auto f = [](const utils::Point& pt) { return pt; };
-  auto mesh = create_mesh(spec, f, MPI_COMM_SELF);
-
-  auto remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh, mesh::FieldShape(0, 0, 1), 1);
-  auto field = mesh::create_field<int>(mesh, mesh::FieldShape(1, 0, 0), 1);
-
-  stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo);
-  EXPECT_ANY_THROW(exchanger.start_exchange(field, amISender));
-
-  field = mesh::create_field<int>(mesh, mesh::FieldShape(0, 1, 0), 1);
-  EXPECT_ANY_THROW(exchanger.start_exchange(field, amISender));
-}
-
-TEST(CommunicationAPIMPMD, FieldNotOnMiddleMesh)
-{
-  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
-    GTEST_SKIP();
-
-  mesh::impl::MeshSpec spec;
-  spec.xmin = 0;          spec.ymin = 0;
-  spec.xmax = 1;          spec.ymax = 1;
-  spec.numelX = 2, spec.numelY = 2;
-  bool amISender = utils::impl::comm_rank(MPI_COMM_WORLD) == 0;
-
-  auto f = [](const utils::Point& pt) { return pt; };
-  auto mesh = create_mesh(spec, f, MPI_COMM_SELF);
-  auto mesh2 = create_mesh(spec, f, MPI_COMM_SELF);
-
-  auto remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh, mesh::FieldShape(0, 0, 1), 1);
-  auto field2 = mesh::create_field<int>(mesh2, mesh::FieldShape(0, 0, 1), 1);
-
-  stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo);
-  EXPECT_ANY_THROW(exchanger.start_exchange(field2, amISender));
-}
-
-#ifndef NDEBUG
-TEST(CommunicationAPIMPMD, BothApplicationSend)
-{
-  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
-    GTEST_SKIP();
-
-  mesh::impl::MeshSpec spec;
-  spec.xmin = 0;          spec.ymin = 0;
-  spec.xmax = 1;          spec.ymax = 1;
-  spec.numelX = 2, spec.numelY = 2;
-  bool amISender = true;
-
-  auto f = [](const utils::Point& pt) { return pt; };
-  auto mesh = create_mesh(spec, f, MPI_COMM_SELF);
-
-  auto remoteInfo = mesh::create_field<mesh::RemoteSharedEntity>(mesh, mesh::FieldShape(0, 0, 1), 1);
-  auto field = mesh::create_field<int>(mesh, mesh::FieldShape(0, 0, 1), 1);
-
-  stk::middle_mesh::MiddleMeshFieldCommunicationMPMD<int> exchanger(MPI_COMM_WORLD, mesh, remoteInfo);
-  EXPECT_ANY_THROW(exchanger.start_exchange(field, amISender));
-}
-#endif

@@ -10,7 +10,7 @@ namespace stk {
 namespace middle_mesh {
 namespace impl {
 
-class ApplicationInterfaceFakeParallelImpl
+class ApplicationInterfaceFakeParallelImpl : public ApplicationInterfaceSPMD
 {
   public:
     // union_comm is a MPI_Comm that contains at least the union of all the processes on
@@ -46,27 +46,27 @@ class ApplicationInterfaceFakeParallelImpl
 #endif
     }
 
-    void create_middle_grid();
+    void create_middle_grid() override;
 
-    std::shared_ptr<mesh::Mesh> get_middle_grid_for_mesh1();
+    std::shared_ptr<mesh::Mesh> get_middle_grid_for_mesh1() override;
 
-    std::shared_ptr<mesh::Mesh> get_middle_grid_for_mesh2();
+    std::shared_ptr<mesh::Mesh> get_middle_grid_for_mesh2() override;
 
-    mesh::FieldPtr<mesh::MeshEntityPtr> get_mesh1_classification();
+    mesh::FieldPtr<mesh::MeshEntityPtr> get_mesh1_classification() override;
 
-    mesh::FieldPtr<mesh::MeshEntityPtr> get_mesh2_classification();
+    mesh::FieldPtr<mesh::MeshEntityPtr> get_mesh2_classification() override;
 
-    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh1_inverse_classification();
+    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh1_inverse_classification() override;
 
-    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh2_inverse_classification();
+    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh2_inverse_classification() override;
 
-    mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info_mesh_one_to_two();
+    mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info_mesh_one_to_two() override;
 
-    mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info_mesh_two_to_one();
+    mesh::FieldPtr<mesh::RemoteSharedEntity> get_remote_info_mesh_two_to_one() override;
 
-    mesh::FieldPtr<utils::Point> get_xi_points_on_mesh1();
+    mesh::FieldPtr<utils::Point> get_xi_points_on_mesh1() override;
 
-    mesh::FieldPtr<utils::Point> get_xi_points_on_mesh2();
+    mesh::FieldPtr<utils::Point> get_xi_points_on_mesh2() override;
 
   private:
     void check_union_comm_size();
@@ -133,6 +133,7 @@ class ApplicationInterfaceFakeParallelImpl
     mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfoMeshTwoToOne;
     mesh::FieldPtr<utils::Point> m_mesh1XiPointsParallel;
     mesh::FieldPtr<utils::Point> m_mesh2XiPointsParallel;
+    bool m_middleGridCreated = false;
 
     const int m_rootRankOnUnionComm = 0;
 };

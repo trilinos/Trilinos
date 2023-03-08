@@ -142,7 +142,6 @@ class FieldScatterFromRoot
       auto& fieldSrc           = *m_fieldSrc;
       FieldShape fshape        = fieldSrc.get_field_shape();
       auto meshSerial          = fieldSrc.get_mesh();
-      size_t totalSize = 0;
       for (int dim=0; dim < 3; ++dim)
         for (auto& entity : meshSerial->get_mesh_entities(dim))
           if (entity)
@@ -156,13 +155,10 @@ class FieldScatterFromRoot
               buf.pack(dim);
               buf.pack(destLocalId);
 
-              totalSize += 2 * sizeof(int);
-
               for (int j=0; j < fshape.count[dim]; ++j)
                 for (int k=0; k < fieldSrc.get_num_comp(); ++k)
                 {
                   buf.pack(fieldSrc(entity, j, k));
-                  totalSize += sizeof(T);
                 }
             }   
           }

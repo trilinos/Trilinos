@@ -1,5 +1,5 @@
 #include "stk_middle_mesh/application_interface.hpp"
-#include "stk_middle_mesh/communication_api_mpmd.hpp"
+#include "stk_middle_mesh/communication_api.hpp"
 #include "stk_middle_mesh/matrix.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
@@ -342,11 +342,12 @@ class ConservativeTransferUser
 class ConservativeTransferMPMDStk
 {
   public:
-    ConservativeTransferMPMDStk(std::shared_ptr<mesh::Mesh> inputMesh, bool isProjectToMesh,
-                                std::shared_ptr<ConservativeTransferUser> user) :
-      m_inputMesh(inputMesh),
-      m_isProjectToMesh(isProjectToMesh),
-      m_user(user)
+    ConservativeTransferMPMDStk(std::shared_ptr<mesh::Mesh> inputMesh1, std::shared_ptr<mesh::Mesh> inputMesh2,
+                                std::shared_ptr<ConservativeTransferUser> userMesh1, std::shared_ptr<ConservativeTransferUser> userMesh2) :
+      m_inputMesh1(inputMesh1),
+      m_inputMesh2(inputMesh2),
+      m_userMesh1(userMesh1),
+      m_userMesh2(userMesh2)
     {
       setup_for_transfer();
     }
@@ -354,57 +355,163 @@ class ConservativeTransferMPMDStk
     void setup_for_transfer()
     {
       m_unionComm = MPI_COMM_WORLD;
-      std::shared_ptr<XiCoordinates> xiCoords = m_user->create_xi_coords();   
-	    std::shared_ptr<ApplicationInterfaceMPMD> interface = application_interface_mpmd_factory(
-	      ApplicationInterfaceType::FakeParallel, m_inputMesh, m_isProjectToMesh, m_unionComm, xiCoords);
+      std::shared_ptr<XiCoordinates> xiCoords;
+      if (m_userMesh1)
+        xiCoords = m_userMesh1->create_xi_coords();
+      else
+        xiCoords = m_userMesh2->create_xi_coords();
 
-      m_middleMesh                      = interface->create_middle_grid();
-      m_middleMeshToInputMeshInfo       = interface->get_mesh_classification();
-      m_inputMeshToMiddleMesh           = interface->compute_mesh_inverse_classification();
-      m_remoteInfo                      = interface->get_remote_info();
-      m_middleMeshQuadPointsOnInputMesh = interface->get_xi_points_on_input_mesh();
-    }
+	    std::shared_ptr<ApplicationInterfaceSPMD> interface = application_interface_spmd_factory(
+	      ApplicationInterfaceType::FakeParallel, m_inputMesh1, m_inputMesh2, m_unionComm, xiCoords);
 
-    void do_transfer(mesh::FieldPtr<double> functionVals, bool amISender)
-    {
-      mesh::FieldPtr<double> quadVals = mesh::create_field<double>(m_middleMesh, m_middleMeshQuadPointsOnInputMesh->get_field_shape(), 1);
-      if (amISender)
+      interface->create_middle_grid();
+      if (m_inputMesh1)
       {
-        m_user->interpolate_to_quad_pts(m_inputMesh, m_middleMesh,
-                                        m_middleMeshQuadPointsOnInputMesh, m_inputMeshToMiddleMesh,
-                                        functionVals, quadVals);
+        m_middleMesh1                      = interface->get_middle_grid_for_mesh1();
+        m_middleMeshToInputMesh1Info       = interface->get_mesh1_classification();
+        m_inputMesh1ToMiddleMesh           = interface->compute_mesh1_inverse_classification();
+        m_remoteInfo1To2                   = interface->get_remote_info_mesh_one_to_two();
+        m_middleMeshQuadPointsOnInputMesh1 = interface->get_xi_points_on_mesh1();
       }
 
-      MiddleMeshFieldCommunicationMPMD<double> exchanger(m_unionComm, m_middleMesh, m_remoteInfo);	  
-	    exchanger.start_exchange(quadVals, amISender);
-	    exchanger.finish_exchange(quadVals, amISender);
-
-      if (!amISender)
+      if (m_inputMesh2)
       {
-        mesh::FieldPtr<double> linearSystemRhs = mesh::create_field<double>(m_inputMesh, mesh::FieldShape(1, 0, 0), 1);
-        m_user->finish_integration(m_inputMesh, m_middleMesh, m_middleMeshQuadPointsOnInputMesh, m_inputMeshToMiddleMesh,
-                                   quadVals, linearSystemRhs);
-        m_user->solve_linear_system(m_inputMesh, m_middleMesh, m_middleMeshQuadPointsOnInputMesh, m_inputMeshToMiddleMesh,
-                                    linearSystemRhs, functionVals);
+        m_middleMesh2                      = interface->get_middle_grid_for_mesh2();
+        m_middleMeshToInputMesh2Info       = interface->get_mesh2_classification();
+        m_inputMesh2ToMiddleMesh           = interface->compute_mesh2_inverse_classification();
+        m_remoteInfo2To1                   = interface->get_remote_info_mesh_two_to_one();
+        m_middleMeshQuadPointsOnInputMesh2 = interface->get_xi_points_on_mesh2();
+      }
+
+      m_exchanger = std::make_shared<MiddleMeshFieldCommunication<double>>(m_unionComm, m_middleMesh1, m_middleMesh2, 
+                                                                           m_remoteInfo1To2, m_remoteInfo2To1);      
+    }
+
+    void start_transfer(mesh::FieldPtr<double> functionValsSend, mesh::FieldPtr<double> functionValsRecv)
+    {
+      MeshData sendData = get_mesh_data_send(functionValsSend);
+      MeshData recvData = get_mesh_data_recv(functionValsRecv);
+
+      if (functionValsSend)      
+      {
+        sendData.user->interpolate_to_quad_pts(sendData.inputMesh, sendData.middleMesh,
+                                               sendData.middleMeshQuadPointsOnInputMesh, sendData.inputMeshToMiddleMesh,
+                                               functionValsSend, sendData.quadVals);
+      }
+    }
+
+    void finish_transfer(mesh::FieldPtr<double> functionValsSend, mesh::FieldPtr<double> functionValsRecv)
+    {
+      MeshData sendData = get_mesh_data_send(functionValsSend);
+      MeshData recvData = get_mesh_data_recv(functionValsRecv);
+
+	    m_exchanger->start_exchange(sendData.quadVals, recvData.quadVals);
+      //------------------------------------------------------
+	    m_exchanger->finish_exchange(recvData.quadVals);
+
+      if (functionValsRecv)
+      {
+        mesh::FieldPtr<double> linearSystemRhs = mesh::create_field<double>(recvData.inputMesh, mesh::FieldShape(1, 0, 0), 1);
+        recvData.user->finish_integration(recvData.inputMesh, recvData.middleMesh, recvData.middleMeshQuadPointsOnInputMesh,
+                                          recvData.inputMeshToMiddleMesh,
+                                          recvData.quadVals, linearSystemRhs);
+        recvData.user->solve_linear_system(recvData.inputMesh, recvData.middleMesh, recvData.middleMeshQuadPointsOnInputMesh,
+                                           recvData.inputMeshToMiddleMesh,
+                                           linearSystemRhs, functionValsRecv);
       }
 
       // for testing only
-      check_conservation(functionVals, amISender);
+      check_conservation(functionValsSend, functionValsRecv);
     }
 
   private:
 
-    void check_conservation(mesh::FieldPtr<double> functionSolValsPtr, bool amISender)
+    struct MeshData
     {
-      double integralVal = m_user->integrate_function(m_inputMesh, m_middleMesh, m_middleMeshQuadPointsOnInputMesh,
-                                                      m_inputMeshToMiddleMesh, functionSolValsPtr);
-      
-      int myRank = utils::impl::comm_rank(m_unionComm);
-      if (amISender)
+      std::shared_ptr<mesh::Mesh> inputMesh;
+      std::shared_ptr<ConservativeTransferUser> user;
+      std::shared_ptr<mesh::Mesh> middleMesh;
+      mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMesh;
+      mesh::FieldPtr<utils::Point> middleMeshQuadPointsOnInputMesh;
+      mesh::FieldPtr<double> quadVals;
+    };
+
+
+    MeshData get_mesh_data_send(mesh::FieldPtr<double> functionValsSend)
+    {
+      MeshData data;
+      if (functionValsSend)
       {
+        bool sendOneToTwo = functionValsSend->get_mesh() == m_inputMesh1;
+
+        data.inputMesh  = sendOneToTwo ? m_inputMesh1 : m_inputMesh2;
+        data.middleMesh = sendOneToTwo ? m_middleMesh1 : m_middleMesh2;
+        data.user       = sendOneToTwo ? m_userMesh1 : m_userMesh2;
+        data.middleMeshQuadPointsOnInputMesh = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh1 
+                                                            : m_middleMeshQuadPointsOnInputMesh2;
+        data.inputMeshToMiddleMesh = sendOneToTwo ? m_inputMesh1ToMiddleMesh : m_inputMesh2ToMiddleMesh;
+        auto& quadVals = sendOneToTwo ? m_quadValsMiddleMesh1 : m_quadValsMiddleMesh2;
+
+        if (!quadVals || quadVals->get_num_comp() != functionValsSend->get_num_comp())
+        {
+          quadVals = mesh::create_field<double>(data.middleMesh, data.middleMeshQuadPointsOnInputMesh->get_field_shape(),
+                                                functionValsSend->get_num_comp());
+        }
+
+        data.quadVals = quadVals;
+      }
+
+      return data;
+    }
+
+
+    MeshData get_mesh_data_recv(mesh::FieldPtr<double> functionValsRecv)
+    {
+      MeshData data;
+      if (functionValsRecv)
+      {
+        bool sendOneToTwo = functionValsRecv->get_mesh() == m_inputMesh2;
+
+        data.inputMesh  = sendOneToTwo ? m_inputMesh2 : m_inputMesh1;
+        data.middleMesh = sendOneToTwo ? m_middleMesh2 : m_middleMesh1;
+        data.user       = sendOneToTwo ? m_userMesh2 : m_userMesh1;
+        data.middleMeshQuadPointsOnInputMesh = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh2 
+                                                            : m_middleMeshQuadPointsOnInputMesh1;
+        data.inputMeshToMiddleMesh = sendOneToTwo ? m_inputMesh2ToMiddleMesh : m_inputMesh1ToMiddleMesh;
+
+        auto& quadVals = sendOneToTwo ? m_quadValsMiddleMesh2 : m_quadValsMiddleMesh1;
+        quadVals = mesh::create_field<double>(data.middleMesh, data.middleMeshQuadPointsOnInputMesh->get_field_shape(),
+                                              functionValsRecv->get_num_comp());
+
+        if (!quadVals || quadVals->get_num_comp() != functionValsRecv->get_num_comp())
+        {
+          quadVals = mesh::create_field<double>(data.middleMesh, data.middleMeshQuadPointsOnInputMesh->get_field_shape(),
+                                                functionValsRecv->get_num_comp());
+        }
+
+        data.quadVals = quadVals;        
+      }
+
+      return data;
+    }    
+
+    void check_conservation(mesh::FieldPtr<double> functionValsSend, mesh::FieldPtr<double> functionValsRecv)
+    {
+      MeshData sendData = get_mesh_data_send(functionValsSend);
+      MeshData recvData = get_mesh_data_recv(functionValsRecv);
+  
+      int myRank = utils::impl::comm_rank(m_unionComm);
+      if (functionValsSend)
+      {
+        double integralVal = sendData.user->integrate_function(sendData.inputMesh, sendData.middleMesh,
+                                                               sendData.middleMeshQuadPointsOnInputMesh,
+                                                               sendData.inputMeshToMiddleMesh, functionValsSend);
         MPI_Send(&integralVal, 1, MPI_DOUBLE, 1 - myRank, 666, m_unionComm);
       } else
       {
+        double integralVal = recvData.user->integrate_function(recvData.inputMesh, recvData.middleMesh,
+                                                               recvData.middleMeshQuadPointsOnInputMesh,
+                                                               recvData.inputMeshToMiddleMesh, functionValsRecv);        
         double integralValSender;
         MPI_Recv(&integralValSender, 1, MPI_DOUBLE, 1 - myRank, 666, m_unionComm, MPI_STATUS_IGNORE);
 
@@ -413,16 +520,26 @@ class ConservativeTransferMPMDStk
       }
     }
 
-    std::shared_ptr<mesh::Mesh> m_inputMesh;
-    bool m_isProjectToMesh;
-    std::shared_ptr<ConservativeTransferUser> m_user;
+    std::shared_ptr<mesh::Mesh> m_inputMesh1;
+    std::shared_ptr<mesh::Mesh> m_inputMesh2;
+    std::shared_ptr<ConservativeTransferUser> m_userMesh1;
+    std::shared_ptr<ConservativeTransferUser> m_userMesh2;
+    std::shared_ptr<MiddleMeshFieldCommunication<double>> m_exchanger;
+
 
     MPI_Comm m_unionComm;
-    std::shared_ptr<mesh::Mesh> m_middleMesh;
-    mesh::FieldPtr<mesh::MeshEntityPtr> m_middleMeshToInputMeshInfo;
-    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> m_inputMeshToMiddleMesh;
-    mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfo;
-    mesh::FieldPtr<utils::Point> m_middleMeshQuadPointsOnInputMesh;   
+    std::shared_ptr<mesh::Mesh> m_middleMesh1;
+    std::shared_ptr<mesh::Mesh> m_middleMesh2;
+    mesh::FieldPtr<mesh::MeshEntityPtr> m_middleMeshToInputMesh1Info;
+    mesh::FieldPtr<mesh::MeshEntityPtr> m_middleMeshToInputMesh2Info;
+    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> m_inputMesh1ToMiddleMesh;
+    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> m_inputMesh2ToMiddleMesh;
+    mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfo1To2;
+    mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfo2To1;
+    mesh::FieldPtr<utils::Point> m_middleMeshQuadPointsOnInputMesh1;
+    mesh::FieldPtr<utils::Point> m_middleMeshQuadPointsOnInputMesh2;
+    mesh::FieldPtr<double> m_quadValsMiddleMesh1;
+    mesh::FieldPtr<double> m_quadValsMiddleMesh2;    
 };
 
 template <typename Tfunc>
@@ -494,20 +611,28 @@ int main(int argc, char* argv[])
 
     auto f = [](const stk::middle_mesh::utils::Point& pt) { return pt; };
     std::shared_ptr<mesh::Mesh> inputMesh = stk::middle_mesh::mesh::impl::create_mesh(spec, f, meshComm);
-    bool isProjectToMesh = color == 0;
+
+    std::shared_ptr<mesh::Mesh> inputMesh1 = color == 0 ? inputMesh : nullptr;
+    std::shared_ptr<mesh::Mesh> inputMesh2 = color == 0 ? nullptr : inputMesh;
 
     auto user = std::make_shared<ConservativeTransferUser>(inputMesh);
-    ConservativeTransferMPMDStk transfer(inputMesh, isProjectToMesh, user);
+    std::shared_ptr<ConservativeTransferUser> userMesh1 = color == 0 ? user : nullptr;
+    std::shared_ptr<ConservativeTransferUser> userMesh2 = color == 0 ? nullptr : user;
+    ConservativeTransferMPMDStk transfer(inputMesh1, inputMesh2, userMesh1, userMesh2);
 
     bool amISender = color == sendColor;
     auto func = [](const utils::Point& pt) { return pt.x*pt.x + 2*pt.y*pt.y + 3*pt.z; };
-    mesh::FieldPtr<double> functionVals;
-    if (amISender)
-      functionVals = create_field(inputMesh, func);
-    else
-      functionVals = mesh::create_field<double>(inputMesh, mesh::FieldShape(1, 0, 0), 1);
+    mesh::FieldPtr<double> functionValsSend, functionValsRecv;
+    if (amISender) {
+      functionValsSend = create_field(inputMesh, func);
+      functionValsRecv = nullptr;
+    } else {
+      functionValsRecv = mesh::create_field<double>(inputMesh, mesh::FieldShape(1, 0, 0), 1);
+      functionValsSend = nullptr;
+    }
     
-    transfer.do_transfer(functionVals, amISender);
+    transfer.start_transfer(functionValsSend, functionValsRecv);
+    transfer.finish_transfer(functionValsSend, functionValsRecv);
 
     //if (!amISender)
     //  check_field(functionVals, func);
