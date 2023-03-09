@@ -1948,6 +1948,43 @@ namespace Ifpack2 {
     };
 #endif
 
+#if defined(KOKKOS_ENABLE_SYCL)
+    static inline int ExtractAndFactorizeRecommendedSYCLTeamSize(const int blksize,
+								const int vector_length,
+								const int internal_vector_length) {
+      const int vector_size = vector_length/internal_vector_length;
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  32; // 64
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return 2*total_team_size/vector_size;
+    }
+    template<>
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return ExtractAndFactorizeRecommendedSYCLTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+    template<>
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLSharedUSMSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return ExtractAndFactorizeRecommendedSYCLTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+#endif
+
+    
     template<typename MatrixType>
     struct ExtractAndFactorizeTridiags {
     public:
