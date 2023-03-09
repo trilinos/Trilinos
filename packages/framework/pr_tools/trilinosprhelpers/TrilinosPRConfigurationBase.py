@@ -443,8 +443,23 @@ class TrilinosPRConfigurationBase(object):
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
-        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        if self.arg_pullrequest_cdash_track == "Pull Request":
+            output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        else:
+            output = self.arg_pr_genconfig_job_name            
         return output
+
+
+    @property
+    def dashboard_model(self):
+        """
+        Generate the dashboard model for CDash
+
+        Nightly, Continuous, Experimental
+        """
+        if self.arg_pullrequest_cdash_track == "Pull Request":
+            return "Experimental"
+        return "Nightly"
 
 
     # --------------------
