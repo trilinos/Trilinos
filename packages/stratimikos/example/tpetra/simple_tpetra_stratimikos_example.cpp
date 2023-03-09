@@ -198,6 +198,7 @@ bool readAndSolveLinearSystem(int argc, char* argv[])
   // parameter list.
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > lowsFactory =
     linearSolverBuilder.createLinearSolveStrategy("");
+  *out << "\nlowsFactory: " << describe(*lowsFactory, verbLevel);
 
   // Setup output stream and the verbosity level
   lowsFactory->setOStream(out);
