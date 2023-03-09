@@ -83,7 +83,7 @@
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_PreconditionerFactory.hpp"
 #ifdef HAVE_PIRO_ROL
-#include "ROL_HessianScaledThyraVector.hpp"
+#include "ROL_LinearOpScaledThyraVector.hpp"
 #endif
 #endif
 
@@ -582,7 +582,7 @@ Piro::PerformROLAnalysis(
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
 #ifdef HAVE_PIRO_TEKO
   bool removeMeanOfTheRHS = hessianDotProductList.get("Remove Mean Of The Right-hand Side",false);
-  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
+  ROL::PrimalLinearOpScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
 #else
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
   ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
