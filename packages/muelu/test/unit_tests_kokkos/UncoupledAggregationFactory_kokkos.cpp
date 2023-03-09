@@ -54,7 +54,6 @@
 
 #include <MueLu_AmalgamationFactory_kokkos.hpp>
 #include <MueLu_CoalesceDropFactory_kokkos.hpp>
-#include <MueLu_CoarseMapFactory_kokkos.hpp>
 #include <MueLu_config.hpp>
 #include <MueLu_TestHelpers_kokkos.hpp>
 #include <MueLu_Version.hpp>

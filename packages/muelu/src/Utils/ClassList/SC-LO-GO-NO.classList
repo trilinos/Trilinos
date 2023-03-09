@@ -23,7 +23,6 @@ CloneRepartitionInterface
 CoalesceDropFactory
 CoalesceDropFactory_kokkos
 CoarseMapFactory
-CoarseMapFactory_kokkos
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory

@@ -54,7 +54,6 @@
 #include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities_kokkos.hpp"
