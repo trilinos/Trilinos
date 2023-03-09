@@ -152,4 +152,19 @@
 #endif
 #endif // KOKKOS_ENABLE_HIP
 
+#if defined(KOKKOS_ENABLE_SYCL)
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Experimental::SYCL)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Experimental::SYCL)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Experimental::SYCL)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Experimental::SYCL)
+#endif
+#endif // KOKKOS_ENABLE_SYCL
+
 #endif // AMESOS2_KOKKOS_IMPL_HPP
