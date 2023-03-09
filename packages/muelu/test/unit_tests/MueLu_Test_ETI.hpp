@@ -170,7 +170,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       auto inst = xpetraParameters.GetInstantiation();
 # endif
       if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+        typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -204,7 +204,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "serial") {
 #ifdef KOKKOS_ENABLE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -241,7 +241,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "openmp") {
 #ifdef KOKKOS_ENABLE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -279,7 +279,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "cuda") {
 #ifdef KOKKOS_ENABLE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -316,7 +316,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "hip") {
 #ifdef KOKKOS_ENABLE_HIP
-	typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
+	typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -353,7 +353,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "sycl") {
 #ifdef KOKKOS_ENABLE_SYCL
-	typedef Kokkos::Compat::KokkosSYCLWrapperNode Node;
+	typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;

@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
 

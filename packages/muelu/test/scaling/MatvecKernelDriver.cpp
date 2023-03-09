@@ -679,10 +679,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_host_type    KCRS;
@@ -832,10 +832,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
@@ -1160,7 +1160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       do_cusparse = false;
     }
     #else
-    if(! std::is_same<NO, Kokkos::Compat::KokkosCudaWrapperNode>::value) do_cusparse = false;
+    if(! std::is_same<NO, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value) do_cusparse = false;
     #endif
 
     #if ! defined(HAVE_MUELU_MAGMASPARSE)
@@ -1245,7 +1245,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "========================================================" << endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
-    out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
+    out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
 

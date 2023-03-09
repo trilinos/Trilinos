@@ -47,7 +47,7 @@
 #ifndef MUELU_USEDEFAULTTYPES_HPP
 #define MUELU_USEDEFAULTTYPES_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "MueLu_config.hpp"
 
 #ifdef HAVE_MUELU_TPETRA
@@ -75,7 +75,7 @@ namespace MueLu
   typedef int DefaultGlobalOrdinal;
   #endif
 
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
+  typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
 }
 
 #endif

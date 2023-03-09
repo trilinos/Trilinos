@@ -50,7 +50,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_Core.hpp>
 
 #include "MueLu_TwoLevelFactoryBase.hpp"

@@ -62,7 +62,7 @@ namespace MueLu {
     @brief Factory for converting matrices to half precision operators
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class LowPrecisionFactory : public SingleLevelFactoryBase {
 #undef MUELU_LOWPRECISIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

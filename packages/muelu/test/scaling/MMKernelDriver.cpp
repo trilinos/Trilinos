@@ -798,9 +798,9 @@ struct LTG_Tests
 #ifdef HAVE_TPETRA_INST_OPENMP
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>
+struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>
 {
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
   static void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,
                   const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                         Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C) {

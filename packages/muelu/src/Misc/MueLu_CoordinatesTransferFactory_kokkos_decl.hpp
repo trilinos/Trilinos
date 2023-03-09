@@ -50,7 +50,7 @@
 
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
@@ -103,13 +103,13 @@ namespace MueLu {
   class CoordinatesTransferFactory_kokkos;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public TwoLevelFactoryBase {
+  class CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public TwoLevelFactoryBase {
   public:
     typedef Scalar                                              scalar_type;
     typedef LocalOrdinal                                        local_ordinal_type;
     typedef GlobalOrdinal                                       global_ordinal_type;
     typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
   private:
     // For compatibility

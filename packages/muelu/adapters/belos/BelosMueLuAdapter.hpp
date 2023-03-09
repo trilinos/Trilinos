@@ -96,7 +96,7 @@ namespace Belos {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node          = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuOp :
       public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA

@@ -561,7 +561,7 @@ int main(int argc, char* argv[]) {
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
       if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+        typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);
@@ -578,7 +578,7 @@ int main(int argc, char* argv[]) {
 #endif
       } else if (node == "serial") {
 #ifdef KOKKOS_ENABLE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);
@@ -598,7 +598,7 @@ int main(int argc, char* argv[]) {
 #endif
       } else if (node == "openmp") {
 #ifdef KOKKOS_ENABLE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);
@@ -618,7 +618,7 @@ int main(int argc, char* argv[]) {
 #endif
       } else if (node == "cuda") {
 #ifdef KOKKOS_ENABLE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);
@@ -638,7 +638,7 @@ int main(int argc, char* argv[]) {
 #endif
       } else if (node == "hip") {
 #ifdef KOKKOS_ENABLE_HIP
-        typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);
@@ -658,7 +658,7 @@ int main(int argc, char* argv[]) {
 #endif
       } else if (node == "sycl") {
 #ifdef KOKKOS_ENABLE_SYCL
-        typedef Kokkos::Compat::KokkosSYCLWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, lib, argc, argv);

@@ -99,39 +99,39 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool useKokkos = false;
   if(lib == Xpetra::UseTpetra) {
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkos = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkos = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkos = true;
 # endif
 # ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
       useKokkos = true;
 # endif
 # ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
       useKokkos = true;
 # endif    
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
-  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
     // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
     // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
     // Behavior of some algorithms on SYCL is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
