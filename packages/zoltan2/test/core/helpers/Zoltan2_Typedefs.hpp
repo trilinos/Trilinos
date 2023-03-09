@@ -65,7 +65,7 @@
 ////#include <Galeri_XpetraParameters.hpp>
 ////#endif
 //
-////#include <KokkosCompat_DefaultNode.hpp>
+////#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 //#include "GeometricGenerator.hpp"
 
 // Forward declaration for classes in the Tpetra namespace

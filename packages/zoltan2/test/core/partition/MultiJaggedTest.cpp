@@ -1420,10 +1420,10 @@ int main(int narg, char *arg[])
     // TODO: Probably this should all change eventually so we don't have a node
     // declared like this.
 #if defined(KOKKOS_ENABLE_CUDA)
-    using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+    using uvm_off_node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
       Kokkos::Cuda, Kokkos::CudaSpace>;
 #elif defined(KOKKOS_ENABLE_HIP)
-    using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+    using uvm_off_node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
       Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
 #endif
 
