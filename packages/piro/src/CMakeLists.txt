@@ -69,8 +69,6 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
-    Piro_ThyraProductME_Objective_SimOpt.hpp
-    Piro_ThyraProductME_Constraint_SimOpt.hpp
     Piro_NOXSolver.hpp
     Piro_NOXSolver_Def.hpp
     Piro_LOCASolver.hpp
@@ -168,8 +166,14 @@ IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
     )
 ENDIF()
 
-# Add rol/adapters/thyra directories if Rol is enabled
+
 IF (Piro_ENABLE_ROL)
+  APPEND_SET(HEADERS
+    Piro_ThyraProductME_Objective_SimOpt.hpp
+    Piro_ThyraProductME_Constraint_SimOpt.hpp
+    Piro_CustomLBFGSSecant.hpp)
+
+  # Add rol/adapters/thyra directories if Rol is enabled
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector)
 ENDIF()
