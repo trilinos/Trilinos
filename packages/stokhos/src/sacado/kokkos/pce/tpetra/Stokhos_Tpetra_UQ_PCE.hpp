@@ -54,7 +54,7 @@
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
@@ -128,7 +128,7 @@ struct DeviceForNode2 {
 };
 
 template <typename Device>
-struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+struct DeviceForNode2< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
 

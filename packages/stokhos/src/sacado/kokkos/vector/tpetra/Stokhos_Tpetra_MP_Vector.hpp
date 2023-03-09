@@ -52,7 +52,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 #endif
@@ -102,7 +102,7 @@ struct DeviceForNode {
 ///   "wrapper" Node types.
 /// \tparam Device (New) Kokkos execution space type.
 template <typename Device>
-struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+struct DeviceForNode< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
 #endif
