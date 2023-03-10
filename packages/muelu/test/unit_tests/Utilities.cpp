@@ -298,93 +298,93 @@ namespace MueLuTests {
       ArrayRCP<size_t> nnzPerRow(9, 0);
       row_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 9*comm->getSize(), 0, comm);
       if(comm->getSize() == 1) {
-	col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 15, 0, comm);
-	nnzPerRow[0] = 3;
-	nnzPerRow[1] = 4;
-	nnzPerRow[2] = 4;
-	nnzPerRow[3] = 4;
-	nnzPerRow[4] = 5;
-	nnzPerRow[5] = 5;
-	nnzPerRow[6] = 4;
-	nnzPerRow[7] = 5;
-	nnzPerRow[8] = 5;
+        col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 15, 0, comm);
+        nnzPerRow[0] = 3;
+        nnzPerRow[1] = 4;
+        nnzPerRow[2] = 4;
+        nnzPerRow[3] = 4;
+        nnzPerRow[4] = 5;
+        nnzPerRow[5] = 5;
+        nnzPerRow[6] = 4;
+        nnzPerRow[7] = 5;
+        nnzPerRow[8] = 5;
       } else if(comm->getSize() == 4) {
-	Teuchos::Array<GlobalOrdinal> global_colids(15);
-	const GlobalOrdinal rank_offset = static_cast<GlobalOrdinal>(comm->getRank() * 9);
-	for(GlobalOrdinal colIdx = 0; colIdx < 9; ++colIdx) {
-	  global_colids[colIdx] = colIdx + rank_offset;
-	}
+        Teuchos::Array<GlobalOrdinal> global_colids(15);
+        const GlobalOrdinal rank_offset = static_cast<GlobalOrdinal>(comm->getRank() * 9);
+        for(GlobalOrdinal colIdx = 0; colIdx < 9; ++colIdx) {
+          global_colids[colIdx] = colIdx + rank_offset;
+        }
 
-	if(comm->getRank() == 0) {
-	  global_colids[9]  = 9;
-	  global_colids[10] = 12;
-	  global_colids[11] = 15;
-	  global_colids[12] = 18;
-	  global_colids[13] = 19;
-	  global_colids[14] = 20;
+        if(comm->getRank() == 0) {
+          global_colids[9]  = 9;
+          global_colids[10] = 12;
+          global_colids[11] = 15;
+          global_colids[12] = 18;
+          global_colids[13] = 19;
+          global_colids[14] = 20;
 
-	  nnzPerRow[0] = 3;
-	  nnzPerRow[1] = 4;
-	  nnzPerRow[2] = 4;
-	  nnzPerRow[3] = 4;
-	  nnzPerRow[4] = 5;
-	  nnzPerRow[5] = 5;
-	  nnzPerRow[6] = 4;
-	  nnzPerRow[7] = 5;
-	  nnzPerRow[8] = 5;
-	} else if(comm->getRank() == 1) {
-	  global_colids[9]  = 2;
-	  global_colids[10] = 5;
-	  global_colids[11] = 8;
-	  global_colids[12] = 27;
-	  global_colids[13] = 28;
-	  global_colids[14] = 29;
+          nnzPerRow[0] = 3;
+          nnzPerRow[1] = 4;
+          nnzPerRow[2] = 4;
+          nnzPerRow[3] = 4;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 5;
+          nnzPerRow[6] = 4;
+          nnzPerRow[7] = 5;
+          nnzPerRow[8] = 5;
+        } else if(comm->getRank() == 1) {
+          global_colids[9]  = 2;
+          global_colids[10] = 5;
+          global_colids[11] = 8;
+          global_colids[12] = 27;
+          global_colids[13] = 28;
+          global_colids[14] = 29;
 
-	  nnzPerRow[0] = 4;
-	  nnzPerRow[1] = 4;
-	  nnzPerRow[2] = 3;
-	  nnzPerRow[3] = 5;
-	  nnzPerRow[4] = 5;
-	  nnzPerRow[5] = 4;
-	  nnzPerRow[6] = 5;
-	  nnzPerRow[7] = 5;
-	  nnzPerRow[8] = 4;
-	} else if(comm->getRank() == 2) {
-	  global_colids[9]  = 6;
-	  global_colids[10] = 7;
-	  global_colids[11] = 8;
-	  global_colids[12] = 27;
-	  global_colids[13] = 30;
-	  global_colids[14] = 33;
+          nnzPerRow[0] = 4;
+          nnzPerRow[1] = 4;
+          nnzPerRow[2] = 3;
+          nnzPerRow[3] = 5;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 4;
+          nnzPerRow[6] = 5;
+          nnzPerRow[7] = 5;
+          nnzPerRow[8] = 4;
+        } else if(comm->getRank() == 2) {
+          global_colids[9]  = 6;
+          global_colids[10] = 7;
+          global_colids[11] = 8;
+          global_colids[12] = 27;
+          global_colids[13] = 30;
+          global_colids[14] = 33;
 
-	  nnzPerRow[0] = 4;
-	  nnzPerRow[1] = 5;
-	  nnzPerRow[2] = 5;
-	  nnzPerRow[3] = 4;
-	  nnzPerRow[4] = 5;
-	  nnzPerRow[5] = 5;
-	  nnzPerRow[6] = 3;
-	  nnzPerRow[7] = 4;
-	  nnzPerRow[8] = 4;
-	} else if(comm->getRank() == 3) {
-	  global_colids[9]  = 15;
-	  global_colids[10] = 16;
-	  global_colids[11] = 17;
-	  global_colids[12] = 20;
-	  global_colids[13] = 23;
-	  global_colids[14] = 26;
+          nnzPerRow[0] = 4;
+          nnzPerRow[1] = 5;
+          nnzPerRow[2] = 5;
+          nnzPerRow[3] = 4;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 5;
+          nnzPerRow[6] = 3;
+          nnzPerRow[7] = 4;
+          nnzPerRow[8] = 4;
+        } else if(comm->getRank() == 3) {
+          global_colids[9]  = 15;
+          global_colids[10] = 16;
+          global_colids[11] = 17;
+          global_colids[12] = 20;
+          global_colids[13] = 23;
+          global_colids[14] = 26;
 
-	  nnzPerRow[0] = 5;
-	  nnzPerRow[1] = 5;
-	  nnzPerRow[2] = 4;
-	  nnzPerRow[3] = 5;
-	  nnzPerRow[4] = 5;
-	  nnzPerRow[5] = 4;
-	  nnzPerRow[6] = 4;
-	  nnzPerRow[7] = 4;
-	  nnzPerRow[8] = 3;
-	}
-	col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 36, global_colids.view(0, 15), 0, comm);
+          nnzPerRow[0] = 5;
+          nnzPerRow[1] = 5;
+          nnzPerRow[2] = 4;
+          nnzPerRow[3] = 5;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 4;
+          nnzPerRow[6] = 4;
+          nnzPerRow[7] = 4;
+          nnzPerRow[8] = 3;
+        }
+        col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 36, global_colids.view(0, 15), 0, comm);
       }
       crs_mat = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(row_map, col_map, nnzPerRow);
     }
@@ -406,65 +406,65 @@ namespace MueLuTests {
       ArrayRCP<Scalar> values;
 
       if(comm->getRank() == 0) {
-	size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
-	ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	row_ptr.deepCopy(row_ptr_view.getConst());
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-	LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
-	ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
         colInds.deepCopy(colInds_view.getConst());
 
-	Scalar raw_values[] = {four, -one, -one,
-			       -one, four, -one, -one,
-			       -one, four, -one, -one,
-			       -one, four, -one, -one,
-			       -one, -one / four, four, -one / four, -one,
-			       zero, zero, two, zero, zero,
-			       -one / ten, four / ten, -one / ten, -one / ten,
-			       -one, -one, four, -one, -one,
-			       -one, -one, four, -one, -one};
-	ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	values.deepCopy(values_view.getConst());
+        Scalar raw_values[] = {four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, -one / four, four, -one / four, -one,
+                               zero, zero, two, zero, zero,
+                               -one / ten, four / ten, -one / ten, -one / ten,
+                               -one, -one, four, -one, -one,
+                               -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
       } else if(comm->getRank() == 1) {
-	size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
-	ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	row_ptr.deepCopy(row_ptr_view.getConst());
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-	LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
-	ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
         colInds.deepCopy(colInds_view.getConst());
 
-	Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
-	ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	values.deepCopy(values_view.getConst());
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
       } else if(comm->getRank() == 2) {
-	size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
-	ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	row_ptr.deepCopy(row_ptr_view.getConst());
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-	LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
-	ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
         colInds.deepCopy(colInds_view.getConst());
 
-	Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
-			       -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
-			       -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
-	ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	values.deepCopy(values_view.getConst());
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
       } else if(comm->getRank() == 3) {
-	size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
-	ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	row_ptr.deepCopy(row_ptr_view.getConst());
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-	LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
-	ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
         colInds.deepCopy(colInds_view.getConst());
 
-	Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
-			       -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
-			       -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
-	ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
-	values.deepCopy(values_view.getConst());
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
       }
       crs_mat->setAllValues(row_ptr, colInds, values);
     }
@@ -475,10 +475,10 @@ namespace MueLuTests {
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
-	Scalar diag_ref[] = {six, seven, seven, seven, six + one / two, two, seven / ten, eight, eight};
-	for(int idx = 0; idx < 9; ++idx) {
-	  TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
-	}
+        Scalar diag_ref[] = {six, seven, seven, seven, six + one / two, two, seven / ten, eight, eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
@@ -486,12 +486,12 @@ namespace MueLuTests {
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
-	Scalar diag_ref[] = {one / six, one / seven, one / seven,
-			     one / seven, one / (six + one / two), one / four,
-			     ten / seven, one / eight, one / eight};
-	for(int idx = 0; idx < 9; ++idx) {
-	  TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
-	}
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), one / four,
+                             ten / seven, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
@@ -499,12 +499,12 @@ namespace MueLuTests {
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
-	Scalar diag_ref[] = {one / six, one / seven, one / seven,
-			     one / seven, one / (six + one / two), one / four,
-			     zero, one / eight, one / eight};
-	for(int idx = 0; idx < 9; ++idx) {
-	  TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
-	}
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), one / four,
+                             zero, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
@@ -512,12 +512,12 @@ namespace MueLuTests {
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0, 42, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
-	Scalar diag_ref[] = {one / six, one / seven, one / seven,
-			     one / seven, one / (six + one / two), zero,
-			     ten / seven, one / eight, one / eight};
-	for(int idx = 0; idx < 9; ++idx) {
-	  TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
-	}
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), zero,
+                             ten / seven, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
@@ -525,12 +525,12 @@ namespace MueLuTests {
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9, 42, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
-	Scalar diag_ref[] = {one / six, one / seven, one / seven,
-			     one / seven, one / (six + one / two), zero,
-			     ten+ten+ten+ten+two, one / eight, one / eight};
-	for(int idx = 0; idx < 9; ++idx) {
-	  TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
-	}
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), zero,
+                             ten+ten+ten+ten+two, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
@@ -723,8 +723,8 @@ namespace MueLuTests {
       Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
       Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
       for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(v->getLocalLength()); ++i) {
-	vData[i] = Teuchos::as<Scalar>(i+1);
-	tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+        vData[i] = Teuchos::as<Scalar>(i+1);
+        tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
       }
     }
     RCP<Vector> inv = Utilities::GetInverse(v);
