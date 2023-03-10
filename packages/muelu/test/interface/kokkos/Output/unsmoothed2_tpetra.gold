@@ -21,8 +21,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 tentative: calculate qr = 0
 matrixmatrix: kernel params -> 
  [empty list]
@@ -53,8 +52,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 tentative: calculate qr = 0
 matrixmatrix: kernel params -> 
  [empty list]

@@ -24,8 +24,7 @@ aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
 aggregation: ordering = natural   [unused]
 aggregation: preserve Dirichlet points = 0   [unused]
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -60,8 +59,7 @@ aggregation: ordering = natural   [unused]
 aggregation: preserve Dirichlet points = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -96,8 +94,7 @@ aggregation: ordering = natural   [unused]
 aggregation: preserve Dirichlet points = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -132,8 +129,7 @@ aggregation: ordering = natural   [unused]
 aggregation: preserve Dirichlet points = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
