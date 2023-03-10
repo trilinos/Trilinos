@@ -203,9 +203,15 @@ namespace MueLuTests {
                          myTestFunctor);
   } //Uncoupled
 
+
+#ifdef HAVE_MUELU_SYCL
+  // Enabling this w/ SYCL yields the error "SYCL kernel cannot call a variadic function"
+#define MUELU_ETI_GROUP(SC,LO,GO,NO)
+#else
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IndexManager_kokkos, IndexManager, SC, LO, GO, NO)
-
+#endif
+  
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
