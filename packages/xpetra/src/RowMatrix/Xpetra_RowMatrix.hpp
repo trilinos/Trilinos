@@ -51,7 +51,7 @@
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
 #include <Teuchos_Describable.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Vector.hpp"
@@ -61,7 +61,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class RowMatrix {
   public:
     typedef Scalar scalar_type;

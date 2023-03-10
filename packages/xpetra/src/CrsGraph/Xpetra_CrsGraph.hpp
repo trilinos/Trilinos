@@ -49,7 +49,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_Describable.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DistObject.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -78,7 +78,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsGraph
     : /*public RowGraph<>,*/ public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
   {

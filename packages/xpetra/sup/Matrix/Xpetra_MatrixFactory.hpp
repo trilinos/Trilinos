@@ -62,7 +62,7 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"

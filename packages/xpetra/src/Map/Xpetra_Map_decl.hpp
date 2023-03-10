@@ -48,7 +48,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -66,9 +66,9 @@ namespace Xpetra {
   // Serial node or OpenMP node (but not both)
 #ifdef HAVE_XPETRA_EPETRA
 # ifdef EPETRA_HAVE_OMP
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
 # else
-  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
 # endif
 #endif
 
@@ -83,7 +83,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Map
     : public Teuchos::Describable
   {

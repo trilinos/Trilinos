@@ -557,25 +557,25 @@ namespace {
 
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif

@@ -2498,25 +2498,25 @@ namespace {
 
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
