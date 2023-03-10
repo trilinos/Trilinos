@@ -2579,6 +2579,13 @@ namespace Tpetra {
           KokkosBlas::sum (subview (lclSums, j), subview (X_lcl, ALL (), col));
         }
       }
+      // lbv 10 mar 2023: Kokkos Kernels provides non-blocking BLAS
+      // functions unless they explicitely return a value to Host.
+      // Here while the lclSums are on host, they are not a return
+      // value, therefore they might be avaible to us immediately.
+      // Adding a frnce here guarantees that we will have the lclSums
+      // ahead of the MPI reduction.
+      Kokkos::fence();
 
       // If there are multiple MPI processes, the all-reduce reads
       // from lclSums, and writes to meansOut.  (We assume that MPI
