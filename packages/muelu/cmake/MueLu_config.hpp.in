@@ -116,6 +116,7 @@
 #cmakedefine HAVE_MUELU_OPENMP
 #cmakedefine HAVE_MUELU_CUDA
 #cmakedefine HAVE_MUELU_HIP
+#cmakedefine HAVE_MUELU_SYCL
 
 #cmakedefine HAVE_MUELU_DEFAULT_GO_LONGLONG
 #cmakedefine HAVE_MUELU_DEFAULT_GO_LONG

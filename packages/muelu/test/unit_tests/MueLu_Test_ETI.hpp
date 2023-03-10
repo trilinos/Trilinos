@@ -351,6 +351,43 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #else
         throw RuntimeError("HIP node type is disabled");
 #endif
+      } else if (node == "sycl") {
+#ifdef KOKKOS_ENABLE_SYCL
+	typedef Kokkos::Compat::KokkosSYCLWrapperNode Node;
+
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::Experimental::SYCL().print_configuration(*out, true/*details*/);
+        }
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#  else
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        if (inst == Xpetra::DOUBLE_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+        if (inst == Xpetra::COMPLEX_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
+        if (inst == Xpetra::FLOAT_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+        throw RuntimeError("Found no suitable SYCL instantiation");
+#  endif
+#else
+        throw RuntimeError("SYCL node type is disabled");
+#endif	
       } else {
         throw RuntimeError("Unrecognized node type");
       }

@@ -114,6 +114,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+      useKokkos = true;
+# endif    
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
@@ -124,6 +128,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef KOKKOS_ENABLE_HIP
   if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
     // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
+    compareWithGold = false;
+#endif
+#ifdef KOKKOS_ENABLE_SYCL
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+    // Behavior of some algorithms on SYCL is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
   clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");

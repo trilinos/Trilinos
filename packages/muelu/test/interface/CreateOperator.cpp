@@ -309,6 +309,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
         useKokkos = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+        useKokkos = true;
+# endif      
     }
     clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 

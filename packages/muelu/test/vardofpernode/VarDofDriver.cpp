@@ -561,25 +561,25 @@ int main(int argc, char* argv[]) {
 #else
         throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
 #endif
-      } else if (node == "hip") {
-#ifdef KOKKOS_HAVE_HIP
-        typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
+      } else if (node == "sycl") {
+#ifdef KOKKOS_HAVE_SYCL
+        typedef Kokkos::Compat::KokkosSYCLWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return main_<double,int,long,Node>(clp, argc, argv);
 #  else
-#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_TPETRA_INST_INT_INT)
         return main_<double,int,int,Node> (clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_TPETRA_INST_INT_LONG)
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_TPETRA_INST_INT_LONG)
         return main_<double,int,long,Node>(clp, lib, argc, argv);
-#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
         return main_<double,int,long long,Node>(clp, lib, argc, argv);
 #    else
         throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #    endif
 #  endif
 #else
-        throw MueLu::Exceptions::RuntimeError("HIP node type is disabled");
+        throw MueLu::Exceptions::RuntimeError("SYCL node type is disabled");
 #endif
       } else {
         throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
