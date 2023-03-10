@@ -659,7 +659,7 @@ namespace percept {
         for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++) {
 
           stk::mesh::Entity node = bucket[ientity];
-          NewNodesType_type *ndata = stk::mesh::field_data(*eMesh.m_new_nodes_field, node);
+          NewNodesType::value_type *ndata = stk::mesh::field_data(*eMesh.m_new_nodes_field, node);
           if (ndata && ndata[0] != 0) {
             new_nodes.push_back(node);
           }
@@ -700,7 +700,7 @@ namespace percept {
     
   void RefinerUtil::get_parent_entity_and_id(PerceptMesh& eMesh, stk::mesh::EntityRank rank, stk::mesh::Entity& element, stk::mesh::Entity& parent_elem, bool debug)
   {
-    ParentElementType_type *parent_element_id_from_field = NULL;
+    ParentElementType::value_type *parent_element_id_from_field = NULL;
 
     if (is_matching_rank(*eMesh.m_parent_element_field, element))
       {
@@ -947,18 +947,18 @@ namespace percept {
               }
 
             VERIFY_OP_ON(eMesh.entity_rank(node), ==, eMesh.node_rank(), "bad rank");
-            NodeRegistryFieldType_type *node_data = stk::mesh::field_data(*eMesh.m_node_registry_field, node);
+            NodeRegistryFieldType::value_type *node_data = stk::mesh::field_data(*eMesh.m_node_registry_field, node);
             if (!node_data)
               {
                 continue;
               }
 
-            node_data[NR_FIELD_OWNING_ELEMENT_ID]     = static_cast<NodeRegistryFieldType_type>(owningElementKey.id());
-            node_data[NR_FIELD_OWNING_ELEMENT_RANK]   = static_cast<NodeRegistryFieldType_type>(owningElementRank);
-            node_data[NR_FIELD_MARK]                  = static_cast<NodeRegistryFieldType_type>(nodeIds_onSE.m_mark);
-            node_data[NR_FIELD_OWNING_SUBDIM_RANK]    = static_cast<NodeRegistryFieldType_type>(owningSubDimRank);
-            node_data[NR_FIELD_OWNING_SUBDIM_ORDINAL] = static_cast<NodeRegistryFieldType_type>(owningSubDimOrd + 1);
-            node_data[NR_FIELD_OWNING_SUBDIM_SIZE]    = static_cast<NodeRegistryFieldType_type>(owningSubDimSize);
+            node_data[NR_FIELD_OWNING_ELEMENT_ID]     = static_cast<NodeRegistryFieldType::value_type>(owningElementKey.id());
+            node_data[NR_FIELD_OWNING_ELEMENT_RANK]   = static_cast<NodeRegistryFieldType::value_type>(owningElementRank);
+            node_data[NR_FIELD_MARK]                  = static_cast<NodeRegistryFieldType::value_type>(nodeIds_onSE.m_mark);
+            node_data[NR_FIELD_OWNING_SUBDIM_RANK]    = static_cast<NodeRegistryFieldType::value_type>(owningSubDimRank);
+            node_data[NR_FIELD_OWNING_SUBDIM_ORDINAL] = static_cast<NodeRegistryFieldType::value_type>(owningSubDimOrd + 1);
+            node_data[NR_FIELD_OWNING_SUBDIM_SIZE]    = static_cast<NodeRegistryFieldType::value_type>(owningSubDimSize);
 
           }
       }

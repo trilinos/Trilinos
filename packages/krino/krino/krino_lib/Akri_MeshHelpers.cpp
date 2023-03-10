@@ -6,6 +6,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_MeshHelpers.hpp>
+
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
@@ -18,14 +20,13 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_EntityIdPool.hpp>
-#include <Akri_MeshHelpers.hpp>
 #include <Akri_ParallelCommHelpers.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_Vec.hpp>
 #include <stk_util/environment/Env.hpp>
-#include "Akri_ReportHandler.hpp"
+#include <Akri_ReportHandler.hpp>
 
 namespace krino{
 
@@ -1127,7 +1128,7 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
         if (entity_elems.empty())
         {
           krinolog << "Relation error, entity not attached to any elements: " << stk::diag::dendl;
-          krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
+          krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
           success = false;
         }
 
@@ -1170,15 +1171,15 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
               if (!should_be_attached)
               {
                 krinolog << "Relation error, entity is attached to element, but should not be (due to coincident shell on side): " << stk::diag::dendl;
-                krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                 success = false;
               }
               if (already_attached)
               {
                 krinolog << "Relation error, entity attached to element more than once: " << stk::diag::dendl;
-                krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                 success = false;
               }
               else
@@ -1191,15 +1192,15 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
                 if (relationship.first != elem_ordinals[it_s])
                 {
                   krinolog << "Relation error, ordinal is incorrect: " << relationship.first << "!=" << elem_ordinals[it_s] << stk::diag::dendl;
-                  krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                  krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                  krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                  krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                   success = false;
                 }
                 if (relationship.second != elem_permutations[it_s])
                 {
                   krinolog << "Relation error, permutation is incorrect: " << relationship.second << "!=" << elem_permutations[it_s] << stk::diag::dendl;
-                  krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                  krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                  krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                  krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                   success = false;
                 }
               }
@@ -1209,14 +1210,14 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
           {
 
             krinolog << "Relation error, entity is not attached to element: " << stk::diag::dendl;
-            krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-            krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+            krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+            krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
             std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> relationship = determine_ordinal_and_permutation(mesh, elem, entity);
             for (unsigned it_s=0; it_s<num_elem_entities; ++it_s)
             {
               if (elem_ordinals[it_s] == relationship.first)
               {
-                krinolog << "Another side is already attached to this element with ordinal " << relationship.first << ": " << debug_entity(mesh, elem_entities[it_s]) << stk::diag::dendl;
+                krinolog << "Another side is already attached to this element with ordinal " << relationship.first << ": " << debug_entity_1line(mesh, elem_entities[it_s]) << stk::diag::dendl;
               }
             }
             success = false;
@@ -1449,112 +1450,53 @@ void destroy_custom_ghostings(stk::mesh::BulkData & mesh)
 
 //--------------------------------------------------------------------------------
 
-void
-delete_mesh_entities(stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & child_elems)
+bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::Entity entity)
 {
-  if (child_elems.empty())
-    return;
+  if(!mesh.is_valid(entity))
+    return false;
 
-  stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::EntityRank entityRank = mesh.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(entityRank + 1); conRank <= endRank; ++conRank)
+    if(mesh.num_connectivity(entity, conRank) > 0)
+      return true;
 
-  stk::mesh::Selector universal_selector = meta.universal_part();
+  return false;
+}
 
-  std::vector<stk::mesh::Entity> child_sides;
-  std::vector<stk::mesh::Entity> child_edges;
-  std::vector<stk::mesh::Entity> child_nodes;
+//--------------------------------------------------------------------------------
 
-  for (unsigned i=0; i<child_elems.size(); ++i)
+bool bucket_has_entity_rank_part(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket)
+{
+  for (auto && bucketPart : bucket.supersets())
+    if (bucketPart->primary_entity_rank() == bucket.entity_rank() && !stk::mesh::is_auto_declared_part(*bucketPart))
+      return true;
+  return false;
+}
+
+void delete_faces_and_edges_without_entity_rank_parts(stk::mesh::BulkData & mesh)
+{
+  std::vector<stk::mesh::Entity> entitiesToDelete;
+  for (stk::mesh::EntityRank entityRank : {stk::topology::FACE_RANK, stk::topology::EDGE_RANK})
   {
-    stk::mesh::Entity child = child_elems[i];
-    if (!mesh.is_valid(child)) continue;
-
-    const unsigned num_child_sides = mesh.num_connectivity(child,meta.side_rank());
-    const stk::mesh::Entity* this_child_sides = mesh.begin(child,meta.side_rank());
-    for (unsigned child_side_index=0; child_side_index<num_child_sides; ++child_side_index)
-    {
-      stk::mesh::Entity side = this_child_sides[child_side_index];
-      child_sides.push_back(side);
-    }
-
-    if (meta.spatial_dimension() == 3)
-    {
-      const unsigned num_child_edges = mesh.num_edges(child);
-      const stk::mesh::Entity* this_child_edges = mesh.begin_edges(child);
-      for (unsigned child_edge_index=0; child_edge_index<num_child_edges; ++child_edge_index)
-      {
-        stk::mesh::Entity edge = this_child_edges[child_edge_index];
-        child_edges.push_back(edge);
-      }
-    }
-
-    const unsigned num_child_nodes = mesh.num_nodes(child);
-    const stk::mesh::Entity* this_child_nodes = mesh.begin_nodes(child);
-    for (unsigned child_node_index=0; child_node_index<num_child_nodes; ++child_node_index)
-    {
-      stk::mesh::Entity node = this_child_nodes[child_node_index];
-      child_nodes.push_back(node);
-    }
-
-    if(krinolog.shouldPrint(LOG_DEBUG))
-      krinolog << "Destroying child, elem#" << mesh.identifier(child) << ":" << stk::diag::dendl;
-
-    ThrowRequireMsg(mesh.destroy_entity(child), "Failed to destroy entity" << mesh.entity_key(child));
+    for (auto && bucket : mesh.buckets(entityRank))
+      if (!bucket_has_entity_rank_part(mesh, *bucket))
+        entitiesToDelete.insert(entitiesToDelete.end(), bucket->begin(), bucket->end());
   }
 
-  for (unsigned i=0; i<child_sides.size(); ++i)
+  if(stk::is_true_on_any_proc(mesh.parallel(), !entitiesToDelete.empty()))
   {
-    stk::mesh::Entity side = child_sides[i];
-    if (mesh.is_valid(side))
+    mesh.modification_begin();
+    for (auto && entityToDelete : entitiesToDelete)
     {
-      const unsigned num_side_elements = mesh.num_elements(side);
-      if (0 == num_side_elements)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child side#" << mesh.identifier(side) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(side), "Failed to destroy entity" << mesh.entity_key(side));
-      }
-      else if(krinolog.shouldPrint(LOG_DEBUG))
-      {
-        krinolog << "Can't destroy child side#" << mesh.identifier(side) << ":" << stk::diag::dendl;
-      }
+      krinolog << "Deleting " << debug_entity_1line(mesh, entityToDelete) << stk::diag::dendl;
+      ThrowRequireMsg(disconnect_and_destroy_entity(mesh, entityToDelete), "Could not destroy entity " << mesh.entity_key(entityToDelete));
     }
-  }
-
-  for (unsigned i=0; i<child_edges.size(); ++i)
-  {
-    stk::mesh::Entity edge = child_edges[i];
-    if (mesh.is_valid(edge))
-    {
-      const unsigned num_edge_elements = mesh.num_elements(edge);
-      if (0 == num_edge_elements)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child edge#" << mesh.identifier(edge) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(edge), "Failed to destroy entity" << mesh.entity_key(edge));
-      }
-    }
-  }
-
-  for (unsigned i=0; i<child_nodes.size(); ++i)
-  {
-    stk::mesh::Entity node = child_nodes[i];
-    if (mesh.is_valid(node))
-    {
-      const unsigned num_node_elements = mesh.num_elements(node);
-      const unsigned num_node_faces = mesh.num_faces(node);
-      const unsigned num_node_edges = mesh.num_edges(node);
-      if (0 == num_node_elements && 0 == num_node_faces && 0 == num_node_edges)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child node#" << mesh.identifier(node) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(node), "Failed to destroy entity" << mesh.entity_key(node));
-      }
-    }
+    mesh.modification_end();
   }
 }
+
+//--------------------------------------------------------------------------------
 
 double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entity child, stk::mesh::Entity parent0, stk::mesh::Entity parent1)
 {
@@ -1810,19 +1752,19 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
     stk::mesh::get_entities_through_relations(mesh, sideNodes, mesh.mesh_meta_data().side_rank(), sideEntities);
     if (!sideEntities.empty())
     {
-      krinolog << "Sides using side nodes: " << stk::diag::dendl;
+      krinolog << "  Sides using side nodes: " << stk::diag::dendl;
       for (auto && side : sideEntities)
-        krinolog << debug_entity(mesh, side) << stk::diag::dendl;
+        krinolog << "    " << debug_entity_1line(mesh, side) << stk::diag::dendl;
     }
 
-    krinolog << "Elements using side nodes: " << stk::diag::dendl;
+    krinolog << "  Elements using side nodes: " << stk::diag::dendl;
     for (auto && sideElement : activeSideElements)
     {
-      krinolog << debug_entity(mesh, sideElement) << stk::diag::dendl;
+      krinolog << "    elem: " << debug_entity_1line(mesh, sideElement) << stk::diag::dendl;
       for (auto && elemSide : StkMeshEntities{mesh.begin(sideElement, sideRank), mesh.end(sideElement, sideRank)})
-        krinolog << debug_entity(mesh, elemSide) << stk::diag::dendl;
+        krinolog << "      elem side: " << debug_entity_1line(mesh, elemSide) << stk::diag::dendl;
       for (auto && elemNode : StkMeshEntities{mesh.begin_nodes(sideElement), mesh.end_nodes(sideElement)})
-        krinolog << debug_entity(mesh, elemNode) << stk::diag::dendl;
+        krinolog << "      elem node: " << debug_entity_1line(mesh, elemNode) << stk::diag::dendl;
     }
 
     if (activeSideElements.size() != 2)

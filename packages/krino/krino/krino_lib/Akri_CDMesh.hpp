@@ -80,9 +80,9 @@ public:
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs );
   static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry);
   static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const RefinementSupport & refinementSupport, const InterfaceGeometry & interfaceGeometry, const int num_refinements);
-  void delete_cdfem_parent_elements();
   static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
+  static void undo_previous_snapping_using_interpolation(const stk::mesh::BulkData & mesh);
   void rebuild_after_rebalance_or_failed_step();
 
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
@@ -259,7 +259,7 @@ private:
     std::vector<SideDescription> & side_requests);
   void update_uncut_element(const Mesh_Element & elem);
 
-  void get_unused_old_child_elements(std::vector<stk::mesh::Entity> & unused_old_child_elems);
+  std::vector<stk::mesh::Entity> get_owned_unused_old_child_elements_and_clear_child_elements();
   void set_entities_for_child_nodes_with_common_ancestry_as_existing_child_nodes();
   bool set_entities_for_existing_child_elements();
   void create_new_mesh_entities();

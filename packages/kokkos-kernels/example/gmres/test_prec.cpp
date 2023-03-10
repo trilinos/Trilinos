@@ -27,9 +27,11 @@ int main(int argc, char* argv[]) {
   using OT   = int;
   using EXSP = Kokkos::DefaultExecutionSpace;
   using MESP = typename EXSP::memory_space;
-  using CRS  = KokkosSparse::CrsMatrix<ST, OT, EXSP, void, OT>;
+  using CRS =
+      KokkosSparse::CrsMatrix<ST, OT, Kokkos::Device<EXSP, MESP>, void, OT>;
 
-  using ViewVectorType = Kokkos::View<ST*, Kokkos::LayoutLeft, EXSP>;
+  using ViewVectorType =
+      Kokkos::View<ST*, Kokkos::LayoutLeft, Kokkos::Device<EXSP, MESP>>;
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<OT, OT, ST, EXSP, MESP,
                                                        MESP>;

@@ -503,11 +503,11 @@ int main(int argc, char* argv[])
       std::cout << "Running example-01 with n=" << n << " verbose=" << belos_verbose << " config=" << show_kokkos << "..." << std::endl; 
 
     // print configuration details if needed
-    Kokkos::Serial::print_configuration(std::cout, true/*details*/);
-    //Kokkos::OpenMP::print_configuration(std::cout, true/*details*/);
+    Kokkos::Serial().print_configuration(std::cout, true/*details*/);
+    //Kokkos::OpenMP().print_configuration(std::cout, true/*details*/);
     //std::cout << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
-    //Kokkos::Cuda::print_configuration(std::cout, true/*details*/);
-    //Kokkos::Experimental::HIP::print_configuration(std::cout, true/*details*/);
+    //Kokkos::Cuda().print_configuration(std::cout, true/*details*/);
+    //Kokkos::Experimental::HIP().print_configuration(std::cout, true/*details*/);
 
     // Create the operator
     Teuchos::RCP<TridiagonalOperator<SC,LO,GO,NO>> matrix = Teuchos::rcp(new TridiagonalOperator<SC,LO,GO,NO>(n, comm));
@@ -607,7 +607,7 @@ int main(int argc, char* argv[])
       Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO>> mueLuFactory = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(params,matrix->getDomainMap()->getComm()));
       //H->setlib(matrix->getDomainMap()->lib());
       H->SetProcRankVerbose(matrix->getDomainMap()->getComm()->getRank());
-      mueLuFactory->SetupHierarchy(*H);
+      //mueLuFactory->SetupHierarchy(*H);
 
       std::cout << "Finished hierarchy!" << std::endl;
 

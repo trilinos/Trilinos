@@ -30,8 +30,12 @@ namespace coupling
 namespace impl 
 {
 
+SplitCommsImpl::SplitCommsImpl()
+{}
+
 SplitCommsImpl::SplitCommsImpl(MPI_Comm parentComm, int localColor)
   : m_parentComm(parentComm), m_splitComm(MPI_COMM_NULL), m_localColor(localColor),
+    m_finalizationDestructor([this](){free_comms_from_destructor();}),
     m_isInitialized(true)
 {
   stk::util::set_coupling_version(parentComm);
@@ -43,11 +47,7 @@ SplitCommsImpl::SplitCommsImpl(MPI_Comm parentComm, int localColor)
 
 SplitCommsImpl::~SplitCommsImpl()
 {
-  int isMPIFinalized;
-  MPI_Finalized(&isMPIFinalized);
-  if (m_isInitialized && !isMPIFinalized && get_free_comms_in_destructor()) {
-    free_comms_from_destructor();
-  }
+  m_finalizationDestructor.destructor();
 }
 
 
@@ -215,6 +215,9 @@ PairwiseRanks SplitCommsImpl::get_pairwise_root_ranks(int otherColor) const
 
 void SplitCommsImpl::free_comms_from_destructor()
 {
+  if (!get_free_comms_in_destructor())
+    return;
+
   if (!m_isInitialized) {
     std::cerr << "Warning: Cannot free communicators of uninitialized SplitCommsImpl" << std::endl;
     return;
@@ -230,6 +233,14 @@ void SplitCommsImpl::free_comms_from_destructor()
 
 void SplitCommsImpl::free_comms_impl()
 {
+  int isMPIFinalized;
+  MPI_Finalized(&isMPIFinalized);
+  if (isMPIFinalized) {
+    std::cerr << "Attempting to free commuicators after MPI was finalized."
+              << "  The communicators will not be freed, and you have leaked memory" << std::endl;
+    return;
+  }
+
   MPI_Comm_free(&m_splitComm);
 
   for (auto& item : m_pairwiseComms) {

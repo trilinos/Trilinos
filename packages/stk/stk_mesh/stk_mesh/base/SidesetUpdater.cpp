@@ -373,7 +373,8 @@ const Selector& IncrementalSidesetUpdater::get_cached_sideset_selector(const Par
 
   if(iter == m_cachedSidesetSelectors.end()) {
     std::vector<const Part *> touchingBlocks = m_metaData.get_blocks_touching_surface(part);
-    Selector selector = ((touchingBlocks.size() > 0) ? selectUnion(touchingBlocks) : m_metaData.universal_part()); // & m_activeSelector;
+    //Selector selector = ((touchingBlocks.size() > 0) ? selectUnion(touchingBlocks) : m_metaData.universal_part()); // & m_activeSelector;
+    Selector selector = selectUnion(touchingBlocks); // & m_activeSelector;
     const auto entry = m_cachedSidesetSelectors.insert({part, selector});
     return entry.first->second;
   }

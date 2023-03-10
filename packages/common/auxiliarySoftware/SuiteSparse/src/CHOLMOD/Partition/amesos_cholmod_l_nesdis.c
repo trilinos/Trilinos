@@ -202,10 +202,10 @@ static UF_long partition    /* size of separator or -1 if failure */
 	    hash = Hash [j] ;
 	    ASSERT (hash >= 0 && hash < csize) ;
 	    head = Hhead [hash] ;
-	    if (head > EMPTY)
+	    if (head > TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* hash bucket for this hash key is empty. */
-		head = EMPTY ;
+		head = TRILINOS_CHOLMOD_EMPTY ;
 	    }
 	    else
 	    {
@@ -218,7 +218,7 @@ static UF_long partition    /* size of separator or -1 if failure */
 	     * bucket. */
 	    Hhead [hash] = FLIP (j) ;
 	    Next [j] = head ;
-	    ASSERT (head >= EMPTY && head < n) ;
+	    ASSERT (head >= TRILINOS_CHOLMOD_EMPTY && head < n) ;
 	}
 
 #ifndef NDEBUG
@@ -228,13 +228,13 @@ static UF_long partition    /* size of separator or -1 if failure */
 	    hash = Hash [k] ;
 	    ASSERT (hash >= 0 && hash < csize) ;
 	    head = Hhead [hash] ;
-	    ASSERT (head < EMPTY) ;	/* hash bucket not empty */
+	    ASSERT (head < TRILINOS_CHOLMOD_EMPTY) ;	/* hash bucket not empty */
 	    j = FLIP (head) ;
 	    ASSERT (j >= 0 && j < n) ;
 	    if (j == k)
 	    {
 		PRINT2 (("hash "ID": ", hash)) ;
-		for ( ; j != EMPTY ; j = Next [j])
+		for ( ; j != TRILINOS_CHOLMOD_EMPTY ; j = Next [j])
 		{
 		    PRINT3 ((" "ID"", j)) ;
 		    ASSERT (j >= 0 && j < n) ;
@@ -268,7 +268,7 @@ static UF_long partition    /* size of separator or -1 if failure */
 
 	for (i = 0 ; i < n ; i++)
 	{
-	    Cmap [i] = EMPTY ;
+	    Cmap [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 
 	for (k = 0 ; k < n ; k++)
@@ -282,14 +282,14 @@ static UF_long partition    /* size of separator or -1 if failure */
 		continue ;
 	    }
 	    head = Hhead [hash] ;
-	    ASSERT (head < EMPTY || head == 1) ;
+	    ASSERT (head < TRILINOS_CHOLMOD_EMPTY || head == 1) ;
 	    if (head == 1)
 	    {
 		/* hash bucket is already empty */
 		continue ;
 	    }
 	    PRINT2 (("\n--------------------hash "ID":\n", hash)) ;
-	    for (j = FLIP (head) ; j != EMPTY && Next[j] > EMPTY ; j = Next [j])
+	    for (j = FLIP (head) ; j != TRILINOS_CHOLMOD_EMPTY && Next[j] > TRILINOS_CHOLMOD_EMPTY ; j = Next [j])
 	    {
 		/* compare j with all nodes i following it in hash bucket */
 		ASSERT (j >= 0 && j < n && Hash [j] == hash) ;
@@ -300,7 +300,7 @@ static UF_long partition    /* size of separator or -1 if failure */
 		DEBUG (for (i = 0 ; i < n ; i++) ASSERT (!Cmap_MARKED (i))) ;
 		DEBUG (pruned = FALSE) ;
 		ilast = j ;
-		for (i = Next [j] ; i != EMPTY ; i = Next [i])
+		for (i = Next [j] ; i != TRILINOS_CHOLMOD_EMPTY ; i = Next [i])
 		{
 		    ASSERT (i >= 0 && i < n && Hash [i] == hash && i != j) ;
 		    pi = Cp [i] ;
@@ -411,11 +411,11 @@ static UF_long partition    /* size of separator or -1 if failure */
 
 	/* Cmap [j] = k if node j is alive and the kth node of compressed graph.
 	 * The mapping is done monotonically (that is, k <= j) to simplify the
-	 * uncompression later on.  Cmap [j] = EMPTY if node j is dead. */
+	 * uncompression later on.  Cmap [j] = TRILINOS_CHOLMOD_EMPTY if node j is dead. */
 
 	for (j = 0 ; j < n ; j++)
 	{
-	    Cmap [j] = EMPTY ;
+	    Cmap [j] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	k = 0 ;
 	for (j = 0 ; j < n ; j++)
@@ -452,8 +452,8 @@ static UF_long partition    /* size of separator or -1 if failure */
 		    i = Ci [p] ;
 		    ASSERT (i >= 0 && i < n && i != j) ;
 		    i = Cmap [i] ;
-		    ASSERT (i >= EMPTY && i < cn && i != k) ;
-		    if (i > EMPTY)
+		    ASSERT (i >= TRILINOS_CHOLMOD_EMPTY && i < cn && i != k) ;
+		    if (i > TRILINOS_CHOLMOD_EMPTY)
 		    {
 			ASSERT (pdest <= p) ;
 			Ci [pdest++] = i ;
@@ -516,12 +516,12 @@ static UF_long partition    /* size of separator or -1 if failure */
 	{
 	    /* do this in reverse order so that Cnw can be expanded in place */
 	    k = Cmap [j] ;
-	    ASSERT (k >= EMPTY && k < n) ;
-	    if (k > EMPTY)
+	    ASSERT (k >= TRILINOS_CHOLMOD_EMPTY && k < n) ;
+	    if (k > TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* node k in compressed graph and is node j in full graph */
 		ASSERT (k <= j) ;
-		ASSERT (Hash [j] >= EMPTY) ;
+		ASSERT (Hash [j] >= TRILINOS_CHOLMOD_EMPTY) ;
 		Part [j] = Part [k] ;
 		Cnw [j] = Cnw [k] ;
 	    }
@@ -529,19 +529,19 @@ static UF_long partition    /* size of separator or -1 if failure */
 	    {
 		/* node j is a dead node */
 		Cnw [j] = 0 ;
-		DEBUG (Part [j] = EMPTY) ;
-		ASSERT (Hash [j] < EMPTY) ;
+		DEBUG (Part [j] = TRILINOS_CHOLMOD_EMPTY) ;
+		ASSERT (Hash [j] < TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 	}
 
 	/* find the components for the dead nodes */
 	for (i = 0 ; i < n ; i++)
 	{
-	    if (Hash [i] < EMPTY)
+	    if (Hash [i] < TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* node i has been absorbed into node j */
 		j = FLIP (Hash [i]) ;
-		ASSERT (Part [i] == EMPTY && j >= 0 && j < n && Cnw [i] == 0) ;
+		ASSERT (Part [i] == TRILINOS_CHOLMOD_EMPTY && j >= 0 && j < n && Cnw [i] == 0) ;
 		Part [i] = Part [j] ;
 	    }
 	    ASSERT (Part [i] >= 0 && Part [i] <= 2) ;
@@ -551,7 +551,7 @@ static UF_long partition    /* size of separator or -1 if failure */
 	PRINT2 (("Part: ")) ;
 	for (cnt = 0, j = 0 ; j < n ; j++)
 	{
-	    ASSERT (Part [j] != EMPTY) ;
+	    ASSERT (Part [j] != TRILINOS_CHOLMOD_EMPTY) ;
 	    PRINT2 ((""ID" ", Part [j])) ;
 	    if (Part [j] == 2) cnt += Cnw [j] ;
 	}
@@ -577,14 +577,14 @@ static UF_long partition    /* size of separator or -1 if failure */
 /* === clear_flag =========================================================== */
 /* ========================================================================== */
 
-/* A node j has been removed from the graph if Flag [j] < EMPTY.
- * If Flag [j] >= EMPTY && Flag [j] < mark, then node j is alive but unmarked.
+/* A node j has been removed from the graph if Flag [j] < TRILINOS_CHOLMOD_EMPTY.
+ * If Flag [j] >= TRILINOS_CHOLMOD_EMPTY && Flag [j] < mark, then node j is alive but unmarked.
  * Flag [j] == mark means that node j is alive and marked.  Incrementing mark
  * means that all nodes are either (still) dead, or live but unmarked.
  *
  * On output, Common->mark < Common->Flag [i] for all i from 0 to Common->nrow.
  * This is the same output condition as cholmod_clear_flag, except that this
- * routine maintains the Flag [i] < EMPTY condition as well, if that condition
+ * routine maintains the Flag [i] < TRILINOS_CHOLMOD_EMPTY condition as well, if that condition
  * was true on input.
  *
  * workspace: Flag (nrow)
@@ -603,13 +603,13 @@ static UF_long clear_flag (cholmod_common *Common)
 	Flag = Common->Flag ;
 	for (i = 0 ; i < nrow ; i++)
 	{
-	    /* if Flag [i] < EMPTY, leave it alone */
-	    if (Flag [i] >= EMPTY)
+	    /* if Flag [i] < TRILINOS_CHOLMOD_EMPTY, leave it alone */
+	    if (Flag [i] >= TRILINOS_CHOLMOD_EMPTY)
 	    {
-		Flag [i] = EMPTY ;
+		Flag [i] = TRILINOS_CHOLMOD_EMPTY ;
 	    }
 	}
-	/* now Flag [i] <= EMPTY for all i */
+	/* now Flag [i] <= TRILINOS_CHOLMOD_EMPTY for all i */
 	Common->mark = 0 ;
     }
     return (Common->mark) ;
@@ -625,7 +625,7 @@ static UF_long clear_flag (cholmod_common *Common)
  * is NULL, then it is assumed to be the identity mapping
  * (Map [0..cn-1] = 0..cn-1).
  *
- * A node j does not appear in B if it has been ordered (Flag [j] < EMPTY,
+ * A node j does not appear in B if it has been ordered (Flag [j] < TRILINOS_CHOLMOD_EMPTY,
  * which means that j has been ordered and is "deleted" from B).
  *
  * If the size of a component is large, it is placed on the component stack,
@@ -652,7 +652,7 @@ static void find_components
     cholmod_sparse *B,
     Int Map [ ],	    /* size n, only Map [0..cn-1] used */
     Int cn,		    /* # of nodes in C */
-    Int cnode,		    /* root node of component C, or EMPTY if C is the
+    Int cnode,		    /* root node of component C, or TRILINOS_CHOLMOD_EMPTY if C is the
 			     * entire graph B */
 
     Int Part [ ],	    /* size cn, optional */
@@ -663,7 +663,7 @@ static void find_components
 
     Int CParent [ ],	    /* CParent [i] = j if component with repnode j is
 			     * the parent of the component with repnode i.
-			     * CParent [i] = EMPTY if the component with
+			     * CParent [i] = TRILINOS_CHOLMOD_EMPTY if the component with
 			     * repnode i is a root of the separator tree.
 			     * CParent [i] is -2 if i is not a repnode. */
     Int Cstack [ ],	    /* component stack for nested dissection */
@@ -686,13 +686,13 @@ static void find_components
 
     PRINT2 (("find components: cn %d\n", cn)) ;
     Flag = Common->Flag ;	    /* size n */
-    Common->mark = EMPTY ;	    /* force initialization of Flag array */
-    mark = clear_flag (Common) ;    /* clear Flag but preserve Flag [i]<EMPTY */
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;	    /* force initialization of Flag array */
+    mark = clear_flag (Common) ;    /* clear Flag but preserve Flag [i]<TRILINOS_CHOLMOD_EMPTY */
     Bp = B->p ;
     Bi = B->i ;
     n = B->nrow ;
-    ASSERT (cnode >= EMPTY && cnode < n) ;
-    ASSERT (IMPLIES (cnode >= 0, Flag [cnode] < EMPTY)) ;
+    ASSERT (cnode >= TRILINOS_CHOLMOD_EMPTY && cnode < n) ;
+    ASSERT (IMPLIES (cnode >= 0, Flag [cnode] < TRILINOS_CHOLMOD_EMPTY)) ;
 
     /* get ordering parameters */
     nd_components = Common->method [Common->current].nd_components ;
@@ -714,12 +714,12 @@ static void find_components
 	for (cj = 0 ; cj < cn ; cj++)
 	{
 	    /* get node snode, which is node cj of C.  It might already be in
-	     * the separator of C (and thus ordered, with Flag [snode] < EMPTY)
+	     * the separator of C (and thus ordered, with Flag [snode] < TRILINOS_CHOLMOD_EMPTY)
 	     */
 	    snode = (Map == NULL) ? (cj) : (Map [cj]) ;
 	    ASSERT (snode >= 0 && snode < n) ;
 
-	    if (Flag [snode] >= EMPTY && Flag [snode] < mark
+	    if (Flag [snode] >= TRILINOS_CHOLMOD_EMPTY && Flag [snode] < mark
 		    && ((Part == NULL) || Part [cj] == part))
 	    {
 
@@ -729,7 +729,7 @@ static void find_components
 
 		/* node snode is the repnode of a connected component S, the
 		 * parent of which is cnode, the repnode of C.  If cnode is
-		 * EMPTY then C is the original graph B. */
+		 * TRILINOS_CHOLMOD_EMPTY then C is the original graph B. */
 		PRINT2 (("----------:::snode "ID" cnode "ID"\n", snode, cnode));
 
 		ASSERT (CParent [snode] == -2) ;
@@ -765,7 +765,7 @@ static void find_components
 		    for (p = pstart ; p < pend ; p++)
 		    {
 			i = Bi [p] ;
-			if (i != j && Flag [i] >= EMPTY)
+			if (i != j && Flag [i] >= TRILINOS_CHOLMOD_EMPTY)
 			{
 			    /* node is still in the graph */
 			    Bi [pdest++] = i ;
@@ -800,7 +800,7 @@ static void find_components
 	}
     }
 
-    /* clear Flag array, but preserve Flag [i] < EMPTY */
+    /* clear Flag array, but preserve Flag [i] < TRILINOS_CHOLMOD_EMPTY */
     clear_flag (Common) ;
 }
 
@@ -843,10 +843,10 @@ UF_long CHOLMOD(bisect)	/* returns # of nodes in separator */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (A, EMPTY) ;
-    RETURN_IF_NULL (Partition, EMPTY) ;
-    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (A, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Partition, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, TRILINOS_CHOLMOD_EMPTY) ;
     Common->status = CHOLMOD_OK ;
 
     /* ---------------------------------------------------------------------- */
@@ -868,13 +868,13 @@ UF_long CHOLMOD(bisect)	/* returns # of nodes in separator */
     if (!ok)
     {
 	ERROR (CHOLMOD_TOO_LARGE, "problem too large") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     CHOLMOD(allocate_work) (n, s, 0, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 
@@ -907,7 +907,7 @@ UF_long CHOLMOD(bisect)	/* returns # of nodes in separator */
 
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     Bp = B->p ;
     Bi = B->i ;
@@ -951,7 +951,7 @@ UF_long CHOLMOD(bisect)	/* returns # of nodes in separator */
 	/* out of memory */
 	CHOLMOD(free_sparse) (&B, Common) ;
 	CHOLMOD(free) (csize, sizeof (Int), Bew, Common) ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     /* graph has unit node and edge weights */
@@ -984,7 +984,7 @@ UF_long CHOLMOD(bisect)	/* returns # of nodes in separator */
 
     B->ncol = n ;   /* restore size for memory usage statistics */
     CHOLMOD(free_sparse) (&B, Common) ;
-    Common->mark = EMPTY ;
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;
     CHOLMOD(clear_flag) (Common) ;
     CHOLMOD(free) (csize, sizeof (Int), Bew, Common) ;
     return (sepsize) ;
@@ -1023,7 +1023,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     /* ---- output --- */
     Int *Perm,		/* size A->nrow, output permutation */
     Int *CParent,	/* size A->nrow.  On output, CParent [c] is the parent
-			 * of component c, or EMPTY if c is a root, and where
+			 * of component c, or TRILINOS_CHOLMOD_EMPTY if c is a root, and where
 			 * c is in the range 0 to # of components minus 1 */
     Int *Cmember,	/* size A->nrow.  Cmember [j] = c if node j of A is
 			 * in component c */
@@ -1039,7 +1039,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     Int n, bnz, top, i, j, k, cnode, cdense, p, cj, cn, ci, cnz, mark, c, uncol,
 	sepsize, parent, ncomponents, threshold, ndense, pstart, pdest, pend,
 	nd_compress, nd_camd, csize, jnext, nd_small, total_weight,
-	nchild, child = EMPTY ;
+	nchild, child = TRILINOS_CHOLMOD_EMPTY ;
     cholmod_sparse *B, *C ;
     size_t s ;
     int ok = TRUE ;
@@ -1049,12 +1049,12 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     /* get inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (A, EMPTY) ;
-    RETURN_IF_NULL (Perm, EMPTY) ;
-    RETURN_IF_NULL (CParent, EMPTY) ;
-    RETURN_IF_NULL (Cmember, EMPTY) ;
-    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (A, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Perm, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (CParent, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Cmember, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, TRILINOS_CHOLMOD_EMPTY) ;
     Common->status = CHOLMOD_OK ;
 
     /* ---------------------------------------------------------------------- */
@@ -1098,13 +1098,13 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     if (!ok)
     {
 	ERROR (CHOLMOD_TOO_LARGE, "problem too large") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     CHOLMOD(allocate_work) (n, s, 0, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 
@@ -1131,7 +1131,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -1157,7 +1157,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     if (Common->status < CHOLMOD_OK)
     {
 	CHOLMOD(free) (3*n, sizeof (Int), Work3n, Common) ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     Bp = B->p ;
     Bi = B->i ;
@@ -1171,7 +1171,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     /* ---------------------------------------------------------------------- */
 
     /* all nodes start out unmarked and unordered (Type 4, see below) */
-    Common->mark = EMPTY ;
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;
     CHOLMOD(clear_flag) (Common) ;
     ASSERT (Flag == Common->Flag) ;
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
@@ -1194,8 +1194,8 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	threshold = MIN (n, threshold) ;
     }
     ndense = 0 ;
-    cnode = EMPTY ;
-    cdense = EMPTY ;
+    cnode = TRILINOS_CHOLMOD_EMPTY ;
+    cdense = TRILINOS_CHOLMOD_EMPTY ;
 
     for (j = 0 ; j < n ; j++)
     {
@@ -1205,13 +1205,13 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    /* node j is dense, prune it from B */
 	    PRINT2 (("j is dense %d\n", j)) ;
 	    ndense++ ;
-	    if (cnode == EMPTY)
+	    if (cnode == TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* first dense node found becomes root of this component,
 		 * which contains all of the dense nodes found here */
 		cdense = j ;
 		cnode = j ;
-		CParent [cnode] = EMPTY ;
+		CParent [cnode] = TRILINOS_CHOLMOD_EMPTY ;
 	    }
 	    Flag [j] = FLIP (cnode) ;
 	}
@@ -1229,10 +1229,10 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    Perm [k] = k ;
 	    Cmember [k] = 0 ;
 	}
-	CParent [0] = EMPTY ;
+	CParent [0] = TRILINOS_CHOLMOD_EMPTY ;
 	CHOLMOD(free_sparse) (&B, Common) ;
 	CHOLMOD(free) (3*n, sizeof (Int), Work3n, Common) ;
-	Common->mark = EMPTY ;
+	Common->mark = TRILINOS_CHOLMOD_EMPTY ;
 	CHOLMOD(clear_flag) (Common) ;
 	return (1) ;
     }
@@ -1249,10 +1249,10 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	CHOLMOD(free_sparse) (&B, Common) ;
 	CHOLMOD(free) (csize, sizeof (Int), Cew, Common) ;
 	CHOLMOD(free) (3*n, sizeof (Int), Work3n, Common) ;
-	Common->mark = EMPTY ;
+	Common->mark = TRILINOS_CHOLMOD_EMPTY ;
 	CHOLMOD(clear_flag) (Common) ;
 	PRINT2 (("out of memory for C, etc\n")) ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     Cp = C->p ;
@@ -1269,7 +1269,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     }
 
     /* push the initial connnected components of B onto the Cstack */
-    top = EMPTY ;	/* Cstack is empty */
+    top = TRILINOS_CHOLMOD_EMPTY ;	/* Cstack is empty */
     /* workspace: Flag (nrow), Iwork (nrow); use Imap as workspace for Queue [*/
     find_components (B, NULL, n, cnode, NULL,
 	    Bnz, CParent, Cstack, &top, Imap, Common) ;
@@ -1287,7 +1287,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	/* clear the Flag array, but do not modify negative entries in Flag  */
 	mark = clear_flag (Common) ;
 
-	DEBUG (for (i = 0 ; i < n ; i++) Imap [i] = EMPTY) ;
+	DEBUG (for (i = 0 ; i < n ; i++) Imap [i] = TRILINOS_CHOLMOD_EMPTY) ;
 
 	/* ------------------------------------------------------------------ */
 	/* get node(s) from the top of the Cstack */
@@ -1298,9 +1298,9 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	 * each connected component is to be ordered separately (nd_components
 	 * is TRUE), then this while loop iterates just once. */
 
-	cnode = EMPTY ;
+	cnode = TRILINOS_CHOLMOD_EMPTY ;
 	cn = 0 ;
-	while (cnode == EMPTY)
+	while (cnode == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    i = Cstack [top--] ;
 
@@ -1311,7 +1311,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 		cnode = i ;
 	    }
 
-	    ASSERT (i >= 0 && i < n && Flag [i] >= EMPTY) ;
+	    ASSERT (i >= 0 && i < n && Flag [i] >= TRILINOS_CHOLMOD_EMPTY) ;
 
 	    /* place i in the queue and mark it */
 	    Map [cn] = i ;
@@ -1320,37 +1320,37 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    cn++ ;
 	}
 
-	ASSERT (cnode != EMPTY) ;
+	ASSERT (cnode != TRILINOS_CHOLMOD_EMPTY) ;
 
 	/* During ordering, there are five kinds of nodes in the graph of B,
 	 * based on Flag [j] and CParent [j] for nodes j = 0 to n-1:
 	 *
 	 * Type 0: If cnode is a repnode of an unordered component, then
-	 * CParent [cnode] is in the range EMPTY to n-1 and
-	 * Flag [cnode] >= EMPTY.  This is a "live" node.
+	 * CParent [cnode] is in the range TRILINOS_CHOLMOD_EMPTY to n-1 and
+	 * Flag [cnode] >= TRILINOS_CHOLMOD_EMPTY.  This is a "live" node.
 	 *
 	 * Type 1: If cnode is a repnode of an ordered separator component,
-	 * then Flag [cnode] < EMPTY and FLAG [cnode] = FLIP (cnode).
-	 * CParent [cnode] is in the range EMPTY to n-1.  cnode is a root of
-	 * the separator tree if CParent [cnode] == EMPTY.  This node is dead.
+	 * then Flag [cnode] < TRILINOS_CHOLMOD_EMPTY and FLAG [cnode] = FLIP (cnode).
+	 * CParent [cnode] is in the range TRILINOS_CHOLMOD_EMPTY to n-1.  cnode is a root of
+	 * the separator tree if CParent [cnode] == TRILINOS_CHOLMOD_EMPTY.  This node is dead.
 	 *
 	 * Type 2: If node j isn't a repnode, has not been absorbed via
 	 * graph compression into another node, but is in an ordered separator
 	 * component, then cnode = FLIP (Flag [j]) gives the repnode of the
 	 * component that contains j and CParent [j]  is -2.  This node is dead.
-	 * Note that Flag [j] < EMPTY.
+	 * Note that Flag [j] < TRILINOS_CHOLMOD_EMPTY.
 	 *
 	 * Type 3: If node i has been absorbed via graph compression into some
 	 * other node j = FLIP (Flag [i]) where j is not a repnode.
 	 * CParent [j] is -2.  Node i may or may not be in an ordered
-	 * component.  This node is dead.  Note that Flag [j] < EMPTY.
+	 * component.  This node is dead.  Note that Flag [j] < TRILINOS_CHOLMOD_EMPTY.
 	 *
 	 * Type 4: If node j is "live" (not in an ordered component, and not
-	 * absorbed into any other node), then Flag [j] >= EMPTY.
+	 * absorbed into any other node), then Flag [j] >= TRILINOS_CHOLMOD_EMPTY.
 	 *
 	 * Only "live" nodes (of type 0 or 4) are placed in a subgraph to be
-	 * partitioned.  Node j is alive if Flag [j] >= EMPTY, and dead if
-	 * Flag [j] < EMPTY.
+	 * partitioned.  Node j is alive if Flag [j] >= TRILINOS_CHOLMOD_EMPTY, and dead if
+	 * Flag [j] < TRILINOS_CHOLMOD_EMPTY.
 	 */
 
 	/* ------------------------------------------------------------------ */
@@ -1383,7 +1383,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    {
 		i = Bi [p] ;
 		/* prune diagonal entries and dead edges from B */
-		if (i != j && Flag [i] >= EMPTY)
+		if (i != j && Flag [i] >= TRILINOS_CHOLMOD_EMPTY)
 		{
 		    /* live node i is in the current component */
 		    Bi [pdest++] = i ;
@@ -1423,7 +1423,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    PRINT2 (("----------------------------C column cj: "ID" j: "ID"\n",
 		cj, j)) ;
 	    ASSERT (j >= 0 && j < n) ;
-	    ASSERT (Flag [j] >= EMPTY) ;
+	    ASSERT (Flag [j] >= TRILINOS_CHOLMOD_EMPTY) ;
 	    for (p = Cp [cj] ; p < Cp [cj+1] ; p++)
 	    {
 		ci = Ci [p] ;
@@ -1431,7 +1431,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 		PRINT3 (("ci: "ID" i: "ID"\n", ci, i)) ;
 		ASSERT (ci != cj && ci >= 0 && ci < cn) ;
 		ASSERT (i != j && i >= 0 && i < n) ;
-		ASSERT (Flag [i] >= EMPTY) ;
+		ASSERT (Flag [i] >= TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 	}
 #endif
@@ -1475,9 +1475,9 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 		CHOLMOD(free_sparse) (&B, Common) ;
 		CHOLMOD(free) (csize, sizeof (Int), Cew, Common) ;
 		CHOLMOD(free) (3*n, sizeof (Int), Work3n, Common) ;
-		Common->mark = EMPTY ;
+		Common->mark = TRILINOS_CHOLMOD_EMPTY ;
 		CHOLMOD(clear_flag) (Common) ;
-		return (EMPTY) ;
+		return (TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 
 	    /* -------------------------------------------------------------- */
@@ -1486,7 +1486,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 
 	    for (ci = 0 ; ci < cn ; ci++)
 	    {
-		if (Hash [ci] < EMPTY)
+		if (Hash [ci] < TRILINOS_CHOLMOD_EMPTY)
 		{
 		    /* ci is dead in C, having been absorbed into cj */
 		    cj = FLIP (Hash [ci]) ;
@@ -1542,7 +1542,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 		PRINT2 (("      node cj: "ID" j: "ID" ordered\n", cj, j)) ;
 	    }
 	    ASSERT (Flag [cnode] == FLIP (cnode)) ;
-	    ASSERT (cnode != EMPTY && Flag [cnode] < EMPTY) ;
+	    ASSERT (cnode != TRILINOS_CHOLMOD_EMPTY && Flag [cnode] < TRILINOS_CHOLMOD_EMPTY) ;
 	    PRINT0 (("discarded\n")) ;
 
 	}
@@ -1554,9 +1554,9 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	     * to be non-empty. */
 	    PRINT0 (("sepsize not tiny: "ID"\n", sepsize)) ;
 	    parent = CParent [cnode] ;
-	    ASSERT (parent >= EMPTY && parent < n) ;
+	    ASSERT (parent >= TRILINOS_CHOLMOD_EMPTY && parent < n) ;
 	    CParent [cnode] = -2 ;
-	    cnode = EMPTY ;
+	    cnode = TRILINOS_CHOLMOD_EMPTY ;
 	    for (cj = 0 ; cj < cn ; cj++)
 	    {
 		j = Map [cj] ;
@@ -1565,7 +1565,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 		    /* All nodes in the separator become part of a component
 		     * whose repnode is cnode */
 		    PRINT2 (("node cj: "ID" j: "ID" ordered\n", cj, j)) ;
-		    if (cnode == EMPTY)
+		    if (cnode == TRILINOS_CHOLMOD_EMPTY)
 		    {
 			PRINT2(("------------new cnode: cj "ID" j "ID"\n",
 				    cj, j)) ;
@@ -1579,7 +1579,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 				cj, j)) ;
 		}
 	    }
-	    ASSERT (cnode != EMPTY && Flag [cnode] < EMPTY) ;
+	    ASSERT (cnode != TRILINOS_CHOLMOD_EMPTY && Flag [cnode] < TRILINOS_CHOLMOD_EMPTY) ;
 	    ASSERT (CParent [cnode] == -2) ;
 	    CParent [cnode] = parent ;
 
@@ -1620,7 +1620,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	}
 	cnode = j ;
 	ASSERT (cnode >= 0 && cnode < n) ;
-	ASSERT (CParent [cnode] >= EMPTY && CParent [cnode] < n) ;
+	ASSERT (CParent [cnode] >= TRILINOS_CHOLMOD_EMPTY && CParent [cnode] < n) ;
 	PRINT2 (("i "ID" is in component with cnode "ID"\n", i, cnode)) ;
 	ASSERT (Flag [cnode] == FLIP (cnode)) ;
 
@@ -1647,7 +1647,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     for (j = 0 ; j < n ; j++)
     {
 	PRINT2 (("j %d CParent %d  ", j, CParent [j])) ;
-	if (CParent [j] >= EMPTY && CParent [j] < n)
+	if (CParent [j] >= TRILINOS_CHOLMOD_EMPTY && CParent [j] < n)
 	{
 	    /* case 1: j is a repnode of a component */
 	    cnode = j ;
@@ -1659,7 +1659,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    cnode = FLIP (Flag [j]) ;
 	    PRINT2 ((" repnode is %d\n", cnode)) ;
 	    ASSERT (cnode >= 0 && cnode < n) ;
-	    ASSERT (CParent [cnode] >= EMPTY && CParent [cnode] < n) ;
+	    ASSERT (CParent [cnode] >= TRILINOS_CHOLMOD_EMPTY && CParent [cnode] < n) ;
 	}
 	ASSERT (Flag [cnode] == FLIP (cnode)) ;
 	/* case 3 no longer holds */
@@ -1687,7 +1687,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 
     if (ndense > 0)
     {
-	ASSERT (CParent [cdense] == EMPTY) ;	/* cdense has no parent */
+	ASSERT (CParent [cdense] == TRILINOS_CHOLMOD_EMPTY) ;	/* cdense has no parent */
 	/* find the children of cdense */
 	nchild = 0 ;
 	for (j = 0 ; j < n ; j++)
@@ -1703,7 +1703,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    /* the cdense node has just one child; merge the two nodes */
 	    PRINT1 (("root has one child\n")) ;
 	    CParent [cdense] = -2 ;		/* cdense is deleted */
-	    CParent [child] = EMPTY ;		/* child becomes a root */
+	    CParent [child] = TRILINOS_CHOLMOD_EMPTY ;		/* child becomes a root */
 	    for (j = 0 ; j < n ; j++)
 	    {
 		if (Flag [j] == FLIP (cdense))
@@ -1734,7 +1734,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 
     /* use Iwork [0..n-1] as workspace for Ipost ( */
     Ipost = Iwork ;
-    DEBUG (for (j = 0 ; j < n ; j++) Ipost [j] = EMPTY) ;
+    DEBUG (for (j = 0 ; j < n ; j++) Ipost [j] = TRILINOS_CHOLMOD_EMPTY) ;
 
     /* compute inverse postorder */
     for (c = 0 ; c < ncomponents ; c++)
@@ -1742,7 +1742,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	cnode = Post [c] ;
 	ASSERT (cnode >= 0 && cnode < n) ;
 	Ipost [cnode] = c ;
-	ASSERT (Head [c] == EMPTY) ;
+	ASSERT (Head [c] == TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     /* adjust the parent array */
@@ -1751,7 +1751,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     for (c = 0 ; c < ncomponents ; c++)
     {
 	parent = CParent [Post [c]] ;
-	NewParent [c] = (parent == EMPTY) ? EMPTY : (Ipost [parent]) ;
+	NewParent [c] = (parent == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : (Ipost [parent]) ;
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
@@ -1770,7 +1770,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
-	if (CParent [c] != EMPTY) Cmember [CParent [c]]++ ;
+	if (CParent [c] != TRILINOS_CHOLMOD_EMPTY) Cmember [CParent [c]]++ ;
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
@@ -1803,7 +1803,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     /* clear the Flag array */
     /* ---------------------------------------------------------------------- */
 
-    Common->mark = EMPTY ;
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;
     CHOLMOD(clear_flag) (Common) ;
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 
@@ -1830,7 +1830,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    if (Common->status < CHOLMOD_OK)
 	    {
 		PRINT0 (("make symmetric failed\n")) ;
-		return (EMPTY) ;
+		return (TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 	    ASSERT ((Int) (B->nrow) == n && (Int) (B->ncol) == n) ;
 	    PRINT2 (("nested dissection (2)\n")) ;
@@ -1850,7 +1850,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    {
 		/* failed */
 		PRINT0 (("camd/csymamd failed\n")) ;
-		return (EMPTY) ;
+		return (TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 	}
 	else
@@ -1861,7 +1861,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	    {
 		/* trilinos_ccolamd failed */
 		PRINT2 (("trilinos_ccolamd failed\n")) ;
-		return (EMPTY) ;
+		return (TRILINOS_CHOLMOD_EMPTY) ;
 	    }
 	}
 
@@ -1898,11 +1898,11 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	k = 0 ;
 	for (c = 0 ; c < ncomponents ; c++)
 	{
-	    for (j = Head [c] ; j != EMPTY ; j = Next [j])
+	    for (j = Head [c] ; j != TRILINOS_CHOLMOD_EMPTY ; j = Next [j])
 	    {
 		Perm [k++] = j ;
 	    }
-	    Head [c] = EMPTY ;
+	    Head [c] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	ASSERT (k == n) ;
 
@@ -1958,13 +1958,13 @@ UF_long CHOLMOD(collapse_septree)
     /* get inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (CParent, EMPTY) ;
-    RETURN_IF_NULL (Cmember, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (CParent, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Cmember, TRILINOS_CHOLMOD_EMPTY) ;
     if (n < ncomponents)
     {
 	ERROR (CHOLMOD_INVALID, "invalid separator tree") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     Common->status = CHOLMOD_OK ;
     nc = ncomponents ;
@@ -1987,12 +1987,12 @@ UF_long CHOLMOD(collapse_septree)
     if (!ok)
     {
 	ERROR (CHOLMOD_TOO_LARGE, "problem too large") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     CHOLMOD(allocate_work) (0, s, 0, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     W = Common->Iwork ;
     Count    = W ; W += ncomponents ;	    /* size ncomponents */
@@ -2005,11 +2005,11 @@ UF_long CHOLMOD(collapse_septree)
 
     for (c = 0 ; c < nc ; c++)
     {
-	First [c] = EMPTY ;
+	First [c] = TRILINOS_CHOLMOD_EMPTY ;
     }
     for (k = 0 ; k < nc ; k++)
     {
-	for (c = k ; c != EMPTY && First [c] == -1 ; c = CParent [c])
+	for (c = k ; c != TRILINOS_CHOLMOD_EMPTY && First [c] == -1 ; c = CParent [c])
 	{
 	    ASSERT (c >= 0 && c < nc) ;
 	    First [c] = k ;
@@ -2046,8 +2046,8 @@ UF_long CHOLMOD(collapse_septree)
     {
 	/* add the subtree of the child, c, into the count of its parent */
 	parent = CParent [c] ;
-	ASSERT (parent >= EMPTY && parent < nc) ;
-	if (parent != EMPTY)
+	ASSERT (parent >= TRILINOS_CHOLMOD_EMPTY && parent < nc) ;
+	if (parent != TRILINOS_CHOLMOD_EMPTY)
 	{
 	    Csubtree [parent] += Csubtree [c] ;
 	}
@@ -2056,7 +2056,7 @@ UF_long CHOLMOD(collapse_septree)
 #ifndef NDEBUG
     /* the sum of the roots should be n */
     j = 0 ;
-    for (c = 0 ; c < nc ; c++) if (CParent [c] == EMPTY) j += Csubtree [c] ;
+    for (c = 0 ; c < nc ; c++) if (CParent [c] == TRILINOS_CHOLMOD_EMPTY) j += Csubtree [c] ;
     ASSERT (j == (Int) n) ;
 #endif
 
@@ -2108,7 +2108,7 @@ UF_long CHOLMOD(collapse_septree)
 	for (c = 0 ; c < nc ; c++)
 	{
 	    Map [c] = nc_new ;
-	    if (CParent [c] >= EMPTY)
+	    if (CParent [c] >= TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* node c is alive, and becomes node Map[c] in the new tree.
 		 * Increment nc_new for the next node c. */
@@ -2120,10 +2120,10 @@ UF_long CHOLMOD(collapse_septree)
 	for (c = 0 ; c < nc ; c++)
 	{
 	    parent = CParent [c] ;
-	    if (parent >= EMPTY)
+	    if (parent >= TRILINOS_CHOLMOD_EMPTY)
 	    {
 		/* node c is alive */
-		CParent [Map [c]] = (parent == EMPTY) ? EMPTY : Map [parent] ;
+		CParent [Map [c]] = (parent == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : Map [parent] ;
 	    }
 	}
 	for (j = 0 ; j < (Int) n ; j++)

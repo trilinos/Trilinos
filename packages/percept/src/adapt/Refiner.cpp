@@ -2552,6 +2552,12 @@
                   std::string newFromPartName = fromPartName + breakPattern->getAppendOriginalString();
                   if (do_strip_hashes) newToPartName = strip_hashes(newToPartName, all_parts, breakPattern->getConvertSeparatorString(), false);
                   if (do_strip_hashes_from) newFromPartName = strip_hashes(newFromPartName, all_parts, breakPattern->getConvertSeparatorString(), false);
+
+                  m_eMesh.get_fem_meta_data()->delete_part_alias_case_insensitive(*fromParts[i_part], newToPartName);
+
+                  m_eMesh.get_fem_meta_data()->add_part_alias(*toParts[i_part], newToPartName);
+                  m_eMesh.get_fem_meta_data()->add_part_alias(*fromParts[i_part], newFromPartName);
+
                   stk::io::set_alternate_part_name(*toParts[i_part], newToPartName);
                   stk::io::set_alternate_part_name(*fromParts[i_part], newFromPartName);
                 }
@@ -3014,10 +3020,10 @@
                   node_vec.push_back(node);
                   if (m_eMesh.m_new_nodes_field)
                     {
-                      NewNodesType_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, node);
+                      NewNodesType::value_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, node);
                       if (ndata)
                         {
-                          ndata[0] = static_cast<NewNodesType_type>(0);
+                          ndata[0] = static_cast<NewNodesType::value_type>(0);
                         }
                     }
                 }

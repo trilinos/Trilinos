@@ -215,7 +215,7 @@
           m_isCommitted = false;
           m_isAdopted = true;
           m_coordinatesField =
-            &m_metaData->declare_field<CoordinatesFieldType_type>( stk::topology::NODE_RANK, "coordinates" );
+            &m_metaData->declare_field<CoordinatesFieldType::value_type>( stk::topology::NODE_RANK, "coordinates" );
           stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), m_spatialDim, nullptr);
         }
       m_isOpen = true;
@@ -4925,7 +4925,7 @@
 
                           if (debug && rank == this->side_rank())
                             std::cout << "SPEF::ch_p_e side= " << this->identifier(entity) << std::endl;
-                          ParentElementType_type *fdata_new = NULL;
+                          ParentElementType::value_type *fdata_new = NULL;
 
                           if (this->hasFamilyTree(entity))
                             {
@@ -4955,7 +4955,7 @@
                                                     << std::endl;
                                         }
                                       VERIFY_OP_ON(fdata_new, !=, 0, "bad fdata_new");
-                                      fdata_new[0] = static_cast<ParentElementType_type>(this->identifier(parent_elem));
+                                      fdata_new[0] = static_cast<ParentElementType::value_type>(this->identifier(parent_elem));
                                     }
                                   else if (this->m_parent_element_field_side && is_matching_rank(*this->m_parent_element_field_side, entity))
                                     {
@@ -4992,7 +4992,7 @@
                                                     << std::endl;
                                         }
                                       VERIFY_OP_ON(fdata_new, !=, 0, "bad fdata_new");
-                                      fdata_new[0] = static_cast<ParentElementType_type>(predicted_parent_id);
+                                      fdata_new[0] = static_cast<ParentElementType::value_type>(predicted_parent_id);
                                     }
                                   else
                                     {
@@ -5794,7 +5794,6 @@
       const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
       stk::mesh::Selector new_selector;
-      unsigned num_inactive = 0;
       unsigned num_part_ranks = part_ranks.size();
       if (!num_part_ranks)
         {
@@ -5813,8 +5812,6 @@
 
           if (inactive_parent_elements_part && active_child_elements_part)
             {
-              num_inactive += stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part),
-                                                                 bulk.buckets(part_ranks[irank]));
               //new_selector |= stk::mesh::Selector(*active_child_elements_part);
               new_selector |= stk::mesh::Selector(*inactive_parent_elements_part);
             }
@@ -5901,10 +5898,10 @@
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
           if(!m_refine_field) m_refine_field = dynamic_cast<RefineFieldType *>(add_field_int("refine_field", stk::topology::ELEMENT_RANK, scalarDimension));
 
-          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
+          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
           if(!m_refine_field_orig) m_refine_field_orig = dynamic_cast<RefineFieldType *>(add_field_int("refine_field_orig", stk::topology::ELEMENT_RANK, scalarDimension));
         }
 
@@ -5931,7 +5928,7 @@
           m_parent_element_field = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), stk::topology::ELEMENT_RANK, "parent_element");
           if(!m_parent_element_field)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(stk::topology::ELEMENT_RANK, "parent_element");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType::value_type>(stk::topology::ELEMENT_RANK, "parent_element");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field = &pe_field;
@@ -5939,7 +5936,7 @@
           m_parent_element_field_side = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), side_rank(), "parent_element_side");
           if(!m_parent_element_field_side)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(side_rank(), "parent_element_side");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType::value_type>(side_rank(), "parent_element_side");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field_side = &pe_field;
@@ -5950,8 +5947,8 @@
               m_node_registry_field = find_field_possible_array_tag<NodeRegistryFieldType>(*get_fem_meta_data(), node_rank(), "node_registry");
               if (!m_node_registry_field)
                 {
-                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType_type>(node_rank(), "node_registry");
-                  std::vector<NodeRegistryFieldType_type> vals(NUM_NR_FIELD_SLOTS, static_cast<NodeRegistryFieldType_type>(0));
+                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType::value_type>(node_rank(), "node_registry");
+                  std::vector<NodeRegistryFieldType::value_type> vals(NUM_NR_FIELD_SLOTS, static_cast<NodeRegistryFieldType::value_type>(0));
                   stk::mesh::put_field_on_mesh( nr_field , get_fem_meta_data()->universal_part(), NUM_NR_FIELD_SLOTS, &vals[0]);
                   stk::io::set_field_role(nr_field, Ioss::Field::TRANSIENT);
                   m_node_registry_field = &nr_field;
@@ -5963,7 +5960,7 @@
       if (!m_new_nodes_field_set)
         {
           m_new_nodes_field_set = true;
-          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType_type>(node_rank(), "new_nodes");
+          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType::value_type>(node_rank(), "new_nodes");
           if(!m_new_nodes_field) m_new_nodes_field = dynamic_cast<NewNodesType *>(add_field_int("new_nodes", node_rank(), scalarDimension));
 
         }
@@ -5971,10 +5968,10 @@
       if (!m_weights_field_set)
         {
           m_weights_field_set = true;
-          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType::value_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
           if (!m_weights_field)
             {
-              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType::value_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
               stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }
@@ -6001,10 +5998,10 @@
 
     void PerceptMesh::register_and_set_smoothing_fields()
     {
-      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
+      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType::value_type>(node_rank(), "unprojected_coordinates");
       if(!m_unprojected_coordinates)
         {
-          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
+          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType::value_type>(node_rank(), "unprojected_coordinates");
 
           // we use first 3 slots for coordinates, last for the flag for if it has been set yet
           stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, nullptr);
@@ -6012,10 +6009,10 @@
         }
       ADD_FIELD(m_unprojected_coordinates);
 
-      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
+      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType::value_type>(node_rank(), "wall_distance");
       if(!m_wall_distance_field)
         {
-          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
+          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType::value_type>(node_rank(), "wall_distance");
 
           stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), nullptr);
           stk::io::set_field_role(*m_wall_distance_field, Ioss::Field::TRANSIENT);
@@ -6031,20 +6028,20 @@
       if (!m_refine_level_field_set)
         {
           m_refine_level_field_set = true;
-          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
+          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType::value_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
         }
 
       if (!m_parent_element_field_set)
         {
           m_parent_element_field_set = true;
-          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.element_rank(), "parent_element");
-          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.side_rank(), "parent_element_side");
+          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType::value_type>(eMesh.element_rank(), "parent_element");
+          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType::value_type>(eMesh.side_rank(), "parent_element_side");
         }
 
       const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
@@ -6065,6 +6062,7 @@
             {
               continue;
             }
+            
           for (unsigned iel=0; iel < old_owning_elements.size(); iel++)
             {
               stk::mesh::Entity old_owning_elem = old_owning_elements[iel];

@@ -5,7 +5,6 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>

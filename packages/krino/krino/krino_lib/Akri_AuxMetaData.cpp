@@ -9,7 +9,6 @@
 #include <Akri_AuxMetaData.hpp>
 #include "Akri_FieldRef.hpp"              // for FieldRef
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part

@@ -76,13 +76,13 @@ namespace percept {
     if (bulk.entity_rank(face) == stk::topology::ELEMENT_RANK)
       {
         if (!shell_field)
-          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
+          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType::value_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
         field = shell_field;
       }
     else
       {
         if (!sideset_field)
-          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
+          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType::value_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
@@ -132,13 +132,13 @@ namespace percept {
     if (bulk.entity_rank(face) == stk::topology::ELEMENT_RANK)
       {
         if (!shell_field)
-          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
+          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType::value_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
         field = shell_field;
       }
     else
       {
         if (!sideset_field)
-          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
+          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType::value_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");

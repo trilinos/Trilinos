@@ -126,6 +126,13 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   try {
       dst_bucket = dst_partition.get_bucket_for_adds();
   }
+  catch(std::bad_alloc& ex) {
+      std::ostringstream strout;
+      strout << "Error adding "<<m_mesh.entity_key(entity)<< " to mesh:"
+             << "ERROR: The current simulation ran out of memory." << std::endl
+             << "Consider requesting less processors per node and resubmit your job." << std::endl;
+      throw std::bad_alloc();
+    }
   catch(std::exception& e) {
       std::ostringstream os;
       os << "Error adding "<<m_mesh.entity_key(entity)<< " to mesh: " << e.what();

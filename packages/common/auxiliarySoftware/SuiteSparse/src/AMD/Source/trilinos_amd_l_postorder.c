@@ -20,7 +20,7 @@ GLOBAL void TRILINOS_AMD_postorder
 (
     /* inputs, not modified on output: */
     Int nn,		/* nodes are in the range 0..nn-1 */
-    Int Parent [ ],	/* Parent [j] is the parent of j, or EMPTY if root */
+    Int Parent [ ],	/* Parent [j] is the parent of j, or TRILINOS_AMD_EMPTY if root */
     Int Nv [ ],		/* Nv [j] > 0 number of pivots represented by node j,
 			 * or zero if j is not a node. */
     Int Fsize [ ],	/* Fsize [j]: size of node j */
@@ -38,8 +38,8 @@ GLOBAL void TRILINOS_AMD_postorder
 
     for (j = 0 ; j < nn ; j++)
     {
-	Child [j] = EMPTY ;
-	Sibling [j] = EMPTY ;
+	Child [j] = TRILINOS_AMD_EMPTY ;
+	Sibling [j] = TRILINOS_AMD_EMPTY ;
     }
 
     /* --------------------------------------------------------------------- */
@@ -52,7 +52,7 @@ GLOBAL void TRILINOS_AMD_postorder
 	{
 	    /* this is an element */
 	    parent = Parent [j] ;
-	    if (parent != EMPTY)
+	    if (parent != TRILINOS_AMD_EMPTY)
 	    {
 		/* place the element in link list of the children its parent */
 		/* bigger elements will tend to be at the end of the list */
@@ -78,7 +78,7 @@ GLOBAL void TRILINOS_AMD_postorder
 		/* dump the link list of children */
 		nchild = 0 ;
 		TRILINOS_AMD_DEBUG1 (("    Children: ")) ;
-		for (ff = Child [j] ; ff != EMPTY ; ff = Sibling [ff])
+		for (ff = Child [j] ; ff != TRILINOS_AMD_EMPTY ; ff = Sibling [ff])
 		{
 		    TRILINOS_AMD_DEBUG1 ((ID" ", ff)) ;
 		    ASSERT (Parent [ff] == j) ;
@@ -87,7 +87,7 @@ GLOBAL void TRILINOS_AMD_postorder
 		}
 		TRILINOS_AMD_DEBUG1 (("\n")) ;
 		parent = Parent [j] ;
-		if (parent != EMPTY)
+		if (parent != TRILINOS_AMD_EMPTY)
 		{
 		    ASSERT (Nv [parent] > 0) ;
 		}
@@ -105,14 +105,14 @@ GLOBAL void TRILINOS_AMD_postorder
 
     for (i = 0 ; i < nn ; i++)
     {
-	if (Nv [i] > 0 && Child [i] != EMPTY)
+	if (Nv [i] > 0 && Child [i] != TRILINOS_AMD_EMPTY)
 	{
 
 #ifndef NDEBUG
 	    Int nchild ;
 	    TRILINOS_AMD_DEBUG1 (("Before partial sort, element "ID"\n", i)) ;
 	    nchild = 0 ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (f >= 0 && f < nn) ;
 		TRILINOS_AMD_DEBUG1 (("      f: "ID"  size: "ID"\n", f, Fsize [f])) ;
@@ -122,11 +122,11 @@ GLOBAL void TRILINOS_AMD_postorder
 #endif
 
 	    /* find the biggest element in the child list */
-	    fprev = EMPTY ;
-	    maxfrsize = EMPTY ;
-	    bigfprev = EMPTY ;
-	    bigf = EMPTY ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    fprev = TRILINOS_AMD_EMPTY ;
+	    maxfrsize = TRILINOS_AMD_EMPTY ;
+	    bigfprev = TRILINOS_AMD_EMPTY ;
+	    bigf = TRILINOS_AMD_EMPTY ;
+	    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (f >= 0 && f < nn) ;
 		frsize = Fsize [f] ;
@@ -139,18 +139,18 @@ GLOBAL void TRILINOS_AMD_postorder
 		}
 		fprev = f ;
 	    }
-	    ASSERT (bigf != EMPTY) ;
+	    ASSERT (bigf != TRILINOS_AMD_EMPTY) ;
 
 	    fnext = Sibling [bigf] ;
 
 	    TRILINOS_AMD_DEBUG1 (("bigf "ID" maxfrsize "ID" bigfprev "ID" fnext "ID
 		" fprev " ID"\n", bigf, maxfrsize, bigfprev, fnext, fprev)) ;
 
-	    if (fnext != EMPTY)
+	    if (fnext != TRILINOS_AMD_EMPTY)
 	    {
-		/* if fnext is EMPTY then bigf is already at the end of list */
+		/* if fnext is TRILINOS_AMD_EMPTY then bigf is already at the end of list */
 
-		if (bigfprev == EMPTY)
+		if (bigfprev == TRILINOS_AMD_EMPTY)
 		{
 		    /* delete bigf from the element of the list */
 		    Child [i] = fnext ;
@@ -162,16 +162,16 @@ GLOBAL void TRILINOS_AMD_postorder
 		}
 
 		/* put bigf at the end of the list */
-		Sibling [bigf] = EMPTY ;
-		ASSERT (Child [i] != EMPTY) ;
+		Sibling [bigf] = TRILINOS_AMD_EMPTY ;
+		ASSERT (Child [i] != TRILINOS_AMD_EMPTY) ;
 		ASSERT (fprev != bigf) ;
-		ASSERT (fprev != EMPTY) ;
+		ASSERT (fprev != TRILINOS_AMD_EMPTY) ;
 		Sibling [fprev] = bigf ;
 	    }
 
 #ifndef NDEBUG
 	    TRILINOS_AMD_DEBUG1 (("After partial sort, element "ID"\n", i)) ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (f >= 0 && f < nn) ;
 		TRILINOS_AMD_DEBUG1 (("        "ID"  "ID"\n", f, Fsize [f])) ;
@@ -190,14 +190,14 @@ GLOBAL void TRILINOS_AMD_postorder
 
     for (i = 0 ; i < nn ; i++)
     {
-	Order [i] = EMPTY ;
+	Order [i] = TRILINOS_AMD_EMPTY ;
     }
 
     k = 0 ;
 
     for (i = 0 ; i < nn ; i++)
     {
-	if (Parent [i] == EMPTY && Nv [i] > 0)
+	if (Parent [i] == TRILINOS_AMD_EMPTY && Nv [i] > 0)
 	{
 	    TRILINOS_AMD_DEBUG1 (("Root of assembly tree "ID"\n", i)) ;
 	    k = TRILINOS_AMD_post_tree (i, k, Child, Sibling, Order, Stack

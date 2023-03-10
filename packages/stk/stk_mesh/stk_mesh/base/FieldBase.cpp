@@ -347,7 +347,8 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
   return restriction.num_scalars_per_entity();
 }
 
-unsigned FieldBase::max_size( EntityRank ent_rank) const
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
+STK_DEPRECATED unsigned FieldBase::max_size( EntityRank ent_rank) const
 {
   unsigned max = 0 ; 
 
@@ -362,6 +363,18 @@ unsigned FieldBase::max_size( EntityRank ent_rank) const
           if ( max < len ) { max = len ; } 
       }   
   }   
+  return max ;
+}
+#endif
+
+unsigned FieldBase::max_size() const
+{
+  FieldRestriction::size_type max = 0 ; 
+
+  for (const FieldRestriction& restriction : restrictions()) {
+    max = std::max(max, restriction.num_scalars_per_entity());
+  }   
+
   return max ;
 }
 

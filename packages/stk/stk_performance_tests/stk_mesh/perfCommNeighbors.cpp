@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>

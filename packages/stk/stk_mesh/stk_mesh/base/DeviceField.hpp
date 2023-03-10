@@ -409,7 +409,7 @@ private:
    const BucketVector& buckets = hostBulk->get_buckets(hostFieldEntityRank, selector);
    const BucketVector& allBuckets = hostBulk->buckets(hostFieldEntityRank);
    numBucketsForField = buckets.size();
-   maxNumScalarsPerEntity = hostField->max_size(rank);
+   maxNumScalarsPerEntity = hostField->max_size();
 
    if (!buckets.empty()) {
      bucketCapacity = buckets[0]->capacity();

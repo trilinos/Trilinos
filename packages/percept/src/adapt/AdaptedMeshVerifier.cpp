@@ -675,8 +675,8 @@ namespace percept
                               eMesh.getChildren(neigh, children_of_neighbor, true, false);
                               if (children_of_neighbor.size() == 0)
                                 {
-                                  RefineLevelType *refine_level_field = eMesh.get_fem_meta_data()->  get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
-                                  RefineFieldType *refine_field = eMesh.get_fem_meta_data()-> get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+                                  RefineLevelType *refine_level_field = eMesh.get_fem_meta_data()->  get_field<RefineLevelType::value_type>(stk::topology::ELEMENT_RANK, "refine_level");
+                                  RefineFieldType *refine_field = eMesh.get_fem_meta_data()-> get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
                                   TransitionElementType *transition_element_field = eMesh.get_transition_element_field();
 
                                   int *parent_refine_field = stk::mesh::field_data( *refine_field , parent );
@@ -1219,7 +1219,7 @@ namespace percept
 
                     if (debug && rank == eMesh.side_rank())
                       std::cout << "RGUR::ch_p_e side= " << eMesh.identifier(entity) << std::endl;
-                    ParentElementType_type *fdata_new = NULL;
+                    ParentElementType::value_type *fdata_new = NULL;
 
                     if (eMesh.hasFamilyTree(entity))
                       {
@@ -1247,7 +1247,7 @@ namespace percept
                                               << std::endl;
                                   }
                                 if (fdata_new)
-                                  VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType_type>(eMesh.identifier(parent_elem)), "bad parent_field "+msg);
+                                  VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType::value_type>(eMesh.identifier(parent_elem)), "bad parent_field "+msg);
                               }
                             else if (eMesh.m_parent_element_field_side && is_matching_rank(*eMesh.m_parent_element_field_side, entity))
                               {
@@ -1268,7 +1268,7 @@ namespace percept
                                               << std::endl;
                                   }
                                 if (fdata_new)
-                                  VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType_type>(predicted_parent_id), "bad parent_field for side"+msg);
+                                  VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType::value_type>(predicted_parent_id), "bad parent_field for side"+msg);
                               }
                             else
                               {

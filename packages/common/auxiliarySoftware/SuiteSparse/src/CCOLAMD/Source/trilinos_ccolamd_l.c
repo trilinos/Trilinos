@@ -754,7 +754,7 @@ typedef struct Trilinos_CColamd_Row_struct
 /* === basic definitions ==================================================== */
 /* ========================================================================== */
 
-#define EMPTY (-1)
+#define TRILINOS_CCOLAMDL_EMPTY (-1)
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
@@ -1555,7 +1555,7 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     Int Front_cols [ ],		/* link list of pivot columns for each front */
     Int *p_nfr,			/* total number of frontal matrices */
     Int InFront [ ],		/* InFront [row] = f if the original row was
-				 * absorbed into front f.  EMPTY if the row was
+				 * absorbed into front f.  TRILINOS_CCOLAMDL_EMPTY if the row was
 				 * empty, dense, or not absorbed.  This array
 				 * has size n_row+1 */
     Int cmember [ ]		/* constraint set of A */
@@ -1833,8 +1833,8 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     	Front_npivcol [col] = 0 ;
     	Front_nrows [col] = 0 ;
     	Front_ncols [col] = 0 ;
-    	Front_parent [col] = EMPTY ;
-    	Front_cols [col] = EMPTY ;
+    	Front_parent [col] = TRILINOS_CCOLAMDL_EMPTY ;
+    	Front_cols [col] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     /* === Initialize scores, kill dense rows/columns ======================= */
@@ -1893,7 +1893,7 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     for (i = 0 ; i < nfr ; i++)
     {
         parent = Front_parent [i] ;
-        if (parent != EMPTY)
+        if (parent != TRILINOS_CCOLAMDL_EMPTY)
         {
             Front_parent [i] = Front_order [parent] ;
         }
@@ -1903,8 +1903,8 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     for (row = 0 ; row < n_row ; row++)
     {
         i = InFront [row] ;
-        ASSERT (i >= EMPTY && i < nfr) ;
-        if (i != EMPTY)
+        ASSERT (i >= TRILINOS_CCOLAMDL_EMPTY && i < nfr) ;
+        if (i != TRILINOS_CCOLAMDL_EMPTY)
         {
             InFront [row] = Front_order [i] ;
         }
@@ -1917,7 +1917,7 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     /* use A [0..n_col-1] as inverse permutation */
     for (i = 0 ; i < n_col ; i++)
     {
-        A [i] = EMPTY ;
+        A [i] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     k = 0 ;
@@ -1935,12 +1935,12 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
         }
         set1 = set2 ;
 
-        for (col = Front_cols [i] ; col != EMPTY ; col = Col [col].nextcol)
+        for (col = Front_cols [i] ; col != TRILINOS_CCOLAMDL_EMPTY ; col = Col [col].nextcol)
         {
             ASSERT (col >= 0 && col < n_col) ;
             DEBUG1 (("trilinos_ccolamd output ordering: k "ID" col "ID"\n", k, col)) ;
             p [k] = col ;
-            ASSERT (A [col] == EMPTY) ;
+            ASSERT (A [col] == TRILINOS_CCOLAMDL_EMPTY) ;
 
 	    cs = CMEMBER (col) ;
             ASSERT (k >= cset_start [cs] && k < cset_start [cs+1]) ;
@@ -1956,7 +1956,7 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
     {
         for (col = 0 ; col < n_col ; col++)
         {
-            if (A [col] == EMPTY)
+            if (A [col] == TRILINOS_CCOLAMDL_EMPTY)
             {
                 k = Col [col].shared2.order ;
 		cs = CMEMBER (col) ;
@@ -2087,9 +2087,9 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 
 	Col [col].shared1.thickness = 1 ;
 	Col [col].shared2.score = 0 ;
-	Col [col].shared3.prev = EMPTY ;
-	Col [col].shared4.degree_next = EMPTY ;
-        Col [col].nextcol = EMPTY ;
+	Col [col].shared3.prev = TRILINOS_CCOLAMDL_EMPTY ;
+	Col [col].shared4.degree_next = TRILINOS_CCOLAMDL_EMPTY ;
+        Col [col].nextcol = TRILINOS_CCOLAMDL_EMPTY ;
         Col [col].lastcol = col ;
     }
 
@@ -2104,7 +2104,7 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 	Row [row].length = 0 ;
 	Row [row].shared2.mark = -1 ;
         Row [row].thickness = 1 ;
-        Row [row].front = EMPTY ;
+        Row [row].front = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     for (col = 0 ; col < n_col ; col++)
@@ -2544,7 +2544,7 @@ PRIVATE void init_scoring
     /* clear the hash buckets */
     for (c = 0 ; c <= n_col ; c++)
     {
-	head [c] = EMPTY ;
+	head [c] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
 #ifndef NDEBUG
@@ -2670,7 +2670,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 
     for (row = 0 ; row < n_row ; row++)
     {
-        InFront [row] = EMPTY ;
+        InFront [row] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     /* === Order the columns ================================================ */
@@ -2681,12 +2681,12 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	/* make sure degree list isn't empty */
 	ASSERT (min_score >= 0) ;
 	ASSERT (min_score <= n_col) ;
-	ASSERT (head [min_score] >= EMPTY) ;
+	ASSERT (head [min_score] >= TRILINOS_CCOLAMDL_EMPTY) ;
 
 #ifndef NDEBUG
 	for (debug_d = 0 ; debug_d < min_score ; debug_d++)
 	{
-	    ASSERT (head [debug_d] == EMPTY) ;
+	    ASSERT (head [debug_d] == TRILINOS_CCOLAMDL_EMPTY) ;
 	}
 #endif
 
@@ -2711,7 +2711,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 #ifndef NDEBUG
 	    for (col = 0 ; col <= n_col ; col++)
 	    {
-	        ASSERT (head [col] == EMPTY) ;
+	        ASSERT (head [col] == TRILINOS_CCOLAMDL_EMPTY) ;
 	    }
 #endif
 
@@ -2727,7 +2727,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		{
 		    DEBUG1 (("Column "ID" is dead\n", col)) ;
 		    /* count dense and null columns */
-		    if (Col [col].shared2.order != EMPTY)
+		    if (Col [col].shared2.order != TRILINOS_CCOLAMDL_EMPTY)
 		    {
 			deadcol++ ;
 		    }
@@ -2744,16 +2744,16 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		ASSERT (min_score <= n_col) ;
 		ASSERT (score >= 0) ;
 		ASSERT (score <= n_col) ;
-		ASSERT (head [score] >= EMPTY) ;
+		ASSERT (head [score] >= TRILINOS_CCOLAMDL_EMPTY) ;
 
 		/* now add this column to dList at proper score location */
 		next_col = head [score] ;
-		Col [col].shared3.prev = EMPTY ;
+		Col [col].shared3.prev = TRILINOS_CCOLAMDL_EMPTY ;
 		Col [col].shared4.degree_next = next_col ;
 
 		/* if there already was a column with the same score, set its */
 		/* previous pointer to this new column */
-		if (next_col != EMPTY)
+		if (next_col != TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    Col [next_col].shared3.prev = col ;
 		}
@@ -2789,7 +2789,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 
 	/* === Select pivot column, and order it ============================ */
 
-	while (head [min_score] == EMPTY && min_score < n_col)
+	while (head [min_score] == TRILINOS_CCOLAMDL_EMPTY && min_score < n_col)
 	{
 	    min_score++ ;
 	}
@@ -2799,9 +2799,9 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	ASSERT (pivot_col >= 0 && pivot_col <= n_col) ;
 	next_col = Col [pivot_col].shared4.degree_next ;
 	head [min_score] = next_col ;
-	if (next_col != EMPTY)
+	if (next_col != TRILINOS_CCOLAMDL_EMPTY)
 	{
-	    Col [next_col].shared3.prev = EMPTY ;
+	    Col [next_col].shared3.prev = TRILINOS_CCOLAMDL_EMPTY ;
 	}
 
 	ASSERT (COL_IS_ALIVE (pivot_col)) ;
@@ -2917,7 +2917,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	    ASSERT (row >= 0 && row < n_row) ;
             if (ROW_IS_ALIVE (row))
             {
-                if (Row [row].front != EMPTY)
+                if (Row [row].front != TRILINOS_CCOLAMDL_EMPTY)
                 {
                     /* This row represents a frontal matrix. */
                     /* Row [row].front is a child of current front */
@@ -2950,7 +2950,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	else
 	{
 	    /* there is no pivot row, since it is of zero length */
-	    pivot_row = EMPTY ;
+	    pivot_row = TRILINOS_CCOLAMDL_EMPTY ;
 	    ASSERT (pivot_row_length == 0) ;
 	}
 	ASSERT (Col [pivot_col].length > 0 || pivot_row_length == 0) ;
@@ -3010,8 +3010,8 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 			cur_score, prev_col, next_col)) ;
 		ASSERT (cur_score >= 0) ;
 		ASSERT (cur_score <= n_col) ;
-		ASSERT (cur_score >= EMPTY) ;
-		if (prev_col == EMPTY)
+		ASSERT (cur_score >= TRILINOS_CCOLAMDL_EMPTY) ;
+		if (prev_col == TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    head [cur_score] = next_col ;
 		}
@@ -3019,7 +3019,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		{
 		    Col [prev_col].shared4.degree_next = next_col ;
 		}
-		if (next_col != EMPTY)
+		if (next_col != TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    Col [next_col].shared3.prev = prev_col ;
 		}
@@ -3055,7 +3055,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		{
 		    DEBUG3 (("aggressive absorption. Row: "ID"\n", row)) ;
 
-                    if (Row [row].front != EMPTY)
+                    if (Row [row].front != TRILINOS_CCOLAMDL_EMPTY)
                     {
                         /* Row [row].front is a child of current front. */
                         child = Row [row].front ;
@@ -3179,7 +3179,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		ASSERT (((Int) hash) <= n_col) ;
 
 		head_column = head [hash] ;
-		if (head_column > EMPTY)
+		if (head_column > TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    /* degree list "hash" is non-empty, use prev (shared3) of */
 		    /* first column in degree list as head of hash bucket */
@@ -3283,11 +3283,11 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		ASSERT (min_score <= n_col) ;
 		ASSERT (cur_score >= 0) ;
 		ASSERT (cur_score <= n_col) ;
-		ASSERT (head [cur_score] >= EMPTY) ;
+		ASSERT (head [cur_score] >= TRILINOS_CCOLAMDL_EMPTY) ;
 		next_col = head [cur_score] ;
 		Col [col].shared4.degree_next = next_col ;
-		Col [col].shared3.prev = EMPTY ;
-		if (next_col != EMPTY)
+		Col [col].shared3.prev = TRILINOS_CCOLAMDL_EMPTY ;
+		if (next_col != TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    Col [next_col].shared3.prev = col ;
 		}
@@ -3297,8 +3297,8 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	    }
 	    else
 	    {
-		Col [col].shared4.degree_next = EMPTY ;
-		Col [col].shared3.prev = EMPTY ;
+		Col [col].shared4.degree_next = TRILINOS_CCOLAMDL_EMPTY ;
+		Col [col].shared3.prev = TRILINOS_CCOLAMDL_EMPTY ;
 	    }
 	}
 
@@ -3319,7 +3319,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	/* all cols */
 	Front_ncols [nfr] = pivot_col_thickness + pivot_row_degree ;
 
-	Front_parent [nfr] = EMPTY ;
+	Front_parent [nfr] = TRILINOS_CCOLAMDL_EMPTY ;
 
 	pivot_row_thickness -= pivot_col_thickness ;
 	DEBUG1 (("Front "ID" Pivot_row_thickness after pivot cols elim: "ID"\n",
@@ -3349,7 +3349,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 		 Front_npivcol [nfr], Front_nrows [nfr], Front_ncols [nfr])) ;
 	DEBUG1 ((" cols:[ ")) ;
 	debug_d = 0 ;
-	for (col = Front_cols [nfr] ; col != EMPTY ; col = Col [col].nextcol)
+	for (col = Front_cols [nfr] ; col != TRILINOS_CCOLAMDL_EMPTY ; col = Col [col].nextcol)
 	{
 		DEBUG1 ((" "ID, col)) ;
 		ASSERT (col >= 0 && col < n_col) ;
@@ -3456,7 +3456,7 @@ PRIVATE void detect_super_cols
 	/* === Get the first column in this hash bucket ===================== */
 
 	head_column = head [hash] ;
-	if (head_column > EMPTY)
+	if (head_column > TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    first_col = Col [head_column].shared3.headhash ;
 	}
@@ -3467,7 +3467,7 @@ PRIVATE void detect_super_cols
 
 	/* === Consider each column in the hash bucket ====================== */
 
-	for (super_c = first_col ; super_c != EMPTY ;
+	for (super_c = first_col ; super_c != TRILINOS_CCOLAMDL_EMPTY ;
 	    super_c = Col [super_c].shared4.hash_next)
 	{
 	    ASSERT (COL_IS_ALIVE (super_c)) ;
@@ -3480,7 +3480,7 @@ PRIVATE void detect_super_cols
 	    /* === Compare super_c with all columns after it ================ */
 
 	    for (c = Col [super_c].shared4.hash_next ;
-		 c != EMPTY ; c = Col [c].shared4.hash_next)
+		 c != TRILINOS_CCOLAMDL_EMPTY ; c = Col [c].shared4.hash_next)
 	    {
 		ASSERT (c != super_c) ;
 		ASSERT (COL_IS_ALIVE (c)) ;
@@ -3529,7 +3529,7 @@ PRIVATE void detect_super_cols
 		Col [c].shared1.parent = super_c ;
 		KILL_NON_PRINCIPAL_COL (c) ;
 		/* order c later, in order_children() */
-		Col [c].shared2.order = EMPTY ;
+		Col [c].shared2.order = TRILINOS_CCOLAMDL_EMPTY ;
 		/* remove c from hash bucket */
 		Col [prev_c].shared4.hash_next = Col [c].shared4.hash_next ;
 
@@ -3548,15 +3548,15 @@ PRIVATE void detect_super_cols
 
 	/* === Empty this hash bucket ======================================= */
 
-	if (head_column > EMPTY)
+	if (head_column > TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    /* corresponding degree list "hash" is not empty */
-	    Col [head_column].shared3.headhash = EMPTY ;
+	    Col [head_column].shared3.headhash = TRILINOS_CCOLAMDL_EMPTY ;
 	}
 	else
 	{
 	    /* corresponding degree list "hash" is empty */
-	    head [hash] = EMPTY ;
+	    head [hash] = TRILINOS_CCOLAMDL_EMPTY ;
 	}
     }
 }
@@ -3903,8 +3903,8 @@ GLOBAL void TRILINOS_CCOLAMD_apply_order
     for (i = 0 ; i < nn ; i++)
     {
 	k = Order [i] ;
-	ASSERT (k >= EMPTY && k < nfr) ;
-	if (k != EMPTY)
+	ASSERT (k >= TRILINOS_CCOLAMDL_EMPTY && k < nfr) ;
+	if (k != TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    Temp [k] = Front [i] ;
 	}
@@ -3940,7 +3940,7 @@ GLOBAL void TRILINOS_CCOLAMD_fsize
 
     for (j = 0 ; j < nn ; j++)
     {
-	Fsize [j] = EMPTY ;
+	Fsize [j] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -3964,7 +3964,7 @@ GLOBAL void TRILINOS_CCOLAMD_fsize
 		j, Npiv [j], frsize, parent)) ;
 	    Fsize [j] = MAX (Fsize [j], frsize) ;
 	    DEBUG1 (("Fsize [j = "ID"] = "ID"\n", j, Fsize [j])) ;
-	    if (parent != EMPTY)
+	    if (parent != TRILINOS_CCOLAMDL_EMPTY)
 	    {
 		/* find the maximum frontsize of self and children */
 		ASSERT (Npiv [parent] > 0) ;
@@ -3989,7 +3989,7 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 (
     /* inputs, not modified on output: */
     Int nn,		/* nodes are in the range 0..nn-1 */
-    Int Parent [ ],	/* Parent [j] is the parent of j, or EMPTY if root */
+    Int Parent [ ],	/* Parent [j] is the parent of j, or TRILINOS_CCOLAMDL_EMPTY if root */
     Int Nv [ ],		/* Nv [j] > 0 number of pivots represented by node j,
 			 * or zero if j is not a node. */
     Int Fsize [ ],	/* Fsize [j]: size of node j */
@@ -4011,8 +4011,8 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 
     for (j = 0 ; j < nn ; j++)
     {
-	Child [j] = EMPTY ;
-	Sibling [j] = EMPTY ;
+	Child [j] = TRILINOS_CCOLAMDL_EMPTY ;
+	Sibling [j] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     /* --------------------------------------------------------------------- */
@@ -4025,7 +4025,7 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 	{
 	    /* this is an element */
 	    parent = Parent [j] ;
-	    if (parent != EMPTY)
+	    if (parent != TRILINOS_CCOLAMDL_EMPTY)
 	    {
 		/* place the element in link list of the children its parent */
 		/* bigger elements will tend to be at the end of the list */
@@ -4054,7 +4054,7 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 		/* dump the link list of children */
 		nchild = 0 ;
 		DEBUG1 (("    Children: ")) ;
-		for (ff = Child [j] ; ff != EMPTY ; ff = Sibling [ff])
+		for (ff = Child [j] ; ff != TRILINOS_CCOLAMDL_EMPTY ; ff = Sibling [ff])
 		{
 		    DEBUG1 ((ID" ", ff)) ;
 		    nchild++ ;
@@ -4074,14 +4074,14 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 
     for (i = 0 ; i < nn ; i++)
     {
-	if (Nv [i] > 0 && Child [i] != EMPTY)
+	if (Nv [i] > 0 && Child [i] != TRILINOS_CCOLAMDL_EMPTY)
 	{
 
 #ifndef NDEBUG
 	    Int nchild ;
 	    DEBUG1 (("Before partial sort, element "ID"\n", i)) ;
 	    nchild = 0 ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
 	    {
 		DEBUG1 (("      f: "ID"  size: "ID"\n", f, Fsize [f])) ;
 		nchild++ ;
@@ -4089,11 +4089,11 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 #endif
 
 	    /* find the biggest element in the child list */
-	    fprev = EMPTY ;
-	    maxfrsize = EMPTY ;
-	    bigfprev = EMPTY ;
-	    bigf = EMPTY ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    fprev = TRILINOS_CCOLAMDL_EMPTY ;
+	    maxfrsize = TRILINOS_CCOLAMDL_EMPTY ;
+	    bigfprev = TRILINOS_CCOLAMDL_EMPTY ;
+	    bigf = TRILINOS_CCOLAMDL_EMPTY ;
+	    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
 	    {
 		frsize = Fsize [f] ;
 		if (frsize >= maxfrsize)
@@ -4111,11 +4111,11 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 	    DEBUG1 (("bigf "ID" maxfrsize "ID" bigfprev "ID" fnext "ID
 		" fprev " ID"\n", bigf, maxfrsize, bigfprev, fnext, fprev)) ;
 
-	    if (fnext != EMPTY)
+	    if (fnext != TRILINOS_CCOLAMDL_EMPTY)
 	    {
-		/* if fnext is EMPTY then bigf is already at the end of list */
+		/* if fnext is TRILINOS_CCOLAMDL_EMPTY then bigf is already at the end of list */
 
-		if (bigfprev == EMPTY)
+		if (bigfprev == TRILINOS_CCOLAMDL_EMPTY)
 		{
 		    /* delete bigf from the element of the list */
 		    Child [i] = fnext ;
@@ -4127,13 +4127,13 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 		}
 
 		/* put bigf at the end of the list */
-		Sibling [bigf] = EMPTY ;
+		Sibling [bigf] = TRILINOS_CCOLAMDL_EMPTY ;
 		Sibling [fprev] = bigf ;
 	    }
 
 #ifndef NDEBUG
 	    DEBUG1 (("After partial sort, element "ID"\n", i)) ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
 	    {
 		DEBUG1 (("        "ID"  "ID"\n", f, Fsize [f])) ;
 		nchild-- ;
@@ -4148,14 +4148,14 @@ GLOBAL void TRILINOS_CCOLAMD_postorder
 
     for (i = 0 ; i < nn ; i++)
     {
-	Order [i] = EMPTY ;
+	Order [i] = TRILINOS_CCOLAMDL_EMPTY ;
     }
 
     k = 0 ;
 
     for (i = 0 ; i < nn ; i++)
     {
-	if ((Parent [i] == EMPTY
+	if ((Parent [i] == TRILINOS_CCOLAMDL_EMPTY
 	    || (CMEMBER (Front_cols [Parent [i]]) != CMEMBER (Front_cols [i])))
 	    && Nv [i] > 0)
 	{
@@ -4200,7 +4200,7 @@ GLOBAL Int TRILINOS_CCOLAMD_post_tree
 
     /* this is simple, but can cause stack overflow if nn is large */
     i = root ;
-    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
     {
 	k = TRILINOS_CCOLAMD_post_tree (f, k, Child, Sibling, Order, Stack, nn) ;
     }
@@ -4222,18 +4222,18 @@ GLOBAL Int TRILINOS_CCOLAMD_post_tree
 	i = Stack [head] ;
 	DEBUG1 (("head of stack "ID" \n", i)) ;
 
-	if (Child [i] != EMPTY)
+	if (Child [i] != TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    /* the children of i are not yet ordered */
 	    /* push each child onto the stack in reverse order */
 	    /* so that small ones at the head of the list get popped first */
 	    /* and the biggest one at the end of the list gets popped last */
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
 	    {
 		head++ ;
 	    }
 	    h = head ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_CCOLAMDL_EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (h > 0) ;
 		Stack [h--] = f ;
@@ -4242,7 +4242,7 @@ GLOBAL Int TRILINOS_CCOLAMD_post_tree
 	    ASSERT (Stack [h] == i) ;
 
 	    /* delete child list so that i gets ordered next time we see it */
-	    Child [i] = EMPTY ;
+	    Child [i] = TRILINOS_CCOLAMDL_EMPTY ;
 	}
 	else
 	{
@@ -4412,13 +4412,13 @@ PRIVATE void debug_deg_lists
     for (deg = 0 ; deg <= n_col ; deg++)
     {
 	col = head [deg] ;
-	if (col == EMPTY)
+	if (col == TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    continue ;
 	}
 	DEBUG4 (("%d:", deg)) ;
-	ASSERT (Col [col].shared3.prev == EMPTY) ;
-	while (col != EMPTY)
+	ASSERT (Col [col].shared3.prev == TRILINOS_CCOLAMDL_EMPTY) ;
+	while (col != TRILINOS_CCOLAMDL_EMPTY)
 	{
 	    DEBUG4 ((" "ID"", col)) ;
 	    have += Col [col].shared1.thickness ;
@@ -4573,7 +4573,7 @@ PRIVATE void dump_super
 
     DEBUG1 ((" =[ ")) ;
     ncols = 0 ;
-    for (col = super_c ; col != EMPTY ; col = Col [col].nextcol)
+    for (col = super_c ; col != TRILINOS_CCOLAMDL_EMPTY ; col = Col [col].nextcol)
     {
         DEBUG1 ((" "ID, col)) ;
         ASSERT (col >= 0 && col < n_col) ;
@@ -4581,7 +4581,7 @@ PRIVATE void dump_super
         {
             ASSERT (COL_IS_DEAD (col)) ;
         }
-        if (Col [col].nextcol == EMPTY)
+        if (Col [col].nextcol == TRILINOS_CCOLAMDL_EMPTY)
         {
             ASSERT (col == Col [super_c].lastcol) ;
         }

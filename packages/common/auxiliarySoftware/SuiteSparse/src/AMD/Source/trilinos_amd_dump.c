@@ -85,20 +85,20 @@ GLOBAL void TRILINOS_AMD_dump (
 	len = Len [i] ;
 	w = W [i] ;
 
-	if (elen >= EMPTY)
+	if (elen >= TRILINOS_AMD_EMPTY)
 	{
 	    if (nv == 0)
 	    {
 		TRILINOS_AMD_DEBUG3 (("\nI "ID": nonprincipal:    ", i)) ;
-		ASSERT (elen == EMPTY) ;
-		if (pe == EMPTY)
+		ASSERT (elen == TRILINOS_AMD_EMPTY) ;
+		if (pe == TRILINOS_AMD_EMPTY)
 		{
 		    TRILINOS_AMD_DEBUG3 ((" dense node\n")) ;
 		    ASSERT (w == 1) ;
 		}
 		else
 		{
-		    ASSERT (pe < EMPTY) ;
+		    ASSERT (pe < TRILINOS_AMD_EMPTY) ;
 		    TRILINOS_AMD_DEBUG3 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
 		}
 	    }
@@ -158,10 +158,10 @@ GLOBAL void TRILINOS_AMD_dump (
 	cnt = 0 ;
 	for (deg = 0 ; deg < n ; deg++)
 	{
-	    if (Head [deg] == EMPTY) continue ;
-	    ilast = EMPTY ;
+	    if (Head [deg] == TRILINOS_AMD_EMPTY) continue ;
+	    ilast = TRILINOS_AMD_EMPTY ;
 	    TRILINOS_AMD_DEBUG3 ((ID": \n", deg)) ;
-	    for (i = Head [deg] ; i != EMPTY ; i = Next [i])
+	    for (i = Head [deg] ; i != TRILINOS_AMD_EMPTY ; i = Next [i])
 	    {
 		TRILINOS_AMD_DEBUG3 (("   "ID" : next "ID" last "ID" deg "ID"\n",
 		    i, Next [i], Last [i], Degree [i])) ;
