@@ -129,30 +129,28 @@ template <typename Ta, typename Tb> KOKKOS_FORCEINLINE_FUNCTION static void swap
 
 KOKKOS_FORCEINLINE_FUNCTION
 static void clear(char *buf, size_type bufsize) {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  memset(buf, 0, bufsize);
-#else
-  for (size_type i = 0; i < bufsize; ++i)
-    buf[i] = 0;
-#endif
+  KOKKOS_IF_ON_HOST(( memset(buf, 0, bufsize); ))
+  KOKKOS_IF_ON_DEVICE((
+    for (size_type i = 0; i < bufsize; ++i)
+      buf[i] = 0;
+  ))
 }
 
 template <typename MemberType>
 KOKKOS_FORCEINLINE_FUNCTION static void clear(MemberType &member, char *buf, size_type bufsize) {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  memset(buf, 0, bufsize);
-#else
-  const ordinal_type team_index_range = (bufsize / CudaVectorSize) + (bufsize % CudaVectorSize > 0);
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(member, team_index_range), [&](const int &idx) {
-    const int ioff = idx * CudaVectorSize;
-    const int itmp = bufsize - ioff;
-    const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, icnt), [&](const int &ii) {
-      const int i = ioff + ii;
-      buf[i] = 0;
+  KOKKOS_IF_ON_HOST(( memset(buf, 0, bufsize); ))
+  KOKKOS_IF_ON_DEVICE((
+    const ordinal_type team_index_range = (bufsize / CudaVectorSize) + (bufsize % CudaVectorSize > 0);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, team_index_range), [&](const int &idx) {
+      const int ioff = idx * CudaVectorSize;
+      const int itmp = bufsize - ioff;
+      const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, icnt), [&](const int &ii) {
+        const int i = ioff + ii;
+        buf[i] = 0;
+      });
     });
-  });
-#endif
+  ))
 }
 
 template <typename T1, typename T2, typename CompareType>
