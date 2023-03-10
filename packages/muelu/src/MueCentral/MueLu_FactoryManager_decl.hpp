@@ -136,6 +136,10 @@ namespace MueLu {
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
         useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+        useKokkos_ = true;
+# endif
     }
 
     //! Constructor used by HierarchyFactory (temporary, will be removed)
@@ -156,6 +160,10 @@ namespace MueLu {
 # endif
 # ifdef HAVE_MUELU_HIP
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+        useKokkos_ = true;
+# endif
+# ifdef HAVE_MUELU_SYCL
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
         useKokkos_ = true;
 # endif
     }

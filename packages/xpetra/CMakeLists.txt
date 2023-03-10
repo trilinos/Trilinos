@@ -168,6 +168,13 @@ ELSE () # Tpetra NOT enabled
   ENDIF ()
 ENDIF ()
 
+
+# We're not going to support building EPETRA and SYCL at the same time,
+# because nobody needs that at present
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${Tpetra_INST_SYCL})
+  MESSAGE(ERROR "Xpetra does not support enabling Epetra and Tpetra/SYCL support at the same time")
+ENDIF()
+
 ##################################
 
 TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
