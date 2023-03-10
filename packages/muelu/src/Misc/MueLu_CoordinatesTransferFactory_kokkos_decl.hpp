@@ -58,7 +58,6 @@
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 
 namespace MueLu {

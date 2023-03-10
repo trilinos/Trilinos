@@ -76,7 +76,6 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -1221,7 +1220,7 @@ namespace MueLu {
           amalgFact = rcp(new AmalgamationFactory_kokkos());
           dropFact = rcp(new CoalesceDropFactory_kokkos());
           UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
-          coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+          coarseMapFact = rcp(new CoarseMapFactory());
           TentativePFact = rcp(new TentativePFactory_kokkos());
           if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
             SaPFact = rcp(new SaPFactory_kokkos());

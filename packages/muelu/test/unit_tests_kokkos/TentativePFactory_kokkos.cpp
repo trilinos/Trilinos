@@ -54,7 +54,7 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
@@ -210,7 +210,7 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
     RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
@@ -303,7 +303,7 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
     auto TentativePFact = rcp(new TentativePFactory_kokkos());
@@ -407,7 +407,7 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
     auto TentativePFact = rcp(new TentativePFactory_kokkos());

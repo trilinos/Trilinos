@@ -10,8 +10,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -34,6 +32,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
@@ -57,8 +57,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -81,6 +79,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates

@@ -77,9 +77,6 @@ using CoalesceDropFactory_kokkos [[maybe_unused]] = MueLu::CoalesceDropFactory_k
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
 using CoarseMapFactory [[maybe_unused]] = MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_COARSEMAPFACTORY_KOKKOS_SHORT
-using CoarseMapFactory_kokkos [[maybe_unused]] = MueLu::CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 using CoarseningVisualizationFactory [[maybe_unused]] = MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif

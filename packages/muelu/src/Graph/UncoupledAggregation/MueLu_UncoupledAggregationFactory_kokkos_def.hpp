@@ -282,75 +282,78 @@ namespace MueLu {
     }
     else
     {
-      SubFactoryMonitor sfm(*this, "Algo \"Graph Coloring\"", currentLevel);
+      {
+        SubFactoryMonitor sfm(*this, "Algo \"Graph Coloring\"", currentLevel);
 
-      // LBV on Sept 06 2019: the note below is a little worrisome,
-      // can we guarantee that MueLu is never used on a non-symmetric
-      // graph?
-      // note: just using colinds_view in place of scalar_view_t type
-      // (it won't be used at all by symbolic SPGEMM)
-      using graph_t = typename LWGraph_kokkos::local_graph_type;
-      using KernelHandle = KokkosKernels::Experimental::
-        KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
-                            typename graph_t::entries_type::value_type,
-                            typename graph_t::entries_type::value_type,
-                            typename graph_t::device_type::execution_space,
-                            typename graph_t::device_type::memory_space,
-                            typename graph_t::device_type::memory_space>;
-      KernelHandle kh;
-      //leave gc algorithm choice as the default
-      kh.create_distance2_graph_coloring_handle();
+        // LBV on Sept 06 2019: the note below is a little worrisome,
+        // can we guarantee that MueLu is never used on a non-symmetric
+        // graph?
+        // note: just using colinds_view in place of scalar_view_t type
+        // (it won't be used at all by symbolic SPGEMM)
+        using graph_t = typename LWGraph_kokkos::local_graph_type;
+        using KernelHandle = KokkosKernels::Experimental::
+          KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
+                              typename graph_t::entries_type::value_type,
+                              typename graph_t::entries_type::value_type,
+                              typename graph_t::device_type::execution_space,
+                              typename graph_t::device_type::memory_space,
+                              typename graph_t::device_type::memory_space>;
+        KernelHandle kh;
+        //leave gc algorithm choice as the default
+        kh.create_distance2_graph_coloring_handle();
 
-      // get the distance-2 graph coloring handle
-      auto coloringHandle = kh.get_distance2_graph_coloring_handle();
+        // get the distance-2 graph coloring handle
+        auto coloringHandle = kh.get_distance2_graph_coloring_handle();
 
-      // Set the distance-2 graph coloring algorithm to use.
-      // Options:
-      //     COLORING_D2_DEFAULT        - Let the kernel handle pick the variation
-      //     COLORING_D2_SERIAL         - Use the legacy serial-only implementation
-      //     COLORING_D2_VB             - Use the parallel vertex based direct method
-      //     COLORING_D2_VB_BIT         - Same as VB but using the bitvector forbidden array
-      //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
-      //     COLORING_D2_NB_BIT         - Net-based coloring (generally the fastest)
-      if(pL.get<bool>("aggregation: deterministic") == true) {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
-      } else if(aggAlgo == "serial") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
-      } else if(aggAlgo == "default") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_DEFAULT );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: default" << std::endl;
-      } else if(aggAlgo == "vertex based") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based" << std::endl;
-      } else if(aggAlgo == "vertex based bit set") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based bit set" << std::endl;
-      } else if(aggAlgo == "edge filtering") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT_EF );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: edge filtering" << std::endl;
-      } else if(aggAlgo == "net based bit set") {
-        coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_NB_BIT );
-        if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: net based bit set" << std::endl;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, vertex based bit set, edge filtering")
+        // Set the distance-2 graph coloring algorithm to use.
+        // Options:
+        //     COLORING_D2_DEFAULT        - Let the kernel handle pick the variation
+        //     COLORING_D2_SERIAL         - Use the legacy serial-only implementation
+        //     COLORING_D2_VB             - Use the parallel vertex based direct method
+        //     COLORING_D2_VB_BIT         - Same as VB but using the bitvector forbidden array
+        //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
+        //     COLORING_D2_NB_BIT         - Net-based coloring (generally the fastest)
+        if(pL.get<bool>("aggregation: deterministic") == true) {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
+        } else if(aggAlgo == "serial") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
+        } else if(aggAlgo == "default") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_DEFAULT );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: default" << std::endl;
+        } else if(aggAlgo == "vertex based") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based" << std::endl;
+        } else if(aggAlgo == "vertex based bit set") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based bit set" << std::endl;
+        } else if(aggAlgo == "edge filtering") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_VB_BIT_EF );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: edge filtering" << std::endl;
+        } else if(aggAlgo == "net based bit set") {
+          coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_NB_BIT );
+          if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: net based bit set" << std::endl;
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 2 coloring algorithm, valid options are: serial, default, matrix squared, vertex based, vertex based bit set, edge filtering")
+            }
+
+        //Create device views for graph rowptrs/colinds
+        typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
+        typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
+
+        //run d2 graph coloring
+        //graph is symmetric so row map/entries and col map/entries are the same
+        KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
+
+        // extract the colors and store them in the aggregates
+        aggregates->SetGraphColors(coloringHandle->get_vertex_colors());
+        aggregates->SetGraphNumColors(static_cast<LO>(coloringHandle->get_num_colors()));
+
+
+        //clean up coloring handle
+        kh.destroy_distance2_graph_coloring_handle();
       }
-
-      //Create device views for graph rowptrs/colinds
-      typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
-      typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
-
-      //run d2 graph coloring
-      //graph is symmetric so row map/entries and col map/entries are the same
-      KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
-
-      // extract the colors and store them in the aggregates
-      aggregates->SetGraphColors(coloringHandle->get_vertex_colors());
-      aggregates->SetGraphNumColors(static_cast<LO>(coloringHandle->get_num_colors()));
-
-      //clean up coloring handle
-      kh.destroy_distance2_graph_coloring_handle();
 
       if (IsPrint(Statistics1)) {
         GetOStream(Statistics1) << "  num colors: " << aggregates->GetGraphNumColors() << std::endl;
