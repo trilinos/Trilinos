@@ -468,9 +468,10 @@ public:
        "LinearSolverFactoryRepository::registerLinearSolverFactory: Input "
        "'factory' is NULL!");
     createFactories ();
-    if (factories_->find (packageName) == factories_->end ()) {
-      factories_->insert (std::make_pair (packageName, factory));
-    }
+// Disable for now!
+//    if (factories_->find (packageName) == factories_->end ()) {
+//     factories_->insert (std::make_pair (packageName, factory));
+//    }
   }
 
 private:
