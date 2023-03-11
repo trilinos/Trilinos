@@ -35,7 +35,7 @@ namespace Tacho {
 template <typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Herk;
 
 struct HerkAlgorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

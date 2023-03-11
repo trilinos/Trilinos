@@ -77,6 +77,14 @@ const char *Version();
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
 #define MSG_INVALID_INPUT "Invaid input arguments"
 #define MSG_NOT_IMPLEMENTED "Not yet implemented"
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+KOKKOS_FUNCTION constexpr bool runsOnCudaOrHIP() { return false; }
+#else
+KOKKOS_FUNCTION constexpr bool runsOnCudaOrHIP() {
+  KOKKOS_IF_ON_HOST(return false;)
+  KOKKOS_IF_ON_DEVICE(return true;)
+}
+#endif
 template <class ExecutionSpace>
 inline constexpr bool run_tacho_on_host_v = !std::is_same_v<ExecutionSpace, Kokkos::DefaultExecutionSpace>
                                           || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
@@ -476,12 +484,14 @@ struct Algo {
   };
 };
 
+
+template <bool isCudaOrHIP>
 struct ActiveAlgorithm {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) || defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
   using type = Algo::Internal;
-#else
+};
+template <>
+struct ActiveAlgorithm<false> {
   using type = Algo::External;
-#endif
 };
 
 template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
