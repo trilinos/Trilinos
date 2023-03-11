@@ -281,8 +281,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetLumpedDiagonal,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
-    // lumped diagonal does not support blocked operations, yet. Skip the test
-    // reactivate later
+    // Note: Lumped diagonal does not support blocked operations.
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -472,17 +471,20 @@ namespace MueLuTests {
     RCP<Matrix> mat = Teuchos::rcp(new CrsMatrixWrap(crs_mat));
 
     { // Regular lumped diag
+      out << std::endl << "== regular lumped diagonal ==" << std::endl;
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
         Scalar diag_ref[] = {six, seven, seven, seven, six + one / two, two, seven / ten, eight, eight};
         for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
           TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
         }
       }
     }
 
     { // doReciprocal
+      out << std::endl << "== reciprocal lumped diagonal ==" << std::endl;
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
@@ -490,12 +492,14 @@ namespace MueLuTests {
                              one / seven, one / (six + one / two), one / four,
                              ten / seven, one / eight, one / eight};
         for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
           TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
         }
       }
     }
 
     { // val < 0.9 treated as 0.0
+      out << std::endl << "== reciprocal lumped diagonal with dropping ==" << std::endl;
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
@@ -503,12 +507,14 @@ namespace MueLuTests {
                              one / seven, one / (six + one / two), one / four,
                              zero, one / eight, one / eight};
         for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
           TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
         }
       }
     }
 
     { // nnzPerRow(i) <= 1 --> diag(i) = zero
+      out << std::endl << "== reciprocal lumped diagonal with single-entry row ==" << std::endl;
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0, 42, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
@@ -516,12 +522,14 @@ namespace MueLuTests {
                              one / seven, one / (six + one / two), zero,
                              ten / seven, one / eight, one / eight};
         for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
           TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
         }
       }
     }
 
     { // nnzPerRow(i) <= 1 --> diag(i) = zero
+      out << std::endl << "== reciprocal lumped diagonal with zero-entry row ==" << std::endl;
       RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9, 42, true);
       ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
       if(comm->getRank() == 0) {
@@ -529,6 +537,7 @@ namespace MueLuTests {
                              one / seven, one / (six + one / two), zero,
                              ten+ten+ten+ten+two, one / eight, one / eight};
         for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
           TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
         }
       }
