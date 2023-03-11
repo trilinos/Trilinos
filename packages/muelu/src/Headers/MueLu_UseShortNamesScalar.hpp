@@ -347,11 +347,11 @@ using TentativePFactory [[maybe_unused]] = MueLu::TentativePFactory<Scalar,Local
 #ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
 using TentativePFactory_kokkos [[maybe_unused]] = MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-using MatrixFreeTentativeP_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_MATRIXFREETENTATIVEP_SHORT
+using MatrixFreeTentativeP [[maybe_unused]] = MueLu::MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
-using MatrixFreeTentativePFactory_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
+using MatrixFreeTentativePFactory [[maybe_unused]] = MueLu::MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 using ThresholdAFilterFactory [[maybe_unused]] = MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;

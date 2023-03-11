@@ -43,10 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP
+#ifndef MUELU_MATRIXFREETENTATIVEP_DEF_HPP
+#define MUELU_MATRIXFREETENTATIVEP_DEF_HPP
 
-#include "MueLu_MatrixFreeTentativeP_kokkos_decl.hpp"
+#include "MueLu_MatrixFreeTentativeP_decl.hpp"
 
 #include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_Level.hpp"
@@ -64,7 +64,7 @@ namespace MueLu {
 
   // compute Y = alpha*R*X + beta*Y
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
+  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
                                           MultiVector &Y,
                                           Teuchos::ETransp mode,
                                           Scalar alpha,
@@ -104,7 +104,7 @@ namespace MueLu {
 
       // Step 2: Compute Y=Y+alpha*P*X
       // recall P*X is essentially injection of X, but sum if a node belongs to multiple aggregates
-      Kokkos::parallel_for("MueLu:MatrixFreeTentativeP_kokkos:apply", md_range_type({0,0},{numCols,numNodes}),
+      Kokkos::parallel_for("MueLu:MatrixFreeTentativeP:apply", md_range_type({0,0},{numCols,numNodes}),
         KOKKOS_LAMBDA(const int colIdx, const int fineIdx) {
           LO aggIdx = vertex2AggView(fineIdx,0);
           kokkos_view_Y(fineIdx,colIdx) += implAlpha*kokkos_view_X(aggIdx,colIdx)/Kokkos::sqrt(aggSizes(aggIdx));
@@ -114,11 +114,11 @@ namespace MueLu {
 
   // I don't care
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
+  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"MatrixFreeTentativeP residual would make no sense as the operator is not square!");
   }
 
 } //namespace MueLu
 
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-#endif // MUELU_MATRIXFREETENTATIVEP_KOKKOS_DEF_HPP
+#define MUELU_MATRIXFREETENTATIVEP_SHORT
+#endif // MUELU_MATRIXFREETENTATIVEP_DEF_HPP
