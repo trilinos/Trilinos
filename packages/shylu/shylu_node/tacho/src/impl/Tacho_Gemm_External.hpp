@@ -32,8 +32,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
   inline static int invoke(const ScalarType alpha, const ViewTypeA &A, const ViewTypeB &B, const ScalarType beta,
                            const ViewTypeC &C) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       typedef typename ViewTypeA::non_const_value_type value_type;
@@ -64,8 +63,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A,
                                            const ViewTypeB &B, const ScalarType beta, const ViewTypeC &C) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       // Kokkos::single(Kokkos::PerTeam(member), [&]() {

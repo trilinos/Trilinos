@@ -106,8 +106,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
     typedef typename supernode_info_type::value_type value_type;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-    static constexpr bool runOnHost = !std::is_same_v<typename supernode_info_type::exec_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename supernode_info_type::exec_space>;
 
     // algorithm choice
     using HerkAlgoType = typename HerkAlgorithm::type;
@@ -361,8 +360,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
 
     typedef typename supernode_info_type::value_type value_type;
 
-    static constexpr bool runOnHost = !std::is_same_v<typename supernode_info_type::exec_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename supernode_info_type::exec_space>;
 
     const auto &s = info.supernodes(sid);
 

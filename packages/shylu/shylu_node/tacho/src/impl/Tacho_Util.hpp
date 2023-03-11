@@ -77,6 +77,9 @@ const char *Version();
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
 #define MSG_INVALID_INPUT "Invaid input arguments"
 #define MSG_NOT_IMPLEMENTED "Not yet implemented"
+template <class ExecutionSpace>
+inline constexpr bool run_tacho_on_host_v = !std::is_same_v<ExecutionSpace, Kokkos::DefaultExecutionSpace>
+                                          || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                                                                \
   if ((ierr) != 0) {                                                                                                   \

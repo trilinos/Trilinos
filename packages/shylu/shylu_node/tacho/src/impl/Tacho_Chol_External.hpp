@@ -32,8 +32,7 @@ namespace Tacho {
 template <typename ArgUplo> struct Chol<ArgUplo, Algo::External> {
   template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       typedef typename ViewTypeA::non_const_value_type value_type;
@@ -55,8 +54,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::External> {
   template <typename MemberType, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       int r_val = 0;

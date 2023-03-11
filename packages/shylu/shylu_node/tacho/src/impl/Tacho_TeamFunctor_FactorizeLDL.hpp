@@ -235,8 +235,7 @@ public:
   KOKKOS_INLINE_FUNCTION void update(MemberType &member, const supernode_type &cur,
                                      const value_type_matrix &ABR) const {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename value_type_matrix::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename value_type_matrix::execution_space>;
 
     const auto info = _info;
     value_type *buf = ABR.data() + ABR.span();

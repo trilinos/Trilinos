@@ -31,8 +31,7 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
   template <typename DiagType, typename ViewTypeA, typename ViewTypeB>
   inline static int invoke(const DiagType diagA, const ViewTypeA &A, const ViewTypeB &B) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       typedef typename ViewTypeA::non_const_value_type value_type;
@@ -64,8 +63,7 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const DiagType diagA, const ViewTypeA &A,
                                            const ViewTypeB &B) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       // Kokkos::single(Kokkos::PerTeam(member), [&]() {

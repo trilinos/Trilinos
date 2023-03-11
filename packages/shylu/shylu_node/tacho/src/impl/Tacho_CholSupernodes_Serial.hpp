@@ -118,8 +118,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     const ordinal_type srcbeg = info.sid_block_colidx(sbeg).second, srcend = info.sid_block_colidx(send).second,
                        srcsize = srcend - srcbeg;
 
-    static constexpr bool runOnHost = !std::is_same_v<typename supernode_info_type::exec_space, Kokkos::DefaultExecutionSpace> 
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename supernode_info_type::exec_space>;
 
     // short cut to direct update
     if ((send - sbeg) == 1) {
@@ -399,8 +398,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename SupernodeInfoType::exec_space, Kokkos::DefaultExecutionSpace> 
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename SupernodeInfoType::exec_space>;
 
     const auto &cur = info.supernodes(sid);
     const ordinal_type sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
@@ -495,8 +493,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename SupernodeInfoType::exec_space, Kokkos::DefaultExecutionSpace> 
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename SupernodeInfoType::exec_space>;
 
     const auto &s = info.supernodes(sid);
 
@@ -531,8 +528,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
-    static constexpr bool runOnHost = !std::is_same_v<typename supernode_info_type::exec_space, Kokkos::DefaultExecutionSpace> 
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename supernode_info_type::exec_space>;
 
     const auto &s = info.supernodes(sid);
 

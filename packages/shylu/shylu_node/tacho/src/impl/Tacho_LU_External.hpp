@@ -33,8 +33,7 @@ template <> struct LU<Algo::External> {
   template <typename ViewTypeA, typename ViewTypeP> inline static int invoke(const ViewTypeA &A, const ViewTypeP &P) {
     int r_val = 0;
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       typedef typename ViewTypeA::non_const_value_type value_type;
@@ -59,8 +58,7 @@ template <> struct LU<Algo::External> {
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeA::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       int r_val = 0;
@@ -73,8 +71,7 @@ template <> struct LU<Algo::External> {
 
   template <typename ViewTypeP> inline static int modify(const ordinal_type m, const ViewTypeP &P) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeP::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeP::execution_space>;
 
     int r_val = 0;
 
@@ -113,8 +110,7 @@ template <> struct LU<Algo::External> {
   template <typename MemberType, typename ViewTypeP>
   KOKKOS_INLINE_FUNCTION static int modify(MemberType &member, ordinal_type m, const ViewTypeP &P) {
 
-    static constexpr bool runOnHost = !std::is_same_v<typename ViewTypeP::execution_space, Kokkos::DefaultExecutionSpace>
-                                    || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeP::execution_space>;
 
     if constexpr(runOnHost) {
       int r_val = 0;
