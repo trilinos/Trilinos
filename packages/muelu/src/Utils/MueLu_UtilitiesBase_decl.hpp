@@ -318,6 +318,7 @@ namespace MueLu {
           local_vector_type diag_dev = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
           local_matrix_type local_mat_dev = rcpA->getLocalMatrixDevice();
           Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(diag_dev.extent(0)));
+          scalar_type valReplacement_dev = valReplacement;
 
           if(doReciprocal) {
             Kokkos::View<int*, execution_space> nnzPerRow("nnz per rows", diag_dev.extent(0));
@@ -365,7 +366,7 @@ namespace MueLu {
                                      if(KAT_S::magnitude(diag_dev(rowIdx, 0)) > tol) {
                                        diag_dev(rowIdx, 0) = KAT_S::one() / diag_dev(rowIdx, 0);
                                      } else {
-                                       diag_dev(rowIdx, 0) = valReplacement;
+                                       diag_dev(rowIdx, 0) = valReplacement_dev;
                                      }
                                    }
                                  });
