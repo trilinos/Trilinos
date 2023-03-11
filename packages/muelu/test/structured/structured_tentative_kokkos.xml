@@ -43,7 +43,7 @@
     </ParameterList>
 
     <ParameterList name="myCoordTransferFact">
-      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
       <Parameter name="structured aggregation"              type="bool"   value="true"/>
       <Parameter name="numDimensions"                       type="string" value="myAggregationFact"/>
       <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
