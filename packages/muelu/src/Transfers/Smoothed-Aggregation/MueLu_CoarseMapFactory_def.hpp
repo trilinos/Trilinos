@@ -61,6 +61,7 @@
 #include "MueLu_CoarseMapFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -121,12 +122,23 @@ namespace MueLu {
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseMap(
     Level& currentLevel, const GlobalOrdinal domainGIDOffset) const
   {
-    RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+
+    GlobalOrdinal numAggs;
+    RCP<const Map> aggMap;
+    if (IsType<RCP<Aggregates> >(currentLevel, "Aggregates")) {
+      RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+      numAggs = aggregates->GetNumAggregates();
+      aggMap = aggregates->GetMap();
+    } else {
+      RCP<Aggregates_kokkos> aggregates_kokkos = Get< RCP<Aggregates_kokkos> >(currentLevel, "Aggregates");
+      numAggs = aggregates_kokkos->GetNumAggregates();
+      aggMap = aggregates_kokkos->GetMap();
+    }
+
     RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 
-    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
     const size_t NSDim = nullspace->getNumVectors();
-    RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
+    RCP<const Teuchos::Comm<int> > comm = aggMap->getComm();
     const ParameterList & pL = GetParameterList();
 
     LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
@@ -147,9 +159,9 @@ namespace MueLu {
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
-    GlobalOrdinal indexBase = aggregates->GetMap()->getIndexBase();
+    GlobalOrdinal indexBase = aggMap->getIndexBase();
 
-    RCP<const Map> coarseMap = StridedMapFactory::Build(aggregates->GetMap()->lib(),
+    RCP<const Map> coarseMap = StridedMapFactory::Build(aggMap->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
         nCoarseDofs,
         indexBase,

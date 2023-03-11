@@ -45,14 +45,6 @@ KOKKOSKERNELS_ADD_OPTION(
         "Whether to build the graph component. Default: OFF"
 )
 
-# The user requested individual components,
-# the assumption is that a full build is not
-# desired and ENABLE_ALL_COMPONENETS is turned
-# off.
-IF (KokkosKernels_ENABLE_COMPONENT_BATCHED OR KokkosKernels_ENABLE_COMPONENT_BLAS
-    OR KokkosKernels_ENABLE_COMPONENT_GRAPH OR KokkosKernels_ENABLE_COMPONENT_SPARSE)
-  SET(KokkosKernels_ENABLE_ALL_COMPONENTS OFF CACHE BOOL "" FORCE)
-ENDIF()
 
 # Graph depends on everything else because it depends
 # on Sparse at the moment, breaking that dependency will
@@ -72,13 +64,24 @@ IF (KokkosKernels_ENABLE_COMPONENT_SPARSE)
   SET(KokkosKernels_ENABLE_COMPONENT_GRAPH ON CACHE BOOL "" FORCE)
 ENDIF()
 
-# At this point, if ENABLE_ALL_COMPONENTS is
-# still ON we need to enable all individual
-# components as they are required for this
-# build.
+# If user requested to enable all components, enable all components
 IF (KokkosKernels_ENABLE_ALL_COMPONENTS)
   SET(KokkosKernels_ENABLE_COMPONENT_BATCHED ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_BLAS ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_SPARSE ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_GRAPH ON CACHE BOOL "" FORCE)
 ENDIF()
+
+# KOKKOSKERNELS_ALL_COMPONENTS_ENABLED says whether all components are on,
+# regardless of how this came to be
+# this is in the cache so we can use it as a global variable,
+# but marking it as advanced should hide it from GUIs
+IF (    KokkosKernels_ENABLE_COMPONENT_BATCHED 
+    AND KokkosKernels_ENABLE_COMPONENT_BLAS
+    AND KokkosKernels_ENABLE_COMPONENT_GRAPH 
+    AND KokkosKernels_ENABLE_COMPONENT_SPARSE)
+  SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED ON CACHE BOOL "" FORCE)
+ELSE()
+  SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED OFF CACHE BOOL "" FORCE)
+ENDIF()
+mark_as_advanced(FORCE KOKKOSKERNELS_ALL_COMPONENTS_ENABLED)

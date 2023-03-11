@@ -68,7 +68,7 @@ static void amesos_update_etree
 	}
 	/* perform path compression */
 	Ancestor [k] = i ;
-	if (a == EMPTY)
+	if (a == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* final ancestor undefined; this is a new edge in the tree */
 	    Parent [k] = i ;
@@ -147,8 +147,8 @@ int CHOLMOD(etree)
 
     for (j = 0 ; j < ncol ; j++)
     {
-	Parent [j] = EMPTY ;
-	Ancestor [j] = EMPTY ;
+	Parent [j] = TRILINOS_CHOLMOD_EMPTY ;
+	Ancestor [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -188,7 +188,7 @@ int CHOLMOD(etree)
 	Prev = Iwork + ncol ;	/* size nrow (i/i/l) */
 	for (i = 0 ; i < nrow ; i++)
 	{
-	    Prev [i] = EMPTY ;
+	    Prev [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	for (j = 0 ; j < ncol ; j++)
 	{
@@ -204,7 +204,7 @@ int CHOLMOD(etree)
 		 * (jprev,j) are considered, where jprev<j */
 		i = Ai [p] ;
 		jprev = Prev [i] ;
-		if (jprev != EMPTY)
+		if (jprev != TRILINOS_CHOLMOD_EMPTY)
 		{
 		    amesos_update_etree (jprev, j, Parent, Ancestor) ;
 		}

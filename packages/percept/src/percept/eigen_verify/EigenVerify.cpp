@@ -143,7 +143,7 @@ void compute_field_error(
 {
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
 
-  const unsigned field_size = field->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size = field->max_size();
   const unsigned nDim = meta.spatial_dimension();
 
   stk::mesh::Selector select_used =

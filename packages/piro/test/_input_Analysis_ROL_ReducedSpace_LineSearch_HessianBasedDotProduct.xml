@@ -186,8 +186,7 @@
         <!--Parameter name="Uniform Parameter Guess" type="double" value="2.0"/ -->
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
-        <Parameter name="Check Gradient" type="bool" value="false" />
-        <Parameter name="Number Of Gradient Checks" type="int" value="1" />
+        <Parameter name="Check Derivatives" type="bool" value="false" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />
@@ -201,6 +200,7 @@
           <Parameter name="Matrix Type" type="string" value="Hessian Of Response" />
           <ParameterList name="Matrix Types">
             <ParameterList name="Hessian Of Response">
+              <Parameter name="Lump Matrix" type="bool" value="false"/>
               <Parameter name="Response Index" type="int" value="0" />
             </ParameterList>
           </ParameterList>

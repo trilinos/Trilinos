@@ -15,7 +15,6 @@
 #include <Akri_AdaptivityHelpers.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInputOptions.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -343,6 +342,7 @@ void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM
     else
     {
       krinolog << "Performing " << num_levels << " levels of post-cdfem mesh refinement..." << std::endl;
+      ThrowRequireMsg(!refinementSupport.get_use_percept(), "Percept cannot be used with post-cdfem refinement.");
 
       // Doing adaptive refinement with a uniform marker is better than doing uniform refinement here because of how
       // the transition elements are handled.
@@ -354,7 +354,6 @@ void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM
             mark_selected_elements_for_refinement(refinement, num_refinements, num_levels, refinement_selector);
           };
 
-      CDMesh::get_new_mesh()->delete_cdfem_parent_elements(); // Extreme work-around for the way percept messes up the active part on cdfem parents.
       perform_multilevel_adaptivity(refinement, mesh, marker_function);
     }
   }

@@ -114,6 +114,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+      useKokkos = true;
+# endif    
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
@@ -124,6 +128,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef KOKKOS_ENABLE_HIP
   if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
     // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
+    compareWithGold = false;
+#endif
+#ifdef KOKKOS_ENABLE_SYCL
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+    // Behavior of some algorithms on SYCL is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
   clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
@@ -360,8 +369,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if (myRank == 0) {
         // Create a copy of outputs
         cmd = "cp -f ";
-        system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
-        system((cmd + baseFile + ".out " + baseFile + ".out_filtered").c_str());
+        int ret = 0;
+        ret = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+        TEUCHOS_ASSERT_EQUALITY(ret,0);
+        ret = system((cmd + baseFile + ".out " + baseFile + ".out_filtered").c_str());
+        TEUCHOS_ASSERT_EQUALITY(ret,0);
 
         // Tpetra produces different eigenvalues in Chebyshev due to using
         // std::rand() for generating random vectors, which may be initialized
@@ -411,7 +423,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         // Run comparison (ignoring whitespaces)
         cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
-        int ret = 0;
+        ret = 0; // GH: to keep the old behavior the same, zero it out here
         if (compareWithGold)
           ret = system(cmd.c_str());
         else

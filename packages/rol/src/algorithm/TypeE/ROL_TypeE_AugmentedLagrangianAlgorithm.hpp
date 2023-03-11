@@ -46,6 +46,7 @@
 
 #include "ROL_TypeE_Algorithm.hpp"
 #include "ROL_AugmentedLagrangianObjective.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeE::AugmentedLagrangianAlgorithm
     \brief Provides an interface to run equality constrained optimization algorithms
@@ -58,6 +59,7 @@ namespace TypeE {
 template<typename Real>
 class AugmentedLagrangianAlgorithm : public TypeE::Algorithm<Real> {
 private:
+  const Ptr<Secant<Real>> secant_;
   ParameterList list_;
   bool useRelTol_;
   // Lagrange multiplier update
@@ -107,7 +109,7 @@ private:
 
 public:
 
-  AugmentedLagrangianAlgorithm(ParameterList &list);
+  AugmentedLagrangianAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   using TypeE::Algorithm<Real>::run;
   virtual void run( Vector<Real>       &x,

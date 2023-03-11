@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc

@@ -230,6 +230,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             req_mem_per_core=3.0,
             max_cores_allowed=12,
             num_concurrent_tests=-1,
+            ccache_enable=False,
             dry_run=False
         )
         return output
@@ -258,6 +259,12 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
         args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        return args
+
+
+    def dummy_args_non_pr_track(self):
+        args = copy.deepcopy(self.dummy_args())
+        args.pullrequest_cdash_track = "some_random_track"
         return args
 
 
@@ -361,10 +368,37 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def test_TrilinosPRConfigurationBaseBuildNameGCC720(self):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config. pullrequest_build_name
+        build_name = pr_config.pullrequest_build_name
         print("--- build_name = {}".format(build_name))
         expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        print("--- build_name = {}".format(build_name))
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):
+        args = self.dummy_args()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Experimental"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelNonPRTrack(self):
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Nightly"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
 
 
     def test_TrilinosPRConfigurationBasePackageEnablesPython3(self):

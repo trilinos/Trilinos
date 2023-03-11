@@ -74,7 +74,7 @@
 
       stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
       unsigned ncolor = 0;
-      int nelem = 0;
+      // int nelem = 0;
       unsigned num_max_colors = MAX_COLORS;
       if (m_noColoring)
         num_max_colors = 1;
@@ -110,7 +110,7 @@
                     if (doThisBucket)
                       {
                         const unsigned num_elements_in_bucket = bucket.size();
-                        nelem += num_elements_in_bucket;
+                        // nelem += num_elements_in_bucket;
 
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {

@@ -33,7 +33,6 @@
 //
 
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData, etc
-#include "stk_mesh/base/CoordinateSystems.hpp" // for Cartesian2d, etc.
 #include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc

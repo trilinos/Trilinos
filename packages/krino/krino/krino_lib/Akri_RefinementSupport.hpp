@@ -69,7 +69,7 @@ private:
   std::string my_nonconformal_adapt_indicator_name;
   RefinementInterface * myNonInterfaceConformingRefinement{nullptr};
   bool myFlagDoNearbyRefinementBeforeInterfaceRefinement{false};
-  bool myFlagUsePercept{true};
+  bool myFlagUsePercept{false};
   mutable stk::diag::Timer myTimer;
 };
 

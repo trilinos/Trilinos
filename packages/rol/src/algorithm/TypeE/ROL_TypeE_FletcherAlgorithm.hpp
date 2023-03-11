@@ -46,6 +46,7 @@
 
 #include "ROL_TypeE_Algorithm.hpp"
 #include "ROL_FletcherObjectiveE.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeE::FletcherAlgorithm
     \brief Provides an interface to run equality constrained optimization algorithms
@@ -59,6 +60,7 @@ template<typename Real>
 class FletcherAlgorithm : public TypeE::Algorithm<Real> {
 private:
 
+  const Ptr<Secant<Real>> secant_;
   ParameterList list_;
   std::string subStep_;
   // Penalty function data
@@ -77,7 +79,7 @@ private:
 
 public:
 
-  FletcherAlgorithm(ParameterList &list);
+  FletcherAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   void initialize( Vector<Real>             &x,
                    const Vector<Real>       &g,

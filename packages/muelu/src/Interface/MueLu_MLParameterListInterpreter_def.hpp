@@ -86,7 +86,6 @@
 #include "MueLu_ParameterListUtils.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-// #include "MueLu_CoarseMapFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 // #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
@@ -212,6 +211,10 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkosRefactor = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+      useKokkosRefactor = true;
+#endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
       setKokkosRefactor = true;

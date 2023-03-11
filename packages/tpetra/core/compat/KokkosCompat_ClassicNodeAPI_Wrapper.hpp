@@ -50,7 +50,7 @@ public:
 };
 
 #ifdef KOKKOS_ENABLE_SYCL
-  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP

@@ -58,8 +58,8 @@ SET(UNIT_TEST_DRIVER
 # For parallel tests, use 4 MPI procs when OpenMP not enabled; use 2 MPI procs, 2 threads when OpenMP enabled
 IF(DEFINED Kokkos_ENABLE_OPENMP)
   IF(Kokkos_ENABLE_OPENMP)
-    SET(SERIAL_ARGS_STRING "--kokkos-threads=1")
-    SET(PARALLEL_ARGS_STRING "--kokkos-threads=2")
+    SET(SERIAL_ARGS_STRING "--kokkos-num-threads=1")
+    SET(PARALLEL_ARGS_STRING "--kokkos-num-threads=2")
     SET(CUSTOM_MPI_PROCS "2")
   ELSE()
     SET(SERIAL_ARGS_STRING "")

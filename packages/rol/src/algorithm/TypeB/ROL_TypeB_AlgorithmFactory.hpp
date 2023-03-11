@@ -143,7 +143,7 @@ inline EAlgorithmB StringToEAlgorithmB(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
+inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
   EAlgorithmB ealg = StringToEAlgorithmB(parlist.sublist("Step").get("Type","Trust Region"));
   switch(ealg) {
     case ALGORITHM_B_LINESEARCH:
@@ -151,14 +151,14 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
       std::string desc
         = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
-        return makePtr<NewtonKrylovAlgorithm<Real>>(parlist);
+        return makePtr<NewtonKrylovAlgorithm<Real>>(parlist,secant);
       else if (desc=="Quasi-Newton Method") {
         std::string method
           = parlist.sublist("Step").sublist("Line Search").sublist("Quasi-Newton").get("Method","L-Secant-B");
         if (method == "L-Secant-B")
-          return makePtr<LSecantBAlgorithm<Real>>(parlist);    // Similar to L-BFGS-B
+          return makePtr<LSecantBAlgorithm<Real>>(parlist,secant);    // Similar to L-BFGS-B
         else
-          return makePtr<QuasiNewtonAlgorithm<Real>>(parlist); // PQN
+          return makePtr<QuasiNewtonAlgorithm<Real>>(parlist,secant); // PQN
       }
       else {
         return makePtr<GradientAlgorithm<Real>>(parlist);
@@ -169,17 +169,17 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
       std::string trmod
         = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
       if (trmod=="Kelley-Sachs")
-        return makePtr<KelleySachsAlgorithm<Real>>(parlist);
+        return makePtr<KelleySachsAlgorithm<Real>>(parlist,secant);
       else if (trmod=="SPG")
-        return makePtr<TrustRegionSPGAlgorithm<Real>>(parlist);
+        return makePtr<TrustRegionSPGAlgorithm<Real>>(parlist,secant);
       else if (trmod=="Coleman-Li")
-        return makePtr<ColemanLiAlgorithm<Real>>(parlist);
+        return makePtr<ColemanLiAlgorithm<Real>>(parlist,secant);
       else
-        return makePtr<LinMoreAlgorithm<Real>>(parlist);
+        return makePtr<LinMoreAlgorithm<Real>>(parlist,secant);
     }
-    case ALGORITHM_B_MOREAUYOSIDA:        return makePtr<MoreauYosidaAlgorithm<Real>>(parlist);
-    case ALGORITHM_B_PRIMALDUALACTIVESET: return makePtr<PrimalDualActiveSetAlgorithm<Real>>(parlist);
-    case ALGORITHM_B_INTERIORPOINT:       return makePtr<InteriorPointAlgorithm<Real>>(parlist);
+    case ALGORITHM_B_MOREAUYOSIDA:        return makePtr<MoreauYosidaAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_B_PRIMALDUALACTIVESET: return makePtr<PrimalDualActiveSetAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_B_INTERIORPOINT:       return makePtr<InteriorPointAlgorithm<Real>>(parlist,secant);
     case ALGORITHM_B_SPECTRALGRADIENT:    return makePtr<SpectralGradientAlgorithm<Real>>(parlist);
     default:                              return nullPtr;
   }

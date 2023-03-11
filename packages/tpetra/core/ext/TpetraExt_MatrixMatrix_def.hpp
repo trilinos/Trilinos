@@ -168,7 +168,7 @@ void Multiply(
 
   using Teuchos::ParameterList;
   RCP<ParameterList> transposeParams (new ParameterList);
-  transposeParams->set ("sort", false);
+  transposeParams->set ("sort", true); // Kokkos Kernels spgemm requires inputs to be sorted
 
   if (!use_optimized_ATB && transposeA) {
     transposer_type transposer (rcpFromRef (A));
@@ -1225,7 +1225,7 @@ void mult_AT_B_newmatrix(
 
   using Teuchos::ParameterList;
   RCP<ParameterList> transposeParams (new ParameterList);
-  transposeParams->set ("sort", false);
+  transposeParams->set ("sort", true); // Kokkos Kernels spgemm requires inputs to be sorted
   if(! params.is_null ()) {
     transposeParams->set ("compute global constants",
                           params->get ("compute global constants: temporaries",

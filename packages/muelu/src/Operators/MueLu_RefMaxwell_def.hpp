@@ -76,7 +76,6 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -219,6 +218,10 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+      useKokkos_ = true;
+# endif    
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
   }
 
@@ -1221,7 +1224,7 @@ namespace MueLu {
           amalgFact = rcp(new AmalgamationFactory_kokkos());
           dropFact = rcp(new CoalesceDropFactory_kokkos());
           UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
-          coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+          coarseMapFact = rcp(new CoarseMapFactory());
           TentativePFact = rcp(new TentativePFactory_kokkos());
           if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
             SaPFact = rcp(new SaPFactory_kokkos());
@@ -1409,7 +1412,7 @@ namespace MueLu {
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
                                              break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP) && !defined(HAVE_MUELU_SYCL)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                          P11vals(m) += impl_half * v * n;
@@ -1435,7 +1438,7 @@ namespace MueLu {
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
                                              break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP) && !defined(HAVE_MUELU_SYCL)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                          P11vals(m) += impl_half * v * n;
@@ -1521,7 +1524,7 @@ namespace MueLu {
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
                                            break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP) && !defined(HAVE_MUELU_SYCL)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                        P11vals(m) += impl_half * n;
@@ -1541,7 +1544,7 @@ namespace MueLu {
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
                                            break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP) && !defined(HAVE_MUELU_SYCL)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                        P11vals(m) += impl_half * n;

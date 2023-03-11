@@ -58,7 +58,7 @@ void field_copy_component(
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   const unsigned nDim = meta.spatial_dimension();
 
-  const unsigned field_size_y = Y->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size_y = Y->max_size();
 
   stk::mesh::Selector select_used =
     meta.locally_owned_part() |
@@ -97,7 +97,7 @@ void field_compute_MAC(
   stk::mesh::Field<double> * Y,
   Intrepid::FieldContainer<double> & mac_values)
 {
-  const unsigned field_size = Y->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size = Y->max_size();
 
   const unsigned nDim = metadata.spatial_dimension();
   const unsigned nVecs = field_size / nDim;

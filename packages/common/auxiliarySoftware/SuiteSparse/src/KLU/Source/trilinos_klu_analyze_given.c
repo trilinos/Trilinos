@@ -72,7 +72,7 @@ TRILINOS_KLU_symbolic *TRILINOS_KLU_alloc_symbolic
     }
     for (i = 0 ; i < n ; i++)
     {
-	P [i] = EMPTY ;
+	P [i] = TRILINOS_KLU_EMPTY ;
     }
     for (j = 0 ; j < n ; j++)
     {
@@ -316,7 +316,7 @@ TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze_given	    /* returns NULL if error, 
 	    }
 
 	    /* fill-in not estimated */
-	    Lnz [block] = EMPTY ;
+	    Lnz [block] = TRILINOS_KLU_EMPTY ;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -343,7 +343,7 @@ TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze_given	    /* returns NULL if error, 
 	maxblock = n ;
 	R [0] = 0 ;
 	R [1] = n ;
-	Lnz [0] = EMPTY ;
+	Lnz [0] = TRILINOS_KLU_EMPTY ;
 
 	/* ------------------------------------------------------------------ */
 	/* P = Puser, or identity if Puser is NULL */
@@ -361,8 +361,8 @@ TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze_given	    /* returns NULL if error, 
 
     Symbolic->nblocks = nblocks ;
     Symbolic->maxblock = maxblock ;
-    Symbolic->lnz = EMPTY ;
-    Symbolic->unz = EMPTY ;
+    Symbolic->lnz = TRILINOS_KLU_EMPTY ;
+    Symbolic->unz = TRILINOS_KLU_EMPTY ;
     Symbolic->nzoff = nzoff ;
 
     return (Symbolic) ;

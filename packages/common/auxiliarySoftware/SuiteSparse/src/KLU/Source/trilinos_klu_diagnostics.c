@@ -432,7 +432,7 @@ Int TRILINOS_KLU_flops		/* return TRUE if successful, FALSE otherwise */
     {
 	return (FALSE) ;
     }
-    Common->flops = EMPTY ;
+    Common->flops = TRILINOS_KLU_EMPTY ;
     if (Numeric == NULL || Symbolic == NULL)
     {
 	Common->status = TRILINOS_KLU_INVALID ;

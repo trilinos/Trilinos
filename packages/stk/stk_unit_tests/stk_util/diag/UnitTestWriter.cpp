@@ -36,6 +36,7 @@
 #include "stk_util/diag/WriterExt.hpp"        // for operator<<
 #include "stk_util/diag/WriterOStream.hpp"    // for operator<<
 #include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf
+#include "stk_util/environment/OutputLog.hpp"
 #include "stk_util/util/Writer.hpp"           // for Writer, operator<<, dendl, push, pop, dflush
 #include "stk_util/util/WriterManip.hpp"      // for operator<<, resetiosflags, setw, setfill
 #include "stk_util/util/Writer_fwd.hpp"       // for LOG_ALWAYS, LOG_MEMBERS, LOG_TRACE, LOG_TRA...
@@ -61,6 +62,38 @@ enum LogMask {
   LOG_TEST1             = 0x0000010,
   LOG_TEST2             = 0x0000020
 };
+
+TEST(UnitTestWriter, diagWriter_NoBlankLines)
+{
+  std::cout.flush();
+  std::ostringstream mystream;
+  std::streambuf* oldbuf = std::cout.rdbuf(mystream.rdbuf());
+  sierra::configure_dwout();
+
+  sierra::dwout()<<"a\n\n\n\nb"<<std::endl;
+  const std::string diagStr = mystream.str();
+  const std::string expectedStr = "a\nb\n";
+  EXPECT_EQ(expectedStr, diagStr);
+
+  std::cout.rdbuf(oldbuf);
+}
+
+TEST(UnitTestWriter, diagWriter_BlankLines)
+{
+  const size_t indentSize = 2;
+  const unsigned flags = stk::indent_streambuf::BRACES | stk::indent_streambuf::BLANK_LINES;
+  std::cout.flush();
+  std::ostringstream mystream;
+  std::streambuf* oldbuf = std::cout.rdbuf(mystream.rdbuf());
+  sierra::configure_dwout(indentSize, flags);
+
+  sierra::dwout()<<"a\n\n\n\nb"<<std::endl;
+  const std::string diagStr = mystream.str();
+  const std::string expectedStr = "a\n\n\n\nb\n";
+  EXPECT_EQ(expectedStr, diagStr);
+
+  std::cout.rdbuf(oldbuf);
+}
 
 std::ostringstream &
 oss()
@@ -89,6 +122,7 @@ dw()
 
 TEST(UnitTestWriter, UnitTest)
 {
+  oss().str(std::string());
 
 // #define SHOW_IOS_BASE_FLOATFIELD_BEHAVIORS
 #ifdef SHOW_IOS_BASE_FLOATFIELD_BEHAVIORS

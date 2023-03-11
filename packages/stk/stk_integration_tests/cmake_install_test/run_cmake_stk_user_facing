@@ -57,6 +57,7 @@ cmake \
 -DTrilinos_ENABLE_STKNGP_TEST:BOOL=ON \
 -DTrilinos_ENABLE_STKUnit_test_utils:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
 -DTPL_ENABLE_Netcdf:BOOL=ON \

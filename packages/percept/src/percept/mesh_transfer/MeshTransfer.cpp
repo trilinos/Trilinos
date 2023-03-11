@@ -134,7 +134,7 @@ void MeshTransfer::run(int argc, char** argv)
   stk::mesh::EntityRank fromRank = fromField->entity_rank();
 
   const int toDim = (srcFieldType == SRC_FIELD) ? 
-      fromField->max_size(fromRank)
+      fromField->max_size()
     : dstMesh.get_spatial_dim();
 
   stk::mesh::EntityRank toRank = fromRank;

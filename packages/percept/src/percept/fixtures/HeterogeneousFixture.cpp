@@ -29,7 +29,6 @@
 
 
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>

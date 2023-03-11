@@ -51,8 +51,8 @@ namespace ROL {
 namespace TypeE {
 
 template<typename Real>
-StabilizedLCLAlgorithm<Real>::StabilizedLCLAlgorithm( ParameterList &list )
-  : TypeE::Algorithm<Real>::Algorithm(), list_(list), subproblemIter_(0) {
+StabilizedLCLAlgorithm<Real>::StabilizedLCLAlgorithm( ParameterList &list, const Ptr<Secant<Real>> &secant )
+  : TypeE::Algorithm<Real>::Algorithm(), secant_(secant), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
@@ -255,7 +255,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
     // Solve linearly constrained augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo = TypeB::AlgorithmFactory<Real>(list_);
+    algo = TypeB::AlgorithmFactory<Real>(list_,secant_);
     algo->run(elc,outStream);
     x.set(*xp->get(0));
 

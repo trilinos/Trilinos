@@ -35,7 +35,6 @@
 #include <stddef.h>                     // for NULL
 #include <iostream>                     // for ostream, operator<<, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
@@ -153,7 +152,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   meta_data.declare_field_restriction(*nodeField, pB, stride[1], stride[1]);
 
-  ASSERT_EQ( nodeField->max_size( stk::topology::NODE_RANK ) , 20u );
+  ASSERT_EQ( nodeField->max_size() , 20u );
 
   //------------------------------
   // Check for error detection of bad stride:

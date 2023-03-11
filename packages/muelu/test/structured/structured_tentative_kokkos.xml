@@ -30,7 +30,7 @@
 
 
     <ParameterList name="myCoarseMapFact">
-      <Parameter name="factory"                             type="string" value="CoarseMapFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
       <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
     </ParameterList>
 

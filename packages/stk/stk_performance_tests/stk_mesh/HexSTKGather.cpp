@@ -49,7 +49,6 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MemoryUsage.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk {
 namespace performance_tests {

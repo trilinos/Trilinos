@@ -108,7 +108,6 @@
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
@@ -274,6 +273,10 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+      useKokkos_ = true;
+# endif    
     (void)MUELU_TEST_AND_SET_VAR(paramList, "use kokkos refactor", bool, useKokkos_);
 
     // Check for timer synchronization
@@ -1255,7 +1258,7 @@ namespace MueLu {
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
-    MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
+    RCP<Factory> coarseMap = rcp(new CoarseMapFactory());
     coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     manager.SetFactory("CoarseMap", coarseMap);
 

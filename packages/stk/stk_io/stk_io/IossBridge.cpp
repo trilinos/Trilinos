@@ -94,7 +94,6 @@
 #include "stk_mesh/base/EntityKey.hpp"              // for operator<<
 #include "stk_mesh/base/FieldBase.hpp"              // for FieldBase, FieldB...
 #include "stk_mesh/base/FieldRestriction.hpp"       // for FieldRestriction
-#include "stk_mesh/base/FieldTraits.hpp"            // for FieldTraits, Fiel...
 #include "stk_mesh/base/Part.hpp"                   // for Part, Part::INVAL...
 #include "stk_mesh/base/Selector.hpp"               // for Selector, operator&
 #include "stk_mesh/baseImpl/PartAttribute.hpp"
@@ -1629,19 +1628,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return false;
     }
 
-    void sort_by_descending_field_size(stk::mesh::PartVector& parts,
-                                       const stk::mesh::FieldBase& field)
-    {
-      auto compare_field_size = [&field](stk::mesh::Part* lhs, stk::mesh::Part* rhs)
-      {
-        const stk::mesh::FieldBase::Restriction &lhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *lhs);
-        const stk::mesh::FieldBase::Restriction &rhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *rhs);
-        return lhsRestriction.num_scalars_per_entity() > rhsRestriction.num_scalars_per_entity();
-      };
-
-      std::sort(parts.begin(), parts.end(), compare_field_size);
-    }
-
     void ioss_add_fields_for_subpart(const stk::mesh::Part &part,
                                      const stk::mesh::EntityRank partType,
                                      Ioss::GroupingEntity *entity,
@@ -1651,7 +1637,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         stk::mesh::EntityRank partRank = part_primary_entity_rank(part);
         stk::mesh::PartVector blocks = part.subsets();
         const stk::mesh::FieldBase *f = namedField.field();
-        sort_by_descending_field_size(blocks, *f);
 
         for (size_t j = 0; j < blocks.size(); j++) {
             mesh::Part & sideBlockPart = *blocks[j];

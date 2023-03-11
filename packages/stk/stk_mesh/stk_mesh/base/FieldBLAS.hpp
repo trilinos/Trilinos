@@ -40,7 +40,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_util/util/Fortran.hpp> // For SIERRA_FORTRAN
+#include <stk_util/util/BlasLapack.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -57,22 +57,6 @@
 #include <omp.h>
 
 #endif
-
-extern "C"
-{
-void SIERRA_FORTRAN(daxpy)(const int *n, const double *dscale, const double x[], const int *incx, double y[],const int *incy); // y=y+dscale*x
-void SIERRA_FORTRAN(dscal)(const int *n, const double *dscale, double *vect, const int *inc); //vect = dscale * vect
-double SIERRA_FORTRAN(ddot)(const int * n, const double* x, const int * incx, const double* y, const int * incy); // < x , y >
-void SIERRA_FORTRAN(sscal)(const int *n, const float *sscale, float *vect, const int *inc); //vect = sscale * vect
-void SIERRA_FORTRAN(dswap)(const int* n, double* d, const int* inc, double* d1, const int* inc1); // switch d1 , d // D.N.E.
-double SIERRA_FORTRAN(dasum)(const int * n,const double * x,const int * incx);
-int SIERRA_FORTRAN(idamax)(const int *n, const double *vect, const int *inc);
-void SIERRA_FORTRAN(saxpy)(const int *n, const float *xscale, const float x[], const int *incx, float y[],const int *incy); // y=y+sscale*x
-float SIERRA_FORTRAN(sdot)(const int * n, const float* x, const int * incx, const float* y, const int * incy); // < x , y >
-float SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
-void SIERRA_FORTRAN(sswap)(const int* n, float* s, const int* inc, float* s1, const int* inc1); // switch s1 , s // D.N.E.
-int SIERRA_FORTRAN(isamax)(const int *n, const float *vect, const int *inc);
-}
 
 namespace stk {
 namespace mesh {
@@ -94,8 +78,8 @@ struct BucketSpan {
   BucketSpan(const Field_t & f, const Bucket& b)
   {
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-    ptr    = static_cast<Scalar*>(reinterpret_cast<typename FieldTraits<Field_t>::data_type*>(field_meta_data.m_data));
-    length = b.size() * field_meta_data.m_bytes_per_entity/f.data_traits().size_of;
+    ptr    = reinterpret_cast<Scalar*>(field_meta_data.m_data);
+    length = b.size() * field_meta_data.m_bytesPerEntity/f.data_traits().size_of;
   }
 
   BucketSpan& operator=(const BucketSpan& B) noexcept
