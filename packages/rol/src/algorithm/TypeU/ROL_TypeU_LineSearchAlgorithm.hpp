@@ -48,6 +48,7 @@
 #include "ROL_LineSearch_U_Types.hpp"
 #include "ROL_DescentDirection_U.hpp"
 #include "ROL_LineSearch_U.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeU::LineSearchAlgorithm
     \brief Provides an interface to run unconstrained line search algorithms.
@@ -135,6 +136,7 @@ public:
       @param[in]     lineSearch is a user-defined line search object
   */
   LineSearchAlgorithm( ParameterList &parlist,
+                       const Ptr<Secant<Real>> &secant = nullPtr,
                        const Ptr<DescentDirection_U<Real>> &descent = nullPtr,
                        const Ptr<LineSearch_U<Real>> &lineSearch = nullPtr );
 

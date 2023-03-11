@@ -140,7 +140,7 @@ public:
       @param[in]     secant     is a user-defined secant object
   */
   NewtonKrylov_U(ParameterList &parlist, const Ptr<Krylov<Real>> &krylov,
-                 Ptr<Secant<Real>> &secant, const bool computeObj = true)
+                 const Ptr<Secant<Real>> &secant, const bool computeObj = true)
     : secant_(secant), krylov_(krylov),
       ekv_(KRYLOV_USERDEFINED), esec_(SECANT_USERDEFINED),
       useSecantPrecond_(false) {
