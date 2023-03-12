@@ -43,21 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MATRIXFREETENTATIVEP_KOKKOS_FWD_HPP
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_FWD_HPP
+#ifndef MUELU_MATRIXFREETENTATIVEPFACTORY_FWD_HPP
+#define MUELU_MATRIXFREETENTATIVEPFACTORY_FWD_HPP
 
 
 
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixFreeTentativeP_kokkos;
+  class MatrixFreeTentativePFactory;
 }
 
-#ifndef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
+#ifndef MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
+#define MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
 #endif
 
 
 
-#endif // MUELU_MATRIXFREETENTATIVEP_KOKKOS_FWD_HPP
+#endif // MUELU_MATRIXFREETENTATIVEPFACTORY_FWD_HPP

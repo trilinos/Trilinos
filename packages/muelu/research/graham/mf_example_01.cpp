@@ -59,6 +59,7 @@
 #include <set>
 #include <stdio.h>
 #include <random>
+#include <unistd.h>
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -452,7 +453,7 @@ int main(int argc, char* argv[])
   // processes correctly before Kokkos touches things.
   Kokkos::initialize(argc, argv);
   // Boilerplate  MPI/Kokkos initialization
-  Teuchos::RCP<Teuchos::MpiComm<int>> comm = Teuchos::rcp(new typename Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  Teuchos::RCP<Teuchos::Comm<int>> comm = Teuchos::rcp(new typename Teuchos::Comm<int>(MPI_COMM_WORLD));
   const int my_rank = comm->getRank();
   const int num_procs = comm->getSize();
   {

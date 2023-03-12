@@ -43,12 +43,12 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MATRIXFREETENTATIVEP_KOKKOS_DECL_HPP
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_DECL_HPP
+#ifndef MUELU_MATRIXFREETENTATIVEP_DECL_HPP
+#define MUELU_MATRIXFREETENTATIVEP_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_MatrixFreeTentativeP_kokkos_fwd.hpp"
+#include "MueLu_MatrixFreeTentativeP_fwd.hpp"
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
@@ -66,10 +66,10 @@ namespace MueLu {
     @brief Matrix-free tentative restrictor operator.
   */
   // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  // class MatrixFreeTentativeP_kokkos;
+  // class MatrixFreeTentativeP;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class MatrixFreeTentativeP_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
+  class MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
@@ -82,7 +82,7 @@ namespace MueLu {
   private:
     // For compatibility
     typedef node_type                                           Node;
-#undef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
+#undef MUELU_MATRIXFREETENTATIVEP_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -90,14 +90,14 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    MatrixFreeTentativeP_kokkos(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates_kokkos> aggregates)
+    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates_kokkos> aggregates)
     : fine_map_(fine_map),
       coarse_map_(coarse_map),
       aggregates_(aggregates)
     { }
 
     //! Destructor.
-    ~MatrixFreeTentativeP_kokkos() = default;
+    ~MatrixFreeTentativeP() = default;
     //@}
 
     // compute the apply operator, Y = alpha*R*X + beta*Y
@@ -135,5 +135,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-#endif // MUELU_MATRIXFREETENTATIVEP_KOKKOS_DECL_HPP
+#define MUELU_MATRIXFREETENTATIVEP_SHORT
+#endif // MUELU_MATRIXFREETENTATIVEP_DECL_HPP
