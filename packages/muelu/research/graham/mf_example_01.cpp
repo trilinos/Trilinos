@@ -88,6 +88,7 @@
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Export.hpp"
 #include "Xpetra_Utils.hpp"
+#include "Xpetra_Parameters.hpp"
 
 // Belos includes
 #include "BelosTpetraAdapter.hpp"
@@ -114,8 +115,6 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Factory.hpp"
-
-#include "mpi.h"
 
 // Kokkos typedefs
 typedef Kokkos::Serial HostExec;
@@ -439,21 +438,10 @@ private:
 };
 
 
-int main(int argc, char* argv[])
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[])
 {
-  // MPI initialization using Teuchos
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-
-  // Xpetra nodes call Kokkos::execution_space::initialize if the execution
-  // space is not initialized, but they don't call Kokkos::initialize.
-  // Teuchos::GlobalMPISession captures its command-line arguments for later
-  // use that Xpetra takes advantage of.
-  //
-  // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
-  // processes correctly before Kokkos touches things.
-  Kokkos::initialize(argc, argv);
-  // Boilerplate  MPI/Kokkos initialization
-  Teuchos::RCP<Teuchos::Comm<int>> comm = Teuchos::rcp(new typename Teuchos::Comm<int>(MPI_COMM_WORLD));
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
   const int my_rank = comm->getRank();
   const int num_procs = comm->getSize();
   {
@@ -466,7 +454,6 @@ int main(int argc, char* argv[])
     using MV = Xpetra::MultiVector<SC,LO,GO,NO>;
 
     // Set a command line processor and parse it
-    Teuchos::CommandLineProcessor clp(false);
     int n = 300;
     int max_iterations = 1000;
     double tol = 1e-10;
@@ -640,4 +627,12 @@ int main(int argc, char* argv[])
   }
   Kokkos::finalize();
   return 0;
+}
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }
