@@ -450,9 +450,7 @@ LinearSolverBuilder<Scalar>::createLinearSolveStrategy(
       );
   }
 
-  // Break this!
-  //return lowsf;
-  return Teuchos::null;
+  return lowsf;
 
 }
 
