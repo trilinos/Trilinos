@@ -140,15 +140,26 @@ void spgemm_symbolic(KernelHandle *handle,
   // Verify that graphs A and B are sorted.
   // This test is designed to be as efficient as possible, but still skip
   // it in a release build.
+  //
+  // Temporary fix for Trilinos issue #11655: Only perform this check if a TPL
+  // is to be called. The KokkosKernels (non-TPL) implementation does not
+  // actually require sorted indices yet. And Tpetra uses size_type = size_t, so
+  // it will (currently) not be calling a TPL path.
 #ifndef NDEBUG
-  if (!KokkosSparse::Impl::isCrsGraphSorted(const_a_r, const_a_l))
-    throw std::runtime_error(
-        "KokkosSparse::spgemm_symbolic: entries of A are not sorted within "
-        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
-  if (!KokkosSparse::Impl::isCrsGraphSorted(const_b_r, const_b_l))
-    throw std::runtime_error(
-        "KokkosSparse::spgemm_symbolic: entries of B are not sorted within "
-        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+  if constexpr (KokkosSparse::Impl::spgemm_symbolic_tpl_spec_avail<
+                    const_handle_type, Internal_alno_row_view_t_,
+                    Internal_alno_nnz_view_t_, Internal_blno_row_view_t_,
+                    Internal_blno_nnz_view_t_,
+                    Internal_clno_row_view_t_>::value) {
+    if (!KokkosSparse::Impl::isCrsGraphSorted(const_a_r, const_a_l))
+      throw std::runtime_error(
+          "KokkosSparse::spgemm_symbolic: entries of A are not sorted within "
+          "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+    if (!KokkosSparse::Impl::isCrsGraphSorted(const_b_r, const_b_l))
+      throw std::runtime_error(
+          "KokkosSparse::spgemm_symbolic: entries of B are not sorted within "
+          "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+  }
 #endif
 
   auto algo = tmp_handle.get_spgemm_handle()->get_algorithm_type();
