@@ -1,4 +1,6 @@
-#include "GDSW_Proxy.hpp"
+#ifndef GDSW_DEF_HPP
+#define GDSW_DEF_HPP
+#include "GDSW_Proxy_decl.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
 using Teuchos::RCP;
@@ -1131,3 +1133,4 @@ getUniqueEntries(const std::vector<int> & vector,
 }
 
 
+#endif

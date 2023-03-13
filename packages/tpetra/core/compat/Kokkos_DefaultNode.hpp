@@ -39,8 +39,13 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef KOKKOS_DEFAULTNODE_HPP
+#define KOKKOS_DEFAULTNODE_HPP
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include "Kokkos_ConfigDefs.hpp"
+#include "KokkosClassic_DefaultNode_config.h"
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Teuchos_RCP.hpp"
 
 // This header file only exists for backwards compatibility.
 #if defined(TPETRA_ENABLE_DEPRECATED_CODE)
@@ -48,3 +53,10 @@
 #else
 #error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated."
 #endif
+
+  };
+
+} // namespace KokkosClassic
+
+#endif // KOKKOS_DEFAULTNODE_HPP
+

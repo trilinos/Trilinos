@@ -41,7 +41,8 @@
 // @HEADER
 */
 
-#include <Tpetra_TestingUtilities.hpp>
+#include <Tpetra_Core.hpp>
+#include <Teuchos_LocalTestingHelpers.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -54,6 +55,7 @@
 #include <iterator>
 #include <numeric>
 #include <sstream>
+#include <ostream>
 #include <fstream>
 #include <unistd.h>
 #include <sys/resource.h>
@@ -69,10 +71,9 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Tpetra_Import_Util.hpp"
 
-
-// Yes, I'm including the CPP file on purpose.  Don't hate.
 #include "GDSW_Proxy.hpp"
-#include "GDSW_Proxy.cpp"
+
+
 
 namespace {
 
@@ -125,10 +126,129 @@ createLaplace1D (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOr
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::Export<LO, GO, NT> export_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
+  typedef typename matrix_type::local_matrix_device_type LMT;
 
   RCP<const Teuchos::Comm<int> > comm = rowMap->getComm ();
+  //#define OLD_AND_MEMORY_HOGGING
+#ifndef OLD_AND_MEMORY_HOGGING
+  ST ONE = Teuchos::ScalarTraits<ST>::one();
 
+  ST TWO = ONE+ONE;
+
+  // Generate column map
+  int rank = comm->getRank();
+  int numProcs = comm->getSize();
+  GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+
+  size_t numRows = rowMap->getLocalNumElements();
+  LO nnz = 3*numRows;
+
+
+  // Make_the column map
+  int size = numRows;
+  if(rank !=0) size++;
+  if(rank !=numProcs-1) size++; 
+  Teuchos::Array<GO> col_ids(size);
+  for(LO i=0; i<(LO)numRows; i++)
+    col_ids[i] = rowMap->getGlobalElement(i);
+  LO ct = numRows;
+
+  LO initial_row_length;
+  LO final_row_length;
+  if(rank!=0) {
+    col_ids[ct] = rowMap->getGlobalElement(0) -1;
+    initial_row_length = 3;
+    ct++;
+  }
+  else {
+    initial_row_length = 2;
+    nnz--;
+  }
+
+  if(rank!=numProcs-1) {
+    col_ids[ct] = rowMap->getGlobalElement(numRows-1) +1;
+    final_row_length = 3;
+    ct++;
+  }
+  else {
+    final_row_length = 2;
+    nnz--;    
+  }
+
+  RCP<const map_type> colMap = rcp(new map_type(GO_INVALID,col_ids(),rowMap->getIndexBase(),comm));
+  size_t numCols = colMap->getLocalNumElements();
+
+
+  // Fill the matrix
+  typename LMT::values_type::non_const_type  values("values",nnz);
+  typename LMT::index_type::non_const_type   colind("colind",nnz);
+  typename LMT::row_map_type::non_const_type rowptr("rowptr",numRows+1);
+
+  Kokkos::parallel_for("matrix fill", numRows,KOKKOS_LAMBDA(const LO& row) {     
+      if(row == 0) {
+        // First row on proc
+        LO row_start = 0;
+        LO row_stop = initial_row_length;
+        rowptr[0] = row_start;
+        rowptr[1] = row_stop;
+        if(initial_row_length == 2) {
+          colind[row_start  ] = row;
+          colind[row_start+1] = row+1;
+          values[row_start  ] =  TWO;
+          values[row_start+1] = -ONE;
+        }
+        else {
+          colind[row_start  ] = numRows;
+          colind[row_start+1] = row;
+          colind[row_start+2] = row+1;
+          values[row_start  ] = -ONE;
+          values[row_start+1] =  TWO;
+          values[row_start+2] = -ONE;        
+        }
+      }
+      else if (row == (LO)numRows -1) {
+        // Last row on proc
+        LO row_start = (row-1)*3 + initial_row_length;
+        LO row_stop  = row_start+final_row_length;
+        rowptr[row+1] = row_stop;
+        if(final_row_length == 2) {
+          colind[row_start  ] = row-1;
+          colind[row_start+1] = row;
+          values[row_start  ] = -ONE;
+          values[row_start+1] =  TWO;
+
+        }
+        else {
+          colind[row_start  ] = row-1;
+          colind[row_start+1] = row;
+          colind[row_start+2] = numRows;
+          values[row_start  ] = -ONE;
+          values[row_start+1] =  TWO;
+          values[row_start+2] = -ONE;        
+        }
+      }
+      else {
+        // All other rows
+        LO row_start = (row-1)*3 + initial_row_length;
+        LO row_stop  = row_start+3;
+        rowptr[row+1] = row_stop;
+        colind[row_start  ] = row-1;
+        colind[row_start+1] = row;
+        colind[row_start+2] = row+1;
+        values[row_start  ] = -ONE;
+        values[row_start+1] =  TWO;
+        values[row_start+2] = -ONE;        
+      }    
+    });
+
+  // Put matrix together
+  LMT A_lcl("local",numRows,numCols,nnz,values,rowptr,colind);
+
+  RCP<matrix_type> A = rcp(new matrix_type(A_lcl,rowMap,colMap));
+
+#else
   const size_t myNumElts = rowMap->getLocalNumElements ();
+
   RCP<matrix_type> A = rcp(new matrix_type(rowMap, 3));
 
   Array<GO> ind (3);
@@ -161,6 +281,7 @@ createLaplace1D (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOr
   }
   
   A->fillComplete (rowMap, rowMap);
+#endif
   return A;
 }
 
@@ -275,14 +396,65 @@ size_t get_memory_usage_now()
 }
 
 
+template <class crs_matrix_type, class map_type>
+RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_type> &filterMap){
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using indices_type = typename crs_matrix_type::local_inds_host_view_type;
+  using values_type = typename crs_matrix_type::values_host_view_type;
+  using GO = typename crs_matrix_type::global_ordinal_type;
+  using LO = typename crs_matrix_type::local_ordinal_type;
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+  auto rowMap = A->getRowMap();
+  auto colMap = A->getColMap();
+  size_t nrows = rowMap->getLocalNumElements();
+
+  // Count
+  Teuchos::Array<size_t> count(filterMap->getLocalNumElements(),0);
+  for(size_t i=0; i<nrows; i++) {
+    indices_type  indices;
+    values_type   values;
+    A->getLocalRowView(i,indices,values);
+    LO frow = filterMap->getLocalElement(rowMap->getGlobalElement(i));
+    for(LO j=0; j<(LO)indices.size(); j++) {
+      if (filterMap->getLocalElement(colMap->getGlobalElement(indices[j])) != LO_INVALID)
+        count[frow]++;
+    }
+  }
+
+
+  // Alloc
+  RCP<crs_matrix_type> B = rcp(new crs_matrix_type(filterMap,filterMap,count()));
+
+  // Fill
+  for(size_t i=0; i<nrows; i++) {
+    indices_type  indices;
+    values_type   values;
+    A->getLocalRowView(i,indices,values);
+    LO frow = filterMap->getLocalElement(rowMap->getGlobalElement(i));
+    for(LO j=0; j<(LO)indices.size(); j++) {
+      LO col = filterMap->getLocalElement(colMap->getGlobalElement(indices[j]));
+      if(col != LO_INVALID) {
+        B->insertLocalValues(frow,1,&values[j],&col);
+      }
+    }   
+  }
+  B->fillComplete(rowMap,rowMap);
+  
+  return B;
+}
+
+
 }//anonymous namespace
 
 
-  //
-  // UNIT TESTS
-  //
+  template<class SC, class LO, class GO, class NT>
+  void GDSWStyle_Test0(int run_case, bool & success) {
+  //  void GDSWStyle_Test0(RCP<const Comm<int> & comm, const int run_case, std::ostream & out, bool & success) {
+    Teuchos::FancyOStream  out(Teuchos::rcpFromRef(std::cout));
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( GDSWStyle, Test0, SC, LO, GO, NT ) {
     using map_type = Map<LO, GO, NT>;
     using import_type = Tpetra::Import<LO, GO, NT>;
     using crs_matrix_type = Tpetra::CrsMatrix<SC,LO,GO,NT>;
@@ -292,7 +464,7 @@ size_t get_memory_usage_now()
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     // create map
-    RCP<const map_type > rowMap1to1 =  createContigMapWithNode<LO, GO, NT> (INVALID, 10000, comm);
+    RCP<const map_type > rowMap1to1 =  createContigMapWithNode<LO, GO, NT> (INVALID, 1000000, comm);
     size_t mem0 = get_memory_usage_now();
 
 
@@ -313,7 +485,6 @@ size_t get_memory_usage_now()
     outputMatrix1->fillComplete(rowMap1to1, rowMap1to1);
     size_t mem2b = get_memory_usage_now();
 
-
     // 2) GDSW Proxy code
     RCP<crs_matrix_type> outputMatrix2;
     TpetraFunctions<SC,LO,GO,NT> tFunctions;
@@ -333,15 +504,33 @@ size_t get_memory_usage_now()
     size_t mem5 = get_memory_usage_now();
 
 
+    // 5) Locally filtered matrix
+    RCP<crs_matrix_type> outputMatrix5 = Filter(outputMatrix3,regionMap);   
+    size_t mem6 = get_memory_usage_now();
+
+
+    // 6) Import-based GDSW style, V2
+    RCP<crs_matrix_type> outputMatrix6;
+    tFunctions.importSquareMatrixFromImporter2(A, Teuchos::rcpFromRef(Importer), outputMatrix6);
+    size_t mem7 = get_memory_usage_now();
+
+    // 7) Import-based GDSW style, V3
+    RCP<crs_matrix_type> outputMatrix7;
+    tFunctions.importSquareMatrixFromImporter3(A, Teuchos::rcpFromRef(Importer), outputMatrix7);
+    size_t mem8 = get_memory_usage_now();
+
     /***********************************************************************************/
     //std::cout<<"Breakdown Mem 0/1/2a/2b/3/4 = "<<mem0<<"/"<<mem1<<"/"<<mem2a<<"/"<<mem2b<<"/"<<mem3<<"/"<<mem4<<std::endl;
 
     std::cout<<"Orig matrix storage                           = "<< (mem1-mem0) <<std::endl;
     std::cout<<"Importer storage                              = "<< (mem2a-mem1) <<std::endl;
-    std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem1) <<std::endl;
+    std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem2a) <<std::endl;
     std::cout<<"2) GDSW-proxy storage                         = "<< (mem3-mem2b) <<std::endl;
     std::cout<<"3) importAndFillComplete storage              = "<< (mem4-mem3) <<std::endl;
     std::cout<<"4) Import-based GDSW-proxy                    = "<< (mem5-mem4) <<std::endl;
+    std::cout<<"5) Locally filtered IACF                      = "<< (mem6-mem5) <<std::endl;
+    std::cout<<"6) V2 Import-based GDSW-proxy                 = "<< (mem7-mem6) <<std::endl;
+    std::cout<<"7) V3 Import-based GDSW-proxy                 = "<< (mem8-mem7) <<std::endl;
 
     // Compare the output matrices
     bool result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
@@ -353,7 +542,24 @@ size_t get_memory_usage_now()
     }
     TEST_EQUALITY( result, true );
 
-    
+
+    std::cout<<std::endl;
+    std::cout<<"Number of Nonzeros 1                          = "<<outputMatrix1->getLocalNumEntries()<<std::endl;
+    std::cout<<"Number of Nonzeros 2                          = "<<outputMatrix2->getLocalNumEntries()<<std::endl;
+    std::cout<<"Number of Nonzeros 3                          = "<<outputMatrix3->getLocalNumEntries()<<std::endl;
+      
+
+
+    // Compare the output matrices
+    result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
+    if(!result) {
+      out<<"*** Tpetra-based matrix ***"<<std::endl;
+      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+      out<<"*** GDSW-proxy matrix ***"<<std::endl;
+      outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
+    }
+    TEST_EQUALITY( result, true );
+
     // Compare the output matrices
     result = compareCrsMatrix(*outputMatrix1,*outputMatrix4);
     if(!result) {
@@ -364,22 +570,72 @@ size_t get_memory_usage_now()
     }
     TEST_EQUALITY( result, true );
 
+    // Compare the output matrices
+    result = compareCrsMatrix(*outputMatrix1,*outputMatrix5);
+    if(!result) {
+      out<<"*** Tpetra-based matrix ***"<<std::endl;
+      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+      out<<"*** Locally Filtered IAFC ***"<<std::endl;
+      outputMatrix5->describe(out,Teuchos::VERB_EXTREME);
+    }
+    TEST_EQUALITY( result, true );
+
+    // Compare the output matrices
+    result = compareCrsMatrix(*outputMatrix1,*outputMatrix6);
+    if(!result) {
+      out<<"*** Tpetra-based matrix ***"<<std::endl;
+      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+      out<<"*** V2 Import-based GDSW-proxy matrix ***"<<std::endl;
+      outputMatrix6->describe(out,Teuchos::VERB_EXTREME);
+    }
+    TEST_EQUALITY( result, true );
+
+
+    // Compare the output matrices
+    result = compareCrsMatrix(*outputMatrix1,*outputMatrix7);
+    if(!result) {
+      out<<"*** Tpetra-based matrix ***"<<std::endl;
+      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+      out<<"*** V3 Import-based GDSW-proxy matrix ***"<<std::endl;
+      outputMatrix7->describe(out,Teuchos::VERB_EXTREME);
+    }
+    TEST_EQUALITY( result, true );
+
   }
 
+}// anonymous namespace
 
   //
   // INSTANTIATIONS
   //
 
 
-#define UNIT_TEST_4( SCALAR, LO, GO, NT )                                \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( GDSWStyle, Test0, SCALAR, LO, GO, NT ) 
+int main(int narg, char *arg[]) 
+{
+  Tpetra::ScopeGuard scope(&narg, &arg);
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
+  using SC = Tpetra::Details::DefaultTypes::scalar_type; 
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  using NT = Tpetra::Map<>::node_type;
 
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+  
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  int run_case = -1
+  cmdp.setOption("case", &run_case,
+                 "Which case to run");
+  if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
+  bool success = true;
+  GDSWStyle_Test0<SC,LO,GO,NT>(run_case,success);
 
-  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_4 )
 
-} // namespace (anonymous)
-
+  if(!comm->getRank()) {
+    if(success) std::cout<<"TEST PASSED"<<std::endl;
+    else std::cout<<"TEST FAILED"<<std::endl
+  }
+}
 
