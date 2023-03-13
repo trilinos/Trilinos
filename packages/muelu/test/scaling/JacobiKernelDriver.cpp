@@ -107,13 +107,13 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    vector_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
-    typedef typename KCRS::StaticCrsGraphType              graph_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+    typedef typename crs_matrix_type::local_matrix_device_type KCRS;
+    typedef typename KCRS::StaticCrsGraphType                  graph_t;
+    typedef typename graph_t::row_map_type::non_const_type     lno_view_t;
+    typedef typename graph_t::row_map_type::const_type         c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type     lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type         c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type         scalar_view_t;
 
     typedef typename vector_type::device_type              device_type;
     typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
@@ -121,21 +121,22 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
     RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+    RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
     RCP<const vector_type> Du = Xpetra::toTpetra(D);
 
-    const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & Bmat = Bu->getLocalMatrix();
-    KCRS Cmat = Cu->getLocalMatrix();
+    const KCRS & Amat = Au->getLocalMatrixDevice();
+    const KCRS & Bmat = Bu->getLocalMatrixDevice();
+
     if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
     lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
-    lno_nnz_view_t Ccolind = Cmat.graph.entries;
+    lno_nnz_view_t Ccolind;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-    scalar_view_t Cvals = Cmat.values;
+    scalar_view_t Cvals;
 
-    auto Dvals = Du->template getLocalView<device_type>();
+    auto Dvals = Du->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     sparse_matrix_t AMKL;
     sparse_matrix_t BMKL;
@@ -194,21 +195,21 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     // Multiply (A*B)
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Multiply")));
     result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &XTempMKL);
-    KCRS::execution_space::fence();
+    typename KCRS::execution_space().fence();
     if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed");
 
     // **********************************
     // Scale (-omegaD) * AB)
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Scale-Via-Multiply")));
     result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, DMKL, XTempMKL, &YTempMKL);
-    KCRS::execution_space::fence();
+    typename KCRS::execution_space().fence();
     if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Scale failed");
 
     // **********************************
     // Add B - ((-omegaD) * AB))
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Add")));
     result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,BMKL,1.0,YTempMKL,&CMKL);
-    KCRS::execution_space::fence();
+    typename KCRS::execution_space().fence();
     if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed");
 
     // **********************************
@@ -226,9 +227,10 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
 
-    Cmat.graph.row_map = Crowptr;
-    Cmat.graph.entries = Ccolind;
-    Cmat.values = Cvals;
+    Cnc->replaceColMap(Bu->getColMap());
+    Cnc->setAllValues(Crowptr,
+                      Ccolind,
+                      Cvals);
 
     mkl_sparse_destroy(AMKL);
     mkl_sparse_destroy(BMKL);

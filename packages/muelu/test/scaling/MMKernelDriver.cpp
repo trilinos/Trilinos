@@ -382,7 +382,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 #include "mkl_types.h"                                  // for MKL_INT
 //#include "mkl.h"
 
-#define MMKD_MKL_ERROR_CHECK(rc) ({ \
+#define MMKD_MKL_ERROR_CHECK(rc) { \
 if (mkl_rc != SPARSE_STATUS_SUCCESS) { \
   std::stringstream ss;  \
   switch (mkl_rc) { \
@@ -410,7 +410,7 @@ if (mkl_rc != SPARSE_STATUS_SUCCESS) { \
   std::cerr << ss.str () << std::endl; \
   return; \
 } \
-})
+}
 
   // mkl_sparse_spmm
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -425,13 +425,13 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   RCP<TimeMonitor> tm;
 #if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
-    typedef typename KCRS::StaticCrsGraphType              graph_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+    typedef typename crs_matrix_type::local_matrix_device_type KCRS;
+    typedef typename KCRS::StaticCrsGraphType                  graph_t;
+    typedef typename graph_t::row_map_type::non_const_type     lno_view_t;
+    typedef typename graph_t::row_map_type::const_type         c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type     lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type         c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type         scalar_view_t;
 
     typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
 

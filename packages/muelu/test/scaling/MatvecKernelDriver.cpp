@@ -906,6 +906,12 @@ public:
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
 
+#if CUSPARSE_VERSION >= 11201
+    cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+    cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
     size_t bufferSize;
     CHECK_CUSPARSE(cusparseSpMV_bufferSize(cusparseHandle,
                                            transA,
@@ -915,7 +921,7 @@ public:
                                            &beta,
                                            vecY,
                                            CUDA_R_64F,
-                                           CUSPARSE_MV_ALG_DEFAULT,
+                                           alg,
                                            &bufferSize));
 
     void* dBuffer = NULL;
@@ -929,7 +935,7 @@ public:
                                        &beta,
                                        vecY,
                                        CUDA_R_64F,
-                                       CUSPARSE_MV_ALG_DEFAULT,
+                                       alg,
                                        dBuffer);
 
     CHECK_CUDA(cudaFree(dBuffer));
@@ -1336,10 +1342,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                               ArowptrMKL.data()+1,
                               AcolindMKL.data(),
                               (double*)Avals.data());
-      auto X_lcl = xt.template getLocalView<device_type> ();
-      auto Y_lcl = yt.template getLocalView<device_type> ();
-      mkl_xdouble = (double*)X_lcl.data();
-      mkl_ydouble = (double*)Y_lcl.data();
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -1402,6 +1404,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         case Experiments::MKL:
         {
             TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+            auto X_lcl = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
+            auto Y_lcl = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+            mkl_xdouble = (double*)X_lcl.data();
+            mkl_ydouble = (double*)Y_lcl.data();
             MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;
