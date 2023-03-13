@@ -462,6 +462,7 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
 
     const Tpetra::global_size_t INVALID =  Teuchos::OrdinalTraits<GO>::invalid ();
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    TpetraFunctions<SC,LO,GO,NT> tFunctions;
 
     // create map
     RCP<const map_type > rowMap1to1 =  createContigMapWithNode<LO, GO, NT> (INVALID, 1000000, comm);
@@ -473,50 +474,53 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
 
     // Grab the column map to create a proxy for the input region
     RCP<const map_type> regionMap = A->getColMap();
-
     size_t mem1 = get_memory_usage_now();
-
+    RCP<crs_matrix_type> outputMatrix1,outputMatrix2,outputMatrix3,outputMatrix4,outputMatrix5,outputMatrix6,outputMatrix7;
 
     // 1) Tpetra-based code duplication what is in GDSW
     import_type Importer(rowMap1to1, regionMap);
     size_t mem2a = get_memory_usage_now();
-    RCP<crs_matrix_type> outputMatrix1 = rcp( new crs_matrix_type(regionMap, regionMap, 0) );
-    outputMatrix1->doImport(*A, Importer, Tpetra::INSERT);
-    outputMatrix1->fillComplete(rowMap1to1, rowMap1to1);
+    if(run_case == -1 || run_case == 1) {
+      outputMatrix1 = rcp( new crs_matrix_type(regionMap, regionMap, 0) );
+      outputMatrix1->doImport(*A, Importer, Tpetra::INSERT);
+      outputMatrix1->fillComplete(rowMap1to1, rowMap1to1);
+    }
     size_t mem2b = get_memory_usage_now();
 
     // 2) GDSW Proxy code
-    RCP<crs_matrix_type> outputMatrix2;
-    TpetraFunctions<SC,LO,GO,NT> tFunctions;
-    tFunctions.importSquareMatrix(A, regionMap, outputMatrix2);
+    if(run_case == -1 || run_case == 2) {
+      tFunctions.importSquareMatrix(A, regionMap, outputMatrix2);
+    }
     size_t mem3 = get_memory_usage_now();
 
     // 3) Import-and-FillComplete code
     // NOTE: This will *NOT* generate the same matrix because we're not specifying the column map
     // This is here only for memory use comparisons
-    RCP<crs_matrix_type> outputMatrix3 = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(A,Importer,rowMap1to1,rowMap1to1);
+    if(run_case == -1 || run_case == 3 || run_case == 5) 
+      outputMatrix3 = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(A,Importer,rowMap1to1,rowMap1to1);
 
     size_t mem4 = get_memory_usage_now();
 
     // 4) Import-based GDSW style
-    RCP<crs_matrix_type> outputMatrix4;
-    tFunctions.importSquareMatrixFromImporter(A, Teuchos::rcpFromRef(Importer), outputMatrix4);
+    if(run_case == -1 || run_case == 4)
+      tFunctions.importSquareMatrixFromImporter(A, Teuchos::rcpFromRef(Importer), outputMatrix4);
     size_t mem5 = get_memory_usage_now();
 
 
     // 5) Locally filtered matrix
-    RCP<crs_matrix_type> outputMatrix5 = Filter(outputMatrix3,regionMap);   
+    if(run_case == -1 || run_case == 5)     
+      outputMatrix5 = Filter(outputMatrix3,regionMap);   
     size_t mem6 = get_memory_usage_now();
 
 
     // 6) Import-based GDSW style, V2
-    RCP<crs_matrix_type> outputMatrix6;
-    tFunctions.importSquareMatrixFromImporter2(A, Teuchos::rcpFromRef(Importer), outputMatrix6);
+    if(run_case == -1 || run_case == 6) 
+      tFunctions.importSquareMatrixFromImporter2(A, Teuchos::rcpFromRef(Importer), outputMatrix6);
     size_t mem7 = get_memory_usage_now();
 
     // 7) Import-based GDSW style, V3
-    RCP<crs_matrix_type> outputMatrix7;
-    tFunctions.importSquareMatrixFromImporter3(A, Teuchos::rcpFromRef(Importer), outputMatrix7);
+    if(run_case == -1 || run_case == 7) 
+      tFunctions.importSquareMatrixFromImporter3(A, Teuchos::rcpFromRef(Importer), outputMatrix7);
     size_t mem8 = get_memory_usage_now();
 
     /***********************************************************************************/
@@ -524,83 +528,94 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
 
     std::cout<<"Orig matrix storage                           = "<< (mem1-mem0) <<std::endl;
     std::cout<<"Importer storage                              = "<< (mem2a-mem1) <<std::endl;
-    std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem2a) <<std::endl;
-    std::cout<<"2) GDSW-proxy storage                         = "<< (mem3-mem2b) <<std::endl;
-    std::cout<<"3) importAndFillComplete storage              = "<< (mem4-mem3) <<std::endl;
-    std::cout<<"4) Import-based GDSW-proxy                    = "<< (mem5-mem4) <<std::endl;
-    std::cout<<"5) Locally filtered IACF                      = "<< (mem6-mem5) <<std::endl;
-    std::cout<<"6) V2 Import-based GDSW-proxy                 = "<< (mem7-mem6) <<std::endl;
-    std::cout<<"7) V3 Import-based GDSW-proxy                 = "<< (mem8-mem7) <<std::endl;
+    if(run_case == -1 || run_case == 1)
+      std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem2a) <<std::endl;
+    if(run_case == -1 || run_case == 2)
+      std::cout<<"2) GDSW-proxy storage                         = "<< (mem3-mem2b) <<std::endl;
+    if(run_case == -1 || run_case == 3 || run_case == 5)
+      std::cout<<"3) importAndFillComplete storage              = "<< (mem4-mem3) <<std::endl;
+    if(run_case == -1 || run_case == 4)
+      std::cout<<"4) Import-based GDSW-proxy                    = "<< (mem5-mem4) <<std::endl;
+    if(run_case == -1 || run_case == 5)
+      std::cout<<"5) Locally filtered IACF                      = "<< (mem6-mem5) <<std::endl;
+    if(run_case == -1 || run_case == 6)
+      std::cout<<"6) V2 Import-based GDSW-proxy                 = "<< (mem7-mem6) <<std::endl;
+    if(run_case == -1 || run_case == 7)
+      std::cout<<"7) V3 Import-based GDSW-proxy                 = "<< (mem8-mem7) <<std::endl;
 
     // Compare the output matrices
-    bool result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** GDSW-proxy matrix ***"<<std::endl;
-      outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
+    bool result;
+    if(run_case == -1) {
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** GDSW-proxy matrix ***"<<std::endl;
+        outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
     }
-    TEST_EQUALITY( result, true );
-
-
-    std::cout<<std::endl;
-    std::cout<<"Number of Nonzeros 1                          = "<<outputMatrix1->getLocalNumEntries()<<std::endl;
-    std::cout<<"Number of Nonzeros 2                          = "<<outputMatrix2->getLocalNumEntries()<<std::endl;
-    std::cout<<"Number of Nonzeros 3                          = "<<outputMatrix3->getLocalNumEntries()<<std::endl;
-      
-
 
     // Compare the output matrices
-    result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** GDSW-proxy matrix ***"<<std::endl;
-      outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
+    if(run_case == -1) {
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix2);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** GDSW-proxy matrix ***"<<std::endl;
+        outputMatrix2->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
     }
-    TEST_EQUALITY( result, true );
-
-    // Compare the output matrices
-    result = compareCrsMatrix(*outputMatrix1,*outputMatrix4);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** Import-based GDSW-proxy matrix ***"<<std::endl;
-      outputMatrix4->describe(out,Teuchos::VERB_EXTREME);
-    }
-    TEST_EQUALITY( result, true );
-
-    // Compare the output matrices
-    result = compareCrsMatrix(*outputMatrix1,*outputMatrix5);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** Locally Filtered IAFC ***"<<std::endl;
-      outputMatrix5->describe(out,Teuchos::VERB_EXTREME);
-    }
-    TEST_EQUALITY( result, true );
-
-    // Compare the output matrices
-    result = compareCrsMatrix(*outputMatrix1,*outputMatrix6);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** V2 Import-based GDSW-proxy matrix ***"<<std::endl;
-      outputMatrix6->describe(out,Teuchos::VERB_EXTREME);
-    }
-    TEST_EQUALITY( result, true );
 
 
     // Compare the output matrices
-    result = compareCrsMatrix(*outputMatrix1,*outputMatrix7);
-    if(!result) {
-      out<<"*** Tpetra-based matrix ***"<<std::endl;
-      outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
-      out<<"*** V3 Import-based GDSW-proxy matrix ***"<<std::endl;
-      outputMatrix7->describe(out,Teuchos::VERB_EXTREME);
-    }
-    TEST_EQUALITY( result, true );
+    if(run_case == -1) { 
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix4);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** Import-based GDSW-proxy matrix ***"<<std::endl;
+        outputMatrix4->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
+    }      
 
+    // Compare the output matrices
+    if(run_case == -1) {
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix5);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** Locally Filtered IAFC ***"<<std::endl;
+        outputMatrix5->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
+    }
+
+    // Compare the output matrices
+    if(run_case == -1) {
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix6);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** V2 Import-based GDSW-proxy matrix ***"<<std::endl;
+        outputMatrix6->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
+    }
+
+    // Compare the output matrices
+    if(run_case == -1) {
+      result = compareCrsMatrix(*outputMatrix1,*outputMatrix7);
+      if(!result) {
+        out<<"*** Tpetra-based matrix ***"<<std::endl;
+        outputMatrix1->describe(out,Teuchos::VERB_EXTREME);
+        out<<"*** V3 Import-based GDSW-proxy matrix ***"<<std::endl;
+        outputMatrix7->describe(out,Teuchos::VERB_EXTREME);
+      }
+      TEST_EQUALITY( result, true );
+    }
   }
 
 }// anonymous namespace
@@ -623,7 +638,7 @@ int main(int narg, char *arg[])
 
   
   Teuchos::CommandLineProcessor cmdp(false,true);
-  int run_case = -1
+  int run_case = -1;
   cmdp.setOption("case", &run_case,
                  "Which case to run");
   if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -635,7 +650,7 @@ int main(int narg, char *arg[])
 
   if(!comm->getRank()) {
     if(success) std::cout<<"TEST PASSED"<<std::endl;
-    else std::cout<<"TEST FAILED"<<std::endl
+    else std::cout<<"TEST FAILED"<<std::endl;
   }
 }
 
