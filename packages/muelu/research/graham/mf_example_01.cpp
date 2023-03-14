@@ -446,10 +446,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   const int num_procs = comm->getSize();
   {
     // Necessary typedefs
-    using SC = double;
-    using LO = int;
-    using GO = long long;
-    using NO = Tpetra::MultiVector<>::node_type;
+    using SC = Scalar;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using NO = Node;
     //using map_type = Xpetra::Map<>; // unused
     using MV = Xpetra::MultiVector<SC,LO,GO,NO>;
 
