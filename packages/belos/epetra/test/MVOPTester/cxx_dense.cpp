@@ -66,7 +66,6 @@
 
 int main(int argc, char *argv[])
 {
-  int i;
   bool ierr, gerr;
   gerr = true;
 
@@ -79,12 +78,12 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
-  bool verbose = false;
-  if (argc>1) {
+  bool verbose = true;
+  /*if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
     }
-  }
+  }*/
 
   bool success = true;
   try {
