@@ -152,19 +152,133 @@ namespace Belos {
       }
 
       //Try to change a value.
-      DMT::Value(*dm1, 1, 1) = (ScalarType)5.0; //TODO: Does this compile? Is an lvalue?
-      if(DMT::Value(*dm1,1,1) != (ScalarType)5.0){
+      DMT::Value(*dm1,0,0) = (ScalarType)5.0; //TODO: Does this compile? Is an lvalue?
+      if(DMT::Value(*dm1,0,0) != (ScalarType)5.0){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::Value" << endl
           << "Does not give write access to matrix values!!" << endl;
         return false;
       }
+
+      //Try to sync to host and vice-versa
+      DMT::SyncHostToDevice(*dm1);
+      DMT::SyncDeviceToHost(*dm1);
       
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
       
       //Try calling const version? TODO need to check const-ness??
       const ScalarType constval = DMT::Value(*dm1,1,1);
+      
+      //get stride
+      int stride = DMT::GetStride(*dm2);
+
+      //randomize and add
+      DMT::Randomize(*dm2);
+      ScalarType tmpVal = DMT::Value(*dm1,numrows-1,numcols-1) + DMT::Value(*dm2,numrows-1,numcols-1);
+      ScalarType tmpVal2 = DMT::Value(*dm1,0,0) + DMT::Value(*dm2,0,0);
+      DMT::Add(*dm1,*dm2);
+      if(DMT::Value(*dm1,numrows-1,numcols-1) != tmpVal ||
+      DMT::Value(*dm1,0,0) != tmpVal2){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Add failed" << endl;
+        return false;
+      }
+
+      //Test assign and scale: 
+      DMT::Assign(*dm1,*dm2);
+      DMT::Scale(*dm1,2.0);
+      if(DMT::Value(*dm1,1,1) != (ScalarType)DMT::Value(*dm2,1,1)*2.0){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Assign or scale failed" << endl;
+        return false;
+      }
+
+      //Test syncs again here? 
+      //Really should throw an error because syncing now
+      //would overwrite the changes we just made on host.
+      //DMT::SyncDeviceToHost(*dm1);
+      //
+      
+      RCP<DM> dm3 = DMT::Subview(*dm1, numrows-1, numcols-1, 1, 1);
+      if(DMT::Value(*dm3,0,0) != DMT::Value(*dm1,1,1)){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Subview failed" << endl;
+        return false;
+      }
+      if(DMT::GetNumRows(*dm3) != numrows-1 ||
+         DMT::GetNumCols(*dm3) != numcols-1){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Subview gives wrong dimensions." << endl;
+        return false;
+      }
+      // Try to change a value in the subview.
+      ScalarType testVal = 237.1;
+      DMT::Value(*dm3,0,0) = testVal;
+      if(DMT::Value(*dm3,0,0) != DMT::Value(*dm1,1,1) ||
+         DMT::Value(*dm3,0,0) != testVal){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Subview did not edit value or did not edit original." << endl;
+        return false;
+      }
+
+      RCP<DM> dm4 = DMT::SubviewCopy(*dm1, numrows-2, numcols-2, 2, 2);
+      if(DMT::Value(*dm4,0,0) != DMT::Value(*dm1,2,2)){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "SubviewCopy failed" << endl;
+        return false;
+      }
+      if(DMT::GetNumRows(*dm4) != numrows-2 ||
+         DMT::GetNumCols(*dm4) != numcols-2){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "SubviewCopy gives wrong dimensions." << endl;
+        return false;
+      }
+      // Try to change a value in the subview.
+      DMT::Value(*dm4,0,0) = testVal-5;
+      if(DMT::Value(*dm4,0,0) == DMT::Value(*dm1,2,2) ||
+         DMT::Value(*dm4,0,0) != testVal-5){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "SubviewCopy is incorrect. Possible view but not copy." << endl;
+        return false;
+      }
+      
+
+      //TODO: Try to add matrices of mismatched size (eg dm3, dm4) and make sure it throws error. 
+      //
+      //Try reshaping:
+      //TODO: What should happen if reshape is called on a subview?
+      //Increase Dimensions
+      DMT::Reshape(*dm2, numrows+5, numcols+5);
+      if(DMT::GetNumRows(*dm2) != numrows+5 ||
+         DMT::GetNumCols(*dm2) != numcols+5){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Reshape test 1 gives wrong dimensions." << endl;
+        return false;
+      }
+      //Decrease dimensions. 
+      DMT::Reshape(*dm2, numrows-2, numcols-2);
+      if(DMT::GetNumRows(*dm2) != numrows-2 ||
+         DMT::GetNumCols(*dm2) != numcols-2){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Reshape test 2 gives wrong dimensions." << endl;
+        return false;
+      }
+
+      ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
+      //TODO: Test handing this to lapack function? 
+      //TODO: Should something err if view is modified on device and 
+      //try to access on host without sync? 
 
 
       return true;
