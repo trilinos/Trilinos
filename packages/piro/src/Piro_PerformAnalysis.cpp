@@ -582,8 +582,9 @@ Piro::PerformROLAnalysis(
 
   
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = Teuchos::null;
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > H_dotP(Teuchos::null), invH_dotP(Teuchos::null), H_sec(Teuchos::null), invH_sec(Teuchos::null);
+
   #ifdef HAVE_PIRO_TEKO
-  Teko::LinearOp H_dotP(Teuchos::null), invH_dotP(Teuchos::null), H_sec(Teuchos::null), invH_sec(Teuchos::null);
   {
     if(analysisVerbosity > 2)
       *out << "\nPiro::PerformROLAnalysis: Start the computation of H_pp" << std::endl;
