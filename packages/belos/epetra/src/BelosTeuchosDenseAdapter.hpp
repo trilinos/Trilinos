@@ -46,7 +46,7 @@
 // Should not be deprecated with epetra. Needed for backward compat.
 // Where should this file live? 
 
-/*! \file BelosTeuchosDenseMatrixTraits.hpp
+/*! \file BelosTeuchosDenseAdapter.hpp
   \brief Full specialization of Belos::DenseMatTraits for Teuchos::SerialDenseMatrix
   with ordinal type int and arbitrary scalar type.
 */
@@ -88,16 +88,23 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     //! \brief Returns a raw pointer to the data on the host.
     static ScalarType* GetRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
-    { return Teuchos::null; }     
+    { return dm.values(); }     
 
-    //! \brief Returns an RCP to a Teuchos::SerialDenseMatrix<int,ScalarType> which has a subview of the given Teuchos::SerialDenseMatrix<int,ScalarType>.
+    //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
-    //        Row and column ranges include the first index and exclude the second index.
-    //        So, for example, giving std::make_pair(5,7) for the rowRange will return rows 
-    //        in range [5,7), so rows 5 and 6. 
-    //        This follows the convention of Kokkos::subview.
-    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> Subview( const Teuchos::SerialDenseMatrix<int,ScalarType> & dm, std::pair<int,int> rowRange, std::pair<int,int> colRange)
-    { return Teuchos::null; }     
+    //        Source  - Reference to another dense matrix from which values are to be copied.
+    //        numRows - The number of rows in this matrix.
+    //        numCols - The number of columns in this matrix.
+    //        startRow  - The row of Source from which the submatrix copy should start.
+    //        startCol  - The column of Source from which the submatrix copy should start.
+    //  
+    //        Should ints be const? Should they be ints or some other ordinal type?
+    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> Subview(Teuchos::SerialDenseMatrix<int,ScalarType> & source, int numRows, int numCols, int startRow=0, int startCol=0)
+    { return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, source, numRows, numCols, startRow, startCol)); }    
+
+    //! \brief Returns a deep copy of the requested subview.
+    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> SubviewCopy( const Teuchos::SerialDenseMatrix<int,ScalarType>& source, int numRows, int numCols, int startRow=0, int startCol=0)
+    { return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy, source, numRows, numCols, startRow, startCol)); }    
     //@}
 
     //@{ \name Attribute methods
@@ -110,6 +117,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     static int GetNumCols( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm )
     { return dm.numCols(); }     
 
+    //! \brief Obtain the stride between the columns of \c dm.
+    static int GetStride( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm )
+    { return dm.stride(); }    
+
     //@}
 
     //@{ \name Shaping methods
@@ -118,8 +129,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     *         keeping the entries. 
     \return Integer error code, set to 0 if successful.
     */
-    static int Reshape( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int numrows, const int numcols)
-    { return 0; }     
+    static void Reshape( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int numrows, const int numcols) { 
+      int err =  dm.reshape(numrows,numcols); 
+      if(err != 0){throw std::runtime_error ("Error in DenseMatrixTraits::Reshape. Teuchos::SerialDenseMatrix.reshape failed.");}
+    }     
 
     //@}
 
@@ -137,30 +150,34 @@ View(const pointer_type &ptr, const IntType&... indices)
       return dm(i,j);
     }
 
-    static void SyncHostToDevice(Teuchos::SerialDenseMatrix<int,ScalarType> &)
-    { }
+    static void SyncHostToDevice(Teuchos::SerialDenseMatrix<int,ScalarType> &){ }
 
-    static void SyncDeviceToHost(Teuchos::SerialDenseMatrix<int,ScalarType> &)
-    { }
+    static void SyncDeviceToHost(Teuchos::SerialDenseMatrix<int,ScalarType> &){ }
     //@}
+
     //@{ \name Operator methods
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
-    static void Add( Teuchos::SerialDenseMatrix<int,ScalarType>& thisDM, const Teuchos::SerialDenseMatrix<int,ScalarType>& sourceDM)
-    { }
+    static void Add( Teuchos::SerialDenseMatrix<int,ScalarType>& thisDM, const Teuchos::SerialDenseMatrix<int,ScalarType>& sourceDM){ 
+      thisDM += sourceDM; 
+    }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
-    static void Scale( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, ScalarType value)
-    { }
+    static void Scale( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, ScalarType value){
+      dm.scale(value);
+    }
 
     //!  \brief Fill the DM with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
-    static void Randomize( Teuchos::SerialDenseMatrix<int,ScalarType>& dm)
-    { }
+    //TODO What to do here? Kinda needs random synced version??
+    static void Randomize( Teuchos::SerialDenseMatrix<int,ScalarType>& dm){ 
+      dm.random();
+    }
 
     //!  \brief Copies entries of source to dest (deep copy). 
-    static void Assign( Teuchos::SerialDenseMatrix<int,ScalarType>& dest, const Teuchos::SerialDenseMatrix<int,ScalarType>& source)
-    { }
+    static void Assign( Teuchos::SerialDenseMatrix<int,ScalarType>& dest, const Teuchos::SerialDenseMatrix<int,ScalarType>& source){ 
+      dest.assign(source);
+    }
     //@}
   };
   
