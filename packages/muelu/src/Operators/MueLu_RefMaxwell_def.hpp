@@ -913,6 +913,7 @@ namespace MueLu {
       if (parameterList_.isSublist("matvec params"))
         {
           RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
+          Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*SM_Matrix_, matvecParams);
           Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_Matrix_, matvecParams);
           Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*P11_, matvecParams);
           if (!D0_T_Matrix_.is_null()) Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_T_Matrix_, matvecParams);
