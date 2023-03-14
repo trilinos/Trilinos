@@ -116,11 +116,18 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
-    //        Row and column ranges include the first index and exclude the second index.
-    //        So, for example, giving std::make_pair(5,7) for the rowRange will return rows 
-    //        in range [5,7), so rows 5 and 6. 
-    //        This follows the convention of Kokkos::subview.
-    static Teuchos::RCP<DM> Subview( const DM & dm, std::pair<int,int> rowRange, std::pair<int,int> colRange)
+    //        Source  - Reference to another dense matrix from which values are to be copied.
+    //        numRows - The number of rows in this matrix.
+    //        numCols - The number of columns in this matrix.
+    //        startRow  - The row of Source from which the submatrix copy should start.
+    //        startCol  - The column of Source from which the submatrix copy should start.
+    //
+    //        Should ints be const? Should they be ints or some other ordinal type?
+    static Teuchos::RCP<DM> Subview( DM & source, int numRows, int numCols, int startRow=0, int startCol=0)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
+    //! \brief Returns a deep copy of the requested subview.
+    static Teuchos::RCP<DM> SubviewCopy( const DM & source, int numRows, int numCols, int startRow=0, int startCol=0)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
     //@}
 
@@ -134,20 +141,24 @@ View(const pointer_type &ptr, const IntType&... indices)
     static int GetNumCols( const DM& dm )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
 
+    //! \brief Obtain the stride between the columns of \c dm.
+    static int GetStride( const DM& dm )
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
+
     //@}
 
     //@{ \name Shaping methods
 
     /* \brief Reshaping method for changing the size of \c dm,
     *         keeping the entries. 
-    \return Integer error code, set to 0 if successful.
     */
     
     // TODO Specify what should happen if matrix shrinks? Should new entries init to zero?
     // No- new entries just get whatever is in memory. 
     // Are there Teuchos unit tests we can copy to verify this function?
-    static int Reshape( DM& dm, const int numrows, const int numcols)
-    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return 0; }     
+    // Needs to be void b/c KK version doesn't have an error code. 
+    static void Reshape( DM& dm, const int numrows, const int numcols)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }     
 
     //@}
 
