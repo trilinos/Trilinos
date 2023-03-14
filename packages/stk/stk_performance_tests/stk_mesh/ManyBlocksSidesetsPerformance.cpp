@@ -81,22 +81,24 @@ protected:
     return os.str();
   }
 
-  void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks)
+  void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks, unsigned numFields=0)
   {
     stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
     setup_empty_mesh(auraOption);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
+    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields);
     stk::performance_tests::setup_sidesets_between_blocks(get_meta());
     setup_mesh(get_mesh_spec(numElemsPerDim), auraOption);
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
     stk::performance_tests::fill_sidesets_between_blocks(get_bulk());
   }
 
-  void setup_multi_block_mesh_without_sidesets(unsigned numElemsPerDim, unsigned numBlocks)
+  void setup_multi_block_mesh_without_sidesets(unsigned numElemsPerDim, unsigned numBlocks, unsigned numFields=0)
   {
     stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
     setup_empty_mesh(auraOption);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
+    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields);
     setup_mesh(get_mesh_spec_without_sidesets(numElemsPerDim, numBlocks), auraOption);
     stk::performance_tests::move_elements_to_other_contiguous_blocks(get_bulk(), numBlocks);
   }
@@ -226,5 +228,68 @@ TEST_F(ManyBlocksSidesets, disconnect_blocks_face_creation)
   batchTimer.print_batch_timing(NUM_ITERS);
 }
 
+TEST_F(ManyBlocksSidesets, sidesets_writeRestart)
+{
+  if (get_parallel_size() > 16) return;
+
+  const unsigned NUM_RUNS = 1;
+  const unsigned NUM_ITERS = 5;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 200);
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 200);
+  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 100);
+
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS, NUM_FIELDS);
+
+    batchTimer.start_batch_timer();
+
+    for(unsigned i=0; i<NUM_ITERS; ++i) {
+      std::string fileName("manyBlocksFields.rsout");
+      stk::io::StkMeshIoBroker ioBroker;
+      ioBroker.set_bulk_data(get_bulk());
+      int outputTimeStep = static_cast<int>(i);
+      double outputTime = 1.0*outputTimeStep;
+      stk::io::write_mesh_with_fields(fileName, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
+      unlink(fileName.c_str());
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F(ManyBlocksSidesets, noSidesets_writeRestart)
+{
+  if (get_parallel_size() > 16) return;
+
+  const unsigned NUM_RUNS = 1;
+  const unsigned NUM_ITERS = 5;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 200);
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 200);
+  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 100);
+
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_multi_block_mesh_without_sidesets(ELEMS_PER_DIM, NUM_BLOCKS, NUM_FIELDS);
+
+    batchTimer.start_batch_timer();
+
+    for(unsigned i=0; i<NUM_ITERS; ++i) {
+      std::string fileName("manyBlocksFields.rsout");
+      stk::io::StkMeshIoBroker ioBroker;
+      ioBroker.set_bulk_data(get_bulk());
+      int outputTimeStep = static_cast<int>(i);
+      double outputTime = 1.0*outputTimeStep;
+      stk::io::write_mesh_with_fields(fileName, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
+      unlink(fileName.c_str());
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
 
 }
