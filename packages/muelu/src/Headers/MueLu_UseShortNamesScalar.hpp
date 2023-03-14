@@ -392,9 +392,6 @@ using Utilities [[maybe_unused]] = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOr
 #ifdef MUELU_UTILITIESBASE_SHORT
 using UtilitiesBase [[maybe_unused]] = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_UTILITIES_KOKKOS_SHORT
-using Utilities_kokkos [[maybe_unused]] = MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
 using VariableDofLaplacianFactory [[maybe_unused]] = MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif

@@ -61,8 +61,6 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#include "MueLu_Utilities_kokkos_fwd.hpp"
-
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"

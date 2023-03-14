@@ -57,7 +57,6 @@
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MasterList.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 
 namespace MueLu {

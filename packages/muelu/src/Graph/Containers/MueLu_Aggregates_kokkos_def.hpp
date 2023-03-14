@@ -53,7 +53,7 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Utilities_kokkos_decl.hpp"
+#include "MueLu_Utilities_decl.hpp"
 #include "MueLu_Aggregates_kokkos_decl.hpp"
 
 namespace MueLu {

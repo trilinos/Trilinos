@@ -54,7 +54,6 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 

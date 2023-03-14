@@ -63,7 +63,7 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include <sstream>
 
@@ -139,7 +139,7 @@ namespace MueLu {
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
 
-      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitly
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
 
     //Build final prolongator
@@ -186,11 +186,11 @@ namespace MueLu {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
           ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Magnitude stopTol = 1e-4;
-          invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
           if (useAbsValueRowSum)
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           else
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -209,7 +209,7 @@ namespace MueLu {
           if (useAbsValueRowSum)
             GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
           if (invDiag == Teuchos::null)
-            invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+            invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
         }
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
@@ -238,7 +238,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
+      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
       if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 

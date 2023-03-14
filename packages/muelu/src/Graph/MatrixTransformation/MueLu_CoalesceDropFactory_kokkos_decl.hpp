@@ -58,7 +58,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
