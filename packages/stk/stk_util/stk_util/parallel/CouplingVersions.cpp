@@ -207,7 +207,8 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(6, "9/18/2022"),
                                                       std::make_pair(7, "10/16/2022"),
                                                       std::make_pair(8, "11/19/2022"),
-                                                      std::make_pair(9, "")
+                                                      std::make_pair(9, "1/31/2023"),
+                                                      std::make_pair(10, "")
                                                     };
 
   return deprecationDates.at(version);

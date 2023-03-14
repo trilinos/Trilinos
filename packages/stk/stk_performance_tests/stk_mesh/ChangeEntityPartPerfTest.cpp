@@ -194,7 +194,7 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingSelectorSimplePerfTest)
   if(get_parallel_size() > 1) { return; }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 5000);
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 200);
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 

@@ -189,7 +189,7 @@ public:
 
   bool member( PartOrdinal partOrdinal ) const
   {
-    return std::binary_search(m_partOrdsBeginEnd.first, m_partOrdsBeginEnd.second, partOrdinal);
+    return contains_ordinal(m_partOrdsBeginEnd.first, m_partOrdsBeginEnd.second, partOrdinal);
   }
 
   /** \brief  Bucket is a subset of all of the given parts */
@@ -584,19 +584,14 @@ struct BucketIdComparator
 inline
 bool Bucket::member_all( const OrdinalVector& parts ) const
 {
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
-
-  const OrdinalVector::const_iterator ip_end = parts.end();
-        OrdinalVector::const_iterator ip     = parts.begin() ;
-
-  bool result_all = true ;
-
-  for ( ; result_all && ip_end != ip ; ++ip ) {
-    const unsigned ord = *ip;
-    result_all = contains_ordinal(i_beg, i_end, ord);
+  const unsigned* beg = m_partOrdsBeginEnd.first;
+  const unsigned* end = m_partOrdsBeginEnd.second;
+  for (unsigned ord : parts) {
+    if (!contains_ordinal(beg, end, ord)) {
+      return false;
+    }
   }
-  return result_all ;
+  return true ;
 }
 
 inline

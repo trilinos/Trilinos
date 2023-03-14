@@ -312,21 +312,29 @@ namespace {
     if (!(ioEntity->type() & supports)) {
       return;
     }
-    size_t iossFieldLength = ioField.transformed_storage()->component_count();
+    int iossFieldLength = ioField.transformed_storage()->component_count();
     size_t entityCount = entities.size();
 
     std::vector<T> ioFieldData(entityCount*iossFieldLength);
 
     field->sync_to_host();
+    const stk::mesh::Bucket* prevBkt = nullptr;
+    int stkFieldLength = 0;
+    int length = 0;
     for (size_t i=0; i < entityCount; ++i) {
       if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
         const T *fldData = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fldData != nullptr) {
-          size_t stkFieldLength = stk::mesh::field_scalars_per_entity(*field, entities[i]);
-          ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
-          size_t length = std::min(iossFieldLength, stkFieldLength);
-          for(size_t j=0; j<length; ++j) {
-            ioFieldData[i*iossFieldLength+j] = fldData[j];
+          const stk::mesh::Bucket* curBkt = mesh.bucket_ptr(entities[i]);
+          if (curBkt != prevBkt) {
+            prevBkt = curBkt;
+            stkFieldLength = stk::mesh::field_scalars_per_entity(*field, *curBkt);
+            ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
+            length = std::min(iossFieldLength, stkFieldLength);
+          }
+          T* ioFieldDataPtr = ioFieldData.data()+i*iossFieldLength;
+          for(int j=0; j<length; ++j) {
+            ioFieldDataPtr[j] = fldData[j];
           }
         }
       }

@@ -193,13 +193,6 @@ void FieldBase::insert_restriction(
     const bool new_restriction = ( ( restr == last_restriction ) || !(*restr == tmp) );
 
     if ( new_restriction ) { 
-      if (mesh_meta_data().is_commit()) {
-        ThrowRequireMsg(mesh_meta_data().are_late_fields_enabled(),
-                        "Attempting to register Field '" << m_name << "' after MetaData is" << std::endl <<
-                        "committed. If you are willing to accept the performance implications, call" << std::endl <<
-                        "MetaData::enable_late_fields() before adding these Fields.");
-      }   
-
       PartVector arg_selector_parts, selectorI_parts;
       OrdinalVector arg_selector_parts_and_subsets, selectorI_parts_and_subsets;
       arg_selector.get_parts(arg_selector_parts);
@@ -213,40 +206,54 @@ void FieldBase::insert_restriction(
 
         const unsigned i_num_scalars_per_entity = i->num_scalars_per_entity();
 
-        bool shouldCheckForExistingSubsetsOrSupersets =
-          arg_num_scalars_per_entity != i_num_scalars_per_entity;
-#ifndef NDEBUG
-        shouldCheckForExistingSubsetsOrSupersets = true;
-#endif
-        if (shouldCheckForExistingSubsetsOrSupersets) {
-          std::pair<bool,bool> result =
-             check_for_existing_subsets_or_supersets(tmp, i,
-                                                     selectorI_parts, selectorI_parts_and_subsets,
-                                                     arg_selector_parts, arg_selector_parts_and_subsets,
-                                                     arg_selector_is_all_unions
-                                                      );
-          if (result.first) {
-            found_superset = true;
-          }
-          if (result.second) {
-            found_subset = true;
-          }
+        std::pair<bool,bool> result =
+           check_for_existing_subsets_or_supersets(tmp, i,
+                                                   selectorI_parts, selectorI_parts_and_subsets,
+                                                   arg_selector_parts, arg_selector_parts_and_subsets,
+                                                   arg_selector_is_all_unions
+                                                    );
+        if (result.first) {
+          found_superset = true;
+        }
+        if (result.second) {
+          found_subset = true;
         }
 
-        if (found_superset) {
+        if (found_superset || found_subset) {
           ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
                           "FAILED to add new field-restriction " << print_restriction(*i, arg_selector) <<
                           " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
+        }
+        if (found_superset) {
           return;
-          }
-        if (found_subset) {
-          ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
-                          arg_method << " FAILED for " << *this << " " << print_restriction(*i, arg_selector) <<
-                          " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
         }
       }
+
       if (!found_subset) {
-        restrs.insert( restr , tmp );
+        if (mesh_meta_data().is_commit()) {
+          if (!mesh_meta_data().are_late_fields_enabled()) {
+            std::cerr<<"field "<<m_name<<", arg sel: "<<arg_selector<<", old restrs: "<<std::endl;
+            for(const FieldRestriction& r : restrs) {
+              std::cerr<<" -  "<<r.selector()<<std::endl;
+            }
+          }
+          ThrowRequireMsg(mesh_meta_data().are_late_fields_enabled(),
+                          "Attempting to register Field '" << m_name << "' after MetaData is" << std::endl <<
+                          "committed. If you are willing to accept the performance implications, call" << std::endl <<
+                          "MetaData::enable_late_fields() before adding these Fields.");
+        }   
+
+        bool addedToUnion = false;
+        for(FieldRestriction& r : restrs) {
+          if (r.num_scalars_per_entity() == tmp.num_scalars_per_entity() && r.dimension() == tmp.dimension()) {
+            r.add_union(tmp.selector());
+            addedToUnion = true;
+            break;
+          }
+        }
+        if (!addedToUnion) {
+          restrs.insert( restr , tmp );
+        }
       }
       else {
         //if subsets were found, we replaced them with the new restriction. so now we need

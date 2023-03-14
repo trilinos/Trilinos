@@ -64,6 +64,8 @@ struct ReducedDependencyCommData
   std::vector<int> uniqueFromProcVec;
   std::vector<int> uniqueToProcVec;
   stk::ParallelMachine m_shared_comm = MPI_COMM_WORLD;
+  int m_transferId = 0;
+  int m_otherTransferId = 0;
 };
 
 template <class INTERPOLATE> class ReducedDependencyGeometricTransfer : public TransferBase {
@@ -116,8 +118,9 @@ public :
 private :
 
   void buildExchangeLists(typename MeshB::EntityProcVec entity_key_proc_to, typename MeshA::EntityProcVec entity_key_proc_from);
-  void communicate_distances ();
-  void filter_to_nearest (typename MeshB::EntityProcVec to_entity_keys, typename MeshA::EntityProcVec from_entity_keys );
+  void communicate_distances();
+  void exchange_transfer_ids();
+  void filter_to_nearest(typename MeshB::EntityProcVec to_entity_keys, typename MeshA::EntityProcVec from_entity_keys );
 
   std::shared_ptr<MeshA>               m_mesha;
   std::shared_ptr<MeshB>               m_meshb;
@@ -258,6 +261,12 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
   std::vector<MPI_Request> receiveRequests(comm_data.numToMeshCommunications);
   std::vector<MPI_Request> sendRequests(comm_data.numFromMeshCommunications);
 
+  int sendTag = 0;
+  int recvTag = MPI_ANY_TAG;
+  if (stk::util::get_common_coupling_version() >= 10) {
+    sendTag = comm_data.m_transferId;
+    recvTag = comm_data.m_otherTransferId;
+  }
 
   for (int ii = 0; ii < comm_data.numToMeshCommunications; ++ii)
   {
@@ -267,7 +276,7 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
     int recvMessageSize = recv_size*sizeof(typename MeshAVec::value_type);
 
     MPI_Irecv(&b_vec[recv_offset], recvMessageSize, MPI_BYTE, source,
-              MPI_ANY_TAG, comm_data.m_shared_comm, &receiveRequests[ii]);
+              recvTag, comm_data.m_shared_comm, &receiveRequests[ii]);
   }
 
   for (int ii = 0; ii < comm_data.numFromMeshCommunications; ++ii)
@@ -279,11 +288,11 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
     int sendMessageSize = send_size*sizeof(typename MeshBVec::value_type);
 
     MPI_Isend(&a_vec[send_offset], sendMessageSize, MPI_BYTE, destination,
-              0, comm_data.m_shared_comm, &sendRequests[ii]);
+              sendTag, comm_data.m_shared_comm, &sendRequests[ii]);
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0] );
+  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], MPI_STATUSES_IGNORE);
 
   std::vector<MPI_Status> sendStati(sendRequests.size());
   MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0] );
@@ -335,11 +344,57 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
     m_interpolate.obtain_parametric_coords(from_entity_keys, *m_mesha, to_points_on_from_mesh, to_points_distance_on_from_mesh);
   communicate_distances();
   filter_to_nearest(to_entity_keys, from_entity_keys);
+
+  if (stk::util::get_common_coupling_version() >= 10) {
+    exchange_transfer_ids();
+  }
 }
 
 template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::local_search()
 {
   //no op (filtering done at communication)
+}
+
+template <class INTERPOLATE>
+void ReducedDependencyGeometricTransfer<INTERPOLATE>::exchange_transfer_ids()
+{
+  std::vector<MPI_Request> receiveRequests(m_comm_data.numToMeshCommunications);
+  std::vector<MPI_Request> sendRequests(m_comm_data.numFromMeshCommunications);
+
+  int sendTag = 0;
+  if (stk::util::get_common_coupling_version() >= 10) {
+    static int s_transferId = 1;
+    m_comm_data.m_transferId = s_transferId++;
+    sendTag = m_comm_data.m_transferId;
+  }
+
+  for (int ii = 0; ii < m_comm_data.numToMeshCommunications; ++ii) {
+    int source = m_comm_data.uniqueToProcVec[ii];
+    int recvMessageSize = 0;
+
+    MPI_Irecv(nullptr, recvMessageSize, MPI_BYTE, source,
+              MPI_ANY_TAG, m_comm_data.m_shared_comm, &receiveRequests[ii]);
+  }
+
+  for (int ii = 0; ii < m_comm_data.numFromMeshCommunications; ++ii) {
+    int destination = m_comm_data.uniqueFromProcVec[ii];
+    int sendMessageSize = 0;
+
+    MPI_Isend(nullptr, sendMessageSize, MPI_BYTE, destination,
+              sendTag, m_comm_data.m_shared_comm, &sendRequests[ii]);
+  }
+
+  std::vector<MPI_Status> receiveStati(receiveRequests.size());
+  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0] );
+
+  if (stk::util::get_common_coupling_version() >= 10) {
+    for(unsigned i=0; i<receiveStati.size(); ++i) {
+      ThrowRequireMsg(m_comm_data.m_otherTransferId == 0 || receiveStati[i].MPI_TAG == m_comm_data.m_otherTransferId, "stk::transfer exchange_transfer_ids error, transfer "<<receiveStati[i].MPI_TAG<<" received when expecting "<<m_comm_data.m_otherTransferId);
+      m_comm_data.m_otherTransferId = receiveStati[i].MPI_TAG;
+    }
+  }
+
+  MPI_Waitall(sendRequests.size(), &sendRequests[0], MPI_STATUSES_IGNORE);
 }
 
 template <class INTERPOlATE>
@@ -406,8 +461,6 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
 
   construct_comm_data<MeshA, MeshB>(from_entity_keys_masked, to_entity_keys_masked, m_comm_data);
 }
-
-
 
 template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::apply()
 {
@@ -480,10 +533,15 @@ ReducedDependencyGeometricTransfer<INTERPOLATE>::buildExchangeLists(typename Mes
     MPI_Irecv(&receiveSizesBuffers[ii], 1, MPI_INT, source, MPI_ANY_TAG, m_comm_data.m_shared_comm, &receiveRequests[ii]);
   }
 
+  int sendTag = 0;
+  if (stk::util::get_common_coupling_version() >= 10) {
+    sendTag = m_comm_data.m_transferId;
+  }
+
   for(int ii = 0; ii < m_comm_data.numToMeshCommunications; ++ii)
   {
     int destination = m_comm_data.uniqueToProcVec[ii];
-    MPI_Isend(&sendSizesBuffers[ii], 1, MPI_INT, destination, 0, m_comm_data.m_shared_comm, &sendRequests[ii]);
+    MPI_Isend(&sendSizesBuffers[ii], 1, MPI_INT, destination, sendTag, m_comm_data.m_shared_comm, &sendRequests[ii]);
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
