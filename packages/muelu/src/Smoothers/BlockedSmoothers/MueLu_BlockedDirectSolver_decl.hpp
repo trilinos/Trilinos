@@ -96,7 +96,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BlockedDirectSolver();
+    BlockedDirectSolver(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~BlockedDirectSolver() { }
