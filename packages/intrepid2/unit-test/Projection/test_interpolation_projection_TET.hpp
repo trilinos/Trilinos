@@ -73,6 +73,7 @@
 #include "Intrepid2_ProjectionTools.hpp"
 #include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 #include "Intrepid2_HVOL_TET_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
@@ -332,6 +333,8 @@ int InterpolationProjectionTet(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType>());
+          if(degree==2)
+            basis_set.push_back(new Basis_HGRAD_TET_C2_FEM<DeviceType,ValueType,ValueType>());
           //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(degree));
           basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(degree,POINTTYPE_WARPBLEND));
 
