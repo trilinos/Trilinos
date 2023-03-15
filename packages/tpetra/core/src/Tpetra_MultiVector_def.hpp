@@ -2580,10 +2580,10 @@ namespace Tpetra {
         }
       }
       // lbv 10 mar 2023: Kokkos Kernels provides non-blocking BLAS
-      // functions unless they explicitely return a value to Host.
-      // Here while the lclSums are on host, they are not a return
-      // value, therefore they might be avaible to us immediately.
-      // Adding a frnce here guarantees that we will have the lclSums
+      // functions unless they explicitly return a value to Host.
+      // Here while the lclSums are on the host, they are not a return
+      // value, therefore they might be available to us immediately.
+      // Adding a fence here guarantees that we will have the lclSums
       // ahead of the MPI reduction.
       Kokkos::fence();
 
