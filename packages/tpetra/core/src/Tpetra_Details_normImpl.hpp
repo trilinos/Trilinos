@@ -333,6 +333,13 @@ normImpl (MagnitudeType norms[],
 
   Impl::lclNormImpl (normsOut, X, numVecs, whichVecs,
                      isConstantStride, whichNorm);
+
+  // lbv 03/15/23: the data from the local norm calculation
+  // better really be available before communication happens
+  // so fencing to make sure the local computations have
+  // completed on device. We might want to make this an
+  // execution space fence down the road?
+  Kokkos::fence();
   Impl::gblNormImpl (normsOut, comm, isDistributed, whichNorm);
 }
 
