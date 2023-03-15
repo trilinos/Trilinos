@@ -63,7 +63,7 @@
 #include <BoxElemFixture.hpp>
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include "Tpetra_MultiVector.hpp"
@@ -123,7 +123,7 @@ public:
 
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
 
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode< Device >  NodeType;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode< Device >  NodeType;
 
   typedef Kokkos::View<     Scalar * , Kokkos::LayoutLeft, Device >  LocalVectorType ;
   typedef Kokkos::View<     Scalar** , Kokkos::LayoutLeft, Device >  LocalMultiVectorType ;
@@ -148,7 +148,7 @@ public:
 
   typedef Teuchos::RCP<const MapType>                        rcpMapType;
   typedef Teuchos::RCP<const Teuchos::Comm<int> >            rcpCommType ;
-  typedef Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> > rcpNodeType ;
+  typedef Teuchos::RCP<Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > rcpNodeType ;
 
   typedef Tpetra::Import<
     typename GlobalVectorType::local_ordinal_type,

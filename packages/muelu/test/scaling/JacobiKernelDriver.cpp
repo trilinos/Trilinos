@@ -479,7 +479,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "========================================================" << endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
-    out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
+    out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
 

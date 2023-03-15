@@ -49,7 +49,7 @@
 #ifndef XPETRA_MATRIX_HPP
 #define XPETRA_MATRIX_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -93,7 +93,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Matrix : public Xpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;

@@ -251,7 +251,7 @@ solveWithBelosGPU (
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error, "KokkosClassic::ThrustGPUNode has been deprecated "
     "and removed.  Please rewrite this function to use "
-    "Kokkos::Compat::KokkosCudaWrapperNode instead.");
+    "Tpetra::KokkosCompat::KokkosCudaWrapperNode instead.");
 
 #endif // whether ThrustGPUNode exists
 }

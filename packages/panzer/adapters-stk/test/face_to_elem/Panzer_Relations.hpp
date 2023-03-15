@@ -58,7 +58,7 @@ protected:
 
 
 
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device> NodeType;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device> NodeType;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType> Map;
   typedef Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, NodeType> Graph;
   typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, NodeType> Export;

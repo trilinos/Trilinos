@@ -120,15 +120,15 @@
 typedef Kokkos::Serial HostExec;
 typedef Kokkos::HostSpace HostMem;
 typedef Kokkos::Device<HostExec,HostMem> HostDevice;
-typedef Kokkos::Compat::KokkosSerialWrapperNode HostNode;
+typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode HostNode;
 #ifdef DREAM_USE_CUDA
   typedef Kokkos::Cuda DeviceExec;
   typedef Kokkos::CudaSpace DeviceMem;
-  typedef Kokkos::Compat::KokkosCudaWrapperNode DeviceNode;
+  typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode DeviceNode;
 #else
   typedef Kokkos::Serial DeviceExec;
   typedef Kokkos::HostSpace DeviceMem;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode DeviceNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DeviceNode;
 #endif
 typedef Kokkos::Device<DeviceExec,DeviceMem> DeviceDevice;
 

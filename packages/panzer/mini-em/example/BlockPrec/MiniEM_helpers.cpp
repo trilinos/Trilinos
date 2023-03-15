@@ -151,7 +151,7 @@ namespace mini_em {
               updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
 
 #ifdef KOKKOS_ENABLE_OPENMP
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
+            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name()) {
               if (linAlgebra == linAlgTpetra)
                 updateParams("solverMueLuRefMaxwellOpenMP.xml", lin_solver_pl, comm, out);
               else {
@@ -164,7 +164,7 @@ namespace mini_em {
             }
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
               updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
 #endif
           } else {
@@ -178,7 +178,7 @@ namespace mini_em {
             lin_solver_pl = rcp(new Teuchos::ParameterList("Linear Solver"));
             updateParams("solverMueLuMaxwellHO.xml", lin_solver_pl, comm, out);
 #ifdef KOKKOS_ENABLE_CUDA
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name()) {
+            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name()) {
               updateParams("solverMueLuMaxwellHOCuda.xml", lin_solver_pl, comm, out);
             }
 #endif

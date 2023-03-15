@@ -59,7 +59,7 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(LWGraph_kokkos graph) {
     numAggregates_  = 0;
     numGlobalAggregates_  = 0;
@@ -78,7 +78,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(const RCP<const Map>& map) {
     numAggregates_ = 0;
     numGlobalAggregates_  = 0;
@@ -97,8 +97,8 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute) const {
+  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute) const {
     if (aggregateSizes_.size() && !forceRecompute) {
       return aggregateSizes_;
 
@@ -126,8 +126,8 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
+  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
     using row_map_type = typename local_graph_type::row_map_type;
     using entries_type = typename local_graph_type::entries_type;
     using size_type    = typename local_graph_type::size_type;
@@ -185,7 +185,7 @@ namespace MueLu {
   
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void 
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
     LO numAggs  = GetNumAggregates();
     LO numNodes = vertex2AggId_->getLocalLength();
     auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
@@ -236,13 +236,13 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
+  std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
     if (numGlobalAggregates_ == -1) return BaseClass::description() + "{nGlobalAggregates = not computed}"; 
     else                            return BaseClass::description() + "{nGlobalAggregates = " + toString(numGlobalAggregates_) + "}";
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+  void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Statistics1) {
@@ -252,7 +252,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetNumGlobalAggregatesComputeIfNeeded() {
+  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> >::GetNumGlobalAggregatesComputeIfNeeded() {
 
     if (numGlobalAggregates_ != -1) {
       LO nAggregates = GetNumAggregates();
@@ -264,8 +264,8 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> >
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetMap() const {
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> >
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetMap() const {
     return vertex2AggId_->getMap();
   }
 

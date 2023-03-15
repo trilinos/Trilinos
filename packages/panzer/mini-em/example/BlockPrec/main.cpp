@@ -14,7 +14,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "Kokkos_View_Fad.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Panzer_NodeType.hpp"
 #include "Panzer_ResponseLibrary.hpp"

@@ -49,7 +49,7 @@
 #ifndef XPETRA_CRSMATRIXWRAP_DEF_HPP
 #define XPETRA_CRSMATRIXWRAP_DEF_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>

@@ -55,7 +55,7 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_ScalarTraits.hpp"
 
@@ -63,7 +63,7 @@ namespace MueLu {
 
   // compute Y = alpha*R*X + beta*Y
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
+  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
                                           MultiVector &Y,
                                           Teuchos::ETransp mode,
                                           Scalar alpha,
@@ -113,7 +113,7 @@ namespace MueLu {
 
   // I don't care
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
+  void MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"MatrixFreeTentativeP residual would make no sense as the operator is not square!");
   }
 

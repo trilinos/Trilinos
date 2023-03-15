@@ -56,7 +56,7 @@
 #include "Amesos2_KokkosMultiVecAdapter_decl.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(S,LO,NODE_TYPE)                             \
   template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,         \
@@ -74,95 +74,95 @@
 
 #if defined(KOKKOS_ENABLE_SERIAL)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosSerialWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosSerialWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosSerialWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosSerialWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode)
 #endif
 #endif
 
 #if defined(KOKKOS_ENABLE_THREADS)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
 #endif
 #endif // KOKKOS_ENABLE_THREADS
 
 #if defined(KOKKOS_ENABLE_OPENMP)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosOpenMPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosOpenMPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosOpenMPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosOpenMPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
 #endif
 #endif // KOKKOS_ENABLE_OPENMP
 
 #if defined(KOKKOS_ENABLE_CUDA)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosCudaWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosCudaWrapperNode)
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(float, int)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosCudaWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosCudaWrapperNode)
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(double, int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosCudaWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosCudaWrapperNode)
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(Kokkos::complex<float>, int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosCudaWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosCudaWrapperNode)
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(Kokkos::complex<double>, int)
 #endif
 #endif // KOKKOS_ENABLE_CUDA
 
 #if defined(KOKKOS_ENABLE_HIP)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosHIPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosHIPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosHIPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosHIPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosHIPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosHIPWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosHIPWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosHIPWrapperNode)
 #endif
 #endif // KOKKOS_ENABLE_HIP
 
 #if defined(KOKKOS_ENABLE_SYCL)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Compat::KokkosSYCLWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Compat::KokkosSYCLWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Compat::KokkosSYCLWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Compat::KokkosSYCLWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
 #endif
 #endif // KOKKOS_ENABLE_SYCL
 

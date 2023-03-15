@@ -210,7 +210,7 @@ Step 4 is optional, but if you do not do Step 3, Pthreads will not be
 Tpetra's default execution space.  In that case, if you want to use
 Pthreads in Tpetra, you must set the ~Node~ template parameter
 explicitly to
-~Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>~.
+~Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Threads>~.
 
 ** Weird C++ errors with Intel compiler
 
@@ -317,7 +317,7 @@ operations, and the Kokkos memory space that Tpetra objects use for
 memory allocations.
 
 The only valid Node types as of Trilinos 12.x are specializations of
-~Kokkos::Compat::KokkosDeviceWrapperNode~, which lives in
+~Tpetra::KokkosCompat::KokkosDeviceWrapperNode~, which lives in
 ~teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp~.
 You do /not/ need to include this header file or worry about the
 details of Node.  Node is a remnant of the 2008-9 version of Kokkos by

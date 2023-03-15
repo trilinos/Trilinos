@@ -49,7 +49,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map.hpp>
@@ -74,14 +74,14 @@ namespace MueLu {
 
   // Partial specialization for DeviceType
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
+  class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
     using execution_space     = typename DeviceType::execution_space;
     using memory_space        = typename DeviceType::memory_space;
     using device_type         = Kokkos::Device<execution_space, memory_space>;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
     using local_lw_graph_type = MueLu::LocalLWGraph_kokkos<LocalOrdinal, GlobalOrdinal, node_type>;
     using size_type           = size_t;
 

@@ -102,7 +102,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraHalfPrecisionOperator : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::halfPrecision HalfScalar;

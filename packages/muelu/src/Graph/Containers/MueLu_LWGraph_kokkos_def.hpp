@@ -55,7 +55,7 @@
 namespace MueLu {
 
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
 
     if (verbLevel & Debug) {

@@ -53,7 +53,7 @@
 
 #include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace MueLu {
 

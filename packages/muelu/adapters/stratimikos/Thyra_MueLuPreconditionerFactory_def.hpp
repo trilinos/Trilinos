@@ -218,10 +218,10 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_EPETRA
   template <class GlobalOrdinal>
-  bool Converters<double, int, GlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>::replaceWithXpetra(ParameterList& paramList, std::string parameterName) {
+  bool Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>::replaceWithXpetra(ParameterList& paramList, std::string parameterName) {
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode Node;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;

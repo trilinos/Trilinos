@@ -64,7 +64,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraMap
     : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
 

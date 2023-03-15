@@ -49,7 +49,7 @@
 #ifndef XPETRA_STRIDEDMAP_DECL_HPP
 #define XPETRA_STRIDEDMAP_DECL_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
@@ -97,7 +97,7 @@ namespace Xpetra {
 */
 template<class LocalOrdinal,
          class GlobalOrdinal,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+         class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 {
 

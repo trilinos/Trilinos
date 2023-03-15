@@ -97,7 +97,7 @@ int main(int argc, char** argv)
   typedef double scalar_type;
   typedef int local_o_type;
   typedef int global_o_type;
-  //typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  //typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
   typedef Tpetra::Details::DefaultTypes::node_type node_type;
 

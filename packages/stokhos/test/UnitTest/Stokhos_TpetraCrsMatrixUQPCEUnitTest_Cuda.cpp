@@ -46,10 +46,10 @@
 #include "Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // Instantiate tests for cuda node
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> CudaWrapperNode;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Cuda> CudaWrapperNode;
 CRSMATRIX_UQ_PCE_TESTS_N( CudaWrapperNode )
 
 int main( int argc, char* argv[] ) {

@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
 
     //Determine if example passed
     RCP<KokkosClassic::DefaultNode::DefaultNodeType> defaultNode =
-      rcp (new KokkosClassic::DefaultNode::DefaultNodeType (pl));
+      rcp (new Tpetra::KokkosClassic::DefaultNode::DefaultNodeType (pl));
     RCP<MV> clonedXcpu = Xpetra::clone (*clonedX, defaultNode);
     clonedXcpu->update (1.0, *X, -1.0);
     Scalar norm;

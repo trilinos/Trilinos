@@ -114,7 +114,7 @@ typedef long long int GlobalOrdinal;
 typedef int GlobalOrdinal;
 #endif
 //
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 //
 
 int main(int argc, char *argv[]) {

@@ -76,13 +76,13 @@ namespace { // (anonymous)
 
 #if defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> test_device_type;
-  typedef Kokkos::Compat::KokkosCudaWrapperNode test_node_type;
+  typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode test_node_type;
 #elif defined(KOKKOS_ENABLE_HIP)
   typedef Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace> test_device_type;
-  typedef Kokkos::Compat::KokkosHIPWrapperNode test_node_type;
+  typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode test_node_type;
 #elif defined(KOKKOS_ENABLE_SYCL)
   typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSpace> test_device_type;
-  typedef Kokkos::Compat::KokkosSYCLWrapperNode test_node_type;
+  typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode test_node_type;
 #endif
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
