@@ -215,6 +215,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     CellTools<DeviceType>::setJacobianInv   (jacobianInv,    jacobian);
     
     // compute the jacobian divided by its determinant
+    // note that this is *not* matrix multiplication, but elementwise multiplication.
     jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInvExtended);
     
     // lazily-evaluated transformed gradient values:
