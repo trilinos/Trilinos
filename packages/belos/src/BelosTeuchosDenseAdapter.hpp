@@ -54,6 +54,7 @@
 //#include "BelosConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+//#include "BelosDenseMatTraits.hpp" //Don't do this right now; circular inclusion with workaround.
 
 namespace Belos {
 

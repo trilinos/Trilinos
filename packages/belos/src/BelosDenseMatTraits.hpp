@@ -48,8 +48,10 @@
 */
 
 //#include "BelosConfigDefs.hpp"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
@@ -210,5 +212,13 @@ View(const pointer_type &ptr, const IntType&... indices)
   };
   
 } // namespace Belos
+// This is included for backwards compatibility
+// for all codes using the default template parameter
+// DM = Teuchos::SerialDenseMatrix<int,ScalarType>
+// TODO: This is a workaround. Needs to be included after
+// defintiion of BelosDenseMatTraits to avoid compile issues.
+// Fix this later.
+#include "BelosTeuchosDenseAdapter.hpp"
+
 
 #endif // end file BELOS_DENSE_MAT_TRAITS_HPP
