@@ -844,10 +844,10 @@ namespace MueLu {
 #endif
 
     RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
-      if (paramList.begin() == paramList.end())
+      if (paramList.numParams() == 0)
         return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedDirectSolver", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedDirectSolver", Exceptions::RuntimeError, "FactoryFactory::BuildBlockedDirectSolver: Generating factory needs to be a BlockedDirectSolver.");
 
       std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
