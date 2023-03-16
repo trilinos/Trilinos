@@ -131,14 +131,14 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeGmres(GmresIterationState<ScalarType,MV>& newstate);
+  void initializeGmres(GmresIterationState<ScalarType,MV,DM>& newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
    */
   void initialize()
   {
-    GmresIterationState<ScalarType,MV> empty;
+    GmresIterationState<ScalarType,MV,DM> empty;
     initializeGmres(empty);
   }
 
@@ -149,8 +149,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    * \returns A GmresIterationState object containing const pointers to the current
    * solver state.
    */
-  GmresIterationState<ScalarType,MV> getState() const {
-    GmresIterationState<ScalarType,MV> state;
+  GmresIterationState<ScalarType,MV,DM> getState() const {
+    GmresIterationState<ScalarType,MV,DM> state;
     state.curDim = curDim_;
     state.V = V_;
     state.H = H_;
@@ -544,7 +544,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP, class DM>
-  void BlockGmresIter<ScalarType,MV,OP,DM>::initializeGmres(GmresIterationState<ScalarType,MV>& newstate)
+  void BlockGmresIter<ScalarType,MV,OP,DM>::initializeGmres(GmresIterationState<ScalarType,MV,DM>& newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_)

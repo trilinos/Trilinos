@@ -19,6 +19,7 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosDenseMatTraits.hpp"
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
@@ -97,6 +98,7 @@ class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
 private:
   typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+  typedef DenseMatTraits<ScalarType,DM> DMT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -654,7 +656,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Te
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Belos::OrthoManagerFactory<ScalarType,MV,OP,DM> factory; 
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
@@ -1010,8 +1012,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       }
 
       // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 =
-        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+      Teuchos::RCP<DM> z_0 = DMT::Create(blockSize_, blockSize_);
 
       // Orthonormalize the new V_0
       int rank = ortho_->normalize( *V_0, z_0 );
