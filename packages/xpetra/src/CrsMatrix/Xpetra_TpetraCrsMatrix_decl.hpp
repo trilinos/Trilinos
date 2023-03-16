@@ -75,6 +75,7 @@ namespace Xpetra {
   class TpetraCrsMatrix
     : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> //, public TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
+    #undef XPETRA_TPETRACRSMATRIX_SHORT
 #include "Xpetra_UseShortNamesScalar.hpp"
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
