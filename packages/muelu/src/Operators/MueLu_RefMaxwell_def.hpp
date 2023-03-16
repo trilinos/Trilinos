@@ -76,7 +76,6 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
@@ -914,6 +913,7 @@ namespace MueLu {
       if (parameterList_.isSublist("matvec params"))
         {
           RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
+          Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*SM_Matrix_, matvecParams);
           Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_Matrix_, matvecParams);
           Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*P11_, matvecParams);
           if (!D0_T_Matrix_.is_null()) Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_T_Matrix_, matvecParams);
@@ -1204,7 +1204,7 @@ namespace MueLu {
           TentativePFact = rcp(new TentativePFactory_kokkos());
           if (parameterList_.get("multigrid algorithm","unsmoothed") == "sa")
             SaPFact = rcp(new SaPFactory_kokkos());
-          Tfact = rcp(new CoordinatesTransferFactory_kokkos());
+          Tfact = rcp(new CoordinatesTransferFactory());
         } else
           {
             amalgFact = rcp(new AmalgamationFactory());

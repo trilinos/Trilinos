@@ -89,9 +89,6 @@ using ConstraintFactory [[maybe_unused]] = MueLu::ConstraintFactory<Scalar,Local
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 using CoordinatesTransferFactory [[maybe_unused]] = MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_COORDINATESTRANSFERFACTORY_KOKKOS_SHORT
-using CoordinatesTransferFactory_kokkos [[maybe_unused]] = MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 using CoupledRBMFactory [[maybe_unused]] = MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif

@@ -108,7 +108,6 @@
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
@@ -1440,7 +1439,7 @@ namespace MueLu {
         manager.SetFactory("Coordinates", NoFactory::getRCP());
 
       } else {
-        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+        RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
@@ -1921,7 +1920,7 @@ namespace MueLu {
       tf->SetFactory("Chosen P", manager.GetFactory("P"));
       tf->AddCoordTransferFactory(semicoarsenFactory);
 
-      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
       coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
       tf->AddCoordTransferFactory(coords);

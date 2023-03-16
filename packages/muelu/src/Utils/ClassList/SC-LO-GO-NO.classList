@@ -27,7 +27,6 @@ CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
-CoordinatesTransferFactory_kokkos
 CoupledRBMFactory
 DemoFactory
 DirectSolver

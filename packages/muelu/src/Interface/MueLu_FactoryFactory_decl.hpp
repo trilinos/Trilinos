@@ -162,7 +162,6 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
@@ -309,7 +308,6 @@ namespace MueLu {
       if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory_kokkos>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                     return Build2<SaPFactory_kokkos>                     (paramList, factoryMapIn, factoryManagersIn);
