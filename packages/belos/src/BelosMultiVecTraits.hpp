@@ -26,6 +26,11 @@
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
 
+// This is included for backwards compatibility
+// for all codes using the default template parameter
+// DM = Teuchos::SerialDenseMatrix<int,ScalarType>
+#include "BelosDenseMatTraits.hpp" 
+
 namespace Belos {
 
   /// \class UndefinedMultiVecTraits

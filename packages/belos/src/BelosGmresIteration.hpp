@@ -126,7 +126,7 @@ class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  virtual void initializeGmres(GmresIterationState<ScalarType,MV>& newstate) = 0;
+  virtual void initializeGmres(GmresIterationState<ScalarType,MV,DM>& newstate) = 0;
 
   /*! \brief Get the current state of the linear solver.
    *
@@ -134,7 +134,7 @@ class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
    *
    * \returns A GmresIterationState object containing const pointers to the current solver state.
    */
-  virtual GmresIterationState<ScalarType,MV> getState() const = 0;
+  virtual GmresIterationState<ScalarType,MV,DM> getState() const = 0;
   //@}
 
   //! @name Status methods
