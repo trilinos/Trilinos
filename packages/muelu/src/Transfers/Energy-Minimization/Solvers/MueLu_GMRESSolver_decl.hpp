@@ -49,7 +49,6 @@
 #include <Xpetra_CrsMatrixFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SolverBase.hpp"

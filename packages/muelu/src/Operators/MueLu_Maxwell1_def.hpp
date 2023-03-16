@@ -46,6 +46,7 @@
 #define MUELU_MAXWELL1_DEF_HPP
 
 #include <sstream>
+#include "MueLu_SmootherBase.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -57,8 +58,6 @@
 #include "MueLu_Maxwell_Utils.hpp"
 
 #include "MueLu_ReitzingerPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"

@@ -57,7 +57,6 @@
 #include "Xpetra_CrsGraphFactory_fwd.hpp"
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"
 #include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"

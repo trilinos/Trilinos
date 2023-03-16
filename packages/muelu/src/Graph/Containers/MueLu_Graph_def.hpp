@@ -46,10 +46,19 @@
 #ifndef MUELU_GRAPH_DEF_HPP
 #define MUELU_GRAPH_DEF_HPP
 
+#include "Xpetra_Map.hpp"
+#include "Xpetra_CrsGraph.hpp"
+
 #include "MueLu_Graph_decl.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Graph<LocalOrdinal,GlobalOrdinal,Node>::Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */) : graph_(graph) {
+      minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
+      maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
+    }
 
 #ifdef MUELU_UNUSED
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

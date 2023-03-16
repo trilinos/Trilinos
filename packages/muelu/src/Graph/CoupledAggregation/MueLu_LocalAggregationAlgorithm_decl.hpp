@@ -51,7 +51,6 @@
 #include "MueLu_LocalAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 

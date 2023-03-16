@@ -64,8 +64,6 @@
 #include "MueLu_TekoSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

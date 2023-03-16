@@ -58,7 +58,6 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_LinkedList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

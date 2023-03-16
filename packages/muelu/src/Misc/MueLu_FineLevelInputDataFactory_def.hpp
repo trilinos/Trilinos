@@ -50,7 +50,6 @@
 #include "Xpetra_Matrix.hpp"
 
 #include "MueLu_FineLevelInputDataFactory_decl.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 

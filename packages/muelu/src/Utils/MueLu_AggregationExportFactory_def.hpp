@@ -64,7 +64,6 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 #include <vector>
 #include <list>
 #include <algorithm>

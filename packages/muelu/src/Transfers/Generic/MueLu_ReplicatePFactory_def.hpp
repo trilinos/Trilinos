@@ -64,10 +64,8 @@
 
 #include <Xpetra_IO.hpp>
 
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_ReplicatePFactory_decl.hpp"
 
-#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

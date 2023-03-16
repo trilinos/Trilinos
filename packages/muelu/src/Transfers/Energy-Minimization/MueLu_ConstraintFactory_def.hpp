@@ -46,11 +46,8 @@
 #ifndef MUELU_CONSTRAINTFACTORY_DEF_HPP
 #define MUELU_CONSTRAINTFACTORY_DEF_HPP
 
-#include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_CrsGraph_fwd.hpp>
 
 #include "MueLu_ConstraintFactory_decl.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"

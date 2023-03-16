@@ -53,8 +53,6 @@
 
 #include "MueLu_HierarchyUtils_decl.hpp"
 #include "MueLu_HierarchyManager.hpp"
-#include "MueLu_SmootherBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here

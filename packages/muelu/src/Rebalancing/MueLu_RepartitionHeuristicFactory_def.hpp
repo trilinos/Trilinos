@@ -58,7 +58,6 @@
 //#include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
@@ -67,7 +66,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_RepartitionHeuristicFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory_decl.hpp"
 
 namespace MueLu {
 

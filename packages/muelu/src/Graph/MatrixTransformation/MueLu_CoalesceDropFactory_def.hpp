@@ -72,7 +72,6 @@
 #include "MueLu_LWGraph.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Utilities.hpp"
 

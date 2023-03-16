@@ -66,6 +66,7 @@
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos.hpp"
 #include "MueLu_AggregationPhase2bAlgorithm_kokkos.hpp"
 #include "MueLu_AggregationPhase3Algorithm_kokkos.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationInfo_kokkos.hpp"
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"

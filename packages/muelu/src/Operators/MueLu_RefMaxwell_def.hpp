@@ -60,8 +60,6 @@
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_ThresholdAFilterFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory.hpp"

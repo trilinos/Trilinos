@@ -48,7 +48,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"

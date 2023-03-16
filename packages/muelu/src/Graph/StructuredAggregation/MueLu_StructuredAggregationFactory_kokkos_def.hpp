@@ -54,7 +54,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 // MueLu specific includes (kokkos version)
 #include "MueLu_LWGraph_kokkos.hpp"

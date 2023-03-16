@@ -50,11 +50,9 @@
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_ExportFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
-#include <Xpetra_CrsGraphFactory.hpp> //TODO
+#include <Xpetra_CrsGraphFactory_fwd.hpp> //TODO
 #include <Xpetra_StridedMap_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
 

@@ -51,11 +51,7 @@
 #include "MueLu_MatrixFreeTentativePFactory_decl.hpp"
 
 #include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_AmalgamationInfo_kokkos.hpp"
-#include "MueLu_MasterList.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
-#include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MatrixFreeTentativeP.hpp"
 

@@ -86,8 +86,6 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 //#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_IO.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Matrix.hpp>
