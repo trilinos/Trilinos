@@ -7941,6 +7941,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /***** 1) First communicator restriction phase ****/
     /***************************************************/
     if (restrictComm) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC restrictComm")));
+#endif
       ReducedRowMap = MyRowMap->removeEmptyProcesses ();
       ReducedComm = ReducedRowMap.is_null () ?
         Teuchos::null :
@@ -7974,7 +7977,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 
     /***************************************************/
-    /***** 2) From Tpera::DistObject::doTransfer() ****/
+    /***** 2) From Tpetra::DistObject::doTransfer() ****/
     /***************************************************/
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
@@ -7983,6 +7986,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     bool bSameDomainMap = BaseDomainMap->isSameAs (*getDomainMap ());
 
     if (! restrictComm && ! MyImporter.is_null () && bSameDomainMap ) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs same map")));
+#endif
       // Same domain map as source matrix
       //
       // NOTE: This won't work for restrictComm (because the Import
@@ -7994,6 +8000,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     else if (restrictComm && ! MyImporter.is_null () && bSameDomainMap) {
       // Same domain map as source matrix (restricted communicator)
       // We need one import from the domain to the column map
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs restricted comm")));
+#endif
       IntVectorType SourceDomain_pids(getDomainMap (),true);
       IntVectorType SourceCol_pids(getColMap());
       // SourceDomain_pids contains the restricted pids
@@ -8005,6 +8014,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else if (MyImporter.is_null ()) {
       // Matrix has no off-process entries
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs all local entries")));
+#endif
       SourcePids.resize (getColMap ()->getLocalNumElements ());
       SourcePids.assign (getColMap ()->getLocalNumElements (), MyPID);
     }
@@ -8014,6 +8026,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // domain map different than SourceMatrix domain map.
       // User has to provide a DomainTransfer object. We need
       // to communications (import/export)
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs rectangular case")));
+#endif
 
       // TargetDomain_pids lives on the rebalanced new domain map
       IntVectorType TargetDomain_pids (domainMap);
@@ -8051,6 +8066,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              BaseDomainMap->isSameAs (*BaseRowMap) &&
              getDomainMap ()->isSameAs (*getRowMap ())) {
       // We can use the rowTransfer + SourceMatrix's Import to find out who owns what.
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs query import")));
+#endif
 
       IntVectorType TargetRow_pids (domainMap);
       IntVectorType SourceRow_pids (getRowMap ());
@@ -8090,6 +8108,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Tpetra-specific stuff
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC reallocate buffers")));
+#endif
     if (constantNumPackets == 0) {
       destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
                                                  RemoteLIDs.size ());
@@ -8102,8 +8124,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
       destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
+    }
 
     // Pack & Prepare w/ owning PIDs
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC pack and prepare")));
+#endif
     if (debug) {
       using Teuchos::outArg;
       using Teuchos::REDUCE_MAX;
@@ -8211,8 +8238,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         std::cerr << os.str ();
       }
     }
+    }
 
     // Do the exchange of remote data.
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC getOwningPIDs exchange remote data")));
+#endif
     if (! communication_needed) {
       if (verbose) {
         std::ostringstream os;
@@ -8411,12 +8443,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         }
       }
     }
+    }
 
     /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
+#endif
     destMat->numImportPacketsPerLID_.sync_host ();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
@@ -8464,6 +8500,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     else {
       CSR_colind_LID.resize (mynnz);
     }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    tmCopySPRdata = Teuchos::null;
+    tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC copy same-perm-remote data"))));
+#endif
 
     if (verbose) {
       std::ostringstream os;
@@ -8476,7 +8516,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // in a huge list of arrays is icky.  Can't we have a bit of an
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
-    unpackAndCombineIntoCrsArrays (*this,
+    unpackAndCombineIntoCrsArrays (*this, 
                                    RemoteLIDs,
                                    hostImports,
                                    numImportPacketsPerLID,
@@ -8500,6 +8540,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     {
       if(TargetPids[i] == -1) TargetPids[i] = MyPID;
     }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    tmCopySPRdata = Teuchos::null;
+#endif
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
@@ -8513,6 +8556,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << std::endl;
       std::cerr << os.str ();
     }
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
+#endif
     Import_Util::lowCommunicationMakeColMapAndReindex (CSR_rowptr (),
                                                        CSR_colind_LID (),
                                                        CSR_colind_GID (),
@@ -8520,6 +8567,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                        TargetPids,
                                                        RemotePids,
                                                        MyColMap);
+    }
 
     if (verbose) {
       std::ostringstream os;
@@ -8531,6 +8579,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /*******************************************************/
     /**** 4) Second communicator restriction phase      ****/
     /*******************************************************/
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC restrict colmap")));
+#endif
     if (restrictComm) {
       ReducedColMap = (MyRowMap.getRawPtr () == MyColMap.getRawPtr ()) ?
         ReducedRowMap :
@@ -8560,6 +8612,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       return;
     }
+    }
 
     /***************************************************/
     /**** 5) Sort                                   ****/
@@ -8571,6 +8624,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         os << *verbosePrefix << "Calling sortCrsEntries" << endl;
         std::cerr << os.str ();
       }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
+#endif
       Import_Util::sortCrsEntries (CSR_rowptr (),
                                    CSR_colind_LID (),
                                    CSR_vals ());
@@ -8583,6 +8639,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
            << endl;
         std::cerr << os.str();
       }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
+#endif
       Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
                                            CSR_colind_LID (),
                                            CSR_vals ());
@@ -8612,11 +8671,19 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // NOTE (mfh 15 May 2014) This should work fine for the Kokkos
     // refactor version of CrsMatrix, though it reserves the right to
     // make a deep copy of the arrays.
+    {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
+#endif
     destMat->setAllValues (CSR_rowptr, CSR_colind_LID, CSR_vals);
+    }
 
     /***************************************************/
     /**** 7) Build Importer & Call ESFC             ****/
     /***************************************************/
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmIESFC = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC build importer and esfc"))));
+#endif
     // Pre-build the importer using the existing PIDs
     Teuchos::ParameterList esfc_params;
 
@@ -8870,12 +8937,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                          rcp (new Teuchos::ParameterList (esfc_params)));
     }
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    tmIESFC = Teuchos::null;
+#endif
+
     if (verbose) {
       std::ostringstream os;
       os << *verbosePrefix << "Done" << endl;
       std::cerr << os.str ();
     }
-  }
+  } //transferAndFillComplete
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
