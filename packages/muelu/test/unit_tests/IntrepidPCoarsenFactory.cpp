@@ -1545,7 +1545,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     // GOLD vector collection
     std::vector<Scalar> p2_gold_in = {/*0,*/1,2,3,4,5,6,7,8,/*9*/};//Ignore Dirichlet unknowns
     std::vector<Scalar> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
@@ -1560,7 +1560,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     // GOLD vector collection
     size_t total_num_points=10;
     int degree=3;
@@ -1590,7 +1590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
 
     // GOLD vector collection
     size_t total_num_points=10;
@@ -1623,7 +1623,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -1691,7 +1691,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -1757,7 +1757,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2470,7 +2470,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     int hi_degree=3;
     int lo_degree=2;
     // GOLD vector collection
@@ -2511,7 +2511,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     int hi_degree=4;
     int lo_degree=3;
     // GOLD vector collection
@@ -2551,7 +2551,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     int hi_degree=4;
     int lo_degree=2;
     // GOLD vector collection
@@ -2593,7 +2593,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2659,7 +2659,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2726,7 +2726,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2793,7 +2793,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2877,7 +2877,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -2950,7 +2950,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   include "MueLu_UseShortNames.hpp"
     ;
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -3026,7 +3026,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode);
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");

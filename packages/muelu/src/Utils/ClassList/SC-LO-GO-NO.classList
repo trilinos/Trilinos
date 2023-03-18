@@ -27,7 +27,6 @@ CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
-CoordinatesTransferFactory_kokkos
 CoupledRBMFactory
 DemoFactory
 DirectSolver
@@ -113,8 +112,8 @@ SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
 TentativePFactory_kokkos
-MatrixFreeTentativeP_kokkos
-MatrixFreeTentativePFactory_kokkos
+MatrixFreeTentativeP
+MatrixFreeTentativePFactory
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
@@ -128,7 +127,6 @@ UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
-Utilities_kokkos
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
 SemiCoarsenPFactory_kokkos

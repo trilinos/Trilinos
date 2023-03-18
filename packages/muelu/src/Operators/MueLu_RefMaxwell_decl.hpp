@@ -60,10 +60,8 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 
 #include "MueLu_ZoltanInterface_fwd.hpp"
@@ -399,9 +397,8 @@ namespace MueLu {
     Teuchos::RCP<const Map> D0origDomainMap_;
     Teuchos::RCP<const Import> D0origImporter_;
     //! Vectors for BCs
-    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrows_, BCcols_, BCdomain_;
     int BCedges_, BCnodes_;
-    Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates

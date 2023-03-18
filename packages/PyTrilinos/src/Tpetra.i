@@ -926,7 +926,7 @@ public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef DeviceType execution_space;
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<execution_space> node_type;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<execution_space> node_type;
   typedef Map<local_ordinal_type, global_ordinal_type, Node> map_type;
   explicit DistObject(const Teuchos::RCP<const DefaultMapType>& map);
   DistObject(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs);
@@ -1032,7 +1032,7 @@ public:
   typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<Node> node_type;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node> node_type;
   typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
   typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
   typedef Node execution_space;
@@ -1362,14 +1362,14 @@ public:
   Teuchos::ArrayRCP<Scalar> getDataNonConst() { return getDataNonConst(0); }
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getData;
   Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
-  // Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
+  // Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node>, false> >
   // offsetView(const Teuchos::RCP<const map_type>& subMap,
   //            const size_t offset) const;
-  // Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
+  // Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node>, false> >
   // offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
   //                    const size_t offset);
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot;
-  // dot_type dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& y) const;
+  // dot_type dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node>, false>& y) const;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;
   mag_type norm2() const;
@@ -1377,7 +1377,7 @@ public:
   mag_type normInf() const;
   // using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
   // mag_type
-  // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
+  // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::meanValue;
   Scalar meanValue() const;
   virtual std::string description() const;

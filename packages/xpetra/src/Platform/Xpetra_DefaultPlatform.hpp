@@ -46,7 +46,7 @@
 #ifndef XPETRA_DEFAULTPLATFORM_HPP
 #define XPETRA_DEFAULTPLATFORM_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_SerialPlatform.hpp"
 #ifdef HAVE_MPI
@@ -69,9 +69,9 @@ namespace Xpetra {
   public:
     //! Typedef indicating the default platform type specified at compile time. For a serial build, this will be SerialPlatform. Otherwise, it will be MpiPlatform.
 #ifdef HAVE_MPI
-    typedef MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
+    typedef MpiPlatform<Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #else
-    typedef SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
+    typedef SerialPlatform<Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #endif
 
     /** \brief Return the default platform.

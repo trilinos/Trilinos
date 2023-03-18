@@ -62,12 +62,12 @@ this directory.
 #include <iostream>
 
 // Define default data types
-//#include <KokkosCompat_DefaultNode.hpp>
+//#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 //typedef double                                                              Scalar;
 //typedef int                                                                 LocalOrdinal;
 //typedef int                                                                 GlobalOrdinal;
-//typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+//typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType                         Node;
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>

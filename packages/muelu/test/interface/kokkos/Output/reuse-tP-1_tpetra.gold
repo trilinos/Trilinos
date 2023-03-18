@@ -34,8 +34,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -84,8 +84,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -161,8 +161,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Computing Ac (MueLu::RAPFactory)
 Reusing previous AP data
 Reusing previous RAP data
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 Reusing coordinates
 matrixmatrix: kernel params -> 
@@ -197,8 +197,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Computing Ac (MueLu::RAPFactory)
 Reusing previous AP data
 Reusing previous RAP data
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 Reusing coordinates
 matrixmatrix: kernel params -> 

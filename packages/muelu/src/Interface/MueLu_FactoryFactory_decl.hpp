@@ -162,14 +162,13 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_MatrixFreeTentativePFactory_kokkos.hpp"
+#include "MueLu_MatrixFreeTentativePFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_RegionRFactory_kokkos.hpp"
 
@@ -243,13 +242,13 @@ namespace MueLu {
       if (factoryName == "BlockedCoarseMapFactory")               return Build2<BlockedCoarseMapFactory>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")                     return BuildRAPFactory<BlockedRAPFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BrickAggregationFactory")               return Build2<BrickAggregationFactory>               (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "ClassicalMapFactory")                   return Build2<ClassicalMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "ClassicalPFactory")                     return Build2<ClassicalPFactory>             (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ClassicalMapFactory")                   return Build2<ClassicalMapFactory>                   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ClassicalPFactory")                     return Build2<ClassicalPFactory>                     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CloneRepartitionInterface")             return Build2<CloneRepartitionInterface>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory")                      return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseningVisualizationFactory")        return Build2<CoarseningVisualizationFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory")                   return Build2<CoalesceDropFactory>                   (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "SmooVecCoalesceDropFactory")           return Build2<SmooVecCoalesceDropFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SmooVecCoalesceDropFactory")            return Build2<SmooVecCoalesceDropFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")                     return Build2<ConstraintFactory>                     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoupledAggregationFactory")             return BuildCoupledAggregationFactory                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory")            return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
@@ -266,7 +265,7 @@ namespace MueLu {
       if (factoryName == "InterfaceAggregationFactory")           return Build2<InterfaceAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InterfaceMappingTransferFactory")       return Build2<InterfaceMappingTransferFactory>       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InverseApproximationFactory")           return Build2<InverseApproximationFactory>           (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "InitialBlockNumberFactory")              return Build2<InitialBlockNumberFactory>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "InitialBlockNumberFactory")             return Build2<InitialBlockNumberFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")                  return Build2<LineDetectionFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       // LocalOrdinalTransferFactory is a utility factory that can be used for multiple things, so there is no default
       //      if (factoryName == "LocalOrdinalTransferFactory")           return Build2<LocalOrdinalTransferFactory>           (paramList, factoryMapIn, factoryManagersIn);
@@ -309,14 +308,13 @@ namespace MueLu {
       if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory_kokkos>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                     return Build2<SaPFactory_kokkos>                     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory_kokkos")   return Build2<StructuredAggregationFactory_kokkos>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "MatrixFreeTentativePFactory_kokkos")    return Build2<MatrixFreeTentativePFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MatrixFreeTentativePFactory")           return Build2<MatrixFreeTentativePFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
 
       if (factoryName == "ZoltanInterface") {

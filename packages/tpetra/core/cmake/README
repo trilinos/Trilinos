@@ -71,6 +71,6 @@ not-covered macros, then invoke that helper macro in the ETI macro.
 For example:
 
 #define INSTMACRO_INT_LONG_CUDA(S) \
-  TPETRA_CRSMATRIX_INSTANT( S, int, long, Kokkos::Compat::Kokkos::CudaWrapperNode )
+  TPETRA_CRSMATRIX_INSTANT( S, int, long, Tpetra::KokkosCompat::Kokkos::CudaWrapperNode )
 
 TPETRA_INSTANTIATE_S( INSTMACRO_INT_LONG_CUDA )

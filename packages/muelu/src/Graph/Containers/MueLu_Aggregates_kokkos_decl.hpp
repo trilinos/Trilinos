@@ -50,7 +50,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 
@@ -103,7 +103,7 @@ namespace MueLu {
   class Aggregates_kokkos;
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
+  class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
   public:
     // For some reason we seem intent on having these declared before pulling the short names in
     // I am not sure why but I will keep things as it is for now
@@ -112,7 +112,7 @@ namespace MueLu {
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
     using execution_space     = typename DeviceType::execution_space;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
     using device_type         = DeviceType;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
     using LO_view             = Kokkos::View<local_ordinal_type*, device_type>;

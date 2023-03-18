@@ -39,15 +39,17 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_CONFIGDEFS_HPP
-#define KOKKOS_CONFIGDEFS_HPP
+#ifndef TPETRA_CORE_COMPAT_KOKKOS_CONFIGDEFS_HPP
+#define TPETRA_CORE_COMPAT_KOKKOS_CONFIGDEFS_HPP
 
 #include "TpetraCore_config.h"
 
 
 // This header file only exists for backwards compatibility.
-#ifdef __GNUC__
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
 #warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_ConfigDefs.hpp is deprecated."
+#else
+#error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_ConfigDefs.hpp is deprecated."
 #endif
 
-#endif /* KOKKOS_CONFIGDEFS_HPP */
+#endif // TPETRA_CORE_COMPAT_KOKKOS_CONFIGDEFS_HPP

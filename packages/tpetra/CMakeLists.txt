@@ -120,7 +120,7 @@ SET(${PACKAGE_NAME}_ETI_NODES "")
 # Decide what Kokkos execution spaces to use by default.  If ETI is
 # ON, "using an execution space ExecutionSpace" means that Tpetra
 # objects with Node =
-# Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace> will
+# Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecutionSpace> will
 #
 #   1. get instantiated explicitly for that Node type, and
 #   2. get tested for that Node type, if their test is also
@@ -190,11 +190,11 @@ GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT OFF)
 # execution space is ON, but ETI for its corresponding Node type is
 # OFF.  This may help users diagnose link errors.
 
-# Kokkos::Serial (Kokkos::Compat::KokkosSerialWrapperNode)
+# Kokkos::Serial (Tpetra::KokkosCompat::KokkosSerialWrapperNode)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SERIAL
   HAVE_TPETRA_INST_SERIAL
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_SERIAL_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_SERIAL ${Tpetra_INST_SERIAL})
@@ -204,18 +204,18 @@ IF (Tpetra_INST_SERIAL)
   ENDIF ()
 ELSE () # NOT Tpetra_INST_SERIAL
   IF (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SERIAL:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SERIAL:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
   ENDIF ()
   IF (Kokkos_ENABLE_SERIAL)
     MESSAGE(STATUS "NOTE: Kokkos::Serial is ON (the CMake option Kokkos_ENABLE_SERIAL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, please also set the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If you use the Kokkos::Serial Node type in Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_SERIAL
 
-# Kokkos::OpenMP (Kokkos::Compat::KokkosOpenMPWrapperNode)
+# Kokkos::OpenMP (Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_OPENMP
   HAVE_TPETRA_INST_OPENMP
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
   ${HAVE_TPETRA_INST_OPENMP_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
@@ -235,11 +235,11 @@ ELSE () # NOT Tpetra_INST_OPENMP
   ENDIF ()
 ENDIF ()
 
-# Kokkos::Threads (Kokkos::Compat::KokkosThreadsWrapperNode)
+# Kokkos::Threads (Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_PTHREAD
   HAVE_TPETRA_INST_PTHREAD
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
   ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
@@ -252,18 +252,18 @@ IF (Tpetra_INST_PTHREAD)
   ENDIF ()
 ELSE () # NOT Tpetra_INST_PTHREAD
   IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_THREADS:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_THREADS:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
   ENDIF()
   IF (Kokkos_ENABLE_THREADS)
     MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_THREADS is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
   ENDIF ()
 ENDIF () # Tpetra_INST_PTHREAD
 
-# Kokkos::Cuda (Kokkos::Compat::KokkosCudaWrapperNode)
+# Kokkos::Cuda (Tpetra::KokkosCompat::KokkosCudaWrapperNode)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_CUDA
   HAVE_TPETRA_INST_CUDA
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
   ${HAVE_TPETRA_INST_CUDA_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_CUDA ${Tpetra_INST_CUDA})
@@ -273,19 +273,19 @@ IF (Tpetra_INST_CUDA)
   ENDIF ()
 ELSE () # NOT Tpetra_INST_CUDA
   IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_CUDA:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_CUDA:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
   ENDIF()
   IF (Kokkos_ENABLE_CUDA)
     MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_CUDA is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
 
-# Kokkos::HIP (Kokkos::Compat::KokkosHIPWrapperNode)
+# Kokkos::HIP (Tpetra::KokkosCompat::KokkosHIPWrapperNode)
 GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_HIP
   HAVE_TPETRA_INST_HIP
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosHIPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_HIP_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosHIPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_HIP_DEFAULT} by default."
   ${HAVE_TPETRA_INST_HIP_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_HIP ${Tpetra_INST_HIP})
@@ -295,18 +295,18 @@ IF (Tpetra_INST_HIP)
   ENDIF ()
 ELSE () # NOT Tpetra_INST_HIP
   IF (HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosHIPWrapperNode is disabled (since Tpetra_INST_HIP=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_HIP:BOOL=ON and Tpetra_INST_HIP:BOOL=ON.  If you are building with a HIP-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable HIP support by default in that case.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosHIPWrapperNode is disabled (since Tpetra_INST_HIP=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_HIP:BOOL=ON and Tpetra_INST_HIP:BOOL=ON.  If you are building with a HIP-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable HIP support by default in that case.")
   ENDIF()
   IF (Kokkos_ENABLE_HIP)
     MESSAGE(STATUS "NOTE: Kokkos::HIP is ON (the CMake option Kokkos_ENABLE_HIP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, please also set the CMake option Tpetra_INST_HIP:BOOL=ON.  If you use the Kokkos::HIP version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_HIP
 
-# Kokkos::SYCL (Kokkos::Compat::KokkosSYCLWrapperNode)
+# Kokkos::SYCL (Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SYCL
   HAVE_TPETRA_INST_SYCL
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSYCLWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SYCL_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosSYCLWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SYCL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_SYCL_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_SYCL ${Tpetra_INST_SYCL})
@@ -316,7 +316,7 @@ IF (Tpetra_INST_SYCL)
   ENDIF ()
 ELSE () # NOT Tpetra_INST_SYCL
   IF (HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSYCLWrapperNode is disabled (since Tpetra_INST_SYCL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SYCL:BOOL=ON and Tpetra_INST_SYCL:BOOL=ON.  If you are building with a SYCL-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable SYCL support by default in that case.")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosSYCLWrapperNode is disabled (since Tpetra_INST_SYCL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SYCL:BOOL=ON and Tpetra_INST_SYCL:BOOL=ON.  If you are building with a SYCL-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable SYCL support by default in that case.")
   ENDIF()
   IF (Kokkos_ENABLE_SYCL)
     MESSAGE(STATUS "NOTE: Kokkos::SYCL is ON (the CMake option Kokkos_ENABLE_SYCL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, please also set the CMake option Tpetra_INST_SYCL:BOOL=ON.  If you use the Kokkos::SYCL version of Tpetra without doing this, you will get link errors!")
@@ -545,36 +545,36 @@ ENDIF ()
 #
 IF(Tpetra_INST_SERIAL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSerialWrapperNode")
 ENDIF()
 IF(Tpetra_INST_PTHREAD)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosThreadsWrapperNode")
 ENDIF()
 IF(Tpetra_INST_OPENMP)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_CUDA)
   # TpetraCore currently requires UVM, so it doesn't make sense to
   # instantiate over Kokkos::CudaSpace as well as
   # Kokkos::CudaUVMSpace.
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 ENDIF()
 IF(Tpetra_INST_HIP)
   # TpetraCore currently requires UVM, so it doesn't make sense to
   # instantiate over Kokkos::HIPSpace as well as
   # Kokkos::HIPHostPinnedSpace.
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosHIPWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosHIPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_SYCL)
   # TpetraCore currently requires UVM, so it doesn't make sense to
   # instantiate over Kokkos::SYCLDeviceUSMSpace as well as
   # Kokkos::SYCLSharedUSMSpace.
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSYCLWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
 ENDIF()
 
 # Tell users what Nodes are enabled.

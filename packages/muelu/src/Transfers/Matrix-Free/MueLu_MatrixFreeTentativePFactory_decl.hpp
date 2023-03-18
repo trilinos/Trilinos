@@ -43,14 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_DECL_HPP
-#define MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_DECL_HPP
+#ifndef MUELU_MATRIXFREETENTATIVEPFACTORY_DECL_HPP
+#define MUELU_MATRIXFREETENTATIVEPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_MatrixFreeTentativePFactory_kokkos_fwd.hpp"
+#include "MueLu_MatrixFreeTentativePFactory_fwd.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_ScalarTraits.hpp"
 
@@ -60,7 +60,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 namespace MueLu {
 
@@ -102,22 +101,22 @@ namespace MueLu {
     | Nullspace | MatrixFreeTentativePFactory | Coarse near null space vectors. Please also check the documentation of the NullspaceFactory for the special dependency tree of the "Nullspace" variable throughout all multigrid levels.
   */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixFreeTentativePFactory_kokkos;
+  class MatrixFreeTentativePFactory;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class MatrixFreeTentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+  class MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>      node_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
 
   private:
     // For compatibility
     typedef node_type                                           Node;
-#undef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
+#undef MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -125,10 +124,10 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    MatrixFreeTentativePFactory_kokkos() { }
+    MatrixFreeTentativePFactory() { }
 
     //! Destructor.
-    virtual ~MatrixFreeTentativePFactory_kokkos() { }
+    virtual ~MatrixFreeTentativePFactory() { }
     //@}
 
     RCP<const ParameterList> GetValidParameterList() const;
@@ -151,5 +150,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
-#endif // MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_DECL_HPP
+#define MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
+#endif // MUELU_MATRIXFREETENTATIVEPFACTORY_DECL_HPP

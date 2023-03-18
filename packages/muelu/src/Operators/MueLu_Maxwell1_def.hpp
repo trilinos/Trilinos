@@ -68,7 +68,6 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 #include <MueLu_HierarchyUtils.hpp>
-# include "MueLu_Utilities_kokkos.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
@@ -228,15 +227,15 @@ namespace MueLu {
 
     // Are we using Kokkos?
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkos_ = true;
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
@@ -422,7 +421,7 @@ namespace MueLu {
       if(applyBCsTo22_) {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows/cols of D0" << std::endl;        
         if (useKokkos_) {
-          Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
+          Utilities::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
         }
@@ -430,7 +429,7 @@ namespace MueLu {
       else {
         GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows of D0" << std::endl;        
         if (useKokkos_) {
-          Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
+          Utilities::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
         } else {
           Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
         }

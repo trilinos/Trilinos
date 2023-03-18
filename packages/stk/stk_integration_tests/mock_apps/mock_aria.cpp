@@ -42,13 +42,17 @@ public:
     m_currentTime(),
     m_finalTime(),
     m_iWasToldToStop(),
+    m_iWantToStop(false),
     m_step(),
     m_sendTransfer(),
-    m_recvTransfer(),
+    m_recvTransfer1(),
+    m_recvTransfer2(),
     m_doingSendTransfer(false),
     m_doingRecvTransfer(false),
+    m_wrongTransferOrder(false),
     m_sendFieldName(),
-    m_recvFieldName()
+    m_recvFieldName1(),
+    m_recvFieldName2()
   {}
 
   ~MockAria()
@@ -72,8 +76,8 @@ public:
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
     const std::string defaultFileName = "generated:1x1x4|sideset:x";
     std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+    m_wrongTransferOrder = stk::get_command_line_option(argc, argv, "wrong-transfer-order", false);
 
-    stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
     std::string defaultSyncMode = "Send";
     std::string syncModeString = stk::get_command_line_option<std::string>(argc, argv, "sync-mode", defaultSyncMode);
@@ -81,6 +85,7 @@ public:
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     m_splitComms.set_free_comms_in_destructor(true);
+    stk::util::impl::set_coupling_version(coupling_version_override);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     int myAppRank = stk::parallel_machine_rank(splitComm);
     int numAppRanks = stk::parallel_machine_size(splitComm);
@@ -103,14 +108,14 @@ public:
     if (m_iAmRootRank) {
       std::ostringstream os;
       os << m_appName << ": STK version: " << stk::version_string()
-         << " (Coupling Version: " << stk::util::get_common_coupling_version() << ")" << std::endl;
+         << " (Coupling Version: " << stk::util::get_common_coupling_version() << ") ("<<coupling_version_override<<")" << std::endl;
       os << m_appName << ", color="<<color<<", world rank: " << myWorldRank<<" out of " << numWorldRanks
                       <<", app rank: " << myAppRank << " out of " << numAppRanks << std::endl;
       os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;
       std::cout << os.str() << std::endl;
     }
 
-    std::vector<std::string> fieldNames = {"reference-temperature", "heat-transfer-coefficient"};
+    std::vector<std::string> fieldNames = {"reference-temperature","heat-transfer-coefficient1", "heat-transfer-coefficient2"};
     mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
   }
 
@@ -156,7 +161,8 @@ public:
     }
     if (otherAppName == "Mock-Sparc") {
       m_doingRecvTransfer = true;
-      m_recvFieldName = "heat-transfer-coefficient";
+      m_recvFieldName1 = "heat-transfer-coefficient1";
+      m_recvFieldName2 = "heat-transfer-coefficient2";
     }
 
     {
@@ -167,7 +173,7 @@ public:
       }
 
       if (m_doingRecvTransfer) {
-        os << m_appName << ": will recv-transfer (field='"<<m_recvFieldName<<"') "
+        os << m_appName << ": will recv-transfer (field='"<<m_recvFieldName1<<","<<m_recvFieldName2<<"') "
            <<" from other app: "<<otherAppName<<std::endl;
       }
 
@@ -200,7 +206,8 @@ public:
       mySendFields.push_back(std::make_pair(m_sendFieldName, m_mesh->get_field_size()));
     }
     if (m_doingRecvTransfer) {
-      myRecvFields.push_back(std::make_pair(m_recvFieldName, m_mesh->get_field_size()));
+      myRecvFields.push_back(std::make_pair(m_recvFieldName1, m_mesh->get_field_size()));
+      myRecvFields.push_back(std::make_pair(m_recvFieldName2, m_mesh->get_field_size()));
     }
 
     stk::coupling::SyncInfo info = create_sync_info();
@@ -229,13 +236,20 @@ public:
 
     if (m_doingRecvTransfer) {
       std::shared_ptr<mock::EmptySendAdapter> sendAdapter;
-      std::shared_ptr<mock::StkRecvAdapter> recvAdapter =
-         std::make_shared<mock::StkRecvAdapter>(parentComm, *m_mesh, m_recvFieldName);
-      m_recvTransfer.reset(new RecvTransfer(sendAdapter, recvAdapter, "MockAriaRecvTransfer", parentComm));
+      std::shared_ptr<mock::StkRecvAdapter> recvAdapter1 =
+         std::make_shared<mock::StkRecvAdapter>(parentComm, *m_mesh, m_recvFieldName1);
+      std::shared_ptr<mock::StkRecvAdapter> recvAdapter2 =
+         std::make_shared<mock::StkRecvAdapter>(parentComm, *m_mesh, m_recvFieldName2);
+      m_recvTransfer1.reset(new RecvTransfer(sendAdapter, recvAdapter1, "MockAriaRecvTransfer1", parentComm));
+      m_recvTransfer2.reset(new RecvTransfer(sendAdapter, recvAdapter2, "MockAriaRecvTransfer2", parentComm));
 
-      m_recvTransfer->coarse_search();
-      m_recvTransfer->communication();
-      m_recvTransfer->local_search();
+      m_recvTransfer1->coarse_search();
+      m_recvTransfer1->communication();
+      m_recvTransfer1->local_search();
+
+      m_recvTransfer2->coarse_search();
+      m_recvTransfer2->communication();
+      m_recvTransfer2->local_search();
     }
   }
 
@@ -257,13 +271,26 @@ public:
       m_sendTransfer->apply();
     }
     if (m_doingRecvTransfer) {
-      m_mesh->set_stk_field_values(m_recvFieldName, 0.0);
-      m_recvTransfer->apply();
-      ThrowRequire(m_recvTransfer->meshb()->called_update_values);
+      m_mesh->set_stk_field_values(m_recvFieldName1, 0.0);
+      m_mesh->set_stk_field_values(m_recvFieldName2, 0.0);
+      m_recvTransfer1->meshb()->called_update_values = false;
+      m_recvTransfer2->meshb()->called_update_values = false;
 
-      const double expectedFieldValue = 4.4;
-      const bool valuesMatch = m_mesh->verify_stk_field_values(m_recvFieldName, expectedFieldValue);
-      ThrowRequireMsg(valuesMatch, "Mock-Aria error, field-values are not correct after transfer");
+      m_recvTransfer1->apply();
+      m_recvTransfer2->apply();
+
+      ThrowRequire(m_recvTransfer1->meshb()->called_update_values);
+      ThrowRequire(m_recvTransfer2->meshb()->called_update_values);
+      m_recvTransfer1->meshb()->called_update_values = false;
+      m_recvTransfer2->meshb()->called_update_values = false;
+
+      const double expectedField1Value = 4.4;
+      const bool values1Match = m_mesh->verify_stk_field_values(m_recvFieldName1, expectedField1Value);
+      ThrowRequireMsg(values1Match, "Mock-Aria error, field1-values are not correct after transfer");
+
+      const double expectedField2Value = 8.8;
+      const bool values2Match = m_mesh->verify_stk_field_values(m_recvFieldName2, expectedField2Value);
+      ThrowRequireMsg(values2Match, "Mock-Aria error, field2-values are not correct after transfer");
     }
   }
 
@@ -287,7 +314,7 @@ public:
 
   bool time_to_stop()
   {
-    bool timeToStop = m_iWasToldToStop || m_currentTime >= m_finalTime;
+    bool timeToStop = m_iWasToldToStop || m_currentTime >= m_finalTime || m_iWantToStop;
     return timeToStop;
   }
 
@@ -325,13 +352,17 @@ private:
   double m_currentTime;
   double m_finalTime;
   bool m_iWasToldToStop;
+  bool m_iWantToStop;
   int m_step;
   std::shared_ptr<SendTransfer> m_sendTransfer;
-  std::shared_ptr<RecvTransfer> m_recvTransfer;
+  std::shared_ptr<RecvTransfer> m_recvTransfer1;
+  std::shared_ptr<RecvTransfer> m_recvTransfer2;
   bool m_doingSendTransfer;
   bool m_doingRecvTransfer;
+  bool m_wrongTransferOrder;
   std::string m_sendFieldName;
-  std::string m_recvFieldName;
+  std::string m_recvFieldName1;
+  std::string m_recvFieldName2;
 };
 
 int main(int argc, char** argv)

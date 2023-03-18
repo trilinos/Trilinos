@@ -100,12 +100,12 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 class SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> : public PFactory {
+    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> : public PFactory {
 public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef typename DeviceType::execution_space execution_space;
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
 private:
   // For compatibility

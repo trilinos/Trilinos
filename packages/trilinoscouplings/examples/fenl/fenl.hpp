@@ -57,7 +57,7 @@
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>

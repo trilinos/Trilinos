@@ -69,7 +69,7 @@ namespace Xpetra {
 */
 template <class LocalOrdinal,
           class GlobalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class MapUtils {
 #undef XPETRA_MAPUTILS_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"

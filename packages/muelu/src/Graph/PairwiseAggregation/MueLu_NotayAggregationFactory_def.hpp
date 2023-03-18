@@ -66,7 +66,7 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -204,7 +204,7 @@ namespace MueLu {
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(orderingVector);
     else if (ordering == O_CUTHILL_MCKEE) {
-      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities<SC,LO,GO,NO>::CuthillMcKee(*A);
       auto localVector = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         orderingVector[i] = localVector[i];
@@ -292,7 +292,7 @@ namespace MueLu {
       if (ordering == O_RANDOM)
         MueLu::NotayUtils::RandomReorder(localOrderingVector);
       else if (ordering == O_CUTHILL_MCKEE) {
-        RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+        RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities<SC,LO,GO,NO>::CuthillMcKee(*A);
         auto localVector = rcmVector->getData(0);
         for (LO i = 0; i < numRows; i++)
           localOrderingVector[i] = localVector[i];

@@ -89,9 +89,6 @@ using ConstraintFactory [[maybe_unused]] = MueLu::ConstraintFactory<Scalar,Local
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 using CoordinatesTransferFactory [[maybe_unused]] = MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_COORDINATESTRANSFERFACTORY_KOKKOS_SHORT
-using CoordinatesTransferFactory_kokkos [[maybe_unused]] = MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 using CoupledRBMFactory [[maybe_unused]] = MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
@@ -347,11 +344,11 @@ using TentativePFactory [[maybe_unused]] = MueLu::TentativePFactory<Scalar,Local
 #ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
 using TentativePFactory_kokkos [[maybe_unused]] = MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
-using MatrixFreeTentativeP_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_MATRIXFREETENTATIVEP_SHORT
+using MatrixFreeTentativeP [[maybe_unused]] = MueLu::MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
-using MatrixFreeTentativePFactory_kokkos [[maybe_unused]] = MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_SHORT
+using MatrixFreeTentativePFactory [[maybe_unused]] = MueLu::MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 using ThresholdAFilterFactory [[maybe_unused]] = MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -391,9 +388,6 @@ using Utilities [[maybe_unused]] = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOr
 #endif
 #ifdef MUELU_UTILITIESBASE_SHORT
 using UtilitiesBase [[maybe_unused]] = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_UTILITIES_KOKKOS_SHORT
-using Utilities_kokkos [[maybe_unused]] = MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
 using VariableDofLaplacianFactory [[maybe_unused]] = MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;

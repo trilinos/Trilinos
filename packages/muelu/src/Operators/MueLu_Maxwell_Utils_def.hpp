@@ -61,8 +61,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
 
-#include "MueLu_Utilities_kokkos.hpp"
-
 
 namespace MueLu {
 
@@ -89,14 +87,14 @@ namespace MueLu {
     int BCedgesLocal = 0;
     int BCnodesLocal = 0;
     if (useKokkos_) {
-      BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+      BCrowsKokkos_ = Utilities::DetectDirichletRows_kokkos(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
 
       if (rowSumTol > 0.)
-        Utilities_kokkos::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
+        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
 
       BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getLocalNumElements());
       BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getLocalNumElements());
-      Utilities_kokkos::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
+      Utilities::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
 
       auto BCrowsKokkos=BCrowsKokkos_;
       Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
@@ -127,6 +125,53 @@ namespace MueLu {
         if (*it)
           BCnodesLocal += 1;
     }
+
+    MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCedgesLocal, BCedges_);
+    MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCnodesLocal, BCnodes_);
+
+
+    allEdgesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
+    allNodesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCnodes_) >= D0_Matrix_->getDomainMap()->getGlobalNumElements();
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::detectBoundaryConditionsSM(RCP<Matrix> & SM_Matrix_,
+                                                                                         RCP<Matrix> & D0_Matrix_,
+                                                                                         magnitudeType rowSumTol,
+                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos_,
+                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos_,
+                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCdomainKokkos_,
+                                                                                         int & BCedges_,
+                                                                                         int & BCnodes_,
+                                                                                         bool & allEdgesBoundary_,
+                                                                                         bool & allNodesBoundary_) {
+    // clean rows associated with boundary conditions
+    // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
+    // BCrows_[i] is true, iff i is a boundary row
+    // BCcols_[i] is true, iff i is a boundary column
+    int BCedgesLocal = 0;
+    int BCnodesLocal = 0;
+    BCrowsKokkos_ = Utilities::DetectDirichletRows_kokkos(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+
+    if (rowSumTol > 0.)
+      Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
+
+    BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getLocalNumElements());
+    BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getLocalNumElements());
+    Utilities::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
+
+    auto BCrowsKokkos=BCrowsKokkos_;
+    Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCrowsKokkos(i))
+	  ++sum;
+      }, BCedgesLocal );
+
+    auto BCdomainKokkos = BCdomainKokkos_;
+    Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCdomainKokkos(i))
+	  ++sum;
+      }, BCnodesLocal);
 
     MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCedgesLocal, BCedges_);
     MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCnodesLocal, BCnodes_);

@@ -248,48 +248,44 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
     stk::mesh::EntityVector sideNodes;
     std::vector<stk::mesh::PartOrdinal> scratchOrdinals1, scratchOrdinals2;
 
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    stk::mesh::Selector ownedSkinSelector = bulkData.mesh_meta_data().locally_owned_part() & skinSelector;
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, ownedSkinSelector);
     for(const stk::mesh::Bucket* bucket : buckets)
     {
-        for(size_t i=0;i<bucket->size();++i)
+        for(stk::mesh::Entity element : *bucket)
         {
-            stk::mesh::Entity element = (*bucket)[i];
             impl::LocalId elementId = eeGraph.get_local_element_id(element);
 
-            bool isElement1InSelector = skinSelector(bucket);
-            if(isElement1InSelector)
+            for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
             {
-                for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
+                stk::mesh::EntityId otherEntityId = 0;
+                stk::mesh::Entity otherElement;
+                bool isElement2InSelector = false;
+
+                bool isParallelEdge = !impl::is_local_element(graphEdge.elem2());
+                bool should_add_side = false;
+
+                if(isParallelEdge)
                 {
-                    stk::mesh::EntityId otherEntityId = 0;
-                    stk::mesh::Entity otherElement;
-                    bool isElement2InSelector = false;
+                    isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
+                    if(!isElement2InSelector) continue;
+                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()], scratchOrdinals1);
+                }
+                else
+                {
+                    otherElement = eeGraph.get_entity(graphEdge.elem2());
+                    otherEntityId = bulkData.identifier(otherElement);
+                    isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
+                    if(!isElement2InSelector) continue;
+                    if(!isParallelEdge && bulkData.identifier(element) < otherEntityId)
+                        should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement, scratchOrdinals1, scratchOrdinals2);
+                }
 
-                    bool isParallelEdge = !impl::is_local_element(graphEdge.elem2());
-                    bool should_add_side = false;
-
-                    if(isParallelEdge)
-                    {
-                        isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
-                        if(!isElement2InSelector) continue;
-                        should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()], scratchOrdinals1);
-                    }
-                    else
-                    {
-                        otherElement = eeGraph.get_entity(graphEdge.elem2());
-                        otherEntityId = bulkData.identifier(otherElement);
-                        isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
-                        if(!isElement2InSelector) continue;
-                        if(!isParallelEdge && bulkData.identifier(element) < otherEntityId)
-                            should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement, scratchOrdinals1, scratchOrdinals2);
-                    }
-
-                    if(should_add_side && checkIfSideIsNotCollapsed(sideNodes, *bucket, bulkData, element, graphEdge.side1()))
-                    {
-                        skinnedSideSet.emplace_back(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1()));
-                        if(!isParallelEdge)
-                            skinnedSideSet.emplace_back(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2()));
-                    }
+                if(should_add_side && checkIfSideIsNotCollapsed(sideNodes, *bucket, bulkData, element, graphEdge.side1()))
+                {
+                    skinnedSideSet.emplace_back(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1()));
+                    if(!isParallelEdge)
+                        skinnedSideSet.emplace_back(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2()));
                 }
             }
         }

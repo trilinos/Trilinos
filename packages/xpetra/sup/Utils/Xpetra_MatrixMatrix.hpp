@@ -91,7 +91,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node          = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Helpers {
 #include "Xpetra_UseShortNames.hpp"
 
@@ -430,7 +430,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
   template <class Scalar,
             class LocalOrdinal  /*= int*/,
             class GlobalOrdinal /*= LocalOrdinal*/,
-            class Node          /*= KokkosClassic::DefaultNode::DefaultNodeType*/>
+            class Node          /*= Tpetra::KokkosClassic::DefaultNode::DefaultNodeType*/>
   class MatrixMatrix {
 #undef XPETRA_MATRIXMATRIX_SHORT
 #include "Xpetra_UseShortNames.hpp"

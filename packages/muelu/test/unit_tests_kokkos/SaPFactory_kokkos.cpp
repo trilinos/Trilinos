@@ -50,12 +50,13 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_IteratorOps.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory_kokkos.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -116,7 +117,7 @@ namespace MueLuTests {
 
     // construct the data to compare
     SC omega = dampingFactor / lambdaMax;
-    RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
+    RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
     RCP<ParameterList> APparams = rcp(new ParameterList);
     RCP<Matrix> Ptest   = Xpetra::IteratorOps<SC,LO,GO,NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label", APparams);
 

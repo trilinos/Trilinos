@@ -40,7 +40,6 @@
 #include <gtest/gtest.h>
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "Shards_Array.hpp"
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
@@ -50,37 +49,48 @@
 #include "stk_mesh/base/Types.hpp"  // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-namespace stk {
-namespace mesh {
-
-class UnitTestFieldImpl {
-public:
-  UnitTestFieldImpl() {}
-
-  void testFieldRestriction();
-
-};
-
-}//namespace mesh
-}//namespace stk
-
 namespace {
 
-TEST(UnitTestFieldRestriction, testUnit)
+using namespace stk::mesh;
+
+class UnitTestFieldImpl  : public ::testing::Test
 {
-  stk::mesh::UnitTestFieldImpl ufield;
-  ufield.testFieldRestriction();
-}
+public:
+  UnitTestFieldImpl()
+  : dummy_names(4, "dummy"),
+    meta_data(3 /*dim*/, dummy_names),
+    pA(meta_data.declare_part( std::string("A") , stk::topology::NODE_RANK)),
+    pB(meta_data.declare_part( std::string("B") , stk::topology::NODE_RANK)),
+    pC(meta_data.declare_part( std::string("C") , stk::topology::NODE_RANK)),
+    pD(meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK))
+  {
+    meta_data.use_simple_fields();
+  }
 
-}//namespace <anonymous>
+  void testFieldRestriction();
+  void testRestrictions3parts();
+  void testRestrictions3parts_union();
+  void testRestrictions3parts_differentNumScalars();
+  void testRestrictions3parts_supersetSubset();
+  void testRestrictions4parts_1union_1intersection();
+  void testRestrictions4parts_2unions();
 
-//----------------------------------------------------------------------
+  void print_restrictions(const FieldRestrictionVector& restrs)
+  {
+    for(const FieldRestriction& restr : restrs) {
+      std::cout << restr.selector() << " : " << restr.num_scalars_per_entity() << std::endl;
+    }
+  }
 
-namespace stk {
-namespace mesh {
+private:
+  std::vector<std::string> dummy_names;
+  MetaData meta_data;
 
-//----------------------------------------------------------------------
-// Test field restrictions: the mapping of ( field , part ) -> dimensions
+  Part& pA;
+  Part& pB;
+  Part& pC;
+  Part& pD;
+};
 
 void UnitTestFieldImpl::testFieldRestriction()
 {
@@ -90,11 +100,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   for ( unsigned i = 1 ; i < 8 ; ++i ) {
     stride[i] = ( i + 1 ) * stride[i-1] ;
   }
-
-  std::vector< std::string > dummy_names(4, "dummy");
-
-  MetaData meta_data(3 /*dim*/,dummy_names);
-  meta_data.use_simple_fields();
 
   const FieldVector  & allocated_fields = meta_data.get_fields();
 
@@ -129,13 +134,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   ASSERT_TRUE( nodeField     == f3_old->field_state( StateNew ) );
   ASSERT_TRUE( f3_old == f3_old->field_state( StateOld ) );
   ASSERT_TRUE( NULL   == f3_old->field_state( StateNM1 ) );
-
-  //------------------------------
-  // Declare some parts for restrictions:
-
-  Part & pA = meta_data.declare_part( std::string("A") , stk::topology::NODE_RANK );
-  Part & pB = meta_data.declare_part( std::string("B") , stk::topology::NODE_RANK );
-  Part & pC = meta_data.declare_part( std::string("C") , stk::topology::NODE_RANK );
 
   // Declare three restrictions:
 
@@ -220,7 +218,138 @@ void UnitTestFieldImpl::testFieldRestriction()
 #endif
 }
 
+void UnitTestFieldImpl::testRestrictions3parts()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
 
+  const unsigned numScalarsPerEntity = 3;
+
+  meta_data.declare_field_restriction(*nodeField, pA, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pB, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pC, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 1;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
 }
+
+void UnitTestFieldImpl::testRestrictions3parts_union()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+
+  const unsigned numScalarsPerEntity = 3;
+
+  Selector abcUnion = pA | pB | pC;
+  meta_data.declare_field_restriction(*nodeField, abcUnion, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pC, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 1;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
 }
+
+void UnitTestFieldImpl::testRestrictions3parts_differentNumScalars()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+
+  unsigned numScalarsPerEntity = 3;
+
+  meta_data.declare_field_restriction(*nodeField, pA, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pB, numScalarsPerEntity, 1);
+
+  numScalarsPerEntity = 1;
+  meta_data.declare_field_restriction(*nodeField, pC, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 2;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
+}
+
+void UnitTestFieldImpl::testRestrictions3parts_supersetSubset()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+
+  meta_data.declare_part_subset(pB, pC);
+
+  const unsigned numScalarsPerEntity = 3;
+
+  meta_data.declare_field_restriction(*nodeField, pA, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pB, numScalarsPerEntity, 1);
+  meta_data.declare_field_restriction(*nodeField, pC, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 1;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
+}
+
+void UnitTestFieldImpl::testRestrictions4parts_1union_1intersection()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+
+  const unsigned numScalarsPerEntity = 3;
+
+  Selector unionAB = pA | pB;
+  meta_data.declare_field_restriction(*nodeField, unionAB, numScalarsPerEntity, 1);
+
+  Selector intersectionCD = pC & pD;
+  meta_data.declare_field_restriction(*nodeField, intersectionCD, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 1;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
+}
+
+void UnitTestFieldImpl::testRestrictions4parts_2unions()
+{
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+
+  const unsigned numScalarsPerEntity = 3;
+
+  Selector unionAB = pA | pB;
+  meta_data.declare_field_restriction(*nodeField, unionAB, numScalarsPerEntity, 1);
+
+  Selector unionCD = pC | pD;
+  meta_data.declare_field_restriction(*nodeField, unionCD, numScalarsPerEntity, 1);
+
+  const unsigned expectedNumRestrictions = 1;
+  EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
+  print_restrictions(nodeField->restrictions());
+}
+
+TEST_F(UnitTestFieldImpl, testRestriction)
+{
+  testFieldRestriction();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions3parts)
+{
+  testRestrictions3parts();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions3parts_union)
+{
+  testRestrictions3parts_union();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions3parts_differentNumScalars)
+{
+  testRestrictions3parts_differentNumScalars();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions3parts_supersetSubset)
+{
+  testRestrictions3parts_supersetSubset();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions4parts_1union_1intersection)
+{
+  testRestrictions4parts_1union_1intersection();
+}
+
+TEST_F(UnitTestFieldImpl, testRestrictions4parts_2unions)
+{
+  testRestrictions4parts_2unions();
+}
+
+}//namespace <anonymous>
 

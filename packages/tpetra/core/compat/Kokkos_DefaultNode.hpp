@@ -43,6 +43,8 @@
 #include "KokkosCompat_DefaultNode.hpp"
 
 // This header file only exists for backwards compatibility.
-#ifdef __GNUC__
-#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated.  Use KokkosCompat_DefaultNode.hpp instead."
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated."
+#else
+#error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated."
 #endif

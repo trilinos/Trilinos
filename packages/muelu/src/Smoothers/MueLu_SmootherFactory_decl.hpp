@@ -87,7 +87,7 @@ namespace MueLu {
   template <class Scalar = double,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class SmootherFactory : public SmootherFactoryBase {
   public:
     typedef Scalar scalar_type;

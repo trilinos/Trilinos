@@ -77,7 +77,7 @@ public:
                             const double & fieldValue)
   {
     const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
-    ThrowRequireMsg(field != nullptr, "StkMesh failed to find field with name "<<fieldName);
+    ThrowRequireMsg(field != nullptr, "StkMesh::set_stk_field_values failed to find field with name "<<fieldName);
     stk::mesh::field_fill(fieldValue, *field);
   }
 
@@ -85,14 +85,13 @@ public:
                                const double expectedFieldValue)
   {
     const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
-    ThrowRequireMsg(field != nullptr, "StkMesh failed to find field with name "<<fieldName);
+    ThrowRequireMsg(field != nullptr, "StkMesh::verify_stk_field_values failed to find field with name "<<fieldName);
     stk::mesh::Selector fieldSelector(*field);
     stk::mesh::EntityVector sides;
     stk::mesh::get_entities(*m_bulk, stk::topology::FACE_RANK, fieldSelector, sides);
     for(stk::mesh::Entity side : sides) {
       const double* fieldData = reinterpret_cast<const double*>(stk::mesh::field_data(*field, side));
       if (std::abs(*fieldData - expectedFieldValue) > 1.e-6) {
-std::cerr<<"for entity "<<m_bulk->entity_key(side)<<" found fieldData="<<*fieldData<<" expected "<<expectedFieldValue<<std::endl;
         return false;
       }
     }

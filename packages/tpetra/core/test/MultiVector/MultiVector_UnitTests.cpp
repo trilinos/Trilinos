@@ -5269,7 +5269,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
     // Restrict to OpenMPNode and disable in debug mode (weird things happen w/ GCC 8.3.0 since RCP's
     // are not necessarily thread-safe
-    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
+    if(typeid(Node)!=typeid(Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
        ::Tpetra::Details::Behavior::debug())
        return;
 

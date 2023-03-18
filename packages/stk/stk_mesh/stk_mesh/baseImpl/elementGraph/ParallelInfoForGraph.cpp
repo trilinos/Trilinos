@@ -102,13 +102,13 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
     return edge;
 }
 
-void pack_selected_value_for_par_info(stk::CommSparse &comm, int procRank, const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, stk::mesh::Selector sel)
+void pack_selected_value_for_par_info(stk::CommSparse &comm, int procRank, const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, const stk::mesh::Selector& sel)
 {
     if(sel(bulkData.bucket(local_element)))
         comm.send_buffer(procRank).pack<int64_t>(bulkData.identifier(local_element));
 }
 
-void pack_data_for_selector(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, stk::mesh::Selector sel)
+void pack_data_for_selector(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::Selector& sel)
 {
     for(const auto& item : graph.get_parallel_graph().get_parallel_graph_info())
     {
@@ -120,8 +120,8 @@ void pack_data_for_selector(stk::CommSparse &comm, ElemElemGraph& graph, const s
 
 void pack_and_communicate_selector(const stk::mesh::BulkData& bulkData,
                                    stk::CommSparse& comm,
-                                   ElemElemGraph& graph,
-                                   stk::mesh::Selector selector)
+                                   const ElemElemGraph& graph,
+                                   const stk::mesh::Selector& selector)
 {
     stk::pack_and_communicate(comm, [&comm, &graph, &bulkData, &selector]()
     {
@@ -161,12 +161,12 @@ void unpack_selected_states(const stk::mesh::BulkData& bulkData,
     });
 }
 
-void update_selected_values(ElemElemGraph& graph,
+void update_selected_values(const ElemElemGraph& graph,
                             const RemoteSelectedValue &remoteSelectedValue,
                             ParallelSelectedInfo &selInfo)
 {
-    stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
-    for(stk::mesh::impl::ParallelGraphInfo::value_type& edgeAndParInfo : parallel_info)
+    const stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
+    for(const stk::mesh::impl::ParallelGraphInfo::value_type& edgeAndParInfo : parallel_info)
     {
         const stk::mesh::GraphEdge &graphEdge = edgeAndParInfo.first;
         if(remoteSelectedValue.is_id_selected(-graphEdge.elem2()))
@@ -178,7 +178,7 @@ void update_selected_values(ElemElemGraph& graph,
 
 void unpack_and_update_selector_value(stk::CommSparse &comm,
                                       const stk::mesh::BulkData& bulkData,
-                                      ElemElemGraph& graph,
+                                      const ElemElemGraph& graph,
                                       ParallelSelectedInfo &selInfo)
 {
     RemoteSelectedValue remoteSelectedValue;
@@ -187,8 +187,8 @@ void unpack_and_update_selector_value(stk::CommSparse &comm,
 }
 
 void populate_selected_value_for_remote_elements(const stk::mesh::BulkData& bulkData,
-                                                 ElemElemGraph& graph,
-                                                 stk::mesh::Selector selector,
+                                                 const ElemElemGraph& graph,
+                                                 const stk::mesh::Selector& selector,
                                                  ParallelSelectedInfo &selInfo)
 {
     selInfo.clear();

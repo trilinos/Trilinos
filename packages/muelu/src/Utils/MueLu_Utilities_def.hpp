@@ -634,22 +634,25 @@ namespace MueLu {
   RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
 #if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
-    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;
-      // Need to cast the real-valued multivector to Scalar=complex
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    // Need to cast the real-valued multivector to Scalar=complex
     if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
         (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
-        Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),X->getNumVectors());
-        size_t numVecs = X->getNumVectors();
-        for (size_t j=0;j<numVecs;j++) {
-          Teuchos::ArrayRCP<const real_type> XVec = X->getData(j);
-          Teuchos::ArrayRCP<Scalar> XVecScalar = Xscalar->getDataNonConst(j);
-          for(size_t i = 0; i < static_cast<size_t>(XVec.size()); ++i)
-            XVecScalar[i]=XVec[i];
-        }
-      } else
+      size_t numVecs = X->getNumVectors();
+      Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
+      auto XVec = X->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto XVecScalar = Xscalar->getDeviceLocalView(Xpetra::Access::ReadWrite);
+
+      Kokkos::parallel_for("MueLu:Utils::RealValuedToScalarMultiVector", range_type(0,X->getLocalLength()),
+                           KOKKOS_LAMBDA(const size_t i) {
+                             for (size_t j=0; j<numVecs; j++)
+                               XVecScalar(i,j) = XVec(i,j);
+                           });
+    } else
 #endif
-        Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
-      return Xscalar;
+      Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
+    return Xscalar;
   }
 
 

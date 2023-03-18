@@ -50,7 +50,7 @@
 #define XPETRA_MATRIXVIEW_HPP
 
 #include <Teuchos_Describable.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
@@ -64,7 +64,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixView { // TODO : virtual public Teuchos::Describable {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 

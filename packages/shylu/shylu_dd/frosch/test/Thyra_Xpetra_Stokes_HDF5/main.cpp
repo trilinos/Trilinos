@@ -102,7 +102,7 @@ using UN    = unsigned;
 using SC    = double;
 using LO    = int;
 using GO    = FROSch::DefaultGlobalOrdinal;
-using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
+using NO    = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace EpetraExt;

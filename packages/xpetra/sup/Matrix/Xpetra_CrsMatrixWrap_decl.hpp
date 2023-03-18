@@ -49,7 +49,7 @@
 #ifndef XPETRA_CRSMATRIXWRAP_DECL_HPP
 #define XPETRA_CRSMATRIXWRAP_DECL_HPP
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -79,7 +79,7 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class CrsMatrixWrap :
   public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 {

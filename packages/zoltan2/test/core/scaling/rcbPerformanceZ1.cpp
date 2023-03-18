@@ -72,7 +72,7 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Tpetra_MultiVector.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <GeometricGenerator.hpp>
 
 #include <vector>

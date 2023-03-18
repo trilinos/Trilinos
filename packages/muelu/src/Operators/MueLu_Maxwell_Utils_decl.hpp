@@ -60,7 +60,6 @@
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 
 namespace MueLu {
@@ -97,6 +96,17 @@ namespace MueLu {
                                            Teuchos::ArrayRCP<bool> & BCrows,
                                            Teuchos::ArrayRCP<bool> & BCcols,
                                            Teuchos::ArrayRCP<bool> & BCdomain,
+                                           bool & allEdgesBoundary,
+                                           bool & allNodesBoundary);
+
+    static void detectBoundaryConditionsSM(RCP<Matrix> & SM_Matrix,
+                                           RCP<Matrix> & D0_Matrix,
+                                           magnitudeType rowSumTol,
+                                           Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos,
+                                           Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos,
+                                           Kokkos::View<bool*, typename Node::device_type> & BCdomainKokkos,
+                                           int & BCedges,
+                                           int & BCnodes,
                                            bool & allEdgesBoundary,
                                            bool & allNodesBoundary);
         

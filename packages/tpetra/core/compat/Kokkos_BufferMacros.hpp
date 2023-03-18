@@ -39,13 +39,15 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_BUFFER_MACROS
-#define KOKKOS_BUFFER_MACROS
+#ifndef TPETRA_CORE_COMPAT_KOKKOS_BUFFERMACROS_HPP
+#define TPETRA_CORE_COMPAT_KOKKOS_BUFFERMACROS_HPP
 
 // We retain this header file only for backwards compatibility.
 
-#ifdef __GNUC__
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
 #warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_BufferMacros.hpp is deprecated."
+#else
+#error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_BufferMacros.hpp is deprecated."
 #endif
 
-#endif // KOKKOS_BUFFER_MACROS
+#endif // TPETRA_CORE_COMPAT_KOKKOS_BUFFERMACROS_HPP
