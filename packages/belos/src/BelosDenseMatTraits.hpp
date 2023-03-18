@@ -163,11 +163,13 @@ View(const pointer_type &ptr, const IntType&... indices)
     *         keeping the entries. 
     */
     
-    // TODO Specify what should happen if matrix shrinks? Should new entries init to zero?
-    // No- new entries just get whatever is in memory. 
-    // Are there Teuchos unit tests we can copy to verify this function?
-    // Needs to be void b/c KK version doesn't have an error code. 
-    static void Reshape( DM& dm, const int numrows, const int numcols)
+    /* \brief Reshaping method for changing the size of \c dm to have \c numrows rows and \c numcols columns.
+     *        All values will be initialized to zero if the final argument is true. 
+     *        If the final argument is fale, the previous entries in 
+     *        the matrix will be maintained. For new entries that did not exist in the previous matrix, values will
+     *        contain noise from memory. 
+    */
+    static void Reshape( DM& dm, const int numrows, const int numcols, bool initZero = false)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }     
 
     //@}

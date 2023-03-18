@@ -134,13 +134,21 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     //@{ \name Shaping methods
 
-    /* \brief Reshaping method for changing the size of \c dm,
-    *         keeping the entries. 
-    \return Integer error code, set to 0 if successful.
+    /* \brief Reshaping method for changing the size of \c dm to have \c numrows rows and \c numcols columns.
+     *        All values will be initialized to zero if the final argument is true. 
+     *        If the final argument is fale, the previous entries in 
+     *        the matrix will be maintained. For new entries that did not exist in the previous matrix, values will
+     *        contain noise from memory. 
     */
-    static void Reshape( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int numrows, const int numcols) { 
-      int err =  dm.reshape(numrows,numcols); 
-      if(err != 0){throw std::runtime_error ("Error in DenseMatrixTraits::Reshape. Teuchos::SerialDenseMatrix.reshape failed.");}
+    static void Reshape( Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int numrows, const int numcols, bool initZero = false) { 
+      if(initZero){
+        int err =  dm.shape(numrows,numcols); 
+        if(err != 0){throw std::runtime_error ("Error in DenseMatrixTraits::shape. Teuchos::SerialDenseMatrix.shape failed.");}
+      }
+      else{
+        int err =  dm.reshape(numrows,numcols); 
+        if(err != 0){throw std::runtime_error ("Error in DenseMatrixTraits::reshape. Teuchos::SerialDenseMatrix.reshape failed.");}
+      }
     }     
 
     //@}
