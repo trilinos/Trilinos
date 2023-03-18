@@ -274,6 +274,21 @@ namespace Belos {
           << "Reshape test 2 gives wrong dimensions." << endl;
         return false;
       }
+      //Increase Dimensions and init to zeros.
+      DMT::Reshape(*dm2, numrows+5, numcols+5, true);
+      if(DMT::GetNumRows(*dm2) != numrows+5 ||
+         DMT::GetNumCols(*dm2) != numcols+5){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Reshape test 3 gives wrong dimensions." << endl;
+        return false;
+      }
+      if(DMT::Value(*dm2,0,0) != 0 || DMT::Value(*dm2,numrows+4,numcols+4)!=0){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Reshape test 3 does not init to zero." << endl;
+        return false;
+      }
 
       ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
       //TODO: Test handing this to lapack function? 
