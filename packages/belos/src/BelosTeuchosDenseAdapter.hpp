@@ -65,6 +65,14 @@ namespace Belos {
     
     //@{ \name Creation methods
 
+    /*! \brief Creates a new empty \c Teuchos::SerialDenseMatrix<int,ScalarType> with no dimension.
+
+    \return Reference-counted pointer to a new dense matrix of type \c Teuchos::SerialDenseMatrix<int,ScalarType>.
+    */
+    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> Create() { 
+      return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>());
+    }     
+
     /*! \brief Creates a new empty \c Teuchos::SerialDenseMatrix<int,ScalarType> containing \c numvecs columns.
      *         Will be initialized to zeros if last parameter is true.
 
