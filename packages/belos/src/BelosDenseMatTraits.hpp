@@ -86,6 +86,13 @@ namespace Belos {
     
     //@{ \name Creation methods
 
+    /*! \brief Creates a new empty \c DM with no dimension.
+
+    \return Reference-counted pointer to a new dense matrix of type \c DM.
+    */
+    static Teuchos::RCP<DM> Create()
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
     /*! \brief Creates a new empty \c DM containing \c numvecs columns.
      *         Will be initialized to zeros if last parameter is true.
 
@@ -93,6 +100,7 @@ namespace Belos {
     */
     static Teuchos::RCP<DM> Create( const int numrows, const int numcols, bool initZero = true)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
 
 /* Kokkos Ex View-from-ptr constructor: 
 View(const pointer_type &ptr, const IntType&... indices)
