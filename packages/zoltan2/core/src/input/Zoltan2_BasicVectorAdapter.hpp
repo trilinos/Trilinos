@@ -239,17 +239,17 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_;}
+  size_t getLocalNumIDs() const override { return numIds_;}
 
-  void getIDsView(const gno_t *&ids) const {ids = idList_;}
+  void getIDsView(const gno_t *&ids) const override {ids = idList_;}
 
   void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const
+    typename node_t::device_type> &ids) const override
   {
     ids = this->kokkos_ids_;
   }
 
-  int getNumWeightsPerID() const { return numWeights_;}
+  int getNumWeightsPerID() const override { return numWeights_;}
 
   virtual void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
     typename node_t::device_type> &wgt) const
@@ -257,7 +257,7 @@ public:
     wgt = kokkos_weights_;
   }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const override
   {
     if (idx < 0 || idx >= numWeights_) {
       std::ostringstream emsg;
@@ -273,9 +273,9 @@ public:
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumEntriesPerID() const { return numEntriesPerID_;}
+  int getNumEntriesPerID() const override { return numEntriesPerID_;}
 
-  void getEntriesView(const scalar_t *&entries, int &stride, int idx = 0) const
+  void getEntriesView(const scalar_t *&entries, int &stride, int idx = 0) const override
   {
     if (idx < 0 || idx >= numEntriesPerID_) {
       std::ostringstream emsg;
@@ -290,7 +290,7 @@ public:
   void getEntriesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> & entries) const
+    typename node_t::device_type> & entries) const override
   {
     entries = kokkos_entries_;
   }

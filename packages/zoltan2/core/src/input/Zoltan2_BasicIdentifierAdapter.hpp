@@ -59,7 +59,7 @@ namespace Zoltan2 {
  *           and their associated weights, if any.
  *
  *  The user supplies the identifiers and weights by way of pointers
- *    to arrays.  
+ *    to arrays.
  *
  *  The template parameter (\c User) is a C++ class type which provides the
  *  actual data types with which the Zoltan2 library will be compiled, through
@@ -103,7 +103,7 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-  BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr, 
+  BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! \brief Constructor
@@ -120,13 +120,13 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_; }
+  size_t getLocalNumIDs() const override { return numIds_; }
 
-  void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
+  void getIDsView(const gno_t *&Ids) const override { Ids = idList_; }
 
-  int getNumWeightsPerID() const { return weights_.size(); }
+  int getNumWeightsPerID() const override  { return weights_.size(); }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const override {
     if (idx < 0 || idx >= weights_.size()) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
@@ -168,7 +168,7 @@ template <typename User>
     }
   }
 }
-  
+
 }  //namespace Zoltan2
-  
+
 #endif

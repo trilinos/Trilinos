@@ -131,15 +131,15 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return vector_->getLocalLength();}
+  size_t getLocalNumIDs() const override { return vector_->getLocalLength();}
 
-  void getIDsView(const gno_t *&ids) const
+  void getIDsView(const gno_t *&ids) const override
   {
     ids = map_->getLocalElementList().getRawPtr();
   }
 
   void getIDsKokkosView(
-    Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const {
+    Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const override {
     if (map_->lib() == Xpetra::UseTpetra) {
       using device_type = typename node_t::device_type;
       const xt_mvector_t *tvector =
@@ -168,16 +168,16 @@ public:
     }
   }
 
-  int getNumWeightsPerID() const { return numWeights_;}
+  int getNumWeightsPerID() const override { return numWeights_;}
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const override
   {
     if(idx<0 || idx >= numWeights_)
     {
         std::ostringstream emsg;
         emsg << __FILE__ << ":" << __LINE__
              << "  Invalid weight index " << idx << std::endl;
-        throw std::runtime_error(emsg.str()); 
+        throw std::runtime_error(emsg.str());
     }
 
     size_t length;
@@ -206,14 +206,14 @@ public:
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumEntriesPerID() const {return vector_->getNumVectors();}
+  int getNumEntriesPerID() const override {return vector_->getNumVectors();}
 
-  void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
+  void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const override;
 
   void getEntriesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> & elements) const;
+    typename node_t::device_type> & elements) const override;
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,

@@ -102,8 +102,8 @@ public:
    */
   ~XpetraCrsMatrixAdapter() { }
 
-  /*! \brief Constructor   
-   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
+  /*! \brief Constructor
+   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
    *        the set \c nWeightsPerRow to the number of weights per row.
    */
@@ -115,10 +115,10 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for entity \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow
    *                  argument to the constructor.
    *
-   * The order of weights should correspond to the order of the primary 
+   * The order of weights should correspond to the order of the primary
    * entity type; see, e.g.,  setRowWeights below.
    */
 
@@ -129,7 +129,7 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
@@ -143,7 +143,7 @@ public:
 
   /*! \brief Specify an index for which the weight should be
               the degree of the entity
-   *    \param idx Zoltan2 will use the entity's 
+   *    \param idx Zoltan2 will use the entity's
    *         degree as the entity weight for index \c idx.
    */
   void setWeightIsDegree(int idx);
@@ -159,27 +159,27 @@ public:
   // The MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumRows() const { 
+  size_t getLocalNumRows() const override {
     return matrix_->getLocalNumRows();
   }
 
-  size_t getLocalNumColumns() const { 
+  size_t getLocalNumColumns() const override {
     return matrix_->getLocalNumCols();
   }
 
-  size_t getLocalNumEntries() const {
+  size_t getLocalNumEntries() const override {
     return matrix_->getLocalNumEntries();
   }
 
-  bool CRSViewAvailable() const { return true; }
+  bool CRSViewAvailable() const override { return true; }
 
-  void getRowIDsView(const gno_t *&rowIds) const 
+  void getRowIDsView(const gno_t *&rowIds) const override
   {
     ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const override
   {
 
     ArrayRCP< const lno_t > localColumnIds;
@@ -190,7 +190,7 @@ public:
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
-                  ArrayRCP<const scalar_t> &values) const
+                  ArrayRCP<const scalar_t> &values) const override
   {
     ArrayRCP< const lno_t > localColumnIds;
     matrix_->getAllValues(offsets,localColumnIds,values);
@@ -198,24 +198,24 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const { return nWeightsPerRow_; }
+  int getNumWeightsPerRow() const override { return nWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
-                           int idx = 0) const
+                           int idx = 0) const override
   {
     if(idx<0 || idx >= nWeightsPerRow_)
     {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
+  bool useNumNonzerosAsRowWeight(int idx) const override { return numNzWeight_[idx];}
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
@@ -314,7 +314,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nvtx = getLocalNumRows();
@@ -349,7 +349,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
 
@@ -360,9 +360,9 @@ template <typename User, typename UserCoord>
 template <typename User, typename UserCoord>
   template <typename Adapter>
     void XpetraCrsMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, User *&out, 
+      const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
-{ 
+{
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
@@ -384,9 +384,9 @@ template <typename User, typename UserCoord>
 template <typename User, typename UserCoord>
   template <typename Adapter>
     void XpetraCrsMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, RCP<User> &out, 
+      const User &in, RCP<User> &out,
       const PartitioningSolution<Adapter> &solution) const
-{ 
+{
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
@@ -403,5 +403,5 @@ template <typename User, typename UserCoord>
 }
 
 }  //namespace Zoltan2
-  
+
 #endif

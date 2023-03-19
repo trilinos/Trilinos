@@ -67,7 +67,7 @@ namespace Zoltan2 {
  *           and their associated weights, if any.
  *
  *  The user supplies the identifiers and weights by way of pointers
- *    to arrays.  
+ *    to arrays.
  *
     The template parameter (\c User) is a C++ class type which provides the
     actual data types with which the Zoltan2 library will be compiled, through
@@ -126,11 +126,11 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  bool areEntityIDsUnique(MeshEntityType etype) const {
+  bool areEntityIDsUnique(MeshEntityType etype) const override {
     return etype==MESH_REGION;
   }
 
-  size_t getLocalNumOf(MeshEntityType etype) const
+  size_t getLocalNumOf(MeshEntityType etype) const override
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -143,8 +143,8 @@ public:
 
     return 0;
   }
-   
-  void getIDsViewOf(MeshEntityType etype, const gno_t *&Ids) const
+
+  void getIDsViewOf(MeshEntityType etype, const gno_t *&Ids) const override
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -157,9 +157,9 @@ public:
 
     else Ids = NULL;
   }
-  
+
   void getTopologyViewOf(MeshEntityType etype,
-			 enum EntityTopologyType const *&Types) const {
+			 enum EntityTopologyType const *&Types) const override {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
       Types = elemTopology;
@@ -173,16 +173,16 @@ public:
   }
 
   void getWeightsViewOf(MeshEntityType etype, const scalar_t *&weights,
-			int &stride, int idx = 0) const
+			int &stride, int idx = 0) const override
   {
     weights = NULL;
     stride = 0;
   }
 
-  int getDimension() const { return dimension_; }
+  int getDimension() const override { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
-			    int &stride, int dim) const {
+			    int &stride, int dim) const override {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	       (MESH_FACE == etype && 2 == dimension_)) {
       if (dim == 0) {
@@ -212,7 +212,7 @@ public:
     }
   }
 
-  bool availAdjs(MeshEntityType source, MeshEntityType target) const {
+  bool availAdjs(MeshEntityType source, MeshEntityType target) const override {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) ||
 	(MESH_VERTEX == source && MESH_REGION == target && 3 == dimension_) ||
@@ -223,7 +223,7 @@ public:
     return false;
   }
 
-  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const override
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -234,12 +234,12 @@ public:
 	(MESH_VERTEX == source && MESH_FACE == target && 2 == dimension_)) {
       return telct_;
     }
-    
+
     return 0;
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const offset_t *&offsets, const gno_t *& adjacencyIds) const
+		   const offset_t *&offsets, const gno_t *& adjacencyIds) const override
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -261,7 +261,7 @@ public:
 
   //#define USE_MESH_ADAPTER
 #ifndef USE_MESH_ADAPTER
-  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const override
   {
     if (through == MESH_VERTEX) {
       if (sourcetarget == MESH_REGION && dimension_ == 3) return true;
@@ -274,8 +274,8 @@ public:
     return false;
   }
 
-  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through) const
+  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
+			    MeshEntityType through) const override
   {
     if (through == MESH_VERTEX &&
 	((sourcetarget == MESH_REGION && dimension_ == 3) ||
@@ -292,8 +292,8 @@ public:
     return 0;
   }
 
-  void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const offset_t *&offsets, const gno_t *&adjacencyIds) const
+  void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through,
+		      const offset_t *&offsets, const gno_t *&adjacencyIds) const override
   {
     if (through == MESH_VERTEX &&
 	((sourcetarget == MESH_REGION && dimension_ == 3) ||
@@ -313,14 +313,14 @@ public:
   }
 #endif
 
-  bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
+  bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const override
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_) ||
 	(MESH_VERTEX == etype)) {
       return entityDegreeWeight_[idx];
     }
-    
+
     return false;
   }
 
@@ -329,7 +329,7 @@ private:
   gno_t *element_num_map_, *node_num_map_;
   gno_t *elemToNode_;
   offset_t tnoct_, *elemOffsets_;
-  gno_t *nodeToElem_; 
+  gno_t *nodeToElem_;
   offset_t telct_, *nodeOffsets_;
 
   int nWeightsPerEntity_;
@@ -373,7 +373,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   else if (typestr.compare("vertex") == 0) {
     if (dimension_ == 3)
       this->setEntityTypes(typestr, "region", "region");
-    else 
+    else
       this->setEntityTypes(typestr, "face", "face");
   }
   else {
@@ -389,29 +389,29 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   size_t dlen = num_nodes_ * dimension_;
   for (size_t i = 0; i < dlen; i++) coords_[i] = as<scalar_t>(dcoords[i]);
   delete [] dcoords;
-  
+
   element_num_map_ = new gno_t[num_elem_];
   std::vector<int> tmp;
   tmp.resize(num_elem_);
-  
+
   // BDD cast to int did not always work!
   // error += im_ex_get_elem_num_map(exoid, (int *)element_num_map_)
   // This may be a case of calling the wrong method
   error += im_ex_get_elem_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
     element_num_map_[i] = static_cast<gno_t>(tmp[i]);
-    
+
   tmp.clear();
   tmp.resize(num_nodes_);
   node_num_map_ = new gno_t [num_nodes_];
-  
+
   // BDD cast to int did not always work!
   // error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
   // This may be a case of calling the wrong method
   error += im_ex_get_node_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
     node_num_map_[i] = static_cast<gno_t>(tmp[i]);
-  
+
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)
     nodeTopology[i] = POINT;
@@ -422,7 +422,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     else
       elemTopology[i] = HEXAHEDRON;
   }
-  
+
   int *elem_blk_ids       = new int [num_elem_blk];
   error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
 
@@ -512,7 +512,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       reconnect[telct] = new int [num_nodes_per_elem[b]];
 
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct_]= 
+	elemToNode_[tnoct_]=
           as<gno_t>(node_num_map_[connect[b][i*num_nodes_per_elem[b] + j]-1]);
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j];
 	++tnoct_;
@@ -914,7 +914,7 @@ void PamgenMeshAdapter<User>::print(int me)
             << std::endl;
 
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i 
+    std::cout << me << fn << i
               << " Elem " << element_num_map_[i]
               << " Coords: ";
     for (int j = 0; j < dimension_; j++)
@@ -924,7 +924,7 @@ void PamgenMeshAdapter<User>::print(int me)
 
 #ifndef USE_MESH_ADAPTER
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i 
+    std::cout << me << fn << i
               << " Elem " << element_num_map_[i]
               << " Graph: ";
     for (int j = eStart_[i]; j < eStart_[i+1]; j++)
@@ -933,7 +933,7 @@ void PamgenMeshAdapter<User>::print(int me)
   }
 #endif
 }
-  
+
 }  //namespace Zoltan2
-  
+
 #endif

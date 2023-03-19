@@ -189,27 +189,27 @@ public:
 
   // TODO:  Assuming rows == objects;
   // TODO:  Need to add option for columns or nonzeros?
-  size_t getLocalNumVertices() const { return graph_->getLocalNumRows(); }
+  size_t getLocalNumVertices() const override { return graph_->getLocalNumRows(); }
 
-  void getVertexIDsView(const gno_t *&ids) const
+  void getVertexIDsView(const gno_t *&ids) const override
   {
     ids = NULL;
     if (getLocalNumVertices())
       ids = graph_->getRowMap()->getLocalElementList().getRawPtr();
   }
 
-  size_t getLocalNumEdges() const { return graph_->getLocalNumEntries(); }
+  size_t getLocalNumEdges() const override { return graph_->getLocalNumEntries(); }
 
-  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
+  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const override
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
   }
 
-  int getNumWeightsPerVertex() const { return nWeightsPerVertex_;}
+  int getNumWeightsPerVertex() const override { return nWeightsPerVertex_;}
 
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
-                            int idx) const
+                            int idx) const override
   {
     if(idx<0 || idx >= nWeightsPerVertex_)
     {
@@ -223,11 +223,11 @@ public:
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useDegreeAsVertexWeight(int idx) const {return vertexDegreeWeight_[idx];}
+  bool useDegreeAsVertexWeight(int idx) const override {return vertexDegreeWeight_[idx];}
 
   int getNumWeightsPerEdge() const { return nWeightsPerEdge_;}
 
-  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const override
   {
     if(idx<0 || idx >= nWeightsPerEdge_)
     {

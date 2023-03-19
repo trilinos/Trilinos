@@ -237,7 +237,7 @@ public:
          getEntityCoordinateDimension() specifying which dimension is
          being provided in the coords list.
   */
-  virtual void getCoordinatesViewOf(MeshEntityType etype,
+  void getCoordinatesViewOf(MeshEntityType etype,
     const scalar_t *&coords, int &stride, int coordDim) const
   {
     coords = NULL;

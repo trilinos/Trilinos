@@ -112,7 +112,7 @@ public:
    */
   virtual ~IdentifierAdapter() {};
 
-  enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
+  enum BaseAdapterType adapterType() const override {return IdentifierAdapterType;}
 };
 
 }  //namespace Zoltan2

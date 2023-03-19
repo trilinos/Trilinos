@@ -148,27 +148,27 @@ public:
   // The MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumRows() const {
+  size_t getLocalNumRows() const override {
     return matrix_->getLocalNumRows();
   }
 
-  size_t getLocalNumColumns() const {
+  size_t getLocalNumColumns() const override {
     return matrix_->getLocalNumCols();
   }
 
-  size_t getLocalNumEntries() const {
+  size_t getLocalNumEntries() const override {
     return matrix_->getLocalNumEntries();
   }
 
-  bool CRSViewAvailable() const { return true; }
+  bool CRSViewAvailable() const override { return true; }
 
-  void getRowIDsView(const gno_t *&rowIds) const
+  void getRowIDsView(const gno_t *&rowIds) const override
   {
     ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const override
   {
     offsets = offset_;
     colIds = columnIds_;
@@ -176,7 +176,7 @@ public:
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
-                  ArrayRCP<const scalar_t> &values) const
+                  ArrayRCP<const scalar_t> &values) const override
   {
     offsets = offset_;
     colIds = columnIds_;
@@ -184,10 +184,10 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const { return nWeightsPerRow_; }
+  int getNumWeightsPerRow() const override { return nWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
-                           int idx = 0) const
+                           int idx = 0) const override
   {
     if(idx<0 || idx >= nWeightsPerRow_)
     {
@@ -202,7 +202,7 @@ public:
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
+  bool useNumNonzerosAsRowWeight(int idx) const override { return numNzWeight_[idx];}
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
