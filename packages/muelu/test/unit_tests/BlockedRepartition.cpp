@@ -85,7 +85,6 @@
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 

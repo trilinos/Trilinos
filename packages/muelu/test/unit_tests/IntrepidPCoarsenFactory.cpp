@@ -57,7 +57,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
