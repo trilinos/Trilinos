@@ -1070,7 +1070,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
               problem_->computeCurrPrecResVec( &*V_0 );
 
             // Get a view of the first block of the Krylov basis.
-            z_0 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+            z_0 = DMT::Create(blockSize_, blockSize_);
 
             // Orthonormalize the new V_0
             rank = ortho_->normalize( *V_0, z_0 );
