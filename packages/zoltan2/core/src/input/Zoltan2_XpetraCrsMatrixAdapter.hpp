@@ -66,8 +66,12 @@ public:
   using user_t = User;
 #endif
 
+/*! \brief Destructor
+   */
+  ~XpetraCrsMatrixAdapter() { }
+
   /*! \brief Constructor
-   *    \param inmatrix The user's Epetra, Tpetra, or Xpetra CrsMatrix object
+   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
    *        then set \c nWeightsPerRow to the number of weights per row.
    */
@@ -135,22 +139,27 @@ public:
     return matrix_->getLocalNumEntries();
   }
 
-  bool CRSViewAvailable() const { return true; }
-
   void getRowIDsView(const gno_t *&rowIds) const
   {
     ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets,
-                  ArrayRCP<const gno_t> &colIds) const
+  void getColumnIDsView(const gno_t *&colIds) const
+  {
+    ArrayView<const gno_t> colView = colMap_->getLocalElementList();
+    colIds = colView.getRawPtr();
+  }
+
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
   {
     ArrayRCP< const lno_t > localColumnIds;
     ArrayRCP<const scalar_t> values;
     matrix_->getAllValues(offsets,localColumnIds,values);
     colIds = columnIds_;
   }
+
+  bool CRSViewAvailable() const { return true; }
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
@@ -160,6 +169,64 @@ public:
     colIds = columnIds_;
   }
 
+  void getCCSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &rowIds) const override {
+    ArrayRCP<const offset_t> crsOffsets{};
+    ArrayRCP<const lno_t> crsLocalColumnIds{};
+    ArrayRCP<const scalar_t> values{};
+    matrix_->getAllValues(crsOffsets, crsLocalColumnIds, values);
+
+    const auto localRowIds = rowMap_->getLocalElementList();
+    const auto numLocalCols = colMap_->getLocalNumElements();
+    rowIds = ArrayRCP<const gno_t>(crsLocalColumnIds.size(), 0);
+    offsets = ArrayRCP<const offset_t>(numLocalCols, 0);
+
+    // Lambda used to compute local row based on column index from CRS view
+    auto determineRow = [&crsOffsets, &localRowIds](const int columnIdx) {
+      int curLocalRow = 0;
+      for (int rowIdx = 0; rowIdx < localRowIds.size(); ++rowIdx) {
+        if (rowIdx < (localRowIds.size() - 1)) {
+          if (static_cast<offset_t>(columnIdx) < crsOffsets[rowIdx + 1]) {
+            return curLocalRow;
+          }
+          ++curLocalRow;
+        } else {
+          return curLocalRow;
+        }
+      }
+
+      return -1;
+    };
+
+    ArrayRCP<gno_t> ccsRowIds(crsLocalColumnIds.size());
+    ArrayRCP<offset_t> ccsOffsets(numLocalCols + 1);
+
+    // Vector of global rows per eahc local column
+    std::vector<std::vector<gno_t>> rowIDsPerCol(crsLocalColumnIds.size());
+
+    for (int colIdx = 0; colIdx < crsLocalColumnIds.size(); ++colIdx) {
+      const auto colID = crsLocalColumnIds[colIdx];
+      const auto globalRow = rowMap_->getGlobalElement(determineRow(colIdx));
+
+      rowIDsPerCol[colID].push_back(globalRow);
+    }
+
+    size_t offsetWrite = 0;
+    for (size_t i = 1; i < rowIDsPerCol.size(); ++i) {
+      const auto &rowIDs = rowIDsPerCol[i - 1];
+      ccsOffsets[i - 1] = rowIDs.size();
+
+      if (not rowIDs.empty()) {
+        std::copy(rowIDs.begin(), rowIDs.end(),
+                  ccsRowIds.begin() + offsetWrite);
+        offsetWrite += rowIDs.size();
+      }
+    }
+
+    ccsOffsets[numLocalCols] = crsLocalColumnIds.size();
+    offsets = ccsOffsets;
+    rowIds = ccsRowIds;
+  }
 
   int getNumWeightsPerRow() const { return nWeightsPerRow_; }
 
@@ -236,7 +303,7 @@ template <typename User, typename UserCoord>
   matrix_->getAllValues(offset,localColumnIds,values);
   columnIds_.resize(nnz, 0);
 
-  for(offset_t i = 0; i < offset[nrows]; i++){
+  for (offset_t i = 0; i < offset[nrows]; i++) {
     columnIds_[i] = colMap_->getGlobalElement(localColumnIds[i]);
   }
 
