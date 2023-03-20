@@ -111,6 +111,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> Subview(Teuchos::SerialDenseMatrix<int,ScalarType> & source, int numRows, int numCols, int startRow=0, int startCol=0)
     { return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, source, numRows, numCols, startRow, startCol)); }    
 
+    static Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType>> SubviewConst( 
+                              const Teuchos::SerialDenseMatrix<int,ScalarType> & source, int numRows, int numCols, int startRow=0, int startCol=0)
+    { return Teuchos::rcp(new const Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, source, numRows, numCols, startRow, startCol)); }    
+
     //! \brief Returns a deep copy of the requested subview.
     static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> SubviewCopy( const Teuchos::SerialDenseMatrix<int,ScalarType>& source, int numRows, int numCols, int startRow=0, int startCol=0)
     { return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy, source, numRows, numCols, startRow, startCol)); }    
@@ -162,7 +166,7 @@ View(const pointer_type &ptr, const IntType&... indices)
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const ScalarType & Value( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int i, const int j )
+    static const ScalarType & Value( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int i, const int j ) 
     { 
       return dm(i,j);
     }
@@ -177,6 +181,11 @@ View(const pointer_type &ptr, const IntType&... indices)
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( Teuchos::SerialDenseMatrix<int,ScalarType>& thisDM, const Teuchos::SerialDenseMatrix<int,ScalarType>& sourceDM){ 
       thisDM += sourceDM; 
+    }
+
+    //!  \brief Fill all entries with \c value. Value is zero if not specified.
+    static void PutScalar( Teuchos::SerialDenseMatrix<int,ScalarType> & dm, ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero()){ 
+      dm.putScalar(value);
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
