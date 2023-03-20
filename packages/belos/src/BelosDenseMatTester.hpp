@@ -166,6 +166,20 @@ namespace Belos {
       
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
+      DMT::PutScalar(*dm2,47.2);
+      if( DMT::Value(*dm2,0,0) != 47.2){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "PutScalar failed" << endl;
+        return false;
+      }
+      DMT::PutScalar(*dm2);
+      if( DMT::Value(*dm2,0,0) != 0){
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "PutScalar default args failed" << endl;
+        return false;
+      }
       
       //Try calling const version? TODO need to check const-ness??
       const ScalarType constval = DMT::Value(*dm1,1,1);
