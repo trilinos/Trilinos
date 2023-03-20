@@ -202,7 +202,7 @@ public:
     ArrayRCP<offset_t> ccsOffsets(numLocalCols + 1);
 
     // Vector of global rows per eahc local column
-    std::vector<std::vector<gno_t>> rowIDsPerCol(crsLocalColumnIds.size());
+    std::vector<std::vector<gno_t>> rowIDsPerCol(numLocalCols);
 
     for (int colIdx = 0; colIdx < crsLocalColumnIds.size(); ++colIdx) {
       const auto colID = crsLocalColumnIds[colIdx];
