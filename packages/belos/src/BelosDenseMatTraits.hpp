@@ -136,6 +136,9 @@ View(const pointer_type &ptr, const IntType&... indices)
     static Teuchos::RCP<DM> Subview( DM & source, int numRows, int numCols, int startRow=0, int startCol=0)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
+    static Teuchos::RCP<const DM> SubviewConst( const DM & source, int numRows, int numCols, int startRow=0, int startCol=0)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
     //! \brief Returns a deep copy of the requested subview.
     static Teuchos::RCP<DM> SubviewCopy( const DM & source, int numRows, int numCols, int startRow=0, int startCol=0)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
@@ -186,7 +189,7 @@ View(const pointer_type &ptr, const IntType&... indices)
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const ScalarType & Value( const DM& dm, const int i, const int j )
+    static const ScalarType & Value( const DM& dm, const int i, const int j ) 
     { 
       UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
       ScalarType * ptrz = new ScalarType;
@@ -204,6 +207,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( DM& thisDM, const DM& sourceDM)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Fill all entries with \c value. Value is zero if not specified.
+    static void PutScalar( DM& dm, ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero()) 
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
