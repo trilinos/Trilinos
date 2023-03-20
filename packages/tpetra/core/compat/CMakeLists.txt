@@ -20,20 +20,18 @@ APPEND_GLOB(HEADERS ${DIR}/*.h)
 # NOTE: Once the deprecated code is removed this entire block should be replaced with
 # APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 # APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
-  APPEND_SET(HEADERS
-    Tpetra_KokkosCompat_DefaultNode.hpp
-    Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp
-  )
 
-  APPEND_SET(SOURCES
-    Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.cpp
-  )
-ELSE()
-  APPEND_SET(HEADERS
-    Tpetra_KokkosCompat_DefaultNode.hpp
-    Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp
+APPEND_SET(HEADERS
+  Tpetra_KokkosCompat_DefaultNode.hpp
+  Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp
+)
 
+APPEND_SET(SOURCES
+  Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.cpp
+)
+
+IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE OR Tpetra_ENABLE_DEPRECATED_CODE)
+  APPEND_SET(HEADERS
     Kokkos_BufferMacros.hpp 
     KokkosCompat_ClassicNodeAPI_Wrapper.hpp
     Kokkos_ConfigDefs.hpp
@@ -42,10 +40,6 @@ ELSE()
     Kokkos_MultiVectorKernelOps.hpp
     Kokkos_NodeAPIConfigDefs.hpp
     Kokkos_Version.hpp
-  )
-
-  APPEND_SET(SOURCES
-    Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.cpp
   )
 ENDIF()
 
