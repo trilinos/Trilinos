@@ -45,7 +45,7 @@ template <typename T> struct LapackTeam {
                         *__restrict__ A22 = A + (p + 1) * as0 + (p + 1) * as1;
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-          if (arith_traits::real(*alpha11) <= zero) {
+          if (*info == 0 && arith_traits::real(*alpha11) <= zero) {
             *info = 1+p;
           }
           *alpha11 = sqrt(arith_traits::real(*alpha11));
@@ -149,7 +149,7 @@ template <typename T> struct LapackTeam {
         }
         member.team_barrier();
         Kokkos::single(Kokkos::PerThread(member), [&]() {
-          if (*alpha11 == zero) {
+          if (*info == 0 && *alpha11 == zero) {
             *info = 1+p;
           }
         });
@@ -276,7 +276,7 @@ template <typename T> struct LapackTeam {
 
         /// pivot
         Kokkos::single(Kokkos::PerThread(member), [&]() {
-          if (*alpha11 == zero) {
+          if (*info == 0 && *alpha11 == zero) {
             *info = 1+p;
           }
           ipiv[p] = p + idx + 1;
