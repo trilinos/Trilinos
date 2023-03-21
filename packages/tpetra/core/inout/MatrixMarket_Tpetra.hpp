@@ -3673,19 +3673,17 @@ namespace Tpetra {
                   << prvRow << ", at curPos = " << curPos << ".  Please report "
                   "this bug to the Tpetra developers.");
                 if (curRow > prvRow) {
-                  for (global_ordinal_type r = prvRow+1; r <= curRow; ++r) {
-                    rowPtr[r] = curPos;
-                  }
                   prvRow = curRow;
                 }
                 numEntriesPerRow[curRow]++;
                 colInd[curPos] = curEntry.colIndex();
                 values[curPos] = curEntry.value();
               }
-              // rowPtr has one more entry than numEntriesPerRow.  The
-              // last entry of rowPtr is the number of entries in
-              // colInd and values.
-              rowPtr[numRows] = numEntries;
+
+              rowPtr[0] = 0;
+              for (global_ordinal_type row = 1; row <= numRows; ++row) {
+                rowPtr[row] = numEntriesPerRow[row-1] + rowPtr[row-1];
+              }
             } // Finished conversion to CSR format
             catch (std::exception& e) {
               mergeAndConvertSucceeded = 0;
