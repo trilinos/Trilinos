@@ -144,6 +144,14 @@ public:
 private:
 
   /**
+   * \brief Compute the row permutation for option LargeDiag-MC64.
+   *
+   * SuperLU_DIST supports several forms of row permutations.  Refer
+   * to \ref slu_mt_options for the available \c RowPerm options.
+   */
+  void computeRowPermutationLargeDiagMC64(SLUD::SuperMatrix& GA);
+
+  /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
    *
    * SuperLU_DIST supports several forms of column permutations.  Refer
@@ -326,6 +334,7 @@ private:
   /// \c true if this processor is in SuperLU_DISTS's 2D process grid
   bool in_grid_;
   bool same_symbolic_;
+  bool force_symbfact_;
   mutable bool same_solve_struct_; // may be modified in solve_impl, but still `logically const'
 
   /// Maps rows of the matrix to processors in the SuperLU_DIST processor grid

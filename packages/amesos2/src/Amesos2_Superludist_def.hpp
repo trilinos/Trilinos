@@ -74,6 +74,7 @@ namespace Amesos2 {
     , xvals_()
     , in_grid_(false)
     , is_contiguous_(true)
+    , force_symbfact_(false)
   {
     using Teuchos::Comm;
     // It's OK to depend on MpiComm explicitly here, because
@@ -326,91 +327,68 @@ namespace Amesos2 {
   }
 
   template<class Matrix, class Vector>
-  int
-  Superludist<Matrix,Vector>::preOrdering_impl()
+  void
+  Superludist<Matrix,Vector>::computeRowPermutationLargeDiagMC64(SLUD::SuperMatrix& GA)
   {
-    SLUD::SuperMatrix GA;      /* Global A in NC format */
-    bool need_value = false;
-    if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
-      need_value = true;
-
-      if( in_grid_ && data_.options.Equil == SLUD::YES ) {
-        // create a copy of A
-        SLUD::SuperMatrix Acopy;
-        SLUD::D::dClone_CompRowLoc_Matrix_dist(&(data_.A), &Acopy);
-        SLUD::D::dCopy_CompRowLoc_Matrix_dist(&(data_.A), &Acopy);
-
-        SLUD::int_t info = 0;
-
-        // Compute scaling
-        data_.R.resize(this->globalNumRows_);
-        data_.C.resize(this->globalNumCols_);
-        function_map::gsequ_loc(&Acopy, data_.R.getRawPtr(), data_.C.getRawPtr(),
-                                &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
-
-        // Apply the scaling to Acopy
-        std::vector<SLUD::DiagScale_t> equed(1);
-        function_map::laqgs_loc(&Acopy, data_.R.getRawPtr(), data_.C.getRawPtr(),
-                                data_.rowcnd, data_.colcnd, data_.amax,
-                                equed.data());
-
-        SLUD::D::pdCompRow_loc_to_CompCol_global(true, &Acopy, &data_.grid, &GA);
-        SLUD::Destroy_CompRow_Matrix_dist(&Acopy);
-      }
-      else
-        SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
+    int job = data_.largediag_mc64_job;
+    if (job == 5)
+    {
+      data_.R1.resize(data_.A.nrow);
+      data_.C1.resize(data_.A.ncol);
     }
 
-    if (data_.options.RowPerm == SLUD::NOROWPERM) {
-      SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
-      for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
-    } else if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
-      int job = data_.largediag_mc64_job;
+    SLUD::NCformat *GAstore = (SLUD::NCformat*) GA.Store;
+    SLUD::int_t* colptr = GAstore->colptr;
+    SLUD::int_t* rowind = GAstore->rowind;
+    SLUD::int_t nnz = GAstore->nnz;
+    double *a_GA = (double *) GAstore->nzval;
+    MPI_Datatype dtype = Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(0.0);
 
-      if (job == 5)
-      {
-        data_.R1.resize(data_.A.nrow);
-        data_.C1.resize(data_.A.ncol);
-      }
+    int iinfo;
+    if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
+      iinfo = function_map::ldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
+              data_.perm_r.getRawPtr(), data_.R1.getRawPtr(), data_.C1.getRawPtr());
 
-      SLUD::NCformat *GAstore = (SLUD::NCformat*) GA.Store;
-      SLUD::int_t* colptr = GAstore->colptr;
-      SLUD::int_t* rowind = GAstore->rowind;
-      SLUD::int_t nnz = GAstore->nnz;
-      double *a_GA = (double *) GAstore->nzval;
-      MPI_Datatype dtype = Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(0.0);
-
-      int iinfo;
-      if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
-        iinfo = function_map::ldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
-                data_.perm_r.getRawPtr(), data_.R1.getRawPtr(), data_.C1.getRawPtr());
-
-        MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
-        if ( iinfo == 0 ) {
-            MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
-            if ( job == 5 && data_.options.Equil ) {
-                MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
-                MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
-            }
-        }
-      } else {
-        MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
-        if ( iinfo == 0 ) {
+      MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+      if ( iinfo == 0 ) {
           MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
           if ( job == 5 && data_.options.Equil ) {
               MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
               MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
           }
-        }
       }
-
-      if (job == 5)
-      {
-        for (SLUD::int_t i = 0; i < data_.A.nrow; ++i) data_.R1[i] = exp(data_.R1[i]);
-        for (SLUD::int_t i = 0; i < data_.A.ncol; ++i) data_.C1[i] = exp(data_.C1[i]);
+    } else {
+      MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+      if ( iinfo == 0 ) {
+        MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+        if ( job == 5 && data_.options.Equil ) {
+            MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
+            MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
+        }
       }
     }
 
+    if (job == 5)
+    {
+      for (SLUD::int_t i = 0; i < data_.A.nrow; ++i) data_.R1[i] = exp(data_.R1[i]);
+      for (SLUD::int_t i = 0; i < data_.A.ncol; ++i) data_.C1[i] = exp(data_.C1[i]);
+    }
+  }
+
+
+  template<class Matrix, class Vector>
+  int
+  Superludist<Matrix,Vector>::preOrdering_impl()
+  {
+    if (data_.options.RowPerm == SLUD::NOROWPERM) {
+      SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
+      for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
+    }
+    else if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+      if (!force_symbfact_)
+        // defer to numerical factorization because row permutation requires the matrix values
+        return (EXIT_SUCCESS + 1);
+    }
     // loadA_impl();                    // Refresh matrix values
 
     if( in_grid_ ){
@@ -445,9 +423,6 @@ namespace Amesos2 {
                           << info << " bytes of memory" );
     }
 
-    if (need_value)
-      SLUD::Destroy_CompCol_Matrix_dist(&GA);
-
     // Ordering will be applied directly before numeric factorization,
     // after we have a chance to get updated coefficients from the
     // matrix
@@ -462,6 +437,12 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::symbolicFactorization_impl()
   {
     // loadA_impl();                    // Refresh matrix values
+    if (!force_symbfact_) {
+       if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+          // defer to numerical factorization because row permutation requires the matrix values
+          return (EXIT_SUCCESS + 1);
+       }
+    }
 
     if( in_grid_ ){
 
@@ -506,9 +487,18 @@ namespace Amesos2 {
     using Teuchos::as;
 
     // loadA_impl();                    // Refresh the matrix values
+    SLUD::SuperMatrix GA;      /* Global A in NC format */
+    bool need_value = false;
 
     if( in_grid_ ) {
       if( data_.options.Equil == SLUD::YES ) {
+        SLUD::int_t info = 0;
+
+        // Compute scaling
+        data_.R.resize(this->globalNumRows_);
+        data_.C.resize(this->globalNumCols_);
+        function_map::gsequ_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
+                                &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
 
         // Apply the scalings
         function_map::laqgs_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
@@ -518,33 +508,49 @@ namespace Amesos2 {
         data_.rowequ = (data_.equed == SLUD::ROW) || (data_.equed == SLUD::BOTH);
         data_.colequ = (data_.equed == SLUD::COL) || (data_.equed == SLUD::BOTH);
 
-        // Apply row-permutation scaling
-        // Here we do it manually to bypass the threshold check in laqgs_loc
-        if (data_.options.RowPerm == SLUD::LargeDiag_MC64 && data_.largediag_mc64_job == 5)
-        {
-          SLUD::NRformat_loc *Astore  = (SLUD::NRformat_loc*) data_.A.Store;
-          double *a = (double*) Astore->nzval;
-          SLUD::int_t m_loc   = Astore->m_loc;
-          SLUD::int_t fst_row = Astore->fst_row;
-          SLUD::int_t i, j, irow = fst_row, icol;
+        // Compute and apply the row permutation
+        if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
+          // Create a column-order copy of A
+          need_value = true;
+          SLUD::D::pdCompRow_loc_to_CompCol_global(true, &data_.A, &data_.grid, &GA);
 
-          /* Scale the distributed matrix further.
-           A <-- diag(R1)*A*diag(C1)            */
-          for (j = 0; j < m_loc; ++j) {
-            for (i = rowptr_view_.data()[j]; i < rowptr_view_.data()[j+1]; ++i) {
-                icol = colind_view_.data()[i];
-                a[i] *= data_.R1[irow] * data_.C1[icol];
+          // Compute row permutation
+          computeRowPermutationLargeDiagMC64(GA);
+
+          // Here we do symbolic factorization
+          force_symbfact_ = true;
+          preOrdering_impl();
+          symbolicFactorization_impl();
+          force_symbfact_ = false;
+
+          // Apply row-permutation scaling for job=5
+          // Here we do it manually to bypass the threshold check in laqgs_loc
+          if (data_.largediag_mc64_job == 5)
+          {
+            SLUD::NRformat_loc *Astore  = (SLUD::NRformat_loc*) data_.A.Store;
+            double *a = (double*) Astore->nzval;
+            SLUD::int_t m_loc   = Astore->m_loc;
+            SLUD::int_t fst_row = Astore->fst_row;
+            SLUD::int_t i, j, irow = fst_row, icol;
+
+            /* Scale the distributed matrix further.
+             A <-- diag(R1)*A*diag(C1)            */
+            for (j = 0; j < m_loc; ++j) {
+              for (i = rowptr_view_.data()[j]; i < rowptr_view_.data()[j+1]; ++i) {
+                  icol = colind_view_.data()[i];
+                  a[i] *= data_.R1[irow] * data_.C1[icol];
+              }
+              ++irow;
             }
-            ++irow;
+
+            /* Multiply together the scaling factors */
+            if ( data_.rowequ ) for (i = 0; i < data_.A.nrow; ++i) data_.R[i] *= data_.R1[i];
+            else for (i = 0; i < data_.A.nrow; ++i) data_.R[i] = data_.R1[i];
+            if ( data_.colequ ) for (i = 0; i < data_.A.ncol; ++i) data_.C[i] *= data_.C1[i];
+            else for (i = 0; i < data_.A.ncol; ++i) data_.C[i] = data_.C1[i];
+
+            data_.rowequ = data_.colequ = 1;
           }
-
-          /* Multiply together the scaling factors */
-          if ( data_.rowequ ) for (i = 0; i < data_.A.nrow; ++i) data_.R[i] *= data_.R1[i];
-          else for (i = 0; i < data_.A.nrow; ++i) data_.R[i] = data_.R1[i];
-          if ( data_.colequ ) for (i = 0; i < data_.A.ncol; ++i) data_.C[i] *= data_.C1[i];
-          else for (i = 0; i < data_.A.ncol; ++i) data_.C[i] = data_.C1[i];
-
-          data_.rowequ = data_.colequ = 1;
         }
       }
 
@@ -610,6 +616,9 @@ namespace Amesos2 {
                           << info << "," << info << ") is exactly zero "
                           "(i.e. U is singular)");
     }
+
+    if (need_value)
+      SLUD::Destroy_CompCol_Matrix_dist(&GA);
 
     // The other option, that info_st < 0, denotes invalid parameters
     // to the function, but we'll assume for now that that won't
