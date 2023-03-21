@@ -912,6 +912,22 @@ namespace Intrepid2 {
     RealSpaceTools<DeviceType>::det(jacobianDet, jacobian);
   }
 
+  template<typename DeviceType>
+  template<typename Scalar>
+  void
+  CellTools<DeviceType>::
+  setJacobianDividedByDet( Data<Scalar,DeviceType> & jacobianDividedByDet,
+                          const Data<Scalar,DeviceType> & jacobian,
+                          const Data<Scalar,DeviceType> & jacobianDetInv)
+  {
+    auto variationTypes = jacobianDetInv.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
+    auto extents        = jacobian.getExtents();
+    
+    // jacobianDetInvExtended container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
+    Data<Scalar,DeviceType> jacobianDetInvExtended = jacobianDetInv.shallowCopy(jacobian.rank(), extents, variationTypes);
+    
+    jacobianDividedByDet.storeInPlaceProduct(jacobian,jacobianDetInvExtended);
+  }
 }
 
 #endif
