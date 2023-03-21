@@ -171,15 +171,13 @@ public:
 
   void getCCSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &rowIds) const override {
-    ArrayRCP<const offset_t> crsOffsets{};
-    ArrayRCP<const lno_t> crsLocalColumnIds{};
-    ArrayRCP<const scalar_t> values{};
+    ArrayRCP<const offset_t> crsOffsets;
+    ArrayRCP<const lno_t> crsLocalColumnIds;
+    ArrayRCP<const scalar_t> values;
     matrix_->getAllValues(crsOffsets, crsLocalColumnIds, values);
 
     const auto localRowIds = rowMap_->getLocalElementList();
     const auto numLocalCols = colMap_->getLocalNumElements();
-    rowIds = ArrayRCP<const gno_t>(crsLocalColumnIds.size(), 0);
-    offsets = ArrayRCP<const offset_t>(numLocalCols, 0);
 
     // Lambda used to compute local row based on column index from CRS view
     auto determineRow = [&crsOffsets, &localRowIds](const int columnIdx) {
@@ -198,10 +196,7 @@ public:
       return -1;
     };
 
-    ArrayRCP<gno_t> ccsRowIds(crsLocalColumnIds.size());
-    ArrayRCP<offset_t> ccsOffsets(numLocalCols + 1);
-
-    // Vector of global rows per eahc local column
+    // Vector of global rows per each local column
     std::vector<std::vector<gno_t>> rowIDsPerCol(numLocalCols);
 
     for (int colIdx = 0; colIdx < crsLocalColumnIds.size(); ++colIdx) {
@@ -212,20 +207,26 @@ public:
     }
 
     size_t offsetWrite = 0;
-    for (size_t i = 1; i < rowIDsPerCol.size(); ++i) {
-      const auto &rowIDs = rowIDsPerCol[i - 1];
-      ccsOffsets[i - 1] = rowIDs.size();
+    ArrayRCP<gno_t> ccsRowIds(values.size());
+    ArrayRCP<offset_t> ccsOffsets(colMap_->getLocalNumElements() + 1);
+
+    ccsOffsets[0] = 0;
+    for (int64_t colID = 1; colID < ccsOffsets.size(); ++colID) {
+      const auto &rowIDs = rowIDsPerCol[colID - 1];
 
       if (not rowIDs.empty()) {
         std::copy(rowIDs.begin(), rowIDs.end(),
                   ccsRowIds.begin() + offsetWrite);
         offsetWrite += rowIDs.size();
       }
+
+      ccsOffsets[colID] = offsetWrite;
     }
 
     ccsOffsets[numLocalCols] = crsLocalColumnIds.size();
-    offsets = ccsOffsets;
+
     rowIds = ccsRowIds;
+    offsets = ccsOffsets;
   }
 
   int getNumWeightsPerRow() const { return nWeightsPerRow_; }

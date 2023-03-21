@@ -109,11 +109,15 @@ int verifyInputAdapter(
       if (!fail) fail = 10;
     }
 
+    const auto nCols = ia.getLocalNumColumns();
+    const zgno_t *colIds=nullptr;
+    ia.getColumnIDsView(colIds);
+
     ArrayRCP<const zgno_t> ccsRowIds;
     ArrayRCP<const offset_t> ccsOffsets;
     ia.getCCSView(ccsOffsets, ccsRowIds);
 
-    printMatrix<offset_t>(comm, nrows, rowIds, offsets.getRawPtr(),
+    printMatrix<offset_t>(comm, nCols, colIds, ccsOffsets.getRawPtr(),
                           ccsRowIds.getRawPtr(), Type::CCS);
   }
   return fail;
