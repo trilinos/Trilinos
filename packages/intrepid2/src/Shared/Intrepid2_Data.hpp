@@ -727,7 +727,7 @@ public:
             {
               // A is full; B is not full, but not constant or full-extent 1D
               // unoptimized in B access:
-              auto BAE = fullArgsData;
+              FullArgExtractor<const_reference_type> BAE;
               storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
             }
           }
@@ -1367,6 +1367,21 @@ public:
       setActiveDims();
     }
     
+    //! constructor with run-time rank (requires full-length extents, variationType inputs; those beyond the rank will be ignored).
+    template<class ViewScalar, class ...ViewProperties>
+    Data(const unsigned rank, Kokkos::View<ViewScalar,DeviceType, ViewProperties...> data, Kokkos::Array<int,7> extents, Kokkos::Array<DataVariationType,7> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    :
+    dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
+    {
+      setUnderlyingView<data.rank>(data);
+      for (unsigned d=0; d<rank; d++)
+      {
+        extents_[d]       = extents[d];
+        variationType_[d] = variationType[d];
+      }
+      setActiveDims();
+    }
+    
     //! constructor for everywhere-constant data
     template<size_t rank>
     Data(DataScalar constantValue, Kokkos::Array<int,rank> extents)
@@ -1567,51 +1582,107 @@ public:
     
     //! sets the View that stores the unique data.  For rank-1 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView1(Kokkos::View<DataScalar*, DeviceType> & view) const
+    void setUnderlyingView1(const Kokkos::View<DataScalar*, DeviceType> & view)
     {
       data1_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-2 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView2(Kokkos::View<DataScalar**, DeviceType> & view) const
+    void setUnderlyingView2(const Kokkos::View<DataScalar**, DeviceType> & view)
     {
       data2_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-3 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView3(Kokkos::View<DataScalar***, DeviceType> & view) const
+    void setUnderlyingView3(const Kokkos::View<DataScalar***, DeviceType> & view)
     {
       data3_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-4 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView4(Kokkos::View<DataScalar****, DeviceType> & view) const
+    void setUnderlyingView4(const Kokkos::View<DataScalar****, DeviceType> & view)
     {
       data4_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-5 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView5(Kokkos::View<DataScalar*****, DeviceType> & view) const
+    void setUnderlyingView5(const Kokkos::View<DataScalar*****, DeviceType> & view)
     {
       data5_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-6 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView6(Kokkos::View<DataScalar******, DeviceType> & view) const
+    void setUnderlyingView6(const Kokkos::View<DataScalar******, DeviceType> & view)
     {
       data6_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-7 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView7(Kokkos::View<DataScalar*******, DeviceType> & view) const
+    void setUnderlyingView7(const Kokkos::View<DataScalar*******, DeviceType> & view)
     {
       data7_ = view;
+    }
+    
+    template<int underlyingRank, class ViewScalar>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView(const Kokkos::View<ViewScalar, DeviceType> & view)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "implementation for specialization missing");
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<1,DataScalar*>(const Kokkos::View<DataScalar*, DeviceType> & view)
+    {
+      setUnderlyingView1(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<2,DataScalar**>(const Kokkos::View<DataScalar**, DeviceType> & view)
+    {
+      setUnderlyingView2(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<3,DataScalar***>(const Kokkos::View<DataScalar***, DeviceType> & view)
+    {
+      setUnderlyingView3(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<4,DataScalar****>(const Kokkos::View<DataScalar****, DeviceType> & view)
+    {
+      setUnderlyingView4(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<5,DataScalar*****>(const Kokkos::View<DataScalar*****, DeviceType> & view)
+    {
+      setUnderlyingView5(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<6,DataScalar******>(const Kokkos::View<DataScalar******, DeviceType> & view)
+    {
+      setUnderlyingView6(view);
+    }
+    
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    void setUnderlyingView<7,DataScalar*******>(const Kokkos::View<DataScalar*******, DeviceType> & view)
+    {
+      setUnderlyingView7(view);
     }
     
     //! Returns a DynRankView constructed atop the same underlying data as the fixed-rank Kokkos::View used internally.
@@ -2230,17 +2301,17 @@ public:
     }
     
     //! Creates a new Data object with the same underlying view, but with the specified logical rank, extents, and variation types.
-    Data shallowCopy(const int rank, const Kokkos::Array<int,7> &extents, const Kokkos::Array<DataVariationType,7> &variationTypes)
+    Data shallowCopy(const int rank, const Kokkos::Array<int,7> &extents, const Kokkos::Array<DataVariationType,7> &variationTypes) const
     {
       switch (dataRank_)
       {
-        case 1: return Data(data1_, extents, variationTypes);
-        case 2: return Data(data2_, extents, variationTypes);
-        case 3: return Data(data3_, extents, variationTypes);
-        case 4: return Data(data4_, extents, variationTypes);
-        case 5: return Data(data5_, extents, variationTypes);
-        case 6: return Data(data6_, extents, variationTypes);
-        case 7: return Data(data7_, extents, variationTypes);
+        case 1: return Data(rank, data1_, extents, variationTypes);
+        case 2: return Data(rank, data2_, extents, variationTypes);
+        case 3: return Data(rank, data3_, extents, variationTypes);
+        case 4: return Data(rank, data4_, extents, variationTypes);
+        case 5: return Data(rank, data5_, extents, variationTypes);
+        case 6: return Data(rank, data6_, extents, variationTypes);
+        case 7: return Data(rank, data7_, extents, variationTypes);
         default:
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled dataRank_");
       }
