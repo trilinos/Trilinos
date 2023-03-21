@@ -67,7 +67,6 @@
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
 #include <Epetra_RowMatrixTransposer.h>
-#include <Epetra_CrsMatrix.h>
 #endif // HAVE_XPETRA_EPETRAEXT
 
 #ifdef HAVE_XPETRA_TPETRA
