@@ -453,7 +453,6 @@ static void spmv_beta_no_transpose(
       A.numRows(), A.nnz(), rows_per_thread, team_size, vector_length);
   int64_t worksets = (y.extent(0) + rows_per_team - 1) / rows_per_team;
 
-
   SPMV_Functor<AMatrix, XVector, YVector, dobeta, conjugate> func(
       alpha, A, x, beta, y, rows_per_team);
 
