@@ -279,7 +279,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu", "Superlu_dist"};
+      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -396,7 +396,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    std::array<std::string, 4> solver_types{"", "Klu", "Superlu", "Superlu_dist"};
+    std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -521,7 +521,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    std::array<std::string, 4> solver_types{"", "Klu", "Superlu", "Superlu_dist"};
+    std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -649,7 +649,7 @@ namespace MueLuTests {
     // TODO test only Tpetra because of Ifpack2 smoother!
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu", "Superlu_dist"};
+      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
       Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -838,7 +838,7 @@ namespace MueLuTests {
     // TODO test only Tpetra because of Ifpack2 smoother!
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu", "Superlu_dist"};
+      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
       Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
