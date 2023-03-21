@@ -157,15 +157,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   Data<PointScalar,DeviceType> jacobianInv    = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
   
-  Data<PointScalar,DeviceType> jacobianDetInvExtended; // container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
-  // set up jacobianDetInvExtended
-  {
-    auto variationTypes = jacobianDetInv.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
-    auto extents        = jacobian.getExtents();
-    
-    jacobianDetInvExtended = jacobianDetInv.shallowCopy(jacobian.rank(), extents, variationTypes);
-  }
-  
   // lazily-evaluated transformed basis values (temporary to allow integralData allocation)
   auto transformedBasis1ValuesTemp = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
   auto transformedBasis2ValuesTemp = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
@@ -210,13 +201,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
     }
     
     geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
-    CellTools<DeviceType>::setJacobianDet   (jacobianDet,    jacobian);
-    CellTools<DeviceType>::setJacobianDetInv(jacobianDetInv, jacobian);
-    CellTools<DeviceType>::setJacobianInv   (jacobianInv,    jacobian);
-    
-    // compute the jacobian divided by its determinant
-    // note that this is *not* matrix multiplication, but elementwise multiplication.
-    jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInvExtended);
+    CellTools<DeviceType>::setJacobianDet         (jacobianDet,    jacobian);
+    CellTools<DeviceType>::setJacobianDetInv      (jacobianDetInv, jacobian);
+    CellTools<DeviceType>::setJacobianInv         (jacobianInv,    jacobian);
+    CellTools<DeviceType>::setJacobianDividedByDet(jacobianDividedByJacobianDet, jacobian, jacobianDetInv);
     
     // lazily-evaluated transformed gradient values:
     auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
