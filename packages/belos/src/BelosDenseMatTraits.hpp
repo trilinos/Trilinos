@@ -225,6 +225,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     //!  \brief Copies entries of sourceDM to thisDM (deep copy). 
     static void Assign( DM& thisDM, const DM& sourceDM)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Returns the Frobenius norm of the dense matrix.
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormFrobenius( DM& dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
     //@}
   };
   
