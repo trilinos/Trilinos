@@ -77,15 +77,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHCURL(Intrep
   Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDetInverse, tensorCubatureWeights);
   
-  Data<PointScalar,DeviceType> jacobianDetInverseExtended; // container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
-  // setup jacobianDetInverseExtended
-  {
-    auto variationTypes = jacobianDetInverse.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
-    auto extents        = jacobian.getExtents();
-    
-    jacobianDetInverseExtended = jacobianDetInverse.shallowCopy(jacobian.rank(), extents, variationTypes);
-  }
-  
   // lazily-evaluated transformed curl values (temporary to allow integralData allocation)
   auto transformedCurlValuesTemp = FunctionSpaceTools::getHCURLtransformCURL(jacobianDividedByJacobianDet, curlValues);
   auto integralData = IntegrationTools::allocateIntegralData(transformedCurlValuesTemp, cellMeasures, transformedCurlValuesTemp);
@@ -129,12 +120,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHCURL(Intrep
     }
     
     geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
-    CellTools<DeviceType>::setJacobianDet(   jacobianDet,        jacobian);
-    CellTools<DeviceType>::setJacobianDetInv(jacobianDetInverse, jacobian);
-    CellTools<DeviceType>::setJacobianInv(   jacobianInv,        jacobian);
-    
-    // compute the jacobian divided by its determinant
-    jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInverseExtended);
+    CellTools<DeviceType>::setJacobianDet(         jacobianDet,                  jacobian);
+    CellTools<DeviceType>::setJacobianDetInv(      jacobianDetInverse,           jacobian);
+    CellTools<DeviceType>::setJacobianInv(         jacobianInv,                  jacobian);
+    CellTools<DeviceType>::setJacobianDividedByDet(jacobianDividedByJacobianDet, jacobian, jacobianDetInverse);
     
     // lazily-evaluated transformed curl, values:
     TransformedBasisValues<Scalar,DeviceType> transformedCurlValues;

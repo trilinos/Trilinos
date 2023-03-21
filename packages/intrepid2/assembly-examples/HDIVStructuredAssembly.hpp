@@ -77,15 +77,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHDIV(Intrepi
   Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDetInverse, tensorCubatureWeights);
   
-  Data<PointScalar,DeviceType> jacobianDetInverseExtended; // container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
-  // setup jacobianDetInverseExtended
-  {
-    auto variationTypes = jacobianDetInverse.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
-    auto extents        = jacobian.getExtents();
-    
-    jacobianDetInverseExtended = jacobianDetInverse.shallowCopy(jacobian.rank(), extents, variationTypes);
-  }
-  
   // lazily-evaluated transformed div values (temporary to allow integralData allocation)
   auto transformedDivValuesTemp = FunctionSpaceTools::getHDIVtransformDIV(jacobianDetInverse, divValues);
   auto integralData = IntegrationTools::allocateIntegralData(transformedDivValuesTemp, cellMeasures, transformedDivValuesTemp);
@@ -132,9 +123,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHDIV(Intrepi
     CellTools<DeviceType>::setJacobianDet(   jacobianDet,        jacobian);
     CellTools<DeviceType>::setJacobianDetInv(jacobianDetInverse, jacobian);
     CellTools<DeviceType>::setJacobianInv(   jacobianInv,        jacobian);
-    
-    // compute the jacobian divided by its determinant
-    jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInverseExtended);
+    CellTools<DeviceType>::setJacobianDividedByDet(jacobianDividedByJacobianDet, jacobian, jacobianDetInverse);
     
     // lazily-evaluated transformed div, values:
     auto transformedDivValues   = FunctionSpaceTools::getHDIVtransformDIV(jacobianDetInverse, divValues);
