@@ -308,6 +308,9 @@ namespace Belos {
       //TODO: Test handing this to lapack function? 
       //TODO: Should something err if view is modified on device and 
       //try to access on host without sync? 
+      //
+      //Compute Frobenius norm. //TODO: Do Frob norm of a matrix we know the answer for and check it. 
+      DMT::NormFrobenius(*dm2);
 
 
       return true;
