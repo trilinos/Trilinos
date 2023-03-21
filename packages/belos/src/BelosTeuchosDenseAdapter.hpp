@@ -204,6 +204,11 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Assign( Teuchos::SerialDenseMatrix<int,ScalarType>& dest, const Teuchos::SerialDenseMatrix<int,ScalarType>& source){ 
       dest.assign(source);
     }
+
+    //!  \brief Returns the Frobenius norm of the dense matrix.
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormFrobenius(Teuchos::SerialDenseMatrix<int,ScalarType>& dm) { 
+      return dm.normFrobenius(); 
+    }
     //@}
   };
   
