@@ -8785,7 +8785,7 @@ namespace Tpetra {
             }
           }
 
-          // drop host views
+          // drop host views before apply
           for (size_t i=0; i<numMVs; ++i)
             eiData[i] = Teuchos::null;
           // probe
@@ -8834,7 +8834,7 @@ namespace Tpetra {
             }
           }
 
-          // drop eiData views
+          // drop host views before apply
           for (size_t i=0; i<numMVs; ++i)
             eiData[i] = Teuchos::null;
           // probe
