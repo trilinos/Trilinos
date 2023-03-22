@@ -3523,6 +3523,8 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
       });
 
     KCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind);
+    if(!KokkosSparse::isCrsGraphSorted(Mrowptr, Mcolind))
+      KokkosSparse::sort_crs_matrix(newmat);
     return newmat;
   }
   else {
@@ -3631,6 +3633,8 @@ merge_matrices(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
 
     // Build and return merged KokkosSparse matrix
     KBCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind, blocksize);
+    if(!KokkosSparse::isCrsGraphSorted(Mrowptr, Mcolind))
+      KokkosSparse::sort_bsr_matrix(newmat);
     return newmat;
   }
   else {
