@@ -52,6 +52,8 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  int *_rval;
+
 public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeLU() = delete;
@@ -59,8 +61,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeLU(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                           const ordinal_type_array &level_sids, const ordinal_type_array &piv,
-                          const value_type_array buf)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _buf(buf) {}
+                          const value_type_array buf, int *rval)
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _buf(buf), _rval(rval) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -79,12 +81,17 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      LU<LU_AlgoType>::invoke(member, AT, P);
+      err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       LU<LU_AlgoType>::modify(member, m, P);
       member.team_barrier();
@@ -111,13 +118,18 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      LU<LU_AlgoType>::invoke(member, AT, P);
+      err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       LU<LU_AlgoType>::modify(member, m, P);
       member.team_barrier();
@@ -167,13 +179,18 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      LU<LU_AlgoType>::invoke(member, AT, P);
+      err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       LU<LU_AlgoType>::modify(member, m, P);
       member.team_barrier();
