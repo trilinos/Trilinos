@@ -497,6 +497,23 @@ namespace Intrepid2 {
                              const OrientationViewType orts,
                              const BasisType * basis);
     
+    /** \brief  Modify basis due to orientation, applying the transpose of the operator applied in modifyBasisByOrientation().  If the input provided represents basis coefficents in the global orientation, then this method will appropriately transform them to the local orientation.
+        \param  output        [out]  - output array, of shape (C,F,P[,D])
+        \param  input          [in]  - input array, of shape (C,F,P[,D]) or (F,P[,D])
+        \param  orts           [in]  - orientations, of shape (C)
+        \param  basis          [in]  - basis of cardinality F
+    */
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties,
+             typename OrientationViewType,
+             typename BasisType>
+    inline
+    static void
+    modifyBasisByOrientationTranspose(Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                                      const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                                      const OrientationViewType orts,
+                                      const BasisType * basis);
+    
     /** \brief  Modify an assembled (C,F1,F2) matrix according to orientation of the cells.
         \param  output           [out]  - output array, shape (C,F1,F2)
         \param  input             [in]  - input array, shape (C,F1,F2)

@@ -97,6 +97,7 @@ namespace Intrepid2 {
     const bool leftMultiply;
     // for simple left-multiplied basis value modification, numPoints is the dimension after the field dimension
     // for matrix value modification (C,F1,F2), numPoints is F2 when left multiplied, and F1 when right multiplied
+    const bool transpose; // when true, multiply by the transpose of the matrix
 
     F_modifyBasisByOrientation(ortViewType orts_,
                                OutputViewType output_,
@@ -110,7 +111,8 @@ namespace Intrepid2 {
                                const ordinal_type numFaces_,
                                const ordinal_type numPoints_,
                                const ordinal_type dimBasis_,
-                               const bool leftMultiply_ = true)
+                               const bool leftMultiply_ = true,
+                               const bool transpose_ = false)
     : orts(orts_),
       output(output_),
       input(input_),
@@ -123,7 +125,8 @@ namespace Intrepid2 {
       numFaces(numFaces_),
       numPoints(numPoints_),
       dimBasis(dimBasis_),
-      leftMultiply(leftMultiply_)
+      leftMultiply(leftMultiply_),
+      transpose(transpose_)
     {}
 
     KOKKOS_INLINE_FUNCTION
@@ -161,7 +164,8 @@ namespace Intrepid2 {
                   for (ordinal_type l=0;l<ndofEdge;++l) {
                     const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                     auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
-                    temp += mat(i,l)*input;
+                    auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                    temp += mat_il*input;
                   }
                   auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
                   output = temp;
@@ -195,8 +199,10 @@ namespace Intrepid2 {
                   for (ordinal_type l=0;l<ndofFace;++l) {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
                     auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
-                    temp += mat(i,l)*input;
+                    auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                    temp += mat_il*input;
                   }
+                  
                   auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
                   output = temp;
                 }
@@ -226,7 +232,8 @@ namespace Intrepid2 {
                 for (ordinal_type l=0;l<ndofFace;++l) {
                   const ordinal_type ll = tagToOrdinal(2, 0, l);
                   auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
-                  temp += mat(i,l)*input;
+                  auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                  temp += mat_il*input;
                 }
                 auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
                 output = temp;
@@ -254,7 +261,8 @@ namespace Intrepid2 {
                 for (ordinal_type l=0;l<ndofEdge;++l) {
                   const ordinal_type ll = tagToOrdinal(1, 0, l);
                   auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
-                  temp += mat(i,l)*input;
+                  auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                  temp += mat_il*input;
                 }
                 auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
                 output = temp;
@@ -344,6 +352,91 @@ namespace Intrepid2 {
                      matData,
                      cellDim, numVerts, numEdges, numFaces,
                      numPoints, dimBasis));
+    }
+  }
+
+  template<typename DT>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties,
+           typename OrientationViewType,
+           typename BasisType>
+  void
+  OrientationTools<DT>::
+  modifyBasisByOrientationTranspose(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                                    const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                                    const OrientationViewType orts,
+                                    const BasisType* basis ) {
+  #ifdef HAVE_INTREPID2_DEBUG
+    {
+      if (input.rank() == output.rank())
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
+                                        ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimensions do not match.");
+      }
+      else if (input.rank() == output.rank() - 1)
+      {
+        for (size_type i=0;i<input.rank();++i)
+          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i+1), std::invalid_argument,
+                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input dimensions must match output dimensions exactly, or else match all but the first dimension (in the case that input does not have a 'cell' dimension).");
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): input and output ranks must either match, or input rank must be one less than that of output.")
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(1)) != basis->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
+    }
+  #endif
+
+    const shards::CellTopology cellTopo = basis->getBaseCellTopology();
+    const ordinal_type  cellDim = cellTopo.getDimension();
+
+    //Initialize output with values from input
+    if(input.rank() == output.rank())
+      Kokkos::deep_copy(output, input);
+    else
+      RealSpaceTools<DT>::clone(output, input);
+
+    if ((cellDim < 3) || basis->requireOrientation()) {
+      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
+      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
+
+      const ordinal_type
+        numCells  = output.extent(0),
+        //numBasis  = output.extent(1),
+        numPoints = output.extent(2),
+        dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
+
+      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
+
+      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+
+      if (basis->requireOrientation()) {
+        numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0);
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
+      }
+
+      bool leftMultiply = true;
+      bool transpose    = true;
+      
+      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
+      typedef F_modifyBasisByOrientation
+        <decltype(orts),
+         decltype(output),decltype(input),
+         decltype(ordinalToTag),decltype(tagToOrdinal),
+         decltype(matData)> FunctorType;
+      Kokkos::parallel_for
+        (policy,
+         FunctorType(orts,
+                     output, input,
+                     ordinalToTag, tagToOrdinal,
+                     matData,
+                     cellDim, numVerts, numEdges, numFaces,
+                     numPoints, dimBasis, leftMultiply, transpose));
     }
   }
 
