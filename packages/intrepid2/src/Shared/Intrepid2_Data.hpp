@@ -1633,56 +1633,38 @@ public:
     KOKKOS_INLINE_FUNCTION
     void setUnderlyingView(const Kokkos::View<ViewScalar, DeviceType> & view)
     {
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "implementation for specialization missing");
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<1,DataScalar*>(const Kokkos::View<DataScalar*, DeviceType> & view)
-    {
-      setUnderlyingView1(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<2,DataScalar**>(const Kokkos::View<DataScalar**, DeviceType> & view)
-    {
-      setUnderlyingView2(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<3,DataScalar***>(const Kokkos::View<DataScalar***, DeviceType> & view)
-    {
-      setUnderlyingView3(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<4,DataScalar****>(const Kokkos::View<DataScalar****, DeviceType> & view)
-    {
-      setUnderlyingView4(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<5,DataScalar*****>(const Kokkos::View<DataScalar*****, DeviceType> & view)
-    {
-      setUnderlyingView5(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<6,DataScalar******>(const Kokkos::View<DataScalar******, DeviceType> & view)
-    {
-      setUnderlyingView6(view);
-    }
-    
-    template<>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView<7,DataScalar*******>(const Kokkos::View<DataScalar*******, DeviceType> & view)
-    {
-      setUnderlyingView7(view);
+      if constexpr (underlyingRank == 1)
+      {
+        setUnderlyingView1(view);
+      }
+      else if constexpr (underlyingRank == 2)
+      {
+        setUnderlyingView2(view);
+      }
+      else if constexpr (underlyingRank == 3)
+      {
+        setUnderlyingView3(view);
+      }
+      else if constexpr (underlyingRank == 4)
+      {
+        setUnderlyingView4(view);
+      }
+      else if constexpr (underlyingRank == 5)
+      {
+        setUnderlyingView5(view);
+      }
+      else if constexpr (underlyingRank == 6)
+      {
+        setUnderlyingView6(view);
+      }
+      else if constexpr (underlyingRank == 7)
+      {
+        setUnderlyingView7(view);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "implementation for specialization missing");
+      }
     }
     
     //! Returns a DynRankView constructed atop the same underlying data as the fixed-rank Kokkos::View used internally.
