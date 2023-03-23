@@ -7,6 +7,7 @@ source ${SCRIPTPATH:?}/common.bash
 # Fetch arguments
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
+on_ubuntu=$(echo "$@" | grep '\-\-on_ubuntu' &> /dev/null && echo "1")
 
 # Configure ccache via environment variables
 function configure_ccache() {
@@ -36,6 +37,8 @@ function bootstrap_modules() {
         envvar_set_or_create PYTHON_EXE python3
         # Always create user's tmp dir for nvcc. See https://github.com/trilinos/Trilinos/issues/10428#issuecomment-1109956415.
         mkdir -p /tmp/trilinos
+
+        module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
@@ -43,6 +46,10 @@ function bootstrap_modules() {
         module load python/3.7.3
         get_python_packages pip3
         export PYTHON_EXE=python3
+
+        module list
+    elif [[ ${on_ubuntu} == "1" ]]; then
+        :
     else
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
         execute_command_checked "module unload sems-archive-git"
@@ -52,9 +59,10 @@ function bootstrap_modules() {
         configure_ccache
 
         envvar_set_or_create     PYTHON_EXE $(which python3)
+
+        module list
     fi
 
-    module list
 
     message_std "PRDriver> " "Python EXE : ${PYTHON_EXE:?}"
     message_std "PRDriver> " "           : $(which ${PYTHON_EXE})"
