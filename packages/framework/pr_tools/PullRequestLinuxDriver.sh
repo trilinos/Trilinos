@@ -49,7 +49,7 @@ function bootstrap_modules() {
 
         module list
     elif [[ ${on_ubuntu} == "1" ]]; then
-        :
+        envvar_set_or_create     PYTHON_EXE $(which python3)
     else
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
         execute_command_checked "module unload sems-archive-git"
