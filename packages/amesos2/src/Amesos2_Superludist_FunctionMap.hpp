@@ -574,6 +574,7 @@ namespace Amesos2 {
 		      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
 		      SLUD::int_t ldb, int nrhs,
 		      type_map::SOLVEstruct_t* solve_struct,
+		      SLUD::SuperLUStat_t* stat, int* info)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
