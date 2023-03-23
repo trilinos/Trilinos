@@ -72,7 +72,6 @@
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
-#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"

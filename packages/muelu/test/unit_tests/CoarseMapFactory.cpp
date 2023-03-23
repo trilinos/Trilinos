@@ -51,7 +51,6 @@
 
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_AmalgamationInfo.hpp>
 #include <MueLu_Aggregates.hpp>

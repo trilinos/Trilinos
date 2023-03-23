@@ -192,13 +192,12 @@ int main(int argc, char *argv[]) {
   Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
-  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-  CoupledAggFact->SetMinNodesPerAggregate(3);
-  CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering("natural");
-  CoupledAggFact->SetPhase3AggCreation(0.5);
+  RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+  UncoupledAggFact->SetMinNodesPerAggregate(3);
+  UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+  UncoupledAggFact->SetOrdering("natural");
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UncoupledAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<Factory>         Rfact = rcp( new TransPFactory() );
