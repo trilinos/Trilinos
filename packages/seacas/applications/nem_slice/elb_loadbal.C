@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -149,7 +149,6 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   int              tmp_lev;
   int             *tmp_v2p = nullptr;
 
-  float             *x_ptr = nullptr, *y_ptr = nullptr, *z_ptr = nullptr;
   float             *x_node_ptr = nullptr, *y_node_ptr = nullptr, *z_node_ptr = nullptr;
   std::vector<float> x_elem_ptr, y_elem_ptr, z_elem_ptr;
   float             *tmp_x = nullptr, *tmp_y = nullptr, *tmp_z = nullptr;
@@ -216,16 +215,15 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       y_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       z_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       break;
+
+    default: Gen_Error(0, "FATAL: Invalid mesh dimension.  Must be 1, 2, or 3."); return 0;
     }
-  }
-  else {
-    x_node_ptr = y_node_ptr = z_node_ptr = nullptr;
   }
 
   /* now set the pointers that are being sent to Chaco */
-  x_ptr = x_node_ptr;
-  y_ptr = y_node_ptr;
-  z_ptr = z_node_ptr;
+  float *x_ptr = x_node_ptr;
+  float *y_ptr = y_node_ptr;
+  float *z_ptr = z_node_ptr;
 
   /*
    * For an elemental decomposition using inertial, ZPINCH, BRICK
@@ -634,7 +632,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         tmp_z   = z_ptr;
         tmp_v2p = lb->vertex2proc;
 
-        for (int cnt = 0; cnt < machine->num_dims; cnt++) {
+        int upper = machine->num_dims > 3 ? 3 : machine->num_dims;
+        for (int cnt = 0; cnt < upper; cnt++) {
           tmpdim[cnt] = machine->dim[cnt];
         }
         if (machine->type == MESH) {

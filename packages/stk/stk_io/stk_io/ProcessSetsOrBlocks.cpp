@@ -25,7 +25,6 @@
 #include "stk_mesh/base/EntityKey.hpp"             // for EntityKey
 #include "stk_mesh/base/FEMHelpers.hpp"            // for declare_element_edge
 #include "stk_mesh/base/Field.hpp"                 // for Field
-#include "stk_mesh/base/FieldTraits.hpp"           // for FieldTraits, Field...
 #include "stk_mesh/base/SideSetEntry.hpp"          // for SideSet
 #include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
 #include "stk_mesh/base/Types.hpp"                 // for EntityId, PartVector

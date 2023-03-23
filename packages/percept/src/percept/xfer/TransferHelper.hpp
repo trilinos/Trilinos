@@ -11,7 +11,6 @@
 #define TransferHelper_h
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace shards {
   class CellTopology;

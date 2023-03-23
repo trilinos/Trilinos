@@ -77,7 +77,7 @@ namespace MueLu {
     }
 
     RCP<const Matrix>  A         = rcpFromRef(Aref);
-    ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal(*A);
+    ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal_arcp(*A);
     bool               useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
     Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);

@@ -56,7 +56,7 @@
       const stk::mesh::MetaData& metaData = m_bulk->mesh_meta_data();
       stk::mesh::BulkData& bulkData = *m_bulk;
 
-      //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates");
+      //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType::value_type >(stk::topology::NODE_RANK, "coordinates");
 
       PerceptMesh meshUtil(&metaData, &bulkData);
 

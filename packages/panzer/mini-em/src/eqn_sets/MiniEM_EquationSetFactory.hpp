@@ -6,9 +6,11 @@
 #include "Panzer_CellData.hpp"
 
 #include "MiniEM_EquationSet_Maxwell.hpp"
+#include "MiniEM_EquationSet_Darcy.hpp"
 
 #include "MiniEM_AuxiliaryEquationSet_MassMatrix.hpp"
 #include "MiniEM_AuxiliaryEquationSet_SchurComplement.hpp"
+#include "MiniEM_AuxiliaryEquationSet_DarcySchurComplement.hpp"
 #include "MiniEM_AuxiliaryEquationSet_ProjectedSchurComplement.hpp"
 #include "MiniEM_AuxiliaryEquationSet_WeakGradient.hpp"
 #include "MiniEM_AuxiliaryEquationSet_MACROS.hpp"
@@ -17,9 +19,13 @@ namespace mini_em {
 
   PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(EquationSet_Maxwell, EquationSet_Maxwell)
 
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(EquationSet_Darcy, EquationSet_Darcy)
+
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_MassMatrix, AuxiliaryEquationSet_MassMatrix)
 
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_SchurComplement, AuxiliaryEquationSet_SchurComplement)
+
+  AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_DarcySchurComplement, AuxiliaryEquationSet_DarcySchurComplement)
 
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_ProjectedSchurComplement, AuxiliaryEquationSet_ProjectedSchurComplement)
 
@@ -46,9 +52,13 @@ namespace mini_em {
 
       PANZER_BUILD_EQSET_OBJECTS("Maxwell",              EquationSet_Maxwell)
 
+      PANZER_BUILD_EQSET_OBJECTS("Darcy",                EquationSet_Darcy)
+
       AUX_BUILD_EQSET_OBJECTS("Auxiliary Mass Matrix",   AuxiliaryEquationSet_MassMatrix)
 
       AUX_BUILD_EQSET_OBJECTS("Auxiliary SchurComplement",   AuxiliaryEquationSet_SchurComplement)
+
+      AUX_BUILD_EQSET_OBJECTS("Auxiliary DarcySchurComplement",   AuxiliaryEquationSet_DarcySchurComplement)
 
       AUX_BUILD_EQSET_OBJECTS("Auxiliary ProjectedSchurComplement",   AuxiliaryEquationSet_ProjectedSchurComplement)
 

@@ -33,7 +33,8 @@ public:
                   const panzer::FieldLayoutLibrary & fl,
                   const unsigned int & seed,
                   const double & rangeMin,
-                  const double & rangeMax);
+                  const double & rangeMax,
+                  const std::string& basisName="E_edge");
 
     void evaluateFields(typename Traits::EvalData d);
 
@@ -42,10 +43,15 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   // Simulation source
-  PHX::MDField<ScalarT,Cell,Point,Dim> current;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
+  PHX::MDField<ScalarT,Cell,Point,Dim> forcingVector;
+  PHX::MDField<ScalarT,Cell,Point> forcingScalar;
   int ir_degree, ir_index, ir_dim;
-  double rangeShift_, rangeMult_;
+  double rangeMin_, rangeMax_;
+  bool vectorBasis_;
+
+  using device_type = PHX::Device;
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> ;
+  pool_type rand_pool_;
 };
 
 }

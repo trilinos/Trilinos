@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,8 +39,8 @@ namespace {
 
     // Get nodes of this side (face) of the element
 
-    int nsnodes = is_hex(etype) ? 4 : 3;
-    INT side_nodes[9]; // SHELL9 has 9 nodes on a face.
+    int nsnodes       = is_hex(etype) ? 4 : 3;
+    INT side_nodes[9] = {0}; // SHELL9 has 9 nodes on a face.
 
     INT *elnodes = mesh->connect[cur_elem];
     ss_to_node_list(etype, elnodes, side_id, side_nodes);
@@ -48,7 +48,7 @@ namespace {
     // How would these side's nodes be if they were viewed from the
     // adjacent element
 
-    INT side_nodes_flipped[9]; // Realistically: 4, max possible: 9
+    INT side_nodes_flipped[9] = {0}; // Realistically: 4, max possible: 9
     get_ss_mirror(etype, side_nodes, side_id, side_nodes_flipped);
 
     for (int i = 0; i < nadj; i++) {
@@ -139,7 +139,8 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
 
     int count = 0;
     for (int j = 0; j < nelfaces; j++) {
-      INT fnodes[9]; // Should only need 4, but ss_to_node_list can potentially access 9 (SHELL9).
+      INT fnodes[9] = {
+          0}; // Should only need 4, but ss_to_node_list can potentially access 9 (SHELL9).
 
       int nfn = 4;
       if (is_wedge(etype)) {
@@ -155,7 +156,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       ss_to_node_list(etype, mesh->connect[i], j + 1, fnodes);
 
       // Translate global IDs of side nodes to local IDs in element
-      int fnodes_loc[9];
+      int fnodes_loc[9] = {0};
       for (int k = 0; k < nfn; k++) {
         bool found = false;
         for (int k2 = 0; k2 < nelnodes; k2++) {

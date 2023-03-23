@@ -117,7 +117,7 @@ static void factor2
 #ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
-        Pinv [k] = EMPTY ;
+        Pinv [k] = AMESOS2_KLU2_EMPTY ;
     }
 #endif
     for (k = 0 ; k < n ; k++)
@@ -126,7 +126,7 @@ static void factor2
         Pinv [P [k]] = k ;
     }
 #ifndef NDEBUGKLU2
-    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
+    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != AMESOS2_KLU2_EMPTY) ;
 #endif
 
     lnz = 0 ;
@@ -306,7 +306,7 @@ static void factor2
             max_lnz_block = MAX (max_lnz_block, lnz_block) ;
             max_unz_block = MAX (max_unz_block, unz_block) ;
 
-            if (Lnz [block] == EMPTY)
+            if (Lnz [block] == AMESOS2_KLU2_EMPTY)
             {
                 /* revise estimate for subsequent factorization */
                 Lnz [block] = MAX (lnz_block, unz_block) ;
@@ -342,7 +342,7 @@ static void factor2
 #ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
-        Pinv [k] = EMPTY ;
+        Pinv [k] = AMESOS2_KLU2_EMPTY ;
     }
 #endif
     for (k = 0 ; k < n ; k++)
@@ -351,7 +351,7 @@ static void factor2
         Pinv [Pnum [k]] = k ;
     }
 #ifndef NDEBUGKLU2
-    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
+    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != AMESOS2_KLU2_EMPTY) ;
 #endif
 
     /* permute scale factors Rs according to pivotal row order */
@@ -448,8 +448,8 @@ KLU_numeric<Entry, Int> *KLU_factor         /* returns NULL if error, or a valid
         return (NULL) ;
     }
     Common->status = KLU_OK ;
-    Common->numerical_rank = EMPTY ;
-    Common->singular_col = EMPTY ;
+    Common->numerical_rank = AMESOS2_KLU2_EMPTY ;
+    Common->singular_col = AMESOS2_KLU2_EMPTY ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */

@@ -35,8 +35,7 @@ BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -70,8 +69,7 @@ BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 

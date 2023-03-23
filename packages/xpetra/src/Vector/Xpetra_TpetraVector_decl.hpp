@@ -75,7 +75,7 @@ RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::Vect
 //
 //
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraVector
     : public virtual Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     , public TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>

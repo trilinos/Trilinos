@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,6 +43,14 @@
 #if EX_API_VERS_NODOT <= 467
 #error "Requires exodusII version 4.68 or later"
 #endif
+
+#include "CJ_ExodusEntity.h"
+#include "CJ_ExodusFile.h"
+#include "CJ_Internals.h"
+#include "CJ_ObjectType.h"
+#include "CJ_SystemInterface.h"
+#include "CJ_Variables.h"
+#include "CJ_Version.h"
 
 namespace {
   template <typename T> void clear(std::vector<T> &vec)
@@ -110,14 +118,6 @@ struct NodeInfo
 
 using GlobalMap = std::vector<NodeInfo>;
 using GMapIter  = GlobalMap::iterator;
-
-#include "CJ_ExodusEntity.h"
-#include "CJ_ExodusFile.h"
-#include "CJ_Internals.h"
-#include "CJ_ObjectType.h"
-#include "CJ_SystemInterface.h"
-#include "CJ_Variables.h"
-#include "CJ_Version.h"
 
 extern double seacas_timer();
 

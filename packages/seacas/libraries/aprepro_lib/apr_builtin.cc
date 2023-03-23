@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -594,7 +594,7 @@ namespace SEAMS {
 
     SEAMS::symrec *format;
     format = aprepro->getsym("_FORMAT");
-    sprintf(tmpstr, format->value.svar.c_str(), x);
+    snprintf(tmpstr, 128, format->value.svar.c_str(), x);
     new_string(tmpstr, &tmp);
     return (tmp);
   }
@@ -800,15 +800,14 @@ namespace SEAMS {
     // Using 'intout(val)', val will be converted to a string
     // using an integer format
 
-    char       *tmp;
-    static char tmpstr[128];
+    char *tmp;
     if (intval == 0.0) {
       new_string("0", &tmp);
       return (tmp);
     }
 
-    sprintf(tmpstr, "%d", static_cast<int>(intval));
-    new_string(tmpstr, &tmp);
+    std::string tmpstr = std::to_string(static_cast<int>(intval));
+    new_string(tmpstr.c_str(), &tmp);
     return (tmp);
   }
 

@@ -46,8 +46,6 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #ifdef out
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spgemm.hpp"
@@ -65,14 +63,14 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include <sstream>
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -98,7 +96,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
@@ -109,12 +107,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
@@ -129,15 +127,22 @@ namespace MueLu {
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
+    RCP<Matrix> finalP;
+    // If Tentative facctory bailed out (e.g., number of global aggregates is 0), then SaPFactory bails
+    //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if (Ptent == Teuchos::null) {
+      finalP = Teuchos::null;
+      Set(coarseLevel, "P", finalP);
+      return;
+    }
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
 
-      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitly
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
 
     //Build final prolongator
-    RCP<Matrix> finalP; // output
 
     // Reuse pattern if available
     RCP<ParameterList> APparams;
@@ -181,11 +186,11 @@ namespace MueLu {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
           ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Magnitude stopTol = 1e-4;
-          invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
           if (useAbsValueRowSum)
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           else
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -204,7 +209,7 @@ namespace MueLu {
           if (useAbsValueRowSum)
             GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
           if (invDiag == Teuchos::null)
-            invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+            invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
         }
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
@@ -233,7 +238,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
+      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
       if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 
@@ -563,7 +568,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
    
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = A->GetFixedBlockSize();
@@ -576,7 +581,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
   } //SatsifyPConstraints()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = 1;//A->GetFixedBlockSize();
@@ -590,7 +595,6 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

@@ -15,7 +15,6 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 
 #include <Intrepid_FunctionSpaceTools.hpp>

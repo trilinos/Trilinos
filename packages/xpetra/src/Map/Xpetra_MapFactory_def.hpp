@@ -176,7 +176,6 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node>>& nodeMap,
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
@@ -194,7 +193,6 @@ Build(UnderlyingLib                                                         lib,
     XPETRA_FACTORY_END;
 }
 #endif      // HAVE_XPETRA_TPETRA
-#endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
 
 

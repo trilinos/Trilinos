@@ -320,7 +320,7 @@
 
       for (unsigned irank=0; irank < m_ranks.size(); irank++)
         {
-          unsigned num_new_elem_during_remesh = 0;
+          // unsigned num_new_elem_during_remesh = 0;
           vector<NeededEntityType> needed_entity_ranks;
           m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
           stk::mesh::Selector& fromPartsSelector = m_fromPartsSelector[irank];
@@ -388,7 +388,6 @@
           //
           //createElementsAndNodesAndConnectLocal(m_ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
 
-          unsigned actual_needed=0, actual_ft_needed=0;
           if (1)
             {
               stk::mesh::Entity parent_p = parent_element;
@@ -449,22 +448,17 @@
                           }
                       }
                       vector<stk::mesh::Entity>::iterator element_pool_it_b4 = element_pool_it;
-                      vector<stk::mesh::Entity>::iterator ft_element_pool_it_b4 = ft_element_pool_it;
                       {
                         //DTIMER2(remesh_createNewElementsCall,remesh);
                         m_breakPattern[irank]->createNewElements(m_eMesh, *m_nodeRegistry, parent, new_sub_entity_nodes, element_pool_it, ft_element_pool_it, m_proc_rank_field);
                       }
                       vector<stk::mesh::Entity>::iterator element_pool_it_af = element_pool_it;
-                      vector<stk::mesh::Entity>::iterator ft_element_pool_it_af = ft_element_pool_it;
                       unsigned nnew = (element_pool_it_af - element_pool_it_b4);
-                      unsigned ft_nnew = (ft_element_pool_it_af - ft_element_pool_it_b4);
                       if (debug)
                         {
                           std::cout << "P[" << m_eMesh.get_rank() << " tmp remesh nnew= " << nnew << std::endl;
                         }
-                      actual_needed += nnew;
-                      actual_ft_needed += ft_nnew;
-                      num_new_elem_during_remesh += nnew;
+                      // num_new_elem_during_remesh += nnew;
                     }
                 }
             }

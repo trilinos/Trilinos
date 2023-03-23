@@ -47,7 +47,6 @@
 #define MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 
@@ -103,13 +102,13 @@ namespace MueLu {
   class NullspaceFactory_kokkos;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class NullspaceFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+  class NullspaceFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>      node_type;
 
   private:
     // For compatibility
@@ -162,5 +161,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP

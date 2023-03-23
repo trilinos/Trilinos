@@ -14,6 +14,7 @@ MATH(EXPR ETI_VALUETYPE_COUNT "${ETI_VALUETYPE_COUNT}-1")
 # Host test
 SET(Intrepid2_TEST_ETI_FILE "")
 LIST(APPEND Intrepid2_TEST_ETI_FILE 
+  "test_project_fields"
   "test_convergence_HEX"
   "test_convergence_QUAD"
   "test_convergence_TET"

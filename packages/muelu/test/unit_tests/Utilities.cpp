@@ -281,185 +281,268 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetLumpedDiagonal,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
-    // lumped diagonal does not support blocked operations, yet. Skip the test
-    // reactivate later
-#if 0
+    // Note: Lumped diagonal does not support blocked operations.
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
-    std::vector<RCP<const Map> > maps = std::vector<RCP<const Map> >(3, Teuchos::null);
-    maps[0] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
-    maps[1] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
-    maps[2] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
-    RCP<Matrix> A00 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], 4.0, -1.0, -1.0, lib);
-    RCP<Matrix> A01 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], -1.0, 0.0, 0.0, lib);
-    RCP<Matrix> A10 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
-    RCP<Matrix> A11 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], 4.0, -1.0, -1.0, lib);
-    RCP<Matrix> A12 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
-    RCP<Matrix> A21 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], -1.0, 0.0, 0.0, lib);
-    RCP<Matrix> A22 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], 4.0, -1.0, -1.0, lib);
+    RCP<CrsMatrix> crs_mat;
+    RCP<const Map> row_map, col_map;
 
-    // create map extractor
-    // To generate the Thyra style map extractor we do not need a full map but only the
-    // information about the Map details (i.e. lib and indexBase). We can extract this
-    // information from maps[0]
-    Teuchos::RCP<const MapExtractor > rgMapExtractor =
-        Teuchos::rcp(new MapExtractor(maps[0], maps, true));
-    Teuchos::RCP<const MapExtractor > doMapExtractor =
-        Teuchos::rcp(new MapExtractor(maps[0], maps, true));
-    // build blocked operator
-    Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,5));
-    bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(0),A00);
-    bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(1),A01);
-    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(0),A10);
-    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(1),A11);
-    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(2),A12);
-    bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(1),A21);
-    bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(2),A22);
-    bop->fillComplete();
+    {
+      ArrayRCP<size_t> nnzPerRow(9, 0);
+      row_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 9*comm->getSize(), 0, comm);
+      if(comm->getSize() == 1) {
+        col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 15, 0, comm);
+        nnzPerRow[0] = 3;
+        nnzPerRow[1] = 4;
+        nnzPerRow[2] = 4;
+        nnzPerRow[3] = 4;
+        nnzPerRow[4] = 5;
+        nnzPerRow[5] = 5;
+        nnzPerRow[6] = 4;
+        nnzPerRow[7] = 5;
+        nnzPerRow[8] = 5;
+      } else if(comm->getSize() == 4) {
+        Teuchos::Array<GlobalOrdinal> global_colids(15);
+        const GlobalOrdinal rank_offset = static_cast<GlobalOrdinal>(comm->getRank() * 9);
+        for(GlobalOrdinal colIdx = 0; colIdx < 9; ++colIdx) {
+          global_colids[colIdx] = colIdx + rank_offset;
+        }
 
-    // blocked diagonal operator (Thyra)
-    RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(bop);
-    TEST_EQUALITY(diagLumped->getMap()->isSameAs(*(bop->getRangeMapExtractor()->getFullMap())),true);
+        if(comm->getRank() == 0) {
+          global_colids[9]  = 9;
+          global_colids[10] = 12;
+          global_colids[11] = 15;
+          global_colids[12] = 18;
+          global_colids[13] = 19;
+          global_colids[14] = 20;
 
-    RCP<Vector> diagLumpedPart0 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,0,false);
-    RCP<Vector> diagLumpedPart1 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,1,false);
-    RCP<Vector> diagLumpedPart2 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,2,false);
-    Teuchos::ArrayRCP<const Scalar> diagLumpedPart0Data = diagLumpedPart0->getData(0);
-    Teuchos::ArrayRCP<const Scalar> diagLumpedPart1Data = diagLumpedPart1->getData(0);
-    Teuchos::ArrayRCP<const Scalar> diagLumpedPart2Data = diagLumpedPart2->getData(0);
-    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),diagLumpedPart1->getLocalLength());
-    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),diagLumpedPart2->getLocalLength());
-    for(size_t i = 1; i < diagLumpedPart0->getLocalLength() - 1; ++i) {
-      TEST_EQUALITY(diagLumpedPart0Data[i],Teuchos::as<Scalar>(7.0));
-      TEST_EQUALITY(diagLumpedPart1Data[i],Teuchos::as<Scalar>(8.0));
-      TEST_EQUALITY(diagLumpedPart2Data[i],Teuchos::as<Scalar>(7.0));
+          nnzPerRow[0] = 3;
+          nnzPerRow[1] = 4;
+          nnzPerRow[2] = 4;
+          nnzPerRow[3] = 4;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 5;
+          nnzPerRow[6] = 4;
+          nnzPerRow[7] = 5;
+          nnzPerRow[8] = 5;
+        } else if(comm->getRank() == 1) {
+          global_colids[9]  = 2;
+          global_colids[10] = 5;
+          global_colids[11] = 8;
+          global_colids[12] = 27;
+          global_colids[13] = 28;
+          global_colids[14] = 29;
+
+          nnzPerRow[0] = 4;
+          nnzPerRow[1] = 4;
+          nnzPerRow[2] = 3;
+          nnzPerRow[3] = 5;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 4;
+          nnzPerRow[6] = 5;
+          nnzPerRow[7] = 5;
+          nnzPerRow[8] = 4;
+        } else if(comm->getRank() == 2) {
+          global_colids[9]  = 6;
+          global_colids[10] = 7;
+          global_colids[11] = 8;
+          global_colids[12] = 27;
+          global_colids[13] = 30;
+          global_colids[14] = 33;
+
+          nnzPerRow[0] = 4;
+          nnzPerRow[1] = 5;
+          nnzPerRow[2] = 5;
+          nnzPerRow[3] = 4;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 5;
+          nnzPerRow[6] = 3;
+          nnzPerRow[7] = 4;
+          nnzPerRow[8] = 4;
+        } else if(comm->getRank() == 3) {
+          global_colids[9]  = 15;
+          global_colids[10] = 16;
+          global_colids[11] = 17;
+          global_colids[12] = 20;
+          global_colids[13] = 23;
+          global_colids[14] = 26;
+
+          nnzPerRow[0] = 5;
+          nnzPerRow[1] = 5;
+          nnzPerRow[2] = 4;
+          nnzPerRow[3] = 5;
+          nnzPerRow[4] = 5;
+          nnzPerRow[5] = 4;
+          nnzPerRow[6] = 4;
+          nnzPerRow[7] = 4;
+          nnzPerRow[8] = 3;
+        }
+        col_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 36, global_colids.view(0, 15), 0, comm);
+      }
+      crs_mat = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(row_map, col_map, nnzPerRow);
     }
 
-    LocalOrdinal lastElement = diagLumpedPart0->getLocalLength() - 1;
+    // Some numbers we need...
+    const Scalar zero  = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one   = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar two   = one + one;
+    const Scalar four  = one + one + one + one;
+    const Scalar six   = four + two;
+    const Scalar seven = six + one;
+    const Scalar eight = seven + one;
+    const Scalar ten   = four + four + two;
 
-    if(comm->getSize() == 1) {
-      TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
-      TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(6.0));
+    {
+      using size_type = typename ArrayRCP<size_t>::size_type;
+      ArrayRCP<size_t> row_ptr;
+      ArrayRCP<LocalOrdinal> colInds;
+      ArrayRCP<Scalar> values;
 
-      TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
-      TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(6.0));
-    } else {
+      if(comm->getRank() == 0) {
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-      if (comm->getRank() == 0) {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(8.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        colInds.deepCopy(colInds_view.getConst());
 
-      } else if (comm->getRank() == comm->getSize() - 1) {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(8.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+        Scalar raw_values[] = {four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, four, -one, -one,
+                               -one, -one / four, four, -one / four, -one,
+                               zero, zero, two, zero, zero,
+                               -one / ten, four / ten, -one / ten, -one / ten,
+                               -one, -one, four, -one, -one,
+                               -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
+      } else if(comm->getRank() == 1) {
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
 
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(6.0));
-      } else {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(8.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        colInds.deepCopy(colInds_view.getConst());
 
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(8.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
+      } else if(comm->getRank() == 2) {
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
+
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        colInds.deepCopy(colInds_view.getConst());
+
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
+      } else if(comm->getRank() == 3) {
+        size_t raw_row_ptr[] = {0, 3, 7, 11, 15, 20, 25, 29, 34, 39};
+        ArrayView<size_t> row_ptr_view(raw_row_ptr, 10, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        row_ptr.deepCopy(row_ptr_view.getConst());
+
+        LocalOrdinal raw_colInds[] = {0, 1, 3, 0, 1, 2, 4, 1, 2, 5, 9, 0, 3, 4, 6, 1, 3, 4, 5, 7, 2, 4, 5, 8, 10, 3, 6, 7, 12, 4, 6, 7, 8, 13, 5, 7, 8, 10, 14};
+        ArrayView<LocalOrdinal> colInds_view(raw_colInds, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        colInds.deepCopy(colInds_view.getConst());
+
+        Scalar raw_values[] = {four, -one, -one, -one, four, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one,
+                               -one, four, -one, -one, -one, -one, four, -one, -one, -one, -one, four, -one, -one};
+        ArrayView<Scalar> values_view(raw_values, 39, Teuchos::ERCPNodeLookup::RCP_ENABLE_NODE_LOOKUP);
+        values.deepCopy(values_view.getConst());
+      }
+      crs_mat->setAllValues(row_ptr, colInds, values);
+    }
+
+    RCP<Matrix> mat = Teuchos::rcp(new CrsMatrixWrap(crs_mat));
+
+    { // Regular lumped diag
+      out << std::endl << "== regular lumped diagonal ==" << std::endl;
+      RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat);
+      ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+        Scalar diag_ref[] = {six, seven, seven, seven, six + one / two, two, seven / ten, eight, eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
 
-    // test reordered operator
-    Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 2 0] 1 ]");
-    Teuchos::RCP<const BlockedCrsMatrix> bAA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(bop);
-    Teuchos::RCP<const BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(buildReorderedBlockedCrsMatrix(brm, bAA));
-
-    TEST_EQUALITY(bA->Rows(),2);
-    TEST_EQUALITY(bA->Cols(),2);
-
-    TEST_EQUALITY(bA->getRangeMapExtractor()->getThyraMode(),true);
-    TEST_EQUALITY(bA->getDomainMapExtractor()->getThyraMode(),true);
-
-    RCP<Vector> diagLumped2 = Utilities::GetLumpedMatrixDiagonal(bA);
-
-
-    TEST_EQUALITY(diagLumped2->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
-
-    // the following is only true, since all blocks are the same size and we have
-    // Thyra maps?? compare max global ids!
-    TEST_EQUALITY(diagLumped2->getMap()->isSameAs(*(diagLumped2->getMap())),true);
-
-    TEST_EQUALITY(diagLumped2->getMap()->getMaxAllGlobalIndex(),comm->getSize() * 300 - 1);
-    TEST_EQUALITY(diagLumped2->getMap()->getMinGlobalIndex(),comm->getRank() * 100);
-
-    RCP<const BlockedCrsMatrix> bA0 = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(bA->getMatrix(0,0));
-    diagLumpedPart0  = bA->getRangeMapExtractor()->ExtractVector(diagLumped2,0,false);
-    RCP<Vector> diagLumpedPart00 = bA0->getRangeMapExtractor()->ExtractVector(diagLumpedPart0,0,false);
-    RCP<Vector> diagLumpedPart01 = bA0->getRangeMapExtractor()->ExtractVector(diagLumpedPart0,1,false);
-    diagLumpedPart1  = bA->getRangeMapExtractor()->ExtractVector(diagLumped2,1,false);
-
-    diagLumpedPart0Data = diagLumpedPart00->getData(0);
-    diagLumpedPart1Data = diagLumpedPart01->getData(0);
-    diagLumpedPart2Data = diagLumpedPart1->getData(0);
-    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),2*diagLumpedPart1->getLocalLength());
-    for(size_t i = 1; i < 100 - 1; ++i) {
-      TEST_EQUALITY(diagLumpedPart0Data[i],Teuchos::as<Scalar>(7.0));
-      TEST_EQUALITY(diagLumpedPart1Data[i],Teuchos::as<Scalar>(7.0));
-      TEST_EQUALITY(diagLumpedPart2Data[i],Teuchos::as<Scalar>(8.0));
-    }
-
-    lastElement = diagLumpedPart00->getLocalLength() - 1;
-
-    if(comm->getSize() == 1) {
-      TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
-
-      TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(6.0));
-      TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
-    } else {
-
-      if (comm->getRank() == 0) {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(8.0));
-
-      } else if (comm->getRank() == comm->getSize() - 1) {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(8.0));
-
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(6.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
-      } else {
-        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(8.0));
-
-        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
-        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(8.0));
+    { // doReciprocal
+      out << std::endl << "== reciprocal lumped diagonal ==" << std::endl;
+      RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true);
+      ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), one / four,
+                             ten / seven, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
       }
     }
-#endif
+
+    { // val < 0.9 treated as 0.0
+      out << std::endl << "== reciprocal lumped diagonal with dropping ==" << std::endl;
+      RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9);
+      ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), one / four,
+                             zero, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
+      }
+    }
+
+    { // nnzPerRow(i) <= 1 --> diag(i) = zero
+      out << std::endl << "== reciprocal lumped diagonal with single-entry row ==" << std::endl;
+      RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0, 42, true);
+      ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), zero,
+                             ten / seven, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
+      }
+    }
+
+    { // nnzPerRow(i) <= 1 --> diag(i) = zero
+      out << std::endl << "== reciprocal lumped diagonal with zero-entry row ==" << std::endl;
+      RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(*mat, true, 0.9, 42, true);
+      ArrayRCP<Scalar> diag = diagLumped->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+        Scalar diag_ref[] = {one / six, one / seven, one / seven,
+                             one / seven, one / (six + one / two), zero,
+                             ten+ten+ten+ten+two, one / eight, one / eight};
+        for(int idx = 0; idx < 9; ++idx) {
+          out << std::endl << "comparing diag[" << idx << "] and diag_ref[" << idx << "]";
+          TEST_FLOATING_EQUALITY(diag[idx], diag_ref[idx], 100*Teuchos::ScalarTraits<Scalar>::eps());
+        }
+      }
+    }
+
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetInverse,Scalar,LocalOrdinal,GlobalOrdinal,Node)
@@ -482,8 +565,8 @@ namespace MueLuTests {
       Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
       Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
       for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(v->getLocalLength()); ++i) {
-	vData[i] = Teuchos::as<Scalar>(i+1);
-	tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+        vData[i] = Teuchos::as<Scalar>(i+1);
+        tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
       }
     }
     RCP<Vector> inv = Utilities::GetInverse(v);

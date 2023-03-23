@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -288,16 +288,16 @@ int main(int argc, char **argv)
 
   /* write element block parameters */
 
-  num_elem_in_block[0] = 1; /* element 1: Quad 1 */
-  num_elem_in_block[1] = 2; /* elements 2, 3: Quad 1 & 2 */
+  num_elem_in_block[0] = 1; /* element 1: Shell 1 */
+  num_elem_in_block[1] = 2; /* elements 2, 3: Shell 1 & 2 */
   num_elem_in_block[2] = 1; /* element 4: Hex    */
   num_elem_in_block[3] = 1; /* element 5: Tetra  */
   num_elem_in_block[4] = 1; /* element 6: Circle */
   num_elem_in_block[5] = 1; /* element 7: Sphere */
   num_elem_in_block[6] = 1; /* element 8: Wedge  */
 
-  num_nodes_per_elem[0] = 4; /* elements in block #1 are 4-node quads  */
-  num_nodes_per_elem[1] = 4; /* elements in block #2 are 4-node quads  */
+  num_nodes_per_elem[0] = 4; /* elements in block #1 are 4-node shells  */
+  num_nodes_per_elem[1] = 4; /* elements in block #2 are 4-node shells  */
   num_nodes_per_elem[2] = 8; /* elements in block #3 are 8-node hexes  */
   num_nodes_per_elem[3] = 4; /* elements in block #3 are 4-node tetras */
   num_nodes_per_elem[4] = 1; /* elements in block #4 are 1-node circles */
@@ -320,11 +320,11 @@ int main(int argc, char **argv)
   num_attr[5] = 3;
   num_attr[6] = 3;
 
-  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "quad", num_elem_in_block[0],
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "shell", num_elem_in_block[0],
                        num_nodes_per_elem[0], 0, 0, num_attr[0]);
   printf("after ex_put_elem_block, error = %d\n", error);
 
-  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "quad", num_elem_in_block[1],
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "shell", num_elem_in_block[1],
                        num_nodes_per_elem[1], 0, 0, num_attr[1]);
   printf("after ex_put_elem_block, error = %d\n", error);
 
@@ -554,7 +554,7 @@ int main(int argc, char **argv)
   ids[4] = 34;
   ids[5] = 35;
 
-  /* side set #1  - quad */
+  /* side set #1  - shell */
   node_list[0] = 8;
   node_list[1] = 5;
   elem_list[0] = 3;
@@ -562,7 +562,7 @@ int main(int argc, char **argv)
   node_list[3] = 7;
   elem_list[1] = 3;
 
-  /* side set #2  - quad/hex, spanning 2 element types  */
+  /* side set #2  - shell/hex, spanning 2 element types  */
   node_list[4] = 2;
   node_list[5] = 3;
   elem_list[2] = 1;

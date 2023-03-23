@@ -39,14 +39,15 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_NODEAPICONFIGDEFS_HPP
-#define KOKKOS_NODEAPICONFIGDEFS_HPP
+#ifndef TPETRA_CORE_COMPAT_KOKKOS_NODEAPICONFIGDEFS_HPP
+#define TPETRA_CORE_COMPAT_KOKKOS_NODEAPICONFIGDEFS_HPP
 
 // We retain this header file only for backwards compatibility.
 
-
-#ifdef __GNUC__
-#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_NodeApiConfigDefs.hpp is deprecated."
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_NodeAPIConfigDefs.hpp is deprecated."
+#else
+#error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_NodeAPIConfigDefs.hpp is deprecated."
 #endif
 
-#endif // KOKKOS_NODEAPICONFIGDEFS_HPP
+#endif // TPETRA_CORE_COMPAT_KOKKOS_NODEAPICONFIGDEFS_HPP

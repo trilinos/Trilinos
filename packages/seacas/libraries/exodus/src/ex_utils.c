@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -69,93 +69,97 @@ extern char *ncmpi_inq_libvers();
 const char *ex_config(void)
 {
   static char buffer[2048];
-  int         j =
-      sprintf(buffer, "\tExodus Version %s, Released %s\n", EXODUS_VERSION, EXODUS_RELEASE_DATE);
+  int         buffer_size = sizeof(buffer) / sizeof(buffer[0]);
+
+  int j = snprintf(buffer, buffer_size, "\tExodus Version %s, Released %s\n", EXODUS_VERSION,
+                   EXODUS_RELEASE_DATE);
 #if defined(PARALLEL_AWARE_EXODUS)
-  j += sprintf(buffer + j, "\t\tParallel enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tParallel NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel NOT enabled\n");
 #endif
 #if defined(EXODUS_THREADSAFE)
-  j += sprintf(buffer + j, "\t\tThread Safe enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tThread Safe enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tThread Safe NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tThread Safe NOT enabled\n");
 #endif
 #if defined(SEACAS_HIDE_DEPRECATED_CODE)
-  j += sprintf(buffer + j, "\t\tDeprecated Functions NOT built\n\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tDeprecated Functions NOT built\n\n");
 #else
-  j += sprintf(buffer + j, "\t\tDeprecated Functions available\n\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tDeprecated Functions available\n\n");
 #endif
 #if defined(NC_VERSION)
-  j += sprintf(buffer + j, "\tNetCDF Version %s\n", NC_VERSION);
+  j += snprintf(buffer + j, buffer_size - j, "\tNetCDF Version %s\n", NC_VERSION);
 #else
-  j += sprintf(buffer + j, "\tNetCDF Version < 4.3.3\n");
+  j += snprintf(buffer + j, buffer_size - j, "\tNetCDF Version < 4.3.3\n");
 #endif
 #if NC_HAS_CDF5
-  j += sprintf(buffer + j, "\t\tCDF5 enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tCDF5 enabled\n");
 #endif
 #ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
-    j += sprintf(buffer + j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
+    j += snprintf(buffer + j, buffer_size - j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor,
+                  release);
   }
-  j += sprintf(buffer + j, "\t\tZlib Compression (read/write) enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tZlib Compression (read/write) enabled\n");
 #if NC_HAS_SZIP_WRITE == 1
-  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) NOT enabled\n");
 #endif
 #endif
 #endif
 #if defined(PARALLEL_AWARE_EXODUS)
 #if NC_HAS_PARALLEL
-  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
 #else
-  j += sprintf(buffer + j,
+  j +=
+      snprintf(buffer + j, buffer_size - j,
                "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
 #endif
 #if NC_HAS_PARALLEL4
-  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via HDF5\n");
 #else
-  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via HDF5\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO *NOT* enabled via HDF5\n");
 #endif
 #if NC_HAS_PAR_FILTERS
-  j += sprintf(buffer + j, "\t\tParallel IO supports filters\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO supports filters\n");
 #endif
 #if NC_HAS_PNETCDF
   {
 #if 0
     char *libver = ncmpi_inq_libvers();
-    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
+    j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
 #else
-    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF.\n");
+    j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via PnetCDF.\n");
 #endif
   }
 #else
-  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
 #endif
 #endif /* PARALLEL_AWARE_EXODUS */
 
 #if NC_HAS_ERANGE_FILL
-  j += sprintf(buffer + j, "\t\tERANGE_FILL support\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tERANGE_FILL support\n");
 #endif
 #if NC_RELAX_COORD_BOUND
-  j += sprintf(buffer + j, "\t\tRELAX_COORD_BOUND defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tRELAX_COORD_BOUND defined\n");
 #endif
 #if defined(NC_COMPACT)
-  j += sprintf(buffer + j, "\t\tNC_COMPACT defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tNC_COMPACT defined\n");
 #endif
 #if defined(NC_HAVE_META_H)
-  j += sprintf(buffer + j, "\t\tNC_HAVE_META_H defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tNC_HAVE_META_H defined\n");
 #endif
 #if NC_HAS_NC2
-  j += sprintf(buffer + j, "\t\tAPI Version 2 support enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tAPI Version 2 support enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tAPI Version 2 support NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tAPI Version 2 support NOT enabled\n");
 #endif
-  j += sprintf(buffer + j, "\n");
+  j += snprintf(buffer + j, buffer_size - j, "\n");
 
   assert(j < 2048);
   return buffer;
@@ -194,10 +198,10 @@ int ex__check_file_type(const char *path, int *type)
       ex_err(__func__, errmsg, EX_WRONGFILETYPE);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    int i                   = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
+    int i                   = fread(magic, 1, MAGIC_NUMBER_LEN, fp);
     magic[MAGIC_NUMBER_LEN] = '\0';
     fclose(fp);
-    if (i != 1) {
+    if (i != MAGIC_NUMBER_LEN) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not read magic data from file '%s', err = %s.",
                path, strerror(errno));
@@ -513,7 +517,7 @@ char *ex__catstr(const char *string, int num)
 {
   /* Only called from an already locked function */
   char *tmp_string = cur_string;
-  cur_string += sprintf(cur_string, "%s%d", string, num) + 1;
+  cur_string += snprintf(cur_string, MAX_VAR_NAME_LENGTH + 1, "%s%d", string, num) + 1;
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
@@ -529,7 +533,8 @@ char *ex__catstr2(const char *string1, int num1, const char *string2, int num2)
 {
   /* Only called from an already locked function */
   char *tmp_string = cur_string;
-  cur_string += sprintf(cur_string, "%s%d%s%d", string1, num1, string2, num2) + 1;
+  cur_string +=
+      snprintf(cur_string, MAX_VAR_NAME_LENGTH + 1, "%s%d%s%d", string1, num1, string2, num2) + 1;
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }

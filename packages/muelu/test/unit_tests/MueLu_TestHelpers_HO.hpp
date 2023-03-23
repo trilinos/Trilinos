@@ -65,7 +65,7 @@ namespace MueLuTests {
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
     {
-      throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Kokkos::Compat::KokkosSerialWrapperNode");
+      throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Tpetra::KokkosCompat::KokkosSerialWrapperNode");
     }
 
 #if defined(HAVE_MUELU_EPETRA) && \
@@ -73,14 +73,14 @@ namespace MueLuTests {
             (defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_SERIAL)) \
            )
     template <>
-    void AllocateEpetraFECrsMatrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
+    void AllocateEpetraFECrsMatrix<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode > > & B)
 
     {
       // Epetra is hard
       const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
       const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
       RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
-      B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(B_epetra);
+      B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode>(B_epetra);
     }
 #endif
 

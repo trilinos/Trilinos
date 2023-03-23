@@ -350,7 +350,7 @@ int CHOLMOD(resymbol_noperm)
     Anext = Iwork + 2*((size_t) nrow) ;	/* size ncol (i/i/l), unsym. only */
     for (j = 0 ; j < nrow ; j++)
     {
-	Link [j] = EMPTY ;
+	Link [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     /* use Lnz in L itself */
@@ -387,7 +387,7 @@ int CHOLMOD(resymbol_noperm)
 		    return (FALSE) ;
 		}
 		/* flag column j as having been seen */
-		Anext [j] = EMPTY ;
+		Anext [j] = TRILINOS_CHOLMOD_EMPTY ;
 	    }
 	    /* the fset is now valid */
 	    ASSERT (CHOLMOD(dump_perm) (fset, nf, ncol, "fset", Common)) ;
@@ -463,7 +463,7 @@ int CHOLMOD(resymbol_noperm)
 	else
 	{
 	    /* for each column j whos first row index is in row k */
-	    for (j = Head [k] ; j != EMPTY ; j = Anext [j])
+	    for (j = Head [k] ; j != TRILINOS_CHOLMOD_EMPTY ; j = Anext [j])
 	    {
 		/* merge column j of A into Flag */
 		PRINT1 (("	---- A column "ID"\n", j)) ;
@@ -480,7 +480,7 @@ int CHOLMOD(resymbol_noperm)
 		}
 	    }
 	    /* clear the kth link list */
-	    Head [k] = EMPTY ;
+	    Head [k] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -488,7 +488,7 @@ int CHOLMOD(resymbol_noperm)
 	/* ------------------------------------------------------------------ */
 
 	/* for each column j of L whose parent is k */
-	for (j = Link [k] ; j != EMPTY ; j = Link [j])
+	for (j = Link [k] ; j != TRILINOS_CHOLMOD_EMPTY ; j = Link [j])
 	{
 	    /* merge column j of L into Flag */
 	    PRINT1 (("	---- L column "ID"\n", k)) ;
@@ -563,12 +563,12 @@ int CHOLMOD(resymbol_noperm)
 	ASSERT (Lnz [k] > 0) ;
 
 	/* parent is the first entry in the column after the diagonal */
-	parent = (Lnz [k] > 1) ? (Li [Lp [k] + 1]) : EMPTY ;
+	parent = (Lnz [k] > 1) ? (Li [Lp [k] + 1]) : TRILINOS_CHOLMOD_EMPTY ;
 
 	PRINT1 (("parent ("ID") = "ID"\n", k, parent)) ;
-	ASSERT ((parent > k && parent < nrow) || (parent == EMPTY)) ;
+	ASSERT ((parent > k && parent < nrow) || (parent == TRILINOS_CHOLMOD_EMPTY)) ;
 
-	if (parent != EMPTY)
+	if (parent != TRILINOS_CHOLMOD_EMPTY)
 	{
 	    Link [k] = Link [parent] ;
 	    Link [parent] = k ;

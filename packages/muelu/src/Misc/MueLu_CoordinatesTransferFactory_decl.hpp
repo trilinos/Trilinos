@@ -50,10 +50,9 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
-#include "Xpetra_Matrix.hpp"
 
-#include "MueLu_CoarseMapFactory_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
@@ -100,6 +99,14 @@ namespace MueLu {
            class GlobalOrdinal = DefaultGlobalOrdinal,
            class Node = DefaultNode>
   class CoordinatesTransferFactory : public TwoLevelFactoryBase {
+    public:
+    typedef Scalar                                              scalar_type;
+    typedef LocalOrdinal                                        local_ordinal_type;
+    typedef GlobalOrdinal                                       global_ordinal_type;
+    typedef typename Node::device_type                          DeviceType;
+    typedef typename DeviceType::execution_space                execution_space;
+
+  private:
 #undef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 

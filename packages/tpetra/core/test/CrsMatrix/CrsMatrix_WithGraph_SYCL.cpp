@@ -59,7 +59,7 @@ namespace Test {
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Declare a colon- and comma-free typedef, to avoid macro issues.
-typedef Kokkos::Compat::KokkosSYCLWrapperNode sycl_node_type;
+typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode sycl_node_type;
 
 #define UNIT_TEST_GROUP_SYCL( SCALAR, LO, GO ) \
   UNIT_TEST_GROUP( SCALAR, LO, GO, sycl_node_type )

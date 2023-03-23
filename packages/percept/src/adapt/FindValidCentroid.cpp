@@ -39,11 +39,6 @@ namespace percept {
             shards::CellTopology cell_topo(cell_topo_data);
             unsigned numNodes = cell_topo.getNodeCount();
             fvm.elementVolume(children[ii], sc_volume);
-            double cellVol = 0.0;
-            for (unsigned in=0; in < numNodes; ++in)
-              {
-                cellVol += sc_volume[in];
-              }
             for (unsigned in=0; in < numNodes; ++in)
               {
                 volumes[ii] = std::min(volumes[ii], sc_volume[in]);

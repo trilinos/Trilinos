@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,7 +55,7 @@ void *init_file(void *varg)
   char name[32];
 
   /* Name is "test_{thread}.exo" */
-  sprintf(name, "test%ld.exo", arg->threadid);
+  snprintf(name, 32, "test%ld.exo", arg->threadid);
 
   ex_opts(EX_VERBOSE);
 

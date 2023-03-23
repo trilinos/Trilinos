@@ -54,15 +54,15 @@
 
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_MatrixFreeTentativePFactory_kokkos.hpp"
+#include "MueLu_MatrixFreeTentativePFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -73,11 +73,11 @@ namespace MueLuTests {
     }
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<MatrixFreeTentativePFactory_kokkos> MFtentPFact = rcp(new MatrixFreeTentativePFactory_kokkos);
+    RCP<MatrixFreeTentativePFactory> MFtentPFact = rcp(new MatrixFreeTentativePFactory);
     TEST_EQUALITY(MFtentPFact != Teuchos::null, true);
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory_kokkos, MakeTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -128,10 +128,10 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
-    RCP<MatrixFreeTentativePFactory_kokkos> MFTentativePFact = rcp(new MatrixFreeTentativePFactory_kokkos());
+    RCP<MatrixFreeTentativePFactory> MFTentativePFact = rcp(new MatrixFreeTentativePFactory());
     MFTentativePFact->SetFactory("Aggregates",         aggFact);
     MFTentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     MFTentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -169,7 +169,7 @@ namespace MueLuTests {
 
   } // MakeTentative
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory_kokkos, MakeTentativeVectorBasedUsingDefaultNullspace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeVectorBasedUsingDefaultNullspace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -211,10 +211,10 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
-    auto MFTentativePFact = rcp(new MatrixFreeTentativePFactory_kokkos());
+    auto MFTentativePFact = rcp(new MatrixFreeTentativePFactory());
     MFTentativePFact->SetFactory("Aggregates",         aggFact);
     MFTentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     MFTentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -263,7 +263,7 @@ namespace MueLuTests {
     //   TEST_COMPARE_CONST(norms[i], <, 100*TMT::eps());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory_kokkos, MakeTentativeUsingDefaultNullspace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeUsingDefaultNullspace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -303,10 +303,10 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
-    auto MFTentativePFact = rcp(new MatrixFreeTentativePFactory_kokkos());
+    auto MFTentativePFact = rcp(new MatrixFreeTentativePFactory());
     MFTentativePFact->SetFactory("Aggregates",         aggFact);
     MFTentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     MFTentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -348,7 +348,7 @@ namespace MueLuTests {
   } //MakeTentativeUsingDefaultNullspace
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory_kokkos, MatrixVsMatrixFree, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFree, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -408,7 +408,7 @@ namespace MueLuTests {
       aggFact->SetFactory("DofsPerNode",  dropFact);
       aggFact->SetFactory("Graph",        dropFact);
 
-      RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
       coarseMapFact->SetFactory("Aggregates", aggFact);
 
       RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
@@ -471,10 +471,10 @@ namespace MueLuTests {
       aggFact->SetFactory("DofsPerNode",  dropFact);
       aggFact->SetFactory("Graph",        dropFact);
 
-      RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
       coarseMapFact->SetFactory("Aggregates", aggFact);
 
-      RCP<MatrixFreeTentativePFactory_kokkos> MFTentativePFact = rcp(new MatrixFreeTentativePFactory_kokkos());
+      RCP<MatrixFreeTentativePFactory> MFTentativePFact = rcp(new MatrixFreeTentativePFactory());
       MFTentativePFact->SetFactory("Aggregates",         aggFact);
       MFTentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
       MFTentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -519,10 +519,10 @@ namespace MueLuTests {
   } // MatrixVsMatrixFree
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory_kokkos, Constructor,   SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory_kokkos, MakeTentative, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory_kokkos, MakeTentativeUsingDefaultNullspace, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory_kokkos, MatrixVsMatrixFree, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory, Constructor,   SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory, MakeTentative, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory, MakeTentativeUsingDefaultNullspace, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MatrixFreeTentativePFactory, MatrixVsMatrixFree, SC, LO, GO, NO)
 
 
 

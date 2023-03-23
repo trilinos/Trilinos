@@ -34,7 +34,7 @@ namespace Tacho {
 template <typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trsv;
 
 struct TrsvAlgorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

@@ -93,7 +93,7 @@
 #define INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(INSTMACRO) \
   using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
   using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
-  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Kokkos_Compat_KokkosSerialWrapperNode)
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Tpetra_KokkosCompat_KokkosSerialWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(INSTMACRO)
 #endif
@@ -103,7 +103,7 @@
 #define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO) \
   using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
   using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
-  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Kokkos_Compat_KokkosThreadsWrapperNode)
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Tpetra_KokkosCompat_KokkosThreadsWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)
 #endif
@@ -112,7 +112,7 @@
 #define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO) \
   using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
   using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
-  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Kokkos_Compat_KokkosOpenMPWrapperNode)
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Tpetra_KokkosCompat_KokkosOpenMPWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)
 #endif
@@ -121,7 +121,7 @@
 #define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO) \
   using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
   using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
-  INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Kokkos_Compat_KokkosCudaWrapperNode)
+  INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Tpetra_KokkosCompat_KokkosCudaWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO)
 #endif

@@ -58,7 +58,7 @@ namespace Thyra {
  * ModelEvaluator methods to the supplied underlying ModelEvaluator except
  * those overloaded here.
  */
-  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal=LocalOrdinal, typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal=LocalOrdinal, typename Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraExplicitAdjointModelEvaluator :
     public ModelEvaluatorDelegatorBase<Scalar>{
 public:

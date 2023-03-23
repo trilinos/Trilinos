@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -2379,13 +2379,6 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster space */
       vdstrs(&nx1, &ny1);
 
-      /* set mapping to virtual and freeform */
-      /*
-      sprintf(map,"%s","VIRTUAL");
-      vdstmp(map,7L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,8L);
-      */
       imap = 3;
       vbstmp(&imap);
       imap = 5;
@@ -2765,13 +2758,6 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster viewport */
       vdstrv(&xmin, &xmax, &ymin, &ymax);
 
-      /* set mapping to replicate and freeform */
-      /*
-      sprintf(map,"%s","REPLICATE");
-      vdstmp(map,8L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,9L);
-      */
       imap = 2;
       vbstmp(&imap);
       imap = 5;
@@ -5305,7 +5291,6 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
 {
   int        errnum, errsev;
   char       symbol[1024];
-  char       err[50];
   int        qdc_index;
   float      value;
   char      *devid;
@@ -5319,10 +5304,10 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
     vdiqdc(&qdc_index, &value);
     devid = get_devid_char(value);
     if (devid != NULL) {
-      sprintf(cur_state->filename, "cgi%s%d", devid, file_cnt++);
+      snprintf(cur_state->filename, 100, "cgi%s%d", devid, file_cnt++);
     }
     else {
-      sprintf(cur_state->filename, "cgiout%d", file_cnt++);
+      snprintf(cur_state->filename, 100, "cgiout%d", file_cnt++);
     }
   }
 
@@ -5332,7 +5317,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
   if (env != 0 && strlen(env) < 1024) {
-    sprintf(symbol, "%s", env);
+    snprintf(symbol, 1024, "%s", env);
   }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
@@ -5341,7 +5326,8 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   if ((cur_state->file_d = open(symbol, (O_CREAT | O_TRUNC | O_RDWR), 0664)) == -1) {
     errnum = 722;
     errsev = 10;
-    sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
+    char err[50];
+    snprintf(err, 50, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
 }
@@ -5426,7 +5412,7 @@ int *frame;
   ic[4] = '\0';
 
   /* set the file name in the state list */
-  sprintf(cur_state->filename, "%s.RGB", ic);
+  snprintf(cur_state->filename, 100, "%s.RGB", ic);
 
   cdrofs(ifilcd);
 }

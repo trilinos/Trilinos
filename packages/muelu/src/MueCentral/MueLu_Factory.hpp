@@ -166,6 +166,11 @@ namespace MueLu {
       return level.Set<T>(varName, data, this);
     }
 
+    template <class T>
+    bool IsType(Level& level, const std::string& varName) const {
+      return level.IsType<T>(varName, GetFactory(varName).get());
+    }
+
     bool IsAvailable(Level& level, const std::string& varName) const {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }

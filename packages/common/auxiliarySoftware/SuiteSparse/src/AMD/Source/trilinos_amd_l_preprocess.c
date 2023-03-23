@@ -60,7 +60,7 @@ GLOBAL void TRILINOS_AMD_preprocess
     for (i = 0 ; i < n ; i++)
     {
 	W [i] = 0 ;		/* # of nonzeros in row i (excl duplicates) */
-	Flag [i] = EMPTY ;	/* Flag [i] = j if i appears in column j */
+	Flag [i] = TRILINOS_AMD_EMPTY ;	/* Flag [i] = j if i appears in column j */
     }
     for (j = 0 ; j < n ; j++)
     {
@@ -89,7 +89,7 @@ GLOBAL void TRILINOS_AMD_preprocess
     for (i = 0 ; i < n ; i++)
     {
 	W [i] = Rp [i] ;
-	Flag [i] = EMPTY ;
+	Flag [i] = TRILINOS_AMD_EMPTY ;
     }
 
     /* --------------------------------------------------------------------- */

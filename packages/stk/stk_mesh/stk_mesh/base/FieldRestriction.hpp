@@ -79,6 +79,11 @@ class FieldRestriction {
     return *this ;
   }
 
+  void add_union(const Selector& otherSelector)
+  {
+    m_selector |= otherSelector;
+  }
+
   explicit FieldRestriction( const Selector& input_selector)
    : m_selector(input_selector),
      m_num_scalars_per_entity(0),

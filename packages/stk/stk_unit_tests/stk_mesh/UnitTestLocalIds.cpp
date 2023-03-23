@@ -6,7 +6,6 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include "stk_mesh/base/CoordinateSystems.hpp"
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/PairIter.hpp>   // for PairIter

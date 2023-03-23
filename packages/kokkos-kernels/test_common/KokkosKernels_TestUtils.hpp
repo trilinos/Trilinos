@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOSKERNELS_TEST_UTILS_HPP
 #define KOKKOSKERNELS_TEST_UTILS_HPP
@@ -50,9 +22,44 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "KokkosSparse_spmv.hpp"
+#include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+
+// Simplify ETI macros
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#define KOKKOSKERNELS_TEST_ALL_TYPES
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTLEFT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTRIGHT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTSTRIDE
+#endif
+#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_DOUBLE
+#endif
+#if defined(KOKKOSKERNELS_INST_INT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_INT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
+#endif
 
 namespace Test {
 template <class ViewType,
@@ -104,6 +111,27 @@ void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
+template <class Scalar1, class Scalar2, class Scalar3>
+void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                        std::string msg = "") {
+  typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
+  typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
+  const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(val1);
+  const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(val2);
+  EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
+}
+
+// Special overload for accurate value by value SIMD vectors comparison
+template <class Scalar, int VecLen, class Tolerance>
+void EXPECT_NEAR_KK_REL(
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2,
+    Tolerance tol, std::string msg = "") {
+  for (int i = 0; i < VecLen; ++i) {
+    EXPECT_NEAR_KK_REL(val1[i], val2[i], tol, msg);
+  }
+}
+
 template <class ViewType1, class ViewType2, class Scalar>
 void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v1_size = v1.extent(0);
@@ -118,6 +146,23 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
 
   for (size_t i = 0; i < v1_size; ++i) {
     EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
+  }
+}
+
+template <class ViewType1, class ViewType2, class Scalar>
+void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
+  size_t v1_size = v1.extent(0);
+  size_t v2_size = v2.extent(0);
+  EXPECT_EQ(v1_size, v2_size);
+
+  typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
+  typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
+
+  for (size_t i = 0; i < v1_size; ++i) {
+    EXPECT_NEAR_KK_REL(h_v1(i), h_v2(i), tol);
   }
 }
 
@@ -288,41 +333,27 @@ void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
   }
 }
 
-template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-void vanillaGEMV(char mode, typename ViewTypeA::non_const_value_type alpha,
-                 const ViewTypeA& A, const ViewTypeX& x,
-                 typename ViewTypeY::non_const_value_type beta,
-                 const ViewTypeY& y) {
+template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType,
+          class ViewTypeY>
+KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
+                                        const ViewTypeA& A, const ViewTypeX& x,
+                                        BetaType beta, const ViewTypeY& y) {
   using ScalarY = typename ViewTypeY::non_const_value_type;
   using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
-  using KAT_Y   = Kokkos::ArithTraits<ScalarY>;
-  int M         = A.extent(0);
-  int N         = A.extent(1);
-  if (beta == KAT_Y::zero()) Kokkos::deep_copy(y, KAT_Y::zero());
-  if (mode == 'N') {
-    for (int i = 0; i < M; i++) {
-      ScalarY y_i = beta * y(i);
-      for (int j = 0; j < N; j++) {
-        y_i += alpha * A(i, j) * x(j);
-      }
-      y(i) = y_i;
-    }
-  } else if (mode == 'T') {
+  const bool transposed = mode == 'T' || mode == 'C';
+  const bool conjugated = mode == 'C';
+  const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
+  int M                 = A.extent(transposed ? 1 : 0);
+  int N                 = A.extent(transposed ? 0 : 1);
+  for (int i = 0; i < M; i++) {
+    ScalarY y_i{};
+    if (has_beta) y_i = beta * y(i);
     for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        y_j += alpha * A(i, j) * x(i);
-      }
-      y(j) = y_j;
+      const auto a   = transposed ? A(j, i) : A(i, j);
+      const auto Aij = conjugated ? KAT_A::conj(a) : a;
+      y_i += alpha * Aij * x(j);
     }
-  } else if (mode == 'C') {
-    for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        y_j += alpha * KAT_A::conj(A(i, j)) * x(i);
-      }
-      y(j) = y_j;
-    }
+    y(i) = y_i;
   }
 }
 
@@ -435,22 +466,6 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   return kok_x;
 }
 
-template <typename crsMat_t, typename vector_t>
-vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector) {
-  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-                    crsMat.numRows());
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
-
-template <typename crsMat_t, typename vector_t>
-vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector) {
-  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-                    crsMat.numRows(), x_vector.extent(1));
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
-
 /// \brief SharedParamTag class used to specify how to invoke templates within
 ///                       batched unit tests
 /// \var TA Indicates which transpose operation to apply to the A matrix
@@ -481,6 +496,11 @@ std::string value_type_name<double>() {
 }
 
 template <>
+std::string value_type_name<int>() {
+  return "::Int";
+}
+
+template <>
 std::string value_type_name<Kokkos::complex<float>>() {
   return "::ComplexFloat";
 }
@@ -500,42 +520,47 @@ int string_compare_no_case(const char* str1, const char* str2) {
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
-/// /brief Csc matrix class for testing purposes.
+/// /brief Cs (Compressed Sparse) matrix class for testing purposes.
+/// This class is for testing purposes only and will generate a random
+/// Crs / Ccs matrix when instantiated. The class is intentionally written
+/// without the use of "row" and "column" member names.
+/// dim1 refers to either rows for Crs matrix or columns for a Ccs matrix.
+/// dim2 refers to either columns for a Crs matrix or rows for a Ccs matrix.
 /// \tparam ScalarType
 /// \tparam LayoutType
 /// \tparam ExeSpaceType
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-class RandCscMat {
+class RandCsMatrix {
  private:
-  using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using RowIdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using ColMapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  int64_t __nrows;
-  int64_t __ncols;
+  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  using IdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using MapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  int64_t __dim2;
+  int64_t __dim1;
   int64_t __nnz = 0;
-  ColMapViewTypeD __col_map_d;
-  RowIdViewTypeD __row_ids_d;
+  MapViewTypeD __map_d;
+  IdViewTypeD __ids_d;
   ValViewTypeD __vals_d;
-  using ColMapViewTypeH = typename ColMapViewTypeD::HostMirror;
-  using RowIdViewTypeH  = typename RowIdViewTypeD::HostMirror;
-  using ValViewTypeH    = typename ValViewTypeD::HostMirror;
-  ColMapViewTypeH __col_map;
-  RowIdViewTypeH __row_ids;
+  using MapViewTypeH = typename MapViewTypeD::HostMirror;
+  using IdViewTypeH  = typename IdViewTypeD::HostMirror;
+  using ValViewTypeH = typename ValViewTypeD::HostMirror;
+  MapViewTypeH __map;
+  IdViewTypeH __ids;
   ValViewTypeH __vals;
   bool __fully_sparse;
 
-  /// Generates a random column map where:
-  ///  1. __col_map(i) is in [__row_ids.data(), &row_ids.data()[nnz - 1]
-  ///  2. __col_map(i) > col_map(i - 1) for i > 1
-  ///  3. __col_map(i) == col_map(j) iff __col_map(i) == col_map(j) == nullptr
-  ///  4. __col_map(i) - col_map(i - 1) is in [0, m]
-  void __populate_random_csc_mat(uint64_t ticks) {
+  /// Generates a random map where (using Ccs terminology):
+  ///  1. __map(i) is in [__ids.data(), &row_ids.data()[nnz - 1]
+  ///  2. __map(i) > col_map(i - 1) for i > 1
+  ///  3. __map(i) == col_map(j) iff __map(i) == col_map(j) == nullptr
+  ///  4. __map(i) - col_map(i - 1) is in [0, m]
+  void __populate_random_cs_mat(uint64_t ticks) {
     std::srand(ticks);
-    for (int64_t col_idx = 0; col_idx < __ncols; col_idx++) {
-      int64_t r = std::rand() % (__nrows + 1);
-      if (r == 0 || __fully_sparse) {  // 100% sparse column
-        __col_map(col_idx) = __nnz;
-      } else {  // sparse column with r elements
+    for (int64_t col_idx = 0; col_idx < __dim1; col_idx++) {
+      int64_t r = std::rand() % (__dim2 + 1);
+      if (r == 0 || __fully_sparse) {  // 100% sparse vector
+        __map(col_idx) = __nnz;
+      } else {  // sparse vector with r elements
         // Populate r row ids
         std::vector<int64_t> v(r);
 
@@ -543,26 +568,26 @@ class RandCscMat {
 
         std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
 
-        for (int64_t i = 0; i < r; i++) __row_ids(i + __nnz) = v.at(i);
+        for (int64_t i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
 
         // Point to new column and accumulate number of non zeros
-        __col_map(col_idx) = __nnz;
+        __map(col_idx) = __nnz;
         __nnz += r;
       }
     }
 
-    // last entry in map points to end of row id list
-    __col_map(__ncols) = __nnz;
+    // last entry in map points to end of id list
+    __map(__dim1) = __nnz;
 
     // Copy to device
-    Kokkos::deep_copy(__col_map_d, __col_map);
-    Kokkos::deep_copy(__row_ids_d, __row_ids);
+    Kokkos::deep_copy(__map_d, __map);
+    Kokkos::deep_copy(__ids_d, __ids);
     ExeSpaceType().fence();
   }
 
   template <class T>
   T __getter_copy_helper(T src) {
-    T dst(std::string("RandCscMat.") + typeid(T).name() + " copy",
+    T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
           src.extent(0));
     Kokkos::deep_copy(dst, src);
     ExeSpaceType().fence();
@@ -571,36 +596,36 @@ class RandCscMat {
 
  public:
   std::string info;
-  /// Constructs a random csc matrix.
-  /// \param m The number of rows.
-  /// \param n The number of columns.
+  /// Constructs a random cs matrix.
+  /// \param dim1 The first dimension: rows for Crs or columns for Ccs
+  /// \param dim2 The second dimension: columns for Crs or rows for Ccs
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCscMat(int64_t m, int64_t n, ScalarType min_val, ScalarType max_val,
-             bool fully_sparse = false) {
-    __ncols        = n;
-    __nrows        = m;
+  RandCsMatrix(int64_t dim1, int64_t dim2, ScalarType min_val,
+               ScalarType max_val, bool fully_sparse = false) {
+    __dim1         = dim1;
+    __dim2         = dim2;
     __fully_sparse = fully_sparse;
-    __col_map_d    = ColMapViewTypeD("RandCscMat.ColMapViewType", __ncols + 1);
-    __col_map      = Kokkos::create_mirror_view(__col_map_d);
-    __row_ids_d    = RowIdViewTypeD("RandCscMat.RowIdViewType",
-                                 m * n + 1);  // over-allocated
-    __row_ids      = Kokkos::create_mirror_view(__row_ids_d);
+    __map_d        = MapViewTypeD("RandCsMatrix.ColMapViewType", __dim1 + 1);
+    __map          = Kokkos::create_mirror_view(__map_d);
+    __ids_d        = IdViewTypeD("RandCsMatrix.RowIdViewType",
+                          dim2 * dim1 + 1);  // over-allocated
+    __ids          = Kokkos::create_mirror_view(__ids_d);
 
     uint64_t ticks =
         std::chrono::high_resolution_clock::now().time_since_epoch().count() %
         UINT32_MAX;
 
     info = std::string(
-        std::string("RandCscMat<") + typeid(ScalarType).name() + ", " +
+        std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
         typeid(LayoutType).name() + ", " + typeid(ExeSpaceType).name() + ">(" +
-        std::to_string(m) + ", " + std::to_string(n) +
+        std::to_string(dim2) + ", " + std::to_string(dim1) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
-    __populate_random_csc_mat(ticks);
+    __populate_random_cs_mat(ticks);
 
-    __vals_d = ValViewTypeD("RandCscMat.ValViewType", __nnz + 1);
+    __vals_d = ValViewTypeD("RandCsMatrix.ValViewType", __nnz + 1);
     __vals   = Kokkos::create_mirror_view(__vals_d);
     Kokkos::fill_random(__vals, random, min_val, max_val);  // random scalars
     Kokkos::fence();
@@ -613,17 +638,15 @@ class RandCscMat {
 
   // O(c), where c is a constant.
   ScalarType operator()(int64_t idx) { return __vals(idx); }
-
   int64_t get_nnz() { return __nnz; }
-  int64_t get_m() { return __nrows; }
-  int64_t get_n() { return __ncols; }
-  int64_t get_col_len(int64_t j) {
-    return j < __ncols ? (__col_map(j + 1) - __col_map(j)) : 0;
-  }
-  int64_t get_col_start(int64_t j) { return j < __ncols ? __col_map(j) : 0; }
+  // dimension2: This is either columns for a Crs matrix or rows for a Ccs
+  // matrix.
+  int64_t get_dim2() { return __dim2; }
+  // dimension1: This is either rows for Crs matrix or columns for a Ccs matrix.
+  int64_t get_dim1() { return __dim1; }
   ValViewTypeD get_vals() { return __getter_copy_helper(__vals_d); }
-  RowIdViewTypeD get_row_ids() { return __getter_copy_helper(__row_ids_d); }
-  ColMapViewTypeD get_col_map() { return __getter_copy_helper(__col_map_d); }
+  IdViewTypeD get_ids() { return __getter_copy_helper(__ids_d); }
+  MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }
 };
 
 /// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) matrix.

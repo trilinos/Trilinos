@@ -58,14 +58,12 @@ class PerceptMesh;
       {m_metric = metric; m_eMesh = eMesh; valid = valid_in; num_invalid = num_invalid_in; mtot = mtot_in; n_invalid = n_invalid_in;}
 
       inline
-      KOKKOS_FUNCTION
       void operator()(const unsigned& index, Double& mtot_loc) const
       {
         const_cast<This *>(this)->operator()(index, mtot_loc);
       }
 
       inline
-      KOKKOS_FUNCTION
       void operator()(const unsigned& index, Double& mtot_loc);
 
     };

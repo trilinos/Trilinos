@@ -53,6 +53,8 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  int *_rval;
+
 public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeLDL() = delete;
@@ -60,8 +62,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeLDL(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                            const ordinal_type_array &level_sids, const ordinal_type_array &piv,
-                           const value_type_array &diag, const value_type_array buf)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _diag(diag), _buf(buf) {}
+                           const value_type_array &diag, const value_type_array buf, int *rval)
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _diag(diag), _buf(buf), _rval(rval) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -82,13 +84,19 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
       Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
       member.team_barrier();
-      LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
+      err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
+
       LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
       member.team_barrier();
 
@@ -122,6 +130,7 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
@@ -130,8 +139,12 @@ public:
       Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
       member.team_barrier();
 
-      LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
+      err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
       member.team_barrier();
@@ -178,6 +191,7 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
@@ -186,8 +200,12 @@ public:
       Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
       member.team_barrier();
 
-      LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
+      err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
 
@@ -234,6 +252,9 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void update(MemberType &member, const supernode_type &cur,
                                      const value_type_matrix &ABR) const {
+
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename value_type_matrix::execution_space>;
+
     const auto info = _info;
     value_type *buf = ABR.data() + ABR.span();
     const ordinal_type sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
@@ -298,25 +319,25 @@ public:
             for (; s2t[ijbeg] == -1; ++ijbeg)
               ;
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-            for (ordinal_type iii = 0; iii < (srcsize - ijbeg); ++iii) {
-              const ordinal_type ii = ijbeg + iii;
-              const ordinal_type row = s2t[ii];
-              if (row < s.m) {
-                for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
-                  Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+            if constexpr(runOnHost) {
+              for (ordinal_type iii = 0; iii < (srcsize - ijbeg); ++iii) {
+                const ordinal_type ii = ijbeg + iii;
+                const ordinal_type row = s2t[ii];
+                if (row < s.m) {
+                  for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
+                    Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                }
               }
+            } else {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize - ijbeg), [&](const ordinal_type &iii) {
+                const ordinal_type ii = ijbeg + iii;
+                const ordinal_type row = s2t[ii];
+                if (row < s.m) {
+                  for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
+                    Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                }
+              });
             }
-#else
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize - ijbeg), [&](const ordinal_type &iii) {
-              const ordinal_type ii = ijbeg + iii;
-              const ordinal_type row = s2t[ii];
-              if (row < s.m) {
-                for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
-                  Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-              }
-            });
-#endif
           }
         });
     return;

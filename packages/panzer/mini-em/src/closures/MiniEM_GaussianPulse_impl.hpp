@@ -30,9 +30,6 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
   beta  = 5.0*dt;
 
   Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis("E_edge");
-  const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
-  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates);
-  this->addDependentField(coords);
 
   std::string n = "Gaussian Pulse";
   this->setName(n);

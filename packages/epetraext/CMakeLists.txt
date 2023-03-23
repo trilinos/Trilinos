@@ -97,17 +97,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MMM_STATISTICS
 #This replaces an option that was reusing an existing name.
 SET(HAVE_HYPRE "${${PACKAGE_NAME}_ENABLE_HYPRE}")
 
-IF(${PACKAGE_NAME}_ENABLE_HDF5)
-  SET(${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT ON)
-ELSE()
-  SET(${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT OFF)
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
-  HAVE_EPETRAEXT_HDF5
-  "Enable EpetraExt interface support for HDF5. This interface requires an already installed HDF5 library\; the include, the library path and the library name must be specified as well."
-  ${${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT} )
-
 #Adding a define for when PyTrilinos is enabled.
 #This replaces an option that was reusing an existing name.
 SET(HAVE_PYTRILINOS "${${PROJECT_NAME}_ENABLE_PyTrilinos}")

@@ -98,9 +98,9 @@ namespace percept {
         // Cp(i,j): i=0,n, j=0,3: Cp(i + n*j)
         const int numControlPoints = 3*MaxControlPoints();
 
-        m_eMesh.m_gregory_control_points_field = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType_type>(m_eMesh.side_rank(), "gregory_control_points"));
-        m_eMesh.m_gregory_control_points_field_shell = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType_type>(m_eMesh.element_rank(), "gregory_control_points_shell"));
-        m_eMesh.m_node_normals = &(m_eMesh.get_fem_meta_data()->declare_field<NormalsFieldType_type>(stk::topology::NODE_RANK, "node_normals"));
+        m_eMesh.m_gregory_control_points_field = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType::value_type>(m_eMesh.side_rank(), "gregory_control_points"));
+        m_eMesh.m_gregory_control_points_field_shell = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType::value_type>(m_eMesh.element_rank(), "gregory_control_points_shell"));
+        m_eMesh.m_node_normals = &(m_eMesh.get_fem_meta_data()->declare_field<NormalsFieldType::value_type>(stk::topology::NODE_RANK, "node_normals"));
 
         if (doRegister)
           {

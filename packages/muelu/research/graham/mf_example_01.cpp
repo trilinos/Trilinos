@@ -59,6 +59,7 @@
 #include <set>
 #include <stdio.h>
 #include <random>
+#include <unistd.h>
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -87,6 +88,7 @@
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Export.hpp"
 #include "Xpetra_Utils.hpp"
+#include "Xpetra_Parameters.hpp"
 
 // Belos includes
 #include "BelosTpetraAdapter.hpp"
@@ -114,21 +116,19 @@
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Factory.hpp"
 
-#include "mpi.h"
-
 // Kokkos typedefs
 typedef Kokkos::Serial HostExec;
 typedef Kokkos::HostSpace HostMem;
 typedef Kokkos::Device<HostExec,HostMem> HostDevice;
-typedef Kokkos::Compat::KokkosSerialWrapperNode HostNode;
+typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode HostNode;
 #ifdef DREAM_USE_CUDA
   typedef Kokkos::Cuda DeviceExec;
   typedef Kokkos::CudaSpace DeviceMem;
-  typedef Kokkos::Compat::KokkosCudaWrapperNode DeviceNode;
+  typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode DeviceNode;
 #else
   typedef Kokkos::Serial DeviceExec;
   typedef Kokkos::HostSpace DeviceMem;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode DeviceNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DeviceNode;
 #endif
 typedef Kokkos::Device<DeviceExec,DeviceMem> DeviceDevice;
 
@@ -438,34 +438,22 @@ private:
 };
 
 
-int main(int argc, char* argv[])
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[])
 {
-  // MPI initialization using Teuchos
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-
-  // Xpetra nodes call Kokkos::execution_space::initialize if the execution
-  // space is not initialized, but they don't call Kokkos::initialize.
-  // Teuchos::GlobalMPISession captures its command-line arguments for later
-  // use that Xpetra takes advantage of.
-  //
-  // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
-  // processes correctly before Kokkos touches things.
-  Kokkos::initialize(argc, argv);
-  // Boilerplate  MPI/Kokkos initialization
-  Teuchos::RCP<Teuchos::MpiComm<int>> comm = Teuchos::rcp(new typename Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
   const int my_rank = comm->getRank();
   const int num_procs = comm->getSize();
   {
     // Necessary typedefs
-    using SC = double;
-    using LO = int;
-    using GO = long long;
-    using NO = Tpetra::MultiVector<>::node_type;
+    using SC = Scalar;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using NO = Node;
     //using map_type = Xpetra::Map<>; // unused
     using MV = Xpetra::MultiVector<SC,LO,GO,NO>;
 
     // Set a command line processor and parse it
-    Teuchos::CommandLineProcessor clp(false);
     int n = 300;
     int max_iterations = 1000;
     double tol = 1e-10;
@@ -503,11 +491,11 @@ int main(int argc, char* argv[])
       std::cout << "Running example-01 with n=" << n << " verbose=" << belos_verbose << " config=" << show_kokkos << "..." << std::endl; 
 
     // print configuration details if needed
-    Kokkos::Serial::print_configuration(std::cout, true/*details*/);
-    //Kokkos::OpenMP::print_configuration(std::cout, true/*details*/);
+    Kokkos::Serial().print_configuration(std::cout, true/*details*/);
+    //Kokkos::OpenMP().print_configuration(std::cout, true/*details*/);
     //std::cout << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
-    //Kokkos::Cuda::print_configuration(std::cout, true/*details*/);
-    //Kokkos::Experimental::HIP::print_configuration(std::cout, true/*details*/);
+    //Kokkos::Cuda().print_configuration(std::cout, true/*details*/);
+    //Kokkos::Experimental::HIP().print_configuration(std::cout, true/*details*/);
 
     // Create the operator
     Teuchos::RCP<TridiagonalOperator<SC,LO,GO,NO>> matrix = Teuchos::rcp(new TridiagonalOperator<SC,LO,GO,NO>(n, comm));
@@ -607,7 +595,7 @@ int main(int argc, char* argv[])
       Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO>> mueLuFactory = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(params,matrix->getDomainMap()->getComm()));
       //H->setlib(matrix->getDomainMap()->lib());
       H->SetProcRankVerbose(matrix->getDomainMap()->getComm()->getRank());
-      mueLuFactory->SetupHierarchy(*H);
+      //mueLuFactory->SetupHierarchy(*H);
 
       std::cout << "Finished hierarchy!" << std::endl;
 
@@ -639,4 +627,12 @@ int main(int argc, char* argv[])
   }
   Kokkos::finalize();
   return 0;
+}
+
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

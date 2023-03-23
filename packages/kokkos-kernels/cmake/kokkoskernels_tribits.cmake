@@ -23,7 +23,7 @@ MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
          INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels)
     write_basic_package_version_file("${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
             VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}"
-            COMPATIBILITY SameMajorVersion)
+            COMPATIBILITY AnyNewerVersion)
 
     INSTALL(FILES
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"

@@ -88,8 +88,9 @@ ELSE()
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
   SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
 
-  # Make sure EpetraExt is turned off
-  DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_EpetraExt OFF)
+  tribits_disable_optional_dependency( EpetraExt
+    "NOTE: Setting Xpetra_ENABLE_EpetraExt=OFF since Xpetra_ENABLE_Epetra='${Xpetra_ENABLE_Epetra}'" )
+
 ENDIF()
 
 #
@@ -167,6 +168,13 @@ ELSE () # Tpetra NOT enabled
   ENDIF ()
 ENDIF ()
 
+
+# We're not going to support building EPETRA and SYCL at the same time,
+# because nobody needs that at present
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${Tpetra_INST_SYCL})
+  MESSAGE(ERROR "Xpetra does not support enabling Epetra and Tpetra/SYCL support at the same time")
+ENDIF()
+
 ##################################
 
 TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
@@ -174,14 +182,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
   "Enable detailed timing of Xpetra."
   OFF)
 
-# Define option to enable code that is refactored to use Kokkos
-SET(Kokkos_Refactor_On_By_Default ON)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
-  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable Xpetra code refactored to use Kokkos."
-  ${Kokkos_Refactor_On_By_Default})
+IF (DEFINED ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  MESSAGE(WARNING "Xpetra no longer uses the option \'Xpetra_ENABLE_Kokkos_Refactor\' and will always build with Kokkos code enabled. \'Xpetra_ENABLE_Kokkos_Refactor\' can safely be removed from the CMake invocation.")
+ENDIF()
 
 #
 #
@@ -210,4 +214,3 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
-

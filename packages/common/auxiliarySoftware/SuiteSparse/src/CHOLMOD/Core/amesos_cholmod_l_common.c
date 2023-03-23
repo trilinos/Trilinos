@@ -134,7 +134,7 @@ int CHOLMOD(start)
      * overwritten with NULL. */
 
     Common->nrow = 0 ;
-    Common->mark = EMPTY ;
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;
     Common->xworksize = 0 ;
     Common->iworksize = 0 ;
     Common->Flag = NULL ;
@@ -148,11 +148,11 @@ int CHOLMOD(start)
     /* ---------------------------------------------------------------------- */
 
     /* fl and lnz are computed in cholmod_analyze and cholmod_rowcolcounts */
-    Common->fl = EMPTY ;
-    Common->lnz = EMPTY ;
+    Common->fl = TRILINOS_CHOLMOD_EMPTY ;
+    Common->lnz = TRILINOS_CHOLMOD_EMPTY ;
 
     /* modfl is computed in cholmod_updown, cholmod_rowadd, and cholmod_rowdel*/
-    Common->modfl = EMPTY ;
+    Common->modfl = TRILINOS_CHOLMOD_EMPTY ;
 
     /* all routines use status as their error-report code */
     Common->status = CHOLMOD_OK ;
@@ -165,7 +165,7 @@ int CHOLMOD(start)
     Common->nrealloc_factor = 0 ;
     Common->ndbounds_hit = 0 ;
     Common->rowfacfl = 0 ;
-    Common->aatfl = EMPTY ;
+    Common->aatfl = TRILINOS_CHOLMOD_EMPTY ;
 
     /* Common->called_nd is TRUE if cholmod_analyze called or NESDIS */
     Common->called_nd = FALSE ;
@@ -278,8 +278,8 @@ int CHOLMOD(defaults)
 	Common->method [i].nd_oksep = 1.0 ;	/* sep ok if < oksep*n */
 
 	/* statistics for each method are not yet computed */
-	Common->method [i].fl = EMPTY ;
-	Common->method [i].lnz = EMPTY ;
+	Common->method [i].fl = TRILINOS_CHOLMOD_EMPTY ;
+	Common->method [i].lnz = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     Common->postorder = TRUE ;	/* follow ordering with weighted postorder */
@@ -411,12 +411,12 @@ int CHOLMOD(allocate_work)
 	}
 
 	/* initialize Flag and Head */
-	Common->mark = EMPTY ;
+	Common->mark = TRILINOS_CHOLMOD_EMPTY ;
 	CHOLMOD(clear_flag) (Common) ;
 	Head = Common->Head ;
 	for (i = 0 ; i <= (Int) (nrow) ; i++)
 	{
-	    Head [i] = EMPTY ;
+	    Head [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
     }
 
@@ -553,7 +553,7 @@ UF_long CHOLMOD(clear_flag)
 	PRINT2 (("reset Flag: mark %ld\n", Common->mark)) ;
 	for (i = 0 ; i < nrow ; i++)
 	{
-	    Flag [i] = EMPTY ;
+	    Flag [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	Common->mark = 0 ;
     }

@@ -41,7 +41,7 @@ SET(SOURCES
  apr_units.cc
  apr_tokenize.cc
  apr_scanner.cc
- apr_getline_int.c
+ apr_getline.cc
  ${BISON_LIB_SOURCE}
  apr_exodus.cc
  apr_array.cc
