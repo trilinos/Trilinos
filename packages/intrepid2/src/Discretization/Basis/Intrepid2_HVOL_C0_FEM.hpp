@@ -144,7 +144,7 @@ namespace Intrepid2 {
 
     /** \brief Constructor.
      */
-    Basis_HVOL_C0_FEM(const shards::CellTopology cellTopo);
+    Basis_HVOL_C0_FEM(const shards::CellTopology& cellTopo);
 
     using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
     using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
