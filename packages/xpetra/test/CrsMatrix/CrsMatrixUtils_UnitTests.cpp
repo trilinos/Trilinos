@@ -50,9 +50,7 @@
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 

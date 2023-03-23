@@ -46,7 +46,6 @@
 #ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
@@ -60,7 +59,7 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -457,7 +456,7 @@ namespace MueLu {
   } // namespace
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -483,7 +482,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
 
@@ -493,7 +492,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -550,7 +549,7 @@ namespace MueLu {
       // Scalar problem without dropping
 
       // Detect and record rows that correspond to Dirichlet boundary conditions
-      boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      boundaryNodes = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
 
       // Trivial LWGraph construction
       graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "graph of A"));
@@ -620,7 +619,7 @@ namespace MueLu {
           {
             kokkosMatrix = local_matrix_type();
             SubFactoryMonitor m2(*this, "Ghosted diag construction", currentLevel);
-            ghostedDiag     = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
+            ghostedDiag     = Utilities::GetMatrixOverlappedDiagonal(*A);
             kokkosMatrix=A->getLocalMatrixDevice();
           }
 
@@ -867,7 +866,7 @@ namespace MueLu {
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
       // Detect and record dof rows that correspond to Dirichlet boundary conditions
-      boundary_nodes_type singleEntryRows = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      boundary_nodes_type singleEntryRows = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
 
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
 
@@ -940,5 +939,4 @@ namespace MueLu {
     Set(currentLevel, "A",            filteredA);
   }
 }
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP

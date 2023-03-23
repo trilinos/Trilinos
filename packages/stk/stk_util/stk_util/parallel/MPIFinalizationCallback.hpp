@@ -34,10 +34,12 @@ namespace stk {
 class MPIFinalizationCallback
 {
   public:
+    MPIFinalizationCallback();
+
     explicit MPIFinalizationCallback(std::function<void()> callback);
 
     MPIFinalizationCallback(const MPIFinalizationCallback&) = delete;
-    MPIFinalizationCallback(MPIFinalizationCallback&&) = delete;
+    MPIFinalizationCallback(MPIFinalizationCallback&& other) = delete;
 
     MPIFinalizationCallback& operator=(const MPIFinalizationCallback&) = delete;
     MPIFinalizationCallback& operator=(MPIFinalizationCallback&&) = delete;

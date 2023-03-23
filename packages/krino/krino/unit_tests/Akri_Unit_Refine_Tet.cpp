@@ -322,8 +322,7 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
   // NP=8 Percept: 28709 ms
 
 
-  const std::vector<int> testActiveProcs{};
-  //const std::vector<int> testActiveProcs{1,2,4,8};
+  const std::vector<int> testActiveProcs{1,2,4,8};
   const int parallelSize = stk::parallel_machine_size(mComm);
   if (std::find(testActiveProcs.begin(), testActiveProcs.end(), parallelSize) == testActiveProcs.end())
     return;

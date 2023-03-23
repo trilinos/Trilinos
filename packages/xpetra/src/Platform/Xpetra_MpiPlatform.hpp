@@ -48,7 +48,7 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_Describable.hpp>
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 
@@ -60,7 +60,7 @@ namespace Xpetra {
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
-  template<class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MpiPlatform : public Teuchos::Describable {
   public:
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.

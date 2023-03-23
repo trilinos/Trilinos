@@ -64,6 +64,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const GraphBase & graph) {
     nAggregates_  = 0;
+    nGlobalAggregates_ = 0;
 
     vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -81,6 +82,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const RCP<const Map> & map) {
     nAggregates_ = 0;
+    nGlobalAggregates_ = 0;
 
     vertex2AggId_ = LOMultiVectorFactory::Build(map, 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -130,7 +132,8 @@ namespace MueLu {
   std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << BaseClass::description();
-    out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
+    if (nGlobalAggregates_ == -1) out << "{nGlobalAggregates = not computed}";
+    else                            out << "{nGlobalAggregates = " << nGlobalAggregates_ << "}";
     return out.str();
   }
 
@@ -138,8 +141,11 @@ namespace MueLu {
   void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Statistics1)
-      out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
+
+    if (verbLevel & Statistics1) {
+      if (nGlobalAggregates_ == -1) out0 << "Global number of aggregates: not computed " << std::endl;
+      else                            out0 << "Global number of aggregates: " << nGlobalAggregates_ << std::endl;
+    }
 
     if(verbLevel == Teuchos::VERB_EXTREME) {
       for(size_t j=0; j <vertex2AggId_->getNumVectors(); j++) {
@@ -154,10 +160,14 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregates() const {
-    LO nAggregates = GetNumAggregates();
-    GO nGlobalAggregates; MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
-    return nGlobalAggregates;
+  GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregatesComputeIfNeeded() {
+    if (nGlobalAggregates_ != -1) {
+      LO nAggregates = GetNumAggregates();
+      GO nGlobalAggregates; 
+      MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
+      SetNumGlobalAggregates(nGlobalAggregates); 
+    }
+    return nGlobalAggregates_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -181,7 +191,7 @@ namespace MueLu {
     LO currNumUnaggregated=0;
 
     // Construct the "rowptr" and the counter
-    aggPtr[0] = 0;
+    aggPtr[0] = 0; 
     for(LO i=0; i<numAggs; i++) {
       aggPtr[i+1] = aggSizes[i] + aggPtr[i];
       aggCurr[i] = aggPtr[i];

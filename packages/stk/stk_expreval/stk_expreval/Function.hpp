@@ -156,12 +156,13 @@ double fpart(double x)
 KOKKOS_INLINE_FUNCTION
 double real_rand()
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
-#else
-  NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
-  return 0.0;
-#endif
+  KOKKOS_IF_ON_HOST((
+    return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
+  ))
+  KOKKOS_IF_ON_DEVICE((
+    NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
+    return 0.0;
+  ))
 }
 
 /// Sets x as the random number seed. Interface to the srand function provided by the
@@ -169,25 +170,27 @@ double real_rand()
 KOKKOS_INLINE_FUNCTION
 double real_srand(double x)
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  std::srand(static_cast<int>(x));
-  return 0.0;
-#else
-  NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
-  return 0.0;
-#endif
+  KOKKOS_IF_ON_HOST((
+    std::srand(static_cast<int>(x));
+    return 0.0;
+  ))
+  KOKKOS_IF_ON_DEVICE((
+    NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
+    return 0.0;
+  ))
 }
 
 /// Return the current time
 KOKKOS_INLINE_FUNCTION
 double current_time()
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  return static_cast<double>(::time(nullptr));
-#else
-  NGP_ThrowErrorMsg("The time function is not supported on GPUs");
-  return 0.0;
-#endif
+  KOKKOS_IF_ON_HOST((
+    return static_cast<double>(::time(nullptr));
+  ))
+  KOKKOS_IF_ON_DEVICE((
+    NGP_ThrowErrorMsg("The time function is not supported on GPUs");
+    return 0.0;
+  ))
 }
 
 KOKKOS_INLINE_FUNCTION void hash_combine(std::size_t& seed, double v) {
@@ -201,11 +204,11 @@ extern int sRandomRangeLowValue;
 KOKKOS_INLINE_FUNCTION
 void random_seed(double x)
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  int y = std::hash<double>{}(x);
-  sRandomRangeHighValue =  y;
-  sRandomRangeLowValue  = ~y;
-#endif
+  KOKKOS_IF_ON_HOST((
+    int y = std::hash<double>{}(x);
+    sRandomRangeHighValue =  y;
+    sRandomRangeLowValue  = ~y;
+  ))
 }
 
 /// Non-platform specific (pseudo) random number generator.
@@ -225,29 +228,31 @@ double seeded_pseudo_random(std::size_t seed, int& low, int& high)
 KOKKOS_INLINE_FUNCTION
 double random0()
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
-  sRandomRangeHighValue += sRandomRangeLowValue;
-  sRandomRangeLowValue += sRandomRangeHighValue;
-  int val = std::abs(sRandomRangeHighValue);
-  return double(val) / double(RAND_MAX);
-#else
-  NGP_ThrowErrorMsg("The random function is not supported on GPUs");
-  return 0.0;
-#endif
+  KOKKOS_IF_ON_HOST((
+    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
+    sRandomRangeHighValue += sRandomRangeLowValue;
+    sRandomRangeLowValue += sRandomRangeHighValue;
+    int val = std::abs(sRandomRangeHighValue);
+    return double(val) / double(RAND_MAX);
+  ))
+  KOKKOS_IF_ON_DEVICE((
+    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+    return 0.0;
+  ))
 }
 
 /// Non-platform specific (pseudo) random number generator.
 KOKKOS_INLINE_FUNCTION
 double random1(double seed)
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  random_seed(seed);
-  return random0();
-#else
-  NGP_ThrowErrorMsg("The random function is not supported on GPUs");
-  return 0.0;
-#endif
+  KOKKOS_IF_ON_HOST((
+    random_seed(seed);
+    return random0();
+  ))
+  KOKKOS_IF_ON_DEVICE((
+    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+    return 0.0;
+  ))
 }
 
 /// Non-platform specific (pseudo) random number generator that

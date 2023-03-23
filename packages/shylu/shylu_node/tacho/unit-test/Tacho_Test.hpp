@@ -59,7 +59,7 @@ void symmetrize_with_upper(const value_type_matrix_type_host &A) {
   const int m = A.extent(0), n = A.extent(1);
   EXPECT_TRUE(m == n);
   for (int i = 0; i < m; ++i)
-    for (int j = i; i < m; ++j)
+    for (int j = i; j < m; ++j)
       A(j, i) = A(i, j);
 }
 void fill_random_matrix(const value_type_matrix_type_host &A) {

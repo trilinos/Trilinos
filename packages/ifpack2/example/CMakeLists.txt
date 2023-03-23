@@ -17,6 +17,7 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE(
   BlockTriDiagonalSolver
   SOURCES BlockTriDi.cpp
+  CATEGORIES BASIC PERFORMANCE
 )
 
 

@@ -26,8 +26,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_topology/topology.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>

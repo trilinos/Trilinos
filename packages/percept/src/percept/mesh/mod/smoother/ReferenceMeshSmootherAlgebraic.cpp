@@ -31,7 +31,6 @@ namespace percept {
 
   int ReferenceMeshSmootherAlgebraic::find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase *coord_field_orig)
   {
-    CoordinatesFieldType_type *coord = static_cast<double*>(stk::mesh::field_data(*coord_field_orig, node));
     int valNew = valOld;
     typedef std::set<stk::mesh::Entity> EntitySet;
     EntitySet neighbors;
@@ -40,13 +39,7 @@ namespace percept {
     for (EntitySet::iterator it = neighbors.begin(); it != neighbors.end(); ++it)
       {
         stk::mesh::Entity nnode = *it;
-        CoordinatesFieldType_type *ncoord = static_cast<double*>(stk::mesh::field_data(*coord_field_orig, nnode));
-        WallDistanceFieldType_type *valn = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nnode);
-        double d = 0.0;
-        for (int jc=0; jc < m_eMesh->get_spatial_dim(); ++jc)
-          {
-            d += (ncoord[jc] - coord[jc])*(ncoord[jc] - coord[jc]);
-          }
+        WallDistanceFieldType::value_type *valn = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nnode);
         if (valn[0] != 0)
           {
             int valTmp = valn[0] + 1;
@@ -94,7 +87,7 @@ namespace percept {
               {
                 stk::mesh::Entity node = bucket[i_node];
                 VERIFY_OP_ON(m_eMesh->is_valid(node), ==, true, "bad node");
-                WallDistanceFieldType_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
+                WallDistanceFieldType::value_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
                 val[0] = 0;
 
                 double *current_coord = static_cast<double*>(stk::mesh::field_data(*coord_field, node));
@@ -138,7 +131,7 @@ namespace percept {
           for (size_t ii = 0; ii < nodes.size(); ++ii)
             {
               stk::mesh::Entity node = nodes[ii];
-              WallDistanceFieldType_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
+              WallDistanceFieldType::value_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
               int valNew = find_new_value(node, val[0], wall_distance_field, coord_field_orig);
 
               if (val[0] == 0 || valNew != val[0])
@@ -153,7 +146,7 @@ namespace percept {
             {
               stk::mesh::Entity node = nodeQ.front();
               nodeQ.pop();
-              WallDistanceFieldType_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
+              WallDistanceFieldType::value_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
               int valNew = find_new_value(node, val[0], wall_distance_field, coord_field_orig);
               if (valNew != val[0])
                 {
@@ -222,7 +215,7 @@ namespace percept {
                     stk::mesh::Entity node = bucket[i_node];
                     double *current_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field, node);
                     double *orig_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, node);
-                    WallDistanceFieldType_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
+                    WallDistanceFieldType::value_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
                     if (val[0] > m_nlayers_drop_off)
                       continue;
                     if (val[0] == -1)
@@ -247,8 +240,8 @@ namespace percept {
                         stk::mesh::Entity nnode = *it;
                         if (nnode == node)
                           continue;
-                        CoordinatesFieldType_type *ncoord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, nnode);
-                        WallDistanceFieldType_type *valn = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nnode);
+                        CoordinatesFieldType::value_type *ncoord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, nnode);
+                        WallDistanceFieldType::value_type *valn = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nnode);
                         double d = 0.0;
                         for (int jc=0; jc < m_eMesh->get_spatial_dim(); ++jc)
                           {
@@ -271,7 +264,7 @@ namespace percept {
                       {
                         double *n_current_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field, nodeMin);
                         double *n_orig_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, nodeMin);
-                        //WallDistanceFieldType_type *n_val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nodeMin);
+                        //WallDistanceFieldType::value_type *n_val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nodeMin);
                         double fac = double(m_nlayers_drop_off + 1 - val[0])/double(m_nlayers_drop_off);
                         double *cg_s = m_eMesh->field_data(*cg_s_field, node);
                         fac = 1.0; // FIXME

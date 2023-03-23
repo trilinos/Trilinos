@@ -270,13 +270,13 @@ static int check_common
     P3 ("    sizeof(BLAS_INT): %d (integer used in the BLAS)\n",
 	    (int) sizeof (BLAS_INT)) ;
 
-    if (Common->fl != EMPTY)
+    if (Common->fl != TRILINOS_CHOLMOD_EMPTY)
     {
 	P2 ("%s", "  Results from most recent analysis:\n") ;
 	P2 ("    Cholesky flop count: %.5g\n", Common->fl) ;
 	P2 ("    Nonzeros in L:       %.5g\n", Common->lnz) ;
     }
-    if (Common->modfl != EMPTY)
+    if (Common->modfl != TRILINOS_CHOLMOD_EMPTY)
     {
 	P2 ("    Update/downdate flop count: %.5g\n", Common->modfl) ;
     }
@@ -428,8 +428,8 @@ static int check_common
 	    }
 	}
 
-	if (fl  != EMPTY) P3 ("        flop count: %.5g\n", fl) ;
-	if (lnz != EMPTY) P3 ("        nnz(L):     %.5g\n", lnz) ;
+	if (fl  != TRILINOS_CHOLMOD_EMPTY) P3 ("        flop count: %.5g\n", fl) ;
+	if (lnz != TRILINOS_CHOLMOD_EMPTY) P3 ("        nnz(L):     %.5g\n", lnz) ;
     }
 
     /* backup AMD results, if any */
@@ -439,8 +439,8 @@ static int check_common
 	P3 ("%s", "AMD (or TRILINOS_COLAMD if factorizing AA')\n") ;
 	fl = Common->method [nmethods].fl ;
 	lnz = Common->method [nmethods].lnz ;
-	if (fl  != EMPTY) P3 ("        AMD flop count: %.5g\n", fl) ;
-	if (lnz != EMPTY) P3 ("        AMD nnz(L):     %.5g\n", lnz) ;
+	if (fl  != TRILINOS_CHOLMOD_EMPTY) P3 ("        AMD flop count: %.5g\n", fl) ;
+	if (lnz != TRILINOS_CHOLMOD_EMPTY) P3 ("        AMD nnz(L):     %.5g\n", lnz) ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -535,7 +535,7 @@ static int check_common
 	}
 	for (i = 0 ; i <= nrow ; i++)
 	{
-	    if (Head [i] != EMPTY)
+	    if (Head [i] != TRILINOS_CHOLMOD_EMPTY)
 	    {
 		PRINT0 (("Head ["ID"] = "ID",\n", i, Head [i])) ;
 		ERR ("workspace corrupted (Head)") ;
@@ -759,7 +759,7 @@ static UF_long check_sparse
 	}
 	for (i = 0 ; i < nrow ; i++)
 	{
-	    Wi [i] = EMPTY ;
+	    Wi [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
     }
 
@@ -805,7 +805,7 @@ static UF_long check_sparse
 	{
 	    ERR ("nz invalid") ;
 	}
-	ilast = EMPTY ;
+	ilast = TRILINOS_CHOLMOD_EMPTY ;
 
 	for ( ; p < pend ; p++)
 	{
@@ -1333,7 +1333,7 @@ int CHOLMOD(print_perm)
 /* ========================================================================== */
 
 /* Ensure that Parent is a valid elimination tree of nodes 0 to n-1.
- * If j is a root of the tree then Parent [j] is EMPTY (-1).
+ * If j is a root of the tree then Parent [j] is TRILINOS_CHOLMOD_EMPTY (-1).
  *
  * NOTE: this check will fail if applied to the component tree (CParent) in
  * cholmod_nested_dissection, unless it has been postordered and renumbered.
@@ -1381,7 +1381,7 @@ static int check_parent
 	p = Parent [j] ;
 	P4 ("  "I8":", j) ;
 	P4 (" "ID"\n", p) ;
-	if (!(p == EMPTY || p > j))
+	if (!(p == TRILINOS_CHOLMOD_EMPTY || p > j))
 	{
 	    ERR ("invalid") ;
 	}
@@ -1729,7 +1729,7 @@ static int check_factor
 	head = n+1 ;
 	tail = n ;
 	j = head ;
-	jprev = EMPTY ;
+	jprev = TRILINOS_CHOLMOD_EMPTY ;
 	count = 0 ;
 	for ( ; ; )
 	{
@@ -1753,7 +1753,7 @@ static int check_factor
 	    jprev = j ;
 	    j = jnext ;
 	}
-	if (Lnext [tail] != EMPTY || count != n+2)
+	if (Lnext [tail] != TRILINOS_CHOLMOD_EMPTY || count != n+2)
 	{
 	    ERR ("invalid link list") ;
 	}
@@ -1807,7 +1807,7 @@ static int check_factor
 	    {
 		ERR ("invalid: L->x missing") ;
 	    }
-	    if (Ls [0] == EMPTY)
+	    if (Ls [0] == TRILINOS_CHOLMOD_EMPTY)
 	    {
 		ERR ("invalid: L->s not defined") ;
 	    }
@@ -1816,7 +1816,7 @@ static int check_factor
 	else
 	{
 	    /* symbolic supernodal factor, but only if it has been computed */
-	    examine_super = (Ls [0] != EMPTY) ;
+	    examine_super = (Ls [0] != TRILINOS_CHOLMOD_EMPTY) ;
 	}
 
 	if (examine_super)
@@ -2199,7 +2199,7 @@ void CHOLMOD(dump_init) (char *s, cholmod_common *Common)
 /* === cholmod_dump_sparse ================================================== */
 /* ========================================================================== */
 
-UF_long CHOLMOD(dump_sparse)	/* returns nnz (diag (A)) or EMPTY if error */
+UF_long CHOLMOD(dump_sparse)	/* returns nnz (diag (A)) or TRILINOS_CHOLMOD_EMPTY if error */
 (
     cholmod_sparse *A,
     char *name,
@@ -2221,7 +2221,7 @@ UF_long CHOLMOD(dump_sparse)	/* returns nnz (diag (A)) or EMPTY if error */
     Wi = malloc (MAX (1, A->nrow) * sizeof (Int)) ;
     ok = check_sparse (Wi, CHOLMOD(dump), name, A, &nnzdiag, Common) ;
     if (Wi != NULL) free (Wi) ;
-    return (ok ? nnzdiag : EMPTY) ;
+    return (ok ? nnzdiag : TRILINOS_CHOLMOD_EMPTY) ;
 }
 
 
@@ -2602,7 +2602,7 @@ int CHOLMOD(dump_work) (int flag, int head, UF_long wsize,
     {
 	for (k = 0 ; k < nrow ; k++)
 	{
-	    if (Head [k] != EMPTY)
+	    if (Head [k] != TRILINOS_CHOLMOD_EMPTY)
 	    {
 		PRINT0 (("Head invalid, Head ["ID"] = "ID"\n", k, Head [k])) ;
 		ASSERT (0) ;

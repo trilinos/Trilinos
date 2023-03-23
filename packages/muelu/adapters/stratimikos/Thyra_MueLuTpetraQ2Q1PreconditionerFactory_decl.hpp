@@ -50,7 +50,7 @@
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teko_Utilities.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
@@ -63,7 +63,7 @@ namespace Thyra {
    *
    * ToDo: Finish documentation!
    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuTpetraQ2Q1PreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   private:
     typedef Scalar          SC;

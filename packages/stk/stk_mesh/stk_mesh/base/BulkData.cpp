@@ -1934,12 +1934,12 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     {
         for(const FieldBase* field : *field_set) {
             const FieldMetaData& srcFieldMeta = field->get_meta_data_for_field()[src_bucket_id];
-            const int src_size = srcFieldMeta.m_bytes_per_entity;
+            const int src_size = srcFieldMeta.m_bytesPerEntity;
             unsigned char * const src = srcFieldMeta.m_data;
             const FieldMetaData& dstFieldMeta = field->get_meta_data_for_field()[dst_bucket_id];
             unsigned char * const dst = dstFieldMeta.m_data;
 
-            ThrowAssert(src_size == dstFieldMeta.m_bytes_per_entity);
+            ThrowAssert(src_size == dstFieldMeta.m_bytesPerEntity);
 
             std::memcpy(dst + src_size * dst_bucket_ord,
                     src + src_size * src_bucket_ord,
@@ -1956,14 +1956,14 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
         const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields(dst_rank);
         for(int i = 0, iend = allFields.size(); i < iend; ++i)
         {
-            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytesPerEntity;
             if(src_size == 0)
             {
                 continue;
             }
 
             unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
+            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytesPerEntity;
 
             if(dst_size)
             {
@@ -5160,6 +5160,15 @@ void BulkData::internal_determine_inducible_parts_and_propagate_to_downward_conn
   }
 }
 
+bool need_to_change_parts(const Bucket* bkt,
+                          const OrdinalVector& addParts,
+                          const OrdinalVector& removeParts)
+{
+  return bkt == nullptr
+      || !bkt->member_all(addParts)
+      || bkt->member_any(removeParts);
+}
+
 void BulkData::internal_change_entity_parts(
   Entity entity ,
   const OrdinalVector& add_parts ,
@@ -5167,26 +5176,20 @@ void BulkData::internal_change_entity_parts(
   OrdinalVector& scratchOrdinalVec,
   OrdinalVector& scratchSpace)
 {
-    require_ok_to_modify();
+  require_ok_to_modify();
 
-    Bucket * const bucket_old = bucket_ptr(entity);
-    bool needToChangeParts = bucket_old == nullptr
-            || !bucket_old->member_all(add_parts)
-            || bucket_old->member_any(remove_parts);
-    if(needToChangeParts)
-    {
-        if (!remove_parts.empty())
-        {
-            notifier.notify_entity_parts_removed(entity, remove_parts);
-        }
-        OrdinalVector parts_removed;
-        internal_change_entity_parts_without_propagating_to_downward_connected_entities(entity, add_parts, remove_parts, parts_removed, scratchOrdinalVec, scratchSpace);
-        internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(entity, add_parts, parts_removed, scratchOrdinalVec, scratchSpace);
-        if (!add_parts.empty())
-        {
-            notifier.notify_entity_parts_added(entity, add_parts);
-        }
+  Bucket * const bucket_old = bucket_ptr(entity);
+  if(need_to_change_parts(bucket_old, add_parts, remove_parts)) {
+    if (!remove_parts.empty()) {
+        notifier.notify_entity_parts_removed(entity, remove_parts);
     }
+    OrdinalVector parts_removed;
+    internal_change_entity_parts_without_propagating_to_downward_connected_entities(entity, add_parts, remove_parts, parts_removed, scratchOrdinalVec, scratchSpace);
+    internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(entity, add_parts, parts_removed, scratchOrdinalVec, scratchSpace);
+    if (!add_parts.empty()) {
+      notifier.notify_entity_parts_added(entity, add_parts);
+    }
+  }
 }
 
 void BulkData::internal_change_entity_parts(
@@ -5442,20 +5445,20 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
   OrdinalVector& scratchOrdinalPartsRemoved,
   OrdinalVector& scratchOrdinalVec)
 {
-  Selector bucketSelector = selectUnion(bucket->supersets());
   EntityRank rank = bucket->entity_rank();
 
+  OrdinalVector partsRemoved;
+  EntityVector subs;
   for(EntityRank subRank = stk::topology::BEGIN_RANK; subRank < rank; ++subRank) {
-    const BucketVector& inducedBuckets = get_buckets(subRank, bucketSelector);
-
-    for(auto inducedBucket : inducedBuckets) {
-      Bucket* modifiableBucket = const_cast<Bucket*>(inducedBucket);
-      bool needToChangeParts = !inducedBucket->member_all(addParts) || inducedBucket->member_any(removeParts);
-      if(needToChangeParts) { 
-        notifier.notify_local_buckets_changed(subRank);
-        internal_change_bucket_parts_without_propagating_to_downward_connected_entities(modifiableBucket, subRank, addParts, removeParts,
-                                                                                        scratchOrdinalPartsRemoved,
-                                                                                        scratchOrdinalVec);
+    Bucket* prevBkt = nullptr;
+    for(unsigned i=0; i<bucket->size(); ++i) {
+      subs.assign(bucket->begin(i, subRank), bucket->end(i, subRank));
+      for(stk::mesh::Entity sub : subs) {
+        Bucket* subBkt = bucket_ptr(sub);
+        if(subBkt == prevBkt || need_to_change_parts(subBkt, addParts, removeParts)) {
+          prevBkt = subBkt;
+          internal_change_entity_parts_without_propagating_to_downward_connected_entities(sub, addParts, removeParts, partsRemoved, scratchOrdinalPartsRemoved, scratchOrdinalVec);
+        }
       }
     }
   }

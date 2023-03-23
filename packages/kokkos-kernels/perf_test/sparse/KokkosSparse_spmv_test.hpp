@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 //
 // Created by Poliakoff, David Zoeller on 4/26/21.
 //
@@ -192,7 +207,7 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
         printf("PTR: %p\n",
                static_cast<const void*>(A.graph.row_block_offsets.data()));
         A.graph.create_block_partitioning(
-            AType::execution_space::concurrency());
+            typename AType::execution_space().concurrency());
         printf("PTR2: %p\n",
                static_cast<const void*>(A.graph.row_block_offsets.data()));
       }

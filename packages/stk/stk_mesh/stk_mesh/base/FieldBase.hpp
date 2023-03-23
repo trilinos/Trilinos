@@ -75,8 +75,9 @@ stk::CSet & get_attributes(FieldBase & field);
 
 struct FieldMetaData
 {
-  unsigned char* m_data;
-  int m_bytes_per_entity;   // num bytes per entity, 0 means bucket does not have this field
+  unsigned char* m_data = nullptr;
+  int m_bytesPerEntity = 0;
+  int m_firstDimension = 0;
 };
 
 typedef std::vector<FieldMetaData> FieldMetaDataVector;
@@ -143,7 +144,10 @@ public:
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
    */
-  unsigned max_size( EntityRank ent_rank) const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
+STK_DEPRECATED unsigned max_size( EntityRank ent_rank) const;
+#endif
+  unsigned max_size() const;
 
   //----------------------------------------
 
@@ -443,12 +447,12 @@ inline void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField) {
 inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
   ThrowAssert(f.entity_rank() == b.entity_rank());
   ThrowAssert(&f.get_mesh() == &b.mesh());
-  return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
+  return f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
   ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
-  return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity;
+  return f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
@@ -474,12 +478,12 @@ inline unsigned field_scalars_per_entity(const FieldBase& f, const Bucket& b) {
   ThrowAssert(f.entity_rank() == b.entity_rank());
   ThrowAssert(&f.get_mesh() == &b.mesh());
   const unsigned bytes_per_scalar = f.data_traits().size_of;
-  return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity/bytes_per_scalar;
+  return f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity/bytes_per_scalar;
 }
 
 inline unsigned field_scalars_per_entity(const FieldBase& f, unsigned bucket_id) {
   const unsigned bytes_per_scalar = f.data_traits().size_of;
-  return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity/bytes_per_scalar;
+  return f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity/bytes_per_scalar;
 }
 
 inline unsigned field_scalars_per_entity(const FieldBase& f, Entity e) {
@@ -489,11 +493,108 @@ inline unsigned field_scalars_per_entity(const FieldBase& f, Entity e) {
   return field_bytes_per_entity(f, bulk.bucket(e))/bytes_per_scalar;
 }
 
+
+inline unsigned field_extent0_per_entity(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+}
+
+inline unsigned field_extent0_per_entity(const FieldBase& f, unsigned bucket_id) {
+  return f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+}
+
+inline unsigned field_extent0_per_entity(const FieldBase& f, Entity e) {
+  BulkData& bulk(f.get_mesh());
+  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+}
+
+
+inline unsigned field_extent1_per_entity(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  const unsigned numBytesPerScalar = f.data_traits().size_of;
+  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
+  const unsigned firstDimension = f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+}
+
+inline unsigned field_extent1_per_entity(const FieldBase& f, unsigned bucket_id) {
+  const unsigned numBytesPerScalar = f.data_traits().size_of;
+  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
+  const unsigned firstDimension = f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+}
+
+inline unsigned field_extent1_per_entity(const FieldBase& f, Entity e) {
+  BulkData& bulk(f.get_mesh());
+  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  const unsigned numBytesPerScalar = f.data_traits().size_of;
+  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
+  const unsigned firstDimension = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+}
+
+
+inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, const Bucket& b) {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  if (dimension == 0) {
+    return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+  }
+  else if (dimension == 1) {
+    const unsigned numBytesPerScalar = f.data_traits().size_of;
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
+    const unsigned firstDimension = f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  }
+  else {
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
+    return (numBytesPerEntity != 0) ? 1 : 0;
+  }
+}
+
+inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, unsigned bucket_id) {
+  if (dimension == 0) {
+    return f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+  }
+  else if (dimension == 1) {
+    const unsigned numBytesPerScalar = f.data_traits().size_of;
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
+    const unsigned firstDimension = f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  }
+  else {
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
+    return (numBytesPerEntity != 0) ? 1 : 0;
+  }
+}
+
+inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, Entity e) {
+  BulkData& bulk(f.get_mesh());
+  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  if (dimension == 0) {
+    return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+  }
+  else if (dimension == 1) {
+    const unsigned numBytesPerScalar = f.data_traits().size_of;
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
+    const unsigned firstDimension = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  }
+  else {
+    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
+    return (numBytesPerEntity != 0) ? 1 : 0;
+  }
+}
+
+
 inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
   ThrowAssert(&b.mesh() == &f.get_mesh());
   //return true if field and bucket have the same rank and the field is associated with the bucket
   ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
-  return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
+  return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity);
 }
 
 inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
@@ -501,7 +602,7 @@ inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
   const BucketVector & buckets = f.get_mesh().get_buckets(f.entity_rank(), selector);
   const size_t numBuckets = buckets.size();
   const size_t bucketCapacity = (buckets.empty()) ? 0 : buckets[0]->capacity();
-  const size_t numPerEntity = f.max_size(f.entity_rank());
+  const size_t numPerEntity = f.max_size();
   const size_t bytesPerScalar = f.data_traits().size_of;
 
   return numBuckets * bucketCapacity * numPerEntity * bytesPerScalar;
@@ -571,9 +672,9 @@ typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity >= knownSize,
-                 "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytes_per_entity= "
-                 << f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity);
+  ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
+                 "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytesPerEntity= "
+                 << f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity);
   ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
 
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
@@ -602,7 +703,7 @@ field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord,
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
 
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[bucket_id];
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytesPerEntity * bucket_ord);
 }
 
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
@@ -618,7 +719,7 @@ field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord,
 
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data +
-                                                                       field_meta_data.m_bytes_per_entity * bucket_ord);
+                                                                       field_meta_data.m_bytesPerEntity * bucket_ord);
 }
 
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
@@ -652,7 +753,7 @@ field_data(const FieldType & f, Entity e,
 
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data +
-                                                                       field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
+                                                                       field_meta_data.m_bytesPerEntity * mi.bucket_ordinal);
 }
 
 } //namespace stk::mesh

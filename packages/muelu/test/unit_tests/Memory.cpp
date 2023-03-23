@@ -83,6 +83,8 @@ namespace {
     out << " PrintMemoryUsage()" << PrintMemoryUsage() << std::endl;
     out << " PrintMemoryInfo()"  << PrintMemoryInfo()  << std::endl;
 
+    success=true;
+
   }
 
 }//namespace <anonymous>

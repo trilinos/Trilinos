@@ -82,7 +82,8 @@ public:
       ---
   */
   Solver( const Ptr<Problem<Real>> &opt,
-          ParameterList            &list );
+          ParameterList            &list,
+          const Ptr<Secant<Real>>  &secant = nullPtr );
 
   /** \brief Solve optimization problem with no iteration output.
 

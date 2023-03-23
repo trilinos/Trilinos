@@ -172,6 +172,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             req_mem_per_core=3.0,
             max_cores_allowed=12,
             num_concurrent_tests=-1,
+            ccache_enable=False,
             dry_run = False
         )
         return output

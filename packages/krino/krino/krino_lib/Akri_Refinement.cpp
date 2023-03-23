@@ -3,8 +3,9 @@
 #include <numeric>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include "Akri_ChildNodeCreator.hpp"
 #include "Akri_DiagWriter.hpp"
@@ -765,8 +766,7 @@ void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterfa
   std::vector<stk::mesh::Entity> elementsToDelete;
   std::vector<SideDescription> sideRequests;
   refine_elements_with_refined_edges_and_store_sides_to_create(edgeMarker, bucketsData, sideRequests, elementsToDelete);
-  communicate_owned_entities_to_ghosting_procs(mesh, elementsToDelete);
-  delete_mesh_entities(mesh, elementsToDelete);
+  stk::mesh::destroy_elements_no_mod_cycle(mesh, elementsToDelete, mesh.mesh_meta_data().universal_part());
 
   mesh.modification_end();
 
@@ -791,8 +791,11 @@ void Refinement::create_another_layer_of_refined_elements_and_sides_to_eliminate
   {
     mesh.modification_begin();
     refine_elements_with_refined_edges_and_store_sides_to_create(edgeMarker, bucketsData, sideRequests, elementsToDelete);
-    delete_mesh_entities(mesh, elementsToDelete);
+    stk::mesh::destroy_elements_no_mod_cycle(mesh, elementsToDelete, mesh.mesh_meta_data().universal_part());
     mesh.modification_end();
+
+    fix_face_and_edge_ownership(mesh);
+    attach_sides_to_elements(mesh);
 
     if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
       batch_create_sides(mesh, sideRequests);
@@ -880,11 +883,12 @@ bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
 
     const std::vector<int> originatingProcForParentsBeingModified = get_originating_procs_for_elements(ownedParentElementsModifiedByUnrefinement);
 
-    communicate_owned_entities_to_ghosting_procs(mesh, childElementsToDeleteForUnrefinement);
     mesh.modification_begin();
-    delete_mesh_entities(mesh, childElementsToDeleteForUnrefinement);
+    stk::mesh::destroy_elements_no_mod_cycle(mesh, childElementsToDeleteForUnrefinement, mesh.mesh_meta_data().universal_part());
     remove_parent_parts(ownedParentElementsModifiedByUnrefinement);
     mesh.modification_end();
+
+    fix_face_and_edge_ownership(mesh);
 
     mark_already_refined_edges();
 
@@ -956,7 +960,7 @@ void Refinement::fully_unrefine_mesh()
     addParts.push_back(myActivePart);
 
   mesh.modification_begin();
-  delete_mesh_entities(mesh, allChildElems);
+  stk::mesh::destroy_elements_no_mod_cycle(mesh, allChildElems, mesh.mesh_meta_data().universal_part());
   mesh.change_entity_parts(ownedParentElems, addParts, stk::mesh::ConstPartVector{myParentPart});
   mesh.modification_end();
 }

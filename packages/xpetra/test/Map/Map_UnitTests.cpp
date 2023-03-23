@@ -148,7 +148,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, validConstructor3, M, LO, GO, N )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     // create Kokkos templates
     typedef typename N::device_type device_type;
@@ -343,7 +342,6 @@ namespace {
       reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
       TEST_EQUALITY_CONST( globalSuccess_int, 0 );
     }
-#endif
 #endif
   }
 
@@ -552,7 +550,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, localMap, M, LO, GO, N )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     typedef typename N::device_type device_type;
     typedef typename device_type::execution_space execution_space;
@@ -643,7 +640,6 @@ namespace {
         TEST_EQUALITY(globalElement, elementList[i]);
       }
     }
-#endif
 #endif
   }
 

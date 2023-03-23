@@ -50,8 +50,8 @@ namespace ROL {
 namespace TypeG {
 
 template<typename Real>
-AugmentedLagrangianAlgorithm<Real>::AugmentedLagrangianAlgorithm( ParameterList &list )
-  : TypeG::Algorithm<Real>::Algorithm(), list_(list), subproblemIter_(0) {
+AugmentedLagrangianAlgorithm<Real>::AugmentedLagrangianAlgorithm( ParameterList &list, const Ptr<Secant<Real>> &secant )
+  : TypeG::Algorithm<Real>::Algorithm(), secant_(secant), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
@@ -217,7 +217,7 @@ void AugmentedLagrangianAlgorithm<Real>::run( Vector<Real>          &x,
     // Solve unconstrained augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo = TypeB::AlgorithmFactory<Real>(list_);
+    algo = TypeB::AlgorithmFactory<Real>(list_,secant_);
     if (hasPolyProj_) algo->run(x,g,alobj,bnd,*proj_->getLinearConstraint(),
                                 *proj_->getMultiplier(),*proj_->getResidual(),
                                 outStream);

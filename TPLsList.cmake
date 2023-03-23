@@ -174,6 +174,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   MAGMASparse     "cmake/TPLs/"    EX
   Check           "cmake/TPLs/"    EX
   SARMA           "cmake/TPLs/"    EX
+  CDT             "cmake/TPLs/"    EX
   )
 
 # NOTES:

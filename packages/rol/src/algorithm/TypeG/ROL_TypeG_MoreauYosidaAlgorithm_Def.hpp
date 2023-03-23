@@ -50,8 +50,8 @@ namespace ROL {
 namespace TypeG {
 
 template<typename Real>
-MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list)
-  : TypeG::Algorithm<Real>::Algorithm(),
+MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant)
+  : TypeG::Algorithm<Real>::Algorithm(), secant_(secant),
     tau_(10), print_(false), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
@@ -178,7 +178,7 @@ void MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
-    algo = TypeE::AlgorithmFactory<Real>(list_);
+    algo = TypeE::AlgorithmFactory<Real>(list_,secant_);
     emul.zero();
     if (hasPolyProj_) algo->run(x,g,myobj,econ,emul,eres,
                                 *proj_->getLinearConstraint(),

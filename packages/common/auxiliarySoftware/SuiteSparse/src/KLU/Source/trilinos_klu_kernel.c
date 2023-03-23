@@ -20,7 +20,7 @@ static Int dfs
     /* input, not modified on output: */
     Int j,		/* node at which to start the DFS */
     Int k,		/* mark value, for the Flag array */
-    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
+    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or TRILINOS_KLU_EMPTY if
 			 * row i is not yet pivotal.  */
     Int Llen [ ],	/* size n, Llen [k] = # nonzeros in column k of L */
     Int Lip [ ],	/* size n, Lip [k] is position in LU of column k of L */
@@ -62,7 +62,7 @@ static Int dfs
 	    PRINTF (("[ start dfs at %d : new %d\n", j, jnew)) ;
 	    /* set Ap_pos [head] to one past the last entry in col j to scan */
 	    Ap_pos [head] =
-		(Lpend [jnew] == EMPTY) ?  Llen [jnew] : Lpend [jnew] ;
+		(Lpend [jnew] == TRILINOS_KLU_EMPTY) ?  Llen [jnew] : Lpend [jnew] ;
 	}
 
 	/* add the adjacent nodes to the recursive stack by iterating through
@@ -127,7 +127,7 @@ static Int lsolve_symbolic
     Int Ap [ ],
     Int Ai [ ],
     Int Q [ ],
-    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or TRILINOS_KLU_EMPTY if row i
 			 * is not yet pivotal.  */
 
     /* workspace, not defined on input or output */
@@ -305,7 +305,7 @@ static void construct_column
 static void lsolve_numeric
 (
     /* input, not modified on output: */
-    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or TRILINOS_KLU_EMPTY if row i
 			 * is not yet pivotal.  */
     Unit *LU,		/* LU factors (pattern and values) */
     Int Stack [ ],	/* stack for dfs */
@@ -365,7 +365,7 @@ static Int lpivot
     Int k,
     Int n,
 
-    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
+    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or TRILINOS_KLU_EMPTY if
 			 * row i is not yet pivotal.  */
 
     Int *p_firstrow,
@@ -376,7 +376,7 @@ static Int lpivot
     double abs_pivot, xabs ;
     Int p, i, ppivrow, pdiag, pivrow, *Li, last_row_index, firstrow, len ;
 
-    pivrow = EMPTY ;
+    pivrow = TRILINOS_KLU_EMPTY ;
     if (Llen [k] == 0)
     {
 	/* matrix is structurally singular */
@@ -404,9 +404,9 @@ static Int lpivot
 	return (FALSE) ;
     }
 
-    pdiag = EMPTY ;
-    ppivrow = EMPTY ;
-    abs_pivot = EMPTY ;
+    pdiag = TRILINOS_KLU_EMPTY ;
+    ppivrow = TRILINOS_KLU_EMPTY ;
+    abs_pivot = TRILINOS_KLU_EMPTY ;
     i = Llen [k] - 1 ;
     GET_POINTER (LU, Lip, Llen, Li, Lx, k, len) ;
     last_row_index = Li [i] ;
@@ -446,7 +446,7 @@ static Int lpivot
     if (xabs > abs_pivot)
     {
         abs_pivot = xabs ;
-        ppivrow = EMPTY ;
+        ppivrow = TRILINOS_KLU_EMPTY ;
     }
 
     /* compare the diagonal with the largest entry */
@@ -455,10 +455,10 @@ static Int lpivot
 	if (xabs >= tol * abs_pivot)
 	{
     	    abs_pivot = xabs ;
-            ppivrow = EMPTY ;
+            ppivrow = TRILINOS_KLU_EMPTY ;
         }
     }
-    else if (pdiag != EMPTY)
+    else if (pdiag != TRILINOS_KLU_EMPTY)
     {
 	/* xabs = ABS (Lx [pdiag]) ;*/
 	ABS (xabs, Lx [pdiag]) ;
@@ -470,7 +470,7 @@ static Int lpivot
 	}
     }
 
-    if (ppivrow != EMPTY)
+    if (ppivrow != TRILINOS_KLU_EMPTY)
     {
         pivrow = Li [ppivrow] ;
         pivot  = Lx [ppivrow] ;
@@ -518,7 +518,7 @@ static void prune
     Int Lpend [ ],	/* Lpend [j] marks symmetric pruning point for L(:,j) */
 
     /* input: */
-    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
+    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or TRILINOS_KLU_EMPTY if
 			 * row i is not yet pivotal.  */
     Int k,		/* prune using column k of U */
     Int pivrow,		/* current pivot row */
@@ -545,8 +545,8 @@ static void prune
 	j = Ui [p] ;
 	ASSERT (j < k) ;
 	PRINTF (("%d is pruned: %d. Lpend[j] %d Lip[j+1] %d\n",
-	    j, Lpend [j] != EMPTY, Lpend [j], Lip [j+1])) ;
-	if (Lpend [j] == EMPTY)
+	    j, Lpend [j] != TRILINOS_KLU_EMPTY, Lpend [j], Lip [j+1])) ;
+	if (Lpend [j] == TRILINOS_KLU_EMPTY)
 	{
 	    /* scan column j of L for the pivot row */
             GET_POINTER (LU, Lip, Llen, Li, Lx, j, llen) ;
@@ -595,7 +595,7 @@ static void prune
 		     * first part of the column of L.  Entries in
 		     * Li [0 ... Lpend [j]-1] are the only part of
 		     * column j of L that needs to be scanned in the DFS.
-		     * Lpend [j] was EMPTY; setting it >= 0 also flags
+		     * Lpend [j] was TRILINOS_KLU_EMPTY; setting it >= 0 also flags
 		     * column j as pruned. */
 		    Lpend [j] = ptail ;
 
@@ -708,8 +708,8 @@ size_t TRILINOS_KLU_kernel   /* final size of LU on output */
     {
 	/* X [k] = 0 ; */
 	CLEAR (X [k]) ;
-	Flag [k] = EMPTY ;
-	Lpend [k] = EMPTY ;	/* flag k as not pruned */
+	Flag [k] = TRILINOS_KLU_EMPTY ;
+	Lpend [k] = TRILINOS_KLU_EMPTY ;	/* flag k as not pruned */
     }
 
     /* ---------------------------------------------------------------------- */
@@ -727,7 +727,7 @@ size_t TRILINOS_KLU_kernel   /* final size of LU on output */
 
     /* P [k] = row means that UNFLIP (Pinv [row]) = k, and visa versa.
      * If row is pivotal, then Pinv [row] >= 0.  A row is initially "flipped"
-     * (Pinv [k] < EMPTY), and then marked "unflipped" when it becomes
+     * (Pinv [k] < TRILINOS_KLU_EMPTY), and then marked "unflipped" when it becomes
      * pivotal. */
 
 #ifndef NDEBUG
@@ -870,7 +870,7 @@ size_t TRILINOS_KLU_kernel   /* final size of LU on output */
 	{
 	    /* matrix is structurally or numerically singular */
 	    Common->status = TRILINOS_KLU_SINGULAR ;
-	    if (Common->numerical_rank == EMPTY)
+	    if (Common->numerical_rank == TRILINOS_KLU_EMPTY)
 	    {
 		Common->numerical_rank = k+k1 ;
 		Common->singular_col = Q [k+k1] ;

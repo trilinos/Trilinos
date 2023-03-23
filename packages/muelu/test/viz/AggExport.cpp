@@ -75,9 +75,12 @@ bool compare_to_gold_all_ranks(int myRank, const std::string & baseFile) {
 
   // Create a copy of outputs
   std::string cmd = "cp -f ";
-  system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+  int retVal;
+  retVal = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(retVal != 0, std::runtime_error, "goldfile copy failed!");
   //system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
-  system((cmd + baseFile + ".vtu "  + baseFile + ".out_filtered").c_str());
+  retVal = system((cmd + baseFile + ".vtu "  + baseFile + ".out_filtered").c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(retVal != 0, std::runtime_error, "goldfile copy failed!");
 
   // Run comparison (ignoring whitespaces)
   cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";

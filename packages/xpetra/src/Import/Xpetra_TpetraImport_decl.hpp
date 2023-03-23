@@ -60,7 +60,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraImport
     : public Import<LocalOrdinal, GlobalOrdinal, Node>
   {

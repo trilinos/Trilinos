@@ -145,7 +145,7 @@ namespace MueLuTests {
   //
 
   typedef double Scalar;                             // Scalar is not relevant for this test
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
+  typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
 
   typedef long int LongInt;                          // macros dislike parameters with space...
 #ifdef HAVE_XPETRA_INT_LONG_LONG

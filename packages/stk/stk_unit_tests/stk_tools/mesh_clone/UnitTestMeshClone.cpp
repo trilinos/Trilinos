@@ -37,7 +37,6 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_tools/mesh_clone/MeshCloneUtils.hpp>
@@ -189,7 +188,7 @@ void expect_equal_fields(stk::mesh::MetaData &newMeta, stk::mesh::FieldBase &old
 
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<oldField.entity_rank(); rank++)
   {
-    EXPECT_EQ(oldField.max_size(rank), newField.max_size(rank));
+    EXPECT_EQ(oldField.max_size(), newField.max_size());
   }
 
   ASSERT_EQ(stk::io::has_field_output_type(oldField), stk::io::has_field_output_type(newField));

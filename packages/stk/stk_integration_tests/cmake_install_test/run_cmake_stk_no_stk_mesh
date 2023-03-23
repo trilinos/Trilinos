@@ -1,6 +1,8 @@
 #!/bin/bash
 
 trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+fortran_macro=${FORTRAN_MACRO:-FORTRAN_ONE_UNDERSCORE}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
 trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
@@ -28,6 +30,9 @@ cmake \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI=ON \
+-DTrilinos_ENABLE_Fortran:BOOL=ON \
+-DTPL_ENABLE_BLAS=ON \
+-DTPL_ENABLE_LAPACK=ON \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMesh:BOOL=OFF \
@@ -37,8 +42,11 @@ cmake \
 -DTrilinos_ENABLE_STKCoupling:BOOL=ON \
 -DTrilinos_ENABLE_STKTransfer:BOOL=ON \
 -DTrilinos_ENABLE_STKSearch:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
+-DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 ${trilinos_src_dir}/
 

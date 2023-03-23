@@ -127,7 +127,7 @@ namespace FROSch {
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
         if (Combine_ == Restricted) {
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
             if (XTmp_->getMap()->lib() == UseTpetra) {
                 auto yLocalMap = yMap->getLocalMap();
                 auto yLocalOverlapMap = yOverlapMap->getLocalMap();

@@ -47,7 +47,7 @@ GLOBAL Int TRILINOS_AMD_post_tree
 
     /* this is simple, but can caouse stack overflow if nn is large */
     i = root ;
-    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
     {
 	k = TRILINOS_AMD_post_tree (f, k, Child, Sibling, Order, Stack, nn) ;
     }
@@ -71,13 +71,13 @@ GLOBAL Int TRILINOS_AMD_post_tree
 	TRILINOS_AMD_DEBUG1 (("head of stack "ID" \n", i)) ;
 	ASSERT (i >= 0 && i < nn) ;
 
-	if (Child [i] != EMPTY)
+	if (Child [i] != TRILINOS_AMD_EMPTY)
 	{
 	    /* the children of i are not yet ordered */
 	    /* push each child onto the stack in reverse order */
 	    /* so that small ones at the head of the list get popped first */
 	    /* and the biggest one at the end of the list gets popped last */
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
 	    {
 		head++ ;
 		ASSERT (head < nn) ;
@@ -85,7 +85,7 @@ GLOBAL Int TRILINOS_AMD_post_tree
 	    }
 	    h = head ;
 	    ASSERT (head < nn) ;
-	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
+	    for (f = Child [i] ; f != TRILINOS_AMD_EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (h > 0) ;
 		Stack [h--] = f ;
@@ -95,7 +95,7 @@ GLOBAL Int TRILINOS_AMD_post_tree
 	    ASSERT (Stack [h] == i) ;
 
 	    /* delete child list so that i gets ordered next time we see it */
-	    Child [i] = EMPTY ;
+	    Child [i] = TRILINOS_AMD_EMPTY ;
 	}
 	else
 	{

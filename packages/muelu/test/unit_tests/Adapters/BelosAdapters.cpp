@@ -290,24 +290,24 @@ namespace MueLuTests {
   // These tests use the original belos/tpetra MultiVecTraits which are not guarded and have no specializations
   // for Epetra. Therefore, carefully choose valid Tpetra instantiations.
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_SERIAL)
-  typedef Kokkos::Compat::KokkosSerialWrapperNode SerialNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode SerialNode;
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, int, SerialNode)
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_SERIAL)
   typedef long long int LongLong;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode SerialNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode SerialNode;
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, LongLong, SerialNode)
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_OPENMP)
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode OpenMPNode;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode OpenMPNode;
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, int, OpenMPNode)
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG) && defined(HAVE_TPETRA_INST_OPENMP)
   typedef long long int LongLong;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode OpenMPNode;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode OpenMPNode;
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, LongLong, OpenMPNode)
 #endif
 

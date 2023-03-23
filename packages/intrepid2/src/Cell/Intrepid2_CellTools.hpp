@@ -64,6 +64,7 @@
 #include "Intrepid2_Basis.hpp"
 
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 
@@ -132,6 +133,7 @@ namespace Intrepid2 {
 
       switch (cellTopo.getKey()) {
       case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Line<3>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
@@ -150,7 +152,6 @@ namespace Intrepid2 {
         //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
       case shards::Quadrilateral<8>::key: 
-      case shards::Line<3>::key:
       case shards::Beam<2>::key:
       case shards::Beam<3>::key:
       case shards::ShellLine<2>::key:

@@ -90,7 +90,7 @@
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <list>
 
@@ -104,7 +104,7 @@ namespace Thyra {
       The general implementation only handles Tpetra. For Epetra there is a specialization
       on SC=double, LO=int, GO=int and NO=EpetraNode.
   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuRefMaxwellPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
 

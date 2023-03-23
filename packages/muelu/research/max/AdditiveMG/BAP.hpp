@@ -7,7 +7,7 @@
 typedef Tpetra::CrsMatrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType>     tpetra_matrix_type;
 typedef Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,KokkosClassic::DefaultNode::DefaultNodeType>   tpetra_multivector_type;
 typedef typename Teuchos::ArrayView<const int>::const_iterator                            iterator_type;
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_type2;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType node_type2;
 
 void BAP1D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type> tpetra_prolong, Teuchos::RCP<tpetra_multivector_type> BAP_shrunk, Teuchos::RCP< const Teuchos::Comm<int> > comm)
 {

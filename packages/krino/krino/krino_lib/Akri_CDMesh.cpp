@@ -9,6 +9,7 @@
 #include <Akri_CDMesh.hpp>
 
 #include <stk_mesh/base/CommunicateMeshTypes.hpp>
+#include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -317,6 +318,17 @@ static void apply_snapping_to_children_of_snapped_nodes(const std::vector<ChildN
         interpolate_nodal_field(field, childNodeStencil.childNode, childNodeStencil.parentNodes, childNodeStencil.parentWeights);
 }
 
+void CDMesh::undo_previous_snapping_using_interpolation(const stk::mesh::BulkData & mesh)
+{
+  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
+  const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+
+  FieldRef cdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field();
+
+  if (cdfemSnapField.valid())
+    undo_previous_snaps_using_interpolation(mesh, auxMeta.active_part(), cdfemSupport.get_coords_field(), cdfemSnapField, cdfemSupport.get_snap_fields());
+}
+
 void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
@@ -325,9 +337,6 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
   const FieldSet snapFields = my_cdfem_support.get_snap_fields();
 
   FieldRef cdfemSnapField = my_cdfem_support.get_cdfem_snap_displacements_field();
-
-  if (cdfemSnapField.valid() && my_cdfem_support.get_use_interpolation_to_unsnap_mesh())
-    undo_previous_snaps_using_interpolation(stk_bulk(), get_active_part(), my_cdfem_support.get_coords_field(), cdfemSnapField, snapFields);
 
   if (cdfemSnapField.valid())
     stk::mesh::field_copy(my_cdfem_support.get_coords_field(), cdfemSnapField);
@@ -450,10 +459,9 @@ CDMesh::modify_mesh()
   set_entities_for_child_nodes_with_common_ancestry_as_existing_child_nodes();
   const bool all_elems_are_set_and_correct = set_entities_for_existing_child_elements();
 
-  std::vector< stk::mesh::Entity> unused_old_child_elems;
-  get_unused_old_child_elements(unused_old_child_elems);
+  std::vector< stk::mesh::Entity> ownedUnusedOldChildElems = get_owned_unused_old_child_elements_and_clear_child_elements();
 
-  const bool modificationIsNeeded = (myRefinementSupport.get_interface_maximum_refinement_level() > 0) || stk::is_true_on_any_proc(stk_bulk().parallel(), !all_elems_are_set_and_correct || !unused_old_child_elems.empty());
+  const bool modificationIsNeeded = (myRefinementSupport.get_interface_maximum_refinement_level() > 0) || stk::is_true_on_any_proc(stk_bulk().parallel(), !all_elems_are_set_and_correct || !ownedUnusedOldChildElems.empty());
 
   if (modificationIsNeeded)
   {
@@ -463,7 +471,7 @@ CDMesh::modify_mesh()
     std::vector<SideDescription> side_requests;
     create_element_and_side_entities(side_requests);
     destroy_custom_ghostings(stk_bulk());
-    delete_mesh_entities(stk_bulk(), unused_old_child_elems);
+    stk::mesh::destroy_elements_no_mod_cycle(stk_bulk(), ownedUnusedOldChildElems, stk_meta().universal_part());
     stk_bulk().modification_end();
     ParallelThrowAssert(stk_bulk().parallel(), check_shared_entity_nodes(stk_bulk()));
 
@@ -569,25 +577,27 @@ CDMesh::set_entities_for_existing_child_elements()
   return all_element_entities_are_set_and_correct;
 }
 
-void
-CDMesh::get_unused_old_child_elements(std::vector<stk::mesh::Entity> & unused_old_child_elems)
+std::vector<stk::mesh::Entity>
+CDMesh::get_owned_unused_old_child_elements_and_clear_child_elements()
 {
-  stk::mesh::Selector selector = get_child_part();
+  std::vector<stk::mesh::Entity> ownedUnusedOldChildElems;
+  stk::mesh::Selector selector = get_child_part() & get_locally_owned_part();
   std::vector<stk::mesh::Entity> old_child_elems;
   stk::mesh::get_selected_entities( selector, stk_bulk().buckets( stk::topology::ELEMENT_RANK ), old_child_elems );
 
-  unused_old_child_elems.clear();
-  unused_old_child_elems.reserve(old_child_elems.size());
+  ownedUnusedOldChildElems.reserve(old_child_elems.size());
 
   for (auto&& old_child_elem : old_child_elems)
   {
     const SubElement * subelem = find_child_element(old_child_elem);
     if (subelem == nullptr)
     {
-      unused_old_child_elems.push_back(old_child_elem);
+      ownedUnusedOldChildElems.push_back(old_child_elem);
     }
   }
   child_elements.clear(); // reset child element vector
+
+  return ownedUnusedOldChildElems;
 }
 
 bool
@@ -904,23 +914,6 @@ CDMesh::restore_subelements()
       element->set_have_interface();
     }
   }
-}
-
-void
-CDMesh::delete_cdfem_parent_elements()
-{/* %TRACE[SPEC]% */ Tracespec trace__("Mesh::delete_cdfem_parent_elements(stk::mesh::BulkData & mesh)"); /* %TRACE% */
-  // Percept messes up the cdfem child/parent parts, the active part, and the percept refined part for post-cdfem refinement.
-  // This is kind of an extreme work-around, but here we delete all of the cdfem parents prior to the post-cdfem refiment so that
-  // there is nothing to mess up.
-
-  std::vector< stk::mesh::Entity> cdfem_parent_elements;
-
-  stk::mesh::Selector selector = get_parent_part();
-  stk::mesh::get_selected_entities( selector, stk_bulk().buckets( stk::topology::ELEMENT_RANK ), cdfem_parent_elements );
-
-  stk_bulk().modification_begin();
-  delete_mesh_entities(stk_bulk(), cdfem_parent_elements);
-  stk_bulk().modification_end();
 }
 
 void
@@ -2603,7 +2596,7 @@ bool have_multiple_conformal_volume_parts_in_common(const stk::mesh::BulkData & 
     if (commonConformalVolumeParts.empty())
       return false;
   }
-  return true;
+  return commonConformalVolumeParts.size() > 1;
 }
 
 void
@@ -2746,14 +2739,16 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
       krinolog << stk::diag::dendl;
       return false;
     }
-
-    const stk::mesh::PartVector & existing_side_parts = stk_bulk().bucket(sides[0]).supersets();
-    for(auto && sidePart : existing_side_parts)
+    else if (sides.size() == 1)
     {
-      if(sidePart->primary_entity_rank() == stk_meta().side_rank() && my_phase_support.is_interface(sidePart))
+      const stk::mesh::PartVector & existing_side_parts = stk_bulk().bucket(sides[0]).supersets();
+      for(auto && sidePart : existing_side_parts)
       {
-        krinolog << "Side " << stk_bulk().identifier(sides[0]) << " has an erroneous interface part " << sidePart->name() << "." << stk::diag::dendl;
-        return false;
+        if(sidePart->primary_entity_rank() == stk_meta().side_rank() && my_phase_support.is_interface(sidePart))
+        {
+          krinolog << "Side " << stk_bulk().identifier(sides[0]) << " has an erroneous interface part " << sidePart->name() << "." << stk::diag::dendl;
+          return false;
+        }
       }
     }
   }

@@ -460,19 +460,19 @@ private:
   KOKKOS_FUNCTION
   void clear_buckets()
   {
-    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    if (is_last_mesh_copy()) {
-      bulk->unregister_device_mesh();
-    }
-  
-    if (is_last_bucket_reference()) {
-      for (stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++) {
-        for (unsigned iBucket = 0; iBucket < buckets[rank].size(); ++iBucket) {
-          buckets[rank][iBucket].~DeviceBucket();
+    KOKKOS_IF_ON_HOST((
+      if (is_last_mesh_copy()) {
+        bulk->unregister_device_mesh();
+      }
+    
+      if (is_last_bucket_reference()) {
+        for (stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++) {
+          for (unsigned iBucket = 0; iBucket < buckets[rank].size(); ++iBucket) {
+            buckets[rank][iBucket].~DeviceBucket();
+          }
         }
       }
-    }
-    #endif
+    ))
   }
 
   bool fill_buckets(const stk::mesh::BulkData& bulk_in);

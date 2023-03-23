@@ -300,26 +300,26 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
 
       //m_eMesh.print_info("here" , 2);
 
-      m_marker_info->errorIndicator_                        = m_eMesh.get_fem_meta_data()->get_field<ErrorFieldType_type>(m_eMesh.element_rank(), m_error_indicator_field);
+      m_marker_info->errorIndicator_                        = m_eMesh.get_fem_meta_data()->get_field<ErrorFieldType::value_type>(m_eMesh.element_rank(), m_error_indicator_field);
       VERIFY_OP_ON(m_marker_info->errorIndicator_, !=, 0, "couldn't find error field - check name and types: m_error_indicator_field: "+m_error_indicator_field);
 
-      m_marker_info->refineField_                           = m_eMesh.get_fem_meta_data()->get_field<RefineFieldType_type>(m_eMesh.element_rank(), "refine_field");
+      m_marker_info->refineField_                           = m_eMesh.get_fem_meta_data()->get_field<RefineFieldType::value_type>(m_eMesh.element_rank(), "refine_field");
       VERIFY_OP_ON(m_marker_info->refineField_, !=, 0, "couldn't find refine field - check name and types");
 
-      m_marker_info->refineFieldOrig_                       = m_eMesh.get_fem_meta_data()->get_field<RefineFieldType_type>(m_eMesh.element_rank(), "refine_field_orig");
+      m_marker_info->refineFieldOrig_                       = m_eMesh.get_fem_meta_data()->get_field<RefineFieldType::value_type>(m_eMesh.element_rank(), "refine_field_orig");
       VERIFY_OP_ON(m_marker_info->refineFieldOrig_, !=, 0, "couldn't find refine field - check name and types");
 
-      m_marker_info->refineLevelField_                      = m_eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(m_eMesh.element_rank(), "refine_level");
+      m_marker_info->refineLevelField_                      = m_eMesh.get_fem_meta_data()->get_field<RefineLevelType::value_type>(m_eMesh.element_rank(), "refine_level");
       VERIFY_OP_ON(m_marker_info->refineLevelField_, !=, 0, "couldn't find refine level field - check name and types");
 
       if (m_eMesh.get_spatial_dim() == 3) {
-        m_marker_info->transitionElementField_                = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType_type>(m_eMesh.element_rank(), "transition_element_3");
+        m_marker_info->transitionElementField_                = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType::value_type>(m_eMesh.element_rank(), "transition_element_3");
         VERIFY_OP_ON(m_marker_info->transitionElementField_, !=, 0, "couldn't find transition element field - check name and types");
-        m_marker_info->transitionElementField2d_          = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType_type>(m_eMesh.face_rank(), "transition_element");
+        m_marker_info->transitionElementField2d_          = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType::value_type>(m_eMesh.face_rank(), "transition_element");
         VERIFY_OP_ON(m_marker_info->transitionElementField2d_, !=, 0, "couldn't find transition element field 2d - check name and types");
       }
       else {
-        m_marker_info->transitionElementField_                = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType_type>(m_eMesh.element_rank(), "transition_element");
+        m_marker_info->transitionElementField_                = m_eMesh.get_fem_meta_data()->get_field<TransitionElementType::value_type>(m_eMesh.element_rank(), "transition_element");
         VERIFY_OP_ON(m_marker_info->transitionElementField_, !=, 0, "couldn't find transition element field - check name and types");
         m_marker_info->transitionElementField2d_              = 0;
       }
@@ -334,18 +334,18 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
 
       if (m_bounding_region_type=="cylinder") {
         m_marker_info->boundingRegion_ =
-          Teuchos::rcp(new CylinderBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates"),
+          Teuchos::rcp(new CylinderBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType::value_type >(stk::topology::NODE_RANK, "coordinates"),
                                                   m_bounding_region_radius, m_bounding_region_start,
                                                   m_bounding_region_end));
       }
       else if (m_bounding_region_type=="sphere") {
         m_marker_info->boundingRegion_ =
-          Teuchos::rcp(new SphereBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates"),
+          Teuchos::rcp(new SphereBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType::value_type >(stk::topology::NODE_RANK, "coordinates"),
                                                 m_bounding_region_radius, m_bounding_region_center));
       }
       else if (m_bounding_region_type=="box") {
         m_marker_info->boundingRegion_ =
-        Teuchos::rcp(new BoxBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates"),
+        Teuchos::rcp(new BoxBoundingRegion(m_eMesh.get_fem_meta_data()->get_field<CoordinatesFieldType::value_type >(stk::topology::NODE_RANK, "coordinates"),
                                            m_bounding_region_start, m_bounding_region_end));
 
       }
@@ -571,7 +571,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
       if (rar.m_debug_error_indicator_string_function.size()) errorIndicatorSource = STRING_FUNCTION;
 
       ErrorFieldType * error_field =
-        &eMesh.get_fem_meta_data()->declare_field<ErrorFieldType_type>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
+        &eMesh.get_fem_meta_data()->declare_field<ErrorFieldType::value_type>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
       stk::mesh::put_field_on_mesh( *error_field , eMesh.get_fem_meta_data()->universal_part(), 1, nullptr);
       stk::io::set_field_role( *error_field, Ioss::Field::TRANSIENT);
 
@@ -612,7 +612,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
         }
 
         ErrorFieldType * from_error_field =
-          &eMesh_error.get_fem_meta_data()->declare_field<ErrorFieldType_type>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
+          &eMesh_error.get_fem_meta_data()->declare_field<ErrorFieldType::value_type>(stk::topology::ELEMENT_RANK, rar.m_error_indicator_field);
         stk::mesh::put_field_on_mesh( *from_error_field , eMesh_error.get_fem_meta_data()->universal_part(), 1, nullptr);
 
         eMesh_error.add_input_field(from_error_field);

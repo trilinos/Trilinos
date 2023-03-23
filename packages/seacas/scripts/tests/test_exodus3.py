@@ -20,7 +20,7 @@ sys.path.append(os.path.join(ACCESS, "lib"))
 import exodus as exo
 
 
-class TestAssemblies(unittest.TestCase):
+class TestExodus(unittest.TestCase):
     def setUp(self):
         input_dir = os.path.dirname(__file__)
         self.tempdir = tempfile.TemporaryDirectory()
@@ -121,6 +121,23 @@ class TestAssemblies(unittest.TestCase):
         root = exo.assembly(name="Root", type="EX_ASSEMBLY", id=100)
         root.entity_list = [200, 300, 400]
         self.assertEqual(str(root), str(assemblies[0]))
+
+    def test_get_entity_count(self):
+        with exo.exodus(self.temp_exo_path) as temp_exofile:
+            elem_ids = temp_exofile.get_ids("EX_ELEM_BLOCK")
+            elems = [temp_exofile.get_entity_count("EX_ELEM_BLOCK", elem) for elem in elem_ids]
+        self.assertListEqual([1, 1, 1, 1, 1, 1, 1], elems)
+
+    def test_get_elem_attr_values(self):
+        names = ["Scale", "Units"]
+        temp_copy = os.path.join(self.tempdir.name, "temp_copy.exo")
+        with exo.copy_mesh(self.temp_exo_path, temp_copy, additionalElementAttributes=names) as temp_exofile:
+            for elem_id in temp_exofile.get_ids("EX_ELEM_BLOCK"):
+                attrs = [[3.14159], [1]]
+                for name, values in zip(names, attrs):
+                    temp_exofile.put_elem_attr_values(elem_id, name, values)
+                self.assertEqual(3.14159, temp_exofile.get_elem_attr_values(elem_id, "Scale")[0])
+                self.assertEqual(1.0, temp_exofile.get_elem_attr_values(elem_id, "Units")[0])
 
     def test_get_assemblies(self):
         with exo.exodus(self.temp_exo_path) as temp_exofile:

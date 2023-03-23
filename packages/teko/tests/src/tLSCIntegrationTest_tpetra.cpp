@@ -346,8 +346,8 @@ bool tLSCIntegrationTest_tpetra::test_plConstruction(int verbosity,std::ostream 
 
    ParameterList pl;
    pl.set("Inverse Type", "Amesos");
-   pl.set("Inverse Velocity Type", "Ifpack");
-   pl.set("Inverse Pressure Type", "Ifpack");
+   pl.set("Inverse Velocity Type", "Ifpack2");
+   pl.set("Inverse Pressure Type", "Ifpack2");
    pl.set("Ignore Boundary Rows",true);
    pl.set("Use LDU",true);
 

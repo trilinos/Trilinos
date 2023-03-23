@@ -37,7 +37,6 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d, etc
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc

@@ -10,8 +10,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -34,6 +32,8 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -65,8 +65,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -89,6 +87,8 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -120,8 +120,6 @@ smoother ->
 
 Level 3
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -144,6 +142,8 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -175,8 +175,6 @@ smoother ->
 
 Level 4
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -199,6 +197,8 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -230,8 +230,6 @@ smoother ->
 
 Level 5
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -254,6 +252,8 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]

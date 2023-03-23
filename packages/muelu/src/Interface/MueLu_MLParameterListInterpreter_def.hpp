@@ -85,15 +85,12 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-// #include "MueLu_CoarseMapFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 // #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#endif
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_IsorropiaInterface.hpp"
@@ -198,25 +195,25 @@ namespace MueLu {
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
     bool useKokkosRefactor;
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkosRefactor = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkosRefactor = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkosRefactor = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkosRefactor = true;
 # endif
 # ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
       useKokkosRefactor = true;
 # endif
+# ifdef HAVE_MUELU_SYCL
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
+      useKokkosRefactor = true;
 #endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
@@ -269,11 +266,9 @@ namespace MueLu {
 
     // Create MueLu factories
     RCP<Factory> dropFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       dropFact = rcp( new CoalesceDropFactory_kokkos() );
     else
-#endif
       dropFact = rcp( new CoalesceDropFactory() );
 
     if (agg_use_aux) {
@@ -285,12 +280,10 @@ namespace MueLu {
     if (agg_type == "Uncoupled") {
       // Uncoupled aggregation
       RCP<Factory> MyUncoupledAggFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor) {
         MyUncoupledAggFact = rcp( new UncoupledAggregationFactory_kokkos() );
       }
       else
-#endif
         MyUncoupledAggFact = rcp( new UncoupledAggregationFactory() );
 
       MyUncoupledAggFact->SetFactory("Graph", dropFact);
@@ -303,7 +296,6 @@ namespace MueLu {
       AggFact = MyUncoupledAggFact;
     } else {
       // Coupled Aggregation (default)
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor) {
         AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
       } else {
@@ -316,17 +308,6 @@ namespace MueLu {
         CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
         AggFact = CoupledAggFact2;
       }
-#else
-      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");
-      CoupledAggFact2->SetPhase3AggCreation(0.5);
-      CoupledAggFact2->SetFactory("Graph", dropFact);
-      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-      AggFact = CoupledAggFact2;
-#endif
     }
     if (verbosityLevel > 3) {
       std::ostringstream oss;
@@ -341,11 +322,9 @@ namespace MueLu {
     RCP<Factory> PFact;
     RCP<Factory> RFact;
     RCP<Factory> PtentFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       PtentFact = rcp( new TentativePFactory_kokkos() );
     else
-#endif
       PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
@@ -354,11 +333,9 @@ namespace MueLu {
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
       RCP<Factory> SaPFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor)
         SaPFact = rcp( new SaPFactory_kokkos() );
       else
-#endif
         SaPFact = rcp( new SaPFactory() );
       SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;

@@ -41,8 +41,8 @@
 #define TPETRA_DETAILS_DEFAULTTYPES_HPP
 
 #include "TpetraCore_config.h"
-#include "KokkosClassic_DefaultNode_config.h"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Tpetra_KokkosClassic_DefaultNode_config.h"
+#include "Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
@@ -89,22 +89,22 @@ namespace DefaultTypes {
   /// \brief Default Tpetra execution space and Node type.
 #if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
   using execution_space = ::Kokkos::Experimental::SYCL;
-  using node_type = ::Kokkos::Compat::KokkosSYCLWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosSYCLWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
   using execution_space = ::Kokkos::Experimental::HIP;
-  using node_type = ::Kokkos::Compat::KokkosHIPWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosHIPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
   using execution_space = ::Kokkos::Cuda;
-  using node_type = ::Kokkos::Compat::KokkosCudaWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosCudaWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
   using execution_space = ::Kokkos::OpenMP;
-  using node_type = ::Kokkos::Compat::KokkosOpenMPWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
   using execution_space = ::Kokkos::Threads;
-  using node_type = ::Kokkos::Compat::KokkosThreadsWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosThreadsWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
   using execution_space = ::Kokkos::Serial;
-  using node_type = ::Kokkos::Compat::KokkosSerialWrapperNode;
+  using node_type = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
 #else
 #    error "No default Tpetra Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif

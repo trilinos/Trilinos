@@ -11,7 +11,7 @@ ParameterLists
 # GDSWPreconditioner #
 ######################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_GDSWP_DIM2_EPETRA
@@ -50,7 +50,7 @@ NUM_MPI_PROCS 8
 # RGDSWPreconditioner #
 #######################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_RGDSWP_DIM2_EPETRA
@@ -107,7 +107,7 @@ ENDIF ()
 # TwoLevelPreconditioner_GDSW #
 ###############################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_GDSW_DIM2_EPETRA
@@ -146,7 +146,7 @@ NUM_MPI_PROCS 8
 # TwoLevelPreconditioner_RGDSW #
 ################################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_DIM2_EPETRA
@@ -185,7 +185,7 @@ NUM_MPI_PROCS 8
 # TwoLevelPreconditioner_IPOUHarmonic_GDSW #
 ############################################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_DIM2_EPETRA
@@ -242,7 +242,7 @@ ENDIF()
 # TwoLevelPreconditioner_IPOUHarmonic_GDSWStar #
 ################################################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSWStar_DIM2_EPETRA
@@ -281,7 +281,7 @@ NUM_MPI_PROCS 8
 # TwoLevelPreconditioner_IPOUHarmonic_RGDSW #
 #############################################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_EPETRA
@@ -327,7 +327,7 @@ NUM_MPI_PROCS 4
 ENDIF()
 
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_EPETRA_DropCoupling

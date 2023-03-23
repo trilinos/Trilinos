@@ -49,7 +49,7 @@
 #include "Tpetra_Directory_fwd.hpp"
 #include "Tpetra_TieBreak_fwd.hpp"
 #include "Tpetra_Details_LocalMap.hpp"
-#include "KokkosCompat_DefaultNode.hpp"
+#include "Tpetra_KokkosCompat_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
@@ -95,13 +95,13 @@ namespace Tpetra {
   ///   The actual default type depends on your Trilinos build options.
   ///   This must be one of the following:
   ///   <ul>
-  ///   <li> Kokkos::Compat::KokkosCudaWrapperNode </li>
-  ///   <li> Kokkos::Compat::KokkosOpenMPWrapperNode </li>
-  ///   <li> Kokkos::Compat::KokkosThreadsWrapperNode </li>
-  ///   <li> Kokkos::Compat::KokkosSerialWrapperNode </li>
+  ///   <li> Tpetra::KokkosCompat::KokkosCudaWrapperNode </li>
+  ///   <li> Tpetra::KokkosCompat::KokkosOpenMPWrapperNode </li>
+  ///   <li> Tpetra::KokkosCompat::KokkosThreadsWrapperNode </li>
+  ///   <li> Tpetra::KokkosCompat::KokkosSerialWrapperNode </li>
   ///   </ul>
   ///   All of the above are just typedefs for
-  ///   Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpaceType,
+  ///   Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecutionSpaceType,
   ///   MemorySpaceType>, where ExecutionSpaceType is a Kokkos
   ///   execution space type, and MemorySpaceType is a Kokkos memory
   ///   space type.  If you omit MemorySpaceType, Tpetra will use the

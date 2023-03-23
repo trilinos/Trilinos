@@ -40,20 +40,20 @@ static Int trilinos_dfs			/* return the new value of k */
     Int p,		/* start a DFS at node p */
     Int k,		/* start the node numbering at k */
     Int Post [ ],	/* Post ordering, modified on output */
-    Int Head [ ],	/* Head [p] = youngest child of p; EMPTY on output */
+    Int Head [ ],	/* Head [p] = youngest child of p; TRILINOS_CHOLMOD_EMPTY on output */
     Int Next [ ],	/* Next [j] = sibling of j; unmodified */
     Int Pstack [ ]	/* unused */
 )
 {
     Int j ;
     /* start a DFS at each child of node p */
-    for (j = Head [p] ; j != EMPTY ; j = Next [j])
+    for (j = Head [p] ; j != TRILINOS_CHOLMOD_EMPTY ; j = Next [j])
     {
 	/* start a DFS at child node j */
 	k = trilinos_dfs (j, k, Post, Head, Next, Pstack) ;
     }
     Post [k++] = p ;	/* order node p as the kth node */
-    Head [p] = EMPTY ;	/* link list p no longer needed */
+    Head [p] = TRILINOS_CHOLMOD_EMPTY ;	/* link list p no longer needed */
     return (k) ;	/* the next node will be numbered k */
 }
 
@@ -66,7 +66,7 @@ static Int trilinos_dfs		/* return the new value of k */
     Int p,		/* start the DFS at a root node p */
     Int k,		/* start the node numbering at k */
     Int Post [ ],	/* Post ordering, modified on output */
-    Int Head [ ],	/* Head [p] = youngest child of p; EMPTY on output */
+    Int Head [ ],	/* Head [p] = youngest child of p; TRILINOS_CHOLMOD_EMPTY on output */
     Int Next [ ],	/* Next [j] = sibling of j; unmodified */
     Int Pstack [ ]	/* workspace of size n, undefined on input or output */
 )
@@ -83,7 +83,7 @@ static Int trilinos_dfs		/* return the new value of k */
 	/* grab the node p from top of the stack and get its youngest child j */
 	p = Pstack [phead] ;
 	j = Head [p] ;
-	if (j == EMPTY)
+	if (j == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* all children of p ordered.  remove p from stack and order it */
 	    phead-- ;
@@ -110,18 +110,18 @@ static Int trilinos_dfs		/* return the new value of k */
  * from cholmod_etree) or a component tree (from cholmod_nested_dissection).
  *
  * An elimination tree is a complete tree of n nodes with Parent [j] > j or
- * Parent [j] = EMPTY if j is a root.  On output Post [0..n-1] is a complete
+ * Parent [j] = TRILINOS_CHOLMOD_EMPTY if j is a root.  On output Post [0..n-1] is a complete
  * permutation vector.
  *
  * A component tree is a subset of 0..n-1.  Parent [j] = -2 if node j is not
- * in the component tree.  Parent [j] = EMPTY if j is a root of the component
+ * in the component tree.  Parent [j] = TRILINOS_CHOLMOD_EMPTY if j is a root of the component
  * tree, and Parent [j] is in the range 0 to n-1 if j is in the component
  * tree but not a root.  On output, Post [k] is defined only for nodes in
  * the component tree.  Post [k] = j if node j is the kth node in the
  * postordered component tree, where k is in the range 0 to the number of
  * components minus 1.
  *
- * Node j is ignored and not included in the postorder if Parent [j] < EMPTY.
+ * Node j is ignored and not included in the postorder if Parent [j] < TRILINOS_CHOLMOD_EMPTY.
  *
  * As a result, check_parent (Parent, n,...) may fail on input, since
  * cholmod_check_parent assumes Parent is an elimination tree.  Similarly,
@@ -160,9 +160,9 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (Parent, EMPTY) ;
-    RETURN_IF_NULL (Post, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Parent, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Post, TRILINOS_CHOLMOD_EMPTY) ;
     Common->status = CHOLMOD_OK ;
 
     /* ---------------------------------------------------------------------- */
@@ -174,13 +174,13 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
     if (!ok)
     {
 	ERROR (CHOLMOD_TOO_LARGE, "problem too large") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     CHOLMOD(allocate_work) (n, s, 0, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 
@@ -188,7 +188,7 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
     /* get inputs */
     /* ---------------------------------------------------------------------- */
 
-    Head  = Common->Head ;	/* size n+1, initially all EMPTY */
+    Head  = Common->Head ;	/* size n+1, initially all TRILINOS_CHOLMOD_EMPTY */
     Iwork = Common->Iwork ;
     Next  = Iwork ;		/* size n (i/i/l) */
     Pstack = Iwork + n ;	/* size n (i/i/l) */
@@ -229,7 +229,7 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
 
 	for (w = 0 ; w < ((Int) n) ; w++)
 	{
-	    Whead [w] = EMPTY ;
+	    Whead [w] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	/* do in forward order, so nodes that ties are ordered by node index */
 	for (j = 0 ; j < ((Int) n) ; j++)
@@ -249,7 +249,7 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
 	/* traverse weight buckets, placing each node in its parent's list */
 	for (w = n-1 ; w >= 0 ; w--)
 	{
-	    for (j = Whead [w] ; j != EMPTY ; j = nextj)
+	    for (j = Whead [w] ; j != TRILINOS_CHOLMOD_EMPTY ; j = nextj)
 	    {
 		nextj = Next [j] ;
 		/* put node j in the link list of its parent */
@@ -272,17 +272,17 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
     k = 0 ;
     for (j = 0 ; j < ((Int) n) ; j++)
     {
-	if (Parent [j] == EMPTY)
+	if (Parent [j] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* j is the root of a tree; start a DFS here */
 	    k = trilinos_dfs (j, k, Post, Head, Next, Pstack) ;
 	}
     }
 
-    /* this would normally be EMPTY already, unless Parent is invalid */
+    /* this would normally be TRILINOS_CHOLMOD_EMPTY already, unless Parent is invalid */
     for (j = 0 ; j < ((Int) n) ; j++)
     {
-	Head [j] = EMPTY ;
+	Head [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     PRINT1 (("postordered "ID" nodes\n", k)) ;

@@ -73,6 +73,8 @@ public:
 
   void get_blocks_touching_surface(const std::string & surface_name, std::vector<std::string> & block_names);
 
+  std::vector<unsigned> get_negative_levelset_interface_ordinals(const Surface_Identifier levelSetIdentifier) const;
+
   void check_phase_parts() const;
 
   bool phases_defined() const { return !my_phase_parts.empty(); }
@@ -114,6 +116,7 @@ public:
   stk::mesh::PartVector get_nonconformal_parts() const;
   stk::mesh::PartVector get_nonconformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
   stk::mesh::PartVector get_conformal_parts() const;
+  stk::mesh::PartVector get_conformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
 
   void determine_block_phases(const std::set<std::string> & FEmodel_block_names);
   void determine_block_phases();

@@ -48,9 +48,7 @@
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
@@ -559,25 +557,25 @@ namespace {
 
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
     {
-      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GO, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      typedef Xpetra::EpetraCrsMatrixT<GO, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
@@ -1286,7 +1284,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, GetLocalMatrix, M, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
@@ -1397,12 +1394,10 @@ namespace {
 	}
       }
     }
-#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     std::cout << "Run ConstructMatrixKokkos test" << std::endl;
     //Kokkos::initialize();
@@ -1601,7 +1596,6 @@ namespace {
       }
     }
     //Kokkos::finalize();
-#endif
 #endif
   }
 

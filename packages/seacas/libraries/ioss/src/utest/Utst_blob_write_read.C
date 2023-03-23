@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -170,7 +170,7 @@ void write_blob()
   region.begin_mode(Ioss::STATE_TRANSIENT);
   const size_t num_ts = 10;
   for (size_t ts = 0; ts < num_ts; ts++) {
-    double time = ts / 10.0;
+    double time = ts;
     auto   step = region.add_state(time);
     region.begin_state(step);
 
@@ -277,6 +277,12 @@ bool read_blob()
         if (data != gold) {
           std::cout << "Difference for field " << field << " on blob " << blob->name()
                     << " at step " << step << "\n";
+          for (size_t i = 0; i < data.size(); i++) {
+            if (data[i] != gold[i]) {
+              std::cout << "Difference at index " << i << ", Data[i] = " << data[i]
+                        << ", Gold[i] = " << gold[i] << "\n";
+            }
+          }
           diff = true;
         }
       }

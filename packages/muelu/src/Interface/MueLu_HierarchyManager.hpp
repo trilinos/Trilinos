@@ -273,7 +273,8 @@ namespace MueLu {
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
                          LvlMngr(levelID+1, lastLevelID));
-        H.GetLevel(levelID)->print(H.GetOStream(Developer), verbosity_);
+        if (levelID < H.GetNumLevels())
+          H.GetLevel(levelID)->print(H.GetOStream(Developer), verbosity_);
 
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;

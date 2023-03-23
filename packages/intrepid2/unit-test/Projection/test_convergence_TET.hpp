@@ -70,6 +70,7 @@
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "struct_mesh_utils.hpp"
 
 #define Intrepid2_Experimental
 
@@ -276,119 +277,12 @@ int ConvergenceTet(const bool verbose) {
 
     // *********************************** GENERATE MESH ************************************
 
-    *outStream << "Generating mesh ... \n\n";
-
-    *outStream << "    NX" << "   NY" << "   NZ\n";
-    *outStream << std::setw(5) << NX <<
-        std::setw(5) << NY <<
-        std::setw(5) << NZ << "\n\n";
-
-    // Print mesh information
-    int numElems = NX*NY*NZ*5;
-    int numNodes = (NX+1)*(NY+1)*(NZ+1);
-    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
-    int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
-    *outStream << " Number of Elements: " << numElems << " \n";
-    *outStream << "    Number of Nodes: " << numNodes << " \n";
-    *outStream << "    Number of Edges: " << numEdges << " \n";
-    *outStream << "    Number of Faces: " << numFaces << " \n\n";
-
-    // Cube
-    double leftX = -1.0, rightX = 1.0;
-    double leftY = -1.0, rightY = 1.0;
-    double leftZ = -1.0, rightZ = 1.0;
-
-    // Mesh spacing
-    double hx = (rightX-leftX)/((double)NX);
-    double hy = (rightY-leftY)/((double)NY);
-    double hz = (rightZ-leftZ)/((double)NZ);
-
-    // Get nodal coordinates
-    DynRankView ConstructWithLabel(nodeCoord, numNodes, dim);
-    auto hNodeCoord = Kokkos::create_mirror_view(nodeCoord);
-    for (int k=0, inode = 0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {
-          hNodeCoord(inode,0) = leftX + (double)i*hx;
-          hNodeCoord(inode,1) = leftY + (double)j*hy;
-          hNodeCoord(inode,2) = leftZ + (double)k*hz;
-          inode++;
-        }
-      }
-    }
-
-    // Perturb mesh coordinates (only interior nodes)
-    if (randomMesh){
-      for (int k=1; k<NZ; k++) {
-        for (int j=1; j<NY; j++) {
-          for (int i=1; i<NX; i++) {
-            int inode = i + j * (NX + 1) + k * (NX + 1) * (NY + 1);
-            // random numbers between -1.0 and 1.0
-            double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
-            double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
-            double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
-            // limit variation to 1/4 edge length
-            hNodeCoord(inode,0) = hNodeCoord(inode,0) + 0.125 * hx * rx;
-            hNodeCoord(inode,1) = hNodeCoord(inode,1) + 0.125 * hy * ry;
-            hNodeCoord(inode,2) = hNodeCoord(inode,2) + 0.125 * hz * rz;
-          }
-        }
-      }
-    }
-    deep_copy(nodeCoord,hNodeCoord);
-
-    // Element to Node map
-    DynRankViewInt ConstructWithLabel(elemNodes, numElems, numNodesPerElem);
-    auto hElemNodes = Kokkos::create_mirror_view(elemNodes);
-    int ielem = 0;
-    for (int k=0; k<NZ; k++) {
-      for (int j=0; j<NY; j++) {
-        for (int i=0; i<NX; i++) {
-          auto v0 = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
-          auto v1 = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i + 1;
-          auto v2 = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i + 1;
-          auto v3 = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i;
-          auto v4 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i;
-          auto v5 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i + 1;
-          auto v6 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i + 1;
-          auto v7 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i;
-
-          hElemNodes(ielem,0) = v0;
-          hElemNodes(ielem,1) = v1;
-          hElemNodes(ielem,2) = v2;
-          hElemNodes(ielem,3) = v5;
-          ielem++;
-
-          hElemNodes(ielem,0) = v0;
-          hElemNodes(ielem,1) = v2;
-          hElemNodes(ielem,2) = v7;
-          hElemNodes(ielem,3) = v5;
-          ielem++;
-
-          hElemNodes(ielem,0) = v0;
-          hElemNodes(ielem,1) = v2;
-          hElemNodes(ielem,2) = v3;
-          hElemNodes(ielem,3) = v7;
-          ielem++;
-
-          hElemNodes(ielem,0) = v0;
-          hElemNodes(ielem,1) = v5;
-          hElemNodes(ielem,2) = v7;
-          hElemNodes(ielem,3) = v4;
-          ielem++;
-
-          hElemNodes(ielem,0) = v2;
-          hElemNodes(ielem,1) = v7;
-          hElemNodes(ielem,2) = v5;
-          hElemNodes(ielem,3) = v6;
-          ielem++;
-        }
-      }
-    }
-    deep_copy(elemNodes,hElemNodes);
-
+    DynRankView nodeCoord;
+    DynRankViewInt elemNodes;
+    createStructMesh(nodeCoord, elemNodes, cellTopo, NX, NY, NZ, randomMesh, *outStream);
 
     //computing vertices coords
+    ordinal_type numElems = elemNodes.extent(0);
     DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
     Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
     KOKKOS_LAMBDA (const int &i) {
@@ -406,9 +300,9 @@ int ConvergenceTet(const bool verbose) {
     cell_cub->getCubature(refPoints, weights);
 
     using basisType = Basis<DeviceType,ValueType,ValueType>;
-    //using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
-    using CG_HBasis = HierarchicalBasisFamily<DeviceType,ValueType,ValueType>;
+    using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
     using CG_DNBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
+    using CG_HBasis = HierarchicalBasisFamily<DeviceType,ValueType,ValueType>;
 
 
     std::vector<bool> useL2Proj;
@@ -682,7 +576,7 @@ int ConvergenceTet(const bool verbose) {
       for (auto useL2Projection:useL2Proj) { 
       
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(basisDegree));
+      basis_set.push_back(new typename  CG_NBasis::HCURL_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(basisDegree));
       basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
 
@@ -945,7 +839,7 @@ int ConvergenceTet(const bool verbose) {
       for (auto useL2Projection:useL2Proj) { //
 
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(basisDegree));
+      basis_set.push_back(new typename  CG_NBasis::HDIV_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(basisDegree));
       basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
 
@@ -1207,7 +1101,7 @@ int ConvergenceTet(const bool verbose) {
 
       for (auto useL2Projection:useL2Proj) { //
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(basisDegree-1));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_TET(basisDegree-1));
       basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(basisDegree-1));
       basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
 

@@ -55,7 +55,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
 
 namespace MueLu {
@@ -125,5 +124,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_AMALGAMATIONFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AMALGAMATIONFACTORY_KOKKOS_DECL_HPP

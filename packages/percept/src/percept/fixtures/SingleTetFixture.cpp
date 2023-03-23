@@ -28,7 +28,6 @@
 
 
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 //----------------------------------------------------------------------
