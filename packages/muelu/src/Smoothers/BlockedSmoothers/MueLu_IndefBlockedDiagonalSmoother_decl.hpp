@@ -61,7 +61,6 @@
 //Xpetra
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
 //MueLu
@@ -70,12 +69,8 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SubBlockAFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_SchurComplementFactory_fwd.hpp"
-#include "MueLu_DirectSolver_fwd.hpp"
-#include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_FactoryManager_fwd.hpp"
 
 namespace MueLu {

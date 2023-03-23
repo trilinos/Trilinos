@@ -54,9 +54,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

@@ -51,6 +51,7 @@
 #include "MueLu_TestHelpers_HO.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>

@@ -54,19 +54,10 @@
 #define MUELU_PERMUTATIONFACTORY_DECL_HPP_
 
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_StridedMap_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_Export_fwd.hpp>
-#include <Xpetra_ExportFactory_fwd.hpp>
-#include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_AlgebraicPermutationStrategy_fwd.hpp"
 #include "MueLu_LocalPermutationStrategy_fwd.hpp"

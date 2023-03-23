@@ -56,15 +56,13 @@
 #include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
-#include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "Intrepid2_Basis.hpp"
 
 #include "Kokkos_DynRankView.hpp"
 
-#include <Xpetra_Import.hpp>
+#include <Xpetra_Import_fwd.hpp>
 
 namespace MueLu {
 

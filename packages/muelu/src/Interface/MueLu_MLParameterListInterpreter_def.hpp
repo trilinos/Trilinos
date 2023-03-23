@@ -81,7 +81,6 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 

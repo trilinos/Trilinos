@@ -8,15 +8,12 @@
 
 #include "MueLu_CGSolver.hpp"
 #include "MueLu_Constraint.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_GMRESSolver.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PatternFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SolverBase.hpp"
 #include "MueLu_SteepestDescentSolver.hpp"
-#include "MueLu_TentativePFactory.hpp"
 
 namespace MueLu {
 

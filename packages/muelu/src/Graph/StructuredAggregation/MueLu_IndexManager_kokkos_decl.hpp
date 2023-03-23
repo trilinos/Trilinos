@@ -53,9 +53,6 @@
 
 #include "Teuchos_OrdinalTraits.hpp"
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_IndexManager_kokkos_fwd.hpp"

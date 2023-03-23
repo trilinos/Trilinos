@@ -60,7 +60,6 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 
 #include "MueLu_BlockedPFactory_decl.hpp"
-#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Monitor.hpp"

@@ -46,7 +46,6 @@
 
 #ifndef MUELU_BLOCKEDCOARSEMAPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDCOARSEMAPFACTORY_DECL_HPP_
-#include "Xpetra_StridedMapFactory_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_CoarseMapFactory.hpp"

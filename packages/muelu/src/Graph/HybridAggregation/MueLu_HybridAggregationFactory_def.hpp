@@ -58,7 +58,6 @@
 #include "MueLu_InterfaceAggregationAlgorithm.hpp"
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm.hpp"
@@ -77,8 +76,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
 
 
 namespace MueLu {

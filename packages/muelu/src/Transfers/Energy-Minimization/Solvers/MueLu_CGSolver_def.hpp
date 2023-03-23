@@ -54,7 +54,7 @@
 #include "MueLu_Monitor.hpp"
 
 
-#include "MueLu_CGSolver.hpp"
+#include "MueLu_CGSolver_decl.hpp"
 
 
 
