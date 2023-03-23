@@ -53,7 +53,7 @@ template <typename EvalT,typename Traits>
 void DarcyAnalyticForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   const double time = workset.time;
-  const double pi = Kokkos::Experimental::pi_v<double>;
+  const double pi = Kokkos::pi_v<double>;
   // const double pi = Kokkos::numbers::pi_v<double>;
 
   const double kappa = kappa_;
