@@ -54,7 +54,6 @@ void DarcyAnalyticForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalDat
 {
   const double time = workset.time;
   const double pi = Kokkos::pi_v<double>;
-  // const double pi = Kokkos::numbers::pi_v<double>;
 
   const double kappa = kappa_;
   const int dim = ir_dim;
