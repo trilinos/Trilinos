@@ -73,8 +73,8 @@ namespace Amesos2 {
     , bvals_()
     , xvals_()
     , in_grid_(false)
-    , is_contiguous_(true)
     , force_symbfact_(false)
+    , is_contiguous_(true)
   {
     using Teuchos::Comm;
     // It's OK to depend on MpiComm explicitly here, because
@@ -159,6 +159,10 @@ namespace Amesos2 {
     data_.perm_r.resize(this->globalNumRows_);
     data_.perm_c.resize(this->globalNumCols_);
     data_.largediag_mc64_job = 4;
+    for (global_size_type i = 0; i < this->globalNumRows_; i++)
+      data_.perm_r[i] = i;
+    for (global_size_type i = 0; i < this->globalNumCols_; i++)
+      data_.perm_c[i] = i;
 
     ////////////////////////////////////////////////////////////////
     // Set up a communicator for the parallel column ordering and //
@@ -319,6 +323,8 @@ namespace Amesos2 {
     if ( data_.options.SolveInitialized == SLUD::YES )
       function_map::SolveFinalize(&(data_.options), &(data_.solve_struct));
 
+    // gridexit of an older version frees SuperLU_MPI_DOUBLE_COMPLE,
+    // which could cause an issue if there are still active instances of superludist?
     SLUD::superlu_gridexit(&(data_.grid)); // TODO: are there any
                                            // cases where grid
                                            // wouldn't be initialized?
@@ -341,32 +347,37 @@ namespace Amesos2 {
     SLUD::int_t* colptr = GAstore->colptr;
     SLUD::int_t* rowind = GAstore->rowind;
     SLUD::int_t nnz = GAstore->nnz;
-    double *a_GA = (double *) GAstore->nzval;
-    MPI_Datatype dtype = Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(0.0);
+    slu_type *a_GA = (slu_type *) GAstore->nzval;
+    MPI_Datatype mpi_dtype = Teuchos::Details::MpiTypeTraits<magnitude_type>::getType();
+    MPI_Datatype mpi_itype = Teuchos::Details::MpiTypeTraits<SLUD::int_t>::getType();
 
-    int iinfo;
+    int iinfo = 0;
     if ( !data_.grid.iam ) { /* Process 0 finds a row permutation */
       iinfo = function_map::ldperm_dist(job, data_.A.nrow, nnz, colptr, rowind, a_GA,
               data_.perm_r.getRawPtr(), data_.R1.getRawPtr(), data_.C1.getRawPtr());
 
-      MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
+      MPI_Bcast( &iinfo, 1, MPI_INT, 0, data_.grid.comm );
       if ( iinfo == 0 ) {
-          MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+          MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_itype, 0, data_.grid.comm );
           if ( job == 5 && data_.options.Equil ) {
-              MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
-              MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
+              MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, mpi_dtype, 0, data_.grid.comm );
+              MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, mpi_dtype, 0, data_.grid.comm );
           }
       }
     } else {
       MPI_Bcast( &iinfo, 1, mpi_int_t, 0, data_.grid.comm );
       if ( iinfo == 0 ) {
-        MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_int_t, 0, data_.grid.comm );
+        MPI_Bcast( data_.perm_r.getRawPtr(), data_.A.nrow, mpi_itype, 0, data_.grid.comm );
         if ( job == 5 && data_.options.Equil ) {
-            MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, dtype, 0, data_.grid.comm );
-            MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, dtype, 0, data_.grid.comm );
+            MPI_Bcast( data_.R1.getRawPtr(), data_.A.nrow, mpi_dtype, 0, data_.grid.comm );
+            MPI_Bcast( data_.C1.getRawPtr(), data_.A.ncol, mpi_dtype, 0, data_.grid.comm );
         }
       }
     }
+    TEUCHOS_TEST_FOR_EXCEPTION( iinfo != 0,
+                        std::runtime_error,
+                        "SuperLU_DIST pre-ordering failed to compute row perm with "
+                        << iinfo << std::endl);
 
     if (job == 5)
     {
@@ -528,17 +539,18 @@ namespace Amesos2 {
           if (data_.largediag_mc64_job == 5)
           {
             SLUD::NRformat_loc *Astore  = (SLUD::NRformat_loc*) data_.A.Store;
-            double *a = (double*) Astore->nzval;
+            slu_type *a = (slu_type*) Astore->nzval;
             SLUD::int_t m_loc   = Astore->m_loc;
             SLUD::int_t fst_row = Astore->fst_row;
             SLUD::int_t i, j, irow = fst_row, icol;
 
             /* Scale the distributed matrix further.
              A <-- diag(R1)*A*diag(C1)            */
+            SLUD::slu_dist_mult<slu_type, magnitude_type> mult_op;
             for (j = 0; j < m_loc; ++j) {
               for (i = rowptr_view_.data()[j]; i < rowptr_view_.data()[j+1]; ++i) {
                   icol = colind_view_.data()[i];
-                  a[i] *= data_.R1[irow] * data_.C1[icol];
+                  a[i] = mult_op(a[i], data_.R1[irow] * data_.C1[icol]);
               }
               ++irow;
             }
@@ -597,7 +609,7 @@ namespace Amesos2 {
 
       // Retrieve the normI of A (required by gstrf).
       bool notran = (data_.options.Trans == SLUD::NOTRANS);
-      double anorm = function_map::plangs((notran ? (char *)"1" : (char *)"I"), &(data_.A), &(data_.grid));
+      magnitude_type anorm = function_map::plangs((notran ? (char *)"1" : (char *)"I"), &(data_.A), &(data_.grid));
 
       int info = 0;
       {
@@ -708,9 +720,10 @@ namespace Amesos2 {
       // Apply row-scaling if requested
       if (data_.options.Equil == SLUD::YES && data_.rowequ) {
         SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
+        SLUD::slu_dist_mult<slu_type, magnitude_type> mult_op;
         for(global_size_type j = 0; j < nrhs; ++j) {
           for(size_t i = 0; i < local_len_rhs; ++i) {
-            bvals_[i + j*ld] *= data_.R[first_global_row_b + i];
+            bvals_[i + j*ld] = mult_op(bvals_[i + j*ld], data_.R[first_global_row_b + i]);
           }
         }
       }
@@ -771,9 +784,10 @@ namespace Amesos2 {
       // Apply col-scaling if requested
       if (data_.options.Equil == SLUD::YES && data_.colequ) {
         SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
+        SLUD::slu_dist_mult<slu_type, magnitude_type> mult_op;
         for(global_size_type j = 0; j < nrhs; ++j) {
           for(size_t i = 0; i < local_len_rhs; ++i) {
-            xvals_[i + j*ld] *= data_.C[first_global_row_b + i];
+            xvals_[i + j*ld] = mult_op(xvals_[i + j*ld], data_.C[first_global_row_b + i]);
           }
         }
       }
