@@ -144,6 +144,9 @@ namespace MueLu {
     //! Build an object with this factory.
     void Build(Level &fineLevel, Level &coarseLevel) const;
 
+    using coordinate_type       = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using CoordinateMultiVector = typename Xpetra::MultiVector<coordinate_type, LO, GO, NO>;
+
     //@}
 
   private:
@@ -166,13 +169,9 @@ namespace MueLu {
     static const int CONTRAST_2_ = -2;
     static const int CONTRAST_3_ = -3;
 
-    //Data that the different styles need to have available when building geometry
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords_; //fine local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx_; //coarse local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz_;
+    // Data that the different styles need to have available when building geometry
+    mutable Teuchos::RCP<CoordinateMultiVector> coords_; // fine local coordinates
+    mutable Teuchos::RCP<CoordinateMultiVector> coordsCoarse_; // coarse local coordinates
     mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
     mutable std::vector<bool> isRoot_;

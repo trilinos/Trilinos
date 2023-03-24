@@ -50,7 +50,7 @@
 
 #include "MueLu_MatrixFreeTentativePFactory_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MatrixFreeTentativeP.hpp"
@@ -104,7 +104,7 @@ namespace MueLu {
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto aggregates    = Get< RCP<Aggregates_kokkos> > (fineLevel, "Aggregates");
+    auto aggregates    = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     auto amalgInfo     = Get< RCP<AmalgamationInfo> >  (fineLevel, "UnAmalgamationInfo");
     auto fineNullspace = Get< RCP<MultiVector> >       (fineLevel, nspName);
     auto coarseMap     = Get< RCP<const Map> >         (fineLevel, "CoarseMap");
