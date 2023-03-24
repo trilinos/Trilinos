@@ -14,7 +14,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -97,7 +97,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -155,7 +155,7 @@ Level 3
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 Lumping dropped entries
