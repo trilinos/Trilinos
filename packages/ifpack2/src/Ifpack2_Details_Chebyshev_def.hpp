@@ -1787,6 +1787,8 @@ describe (Teuchos::FancyOStream& out,
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
           << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
+          << "fourthKindAlgorithm_: " << fourthKindAlgorithm_ << endl
+          << "useOptimalWeights_: " << useOptimalWeights_ << endl
           << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
     }
   } // print user parameters
