@@ -1328,11 +1328,10 @@ fourthKindApplyImpl (const op_type& A,
                      const ST lambdaMax,
                      const V& D_inv) const
 {
-  auto betas = optimalWeightsImpl<ScalarType>(numIters);
-
   // standard 4th kind Chebyshev smoother has \beta_i := 1
-  if(!useOptimalWeights_){
-    std::fill(betas.begin(), betas.end(), 1.0);
+  std::vector<ScalarType> betas(numIters, 1.0)
+  if(useOptimalWeights_){
+    betas = optimalWeightsImpl<ScalarType>(numIters);
   }
 
   const ST zero = Teuchos::as<ST> (0);

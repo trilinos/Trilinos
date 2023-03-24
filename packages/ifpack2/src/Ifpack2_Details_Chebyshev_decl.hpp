@@ -646,7 +646,7 @@ private:
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, using the fourth kind Chebyshev polynomials
-  ///   with optimal weights, see:
+  ///   (optionally) with optimal weights, see:
   ///    https://arxiv.org/pdf/2202.08830.pdf
   ///   for details.
   ///
