@@ -849,7 +849,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   if (numEigIters >= 15) {
     const MT tol = Teuchos::as<MT> (1.0e-4);
     // Avoid division by zero when computing relative accuracy.
-    const MT relDiff = maxResNormTextbook == zero ?
+    MT relDiff = maxResNormTextbook == zero ?
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) :
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
     TEUCHOS_TEST_FOR_EXCEPTION(
