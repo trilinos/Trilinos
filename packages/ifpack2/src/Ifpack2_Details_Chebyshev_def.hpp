@@ -1329,7 +1329,7 @@ fourthKindApplyImpl (const op_type& A,
                      const V& D_inv) const
 {
   // standard 4th kind Chebyshev smoother has \beta_i := 1
-  std::vector<ScalarType> betas(numIters, 1.0)
+  std::vector<ScalarType> betas(numIters, 1.0);
   if(useOptimalWeights_){
     betas = optimalWeightsImpl<ScalarType>(numIters);
   }
@@ -1337,6 +1337,7 @@ fourthKindApplyImpl (const op_type& A,
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
   const ST mone = Teuchos::as<ST> (-1);
+  const ST invEig = 1.0 / (lambdaMax * boostFactor_);
 
   if (zeroStartingSolution_) {
     X.putScalar (zero);
@@ -1355,7 +1356,7 @@ fourthKindApplyImpl (const op_type& A,
 
   for (int i = 0; i < numIters; ++i) {
     const ST zScale = (2.0 * i - 1.0) / (2.0 * i + 3.0);
-    const ST rScale = (8.0 * i + 4.0) / (2.0 * i + 3.0) / lambdaMax;
+    const ST rScale = (8.0 * i + 4.0) / (2.0 * i + 3.0) * invEig;
 
     solve (P, D_inv, R); // P = D_inv * R, that is, D \ R.
 
@@ -1365,7 +1366,7 @@ fourthKindApplyImpl (const op_type& A,
     // X = X + betas[i] * Z
     X.update(betas[i], Z, one);
 
-    // R = R - A*Z (not really the residual!)
+    // R = R - A*Z
     A.apply(Z, P);
 
     R.update(mone, P, one);
