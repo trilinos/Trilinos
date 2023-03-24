@@ -263,7 +263,7 @@ private:
 };
 
 
-/** \brief Nonmember constructor for TpetraMultiVector.
+/** \brief Nonmember constructor for non-const TpetraMultiVector.
  *
  * \relates TpetraMultiVector.
  */
@@ -282,7 +282,7 @@ tpetraMultiVector(
 }
 
 
-/** \brief Nonmember constructor for TpetraMultiVector.
+/** \brief Nonmember constructor for const TpetraMultiVector.
  *
  * \relates TpetraMultiVector.
  */
