@@ -3129,6 +3129,17 @@ namespace Ifpack2 {
       return total_team_size/team_size;
     }
 
+    template<typename T>
+    static inline int ComputeResidualVectorRecommendedVectorSize(const int blksize,
+                                                                 const int team_size) {
+      if ( is_cuda<T>::value )
+        return ComputeResidualVectorRecommendedCudaVectorSize(blksize, team_size);
+      if ( is_hip<T>::value )
+        return ComputeResidualVectorRecommendedHIPVectorSize(blksize, team_size);
+      if ( is_sycl<T>::value )
+        return ComputeResidualVectorRecommendedSYCLVectorSize(blksize, team_size);
+      return -1;
+    }
 
     
     template<typename MatrixType>
@@ -3617,7 +3628,7 @@ namespace Ifpack2 {
         if constexpr (is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
@@ -3654,7 +3665,7 @@ namespace Ifpack2 {
         if constexpr(is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
@@ -3727,7 +3738,7 @@ namespace Ifpack2 {
         if constexpr (is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
