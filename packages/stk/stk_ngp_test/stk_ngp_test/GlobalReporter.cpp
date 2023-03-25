@@ -22,10 +22,22 @@ ReporterBase*& getDeviceReporterOnHost()
   return deviceReporterOnHost;
 }
 
+#ifdef KOKKOS_ENABLE_SYCL
+namespace{
+sycl::ext::oneapi::experimental::device_global<
+    ReporterBase*,
+    decltype(sycl::ext::oneapi::experimental::properties(
+        sycl::ext::oneapi::experimental::device_image_scope))>
+  deviceReporterOnDevice;
+}
+#endif
+
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
   KOKKOS_IF_ON_DEVICE((
+#ifndef KOKKOS_ENABLE_SYCL
     __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
+#endif
     return deviceReporterOnDevice;
   ))
   KOKKOS_IF_ON_HOST((
