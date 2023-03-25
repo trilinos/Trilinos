@@ -52,25 +52,15 @@
 
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
 
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 

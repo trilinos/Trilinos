@@ -56,7 +56,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SubBlockAFactory_fwd.hpp"
 
 
 namespace MueLu {

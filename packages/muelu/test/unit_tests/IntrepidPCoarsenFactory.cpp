@@ -51,12 +51,12 @@
 #include "MueLu_TestHelpers_HO.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"

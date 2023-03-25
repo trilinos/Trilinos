@@ -131,7 +131,7 @@ namespace Intrepid2 {
 
   template<typename DT, typename OT, typename PT>
   Basis_HVOL_C0_FEM<DT,OT,PT>::
-  Basis_HVOL_C0_FEM(const shards::CellTopology cellTopo) {
+  Basis_HVOL_C0_FEM(const shards::CellTopology& cellTopo) {
     const ordinal_type spaceDim = cellTopo.getDimension();
 
     this->basisCardinality_  = 1;

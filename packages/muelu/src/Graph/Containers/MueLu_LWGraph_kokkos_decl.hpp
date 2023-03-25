@@ -52,7 +52,7 @@
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_Map.hpp>
+#include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_VerbosityLevel.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"

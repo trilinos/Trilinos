@@ -52,8 +52,7 @@
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_UserPFactory.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_UserPFactory_decl.hpp"
 
 namespace MueLu {
 

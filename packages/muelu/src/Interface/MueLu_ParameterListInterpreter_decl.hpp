@@ -62,7 +62,6 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
-#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
 #include "MueLu_FacadeClassBase.hpp"

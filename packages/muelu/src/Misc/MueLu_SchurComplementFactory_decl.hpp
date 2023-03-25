@@ -58,18 +58,11 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_StridedMap_fwd.hpp>
 
 
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 
 namespace MueLu {

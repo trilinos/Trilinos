@@ -1,12 +1,11 @@
 // @HEADER
+// ************************************************************************
 //
-// ***********************************************************************
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,29 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
-#ifndef MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP
-#define MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP
 
+/** \file test_01.cpp
+    \brief  Unit tests for the Intrepid2::Basis_HGRAD_LINE_C2_FEM class.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson.
+*/
 
+#include "Kokkos_Core.hpp"
 
+#include "test_01.hpp"
 
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CoupledAggregationFactory;
+int main(int argc, char *argv[]) {
+
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+
+  const int r_val = Intrepid2::Test::HGRAD_LINE_C2_FEM_Test01<@ETI_VALUETYPE@, @ETI_DEVICE@>(verbose);
+
+  Kokkos::finalize();
+  return r_val;
 }
 
-#ifndef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
-#define MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
-#endif
-
-
-
-#endif // MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP

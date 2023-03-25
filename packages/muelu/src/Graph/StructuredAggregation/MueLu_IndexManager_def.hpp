@@ -49,7 +49,6 @@
 #include "Teuchos_OrdinalTraits.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
 #include <MueLu_IndexManager_decl.hpp>
 
 /*****************************************************************************

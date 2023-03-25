@@ -65,7 +65,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_PermutationFactory.hpp"
 #include "MueLu_Monitor.hpp"
 

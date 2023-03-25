@@ -62,9 +62,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PgPFactory_decl.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {

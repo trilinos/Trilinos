@@ -35,14 +35,10 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_DirectSolver.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
@@ -135,30 +131,19 @@ namespace MueLu {
     if (verbosityLevel >  7) eVerbLevel = Teuchos::VERB_HIGH;
     if (verbosityLevel >  9) eVerbLevel = Teuchos::VERB_EXTREME;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
     // Create MueLu factories
     // RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
-    RCP<FactoryBase> CoupledAggFact = Teuchos::null;
-    if(agg_type == "Uncoupled") {
-      // Uncoupled aggregation
-      RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");
-      CoupledAggFact = CoupledAggFact2;
-    } else {
-      // Coupled Aggregation (default)
-      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");
-      CoupledAggFact2->SetPhase3AggCreation(0.5);
-      CoupledAggFact = CoupledAggFact2;
-    }
+    // Uncoupled aggregation
+    RCP<UncoupledAggregationFactory> AggFact = rcp(new UncoupledAggregationFactory());
+    AggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+    AggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    AggFact->SetOrdering("natural");
+
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
@@ -297,13 +282,13 @@ namespace MueLu {
       Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(RFact)->DisableMultipleCallCheck();
       Teuchos::rcp_dynamic_cast<SingleLevelFactoryBase>(coarseFact)->DisableMultipleCallCheck();
       Teuchos::rcp_dynamic_cast<SingleLevelFactoryBase>(dropFact)->DisableMultipleCallCheck();
-      Teuchos::rcp_dynamic_cast<SingleLevelFactoryBase>(CoupledAggFact)->DisableMultipleCallCheck();
+      Teuchos::rcp_dynamic_cast<SingleLevelFactoryBase>(AggFact)->DisableMultipleCallCheck();
       Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(AcFact)->DisableMultipleCallCheck();
       Teuchos::rcp_dynamic_cast<SingleLevelFactoryBase>(nspFact)->DisableMultipleCallCheck();
 
       manager->SetFactory("CoarseSolver", coarseFact); // TODO: should not be done in the loop
       manager->SetFactory("Graph", dropFact);
-      manager->SetFactory("Aggregates", CoupledAggFact);
+      manager->SetFactory("Aggregates", AggFact);
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("A", AcFact);
       manager->SetFactory("P", PFact);
@@ -313,7 +298,7 @@ namespace MueLu {
 
       //initmanager->SetFactory("CoarseSolver", coarseFact);
       initmanager->SetFactory("Graph", dropFact);
-      initmanager->SetFactory("Aggregates", CoupledAggFact);
+      initmanager->SetFactory("Aggregates", AggFact);
       initmanager->SetFactory("DofsPerNode", dropFact);
       initmanager->SetFactory("A", AcFact);
       initmanager->SetFactory("P", PtentFact); // use nonsmoothed transfers

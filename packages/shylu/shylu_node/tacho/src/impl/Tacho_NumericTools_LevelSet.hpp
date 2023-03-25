@@ -1556,9 +1556,10 @@ public:
             team_policy_update;
 #endif
 
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf);
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf, &rval);
 
         // get max vector size
         const ordinal_type vmax = policy_factor.vector_length_max();
@@ -1597,6 +1598,9 @@ public:
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;
@@ -2882,9 +2886,10 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf, &rval);
 
         // get max vector length
         const ordinal_type vmax = policy_factor.vector_length_max();
@@ -2923,6 +2928,9 @@ public:
 
             factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "SYTRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;
@@ -3210,9 +3218,10 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf, &rval);
 
         // get max vector length
         const ordinal_type vmax = policy_factor.vector_length_max();
@@ -3252,6 +3261,9 @@ public:
 
             factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;

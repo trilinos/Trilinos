@@ -187,10 +187,6 @@ An example of line smoothing is provided in \texttt{packages/trilinoscouplings/e
       \verb!uncoupled!    & Attempts to construct aggregates of optimal size ($3^d$
                             nodes in $d$ dimensions). Each process works independently, and
                             aggregates cannot span multiple processes.\\
-      \verb!coupled!      & Attempts to construct aggregates of optimal size ($3^d$
-                            nodes in $d$ dimensions). Aggregates are allowed to
-                            cross processor boundaries. \textbf{Use carefully}. If
-                            unsure, use \verb!uncoupled! instead.\\
       \verb!brick!        & Attempts to construct rectangular aggregates \\
       %\verb!METIS!     & Use graph partitioning algorithm to create aggregates,
       %                   working process-wise. Number of nodes in each aggregate

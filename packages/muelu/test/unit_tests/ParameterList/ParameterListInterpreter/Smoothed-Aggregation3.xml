@@ -35,7 +35,7 @@
           <Parameter name="factory"     type="string" value="TentativePFactory"/>
 
           <ParameterList name="Aggregates">
-            <Parameter name="factory"              type="string" value="CoupledAggregationFactory"/>
+            <Parameter name="factory"              type="string" value="UncoupledAggregationFactory"/>
             <Parameter name="aggregation: min agg size" type="int"    value="1"/>
           </ParameterList>
         </ParameterList>

@@ -57,7 +57,6 @@
 #include <Xpetra_IO.hpp>
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Utilities.hpp"
 
 #include <vector>

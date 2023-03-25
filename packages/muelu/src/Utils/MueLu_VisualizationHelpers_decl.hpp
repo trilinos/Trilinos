@@ -47,8 +47,6 @@
 #ifndef MUELU_VISUALIZATIONHELPERS_DECL_HPP_
 #define MUELU_VISUALIZATIONHELPERS_DECL_HPP_
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VisualizationHelpers_fwd.hpp"

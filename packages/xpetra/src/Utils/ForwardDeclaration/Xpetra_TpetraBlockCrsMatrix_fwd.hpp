@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
+//             Xpetra: A linear algebra interface package
 //                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,63 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
-#define MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
+#ifndef XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
+#define XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
 
-#include "MueLu_CoupledAggregationFactory_decl.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_Aggregates.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
+namespace Xpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class TpetraBlockCrsMatrix;
+}
 
-namespace MueLu {
+#ifndef XPETRA_TPETRABLOCKCRSMATRIX_SHORT
+#define XPETRA_TPETRABLOCKCRSMATRIX_SHORT
+#endif
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::CoupledAggregationFactory()
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-    Input(currentLevel, "Graph");
-    //Input(currentLevel, "UnAmalgamationInfo"); // TODO, only provided by CoalesceDropFactory2
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
-  {
-    FactoryMonitor m(*this, "Build", currentLevel);
-
-    RCP<Aggregates> aggregates;
-    {
-      //TODO check for reuse of aggregates here
-
-      // Level Get
-      RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
-
-      // Build
-      aggregates = rcp(new Aggregates(*graph));
-      aggregates->setObjectLabel("UC");
-
-      algo1_.CoarsenUncoupled(*graph, *aggregates);
-      algo2_.AggregateLeftovers(*graph, *aggregates);
-
-    }
-
-    aggregates->AggregatesCrossProcessors(true);
-    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
-
-    // Level Set
-    Set(currentLevel, "Aggregates", aggregates);
-
-    if (IsPrint(Statistics0)) {
-      aggregates->describe(GetOStream(Statistics0), getVerbLevel());
-    }
-
-  }
-
-} //namespace MueLu
-
-#endif // MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
+#endif // XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
