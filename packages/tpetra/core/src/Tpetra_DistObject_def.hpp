@@ -1058,7 +1058,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      doPackAndPrepare(src, exportLIDs, constantNumPackets);
+      doPackAndPrepare(src, exportLIDs, constantNumPackets, execution_space());
       if (commOnHost) {
         this->exports_.sync_host();
       }
@@ -1552,14 +1552,15 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doPackAndPrepare(const SrcDistObject& src,
                    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                   size_t& constantNumPackets)
+                   size_t& constantNumPackets,
+                   const execution_space &space)
   {
     using Details::ProfilingRegion;
     using std::endl;
     const bool debug = Details::Behavior::debug("DistObject");
 
     ProfilingRegion region_pp
-      ("Tpetra::DistObject::doTransferNew::packAndPrepare");
+      ("Tpetra::DistObject::doPackAndPrepare");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
     // favor of Kokkos profiling.
@@ -1588,7 +1589,7 @@ namespace Tpetra {
       try {
         this->packAndPrepare (src, exportLIDs, this->exports_,
             this->numExportPacketsPerLID_,
-            constantNumPackets);
+            constantNumPackets, space);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1610,7 +1611,7 @@ namespace Tpetra {
     else {
       this->packAndPrepare (src, exportLIDs, this->exports_,
           this->numExportPacketsPerLID_,
-          constantNumPackets);
+          constantNumPackets, space);
     }
   }
 
@@ -1700,6 +1701,53 @@ namespace Tpetra {
 
 // clang-format on
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
+    const SrcDistObject &source,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &exportLIDs,
+    Kokkos::DualView<packet_type *, buffer_device_type> &exports,
+    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
+    size_t &constantNumPackets, const execution_space &space) {
+  /*
+  we're here if the derived class doesn't know how to do this in an
+  execution space instance, so just do it in the default instance
+
+  Sync with the requested space as appropriate
+  */
+
+  // TODO: Details::Spaces::exec_space_wait(space, execution_space());
+  space.fence(); // make sure any work in space has finished
+  packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
+                 constantNumPackets); // default instance
+  // wait for pack to finish before caller inserts more work into space
+  execution_space
+      .fence(); // TODO: Details::Spaces::exec_space_wait(execution_space(),
+                // space);
+}
+// clang-format off
+
+
+
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>& /* importLIDs */,
+   Kokkos::DualView<
+     packet_type*,
+     buffer_device_type> /* imports */,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type> /* numPacketsPerLID */,
+   const size_t /* constantNumPackets */,
+   const CombineMode /* combineMode */)
+  {}
+
+// clang-format on
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
     const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
         &importLIDs,
@@ -1707,11 +1755,6 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
     Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
     const size_t constantNumPackets, const CombineMode combineMode,
     const execution_space &space) {
-  /*
-  we're here if the derived class doesn't know how to do this in an
-  execution space instance, so just do it in the default instance
-  */
-
   // Wait for any work in the provided space to complete
   space.fence(); // TODO: Details::Spaces::exec_space_wait(execution_space(),
                  // space);
