@@ -2341,7 +2341,8 @@ namespace Tpetra {
      const size_t numSameIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-     const CombineMode CM);
+     const CombineMode CM,
+     const execution_space &space) override;
 
     virtual void
     packAndPrepare

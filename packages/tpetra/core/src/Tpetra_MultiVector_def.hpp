@@ -1124,7 +1124,8 @@ namespace Tpetra {
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -1217,8 +1218,8 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
-            range_t rp(0,numSameIDs);
+                  Kokkos::RangePolicy<execution_space, size_t>;
+            range_t rp(space, 0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
             Kokkos::parallel_for(rp, aaf);
@@ -1226,7 +1227,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (space, tgt_j, src_j); 
           }
         }
       }
@@ -1244,8 +1245,8 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
-            range_t rp(0,numSameIDs);
+                  Kokkos::RangePolicy<execution_space, size_t>;
+            range_t rp(space, 0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
             Kokkos::parallel_for(rp, aaf);
@@ -1253,7 +1254,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (space, tgt_j, src_j); 
           }
         }
       }
