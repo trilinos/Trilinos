@@ -1335,7 +1335,7 @@ namespace Tpetra {
           os << *prefix << "8. unpackAndCombine - remoteLIDs " << remoteLIDs.extent(0) << ", constantNumPackets " << constantNumPackets << endl;
           std::cerr << os.str ();
         }
-        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM);
+        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM, execution_space());
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1618,14 +1618,15 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                      size_t constantNumPackets,
-                     CombineMode CM)
+                     CombineMode CM,
+                     const execution_space &space)
   {
     using Details::ProfilingRegion;
     using std::endl;
     const bool debug = Details::Behavior::debug("DistObject");
 
     ProfilingRegion region_uc
-      ("Tpetra::DistObject::doTransferNew::unpackAndCombine");
+      ("Tpetra::DistObject::doUnpackAndCombine");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
     // favor of Kokkos profiling.
@@ -1638,15 +1639,15 @@ namespace Tpetra {
       try {
         this->unpackAndCombine (remoteLIDs, this->imports_,
             this->numImportPacketsPerLID_,
-            constantNumPackets, CM);
+            constantNumPackets, CM, space);
         lclSuccess = true;
       }
       catch (std::exception& e) {
-        lclErrStrm << "unpackAndCombine threw an exception: "
+        lclErrStrm << "doUnpackAndCombine threw an exception: "
           << endl << e.what();
       }
       catch (...) {
-        lclErrStrm << "unpackAndCombine threw an exception "
+        lclErrStrm << "doUnpackAndCombine threw an exception "
           "not a subclass of std::exception.";
       }
       const char gblErrMsgHeader[] = "Tpetra::DistObject "
@@ -1660,7 +1661,7 @@ namespace Tpetra {
     else {
       this->unpackAndCombine (remoteLIDs, this->imports_,
           this->numImportPacketsPerLID_,
-          constantNumPackets, CM);
+          constantNumPackets, CM, space);
     }
   }
 
@@ -1695,6 +1696,34 @@ namespace Tpetra {
      buffer_device_type>,
    size_t&)
   {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<
+     packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   const CombineMode combineMode,
+   const execution_space &space)
+  {
+    /*
+    we're here if the derived class doesn't know how to do this in an
+    execution space instance, so just do it in the default instance
+    after appropriate sync 
+    */
+    
+    execution_space().fence(); //TODO: Details::Spaces::exec_space_wait(space, execution_space());
+    unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, combineMode); // default instance
+    space.fence(); //TODO: Details::Spaces::exec_space_wait(execution_space(), space);
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
