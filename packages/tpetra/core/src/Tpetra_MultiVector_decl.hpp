@@ -2369,7 +2369,22 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
-     const CombineMode CM);
+     const CombineMode CM,
+     const execution_space &space) override;
+
+    virtual void
+    unpackAndCombine
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     const size_t constantNumPackets,
+     const CombineMode CM) override;
 
   private:
 
