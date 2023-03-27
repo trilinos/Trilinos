@@ -1668,6 +1668,32 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermute
+  (const SrcDistObject &source,
+   const size_t numSameIDs,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type> &permuteToLIDs,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM,
+   const execution_space &space)
+  {
+    /*
+    we're here if the derived class doesn't know how to do this in an
+    execution space instance, so fall back to the default instance and
+    sync appropriately with the requested instance
+    */
+
+    space.fence(); // // TODO: Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
+    copyAndPermute(source, numSameIDs, permuteToLIDs, permuteFromLIDs, CM); // default instance
+    execution_space().fence(); // TODO: Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  copyAndPermute
   (const SrcDistObject&,
    const size_t,
    const Kokkos::DualView<

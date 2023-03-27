@@ -859,6 +859,18 @@ namespace Tpetra {
                       buffer_device_type>& permuteFromLIDs,
                     const CombineMode CM);
 
+    /*! \brief Same as copyAndPermute, but do operations in \c space
+    */
+    virtual void
+    copyAndPermute (const SrcDistObject& source,
+                    const size_t numSameIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteToLIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteFromLIDs,
+                    const CombineMode CM,
+                    const execution_space &space);
+
     /// \brief Pack data and metadata for communication (sends).
     ///
     /// Subclasses <i>must</i> reimplement this function.  Its default
