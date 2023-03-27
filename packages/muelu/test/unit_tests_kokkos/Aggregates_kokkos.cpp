@@ -67,8 +67,8 @@
 #include "MueLu_AggregationPhase2bAlgorithm_kokkos.hpp"
 #include "MueLu_AggregationPhase3Algorithm_kokkos.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
@@ -88,7 +88,7 @@ namespace MueLuTests {
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -293,12 +293,12 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
     Level level;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -322,7 +322,7 @@ namespace MueLuTests {
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
     TEST_INEQUALITY(aggregates, Teuchos::null);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
-    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates", aggFact.get());
   }
@@ -336,12 +336,12 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
     Level level;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -364,7 +364,7 @@ namespace MueLuTests {
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
     TEST_INEQUALITY(aggregates, Teuchos::null);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
-    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates", aggFact.get());
   }
@@ -378,12 +378,12 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
     Level level;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -407,7 +407,7 @@ namespace MueLuTests {
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
     TEST_INEQUALITY(aggregates, Teuchos::null);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
-    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates", aggFact.get());
   }
@@ -422,12 +422,12 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
     Level level;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -456,7 +456,7 @@ namespace MueLuTests {
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
     TEST_INEQUALITY(aggregates, Teuchos::null);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
-    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates", aggFact.get());
   }
@@ -482,7 +482,7 @@ namespace MueLuTests {
     RCP<Aggregates_kokkos> aggregates;
     RCP<LWGraph_kokkos> graph;
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -535,7 +535,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
 
     RCP<Aggregates_kokkos> aggregates;
     RCP<LWGraph_kokkos> graph;
@@ -591,7 +591,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
-    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    RCP<AmalgamationInfo> amalgInfo;
 
     RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates_kokkos(A, false, false, false, true);
     GO numAggs = aggregates->GetNumAggregates();
@@ -667,7 +667,7 @@ namespace MueLuTests {
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(false));
     dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     level.Request("Graph",dropFact.get());
 
@@ -702,7 +702,7 @@ namespace MueLuTests {
     // Repeat with "aggregation: dropping may create Dirichlet" = TRUE, i.e.,
     // dropping connections may lead to the creation of new Dirichlet rows.
     // The second row should be flagged as Dirichlet because all off-diagonal entries are dropped.
-    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(true));
     dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
@@ -788,10 +788,10 @@ namespace MueLuTests {
     level.Set("A", A);
 
     RCP<CoalesceDropFactory_kokkos> dropFact;
-    RCP<AmalgamationFactory_kokkos> amalgFact;
+    RCP<AmalgamationFactory> amalgFact;
     RCP<UncoupledAggregationFactory_kokkos> aggFact;
 
-    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(false));
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -822,7 +822,7 @@ namespace MueLuTests {
     Level levelGreedyAndNoPreserve;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndNoPreserve);
     levelGreedyAndNoPreserve.Set("A", A);
-    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -854,7 +854,7 @@ namespace MueLuTests {
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndPreserve);
     levelGreedyAndPreserve.Set("A", A);
 
-    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);

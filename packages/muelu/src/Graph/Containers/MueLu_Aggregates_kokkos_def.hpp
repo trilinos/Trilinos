@@ -64,7 +64,7 @@ namespace MueLu {
     numAggregates_  = 0;
     numGlobalAggregates_  = 0;
 
-    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
+    vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
@@ -83,7 +83,7 @@ namespace MueLu {
     numAggregates_ = 0;
     numGlobalAggregates_  = 0;
 
-    vertex2AggId_ = LOVectorFactory::Build(map);
+    vertex2AggId_ = LOMultiVectorFactory::Build(map, 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
     procWinner_ = LOVectorFactory::Build(map);

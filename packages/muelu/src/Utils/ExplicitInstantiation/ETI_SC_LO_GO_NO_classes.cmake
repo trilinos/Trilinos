@@ -2,7 +2,6 @@
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AggregationExportFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AggregateQualityEstimateFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AmalgamationFactory )
-APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AmalgamationFactory_kokkos )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::Amesos2Smoother-.?if.defined[HAVE_MUELU_TPETRA].&&.defined[HAVE_MUELU_AMESOS2] )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AMGXOperator-.?if.defined[HAVE_MUELU_AMGX] )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::AlgebraicPermutationStrategy )

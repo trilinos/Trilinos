@@ -15,7 +15,7 @@
 #include <MueLu_HierarchyManager.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_RAPFactory.hpp>
-#include <MueLu_AmalgamationFactory_kokkos.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory_kokkos.hpp>
 #include <MueLu_ThresholdAFilterFactory.hpp>
 
@@ -105,7 +105,7 @@ namespace MueLu {
         fineLevel.Set("Coordinates",coords);
         fineLevel.Set("DofsPerNode",1);
         fineLevel.setlib(auxOp->getDomainMap()->lib());
-        auto amalgFact = rcp(new AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
+        auto amalgFact = rcp(new AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
         auto dropFact = rcp(new CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
         dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 

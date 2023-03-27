@@ -11,7 +11,6 @@ AggregationPhase3Algorithm_kokkos
 AggregationStructuredAlgorithm
 AggregationStructuredAlgorithm_kokkos
 AmalgamationInfo
-AmalgamationInfo_kokkos
 GlobalLexicographicIndexManager
 Graph
 GraphBase
