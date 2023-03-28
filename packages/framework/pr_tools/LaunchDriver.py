@@ -100,7 +100,7 @@ def main(argv):
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
   if args.in_container:
-     cmd += " --in-container"
+     cmd += " --no-bootstrap"
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 
