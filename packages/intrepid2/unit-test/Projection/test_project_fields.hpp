@@ -362,7 +362,8 @@ int ProjectFields(const bool verbose) {
         else 
           functionAtEvalPoints = DynRankView("functionAtEvalPoints", numElems, numPoints, dim);
 
-        DynRankView physEvalPoints("physEvalPoints", numElems, numPoints, dim);
+        //(x,y,z) coords also in 2D. In 2D, z=0.
+        DynRankView physEvalPoints("physEvalPoints", numElems, numPoints, 3); 
         {
           DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numElems, numNodesPerElem);
 
