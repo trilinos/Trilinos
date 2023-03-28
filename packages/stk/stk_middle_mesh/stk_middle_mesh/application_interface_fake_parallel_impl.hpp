@@ -10,7 +10,7 @@ namespace stk {
 namespace middle_mesh {
 namespace impl {
 
-class ApplicationInterfaceFakeParallelImpl : public ApplicationInterfaceSPMD
+class ApplicationInterfaceFakeParallelImpl : public ApplicationInterface
 {
   public:
     // union_comm is a MPI_Comm that contains at least the union of all the processes on

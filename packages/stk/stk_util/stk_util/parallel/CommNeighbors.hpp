@@ -107,14 +107,14 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBufferV & send_buffer( int p )
   {
-    ThrowAssertMsg(m_size > p, "CommNeighbors::send_buffer p="<<p<<" out of range.");
+    STK_ThrowAssertMsg(m_size > p, "CommNeighbors::send_buffer p="<<p<<" out of range.");
     return m_send[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   CommBufferV & recv_buffer( int p )
   {
-    ThrowAssertMsg(m_size > p, "CommNeighbors::recv_buffer p="<<p<<" out of range.");
+    STK_ThrowAssertMsg(m_size > p, "CommNeighbors::recv_buffer p="<<p<<" out of range.");
     return m_recv[p] ;
   }
 

@@ -123,7 +123,7 @@ public:
   stk::mesh::Entity get_parent_element(stk::mesh::Entity childElement) const
   {
     stk::mesh::Entity familyTree = get_family_tree(childElement);
-    ThrowRequire(familyTree != stk::mesh::Entity::InvalidEntity);
+    STK_ThrowRequire(familyTree != stk::mesh::Entity::InvalidEntity);
     return get_parent_from_family_tree(familyTree);
   }
 
@@ -183,7 +183,7 @@ private:
   stk::mesh::Entity get_parent_from_family_tree(stk::mesh::Entity familyTree) const {
     const stk::mesh::Entity* entityStart = m_stkMeshBulkData.begin(familyTree, stk::topology::ELEMENT_RANK);
     const stk::mesh::Entity* entityEnd   = m_stkMeshBulkData.end  (familyTree, stk::topology::ELEMENT_RANK);
-    ThrowRequire(entityStart != entityEnd);
+    STK_ThrowRequire(entityStart != entityEnd);
     return (*entityStart);
   }
 
@@ -362,13 +362,13 @@ public:
 
   stk::mesh::MetaData& get_meta()
   {
-    ThrowRequireMsg(m_metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+    STK_ThrowRequireMsg(m_metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
     return *m_metaData;
   }
 
   stk::mesh::BulkData& get_bulk()
   {
-    ThrowRequireMsg(m_bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+    STK_ThrowRequireMsg(m_bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
     return *m_bulkData;
   }
 

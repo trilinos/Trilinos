@@ -65,13 +65,13 @@ public:
   template<typename T>
   const T& as() const
   {
-    ThrowRequireMsg(!val.empty(), "Error in VariableType::as, internal value is empty.");
-    ThrowRequireMsg(sizeof(T) <= maxSize, std::string("Error: ") + sierra::demangle(typeid(T).name())
+    STK_ThrowRequireMsg(!val.empty(), "Error in VariableType::as, internal value is empty.");
+    STK_ThrowRequireMsg(sizeof(T) <= maxSize, std::string("Error: ") + sierra::demangle(typeid(T).name())
                     + " size too big in in VariableType::as()");
     std::istringstream iss(val);
     T* Tptr = new (asData) T(0);
     iss >> *Tptr;
-    ThrowRequireMsg(!iss.fail(), "Error in VariableType::as, failed to convert '" << val <<
+    STK_ThrowRequireMsg(!iss.fail(), "Error in VariableType::as, failed to convert '" << val <<
                     "' to type " << sierra::demangle(typeid(T).name()) );
     return *Tptr;
   }

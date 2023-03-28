@@ -95,7 +95,7 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & send_buffer( int p )
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -111,7 +111,7 @@ public:
 
   const CommBuffer & send_buffer( int p ) const
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -128,7 +128,7 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & recv_buffer( int p )
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -145,7 +145,7 @@ public:
   /** Obtain the message buffer for a given processor */
   const CommBuffer & recv_buffer( int p ) const
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {

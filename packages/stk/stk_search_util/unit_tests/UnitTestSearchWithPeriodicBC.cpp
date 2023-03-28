@@ -66,8 +66,8 @@ void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_
   for (size_t i = 0; i < pbc_search.size(); ++i)
   {
     std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
-    ThrowRequire(bulk_data.is_valid(entityPair.first));
-    ThrowRequire(bulk_data.is_valid(entityPair.second));
+    STK_ThrowRequire(bulk_data.is_valid(entityPair.first));
+    STK_ThrowRequire(bulk_data.is_valid(entityPair.second));
     double * domainField = stk::mesh::field_data(volField, entityPair.first);
     double * rangeField = stk::mesh::field_data(volField, entityPair.second);
     *domainField += *rangeField;
@@ -81,8 +81,8 @@ void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_
   for (size_t i = 0; i < pbc_search.size(); ++i)
   {
     std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
-    ThrowRequire(bulk_data.is_valid(entityPair.first));
-    ThrowRequire(bulk_data.is_valid(entityPair.second));
+    STK_ThrowRequire(bulk_data.is_valid(entityPair.first));
+    STK_ThrowRequire(bulk_data.is_valid(entityPair.second));
     double * domainField = stk::mesh::field_data(volField, entityPair.first);
     double * rangeField = stk::mesh::field_data(volField, entityPair.second);
     *rangeField = *domainField;

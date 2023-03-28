@@ -73,7 +73,7 @@ void launch_ireceives(ParallelMachine p_comm,
     recv[proc].reset();
     const unsigned recv_size = recv[proc].capacity();
     void * const   recv_buf  = recv[proc].buffer();
-    ThrowRequireMsg(MPI_SUCCESS == MPI_Irecv( recv_buf , recv_size , MPI_BYTE , proc , mpi_tag , p_comm , & request[i] ),"stk::launch_ireceives ERROR in MPI_Irecv.");
+    STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Irecv( recv_buf , recv_size , MPI_BYTE , proc , mpi_tag , p_comm , & request[i] ),"stk::launch_ireceives ERROR in MPI_Irecv.");
   }
 }
 
@@ -119,7 +119,7 @@ void communicate_any(ParallelMachine p_comm ,
   launch_sends(p_comm, send_procs, send, mpi_tag);
 
   std::vector<MPI_Status>  status(  num_recv );
-  ThrowRequireMsg(MPI_SUCCESS == MPI_Waitall( num_recv , request.data() , status.data() ),"stk::communicate_any ERROR in MPI_Waitall.");
+  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Waitall( num_recv , request.data() , status.data() ),"stk::communicate_any ERROR in MPI_Waitall.");
 
 #ifndef NDEBUG
   const int p_rank = parallel_machine_rank( p_comm );
@@ -172,7 +172,7 @@ void communicate_unpack(ParallelMachine p_comm ,
   for (unsigned i=0; i<num_recv; ++i) {
     int idx = 0;
     MPI_Waitany(num_recv, request.data(), &idx, MPI_STATUS_IGNORE);
-    ThrowRequireMsg(idx != MPI_UNDEFINED, "MPI_Waitany produced idx == MPI_UNDEFINED");
+    STK_ThrowRequireMsg(idx != MPI_UNDEFINED, "MPI_Waitany produced idx == MPI_UNDEFINED");
     const int fromProc = recv_procs[idx];
     functor(fromProc, recv[fromProc]);
   }
@@ -446,10 +446,10 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
   unsigned num_recv = 0;
 
   result = MPI_Reduce(tmp,recvcounts,p_size,uint_type,MPI_SUM,0,comm);
-  ThrowRequireMsg(result == MPI_SUCCESS, method << " ERROR: " << result << " == MPI_Reduce");
+  STK_ThrowRequireMsg(result == MPI_SUCCESS, method << " ERROR: " << result << " == MPI_Reduce");
 
   result = MPI_Scatter(recvcounts,1,uint_type,&num_recv,1,uint_type,0,comm);
-  ThrowRequireMsg(result == MPI_SUCCESS, method << " ERROR: " << result << " == MPI_Scatter");
+  STK_ThrowRequireMsg(result == MPI_SUCCESS, method << " ERROR: " << result << " == MPI_Scatter");
 
   // do point-to-point send/recvs
   const int mpi_tag = STK_COMMSPARSE_MPI_TAG_PROC_SIZING;
@@ -466,7 +466,7 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
     MPI_Request * const p_request = & request[i] ;
     result = MPI_Irecv( p_buf , 1 , uint_type,
                         MPI_ANY_SOURCE , mpi_tag , comm , p_request );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Irecv");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Irecv");
   }
 
   // Send the point-to-point message sizes,
@@ -475,7 +475,7 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
     int      dst = send_procs[i];
     unsigned value = send_bufs[dst].size();
     result = MPI_Send( & value , 1 , uint_type, dst , mpi_tag , comm );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Send");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Send");
   }
 
   // Wait for all receives
@@ -484,7 +484,7 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
     MPI_Request * const p_request = request.data();
     MPI_Status  * const p_status  = status.data();
     result = MPI_Waitall( num_recv , p_request , p_status );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Waitall");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Waitall");
   }
 
   recv_procs.resize(num_recv);
@@ -559,7 +559,7 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
     MPI_Request * const p_request = & request[i] ;
     result = MPI_Irecv( p_buf , 1 , uint_type,
                         recv_procs[i] , mpi_tag , comm , p_request );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Irecv");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Irecv");
   }
 
   // Send the point-to-point message sizes,
@@ -568,7 +568,7 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
     int      dst = send_procs[i];
     unsigned value = send_bufs[dst].size() ;
     result = MPI_Send( & value , 1 , uint_type, dst , mpi_tag , comm );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Send");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Send");
   }
 
   // Wait for all receives
@@ -576,7 +576,7 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
   {
     MPI_Request * const p_request = request.data();
     result = MPI_Waitall( num_recv , p_request , MPI_STATUSES_IGNORE );
-    ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Waitall");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, method << " ERROR: " << result << " == MPI_Waitall");
   }
 
   for(unsigned i=0; i<num_recv; ++i) {

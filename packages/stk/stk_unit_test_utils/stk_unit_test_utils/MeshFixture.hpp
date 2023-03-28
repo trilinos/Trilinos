@@ -137,13 +137,13 @@ protected:
 
     virtual stk::mesh::MetaData& get_meta()
     {
-        ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+        STK_ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
         return *metaData;
     }
 
     virtual stk::mesh::BulkData& get_bulk()
     {
-        ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+        STK_ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
         return *bulkData;
     }
 
@@ -162,7 +162,7 @@ protected:
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
-        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
+        STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
     }
 
@@ -314,13 +314,13 @@ protected:
 
     virtual stk::mesh::MetaData& get_meta()
     {
-        ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+        STK_ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
         return *metaData;
     }
 
     virtual stk::mesh::BulkData& get_bulk()
     {
-        ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+        STK_ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
         return *bulkData;
     }
 
@@ -344,7 +344,7 @@ protected:
           m_bucketCapacity = bucketCapacity;
         }
 
-        ThrowRequireMsg((auraOption == m_auraOption) && (bucketCapacity == m_bucketCapacity),
+        STK_ThrowRequireMsg((auraOption == m_auraOption) && (bucketCapacity == m_bucketCapacity),
            "allocate_bulk being called with different arguments from previous call: auraOption = "
                                 << auraOption << " (previously: " << m_auraOption << ") bucketCapacity = "
                                  << bucketCapacity << " (previously: " << m_bucketCapacity << ")" );
@@ -352,16 +352,16 @@ protected:
 
     void set_meta(std::shared_ptr<stk::mesh::MetaData> inMetaData)
     {
-        ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
+        STK_ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
         metaData = inMetaData;
     }
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
-        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
+        STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
 
-        ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
+        STK_ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
                         "Unit test error. Trying to reset non NULL meta data.");
     }
 

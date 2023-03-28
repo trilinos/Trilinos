@@ -15,12 +15,12 @@ TEST_F(StkToolsC, DeleteMeshExceptSpecifiedElems)
 {
   const std::string unNamed = "mesh not specified";
   const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
-  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   std::string invalidElemId = "-1";
   std::string inputElemIds = stk::unit_test_util::simple_fields::get_command_line_option("-e", invalidElemId);
-  ThrowRequireMsg(inputElemIds != invalidElemId, "Please specify element list with -e.");
+  STK_ThrowRequireMsg(inputElemIds != invalidElemId, "Please specify element list with -e.");
 
   std::set<stk::mesh::EntityId> elemIdsToKeep;
   std::vector<std::string> elemIdSegments = stk::split_csv_string(inputElemIds);
@@ -72,7 +72,7 @@ void stk_determine_centroid(const unsigned spatial_dim, stk::mesh::Entity elemen
   for (unsigned iNode = 0; iNode < num_nodes; ++iNode) {
     stk::mesh::Entity node = node_vec[iNode];
     double* coor = static_cast<double*>(stk::mesh::field_data(nodal_coord, node));
-    ThrowRequire(coor);
+    STK_ThrowRequire(coor);
     for (unsigned i = 0; i < spatial_dim; ++i) {
       centroid[i] += coor[i];
     }
@@ -87,7 +87,7 @@ TEST_F(StkToolsC, DeleteMeshExceptWithinBoundingBox)
 {
   const std::string unNamed = "mesh not specified";
   const std::string inputMeshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
-  ThrowRequireMsg(inputMeshName!=unNamed, "Please specify mesh with -i option.");
+  STK_ThrowRequireMsg(inputMeshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(inputMeshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   const std::string outputMeshName = stk::unit_test_util::simple_fields::get_option("-o", "modified.g");
@@ -127,12 +127,12 @@ TEST_F(StkToolsC, FlipElementConnectivity)
 {
   const std::string unNamed = "mesh not specified";
   const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
-  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   int invalidBlockId = -1;
   int inputBlockId = stk::unit_test_util::simple_fields::get_command_line_option("-b", invalidBlockId);
-  ThrowRequireMsg(inputBlockId!=invalidBlockId, "Please specify block with -b.");
+  STK_ThrowRequireMsg(inputBlockId!=invalidBlockId, "Please specify block with -b.");
 
   std::ostringstream os;
   os << "block_" << inputBlockId;
@@ -146,7 +146,7 @@ TEST_F(StkToolsC, FlipElementConnectivity)
   for (auto elem : elems)
   {
     stk::topology topology = get_bulk().bucket(elem).topology();
-    ThrowRequireMsg(topology == stk::topology::HEX_8, "Input block must have HEX_8 topology but found topology " << topology);
+    STK_ThrowRequireMsg(topology == stk::topology::HEX_8, "Input block must have HEX_8 topology but found topology " << topology);
 
     stk::mesh::EntityVector storedNodes;
     const stk::mesh::Entity* node = get_bulk().begin_nodes(elem);

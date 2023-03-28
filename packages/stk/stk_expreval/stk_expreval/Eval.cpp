@@ -287,7 +287,7 @@ int
 Eval::get_variable_index(const std::string & variable) const
 {
   const auto variableIter = m_variableMap.find(variable);
-  ThrowRequireMsg(variableIter != m_variableMap.end(), "Variable " + variable + " Not Found in VariableMap");
+  STK_ThrowRequireMsg(variableIter != m_variableMap.end(), "Variable " + variable + " Not Found in VariableMap");
   return variableIter->second->get_index();
 }
 
@@ -409,7 +409,7 @@ public:
 
   void release_index(const int idx)
   {
-    ThrowRequireMsg(idx >= 0, "Attempting to free negative index");
+    STK_ThrowRequireMsg(idx >= 0, "Attempting to free negative index");
     m_freeList.push(idx);
   }
 

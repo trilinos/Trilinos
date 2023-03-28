@@ -102,7 +102,7 @@ public:
 
     LocalIDType entity_to_local(stk::mesh::Entity entity) const
     {
-        ThrowAssert(entityToLocalId.size() > entity.local_offset());
+        STK_ThrowAssert(entityToLocalId.size() > entity.local_offset());
 
         return entityToLocalId[entity.local_offset()];
     }

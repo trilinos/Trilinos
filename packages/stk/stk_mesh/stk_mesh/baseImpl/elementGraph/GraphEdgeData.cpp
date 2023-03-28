@@ -38,8 +38,8 @@ size_t Graph::get_num_edges_for_element(impl::LocalId elem) const
 
 const GraphEdge & Graph::get_edge_for_element(impl::LocalId elem1, size_t index) const
 {
-    ThrowAssertMsg(get_num_edges_for_element(elem1) != 0, "Cannot retrieve graph edge for element that has no faces");
-    ThrowAssertMsg(get_num_edges_for_element(elem1) > index, "index out of range");
+    STK_ThrowAssertMsg(get_num_edges_for_element(elem1) != 0, "Cannot retrieve graph edge for element that has no faces");
+    STK_ThrowAssertMsg(get_num_edges_for_element(elem1) > index, "index out of range");
 
     return m_graphEdges[m_elemOffsets[elem1].first+index];
 }
@@ -87,7 +87,7 @@ void Graph::set_offsets()
     impl::LocalId nextElem = m_graphEdges[i].elem1();
     if (nextElem != currElem)
     {
-      ThrowAssertMsg(currElem >= 0 && size_t(currElem) <= m_elemOffsets.size(), "element out of range");
+      STK_ThrowAssertMsg(currElem >= 0 && size_t(currElem) <= m_elemOffsets.size(), "element out of range");
       m_elemOffsets[currElem] = IndexRange(startIdx, i);
       for (impl::LocalId elem=currElem+1; elem < nextElem; elem++)
       {
@@ -107,7 +107,7 @@ using IterType = std::vector<GraphEdge>::iterator;
 
 void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
-  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   for (auto& edge : graphEdges)
   {
@@ -186,7 +186,7 @@ unsigned Graph::find_sorted_insertion_index(IndexRange indices, const GraphEdge&
 
 void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 {
-  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   m_graphEdges.swap(graphEdges);
   set_offsets();
@@ -196,7 +196,7 @@ void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 
 void Graph::delete_sorted_edges(const std::vector<GraphEdge>& edgesToDelete)
 {
-  ThrowAssertMsg(std::is_sorted(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1()),
+  STK_ThrowAssertMsg(std::is_sorted(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1()),
                 "Input vector is expected to be sorted");
 
   int startIdx = 0;
@@ -315,7 +315,7 @@ void Graph::compress_graph()
     }
   }
 
-  ThrowRequireMsg(is_valid(m_graphEdges[m_graphEdges.size() - offset - 1]), "The count of unused edges is incorrect");
+  STK_ThrowRequireMsg(is_valid(m_graphEdges[m_graphEdges.size() - offset - 1]), "The count of unused edges is incorrect");
   m_graphEdges.resize(m_graphEdges.size() - offset);
   m_numUnusedEntries = 0;
 }
@@ -367,7 +367,7 @@ void ParallelInfoForGraphEdges::erase_parallel_info_for_graph_edge(const GraphEd
 impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const
 {
     impl::ParallelGraphInfo::const_iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
-    ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
                      << graphEdge << ".");
     return iter;
 }
@@ -375,7 +375,7 @@ impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_
 impl::ParallelGraphInfo::iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge)
 {
     impl::ParallelGraphInfo::iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
-    ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
                      << graphEdge << ".");
     return iter;
 }
@@ -410,7 +410,7 @@ bool ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphE
     }
     else {
         if (iter->second != parInfo) {
-            ThrowErrorMsg("Program error. local elem/remote elem pair"
+            STK_ThrowErrorMsg("Program error. local elem/remote elem pair"
                             << " (" << graphEdge.elem1() << "," << graphEdge.side1() << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2()) << "," << graphEdge.side2() << ")"
                             << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
                             << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl

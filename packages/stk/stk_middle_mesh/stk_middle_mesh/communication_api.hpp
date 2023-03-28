@@ -23,18 +23,7 @@ class MiddleMeshFieldCommunication
 
     void finish_exchange(mesh::FieldPtr<T> fieldRecv);
 
-  private:
-
-    struct DataPlusId
-    {
-      DataPlusId(const T& data_=T(), int localId_=-1) :
-        data(data_),
-        localId(localId_)
-      {}
-
-      T data;
-      int localId;
-    };  
+  private: 
 
     void check_fieldshape(mesh::FieldPtr<T> field);
 
@@ -52,7 +41,7 @@ class MiddleMeshFieldCommunication
 
     void complete_receives(mesh::FieldPtr<T> fieldRecvPtr);
 
-    void unpack_buffer(const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldPtr);
+    void unpack_buffer(stk::CommBuffer& buf, mesh::FieldPtr<T> fieldPtr);
 
 
     MPI_Comm m_unionComm;
@@ -60,7 +49,7 @@ class MiddleMeshFieldCommunication
     std::shared_ptr<mesh::Mesh> m_middleMesh2;
     mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfo1;
     mesh::FieldPtr<mesh::RemoteSharedEntity> m_remoteInfo2;    
-    stk::DataExchangeKnownPatternNonBlockingBuffer<DataPlusId> m_exchanger;
+    stk::DataExchangeKnownPatternNonBlockingCommBuffer m_exchanger;
 };
 
 
@@ -77,31 +66,31 @@ MiddleMeshFieldCommunication<T>::MiddleMeshFieldCommunication(MPI_Comm unionComm
 {
   if (middleMesh1)
   {
-    ThrowRequireMsg(remoteInfo1, "When passing in middleMesh1, must also pass in remoteInfo1");
-    ThrowRequireMsg(remoteInfo1->get_mesh() == middleMesh1, "remoteInfo1 must be defined on middleMesh1");
+    STK_ThrowRequireMsg(remoteInfo1, "When passing in middleMesh1, must also pass in remoteInfo1");
+    STK_ThrowRequireMsg(remoteInfo1->get_mesh() == middleMesh1, "remoteInfo1 must be defined on middleMesh1");
   }
 
 
   if (middleMesh2)
   {
-    ThrowRequireMsg(remoteInfo2, "When passing in middleMesh2, must also pass in remoteInfo2");
-    ThrowRequireMsg(remoteInfo2->get_mesh() == middleMesh2, "remoteInfo1 must be defined on middleMesh1");
+    STK_ThrowRequireMsg(remoteInfo2, "When passing in middleMesh2, must also pass in remoteInfo2");
+    STK_ThrowRequireMsg(remoteInfo2->get_mesh() == middleMesh2, "remoteInfo1 must be defined on middleMesh1");
   }
       
   for (int i=0; i < 3; ++i)
   {
     if (remoteInfo1)
-      ThrowRequire(remoteInfo1->get_field_shape() == mesh::FieldShape(0, 0, 1));
+      STK_ThrowRequire(remoteInfo1->get_field_shape() == mesh::FieldShape(0, 0, 1));
     
     if (remoteInfo2)
-      ThrowRequire(remoteInfo2->get_field_shape() == mesh::FieldShape(0, 0, 1));
+      STK_ThrowRequire(remoteInfo2->get_field_shape() == mesh::FieldShape(0, 0, 1));
   }
 
   if (remoteInfo1)
-    ThrowRequire(remoteInfo1->get_num_comp() == 1);
+    STK_ThrowRequire(remoteInfo1->get_num_comp() == 1);
 
   if (remoteInfo2)
-    ThrowRequire(remoteInfo2->get_num_comp() == 1);
+    STK_ThrowRequire(remoteInfo2->get_num_comp() == 1);
 }
 
 
@@ -155,8 +144,8 @@ void MiddleMeshFieldCommunication<T>::check_field_shapes_same_locally(mesh::Fiel
 {
   if (fieldSend && fieldRecv)
   {
-    ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "fieldSend and fieldRecv must have same FieldShape");
-    ThrowRequireMsg(fieldSend->get_num_comp() == fieldRecv->get_num_comp(), "fieldSend and FieldRecv must have same number of components");
+    STK_ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "fieldSend and fieldRecv must have same FieldShape");
+    STK_ThrowRequireMsg(fieldSend->get_num_comp() == fieldRecv->get_num_comp(), "fieldSend and FieldRecv must have same number of components");
   }
 }
 
@@ -186,7 +175,7 @@ void MiddleMeshFieldCommunication<T>::check_field_shapes_same_globally_debug_onl
 
   if (fieldSend || fieldRecv) {
     if (fieldSend && fieldRecv)
-      ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "send and receive fields must have same FieldShape");
+      STK_ThrowRequireMsg(fieldSend->get_field_shape() == fieldRecv->get_field_shape(), "send and receive fields must have same FieldShape");
 
     
     fshape = fieldSend ? fieldSend->get_field_shape() : fieldRecv->get_field_shape();
@@ -235,25 +224,43 @@ mesh::FieldPtr<mesh::RemoteSharedEntity> MiddleMeshFieldCommunication<T>::get_re
 template <typename T>
 void MiddleMeshFieldCommunication<T>::set_recv_buffer_sizes(mesh::FieldPtr<T> fieldRecv)
 {
+  int commSize = utils::impl::comm_size(m_unionComm);
   if (!fieldRecv)
+  {
+    for (int rank=0; rank < commSize; ++rank)
+      m_exchanger.set_recv_buffer_size(rank, 0);
+    
+    m_exchanger.allocate_recv_buffers();
     return;
+  }
 
-  std::vector<int> recvCounts(utils::impl::comm_size(m_unionComm), 0);
-  auto& remoteInfo              = *(get_remote_info(fieldRecv));
-  mesh::FieldShape fshape = fieldRecv->get_field_shape();
-  int numCompPerNode            = fieldRecv->get_num_comp();
-  int numNodesPerElement        = fshape.count[2];
+  std::vector<int> recvCounts(commSize, 0);
+  auto& remoteInfo = *(get_remote_info(fieldRecv));
   for (auto el : fieldRecv->get_mesh()->get_elements())
     if (el)
     {
       mesh::RemoteSharedEntity remote = remoteInfo(el, 0, 0);
-      recvCounts[remote.remoteRank] += numNodesPerElement * numCompPerNode;
+      recvCounts[remote.remoteRank]++;
     }
 
+  mesh::FieldShape fshape = fieldRecv->get_field_shape();
+  int numCompPerNode            = fieldRecv->get_num_comp();
+  int numNodesPerElement        = fshape.count[2];
   for (size_t rank=0; rank < recvCounts.size(); ++rank)
   {
-    m_exchanger.get_recv_buf(rank).resize(recvCounts[rank]);
+    auto& buf = m_exchanger.get_recv_buf(rank);
+    for (int i=0; i < recvCounts[rank]; ++i)
+    {
+      buf.template pack<int>(0);
+      for (int j=0; j < numNodesPerElement; ++j)
+        for (int k=0; k < numCompPerNode; ++k)
+          buf.pack(T());
+    }
+
+    m_exchanger.set_recv_buffer_size(rank, buf.size());
   }
+
+  m_exchanger.allocate_recv_buffers();
 }
 
 template <typename T>
@@ -266,21 +273,33 @@ void MiddleMeshFieldCommunication<T>::pack_send_buffers(mesh::FieldPtr<T> fieldS
   auto& remoteInfo       = *(get_remote_info(fieldSendPtr));
   int numNodesPerElement = field.get_field_shape().count[2];
   int numCompPerNode     = field.get_num_comp();
-  for (auto el : field.get_mesh()->get_elements())
-    if (el)
+
+  for (int phase=0; phase < 2; ++phase)
+  {
+    for (auto el : field.get_mesh()->get_elements())
+      if (el)
+      {
+        mesh::RemoteSharedEntity remote = remoteInfo(el, 0, 0);
+        auto& buf = m_exchanger.get_send_buf(remote.remoteRank);
+
+        buf.pack(remote.remoteId);
+        for (int i=0; i < numNodesPerElement; ++i)
+          for (int j=0; j < numCompPerNode; ++j)
+            buf.pack(field(el, i, j));
+      }
+
+    if (phase == 0)
     {
-      mesh::RemoteSharedEntity remote = remoteInfo(el, 0, 0);
-      for (int i=0; i < numNodesPerElement; ++i)
-        for (int j=0; j < numCompPerNode; ++j)
-          m_exchanger.get_send_buf(remote.remoteRank).emplace_back(field(el, i, j), remote.remoteId);
+      m_exchanger.allocate_send_buffers();
     }
+  }
 }
 
 
 template <typename T>
 void MiddleMeshFieldCommunication<T>::complete_receives(mesh::FieldPtr<T> fieldRecvPtr)
 {
-  auto f = [&](int rank, const std::vector<DataPlusId>& buf)
+  auto f = [&](int rank, stk::CommBuffer& buf)
   {
     unpack_buffer(buf, fieldRecvPtr);
   };
@@ -291,23 +310,24 @@ void MiddleMeshFieldCommunication<T>::complete_receives(mesh::FieldPtr<T> fieldR
 
 
 template <typename T>
-void MiddleMeshFieldCommunication<T>::unpack_buffer(const std::vector<DataPlusId>& buf, mesh::FieldPtr<T> fieldRecvPtr)
+void MiddleMeshFieldCommunication<T>::unpack_buffer(stk::CommBuffer& buf, mesh::FieldPtr<T> fieldRecvPtr)
 {
   std::shared_ptr<mesh::Mesh> middleMeshRecv = fieldRecvPtr->get_mesh();
   int numNodesPerElement = fieldRecvPtr->get_field_shape().count[2];
   int numCompPerNode = fieldRecvPtr->get_num_comp();
-  assert(buf.size() % (numNodesPerElement * numCompPerNode) == 0);
 
   auto& field = *fieldRecvPtr;
-  size_t idx = 0;
-  while (idx < buf.size())
+  while (buf.remaining() > 0)
   {
-    auto el = middleMeshRecv->get_elements()[buf[idx].localId];
+    int localId;
+    buf.unpack(localId);
+    auto el = middleMeshRecv->get_elements()[localId];
     for (int i=0; i < numNodesPerElement; ++i)
       for (int j=0; j < numCompPerNode; ++j)
-      {      
-        field(el, i, j) = buf[idx].data;
-        idx++;
+      {
+        T val;  
+        buf.unpack(val);
+        field(el, i, j) = val;
       }
   }
 }

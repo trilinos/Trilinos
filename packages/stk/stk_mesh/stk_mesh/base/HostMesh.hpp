@@ -238,8 +238,8 @@ public:
   {
 #ifndef NDEBUG
     stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
-    NGP_ThrowAssert(rank < numRanks);
-    NGP_ThrowAssert(i < bulk->buckets(rank).size());
+    STK_NGP_ThrowAssert(rank < numRanks);
+    STK_NGP_ThrowAssert(i < bulk->buckets(rank).size());
 #endif
     return *bulk->buckets(rank)[i];
   }

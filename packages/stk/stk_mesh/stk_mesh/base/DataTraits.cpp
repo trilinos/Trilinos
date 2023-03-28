@@ -115,40 +115,40 @@ public:
     { is_void = true ; }
 
   void construct( void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void destroy( void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void pack( CommBuffer & , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void unpack( CommBuffer & , void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void print( std::ostream & , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void copy( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void max( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void min( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 };
 
 }
@@ -248,19 +248,19 @@ public:
   }
 
   virtual void max( void * vx , const void * vy , std::size_t n ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void min( void * vx , const void * vy , std::size_t n ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 };
 
 template< typename T >
@@ -450,31 +450,31 @@ public:
   }
 
   void pack( CommBuffer & , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void unpack( CommBuffer & , void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void print( std::ostream & , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void max( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void min( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_or( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_xor( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 };
 
 }

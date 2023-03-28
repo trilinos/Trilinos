@@ -79,7 +79,7 @@ class FieldScatterFromRootTester
       mesh::impl::MeshScatterFromRoot scatterer(m_unionComm, m_meshSerial, m_meshComm,
                                                 elementDestinationRanks); 
       std::shared_ptr<mesh::Mesh> meshParallel = scatterer.scatter();
-      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_desintations();
+      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_destinations();
 
 
       mesh::FieldPtr<utils::Point> fieldSrc, fieldDest;

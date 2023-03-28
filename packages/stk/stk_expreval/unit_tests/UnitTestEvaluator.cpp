@@ -165,7 +165,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
     variableSizesHost(varIndex)   = 1;
-    ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
+    STK_ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
     }
@@ -174,7 +174,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
     variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
     variableSizesHost(varIndex + boundScalars.size())  = boundVectors[varIndex].varValues.size();
-    ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
+    STK_ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
         variableHostValues(threadIndex, varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[threadIndex][varComponent];

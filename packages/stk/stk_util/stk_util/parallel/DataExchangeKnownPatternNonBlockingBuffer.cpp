@@ -23,8 +23,8 @@ void DataExchangeKnownPatternNonBlockingCommBuffer::allocate_recv_buffers()
 
 void DataExchangeKnownPatternNonBlockingCommBuffer::start_nonblocking()
 {
-  ThrowRequireMsg(get_send_buffers_allocated(), "send buffers must have been allocated before starting the send");
-  ThrowRequireMsg(m_recvBufsAllocated, "must allocate recv buffers before starting recvs");
+  STK_ThrowRequireMsg(get_send_buffers_allocated(), "send buffers must have been allocated before starting the send");
+  STK_ThrowRequireMsg(m_recvBufsAllocated, "must allocate recv buffers before starting recvs");
 
   m_exchanger.start_nonblocking(m_sendBufStorage, m_recvBufStorage);
   set_sends_in_progress(true);

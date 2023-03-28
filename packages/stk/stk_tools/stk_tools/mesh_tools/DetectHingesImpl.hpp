@@ -63,7 +63,7 @@ public:
   void set_adjacency(bool adjacent) { hasAdjacentFace = adjacent; }
 
   const stk::mesh::BulkData& get_bulk() const {
-    ThrowRequire(nullptr != bulk);
+    STK_ThrowRequire(nullptr != bulk);
     return *bulk;
   }
 

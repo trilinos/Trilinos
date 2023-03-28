@@ -531,13 +531,13 @@ private:
 KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedEntities
 DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
-  NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
+  STK_NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
     const unsigned numNodes = nodeOffsets(offsetIntoBucket+1)-nodeOffsets(offsetIntoBucket);
     const size_t nodeOffset = nodeOffsets(offsetIntoBucket);
     return ConnectedEntities(&nodeConnectivity(nodeOffset), numNodes, 1);
   }
-  NGP_ThrowAssert(owningMesh != nullptr);
+  STK_NGP_ThrowAssert(owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
   return owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
 }
@@ -545,12 +545,12 @@ DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::Entit
 KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedOrdinals
 DeviceBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
-  NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
+  STK_NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
     const unsigned numNodes = nodeOffsets(offsetIntoBucket+1)-nodeOffsets(offsetIntoBucket);
     return ConnectedOrdinals(nodeOrdinals.data(), numNodes, 1);
   }
-  NGP_ThrowAssert(owningMesh != nullptr);
+  STK_NGP_ThrowAssert(owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
   return owningMesh->get_connected_ordinals(entity_rank(), meshIndex, connectedRank);
 }

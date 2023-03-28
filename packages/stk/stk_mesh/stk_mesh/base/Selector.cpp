@@ -83,7 +83,7 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
     break;
   case SelectorNodeType::PART:
     if (root->part() != InvalidPartOrdinal) {
-      ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
+      STK_ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
       out << meta->get_part(root->part()).name();
     }
     else {
@@ -92,7 +92,7 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
     break;
   case SelectorNodeType::PART_UNION:
   {
-    ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
+    STK_ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
     out << "(";
     for(unsigned i=0; i<root->m_partOrds.size(); ++i) {
       out << meta->get_part(root->m_partOrds[i]).name();
@@ -102,7 +102,7 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
   } break;
   case SelectorNodeType::PART_INTERSECTION:
   {
-    ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
+    STK_ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
     out << "(";
     for(unsigned i=0; i<root->m_partOrds.size(); ++i) {
       out << meta->get_part(root->m_partOrds[i]).name();
@@ -209,10 +209,10 @@ void gather_parts_impl(PartVector& parts, const MetaData* meta, SelectorNode con
     gather_parts_impl(parts, meta, root->lhs());
     break;
   case SelectorNodeType::DIFFERENCE:
-    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+    STK_ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
     break;
   case SelectorNodeType::COMPLEMENT:
-    ThrowRequireMsg(false, "Cannot get_parts from a selector with complements");
+    STK_ThrowRequireMsg(false, "Cannot get_parts from a selector with complements");
     break;
   case SelectorNodeType::FIELD:
     if(root->field() == NULL) {
@@ -553,7 +553,7 @@ void Selector::get_parts(PartVector& parts) const
 
 stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData &differentMeta) const
 {
-    ThrowRequireMsg(m_meta != nullptr, "Selector::clone_for_different_mesh m_meta==nullptr");
+    STK_ThrowRequireMsg(m_meta != nullptr, "Selector::clone_for_different_mesh m_meta==nullptr");
     const MetaData& oldMeta = *m_meta;
     stk::mesh::Selector newSelector(*this);
     newSelector.m_meta = &differentMeta;
@@ -563,13 +563,13 @@ stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData
         {
             const std::string& oldPartName = oldMeta.get_part(selectorNode.part()).name();
             Part* differentPart = differentMeta.get_part(oldPartName);
-            ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
+            STK_ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
             selectorNode.m_partOrd = differentPart->mesh_meta_data_ordinal();
         }
         else if(selectorNode.m_type == SelectorNodeType::FIELD)
         {
             unsigned ord = selectorNode.m_field_ptr->mesh_meta_data_ordinal();
-            ThrowRequireMsg(selectorNode.m_field_ptr->name() == differentMeta.get_fields()[ord]->name(),
+            STK_ThrowRequireMsg(selectorNode.m_field_ptr->name() == differentMeta.get_fields()[ord]->name(),
                             "Attepting to clone selector into mesh with different parts");
             selectorNode.m_field_ptr = differentMeta.get_fields()[ord];
         }
@@ -590,7 +590,7 @@ BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
     }
 
     const BulkData* mesh = find_mesh();
-    ThrowRequireMsg(mesh != NULL,
+    STK_ThrowRequireMsg(mesh != NULL,
         "ERROR, Selector::get_buckets not available if selector expression does not involve any mesh Parts.");
 
     return mesh->get_buckets(entity_rank, *this);
@@ -603,7 +603,7 @@ bool Selector::is_empty(EntityRank entity_rank) const
     }
 
     const BulkData * mesh = this->find_mesh();
-    ThrowRequireMsg(mesh != NULL,
+    STK_ThrowRequireMsg(mesh != NULL,
                     "ERROR, Selector::empty not available if selector expression does not involve any mesh Parts.");
     if (mesh->in_modifiable_state()) {
       BucketVector const& buckets = this->get_buckets(entity_rank);

@@ -158,7 +158,7 @@ protected:
       m_search = std::make_shared<BoundingBoxSearch>(
           m_searchSendMesh, m_searchRecvMesh, "BoundingBoxSearch", MPI_COMM_WORLD);
     } else {
-      ThrowRequireMsg(false, "Invalid SplitComm color");
+      STK_ThrowRequireMsg(false, "Invalid SplitComm color");
     }
 
     m_search->coarse_search();

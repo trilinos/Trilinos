@@ -36,7 +36,7 @@ MPI_Comm CommReplacer::get_copied_comm(MPI_Comm origComm)
       }
     }
 
-    ThrowRequireMsg(false, "Unable to find origComm");
+    STK_ThrowRequireMsg(false, "Unable to find origComm");
   }
 
   return MPI_COMM_NULL;
@@ -51,7 +51,7 @@ MPI_Comm CommReplacer::get_orig_comm(MPI_Comm copyComm)
     }
   }
 
-  ThrowRequireMsg(false, "Unable to find copyComm");
+  STK_ThrowRequireMsg(false, "Unable to find copyComm");
   return MPI_COMM_NULL;
 }
 

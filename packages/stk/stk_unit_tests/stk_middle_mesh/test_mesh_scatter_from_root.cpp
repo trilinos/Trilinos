@@ -52,7 +52,7 @@ class MeshScatterFromRootTester : public ::testing::Test
       auto inputMesh = utils::impl::comm_rank(unionComm) == rootRankOnUnionComm ? meshSerial : nullptr;
       mesh::impl::MeshScatterFromRoot scatterer(unionComm, inputMesh, meshComm, destRanksOnInputComm);
       std::shared_ptr<mesh::Mesh> meshScattered = scatterer.scatter();
-      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_desintations();
+      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_destinations();
 
       check_entity_destinations(unionComm, rootRankOnUnionComm,
                                 inputMesh, meshScattered, entityDestinations);

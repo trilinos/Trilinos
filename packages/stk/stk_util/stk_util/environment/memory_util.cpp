@@ -122,13 +122,13 @@ void get_gpu_memory_info(size_t& used, size_t& free)
 
 #ifdef __CUDACC__
   cudaError_t err = cudaMemGetInfo(&free, &total);
-  ThrowRequireMsg(err == cudaSuccess,
+  STK_ThrowRequireMsg(err == cudaSuccess,
                   "stk::get_gpu_memory_info: cudaMemGetInfo returned error-code: "<<err);
   used = total - free;
 #endif
-  ThrowRequireMsg(total != std::numeric_limits<size_t>::max(), "total memory size must be finite");
-  ThrowRequireMsg(free != std::numeric_limits<size_t>::max(), "free memory size must be finite");
-  ThrowRequireMsg(total >= free, "total memory size must be >= free memory size");
+  STK_ThrowRequireMsg(total != std::numeric_limits<size_t>::max(), "total memory size must be finite");
+  STK_ThrowRequireMsg(free != std::numeric_limits<size_t>::max(), "free memory size must be finite");
+  STK_ThrowRequireMsg(total >= free, "total memory size must be >= free memory size");
 }
 
 // return current resident set size in bytes

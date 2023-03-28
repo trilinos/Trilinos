@@ -23,7 +23,7 @@ protected:
   virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
                              unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
   {
-    ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
+    STK_ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
 
     metaData = stk::mesh::MeshBuilder(communicator)
                 .set_spatial_dimension(m_spatialDim)

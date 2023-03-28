@@ -50,7 +50,7 @@ OldSyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
 
   if (globalRank == myRootProc)
   {
-    ThrowRequireMsg(localRank == 0, "OldSyncInfo object Local rank on the root proc is not zero");
+    STK_ThrowRequireMsg(localRank == 0, "OldSyncInfo object Local rank on the root proc is not zero");
   }
 
   OldSyncInfo recvInfo;

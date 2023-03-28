@@ -120,7 +120,7 @@ public:
     bool isElem1Local = m_bulk_data.is_valid(elem1) && m_bulk_data.bucket(elem1).owned();
     bool isElem2Local = m_bulk_data.is_valid(elem2) && m_bulk_data.bucket(elem2).owned();
 
-    ThrowRequire(isElem1Local);
+    STK_ThrowRequire(isElem1Local);
 
     if(isElem2Local)
     {

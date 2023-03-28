@@ -15,7 +15,7 @@ void MeshDiagnosticObserver::gather_new_errors(std::ofstream & out, const std::v
             out << error;
 
             if(m_throwOnError)
-                ThrowRequireMsg( false,
+                STK_ThrowRequireMsg( false,
                                  "Mesh diagnostic rule failure: " + error );
         }
     }

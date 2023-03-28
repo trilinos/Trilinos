@@ -150,8 +150,8 @@ send_non_owned_entities_to_owner(stk::mesh::BulkData& stkBulk, const stk::mesh::
     for(unsigned j = 0; j < ghostRequestRecv[iproc].size(); ++j) {
       ghostObj& curGhost = ghostRequestRecv[iproc][j];
       stk::mesh::Entity curEntity = stkBulk.get_entity(curGhost.entityRank,curGhost.entityId);
-      ThrowAssert(stkBulk.is_valid(curEntity));
-      ThrowAssert(stkBulk.bucket(curEntity).owned());
+      STK_ThrowAssert(stkBulk.is_valid(curEntity));
+      STK_ThrowAssert(stkBulk.bucket(curEntity).owned());
       owned_entities.emplace_back(curEntity, curGhost.destProc);
     }      
   }

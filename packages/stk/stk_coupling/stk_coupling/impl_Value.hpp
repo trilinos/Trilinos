@@ -74,7 +74,7 @@ struct Value
                                                                   std::any_cast<std::vector<std::pair<std::string, int>>>(rhs.value));
         case VECTOR_PAIR_STRING_DOUBLE: return (std::any_cast<std::vector<std::pair<std::string, double>>>(value) ==
                                                                   std::any_cast<std::vector<std::pair<std::string, double>>>(rhs.value));
-        default: ThrowErrorMsg("Found unsupported type: " << type << " while determining Value equality."); return false;
+        default: STK_ThrowErrorMsg("Found unsupported type: " << type << " while determining Value equality."); return false;
       }
 
     }
@@ -102,7 +102,7 @@ void execute(CommandType& command, Value& value)
     case VECTOR_STRING: command.template execute<std::vector<std::string>>(value); break;
     case VECTOR_PAIR_STRING_INT: command.template execute<std::vector<std::pair<std::string,int>>>(value); break;
     case VECTOR_PAIR_STRING_DOUBLE: command.template execute<std::vector<std::pair<std::string,double>>>(value); break;
-    default: ThrowErrorMsg("Found unsupported type: " << value.type << " while executing command '" << command.name() << "'"); break;
+    default: STK_ThrowErrorMsg("Found unsupported type: " << value.type << " while executing command '" << command.name() << "'"); break;
   }
 }
 
