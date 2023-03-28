@@ -51,7 +51,9 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+#if KOKKOS_VERSION < 40099
 namespace Details {
+#endif
 
 template <typename S>
 class ArithTraits< Sacado::MP::Vector<S> > {
@@ -211,8 +213,10 @@ public:
   }
 };
 
-}
-}
+#if KOKKOS_VERSION < 40099
+} // namespace Details - removed after Kokkos 4.0
+#endif
+} // namespace Kokkos
 
 namespace KokkosBatched {
 
