@@ -82,19 +82,6 @@ namespace Belos {
       return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(numrows,numcols,initZero));
     }     
 
-/* Kokkos Ex View-from-ptr constructor: 
-View(const pointer_type &ptr, const IntType&... indices)
-
-    Unmanaged data wrapping constructor.
-
-        ptr: pointer to a user provided memory allocation. Must provide storage of size View::required_allocation_size(n0,...,nR)
-        indices: Extents of the View.
-        Requires: sizeof(IntType...)==rank_dynamic() or sizeof(IntType...)==rank(). In the latter case, the extents corresponding to compile-time dimensions must match the View type’s compile-time extents.
-        Requires: array_layout::is_regular == true.
-*/
-    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> ViewFromPtr( ScalarType* &ptr, const int numrows, const int numcols)
-    { return Teuchos::null; }     
-
     //! \brief Returns a raw pointer to the data on the host.
     static ScalarType* GetRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
     { return dm.values(); }     

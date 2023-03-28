@@ -603,6 +603,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       // put data into z_, make sure old information is not still hanging around.
       if (newstate.z != z_) {
         DMT::PutScalar(*z_);
+        //Note: Need a SubviewConst here because the z in GMRES Iteration State is defined as const.
         Teuchos::RCP<const DM> newZ = DMT::SubviewConst(*newstate.z,curDim_+blockSize_,blockSize_);
         Teuchos::RCP<DM> lclZ = DMT::Subview(*z_,curDim_+blockSize_,blockSize_);
         DMT::Assign(*lclZ,*newZ);
