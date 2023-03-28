@@ -14,8 +14,10 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include "BelosConfigDefs.hpp"
+#include "BelosDenseMatTester.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosOutputManager.hpp"
 
 namespace {
@@ -177,6 +179,22 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, DenseTest, O1, O2, Scalar )
+  {
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // Test Dense Traits:
+    bool res = Belos::TestDenseMatTraits<Scalar,Kokkos::DualView<Scalar**>>(MyOM);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
   //
   // INSTANTIATIONS
   //
@@ -185,7 +203,8 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, LO, GO, SCALAR ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, LO, GO, SCALAR ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, LO, GO, SCALAR ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, LO, GO, SCALAR )
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, DenseTest, LO, GO, SCALAR ) 
 
 #include "TpetraCore_ETIHelperMacros.h"
 
