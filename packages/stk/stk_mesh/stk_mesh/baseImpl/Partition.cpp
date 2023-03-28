@@ -76,7 +76,7 @@ Partition::~Partition()
 
 bool Partition::remove(Entity entity)
 {
-  ThrowAssert(belongs(m_mesh.bucket(entity)));
+  STK_ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket &bucket   = m_mesh.bucket(entity);
   unsigned ordinal = m_mesh.bucket_ordinal(entity);
@@ -109,7 +109,7 @@ bool Partition::add(Entity entity)
 
 bool Partition::move_to(Entity entity, Partition &dst_partition)
 {
-  ThrowAssert(belongs(m_mesh.bucket(entity)));
+  STK_ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket *src_bucket   = m_mesh.bucket_ptr(entity);
   unsigned src_ordinal = m_mesh.bucket_ordinal(entity);
@@ -118,7 +118,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
     return false;
   }
 
-  ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
+  STK_ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                   "Partition::move_to cannot move an entity that does not belong to it.");
 
   // If the last bucket is full, automatically create a new one.
@@ -139,7 +139,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
       throw std::runtime_error(os.str());
   }
 
-  ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
+  STK_ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
                   "Error: cannot change topology of entity (rank: "
                   << static_cast<stk::topology::rank_t>(m_mesh.entity_rank(entity))
                   << ", global_id: " << m_mesh.identifier(entity) << ") from "
@@ -206,7 +206,7 @@ void Partition::add_bucket(Bucket* bucket)
 
 void Partition::remove_impl()
 {
-  ThrowAssert(!empty());
+  STK_ThrowAssert(!empty());
 
   Bucket &last_bucket   = **(end() - 1);
 
@@ -321,10 +321,10 @@ void Partition::sort(const EntitySorterBase& sorter)
       const unsigned n = *bucket_itr == orig_vacancy_bucket ? curr_bucket.size() -1 : curr_bucket.size(); // skip very last entity in partition
 
       for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr ) {
-          ThrowAssert(sorted_ent_vector_itr != entities.end());
+          STK_ThrowAssert(sorted_ent_vector_itr != entities.end());
 
           Entity curr_entity = curr_bucket[curr_bucket_ord];
-          ThrowAssert(m_mesh.is_valid(curr_entity));
+          STK_ThrowAssert(m_mesh.is_valid(curr_entity));
 
           if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
           {

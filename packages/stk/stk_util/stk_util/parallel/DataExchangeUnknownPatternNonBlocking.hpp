@@ -167,7 +167,7 @@ void DataExchangeUnknownPatternNonBlocking::start_sends(std::vector< std::vector
 {
     int commSize;
     MPI_Comm_size(m_comm, &commSize);
-    ThrowRequireMsg(sendLists.size() == static_cast<size_t>(commSize), "send list must have length equal to the number of procs");
+    STK_ThrowRequireMsg(sendLists.size() == static_cast<size_t>(commSize), "send list must have length equal to the number of procs");
 
     for (unsigned int i=0; i < sendLists.size(); ++i) {
       if (sendLists[i].size() > 0) {
@@ -186,8 +186,8 @@ void DataExchangeUnknownPatternNonBlocking::start_nonblocking(std::vector< std::
                                                               std::vector< std::vector<T> > &recvLists,
                                                               int numRecvsExpected)
 {
-  ThrowRequireMsg(sendLists.size() == recvLists.size(), "send and receive lists must be same size");
-  ThrowRequireMsg(numRecvsExpected >= -1, "num_recvs_expected must be a positive value or -1");
+  STK_ThrowRequireMsg(sendLists.size() == recvLists.size(), "send and receive lists must be same size");
+  STK_ThrowRequireMsg(numRecvsExpected >= -1, "num_recvs_expected must be a positive value or -1");
   reset();
 
   m_numRecvsExpected = numRecvsExpected;

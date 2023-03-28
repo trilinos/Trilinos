@@ -879,7 +879,7 @@ get_field_output_type_from_storage(const std::string & storageType)
   else if (storageType == quaternion_3d)  return stk::io::FieldOutputType::QUATERNION_3D;
   else if (stk::string_starts_with(sierra::make_lower(storageType), "real")) return stk::io::FieldOutputType::CUSTOM;
   else {
-    ThrowErrorMsg("Invalid storage type: " << storageType);
+    STK_ThrowErrorMsg("Invalid storage type: " << storageType);
     return stk::io::FieldOutputType::SCALAR;  // Quiet down compiler
   }
 }

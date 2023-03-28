@@ -103,12 +103,12 @@ STK_DEPRECATED void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_
       for(EntityRank r=stk::topology::NODE_RANK; r<rank_i; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.downward_relation_counts[r] += num_rels;
-        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
+        STK_ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
       for(EntityRank r=static_cast<EntityRank>(rank_i+1); r<nranks; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.upward_relation_counts[r] += num_rels;
-        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
+        STK_ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
     }
 

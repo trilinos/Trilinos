@@ -4718,7 +4718,7 @@ struct edgeToBeRefined
 
   stk::mesh::EntityId suggested_node_id() const
   {
-    ThrowRequireMsg(!m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
+    STK_ThrowRequireMsg(!m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
     return m_id_proc_pairs_from_all_procs[0].second;
   }
 
@@ -4740,7 +4740,7 @@ struct edgeToBeRefined
 
   stk::mesh::EntityId get_id_for_edge() const
   {
-    ThrowRequireMsg(m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
+    STK_ThrowRequireMsg(m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
     return m_id_proc_pairs_from_all_procs[0].second;
   }
 
@@ -4804,7 +4804,7 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
       ChildNodeRequest & request = child_node_requests[it_req];
       std::vector<const stk::mesh::Entity*> & request_parents = request.first;
 
-      ThrowRequireMsg(request_parents.size() == 2, "Invalid size of request, needed exactly 2 parents, found " << request_parents.size() << ". Contact sierra-help.");
+      STK_ThrowRequireMsg(request_parents.size() == 2, "Invalid size of request, needed exactly 2 parents, found " << request_parents.size() << ". Contact sierra-help.");
       if (mesh.is_valid(*request_parents[0]) && mesh.is_valid(*request_parents[1]) && communicate_edge[it_req] == false )
       {
         stk::mesh::Entity **request_child = &request.second;
@@ -4888,7 +4888,7 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
   }
 
   std::vector<bool>::iterator iter = std::find(communicate_edge.begin(), communicate_edge.end(), false);
-  ThrowRequireMsg(iter == communicate_edge.end(), "Invalid edge requests. Contact sierra-help.");
+  STK_ThrowRequireMsg(iter == communicate_edge.end(), "Invalid edge requests. Contact sierra-help.");
 }
 
 void set_coords_on_new_node(stk::mesh::MetaData& meta, stk::mesh::Entity nodeA, stk::mesh::Entity nodeB, stk::mesh::Entity new_node)

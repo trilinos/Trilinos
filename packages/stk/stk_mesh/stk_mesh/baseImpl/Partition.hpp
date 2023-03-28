@@ -181,7 +181,7 @@ private:
   {
 #ifndef NDEBUG
     for (int i = 0, e = m_buckets.size(); i < e; ++i) {
-      ThrowAssert(m_buckets[i] != NULL);
+      STK_ThrowAssert(m_buckets[i] != NULL);
     }
 #endif
   }

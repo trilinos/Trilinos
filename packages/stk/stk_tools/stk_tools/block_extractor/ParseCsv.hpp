@@ -50,7 +50,7 @@ int string_to_integer(const std::string &input)
     convertedInt = std::stoi(input);
   }
   catch (std::exception &) {
-    ThrowErrorMsg("Could not convert argument '" << input << "' to an integer");
+    STK_ThrowErrorMsg("Could not convert argument '" << input << "' to an integer");
   }
 
   return convertedInt;
@@ -63,14 +63,14 @@ std::vector<int> get_ids_from_strings(const std::vector<std::string> & inputSegm
   for (const std::string & inputSegment : inputSegments)
   {
     const std::vector<std::string> splitInput = stk::split_string(stk::trim_string(inputSegment), ':');
-    ThrowRequireMsg((splitInput.size() > 0) && (splitInput.size() <= 3),
+    STK_ThrowRequireMsg((splitInput.size() > 0) && (splitInput.size() <= 3),
                     "Incorrect number of fields for range (" << inputSegment << ").  Syntax is first:last:stride");
 
     const int first = string_to_integer(stk::trim_string(splitInput[0]));
     const int last = (splitInput.size() > 1) ? string_to_integer(stk::trim_string(splitInput[1])) : first;
     const int stride = (splitInput.size() > 2) ? string_to_integer(stk::trim_string(splitInput[2])) : 1;
 
-    ThrowRequireMsg((first > 0) && (last > 0) && (stride > 0) && (last >= first),
+    STK_ThrowRequireMsg((first > 0) && (last > 0) && (stride > 0) && (last >= first),
                     "Invalid integers provided for range (" << inputSegment << ").  Syntax is first:last:stride");
 
     for (int i = first; i <= last; i += stride) {

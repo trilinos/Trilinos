@@ -25,6 +25,7 @@ namespace mock_utils {
 inline
 void read_mesh(MPI_Comm comm,
                const std::string& fileName,
+               const std::string& partName,
                const std::vector<std::string>& fieldNames,
                std::shared_ptr<mock::StkMesh>& mesh)
 {
@@ -37,8 +38,8 @@ void read_mesh(MPI_Comm comm,
   ioBroker.add_mesh_database(fileName, stk::io::READ_MESH);
   ioBroker.create_input_mesh();
 
-  stk::mesh::Part* surfacePart = meta.get_part("surface_1");
-  ThrowRequireMsg(surfacePart != nullptr,"Error, didn't find assumed part 'surface_1'");
+  stk::mesh::Part* surfacePart = meta.get_part(partName);
+  STK_ThrowRequireMsg(surfacePart != nullptr, std::string("Error, didn't find part: ") + partName);
   constexpr double initialValue = 0.0;
   for(const std::string& fieldName : fieldNames) {
     stk::mesh::Field<double>& field = meta.declare_field<double>(stk::topology::FACE_RANK, fieldName);
@@ -53,15 +54,16 @@ void read_mesh(MPI_Comm comm,
 inline
 void read_mesh(MPI_Comm comm,
                const std::string& fileName,
+               const std::string& partName,
                const std::vector<std::string>& fieldNames,
                std::shared_ptr<mock::SparcMesh>& mesh)
 {
   std::shared_ptr<mock::StkMesh> stkMesh;
-  read_mesh(comm, fileName, fieldNames, stkMesh);
+  read_mesh(comm, fileName, partName, fieldNames, stkMesh);
 
   std::shared_ptr<stk::mesh::BulkData> stkBulk = stkMesh->get_stk_mesh();
-  stk::mesh::Part* surfacePart = stkBulk->mesh_meta_data().get_part("surface_1");
-  ThrowRequireMsg(surfacePart != nullptr,"Error, didn't find assumed part 'surface_1'");
+  stk::mesh::Part* surfacePart = stkBulk->mesh_meta_data().get_part(partName);
+  STK_ThrowRequireMsg(surfacePart != nullptr, std::string("Error, didn't find assumed part: ") + partName);
 
   stk::mesh::Selector ownedSurface = stkBulk->mesh_meta_data().locally_owned_part() & *surfacePart;
   stk::mesh::EntityVector sides;

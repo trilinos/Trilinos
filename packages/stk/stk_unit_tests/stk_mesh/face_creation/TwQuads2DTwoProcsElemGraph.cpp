@@ -60,7 +60,7 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
   stk::io::write_mesh(file_temp, fixture.m_bulk_data);
   stk::io::fill_mesh(file_temp, bulkData);
 
-  ThrowRequireMsg(fixture.m_bulk_data.parallel_size()<10, "Testing assumption violated.");
+  STK_ThrowRequireMsg(fixture.m_bulk_data.parallel_size()<10, "Testing assumption violated.");
   os << file_temp << "." << fixture.m_bulk_data.parallel_size() << "." << fixture.m_bulk_data.parallel_rank();
   unlink(os.str().c_str());
 }

@@ -186,7 +186,7 @@ inline
 Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) const
 {
   const BucketVector & all_buckets_for_rank = m_buckets[entity_rank];
-  ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
+  STK_ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
   return all_buckets_for_rank[bucket_id];
 }
 

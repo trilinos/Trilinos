@@ -794,7 +794,7 @@ struct CheckFieldValues {
   void operator()(const stk::mesh::FastMeshIndex& entity) const
   {
     for (unsigned component = 0; component < numScalarsPerEntity; component++) {
-      NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
+      STK_NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
     }
   }
 

@@ -7,8 +7,8 @@ void ReceiveCounter::start_receive_count(const std::vector<int> &sendCounts)
 {
     int commSize;
     MPI_Comm_size(m_comm, &commSize);
-    ThrowRequireMsg(sendCounts.size() == static_cast<size_t>(commSize), "send counts must have same length as MPI Communicator size");
-    ThrowRequireMsg(m_recvFinished, "Previous receive count must have completed before starting a new one");
+    STK_ThrowRequireMsg(sendCounts.size() == static_cast<size_t>(commSize), "send counts must have same length as MPI Communicator size");
+    STK_ThrowRequireMsg(m_recvFinished, "Previous receive count must have completed before starting a new one");
 
     m_recvFinished = false;
     m_sendCount.resize(sendCounts.size());

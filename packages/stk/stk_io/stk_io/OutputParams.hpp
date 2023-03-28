@@ -104,7 +104,7 @@ public:
         return m_ioRegion;
     }
     Ioss::Region &io_region() const {
-        ThrowRequireMsg(m_ioRegion != nullptr, "Region is null"); return *m_ioRegion;
+        STK_ThrowRequireMsg(m_ioRegion != nullptr, "Region is null"); return *m_ioRegion;
     }
     const mesh::BulkData &bulk_data() const {
         return m_bulkData;

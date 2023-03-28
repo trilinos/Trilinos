@@ -52,7 +52,7 @@ void TransferCopyById::setup_translators()
 {
   m_numFields = m_meshb.num_fields();
 
-  ThrowRequireMsg(m_numFields == m_mesha.num_fields(), "Send and receive regions have different number of fields");
+  STK_ThrowRequireMsg(m_numFields == m_mesha.num_fields(), "Send and receive regions have different number of fields");
 
   m_sendFieldDataTypes.resize(m_numFields);
   m_recvFieldDataTypes.resize(m_numFields);
@@ -83,7 +83,7 @@ void TransferCopyById::local_copy(const Mesh_ID key)
     if(m_fieldCompatibility[f]) {
       unsigned fsize = std::min(this_field_size_a, this_field_size_b);
       if(fsize != 0) {
-        ThrowRequireMsg(this_field_size_a == this_field_size_b, 
+        STK_ThrowRequireMsg(this_field_size_a == this_field_size_b, 
                         "field_size_a " << this_field_size_a << " field_size_b " << this_field_size_b);
       }
       std::memcpy(f_dataB, f_dataA, fsize);
@@ -235,7 +235,7 @@ void TransferCopyById::check_received_keys(MeshIDSet & remoteKeys)
   all_reduce( comm , ReduceSum<1>( & m_errorCount ) );
   if(m_errorCount) {
     all_write_string( comm , std::cerr , m_errorMsg.str() );
-    ThrowErrorMsg("Error in communication during CopyTransfer!\n");
+    STK_ThrowErrorMsg("Error in communication during CopyTransfer!\n");
   }
 }
 

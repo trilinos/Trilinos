@@ -5,6 +5,7 @@
 #include "predicates/point_classifier_normal_wrapper.hpp"
 #include "mesh_relational_data.hpp"
 #include "gauss_newton.hpp"
+#include "quad_point_finder.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -27,9 +28,7 @@ class MiddleMeshPointProjection
       m_mesh2(mesh2),
       m_meshIn(meshIn),
       m_relationalData(relationalData),
-      m_classifier(classifier),
-      m_gaussNewton(3, 2, 1e-13, 100),
-      m_xi0(2)
+      m_classifier(classifier)
     {}
 
     mesh::FieldPtr<utils::Point> projection_onto_mesh1(std::shared_ptr<XiCoordinates> xiCoords);
@@ -37,15 +36,12 @@ class MiddleMeshPointProjection
     mesh::FieldPtr<utils::Point> projection_onto_mesh2(std::shared_ptr<XiCoordinates> xiCoords);
 
   private:
-    utils::Point compute_nearest_point_on_quad(mesh::MeshEntityPtr el, const utils::Point& ptXyz, const utils::Point& ptXiGuess);
-
     std::shared_ptr<mesh::Mesh> m_mesh1;
     std::shared_ptr<mesh::Mesh> m_mesh2;
     std::shared_ptr<mesh::Mesh> m_meshIn;
     std::shared_ptr<MeshRelationalData> m_relationalData;
     std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> m_classifier;
-    utils::impl::GaussNewton m_gaussNewton;
-    std::vector<double> m_xi0;
+    stk::middle_mesh::mesh::impl::QuadPointFinder m_quadPointFinder;
 };
 
 } // namespace 

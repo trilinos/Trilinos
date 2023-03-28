@@ -204,7 +204,7 @@ size_t get_info_index(
 {
   auto it = std::lower_bound(sortedIndices.begin(), sortedIndices.end(), infoId,
             [&infos](size_t lhs, const typename Info::GlobalId & rhs) -> bool { return infos[lhs].get_unique_id() < rhs; });
-  ThrowAssert(it != sortedIndices.end() && infos[*it].get_unique_id() == infoId);
+  STK_ThrowAssert(it != sortedIndices.end() && infos[*it].get_unique_id() == infoId);
   return *it;
 }
 
@@ -223,7 +223,7 @@ void IndependentSetFinder<Info>::receive_status_of_shared_infos(
          commSparse.recv_buffer(procId).unpack<InOutUnknownStatus>(oneInOutStatus);
 
          const size_t iInfo = get_info_index(infos, sortedIndicesForGlobalIdsOfOffProcInfos, infoId);
-         ThrowRequireWithSierraHelpMsg(inOutStatus[iInfo] == UNKNOWN_STATUS || inOutStatus[iInfo] == oneInOutStatus);
+         STK_ThrowRequireWithSierraHelpMsg(inOutStatus[iInfo] == UNKNOWN_STATUS || inOutStatus[iInfo] == oneInOutStatus);
          inOutStatus[iInfo] = oneInOutStatus;
      });
 }

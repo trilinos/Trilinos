@@ -21,7 +21,7 @@ DataExchangeKnownPatternNonBlocking::~DataExchangeKnownPatternNonBlocking()
 
 void DataExchangeKnownPatternNonBlocking::complete_sends()
 {
-  ThrowRequireMsg(m_areSendsInProgress, "sends must be started before they can be completed");
+  STK_ThrowRequireMsg(m_areSendsInProgress, "sends must be started before they can be completed");
   MPI_Waitall(m_sendReqs.size(), m_sendReqs.data(), MPI_STATUSES_IGNORE);
   m_areSendsInProgress = false;
 }

@@ -20,7 +20,7 @@ TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
 {
   const std::string unNamed = "mesh not specified";
   const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
-  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   std::ostringstream os;

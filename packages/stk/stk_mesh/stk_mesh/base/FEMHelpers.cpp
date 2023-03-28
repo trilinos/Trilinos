@@ -62,7 +62,7 @@ void verify_declare_element_edge(
 {
     stk::topology elem_top = mesh.bucket(elem).topology();
 
-    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
+    STK_ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
             "Element[" << mesh.identifier(elem) << "] has no defined topology");
 
     stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
@@ -70,11 +70,11 @@ void verify_declare_element_edge(
             (elem_top != stk::topology::INVALID_TOPOLOGY && local_edge_id < elem_top.num_edges() )
             ? elem_top.edge_topology(local_edge_id) : invalid;
 
-    ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_edge_id >= elem_top.num_edges(),
+    STK_ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_edge_id >= elem_top.num_edges(),
             "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
             "local_edge_id exceeds " << elem_top.name() << ".edge_count = " << elem_top.num_edges());
 
-    ThrowErrorMsgIf( edge_top == stk::topology::INVALID_TOPOLOGY,
+    STK_ThrowErrorMsgIf( edge_top == stk::topology::INVALID_TOPOLOGY,
             "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
             "No element topology found");
 }
@@ -90,9 +90,9 @@ Entity declare_element(BulkData & mesh,
 {
     const MetaData & fem_meta = mesh.mesh_meta_data();
     stk::topology top = fem_meta.get_topology(*parts[0]);
-    ThrowAssert(node_ids.size() >= top.num_nodes());
+    STK_ThrowAssert(node_ids.size() >= top.num_nodes());
 
-    ThrowErrorMsgIf(top == stk::topology::INVALID_TOPOLOGY,
+    STK_ThrowErrorMsgIf(top == stk::topology::INVALID_TOPOLOGY,
             "Part " << parts[0]->name() << " does not have a local topology");
 
     PartVector empty;
@@ -248,7 +248,7 @@ get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
             continue;
         }
 
-        ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
+        STK_ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology);
 
         pFilter.set_ordinal_and_permutation(nodes_of_sub_rank, nodes_of_sub_topology, sub_topology, i, ordinalAndPermutation);
@@ -282,10 +282,10 @@ bool element_side_polarity(const BulkData& mesh,
         is_side ? elem_top.num_sides()
             : elem_top.num_edges() );
 
-    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
+    STK_ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
         "For Element[" << mesh.identifier(elem) << "], element has no defined topology");
 
-    ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
+    STK_ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
         "For Element[" << mesh.identifier(elem) << "], " <<
         "side: " << mesh.identifier(side) << ", " <<
         "local_side_id = " << local_side_id <<
@@ -322,7 +322,7 @@ stk::EquivalentPermutation sub_rank_equivalent(const stk::mesh::BulkData& mesh,
     stk::topology subTopology = elemTopology.sub_topology(subRank, ordinal);
     const unsigned maxNumSubNodes = 144;
     stk::mesh::Entity elemSubRankNodes[maxNumSubNodes];
-    ThrowAssertMsg(subTopology.num_nodes() < maxNumSubNodes, "Error in sub_rank_equivalent, subTopology.num_nodes() needs to be less than hard-coded array-length "<<maxNumSubNodes);
+    STK_ThrowAssertMsg(subTopology.num_nodes() < maxNumSubNodes, "Error in sub_rank_equivalent, subTopology.num_nodes() needs to be less than hard-coded array-length "<<maxNumSubNodes);
     elemTopology.sub_topology_nodes(elemNodes, subRank, ordinal, elemSubRankNodes);
     return subTopology.is_equivalent(elemSubRankNodes, subRankNodes);
 }
@@ -351,7 +351,7 @@ inline void sub_topology_check(const stk::mesh::EntityVector& candidateSideNodes
                                stk::topology subTopology)
 {
     bool sizeCheck = (subTopology == stk::topology::INVALID_TOPOLOGY) ? true : (candidateSideNodes.size() == subTopology.num_nodes());
-    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
+    STK_ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
                                << elemTopology << "),subTopology=" << subTopology
                                << ", side: " << candidateSideNodes.size()
                                << ", expected: " << subTopology.num_nodes());
@@ -363,7 +363,7 @@ inline void sub_topology_check(const stk::mesh::Entity* candidateSideNodes,
                                stk::topology subTopology)
 {
     bool sizeCheck = (subTopology == stk::topology::INVALID_TOPOLOGY) ? true : (numCandidateSideNodes == subTopology.num_nodes());
-    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
+    STK_ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
                                << elemTopology << "),subTopology=" << subTopology
                                << ", side: " << numCandidateSideNodes
                                << ", expected: " << subTopology.num_nodes());
@@ -468,7 +468,7 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         unsigned subcell_identifier,
         EntityVector & subcell_nodes)
 {
-    ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
+    STK_ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
 
     subcell_nodes.clear();
 
@@ -485,11 +485,11 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
 
 // valid ranks fall within the dimension of the cell topology
         const bool bad_rank = static_cast<unsigned>(subcell_rank) >= celltopology.dimension();
-        ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
+        STK_ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
 
 // subcell_identifier must be less than the subcell count
         const bool bad_id = subcell_identifier >= celltopology.num_sub_topology(subcell_rank);
-        ThrowInvalidArgMsgIf( bad_id, "subcell_id is >= subcell_count\n");
+        STK_ThrowInvalidArgMsgIf( bad_id, "subcell_id is >= subcell_count\n");
     }
 
     // Get the cell topology of the subcell
@@ -519,11 +519,11 @@ int get_entity_subcell_id(const BulkData& mesh,
         stk::topology subcell_topology,
         const std::vector<Entity>& subcell_nodes)
 {
-    ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
+    STK_ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
     const int INVALID_SIDE = -1;
 
     stk::topology entity_topology = mesh.bucket(entity).topology();
-    ThrowAssert(entity_topology.num_nodes() == mesh.num_nodes(entity));
+    STK_ThrowAssert(entity_topology.num_nodes() == mesh.num_nodes(entity));
 
     for(size_t i = 0; i < entity_topology.num_sub_topology(subcell_rank); ++i)
     {

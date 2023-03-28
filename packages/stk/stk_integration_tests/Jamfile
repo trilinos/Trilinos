@@ -65,6 +65,7 @@ local installed-developer-files =
   mock_sparc
   mock_conservative_transfer_mpmd
   mock_conservative_transfer_spmd
+  mock_nonconservative_transfer_spmd
   ;
 
 #
@@ -198,6 +199,7 @@ exe mock_conservative_transfer_mpmd
         $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_mpmd.cpp 
     ]
     /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag
   ;
@@ -208,6 +210,21 @@ exe mock_conservative_transfer_spmd
         $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_spmd.cpp 
     ]
     /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag
   ;
+
+exe mock_nonconservative_transfer_spmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_nonconservative_transfer_spmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
+    /sierra/stk_search//stk_search
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;
+
+

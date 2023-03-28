@@ -108,7 +108,7 @@ void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData &bulkD
   const int p_size  = bulkData.parallel_size();
   const int p_rank = bulkData.parallel_rank();
 
-  ThrowRequire(2 == p_size);
+  STK_ThrowRequire(2 == p_size);
 
   stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
 
@@ -4327,7 +4327,7 @@ ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk
   unsigned nProc  = stk::parallel_machine_size(comm);
   unsigned myProc = stk::parallel_machine_rank(comm);
 
-  ThrowRequire(nProc <= 4);
+  STK_ThrowRequire(nProc <= 4);
 
   stk::io::fill_mesh("generated:1x1x4", bulkData);
 

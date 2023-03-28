@@ -105,7 +105,7 @@ struct ClusterGraphNode
     else if (proc == rhs.proc && clusterIndex < rhs.clusterIndex)
       return true;
     else if(proc == rhs.proc && clusterIndex == rhs.clusterIndex) {
-      ThrowRequireMsg(clusterMinElemId == rhs.clusterMinElemId,
+      STK_ThrowRequireMsg(clusterMinElemId == rhs.clusterMinElemId,
                       "Two equivalent cluster nodes {proc,clusterIndex} = {"
                       << proc << "," << clusterIndex << "} do not have the same clusterMinElemId: "
                       << clusterMinElemId << " vs " << rhs.clusterMinElemId);
@@ -277,7 +277,7 @@ private:
 #endif
 
       auto iter = entityToClusterMap.find(localElemId);
-      ThrowRequireMsg(iter != entityToClusterMap.end(),
+      STK_ThrowRequireMsg(iter != entityToClusterMap.end(),
                       "Could not find local element " << localElemId << " from proc: " << rank
                       << " for remote cluster index: " << remoteClusterIndex);
 

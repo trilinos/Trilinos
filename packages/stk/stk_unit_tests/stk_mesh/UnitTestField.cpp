@@ -596,7 +596,7 @@ void verify_fields_are_on_entities(const std::string& filename, stk::mesh::Entit
   for(const std::string& field_name : fieldnames)
   {
     stk::mesh::FieldBase* field = bulk.mesh_meta_data().get_field(rank, field_name);
-    ThrowRequireWithSierraHelpMsg(field!=nullptr);
+    STK_ThrowRequireWithSierraHelpMsg(field!=nullptr);
     stk::mesh::Selector selector = stk::mesh::selectField(*field) & meta.locally_owned_part();
     unsigned numAccelEntities = stk::mesh::count_selected_entities(selector, bulk.buckets(rank));
     EXPECT_EQ(goldNum, numAccelEntities);

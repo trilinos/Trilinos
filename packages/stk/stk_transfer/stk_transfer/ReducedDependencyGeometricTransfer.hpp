@@ -49,24 +49,13 @@
 #include <stk_search/SearchMethod.hpp>
 #include <stk_transfer/GeometricTransferImpl.hpp>
 #include <stk_transfer/TransferBase.hpp>
+#include <stk_transfer/TransferUtil.hpp>
+#include <stk_transfer/ReducedDependencyCommData.hpp>
 
 
 namespace stk {
 namespace transfer {
 
-
-struct ReducedDependencyCommData
-{
-  std::vector<std::pair <int, int>> offset_and_num_keys_to_mesh;
-  std::vector<std::pair <int, int>> offset_and_num_keys_from_mesh;
-  int numToMeshCommunications;
-  int numFromMeshCommunications;
-  std::vector<int> uniqueFromProcVec;
-  std::vector<int> uniqueToProcVec;
-  stk::ParallelMachine m_shared_comm = MPI_COMM_WORLD;
-  int m_transferId = 0;
-  int m_otherTransferId = 0;
-};
 
 template <class INTERPOLATE> class ReducedDependencyGeometricTransfer : public TransferBase {
 
@@ -205,6 +194,7 @@ void construct_comm_data(const typename MeshA::EntityProcVec & entity_key_proc_f
 
   impl::get_unique_procs_from_entity_keys<MeshB>(entity_key_proc_to, comm.uniqueToProcVec);
   comm.numToMeshCommunications = comm.uniqueToProcVec.size();
+  comm.m_otherTransferId.assign(comm.numToMeshCommunications, 0);//zeros for now, will be replaced during exchange_transfer_ids().
 
   comm.offset_and_num_keys_to_mesh.resize(comm.numToMeshCommunications);
   impl::create_offset_and_num_key(comm.uniqueToProcVec, entity_key_proc_to, comm.offset_and_num_keys_to_mesh );
@@ -262,15 +252,17 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
   std::vector<MPI_Request> sendRequests(comm_data.numFromMeshCommunications);
 
   int sendTag = 0;
-  int recvTag = MPI_ANY_TAG;
   if (stk::util::get_common_coupling_version() >= 10) {
     sendTag = comm_data.m_transferId;
-    recvTag = comm_data.m_otherTransferId;
   }
 
   for (int ii = 0; ii < comm_data.numToMeshCommunications; ++ii)
   {
     int source = comm_data.uniqueToProcVec[ii];
+    int recvTag = comm_data.m_otherTransferId[ii];
+    if (stk::util::get_common_coupling_version() < 10) {
+      recvTag = MPI_ANY_TAG;
+    }
     const int recv_size = comm_data.offset_and_num_keys_to_mesh[ii].second * stride;
     const int recv_offset = comm_data.offset_and_num_keys_to_mesh[ii].first * stride;
     int recvMessageSize = recv_size*sizeof(typename MeshAVec::value_type);
@@ -314,7 +306,7 @@ template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::Re
     static_assert(8 == sizeof(typename InterpolateClass::EntityKeyA), "Size of EntityKeyA needs to be 64 bit");
     static_assert(8 == sizeof(typename InterpolateClass::EntityKeyB), "Size of EntityKeyB needs to be 64 bit");
     m_comm_data.m_shared_comm = pm;
-    ThrowRequire(mesha || meshb);
+    STK_ThrowRequire(mesha || meshb);
   }
 
 template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::coarse_search() {
@@ -358,43 +350,7 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
 template <class INTERPOLATE>
 void ReducedDependencyGeometricTransfer<INTERPOLATE>::exchange_transfer_ids()
 {
-  std::vector<MPI_Request> receiveRequests(m_comm_data.numToMeshCommunications);
-  std::vector<MPI_Request> sendRequests(m_comm_data.numFromMeshCommunications);
-
-  int sendTag = 0;
-  if (stk::util::get_common_coupling_version() >= 10) {
-    static int s_transferId = 1;
-    m_comm_data.m_transferId = s_transferId++;
-    sendTag = m_comm_data.m_transferId;
-  }
-
-  for (int ii = 0; ii < m_comm_data.numToMeshCommunications; ++ii) {
-    int source = m_comm_data.uniqueToProcVec[ii];
-    int recvMessageSize = 0;
-
-    MPI_Irecv(nullptr, recvMessageSize, MPI_BYTE, source,
-              MPI_ANY_TAG, m_comm_data.m_shared_comm, &receiveRequests[ii]);
-  }
-
-  for (int ii = 0; ii < m_comm_data.numFromMeshCommunications; ++ii) {
-    int destination = m_comm_data.uniqueFromProcVec[ii];
-    int sendMessageSize = 0;
-
-    MPI_Isend(nullptr, sendMessageSize, MPI_BYTE, destination,
-              sendTag, m_comm_data.m_shared_comm, &sendRequests[ii]);
-  }
-
-  std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0] );
-
-  if (stk::util::get_common_coupling_version() >= 10) {
-    for(unsigned i=0; i<receiveStati.size(); ++i) {
-      ThrowRequireMsg(m_comm_data.m_otherTransferId == 0 || receiveStati[i].MPI_TAG == m_comm_data.m_otherTransferId, "stk::transfer exchange_transfer_ids error, transfer "<<receiveStati[i].MPI_TAG<<" received when expecting "<<m_comm_data.m_otherTransferId);
-      m_comm_data.m_otherTransferId = receiveStati[i].MPI_TAG;
-    }
-  }
-
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], MPI_STATUSES_IGNORE);
+  impl::exchange_transfer_ids(m_comm_data);
 }
 
 template <class INTERPOlATE>
@@ -409,7 +365,7 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
   {
     int offset = m_comm_data.offset_and_num_keys_to_mesh[ii].first;
     for(int jj =0; jj < m_comm_data.offset_and_num_keys_to_mesh[ii].second; ++jj){
-      ThrowRequireMsg(offset+jj < (int)to_points_distance_on_to_mesh.size(),"'offset+jj' ("<<offset<<"+"<<jj<<") required to be less than to_points_distance_on_to_mesh.size() ("<<to_points_distance_on_to_mesh.size()<<")");
+      STK_ThrowRequireMsg(offset+jj < (int)to_points_distance_on_to_mesh.size(),"'offset+jj' ("<<offset<<"+"<<jj<<") required to be less than to_points_distance_on_to_mesh.size() ("<<to_points_distance_on_to_mesh.size()<<")");
       std::pair<double,int> dist_and_to_entity_index = std::make_pair(to_points_distance_on_to_mesh[offset+jj], offset+jj);
       auto key = to_entity_keys[offset+jj].id();
       if ( filterMap.find(key) == filterMap.end() )
@@ -503,8 +459,8 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
       entities_to_copy_from.push_back(ep);
     }
   }
-  std::sort(entities_to_copy_to.begin(), entities_to_copy_to.end());
 
+  std::sort(entities_to_copy_to.begin(), entities_to_copy_to.end());
 }
 
 template<class INTERPOLATE>
@@ -567,10 +523,8 @@ template <class INTERPOLATE>  void ReducedDependencyGeometricTransfer<INTERPOLAT
   do_communication(m_comm_data, to_points_distance_on_from_mesh, to_points_distance_on_to_mesh);
 }
 
-
 }
 }
-
 
 #endif
 
