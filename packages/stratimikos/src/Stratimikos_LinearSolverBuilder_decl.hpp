@@ -80,9 +80,9 @@ using Teuchos::ParameterList;
 
 
 /** \brief Concrete subclass of <tt>Thyra::LinearSolverBuilderBase</tt> for
- * creating <tt>LinearOpWithSolveFactoryBase</tt> objects and
- * <tt>PreconditionerFactoryBase</tt> object on demand for various Trilinos
- * linear solver packages.
+ * creating <tt>Thyra::LinearOpWithSolveFactoryBase</tt> objects and
+ * <tt>Thyra::PreconditionerFactoryBase</tt> objects on demand for various
+ * Trilinos linear solver and preconditioner packages.
  *
  * For an example of how to use this class see
  *  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
