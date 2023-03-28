@@ -223,7 +223,11 @@ namespace KokkosBatched {
   template <typename S>
   struct MagnitudeScalarType< Sacado::MP::Vector<S> > {
     typedef Sacado::MP::Vector<S> val_type;
+#if KOKKOS_VERSION < 40099
     typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type type;
+#else
+    typedef typename Kokkos::ArithTraits<val_type>::mag_type type;
+#endif
   };
 
 }
