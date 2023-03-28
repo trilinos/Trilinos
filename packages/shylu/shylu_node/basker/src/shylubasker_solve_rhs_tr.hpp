@@ -81,7 +81,7 @@ namespace BaskerNS
     for (Int i = 0; i < gn; i++) printf( "  perm_comp_array(%d) = %d\n",i,perm_comp_array[i] );
     for (Int i = 0; i < gn; i++) printf( "  (unused) perm_inv_comp_array(%d) = %d\n",i,perm_inv_comp_array[i] );
 #endif
-    permute_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
+    permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
       // rhs content from _y has been permuted and copied to x_view_ptr_copy which will act as the rhs-to-update during solve calls; y_view_ptr_copy will store the pivots (i.e. solutions)
 
     solve_interfacetr(x_view_ptr_copy, y_view_ptr_copy);
