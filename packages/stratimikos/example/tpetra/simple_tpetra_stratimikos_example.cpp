@@ -48,7 +48,6 @@ bool readAndSolveLinearSystem(int argc, char* argv[])
   using ST = Teuchos::ScalarTraits<Scalar>;
 
   bool success = true;
-  bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
