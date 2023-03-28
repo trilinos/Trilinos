@@ -166,15 +166,15 @@ namespace Belos {
       
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
-      DMT::PutScalar(*dm2,47.2);
-      if( DMT::Value(*dm2,0,0) != 47.2){
+      DMT::PutScalar(*dm2,(ScalarType)47.2);
+      if( DMT::Value(*dm2,0,0) != (ScalarType)47.2){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "PutScalar failed" << endl;
         return false;
       }
       DMT::PutScalar(*dm2);
-      if( DMT::Value(*dm2,0,0) != 0){
+      if( DMT::Value(*dm2,0,0) != zero){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "PutScalar default args failed" << endl;
@@ -203,7 +203,7 @@ namespace Belos {
       //Test assign and scale: 
       DMT::Assign(*dm1,*dm2);
       DMT::Scale(*dm1,2.0);
-      if(DMT::Value(*dm1,1,1) != (ScalarType)DMT::Value(*dm2,1,1)*2.0){
+      if(DMT::Value(*dm1,1,1) != (ScalarType)DMT::Value(*dm2,1,1)*(ScalarType)2.0){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Assign or scale failed" << endl;
@@ -256,9 +256,9 @@ namespace Belos {
         return false;
       }
       // Try to change a value in the subview.
-      DMT::Value(*dm4,0,0) = testVal-5;
+      DMT::Value(*dm4,0,0) = testVal-(ScalarType)5;
       if(DMT::Value(*dm4,0,0) == DMT::Value(*dm1,2,2) ||
-         DMT::Value(*dm4,0,0) != testVal-5){
+         DMT::Value(*dm4,0,0) != testVal-(ScalarType)5){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "SubviewCopy is incorrect. Possible view but not copy." << endl;
@@ -297,7 +297,7 @@ namespace Belos {
           << "Reshape test 3 gives wrong dimensions." << endl;
         return false;
       }
-      if(DMT::Value(*dm2,0,0) != 0 || DMT::Value(*dm2,numrows+4,numcols+4)!=0){
+      if(DMT::Value(*dm2,0,0) != zero || DMT::Value(*dm2,numrows+4,numcols+4) != zero){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Reshape test 3 does not init to zero." << endl;
