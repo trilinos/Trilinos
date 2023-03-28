@@ -2,12 +2,12 @@
 SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
-# set -x  # echo commands
+set -x  # echo commands
 
 # Fetch arguments
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
-on_ubuntu=$(echo "$@" | grep '\-\-on_ubuntu' &> /dev/null && echo "1")
+in_container=$(echo "$@" | grep '\-\-in\-container' &> /dev/null && echo "1")
 
 # Configure ccache via environment variables
 function configure_ccache() {
@@ -48,7 +48,7 @@ function bootstrap_modules() {
         export PYTHON_EXE=python3
 
         module list
-    elif [[ ${on_ubuntu} == "1" ]]; then
+    elif [[ ${in_container} == "1" ]]; then
         envvar_set_or_create     PYTHON_EXE $(which python3)
     else
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
@@ -70,7 +70,7 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules complete"
 }
 
-
+echo "USING MY BRANCH"
 print_banner "PullRequestLinuxDriver.sh"
 
 # Set up Sandia PROXY environment vars
