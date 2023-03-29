@@ -46,8 +46,6 @@
 #ifndef MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <stdlib.h>
 
 #include <Kokkos_Core.hpp>
@@ -76,7 +74,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 RCP<const ParameterList>
 SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                           Kokkos::Compat::KokkosDeviceWrapperNode<
+                           Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
                                DeviceType>>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -106,7 +104,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
     DeclareInput(Level &fineLevel, Level & /* coarseLevel */) const {
   Input(fineLevel, "A");
   Input(fineLevel, "Nullspace");
@@ -140,7 +138,7 @@ void SemiCoarsenPFactory_kokkos<
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Kokkos::Compat::KokkosDeviceWrapperNode<
+                                Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
                                     DeviceType>>::Build(Level &fineLevel,
                                                         Level &coarseLevel)
     const {
@@ -150,7 +148,7 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Kokkos::Compat::KokkosDeviceWrapperNode<
+                                Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
                                     DeviceType>>::BuildP(Level &fineLevel,
                                                          Level &coarseLevel)
     const {
@@ -335,7 +333,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class DeviceType>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
     BuildSemiCoarsenP(Level &coarseLevel, const LO NFRows, const LO NFNodes,
                       const LO DofsPerNode, const LO NFLayers,
                       const LO NCLayers, const ArrayRCP<LO> LayerId,
@@ -697,5 +695,4 @@ void SemiCoarsenPFactory_kokkos<
 } // namespace MueLu
 
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP

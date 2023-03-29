@@ -48,9 +48,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_StratimikosSmoother_fwd.hpp"
@@ -60,7 +59,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"

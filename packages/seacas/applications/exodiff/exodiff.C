@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1506,7 +1506,7 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       const std::string &name = (interFace.glob_var_names)[out_idx];
       int idx1 = find_string(file1.Global_Var_Names(), name, interFace.nocase_var_names);
       int idx2 = find_string(file2.Global_Var_Names(), name, interFace.nocase_var_names);
-      if (idx1 < 0 || idx2 < 0 || vals2 == nullptr) {
+      if (idx1 < 0 || idx2 < 0) {
         Error(fmt::format("Unable to find global variable named '{}' on database.\n", name));
       }
       gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interFace.output_type);
@@ -1792,7 +1792,9 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
         if (el_flag >= 0) {
           if (elmt_map.empty()) {
-            v2 = vals2[e];
+            if (vals2 != nullptr) {
+              v2 = vals2[e];
+            }
           }
           else {
             // With mapping, map global index from file 1 to global index
@@ -1844,7 +1846,7 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       eblock1->Free_Results();
-      if (elmt_map.empty()) {
+      if (elmt_map.empty() && eblock2 != nullptr) {
         eblock2->Free_Results();
       }
 
@@ -1967,9 +1969,9 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       if (!interFace.quiet_flag) {
         Node_Set<INT> *nset = file1.Get_Node_Set_by_Id(max_diff.blk);
         std::string    buf  = fmt::format(
-                "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})", name,
-                name_length(), interFace.ns_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-                max_diff.diff, max_diff.blk, id_map[nset->Node_Id(max_diff.id) - 1]);
+            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})", name,
+            name_length(), interFace.ns_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+            max_diff.diff, max_diff.blk, id_map[nset->Node_Id(max_diff.id) - 1]);
         DIFF_OUT(buf);
       }
       else {
@@ -2077,10 +2079,10 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       if (!interFace.quiet_flag) {
         Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
         std::string    buf  = fmt::format(
-                "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
-                name_length(), interFace.ss_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-                max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
-                (int)sset->Side_Id(max_diff.id).second);
+            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
+            name_length(), interFace.ss_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+            max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
+            (int)sset->Side_Id(max_diff.id).second);
         DIFF_OUT(buf);
       }
       else {
@@ -2331,9 +2333,9 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       if (!interFace.quiet_flag) {
         Edge_Block<INT> *eblock = file1.Get_Edge_Block_by_Id(max_diff.blk);
         std::string      buf    = fmt::format(
-                    "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
-                    name_length(), interFace.eb_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-                    max_diff.diff, max_diff.blk, eblock->Edge_Index(max_diff.id) + 1);
+            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
+            name_length(), interFace.eb_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+            max_diff.diff, max_diff.blk, eblock->Edge_Index(max_diff.id) + 1);
         DIFF_OUT(buf);
       }
       else {

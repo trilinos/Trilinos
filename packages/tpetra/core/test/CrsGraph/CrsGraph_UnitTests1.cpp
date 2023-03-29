@@ -551,6 +551,11 @@ namespace { // (anonymous)
       TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
       TEST_EQUALITY( G->getRowMap(), rmap );
       TEST_EQUALITY( G->getColMap(), rmap );
+
+      // Test whether setAllIndices works for an already fillComplete'd graph
+      TEST_NOTHROW(G->resumeFill());
+      TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
+      TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
     }
 
     // All procs fail if any node fails

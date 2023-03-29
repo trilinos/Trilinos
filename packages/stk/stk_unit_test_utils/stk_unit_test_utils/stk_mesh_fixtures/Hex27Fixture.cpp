@@ -233,7 +233,7 @@ void Hex27Fixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_nodes[i] );
         m_bulk_data.change_entity_parts(node, m_node_parts);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
              "This process should know about the nodes that make up its element");
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
@@ -502,7 +502,7 @@ void Hex27Fixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_nodes[i] );
         m_bulk_data.change_entity_parts(node, m_node_parts);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
              "This process should know about the nodes that make up its element");
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);

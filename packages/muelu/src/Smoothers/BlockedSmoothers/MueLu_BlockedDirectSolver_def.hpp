@@ -62,13 +62,10 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_BlockedDirectSolver.hpp"
+#include "MueLu_BlockedDirectSolver_decl.hpp"
 #include "MueLu_MergedBlockedMatrixFactory.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_HierarchyUtils.hpp"
-#include "MueLu_SmootherBase.hpp"
 #include "MueLu_DirectSolver.hpp"
 
 namespace MueLu {

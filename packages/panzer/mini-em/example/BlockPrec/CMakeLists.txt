@@ -2,6 +2,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(BLOCK_PREC_SOURCES
   main.cpp
+  MiniEM_helpers.cpp
   )
 
 TRIBITS_ADD_EXECUTABLE(
@@ -17,6 +18,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
+  darcy.xml
   solverCG.xml solverGMRES.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
   solverMueLuMaxwellHO.xml solverMueLuMaxwellHOCuda.xml
@@ -222,6 +224,26 @@ TRIBITS_ADD_TEST(
    "--solver=CG --linAlgebra=Tpetra --inputFile=maxwell-1stOrder.xml --basis-order=1"
    "--solver=CG --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
    "--solver=CG --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3"
+   COMM serial mpi
+   NUM_MPI_PROCS 4
+   )
+
+
+
+#################################################
+#################################################
+# DARCY
+
+#################################################
+# CG
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Darcy_CG"
+   ARGS
+   "--solver=CG --linAlgebra=Tpetra --inputFile=darcy.xml --basis-order=1 --x-elements=15  --y-elements=15 --z-elements=15"
+   "--solver=CG --linAlgebra=Tpetra --inputFile=darcy.xml --basis-order=2 --x-elements=8  --y-elements=8 --z-elements=8"
+   "--solver=CG --linAlgebra=Tpetra --inputFile=darcy.xml --basis-order=3 --x-elements=4  --y-elements=4 --z-elements=4"
    COMM serial mpi
    NUM_MPI_PROCS 4
    )

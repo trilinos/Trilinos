@@ -19,3 +19,4 @@ tag: 3.6.00     date: 04/06/2022  master: 8381db04    release: a7e683c4
 tag: 3.6.01     date: 05/23/2022  master: e09389ae    release: e1d8de42
 tag: 3.7.00     date: 08/25/2022  master: 42ab7a29    release: 9cc88ffa
 tag: 3.7.01     date: 12/01/2022  master: 04821ac3    release: 6cb632b6
+tag: 4.0.0      date: 02/32/2023  master: b4014bf2    release: a10dff20

@@ -47,9 +47,8 @@
 #define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
 
@@ -139,5 +138,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DECL_HPP

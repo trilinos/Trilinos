@@ -410,7 +410,7 @@ public:
         if(stk::topology::INVALID_RANK != assemblyCompositeRank) {
           m_meta.declare_part(assemblyData.name, assemblyCompositeRank);
 
-          ThrowRequire((assemblyParsedRank == assemblyCompositeRank) ||
+          STK_ThrowRequire((assemblyParsedRank == assemblyCompositeRank) ||
                        (assemblyParsedRank == stk::topology::INVALID_RANK));
         }
       }
@@ -519,7 +519,7 @@ public:
 private:
   void validate_spatial_dim(unsigned spatialDim)
   {
-    ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
+    STK_ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
   }
 
   stk::mesh::BulkData& m_bulk;

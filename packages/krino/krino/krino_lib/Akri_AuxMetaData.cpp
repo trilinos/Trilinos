@@ -9,7 +9,6 @@
 #include <Akri_AuxMetaData.hpp>
 #include "Akri_FieldRef.hpp"              // for FieldRef
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -35,6 +34,12 @@ AuxMetaData::get(const stk::mesh::MetaData & stk_meta)
   AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
   ThrowRequireMsg(nullptr != aux_meta, "AuxMetaData not found on MetaData.");
   return *aux_meta;
+}
+
+bool AuxMetaData::has(const stk::mesh::MetaData & stk_meta)
+{
+  AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
+  return aux_meta != nullptr;
 }
 
 AuxMetaData &

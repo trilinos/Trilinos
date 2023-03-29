@@ -205,9 +205,9 @@ namespace {
     // Here we use CudaNode on Rank 0 and SerialNode on everything else
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     constexpr bool debug = true;
-    using SerialNode         = Kokkos::Compat::KokkosSerialWrapperNode;
+    using SerialNode         = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
     using SerialMap          = Map<LO,GO,SerialNode>;
-    using CudaNode           = Kokkos::Compat::KokkosCudaWrapperNode;
+    using CudaNode           = Tpetra::KokkosCompat::KokkosCudaWrapperNode;
     using CudaMap            = Map<LO,GO,CudaNode>;
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?

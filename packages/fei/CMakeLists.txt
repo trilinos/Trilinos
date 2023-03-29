@@ -19,33 +19,6 @@ ENDIF()
 SET(FEI_EPETRA ON CACHE BOOL "FEI support for Epetra")
 GLOBAL_SET(HAVE_FEI_EPETRA ON)
 
-IF (${PACKAGE_NAME}_ENABLE_AztecOO)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    FEI_AZTECOO
-    HAVE_FEI_AZTECOO
-    "FEI support for AztecOO"
-    ${${PACKAGE_NAME}_ENABLE_AztecOO}
-  )
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Belos)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    FEI_BELOS
-    HAVE_FEI_BELOS
-    "FEI support for Belos"
-    ${${PACKAGE_NAME}_ENABLE_Belos}
-  )
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Amesos)
-    TRIBITS_ADD_OPTION_AND_DEFINE(
-      FEI_AMESOS
-      HAVE_FEI_AMESOS
-      "FEI support for Amesos"
-      ${${PACKAGE_NAME}_ENABLE_Amesos}
-    )
-ENDIF()
-
 #
 # C) Add the libraries, tests, and examples
 #

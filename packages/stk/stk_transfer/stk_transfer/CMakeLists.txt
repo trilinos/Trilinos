@@ -3,6 +3,7 @@
 # the installation of the headers
 
 FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
 
 INSTALL(FILES ${HEADERS} DESTINATION
 ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer/)
@@ -16,6 +17,6 @@ ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer/copy_by_id)
 TRIBITS_ADD_LIBRARY(
   stk_transfer_impl
   NOINSTALLHEADERS ${HEADERS_IMPL}
-  SOURCES  ${SOURCES_IMPL}
+  SOURCES  ${SOURCES} ${SOURCES_IMPL}
   )
 

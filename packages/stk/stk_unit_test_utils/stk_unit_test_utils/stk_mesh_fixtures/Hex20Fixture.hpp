@@ -177,7 +177,7 @@ public:
   template <typename Iterator>
   void add_elem_parts(Iterator itr, size_t num)
   {
-    ThrowRequire(!m_meta.is_commit());
+    STK_ThrowRequire(!m_meta.is_commit());
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
@@ -304,7 +304,7 @@ public:
   template <typename Iterator>
   void add_elem_parts(Iterator itr, size_t num)
   {
-    ThrowRequire(!m_meta.is_commit());
+    STK_ThrowRequire(!m_meta.is_commit());
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 

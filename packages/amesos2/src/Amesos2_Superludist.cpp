@@ -135,7 +135,7 @@ namespace Amesos2 {
 
 }
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "TpetraCore_ETIHelperMacros.h"
 
 /*#define AMESOS2_SUPERLUDIST_LOCAL_INSTANT(S,LO,GO,N)                        \
@@ -202,7 +202,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #if defined(HAVE_TPETRA_INST_SERIAL) && !defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-#define NODETYPE Kokkos_Compat_KokkosSerialWrapperNode
+#define NODETYPE Tpetra_KokkosCompat_KokkosSerialWrapperNode
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, int, NODETYPE)
@@ -241,7 +241,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
 #if defined(HAVE_TPETRA_INST_PTHREAD) && !defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-#define NODETYPE Kokkos_Compat_KokkosThreadsWrapperNode
+#define NODETYPE Tpetra_KokkosCompat_KokkosThreadsWrapperNode
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, int, NODETYPE)
@@ -280,7 +280,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
 #if defined(HAVE_TPETRA_INST_OPENMP) && !defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-#define NODETYPE Kokkos_Compat_KokkosOpenMPWrapperNode
+#define NODETYPE Tpetra_KokkosCompat_KokkosOpenMPWrapperNode
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, int, NODETYPE)
@@ -319,7 +319,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
 #if defined(HAVE_TPETRA_INST_CUDA) && !defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-#define NODETYPE Kokkos_Compat_KokkosCudaWrapperNode
+#define NODETYPE Tpetra_KokkosCompat_KokkosCudaWrapperNode
 #ifdef HAVE_TPETRA_INST_DOUBLE
   #ifdef HAVE_TPETRA_INST_INT_INT
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, int, NODETYPE)

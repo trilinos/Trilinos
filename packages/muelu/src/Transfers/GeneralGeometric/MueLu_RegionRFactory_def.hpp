@@ -46,15 +46,11 @@
 #ifndef MUELU_REGIONRFACTORY_DEF_HPP
 #define MUELU_REGIONRFACTORY_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 
 // #include "MueLu_PFactory.hpp"
 // #include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_MasterList.hpp"
 
 #include "MueLu_RegionRFactory_decl.hpp"
 
@@ -1146,5 +1142,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_REGIONRFACTORY_SHORT
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_REGIONRFACTORY_DEF_HPP

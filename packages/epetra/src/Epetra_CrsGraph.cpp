@@ -1817,9 +1817,9 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
       for(int j = 0; j < NumIndices; j++) {
       int GID = ColIndices[j];
       int LID = colmap.LID(GID);
-      if(LID != -1)
+      if(LID > -1)
         ColIndices[j] = LID;
-      else
+      else // GH: if an index is negative, it's a sign of an error or overflow
         throw ReportError("Internal error in FillComplete ",-1);
       }
     }
@@ -1848,9 +1848,9 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
       for(int j = 0; j < NumIndices; j++) {
       long long GID = ColIndices[j];
       int LID = colmap.LID(GID);
-      if(LID != -1)
+      if(LID > -1)
         intColIndices[j] = LID;
-      else
+      else // GH: if an index is negative, it's a sign of an error or overflow
         throw ReportError("Internal error in FillComplete ",-1);
       }
     }

@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #include <KokkosKernels_Handle.hpp>
 
 #include <cstdlib>
@@ -239,6 +211,64 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
   return 0;
 }
 
+using KokkosKernels::Impl::xorshiftHash;
+
+template <typename lno_t, typename size_type, typename rowmap_t,
+          typename entries_t>
+bool verifySymmetric(lno_t numVerts, const rowmap_t &d_rowmap,
+                     const entries_t &d_entries) {
+  auto rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_rowmap);
+  auto entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_entries);
+  size_t hash = 0;
+  for (lno_t v = 0; v < numVerts; v++) {
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd   = rowmap(v + 1);
+    for (size_type i = rowBegin; i < rowEnd; i++) {
+      lno_t nei = entries(i);
+      if (nei < numVerts && nei != v) {
+        hash ^= xorshiftHash<size_t>(xorshiftHash<size_t>(v) ^
+                                     xorshiftHash<size_t>(nei));
+      }
+    }
+  }
+  return hash == 0U;
+}
+
+template <typename lno_t, typename size_type, typename rowmap_t,
+          typename entries_t, typename colors_t>
+bool verifyColoring(lno_t numVerts, const rowmap_t &d_rowmap,
+                    const entries_t &d_entries, const colors_t &d_colors) {
+  auto rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_rowmap);
+  auto entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_entries);
+  auto colors =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_colors);
+  // Just do the simplest possible neighbors-of-neighbors loop to find conflicts
+  for (lno_t v = 0; v < numVerts; v++) {
+    if (colors(v) == 0) {
+      std::cout << "Vertex " << v << " is uncolored.\n";
+      return false;
+    }
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd   = rowmap(v + 1);
+    for (size_type i = rowBegin; i < rowEnd; i++) {
+      lno_t nei = entries(i);
+      if (nei < numVerts && nei != v) {
+        // check for dist-1 conflict
+        if (colors(v) == colors(nei)) {
+          std::cout << "Dist-1 conflict between " << v << " and " << nei
+                    << '\n';
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 namespace KokkosKernels {
 
 namespace Experiment {
@@ -273,6 +303,19 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, lno_t, ExecSpace, TempMemSpace, PersistentMemSpace>
       KernelHandle;
+
+  if (verbose) {
+    if (verifySymmetric<lno_t, size_type, decltype(crsGraph.row_map),
+                        decltype(crsGraph.entries)>(
+            crsGraph.numRows(), crsGraph.row_map, crsGraph.entries)) {
+      std::cout << std::endl << "Graph is symmetric (valid input)" << std::endl;
+    } else {
+      std::cout << std::endl
+                << "Graph is nonsymmetric (INVALID INPUT)" << std::endl;
+      // Don't attempt coloring when input is invalid
+      return;
+    }
+  }
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -319,13 +362,26 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
                  "Num Phases:"
               << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
     std::cout << "\t";
-    KokkosKernels::Impl::print_1Dview(
-        kh.get_graph_coloring_handle()->get_vertex_colors());
+
+    auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
+    KokkosKernels::Impl::print_1Dview(colors);
+
+    if (verbose) {
+      if (verifyColoring<lno_t, size_type, decltype(crsGraph.row_map),
+                         decltype(crsGraph.entries), decltype(colors)>(
+              crsGraph.numRows(), crsGraph.row_map, crsGraph.entries, colors)) {
+        std::cout << std::endl
+                  << "Graph Coloring is VALID" << std::endl
+                  << std::endl;
+      } else {
+        std::cout << std::endl << "Graph Coloring is NOT VALID" << std::endl;
+        break;
+      }
+    }
 
     if (params.coloring_output_file != NULL) {
       std::ofstream os(params.coloring_output_file, std::ofstream::out);
-      KokkosKernels::Impl::print_1Dview(
-          os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n");
+      KokkosKernels::Impl::print_1Dview(os, colors, true, "\n");
     }
     totalTime += kh.get_graph_coloring_handle()->get_overall_coloring_time();
   }

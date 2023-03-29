@@ -15,7 +15,7 @@ from textwrap import dedent
 
 sys.dont_write_bytecode = True
 
-from . import sysinfo
+from .sysinfo import SysInfo
 from LoadEnv.load_env import LoadEnv
 import setenvironment
 
@@ -24,7 +24,7 @@ import setenvironment
 class TrilinosPRConfigurationBase(object):
     """
     Trilinos Pull Request configuration driver. This should be
-    treated as an Abstract Base Class because the `execute()`
+    treated as an Abstract Base Class because the `execute_test()`
     method is implemented as a stub.
 
     Note: Attributes / Properties prefixed with `arg_` come from the
@@ -45,6 +45,7 @@ class TrilinosPRConfigurationBase(object):
             variable set by Jenkins.)
         arg_pr_config_file: The config.ini file that specifies the configuration to load.
         arg_pr_jenkins_job_name: The Jenkins Job Name.
+        arg_ccache_enable: Enable ccache.
         filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
@@ -63,6 +64,7 @@ class TrilinosPRConfigurationBase(object):
     """
     def __init__(self, args):
         self.args                  = args
+        self.load_env_ini_file     = None
         self._config_data          = None
         self._mem_per_core         = None
         self._max_cores_allowed    = None
@@ -276,6 +278,10 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.filename_subprojects
 
+    @property
+    def arg_ccache_enable(self):
+        """Is ccache enabled?"""
+        return self.args.ccache_enable
 
     # --------------------
     # P R O P E R T I E S
@@ -399,7 +405,7 @@ class TrilinosPRConfigurationBase(object):
         This is equvalent to running `make -j <concurrency_build>` from the command line.
         """
         if self._concurrency_build is None:
-            si = sysinfo.SysInfo()
+            si = SysInfo()
 
             self._concurrency_build = si.compute_num_usable_cores(req_mem_gb_per_core = self.arg_req_mem_per_core,
                                                                   max_cores_allowed   = self.max_cores_allowed)
@@ -437,13 +443,31 @@ class TrilinosPRConfigurationBase(object):
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
-        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        if self.arg_pullrequest_cdash_track == "Pull Request":
+            output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        else:
+            output = self.arg_pr_genconfig_job_name            
         return output
+
+
+    @property
+    def dashboard_model(self):
+        """
+        Generate the dashboard model for CDash
+
+        Nightly, Continuous, Experimental
+        """
+        if self.arg_pullrequest_cdash_track == "Pull Request":
+            return "Experimental"
+        return "Nightly"
 
 
     # --------------------
     # M E T H O D S
     # --------------------
+
+    def get_formatted_msg(self, msg):
+        pass
 
     def message(self, text, debug_level_override=None):
         """
@@ -686,6 +710,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_build_dir               = {}".format(self.arg_build_dir))
         self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
         self.message("--- arg_ctest_drop_site         = {}".format(self.arg_ctest_drop_site))
+        self.message("--- arg_ccache_enable           = {}".format(self.arg_ccache_enable))
         self.message("")
         self.message("--- concurrency_build           = {}".format(self.concurrency_build))
         self.message("--- concurrency_test            = {}".format(self.concurrency_test))

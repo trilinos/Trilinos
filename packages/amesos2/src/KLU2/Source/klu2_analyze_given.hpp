@@ -109,7 +109,7 @@ KLU_symbolic<Entry, Int> *KLU_alloc_symbolic
     }
     for (i = 0 ; i < n ; i++)
     {
-        P [i] = EMPTY ;
+        P [i] = AMESOS2_KLU2_EMPTY ;
     }
     for (j = 0 ; j < n ; j++)
     {
@@ -357,7 +357,7 @@ KLU_symbolic<Entry, Int> *KLU_analyze_given     /* returns NULL if error, or a v
             }
 
             /* fill-in not estimated */
-            Lnz [block] = EMPTY ;
+            Lnz [block] = AMESOS2_KLU2_EMPTY ;
         }
 
         /* ------------------------------------------------------------------ */
@@ -384,7 +384,7 @@ KLU_symbolic<Entry, Int> *KLU_analyze_given     /* returns NULL if error, or a v
         maxblock = n ;
         R [0] = 0 ;
         R [1] = n ;
-        Lnz [0] = EMPTY ;
+        Lnz [0] = AMESOS2_KLU2_EMPTY ;
 
         /* ------------------------------------------------------------------ */
         /* P = Puser, or identity if Puser is NULL */
@@ -402,8 +402,8 @@ KLU_symbolic<Entry, Int> *KLU_analyze_given     /* returns NULL if error, or a v
 
     Symbolic->nblocks = nblocks ;
     Symbolic->maxblock = maxblock ;
-    Symbolic->lnz = EMPTY ;
-    Symbolic->unz = EMPTY ;
+    Symbolic->lnz = AMESOS2_KLU2_EMPTY ;
+    Symbolic->unz = AMESOS2_KLU2_EMPTY ;
     Symbolic->nzoff = nzoff ;
 
     return (Symbolic) ;

@@ -47,6 +47,7 @@
 #include <iomanip>
 #include <iostream>
 #include <unistd.h>
+#include <sys/resource.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
@@ -186,6 +187,28 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
 #endif
 
 
+/*********************************************************************/
+// Gets current memory usage in kilobytes
+size_t get_current_memory_usage()
+{
+  size_t memory = 0; 
+  
+  // darwin reports rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+  const size_t RU_MAXRSS_UNITS=1024;
+#else
+  const size_t RU_MAXRSS_UNITS=1;
+#endif
+  
+  struct rusage sys_resources;
+  getrusage(RUSAGE_SELF, &sys_resources);
+  memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
+  
+  /* Success */
+  return memory;
+}
+/*********************************************************************/
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -259,6 +282,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int provideNodeComm = 0;                            clp.setOption("nodecomm",          &provideNodeComm,  "make the nodal communicator available w/ reduction factor X");
 #endif
   std::string userBlkFileName = "";                   clp.setOption("userBlks",              &userBlkFileName,   "read user smoother blocks from MatrixMarket matrix file. nnz (i,j) ==> jth dof in ith block");
+  int numReruns = 1;                                  clp.setOption("reruns",                &numReruns,  "number of reruns");
+  std::string rerunFilePrefix;                             clp.setOption("fileprefix",              &rerunFilePrefix,      "if doing reruns, optional prefix to prepend to output files");
+  std::string rerunFileSuffix;                             clp.setOption("filesuffix",              &rerunFileSuffix,      "if doing reruns, optional suffix to append to output files");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -380,7 +406,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
   }
 #endif
 
-  int numReruns = 1;
+  bool resetStackedTimer = false;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
 
@@ -444,6 +470,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
           // including printf's, therefore we cannot simply replace C++ cout
           // buffers, and have to use heavy machinary (dup2)
           std::string filename = runList.get<std::string>("filename");
+          if (rerunFilePrefix != "")
+            filename = rerunFilePrefix + "_" + filename;
+          if (rerunFileSuffix != "")
+            filename += "_" + rerunFileSuffix;
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
           filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
@@ -455,8 +485,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
         if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
 
-        if (useStackedTimer && runCount > 1)
-          stacked_timer->startBaseTimer();
+        if (resetStackedTimer) {
+          stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+          Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+        }
       }
 
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -488,6 +520,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
       comm->barrier();
       tm = Teuchos::null;
 
+
+      size_t mem = get_current_memory_usage();
+      out2<<"Memory use after preconditioner setup (GB): " << (mem/1024.0/1024.0)<<std::endl;
+
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
@@ -517,6 +553,8 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
       tm = Teuchos::null;
       globalTimeMonitor = Teuchos::null;
+      if (useStackedTimer)
+        resetStackedTimer = true;
 
       if (printTimings) {
         RCP<ParameterList> reportParams = rcp(new ParameterList);

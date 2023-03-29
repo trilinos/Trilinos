@@ -15,6 +15,17 @@
 
 namespace krino {
 
+double compute_parametric_square_distance(const Vector3d childPCoords)
+{
+  double dist2 = 0.0;
+  if (childPCoords[0] < 0.0) dist2 += childPCoords[0]*childPCoords[0];
+  if (childPCoords[1] < 0.0) dist2 += childPCoords[1]*childPCoords[1];
+  if (childPCoords[2] < 0.0) dist2 += childPCoords[2]*childPCoords[2];
+  const double zeta = 1.0 - childPCoords[0] - childPCoords[1] - childPCoords[2];
+  if (zeta < 0.0) dist2 += zeta*zeta;
+  return dist2;
+}
+
 Vector3d
 get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, const Vector3d & pt)
 {

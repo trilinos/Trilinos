@@ -50,9 +50,11 @@ project votd
     <define>STK_BUILT_IN_SIERRA
     <define>STK_SHOW_DEPRECATED_WARNINGS
     <define>STK_HIDE_DEPRECATED_CODE
+    <define>STK_USE_SIMPLE_FIELDS
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
   : usage-requirements
+    <define>STK_USE_SIMPLE_FIELDS
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
   : build-dir $(stk_mesh-builddir)

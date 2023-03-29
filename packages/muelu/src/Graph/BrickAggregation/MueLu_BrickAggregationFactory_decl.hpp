@@ -59,7 +59,7 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_BrickAggregationFactory_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"

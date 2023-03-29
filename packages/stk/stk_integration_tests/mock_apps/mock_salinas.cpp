@@ -66,10 +66,11 @@ public:
     const std::string defaultFileName = "generated:1x1x4|sideset:x";
     std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
 
-    stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
+    m_splitComms.set_free_comms_in_destructor(true);
+    stk::util::impl::set_coupling_version(coupling_version_override);
     const std::vector<int>& otherColors = m_splitComms.get_other_colors();
     if (otherColors.size() != 1) {
       if (otherColors.empty()) {
@@ -97,7 +98,7 @@ public:
     }
 
     std::vector<std::string> fieldNames = {"traction", "temperature"};
-    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
+    mock_utils::read_mesh(splitComm, meshFileName, "surface_1", fieldNames, m_mesh);
     m_currentTime = 0.0;
     m_finalTime = 1.0;
   }
@@ -173,11 +174,11 @@ public:
   void check_field_sizes(std::vector<std::pair<std::string,int>> sendFields,
                          std::vector<std::pair<std::string,int>> recvFields)
   {
-    ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
+    STK_ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
        <<sendFields.size()<<") doesn't match number of recv-fields ("<<recvFields.size()
        <<")");
     for (unsigned i=0; i<sendFields.size(); ++i) {
-      ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
+      STK_ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
         "Send-field size ("<<sendFields[i].first<<","<<sendFields[i].second<<") "
         <<"doesn't match Recv-field size ("<<recvFields[i].first<<","<<recvFields[i].second<<")");
     }   
@@ -218,11 +219,11 @@ public:
     if (m_doingRecvTransfer) {
       m_mesh->set_stk_field_values(m_recvFieldName, 0.0);
       m_recvTransfer->apply();
-      ThrowRequire(m_recvTransfer->meshb()->called_update_values);
+      STK_ThrowRequire(m_recvTransfer->meshb()->called_update_values);
 
       const double expectedFieldValue = (m_otherAppName=="Mock-Sparc" ? 4.4 : 9.9);
       const bool valuesMatch = m_mesh->verify_stk_field_values(m_recvFieldName, expectedFieldValue);
-      ThrowRequireMsg(valuesMatch, "Mock-Salinas error, field-values are not correct after transfer");
+      STK_ThrowRequireMsg(valuesMatch, "Mock-Salinas error, field-values are not correct after transfer");
     }
   }
 

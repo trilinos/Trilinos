@@ -84,11 +84,11 @@ variables:
 	float attrib1(num_el_in_blk1, num_att_in_blk1) ;
 	char attrib_name1(num_att_in_blk1, len_name) ;
 	int connect1(num_el_in_blk1, num_nod_per_el1) ;
-		connect1:elem_type = "quad" ;
+		connect1:elem_type = "shell" ;
 	float attrib2(num_el_in_blk2, num_att_in_blk2) ;
 	char attrib_name2(num_att_in_blk2, len_name) ;
 	int connect2(num_el_in_blk2, num_nod_per_el2) ;
-		connect2:elem_type = "quad" ;
+		connect2:elem_type = "shell" ;
 	float attrib3(num_el_in_blk3, num_att_in_blk3) ;
 	char attrib_name3(num_att_in_blk3, len_name) ;
 	int connect3(num_el_in_blk3, num_nod_per_el3) ;
@@ -339,13 +339,13 @@ data:
 
  elem_ss1 = 3, 3 ;
 
- side_ss1 = 4, 2 ;
+ side_ss1 = 6, 4 ;
 
  dist_fact_ss1 = 30, 30.1, 30.2, 30.3 ;
 
  elem_ss2 = 1, 3 ;
 
- side_ss2 = 2, 3 ;
+ side_ss2 = 4, 5 ;
 
  dist_fact_ss2 = 31, 31.1, 31.2, 31.3 ;
 

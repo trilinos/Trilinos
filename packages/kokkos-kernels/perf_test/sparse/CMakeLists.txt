@@ -65,10 +65,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
     )
 ENDIF ()
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_spmv_blockcrs
-        SOURCES KokkosSparse_spmv_blockcrs.cpp
-)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spmv_bsr
@@ -85,7 +81,12 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_sptrsv_cholmod.cpp
 )
 
-IF (NOT ${KOKKOS_HAS_TRILINOS})
+IF (KOKKOS_HAS_TRILINOS)
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU OFF)
+ELSE ()
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU ON)
+ENDIF ()
+IF (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU)
     # Disable this perf test with Trilinos builds to workaround
     # -Werror issues error: declaration of xyz with C language linkage
     KOKKOSKERNELS_ADD_EXECUTABLE(
@@ -108,4 +109,9 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spiluk
         SOURCES KokkosSparse_spiluk.cpp
+)
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+        sparse_mdf
+        SOURCES KokkosSparse_mdf.cpp
 )

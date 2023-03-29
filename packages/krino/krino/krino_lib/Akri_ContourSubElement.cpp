@@ -33,38 +33,18 @@ bool ContourSubElement::is_more(const Vector3d & x, const Vector3d & y)
   return false;
 }
 
-ContourSubElement::ContourSubElement( const stk::topology topo,
-			const PointVec & coords,
-			const std::vector<int> & side_ids,
-			const ContourElement *in_owner,
+ContourSubElement::ContourSubElement( const ContourElement *in_owner,
 			const int in_subelement_depth,
 			const int subelement_sign )
-    : my_master_element( MasterElementDeterminer::getMasterElement(topo) ),
-      my_side_master_element( MasterElementDeterminer::getMasterElement(topo.side_topology()) ),
-      my_coords( coords ),
-      my_side_ids( side_ids ),
-      my_owner( in_owner ),
+    : my_owner( in_owner ),
       my_subelement_depth( in_subelement_depth ),
       my_sign( subelement_sign )
-{ /* %TRACE% */  /* %TRACE% */
-  my_num_nodes = my_coords.size();
-  ThrowAssert( (unsigned)my_num_nodes == topology().num_nodes() );
-  my_num_sides = my_side_ids.size();
-  ThrowAssert( (unsigned)my_num_sides == topology().num_sides() );
-
-  // compute distance at each node
-  my_dist.clear();
-  my_dist.reserve(my_num_nodes);
-  for ( int i = 0; i < my_num_nodes; i++ )
-  {
-    double nodal_dist = my_owner->distance( my_coords[i] );
-    my_dist.push_back(nodal_dist);
-  }
+{
 }
 
 int
 ContourSubElement::build_facets( Faceted_Surface & facets )
-{ /* %TRACE% */  /* %TRACE% */
+{
   int start_size = facets.size();
 
   if ( !my_subelements.empty() )
@@ -76,17 +56,14 @@ ContourSubElement::build_facets( Faceted_Surface & facets )
   }
   else
   {
-    for ( int iside = 0; iside < my_num_sides; iside++ )
+    const int numSides = get_num_sides();
+    const int * sideIds = get_side_ids();
+    for ( int iside = 0; iside < numSides; iside++ )
     {
       // side_ids == -2 indicates that sides is on interface
-      if ( my_side_ids[iside] == -2 )
+      if ( sideIds[iside] == -2 )
       {
-        const int subelem_num_facets = side_facets( facets, iside );
-        if ( krinolog.shouldPrint(LOG_SUBELEMENT) )
-        {
-          krinolog << "Subelement with area = " << side_relative_area(iside)
-                   << " added " << subelem_num_facets << " facets." << std::endl;
-        }
+        side_facets( facets, iside );
       }
     }
   }
@@ -97,7 +74,7 @@ ContourSubElement::build_facets( Faceted_Surface & facets )
 
 void
 ContourSubElement::dump_structure() const
-{ /* %TRACE% */  /* %TRACE% */
+{
 
   if ( !my_subelements.empty() )
   {
@@ -123,7 +100,7 @@ ContourSubElement::dump_structure() const
 
 void
 ContourSubElement::dump_details() const
-{ /* %TRACE% */  /* %TRACE% */
+{
   if ( !my_subelements.empty() )
   {
     krinolog << "my subelement type = " << topology().name() << ", my # of subelements = " << my_subelements.size() << std::endl;
@@ -142,7 +119,7 @@ ContourSubElement::dump_details() const
 
 int
 ContourSubElement::side_facets( Faceted_Surface & facets, int side ) const
-{ /* %TRACE% */  /* %TRACE% */
+{
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();
   ThrowRuntimeError("Subelement decomposition for subelement of type '" << sub_type
@@ -151,47 +128,61 @@ ContourSubElement::side_facets( Faceted_Surface & facets, int side ) const
   return -1;
 }
 
+double
+ContourSubElement::side_area( int side ) const
+{
+  const std::string & owner_type = my_owner->dist_topology().name();
+  const std::string & sub_type = topology().name();
+  ThrowRuntimeError("Subelement decomposition for subelement of type '" << sub_type
+      << "' which was generated from owning element of type '" << owner_type
+      << "' is missing the capability to compute its side area.");
+  return 0.;
+}
+
 std::ostream &
 ContourSubElement::put( std::ostream& os ) const
-{ /* %TRACE% */  /* %TRACE% */
+{
   os << "Subelement description:" << std::endl;
   os << "  type = " << topology().name()
      << ", relative volume = " << relative_volume()
      << ", parametric_quality = " << parametric_quality()
      << ", physical_quality = " << physical_quality() << std::endl;
-  for ( int i = 0; i < my_num_nodes; i++ )
+  const int numNodes = get_num_nodes();
+  const Vector3d * nodeCoords = get_coordinates_at_nodes();
+  const double * nodeDist = get_distance_at_nodes();
+  const int * sideIds = get_side_ids();
+  for ( int i = 0; i < numNodes; i++ )
     {
-      Vector3d x = my_owner->coordinates( my_coords[i] );
+      Vector3d x = my_owner->coordinates( nodeCoords[i] );
       os << "  coords[" << i << "] = ("
-      << my_coords[i][0] << ","
-      << my_coords[i][1] << ","
-      << my_coords[i][2] << ")"
+      << nodeCoords[i][0] << ","
+      << nodeCoords[i][1] << ","
+      << nodeCoords[i][2] << ")"
       << ",  x = ("
       << x[0] << ","
       << x[1] << ","
       << x[2] << ")"
-      << ", dist = " << my_dist[i]
-      << ", sign = " << -1 + 2*LevelSet::sign_change(my_dist[i],-1.) << std::endl;
+      << ", dist = " << nodeDist[i]
+      << ", sign = " << -1 + 2*LevelSet::sign_change(nodeDist[i],-1.) << std::endl;
     }
-  for ( int i = 0; i < my_num_sides; i++ )
+  for ( int i = 0; i < get_num_sides(); i++ )
     {
-      os << "  side_ids[" << i << "] = " << my_side_ids[i]
-	 << ", side_relative_area[" << i << "] = " << side_relative_area(i)
+      os << "  side_ids[" << i << "] = " << sideIds[i]
 	 << ", side_quality[" << i << "] = " << side_quality(i) << std::endl;
     }
   // matlab visualization
   os << "  matlabvertices = [";
-  for ( int i = 0; i < my_num_nodes; i++ )
+  for ( int i = 0; i < numNodes; i++ )
     {
-      os << my_coords[i][0] << " "
-	 << my_coords[i][1] << " "
-	 << my_coords[i][2] << "; ";
+      os << nodeCoords[i][0] << " "
+	 << nodeCoords[i][1] << " "
+	 << nodeCoords[i][2] << "; ";
     }
   os << "];" << std::endl;
   os << "  physical space matlabvertices = [";
-  for ( int i = 0; i < my_num_nodes; i++ )
+  for ( int i = 0; i < numNodes; i++ )
     {
-      Vector3d x = my_owner->coordinates( my_coords[i] );
+      Vector3d x = my_owner->coordinates( nodeCoords[i] );
       os << x[0] << " "
 	 << x[1] << " "
 	 << x[2] << "; ";
@@ -203,32 +194,40 @@ ContourSubElement::put( std::ostream& os ) const
 
 double
 ContourSubElement::relative_volume() const
-{ /* %TRACE% */  /* %TRACE% */
+{
+  if (topology() == stk::topology::TETRAHEDRON_4)
+    return compute_tet_volume(get_coordinates_at_nodes());
+  if (topology() == stk::topology::TRIANGLE_3_2D)
+    return compute_tri_volume(get_coordinates_at_nodes());
+
   // This is a relative volume compared to the owner volume.
   // Actually this is a relative volume if the "parametric" volume of the element is unity.
   // Otherwise, it is off by a factor.
   const int nelem = 1;
   const int dim   = spatial_dim();
-  const int nint  = my_master_element.num_intg_pts();
-  std::vector<double> coords(my_num_nodes * dim, 0.);
+  const auto & masterElement = get_master_element();
+  const int numNodes = get_num_nodes();
+  const Vector3d * nodeCoords = get_coordinates_at_nodes();
+  const int nint  = masterElement.num_intg_pts();
+  std::vector<double> coords(numNodes * dim, 0.);
   std::vector<double> det_J(nint, 0.);
   double error = 0.;
 
   // integration weights
-  const double * intg_weights = my_master_element.intg_weights();
+  const double * intg_weights = masterElement.intg_weights();
 
   // load coords
   int count = 0;
-  for ( int i = 0; i < my_num_nodes; i++ )
+  for ( int i = 0; i < numNodes; i++ )
     {
       for ( int j = 0; j < dim; j++ )
 	{
-	  coords[count++] = my_coords[i][j];
+	  coords[count++] = nodeCoords[i][j];
 	}
     }
 
   // determinant at integration points
-  my_master_element.determinant( dim, nelem, coords.data(), det_J.data(), &error );
+  masterElement.determinant( dim, nelem, coords.data(), det_J.data(), &error );
 
   double elem_volume = 0.;
   for ( int ip = 0; ip < nint; ip++ )
@@ -237,49 +236,6 @@ ContourSubElement::relative_volume() const
     }
 
   return elem_volume;
-}
-
-double
-ContourSubElement::side_relative_area( const int side ) const
-{ /* %TRACE% */  /* %TRACE% */
-  // This is a relative volume compared to the owner volume.
-  // Actually this is a relative volume if the "parametric" volume of the element is unity.
-  // Otherwise, it is off by a factor.
-  const int nelem = 1;
-  const int dim   = spatial_dim();
-  const int nint  = my_side_master_element.num_intg_pts();
-  const stk::topology Top = topology();
-  const stk::topology sideTop = Top.side_topology(side);
-  const int side_num_nodes = sideTop.num_nodes();
-  const unsigned * const lnn = get_side_node_ordinals(Top, side);
-
-  std::vector<double> coords(side_num_nodes * dim, 0.);
-  std::vector<double> det_J(nint, 0.);
-  double error = 0.;
-
-  // integration weights
-  const double * intg_weights = my_side_master_element.intg_weights();
-
-  // load coords
-  int count = 0;
-  for ( int i = 0; i < side_num_nodes; i++ )
-    {
-      for ( int j = 0; j < dim; j++ )
-	{
-	  coords[count++] = my_coords[lnn[i]][j];
-	}
-    }
-
-  // determinant at integration points
-  my_side_master_element.determinant( dim, nelem, coords.data(), det_J.data(), &error );
-
-  double elem_side_area = 0.;
-  for ( int ip = 0; ip < nint; ip++ )
-    {
-      elem_side_area += det_J[ip] * intg_weights[ip];
-    }
-
-  return elem_side_area;
 }
 
 bool
@@ -297,10 +253,13 @@ ContourSubElement::have_interface_sides() const
   }
   else
   {
-    for ( int iside = 0; iside < my_num_sides; iside++ )
+    const int numSides = get_num_sides();
+    const int * sideIds = get_side_ids();
+
+    for ( int iside = 0; iside < numSides; iside++ )
     {
       // side_ids == -2 indicates that sides is on interface
-      if ( my_side_ids[iside] == -2 )
+      if ( sideIds[iside] == -2 )
       {
         return true;
       }
@@ -310,14 +269,56 @@ ContourSubElement::have_interface_sides() const
 }
 
 ContourSubElement::~ContourSubElement()
-{ /* %TRACE% */  /* %TRACE% */
+{
   for ( auto && subelem : my_subelements )
     delete subelem;
 }
 
+double ContourSubElement::compute_area_of_interface() const
+{
+  double surfaceArea = 0.;
+  if ( !my_subelements.empty() )
+  {
+    for ( auto && subelem : my_subelements )
+      surfaceArea += subelem->compute_area_of_interface( );
+    return surfaceArea;
+  }
+  else
+  {
+    const int numSides = get_num_sides();
+    const int * sideIds = get_side_ids();
+    for ( int iside = 0; iside < numSides; iside++ )
+    {
+      // side_ids == -2 indicates that sides is on interface
+      if ( sideIds[iside] == -2 )
+      {
+        surfaceArea += side_area( iside );
+      }
+    }
+  }
+  return surfaceArea;
+}
+
+double ContourSubElement::compute_relative_signed_volume(const int signOfDomain) const
+{
+  ThrowAssert(signOfDomain == -1 || signOfDomain == 1);
+  if ( !my_subelements.empty() )
+  {
+    double signedVolume = 0.;
+    for ( auto && subelem : my_subelements )
+      signedVolume += subelem->compute_relative_signed_volume(signOfDomain);
+    return signedVolume;
+  }
+
+  if (my_sign == signOfDomain)
+    return relative_volume();
+  return 0.;
+}
+
+
 int
 ContourSubElement::num_intg_pts(const int intg_pt_sign)
-{ /* %TRACE% */  /* %TRACE% */
+{
   int num_pts = 0;
 
   if ( !my_subelements.empty() )
@@ -331,12 +332,15 @@ ContourSubElement::num_intg_pts(const int intg_pt_sign)
     {
       if ( 0 == intg_pt_sign ) // interface points
 	{
-	  for ( int iside = 0; iside < my_num_sides; iside++ )
+          const auto & sideMasterElement = get_side_master_element();
+          const int numSides = get_num_sides();
+          const int * sideIds = get_side_ids();
+	  for ( int iside = 0; iside < numSides; iside++ )
 	    {
 	      // side_ids == -2 indicates that side is on interface
-	      if ( my_side_ids[iside] == -2 )
+	      if ( sideIds[iside] == -2 )
 		{
-		  num_pts += my_side_master_element.num_intg_pts();
+		  num_pts += sideMasterElement.num_intg_pts();
 		}
 	    }
 	}
@@ -348,7 +352,7 @@ ContourSubElement::num_intg_pts(const int intg_pt_sign)
 	    }
 	  else
 	    {
-	      return ( my_master_element.num_intg_pts() );
+	      return ( get_master_element().num_intg_pts() );
 	    }
 	}
     }
@@ -362,7 +366,7 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 			     sierra::ArrayContainer<double,NINT> & intg_weights,
 			     sierra::ArrayContainer<double,NINT> & determinant,
 			     int index )
-{ /* %TRACE% */  /* %TRACE% */
+{
   if ( !my_subelements.empty() )
     {
       for ( auto && subelem : my_subelements )
@@ -376,18 +380,25 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
     }
   else
     {
+      const int numNodes = get_num_nodes();
+      const Vector3d * nodeCoords = get_coordinates_at_nodes();
+
       if ( 0 == intg_pt_sign ) // interface points
 	{
-	  for ( int iside = 0; iside < my_num_sides; iside++ )
+          const auto & sideMasterElement = get_side_master_element();
+          const int numSides = get_num_sides();
+          const int * sideIds = get_side_ids();
+
+	  for ( int iside = 0; iside < numSides; iside++ )
 	    {
 	      // side_ids == -2 indicates that side is on interface
-	      if ( my_side_ids[iside] == -2 )
+	      if ( sideIds[iside] == -2 )
 		{
 		  const int nelem = 1;
 		  const int dim   = spatial_dim();
 		  const stk::topology Top = topology();
 		  const stk::topology sideTop = Top.side_topology(iside);
-		  const int side_num_intg_pts = my_side_master_element.num_intg_pts();
+		  const int side_num_intg_pts = sideMasterElement.num_intg_pts();
 		  const int side_num_nodes = sideTop.num_nodes();
 		  const unsigned * const lnn = get_side_node_ordinals(Top, iside );
 		  double error;
@@ -399,19 +410,19 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 		  // load coords
 		  for ( int i = 0; i < side_num_nodes; i++ )
 		    {
-		      Vector3d coordinates = my_owner->coordinates( my_coords[lnn[i]] );
+		      Vector3d coordinates = my_owner->coordinates( nodeCoords[lnn[i]] );
 		      for ( int d = 0; d < dim; d++ ) coords(d,i) = coordinates[d];
 		    }
 
 		  // determinant at integration points
-		  my_side_master_element.determinant( dim, nelem, coords.ptr(), det_J.ptr(), &error );
+		  sideMasterElement.determinant( dim, nelem, coords.ptr(), det_J.ptr(), &error );
 
 		  // integration weights
-		  const double * intg_wts_ptr = my_side_master_element.intg_weights();
+		  const double * intg_wts_ptr = sideMasterElement.intg_weights();
 		  const sierra::Array<const double,NINT> intg_wts(intg_wts_ptr,side_num_intg_pts);
 
 		  // basis fns at integration point locations
-		  const double * bf_ptr = my_side_master_element.shape_fcn();
+		  const double * bf_ptr = sideMasterElement.shape_fcn();
 		  const sierra::Array<const double,NPE_VAR,NINT> bf(bf_ptr,side_num_nodes,side_num_intg_pts);
 
 		  for ( int ip = 0; ip < side_num_intg_pts; ++ip)
@@ -421,7 +432,7 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 
 		      Vector3d xi(Vector3d::ZERO);
 		      for ( int i = 0; i < side_num_nodes; i++ )
-			xi += bf(i,ip) * my_coords[lnn[i]];
+			xi += bf(i,ip) * nodeCoords[lnn[i]];
 
 		      for ( int d = 0; d < dim; ++d )
 			intg_pt_locations(d,index) = xi[d];
@@ -435,6 +446,8 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 	{
 	  ThrowAssert(-1 == intg_pt_sign || 1 == intg_pt_sign);
 
+	  const auto & masterElement = get_master_element();
+
 	  if ( intg_pt_sign != my_sign )
 	    {
 	      return(index);
@@ -442,30 +455,30 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 
 	  const int nelem            = 1;
 	  const int dim              = spatial_dim();
-	  const int vol_num_intg_pts = my_master_element.num_intg_pts();
+	  const int vol_num_intg_pts = masterElement.num_intg_pts();
 
 	  // temp arrays
-	  sierra::ArrayContainer<double,DIM,NPE_COORD> coords(dim,my_num_nodes);
+	  sierra::ArrayContainer<double,DIM,NPE_COORD> coords(dim,numNodes);
 	  sierra::ArrayContainer<double,NINT> det_J(vol_num_intg_pts);
 
 	  double error;
 
 	  // integration weights
-	  const double * intg_wts_ptr = my_master_element.intg_weights();
+	  const double * intg_wts_ptr = masterElement.intg_weights();
 	  const sierra::Array<const double,NINT> intg_wts(intg_wts_ptr,vol_num_intg_pts);
 
 	  // load coords
-	  for ( int i = 0; i < my_num_nodes; i++ )
+	  for ( int i = 0; i < numNodes; i++ )
 	    {
-	      for ( int d = 0; d < dim; d++ ) coords(d,i) = my_coords[i][d];
+	      for ( int d = 0; d < dim; d++ ) coords(d,i) = nodeCoords[i][d];
 	    }
 
 	  // determinant at integration points
-	  my_master_element.determinant( dim, nelem, coords.ptr(), det_J.ptr(), &error );
+	  masterElement.determinant( dim, nelem, coords.ptr(), det_J.ptr(), &error );
 
 	  // basis fns at integration point locations
-	  const double * bf_ptr = my_master_element.shape_fcn();
-	  const sierra::Array<const double,NPE_VAR,NINT> bf(bf_ptr,my_num_nodes,vol_num_intg_pts);
+	  const double * bf_ptr = masterElement.shape_fcn();
+	  const sierra::Array<const double,NPE_VAR,NINT> bf(bf_ptr,numNodes,vol_num_intg_pts);
 
 	  for ( int ip = 0; ip < vol_num_intg_pts; ++ip)
 	    {
@@ -473,8 +486,8 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 	      intg_weights(index) = intg_wts(ip);
 
 	      Vector3d xi(Vector3d::ZERO);
-	      for ( int i = 0; i < my_num_nodes; i++ )
-		xi += bf(i,ip) * my_coords[i];
+	      for ( int i = 0; i < numNodes; i++ )
+		xi += bf(i,ip) * nodeCoords[i];
 
 	      for ( int d = 0; d < dim; d++ )
 		intg_pt_locations(d,index) = xi[d];
@@ -488,27 +501,30 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 
 double
 ContourSubElement::parametric_quality() const
-{ /* %TRACE% */  /* %TRACE% */
+{
   const int nelem = 1;
-  const int nint  = my_master_element.num_intg_pts();
+  const auto & masterElement = get_master_element();
+  const int numNodes = get_num_nodes();
+  const Vector3d * nodeCoords = get_coordinates_at_nodes();
+  const int nint  = masterElement.num_intg_pts();
   const int dim   = spatial_dim();
-  std::vector<double> coords(my_num_nodes * dim, 0.);
+  std::vector<double> coords(numNodes * dim, 0.);
   std::vector<double> det_J(nint, 0.);
   double error = 0.;
   double sub_quality = 0.;
 
   // load coords
   int count = 0;
-  for ( int i = 0; i < my_num_nodes; i++ )
+  for ( int i = 0; i < numNodes; i++ )
     {
       for ( int j = 0; j < dim; j++ )
 	{
-	  coords[count++] = my_coords[i][j];
+	  coords[count++] = nodeCoords[i][j];
 	}
     }
 
   // determinant at integration points
-  my_master_element.determinant( dim, nelem, coords.data(), det_J.data(), &error );
+  masterElement.determinant( dim, nelem, coords.data(), det_J.data(), &error );
 
   double min_det_J = 0., sum_det_J = 0.;
   for ( int ip = 0; ip < nint; ip++ )
@@ -528,20 +544,23 @@ ContourSubElement::parametric_quality() const
 
 double
 ContourSubElement::physical_quality() const
-{ /* %TRACE% */  /* %TRACE% */
+{
   const int nelem = 1;
-  const int nint  = my_master_element.num_intg_pts();
+  const auto & masterElement = get_master_element();
+  const int numNodes = get_num_nodes();
+  const Vector3d * nodeCoords = get_coordinates_at_nodes();
+  const int nint  = masterElement.num_intg_pts();
   const int dim   = spatial_dim();
-  std::vector<double> coords(my_num_nodes * dim, 0.);
+  std::vector<double> coords(numNodes * dim, 0.);
   std::vector<double> det_J(nint, 0.);
   double error = 0.;
   double sub_quality = 0.;
 
   // load coords
   int count = 0;
-  for ( int i = 0; i < my_num_nodes; i++ )
+  for ( int i = 0; i < numNodes; i++ )
     {
-      const Vector3d phys_coords = my_owner->coordinates(my_coords[i]);
+      const Vector3d phys_coords = my_owner->coordinates(nodeCoords[i]);
       for ( int j = 0; j < dim; j++ )
 	{
 	  coords[count++] = phys_coords[j];
@@ -549,7 +568,7 @@ ContourSubElement::physical_quality() const
     }
 
   // determinant at integration points
-  my_master_element.determinant( dim, nelem, coords.data(), det_J.data(), &error );
+  masterElement.determinant( dim, nelem, coords.data(), det_J.data(), &error );
 
   double min_det_J = 0., sum_det_J = 0.;
   for ( int ip = 0; ip < nint; ip++ )
@@ -569,9 +588,11 @@ ContourSubElement::physical_quality() const
 
 double
 ContourSubElement::side_quality(const int side) const
-{ /* %TRACE% */  /* %TRACE% */
+{
   const int nelem = 1;
-  const int nint  = my_side_master_element.num_intg_pts();
+  const auto & sideMasterElement = get_side_master_element();
+  const Vector3d * nodeCoords = get_coordinates_at_nodes();
+  const int nint  = sideMasterElement.num_intg_pts();
   const stk::topology Top = topology();
   const stk::topology sideTop = Top.side_topology(side);
   const int side_num_nodes = sideTop.num_nodes();
@@ -588,12 +609,12 @@ ContourSubElement::side_quality(const int side) const
     {
       for ( int j = 0; j < dim; j++ )
 	{
-	  coords[count++] = my_coords[lnn[i]][j];
+	  coords[count++] = nodeCoords[lnn[i]][j];
 	}
     }
 
   // determinant at integration points
-  my_side_master_element.determinant( dim, nelem, coords.data(), det_J.data(), &error );
+  sideMasterElement.determinant( dim, nelem, coords.data(), det_J.data(), &error );
 
   double min_det_J = 0., sum_det_J = 0.;
   for ( int ip = 0; ip < nint; ip++ )
@@ -615,7 +636,7 @@ double
 ContourSubElement::find_quadratic_crossing( double d0,
 				     double d1,
 				     double d2 )
-{ /* %TRACE% */  /* %TRACE% */
+{
   const double epsilon = std::numeric_limits<double>::epsilon()*std::sqrt(d0*d0 + d1*d1 + d2*d2);
   if ( std::fabs(d0) < epsilon ) return 0.0;
   if ( std::fabs(d1) < epsilon ) return 1.0;
@@ -644,92 +665,71 @@ ContourSubElement::find_quadratic_crossing( double d0,
 }
 
 ContourSubElement_Quad_4::ContourSubElement_Quad_4(
-  const PointVec & coords,
-  const std::vector<int> &  side_ids,
+  const std::array<Vector3d,4> & coords,
+  const std::array<int,4> &  side_ids,
   const ContourElement * in_owner )
-    : ContourSubElement( stk::topology::QUADRILATERAL_4_2D,
-		  coords,
+    : ContourSubElementWithTopology<stk::topology::QUAD_4_2D>( coords,
 		  side_ids,
 		  in_owner,
 		  0, /* in_subelement_depth*/
 		  0  /* subelement_sign=0 for now, correct this below if this element is entirely on one side */ )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_linear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
-
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  non_conformal_decomposition();
+  if (my_sign == 0)
+  {
+    non_conformal_decomposition();
+  }
 }
 
 int
 ContourSubElement_Quad_4::non_conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
 
   // create 4, 3-noded, adaptive triangles
   my_subelements.reserve(4);
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(3,Vector3d::ZERO);
-  std::vector<int> sub_ids(3);
+  std::array<Vector3d,3> sub_coords;
+  std::array<int,3> sub_ids;
 
-  Vector3d center = 0.25*(my_coords[0]+my_coords[1]+my_coords[2]+my_coords[3]);
+  Vector3d center = 0.25*(myCoords[0]+myCoords[1]+myCoords[2]+myCoords[3]);
 
   // triangle #1
-  sub_coords[0] = my_coords[0];
-  sub_coords[1] = my_coords[1];
+  sub_coords[0] = myCoords[0];
+  sub_coords[1] = myCoords[1];
   sub_coords[2] = center;
-  sub_ids[0] = my_side_ids[0];
+  sub_ids[0] = mySideIds[0];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #2
-  sub_coords[0] = my_coords[1];
-  sub_coords[1] = my_coords[2];
+  sub_coords[0] = myCoords[1];
+  sub_coords[1] = myCoords[2];
   sub_coords[2] = center;
-  sub_ids[0] = my_side_ids[1];
+  sub_ids[0] = mySideIds[1];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #3
-  sub_coords[0] = my_coords[2];
-  sub_coords[1] = my_coords[3];
-  sub_ids[0] = my_side_ids[2];
+  sub_coords[0] = myCoords[2];
+  sub_coords[1] = myCoords[3];
+  sub_ids[0] = mySideIds[2];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #4
-  sub_coords[0] = my_coords[3];
-  sub_coords[1] = my_coords[0];
+  sub_coords[0] = myCoords[3];
+  sub_coords[1] = myCoords[0];
   sub_coords[2] = center;
-  sub_ids[0] = my_side_ids[3];
+  sub_ids[0] = mySideIds[3];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
@@ -739,91 +739,70 @@ ContourSubElement_Quad_4::non_conformal_decomposition()
 }
 
 ContourSubElement_Quad_9::ContourSubElement_Quad_9(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,9> & coords,
+  const std::array<int,4> &  sideIds,
   const ContourElement *in_owner )
-    : ContourSubElement( stk::topology::QUADRILATERAL_9_2D,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::QUAD_9_2D>( coords,
+		  sideIds,
 		  in_owner,
 		  0, /* in_subelement_depth*/
 		  0  /* subelement_sign=0 for now, correct this below if this element is entirely on one side */ )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
-
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  non_conformal_decomposition();
+  if (my_sign == 0)
+  {
+    non_conformal_decomposition();
+  }
 }
 
 int
 ContourSubElement_Quad_9::non_conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
 
   // create 4, 3-noded, adaptive triangles
   my_subelements.reserve(4);
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(3,Vector3d::ZERO);
-  std::vector<int> sub_ids(3);
+  std::array<Vector3d,3> sub_coords;
+  std::array<int,3> sub_ids;
 
   // triangle #1
-  sub_coords[0] = my_coords[0];
-  sub_coords[1] = my_coords[1];
-  sub_coords[2] = my_coords[8];
-  sub_ids[0] = my_side_ids[0];
+  sub_coords[0] = myCoords[0];
+  sub_coords[1] = myCoords[1];
+  sub_coords[2] = myCoords[8];
+  sub_ids[0] = mySideIds[0];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #2
-  sub_coords[0] = my_coords[1];
-  sub_coords[1] = my_coords[2];
-  sub_coords[2] = my_coords[8];
-  sub_ids[0] = my_side_ids[1];
+  sub_coords[0] = myCoords[1];
+  sub_coords[1] = myCoords[2];
+  sub_coords[2] = myCoords[8];
+  sub_ids[0] = mySideIds[1];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #3
-  sub_coords[0] = my_coords[2];
-  sub_coords[1] = my_coords[3];
-  sub_coords[2] = my_coords[8];
-  sub_ids[0] = my_side_ids[2];
+  sub_coords[0] = myCoords[2];
+  sub_coords[1] = myCoords[3];
+  sub_coords[2] = myCoords[8];
+  sub_ids[0] = mySideIds[2];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
   my_subelements.push_back( sub );
 
   // triangle #4
-  sub_coords[0] = my_coords[3];
-  sub_coords[1] = my_coords[0];
-  sub_coords[2] = my_coords[8];
-  sub_ids[0] = my_side_ids[3];
+  sub_coords[0] = myCoords[3];
+  sub_coords[1] = myCoords[0];
+  sub_coords[2] = myCoords[8];
+  sub_ids[0] = mySideIds[3];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1 );
@@ -833,18 +812,17 @@ ContourSubElement_Quad_9::non_conformal_decomposition()
 }
 
 ContourSubElement_Tri_3::ContourSubElement_Tri_3(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,3> & coords,
+  const std::array<int,3> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth,
   const int subelement_sign )
-    : ContourSubElement( stk::topology::TRIANGLE_3_2D,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TRI_3_2D>( coords,
+		  sideIds,
 		  in_owner,
 		  in_subelement_depth,
 		  subelement_sign )
-{ /* %TRACE% */  /* %TRACE% */
+{
   // if this is a conformal element, return quickly
   if ( subelement_sign != 0 )
     {
@@ -852,37 +830,29 @@ ContourSubElement_Tri_3::ContourSubElement_Tri_3(
     }
 
   // snap to mesh
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
   for (int n = 0; n < 3; ++n)
     {
-      if (std::fabs(my_dist[n]) < my_owner->edge_linear_tolerance() * my_owner->length_scale() )
+      if (std::fabs(myDist[n]) < snapTol )
 	{
-	  my_dist[n] = 0.0;
+	  myDist[n] = 0.0;
 	}
     }
 
-  // see if there is a crossing
-  bool have_crossing = false;
-  for ( int i = 1; i < my_num_nodes; i++ )
-    {
-      if ( LevelSet::sign_change(my_dist[0], my_dist[i]) ) have_crossing = true;
-    }
 
-  if ( have_crossing )
+  my_sign = ContourElement::compute_linear_distance_sign(snapTol, myDist.size(), myDist.data());
+
+  if ( my_sign == 0 )
     {
       // attempt conformal decomposition
       int success = conformal_decomposition();
       ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
     }
-  else
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-    }
 }
 
 int
 ContourSubElement_Tri_3::conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
 
   // create 4 conforming triangular subelements
 
@@ -890,7 +860,8 @@ ContourSubElement_Tri_3::conformal_decomposition()
   my_subelements.clear();
   my_subelements.reserve(4);
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(3,Vector3d::ZERO);
+  std::array<Vector3d,3> sub_coords;
+  std::array<int,3> sub_ids;
 
   // For any edge with a crossing, we will move the
   // mid side node for that egdge to the crossing
@@ -898,23 +869,22 @@ ContourSubElement_Tri_3::conformal_decomposition()
   // in a local vector of nodes (lcoords).
   // We will also create local vectors for the distance and side_ids
   // so that we can reorient the tri as discussed below.
-  PointVec lcoords = my_coords;
-  lcoords.resize(6,Vector3d::ZERO);
-  std::vector<int> sub_ids(3);
-  std::vector<int> is_on_surf(6); // initializes to 0 (false)
+  std::array<Vector3d,6> lcoords = {myCoords[0], myCoords[1], myCoords[2], Vector3d::ZERO, Vector3d::ZERO, Vector3d::ZERO};
+  std::array<double,3> ldist = { myDist[0], myDist[1], myDist[2] };
+  std::array<int,6> is_on_surf = {0,0,0,0,0,0};
   int sub_sign;
-  std::vector<int> edge_node_ids(6);
+  std::array<int,6> edge_node_ids;
 
   // find edge crossings
   edge_node_ids[0] = 0;
   edge_node_ids[1] = 1;
   edge_node_ids[2] = 2;
-  edge_node_ids[3] = process_edge( 0, 1, 3, is_on_surf, lcoords, my_dist );
-  edge_node_ids[4] = process_edge( 1, 2, 4, is_on_surf, lcoords, my_dist );
-  edge_node_ids[5] = process_edge( 2, 0, 5, is_on_surf, lcoords, my_dist );
+  edge_node_ids[3] = process_edge( 0, 1, 3, is_on_surf, lcoords, ldist );
+  edge_node_ids[4] = process_edge( 1, 2, 4, is_on_surf, lcoords, ldist );
+  edge_node_ids[5] = process_edge( 2, 0, 5, is_on_surf, lcoords, ldist );
 
   const int zero_sign = LevelSet::sign(0.0);
-  std::vector<int> sub_degenerate(4); // initializes to zero (false)
+  std::array<bool,4> sub_degenerate;
 
   sub_degenerate[0] = is_degenerate(edge_node_ids,0,3,5);
   sub_degenerate[1] = is_degenerate(edge_node_ids,3,1,4);
@@ -927,10 +897,10 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[0];
       sub_coords[1] = lcoords[3];
       sub_coords[2] = lcoords[5];
-      sub_sign = LevelSet::sign(my_dist[0]);
-      sub_ids[0] = my_side_ids[0];
+      sub_sign = LevelSet::sign(myDist[0]);
+      sub_ids[0] = mySideIds[0];
       sub_ids[1] = ((is_on_surf[3] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
-      sub_ids[2] = my_side_ids[2];
+      sub_ids[2] = mySideIds[2];
       sub = new ContourSubElement_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1, sub_sign );
       my_subelements.push_back( sub );
     }
@@ -941,9 +911,9 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[3];
       sub_coords[1] = lcoords[1];
       sub_coords[2] = lcoords[4];
-      sub_sign = LevelSet::sign(my_dist[1]);
-      sub_ids[0] = my_side_ids[0];
-      sub_ids[1] = my_side_ids[1];
+      sub_sign = LevelSet::sign(myDist[1]);
+      sub_ids[0] = mySideIds[0];
+      sub_ids[1] = mySideIds[1];
       sub_ids[2] = ((is_on_surf[3] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
       sub = new ContourSubElement_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1, sub_sign );
       my_subelements.push_back( sub );
@@ -955,10 +925,10 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[5];
       sub_coords[1] = lcoords[4];
       sub_coords[2] = lcoords[2];
-      sub_sign = LevelSet::sign(my_dist[2]);
+      sub_sign = LevelSet::sign(myDist[2]);
       sub_ids[0] = ((is_on_surf[5] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
-      sub_ids[1] = my_side_ids[1];
-      sub_ids[2] = my_side_ids[2];
+      sub_ids[1] = mySideIds[1];
+      sub_ids[2] = mySideIds[2];
       sub = new ContourSubElement_Tri_3( sub_coords, sub_ids, my_owner, my_subelement_depth+1, sub_sign );
       my_subelements.push_back( sub );
     }
@@ -969,9 +939,9 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[3];
       sub_coords[1] = lcoords[4];
       sub_coords[2] = lcoords[5];
-      sub_sign = LevelSet::sign( (is_on_surf[3] ? 0.0 : my_dist[0]+my_dist[1]) +
-				 (is_on_surf[4] ? 0.0 : my_dist[1]+my_dist[2]) +
-				 (is_on_surf[5] ? 0.0 : my_dist[2]+my_dist[0]) );
+      sub_sign = LevelSet::sign( (is_on_surf[3] ? 0.0 : myDist[0]+myDist[1]) +
+				 (is_on_surf[4] ? 0.0 : myDist[1]+myDist[2]) +
+				 (is_on_surf[5] ? 0.0 : myDist[2]+myDist[0]) );
       sub_ids[0] = ((is_on_surf[3] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[1])) ? -2 : -1;
       sub_ids[1] = ((is_on_surf[4] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[2])) ? -2 : -1;
       sub_ids[2] = ((is_on_surf[5] && is_on_surf[3]) && (zero_sign != sub_sign || sub_degenerate[0])) ? -2 : -1;
@@ -1004,10 +974,10 @@ int
 ContourSubElement_Tri_3::process_edge( const int i0,
 				const int i1,
 				const int i2,
-				std::vector<int> & is_on_surf,
-				PointVec & lcoords,
-				const std::vector<double> & ldist )
-{ /* %TRACE% */  /* %TRACE% */
+				std::array<int,6> & is_on_surf,
+				std::array<Vector3d,6> & lcoords,
+				const std::array<double,3> & ldist )
+{
   int edge_node_id = i2;
   is_on_surf[i2] = LevelSet::sign_change( ldist[i0], ldist[i1] );
   if ( is_on_surf[i2] )
@@ -1082,9 +1052,9 @@ ContourSubElement_Tri_3::process_edge( const int i0,
 }
 
 bool
-ContourSubElement_Tri_3::is_degenerate( const std::vector<int> & edge_node_ids,
+ContourSubElement_Tri_3::is_degenerate( const std::array<int,6> & edge_node_ids,
 				 const int i0, const int i1, const int i2 )
-{ /* %TRACE% */  /* %TRACE% */
+{
 
   // DRN:  This is really ugly, hand-optimized code for looking for degenerate tris
   //       Basically, it checks if any of the edges are degenerate. Then it has to look for
@@ -1126,8 +1096,8 @@ ContourSubElement_Tri_3::is_degenerate( const std::vector<int> & edge_node_ids,
 int
 ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
 			       int side ) const
-{ /* %TRACE% */  /* %TRACE% */
-  ThrowAssert( my_side_ids[side] == -2 );
+{
+  ThrowAssert( get_side_ids()[side] == -2 );
 
   // just one linear facet per side
   const int num_facets = 1;
@@ -1136,104 +1106,85 @@ ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
 
   if ( LevelSet::sign_change(0.0, (double) my_sign) )
     {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(my_coords[lnn[0]]), my_owner->coordinates(my_coords[lnn[1]]) );
+      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]) );
       facets.add( std::move(facet) );
     }
   else
     {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(my_coords[lnn[1]]), my_owner->coordinates(my_coords[lnn[0]]) );
+      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[0]]) );
       facets.add( std::move(facet) );
     }
 
   return( num_facets );
 }
 
+double
+ContourSubElement_Tri_3::side_area( int side ) const
+{
+  ThrowAssert( get_side_ids()[side] == -2 );
+
+  const unsigned * const lnn = get_side_node_ordinals(topology(), side);
+
+  return (my_owner->coordinates(myCoords[lnn[0]]) - my_owner->coordinates(myCoords[lnn[1]])).length();
+}
+
 const int ContourSubElement_Adaptive_Tri_3::MAX_REFINMENT_LEVELS = 6;
 
 ContourSubElement_Adaptive_Tri_3::ContourSubElement_Adaptive_Tri_3(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,3> & coords,
+  const std::array<int,3> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth )
-    : ContourSubElement( stk::topology::TRIANGLE_3_2D,
-                  coords,
-                  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TRI_3_2D>( coords,
+                  sideIds,
                   in_owner,
                   in_subelement_depth,
                   0 )
-{ /* %TRACE% */  /* %TRACE% */
-  my_edge_age.resize(3); // initializes to zero
+{
+  my_edge_age.fill(0);
   non_conformal_decomposition();
 }
 
 ContourSubElement_Adaptive_Tri_3::ContourSubElement_Adaptive_Tri_3(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
-  const std::vector<int> &  edge_age,
+  const std::array<Vector3d,3> & coords,
+  const std::array<int,3> & side_ids,
+  const std::array<int,3> &  edge_age,
   const ContourElement * in_owner,
   const int in_subelement_depth )
-    : ContourSubElement( stk::topology::TRIANGLE_3_2D,
-                  coords,
+    : ContourSubElementWithTopology<stk::topology::TRI_3_2D>( coords,
                   side_ids,
                   in_owner,
                   in_subelement_depth,
                   0 )
-{ /* %TRACE% */  /* %TRACE% */
+{
   my_edge_age = edge_age;
   non_conformal_decomposition();
 }
 
 int
 ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
+  if (my_sign != 0)
+  {
+    return success;
+  }
 
-  const double variation = max_dist - min_dist;
+  int longest_bad_edge = -1;
 
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
+  std::array<Vector3d,6> lcoords = {myCoords[0], myCoords[1], myCoords[2], 0.5*(myCoords[0] + myCoords[1]), 0.5*(myCoords[1] + myCoords[2]), 0.5*(myCoords[2] + myCoords[0])};
 
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return success;
-    }
-
-    int longest_bad_edge = -1;
-
-  // use temporary storage for vertex and side nodes
-  PointVec lcoords = my_coords;
-  lcoords.resize(6,Vector3d::ZERO);
-  lcoords[3] = 0.5 * (my_coords[0] + my_coords[1]);
-  lcoords[4] = 0.5 * (my_coords[1] + my_coords[2]);
-  lcoords[5] = 0.5 * (my_coords[2] + my_coords[0]);
-
-  PointVec lphyscoords(6);
+  std::array<Vector3d,6> lphyscoords;
   for (int n = 0; n < 6; ++n)
-    {
-      lphyscoords[n] = my_owner->coordinates( lcoords[n] );
-    }
+    lphyscoords[n] = my_owner->coordinates( lcoords[n] );
 
-  std::vector<double> ldist = my_dist;
-  ldist.resize(6);
+  std::array<double,6> ldist = {myDist[0], myDist[1], myDist[2], 0., 0., 0.};
   for (int n = 3; n < 6; ++n)
-    {
-      ldist[n] = my_owner->distance( lcoords[n] );
-    }
+    ldist[n] = my_owner->distance( lcoords[n] );
 
   const stk::topology Top = stk::topology::TRIANGLE_6_2D;
   int num_edges = Top.num_edges();
@@ -1307,7 +1258,7 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
       my_subelements.clear();
       my_subelements.reserve(1);
 
-      ContourSubElement *sub = new ContourSubElement_Tri_3( my_coords, my_side_ids, my_owner, my_subelement_depth+1 );
+      ContourSubElement *sub = new ContourSubElement_Tri_3( myCoords, mySideIds, my_owner, my_subelement_depth+1 );
       my_subelements.push_back( sub );
     }
   else
@@ -1319,9 +1270,9 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
       my_subelements.clear();
       my_subelements.reserve(2);
       ContourSubElement *sub  = NULL;
-      PointVec sub_coords(3,Vector3d::ZERO);
-      std::vector<int> sub_ids(3);
-      std::vector<int> sub_edge_age(3);
+      std::array<Vector3d,3> sub_coords;
+      std::array<int,3> sub_ids;
+      std::array<int,3> sub_edge_age;
 
       static const unsigned permute_0[] = { 0,1,2 };
       static const unsigned permute_1[] = { 1,2,0 };
@@ -1331,15 +1282,15 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
       const unsigned * lnn = permute_table[longest_bad_edge];
       const unsigned * lsn = lnn; // side permutation mirrors node permutation
 
-      const Vector3d edge_node = 0.5 * (my_coords[lnn[0]] + my_coords[lnn[1]]);
+      const Vector3d edge_node = 0.5 * (myCoords[lnn[0]] + myCoords[lnn[1]]);
 
       // tri #1
-      sub_coords[0] = my_coords[lnn[0]];
+      sub_coords[0] = myCoords[lnn[0]];
       sub_coords[1] = edge_node;
-      sub_coords[2] = my_coords[lnn[2]];
-      sub_ids[0] = my_side_ids[lsn[0]];
+      sub_coords[2] = myCoords[lnn[2]];
+      sub_ids[0] = mySideIds[lsn[0]];
       sub_ids[1] = -1; /* not on any parent side */
-      sub_ids[2] = my_side_ids[lsn[2]];
+      sub_ids[2] = mySideIds[lsn[2]];
       sub_edge_age[0] = my_edge_age[lsn[0]]+1;
       sub_edge_age[1] = my_edge_age[lsn[0]]+1;
       sub_edge_age[2] = my_edge_age[lsn[2]];
@@ -1348,10 +1299,10 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
 
       // tri #2
       sub_coords[0] = edge_node;
-      sub_coords[1] = my_coords[lnn[1]];
-      sub_coords[2] = my_coords[lnn[2]];
-      sub_ids[0] = my_side_ids[lsn[0]];
-      sub_ids[1] = my_side_ids[lsn[1]];
+      sub_coords[1] = myCoords[lnn[1]];
+      sub_coords[2] = myCoords[lnn[2]];
+      sub_ids[0] = mySideIds[lsn[0]];
+      sub_ids[1] = mySideIds[lsn[1]];
       sub_edge_age[0] = my_edge_age[lsn[0]]+1;
       sub_edge_age[1] = my_edge_age[lsn[1]];
       sub_edge_age[2] = my_edge_age[lsn[0]]+1;
@@ -1364,114 +1315,64 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
 }
 
 ContourSubElement_Tri_6::ContourSubElement_Tri_6(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,6> & coords,
+  const std::array<int,3> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth,
   const int subelement_sign )
-    : ContourSubElement( stk::topology::TRIANGLE_6_2D,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TRI_6_2D> ( coords,
+		  sideIds,
 		  in_owner,
 		  in_subelement_depth,
 		  subelement_sign )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
-
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  // use a single non-conformal, adaptive 4-noded tet
-  my_subelements.clear();
-  my_subelements.reserve(1);
-  ContourSubElement *sub  = NULL;
-  PointVec sub_coords(3,Vector3d::ZERO);
-
-  sub_coords[0] = my_coords[0];
-  sub_coords[1] = my_coords[1];
-  sub_coords[2] = my_coords[2];
-
-  sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, my_side_ids, my_owner, my_subelement_depth+1 );
-  my_subelements.push_back( sub );
+  if (my_sign == 0)
+  {
+    // use a single non-conformal, adaptive 3-noded tri
+    const std::array<Vector3d,3> sub_coords = { myCoords[0], myCoords[1], myCoords[2] };
+    ContourSubElement *sub = new ContourSubElement_Adaptive_Tri_3( sub_coords, mySideIds, my_owner, my_subelement_depth+1 );
+    my_subelements.push_back( sub );
+  }
 }
 
 ContourSubElement_Hex_8::ContourSubElement_Hex_8(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,8> & coords,
+  const std::array<int,6> &  sideIds,
   const ContourElement * in_owner )
-    : ContourSubElement( stk::topology::HEXAHEDRON_8,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::HEX_8> ( coords,
+		  sideIds,
 		  in_owner,
 		  0, /* in_subelement_depth*/
 		  0  /* subelement_sign=0 for now, correct this below if this element is entirely on one side */ )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_linear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
+  if (my_sign == 0)
+  {
+    // create 24, 4-noded, adaptive tetrahedra
+    my_subelements.reserve(24);
 
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  // create 24, 4-noded, adaptive tetrahedra
-  my_subelements.reserve(24);
-
-  // Conceptually, hex is broken into 6 prisms, with the
-  // bases of the prisms corresponding to a face of the hex.
-  int success = true; // optimism
-  for ( int face = 0; face < 6 && success; ++face )
+    // Conceptually, hex is broken into 6 prisms, with the
+    // bases of the prisms corresponding to a face of the hex.
+    int success = true; // optimism
+    for ( int face = 0; face < 6 && success; ++face )
     {
       success &= subpyramid_non_conformal_decomposition( face );
     }
+  }
 }
 
 int
 ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face )
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(4,Vector3d::ZERO);
-  std::vector<int> sub_ids(4);
+  std::array<Vector3d,4> sub_coords;
+  std::array<int,4> sub_ids;
 
   static const unsigned face_0[] = { 0,1,5,4 };
   static const unsigned face_1[] = { 1,2,6,5 };
@@ -1494,16 +1395,16 @@ ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face 
   // refinement of the sub-tets will do longest edge bisection rather than the
   // self-similar 8 subtet refinement.
 
-  Vector3d vol_center = 0.125*(my_coords[0]+my_coords[1]+my_coords[2]+my_coords[3]+
-			      my_coords[4]+my_coords[5]+my_coords[6]+my_coords[7]);
-  Vector3d face_center = 0.25*(my_coords[lnn[0]]+my_coords[lnn[1]]+my_coords[lnn[2]]+my_coords[lnn[3]]);
+  Vector3d vol_center = 0.125*(myCoords[0]+myCoords[1]+myCoords[2]+myCoords[3]+
+			      myCoords[4]+myCoords[5]+myCoords[6]+myCoords[7]);
+  Vector3d face_center = 0.25*(myCoords[lnn[0]]+myCoords[lnn[1]]+myCoords[lnn[2]]+myCoords[lnn[3]]);
 
   // tet #1
-  sub_coords[0] = my_coords[lnn[0]];
+  sub_coords[0] = myCoords[lnn[0]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[1]];
+  sub_coords[2] = myCoords[lnn[1]];
   sub_coords[3] = vol_center;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1511,11 +1412,11 @@ ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face 
   my_subelements.push_back( sub );
 
   // tet #2
-  sub_coords[0] = my_coords[lnn[1]];
+  sub_coords[0] = myCoords[lnn[1]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[2]];
+  sub_coords[2] = myCoords[lnn[2]];
   sub_coords[3] = vol_center;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1523,11 +1424,11 @@ ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face 
   my_subelements.push_back( sub );
 
   // tet #3
-  sub_coords[0] = my_coords[lnn[2]];
+  sub_coords[0] = myCoords[lnn[2]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[3]];
+  sub_coords[2] = myCoords[lnn[3]];
   sub_coords[3] = vol_center;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1535,11 +1436,11 @@ ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face 
   my_subelements.push_back( sub );
 
   // tet #4
-  sub_coords[0] = my_coords[lnn[3]];
+  sub_coords[0] = myCoords[lnn[3]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[0]];
+  sub_coords[2] = myCoords[lnn[0]];
   sub_coords[3] = vol_center;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1550,61 +1451,40 @@ ContourSubElement_Hex_8::subpyramid_non_conformal_decomposition( const int face 
 }
 
 ContourSubElement_Hex_27::ContourSubElement_Hex_27(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,27> & coords,
+  const std::array<int,6> &  sideIds,
   const ContourElement * in_owner )
-    : ContourSubElement( stk::topology::HEXAHEDRON_27,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::HEX_27> ( coords,
+		  sideIds,
 		  in_owner,
 		  0, /* in_subelement_depth*/
 		  0  /* subelement_sign=0 for now, correct this below if this element is entirely on one side */ )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
+  if (my_sign == 0)
+  {
+    // create 24, 4-noded, adaptive tetrahedra
+    my_subelements.reserve(24);
 
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  // create 24, 4-noded, adaptive tetrahedra
-  my_subelements.reserve(24);
-
-  // Conceptually, hex is broken into 6 prisms, with the
-  // bases of the prisms corresponding to a face of the hex.
-  int success = true; // optimism
-  for ( int face = 0; face < 6 && success; ++face )
+    // Conceptually, hex is broken into 6 prisms, with the
+    // bases of the prisms corresponding to a face of the hex.
+    int success = true; // optimism
+    for ( int face = 0; face < 6 && success; ++face )
     {
       success &= subpyramid_non_conformal_decomposition( face );
     }
+  }
 }
 
 int
 ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face )
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(4,Vector3d::ZERO);
-  std::vector<int> sub_ids(4);
+  std::array<Vector3d,4> sub_coords;
+  std::array<int,4> sub_ids;
 
   static const unsigned face_0[] = { 0,1,5,4, 25 };
   static const unsigned face_1[] = { 1,2,6,5, 24 };
@@ -1628,11 +1508,11 @@ ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face
   // self-similar 8 subtet refinement.
 
   // tet #1
-  sub_coords[0] = my_coords[lnn[0]];
-  sub_coords[1] = my_coords[lnn[4]];
-  sub_coords[2] = my_coords[lnn[1]];
-  sub_coords[3] = my_coords[20];
-  sub_ids[0] = my_side_ids[face];
+  sub_coords[0] = myCoords[lnn[0]];
+  sub_coords[1] = myCoords[lnn[4]];
+  sub_coords[2] = myCoords[lnn[1]];
+  sub_coords[3] = myCoords[20];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1640,11 +1520,11 @@ ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face
   my_subelements.push_back( sub );
 
   // tet #2
-  sub_coords[0] = my_coords[lnn[1]];
-  sub_coords[1] = my_coords[lnn[4]];
-  sub_coords[2] = my_coords[lnn[2]];
-  sub_coords[3] = my_coords[20];
-  sub_ids[0] = my_side_ids[face];
+  sub_coords[0] = myCoords[lnn[1]];
+  sub_coords[1] = myCoords[lnn[4]];
+  sub_coords[2] = myCoords[lnn[2]];
+  sub_coords[3] = myCoords[20];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1652,11 +1532,11 @@ ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face
   my_subelements.push_back( sub );
 
   // tet #3
-  sub_coords[0] = my_coords[lnn[2]];
-  sub_coords[1] = my_coords[lnn[4]];
-  sub_coords[2] = my_coords[lnn[3]];
-  sub_coords[3] = my_coords[20];
-  sub_ids[0] = my_side_ids[face];
+  sub_coords[0] = myCoords[lnn[2]];
+  sub_coords[1] = myCoords[lnn[4]];
+  sub_coords[2] = myCoords[lnn[3]];
+  sub_coords[3] = myCoords[20];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1664,11 +1544,11 @@ ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face
   my_subelements.push_back( sub );
 
   // tet #4
-  sub_coords[0] = my_coords[lnn[3]];
-  sub_coords[1] = my_coords[lnn[4]];
-  sub_coords[2] = my_coords[lnn[0]];
-  sub_coords[3] = my_coords[20];
-  sub_ids[0] = my_side_ids[face];
+  sub_coords[0] = myCoords[lnn[3]];
+  sub_coords[1] = myCoords[lnn[4]];
+  sub_coords[2] = myCoords[lnn[0]];
+  sub_coords[3] = myCoords[20];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1679,59 +1559,40 @@ ContourSubElement_Hex_27::subpyramid_non_conformal_decomposition( const int face
 }
 
 ContourSubElement_Wedge_6::ContourSubElement_Wedge_6(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,6> & coords,
+  const std::array<int,5> &  sideIds,
   const ContourElement * in_owner )
-    : ContourSubElement( stk::topology::WEDGE_6,
-                  coords,
-                  side_ids,
+    : ContourSubElementWithTopology<stk::topology::WEDGE_6>( coords,
+                  sideIds,
                   in_owner,
                   0, /* in_subelement_depth*/
                   0  /* subelement_sign=0 for now, correct this below if this element is entirely on one side */ )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_linear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
-
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  // create 12, 4-noded, adaptive tetrahedra
-  my_subelements.reserve(12);
-
-  int success = true; // optimism
-  for ( int face = 0; face < 3 && success; ++face )
+  if (my_sign == 0)
   {
-    success &= subpyramid_non_conformal_decomposition( face );
+    // create 12, 4-noded, adaptive tetrahedra
+    my_subelements.reserve(12);
+
+    // Conceptually, hex is broken into 6 prisms, with the
+    // bases of the prisms corresponding to a face of the hex.
+    int success = true; // optimism
+    for ( int face = 0; face < 3 && success; ++face )
+    {
+      success &= subpyramid_non_conformal_decomposition( face );
+    }
   }
 }
 
 int
 ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int face )
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(4,Vector3d::ZERO);
-  std::vector<int> sub_ids(4);
+  std::array<Vector3d,4> sub_coords;
+  std::array<int,4> sub_ids;
 
   static const unsigned face_0[] = {0, 1, 4, 3};
   static const unsigned face_1[] = {1, 2, 5, 4};
@@ -1751,15 +1612,15 @@ ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int fac
   // self-similar 8 subtet refinement.
 
   // Not guaranteed to be within a highly deformed wedge
-  const Vector3d centroid = (my_coords[0]+my_coords[1]+my_coords[2]+my_coords[3]+my_coords[4]+my_coords[5])/6.;
-  const Vector3d face_center = 0.25*(my_coords[lnn[0]]+my_coords[lnn[1]]+my_coords[lnn[2]]+my_coords[lnn[3]]);
+  const Vector3d centroid = (myCoords[0]+myCoords[1]+myCoords[2]+myCoords[3]+myCoords[4]+myCoords[5])/6.;
+  const Vector3d face_center = 0.25*(myCoords[lnn[0]]+myCoords[lnn[1]]+myCoords[lnn[2]]+myCoords[lnn[3]]);
 
   // tet #1
-  sub_coords[0] = my_coords[lnn[0]];
+  sub_coords[0] = myCoords[lnn[0]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[1]];
+  sub_coords[2] = myCoords[lnn[1]];
   sub_coords[3] = centroid;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1767,11 +1628,11 @@ ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int fac
   my_subelements.push_back( sub );
 
   // tet #2
-  sub_coords[0] = my_coords[lnn[1]];
+  sub_coords[0] = myCoords[lnn[1]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[2]];
+  sub_coords[2] = myCoords[lnn[2]];
   sub_coords[3] = centroid;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1779,11 +1640,11 @@ ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int fac
   my_subelements.push_back( sub );
 
   // tet #3
-  sub_coords[0] = my_coords[lnn[2]];
+  sub_coords[0] = myCoords[lnn[2]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[3]];
+  sub_coords[2] = myCoords[lnn[3]];
   sub_coords[3] = centroid;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1791,11 +1652,11 @@ ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int fac
   my_subelements.push_back( sub );
 
   // tet #4
-  sub_coords[0] = my_coords[lnn[3]];
+  sub_coords[0] = myCoords[lnn[3]];
   sub_coords[1] = face_center;
-  sub_coords[2] = my_coords[lnn[0]];
+  sub_coords[2] = myCoords[lnn[0]];
   sub_coords[3] = centroid;
-  sub_ids[0] = my_side_ids[face];
+  sub_ids[0] = mySideIds[face];
   sub_ids[1] = -1; /* not on any parent side */
   sub_ids[2] = -1; /* not on any parent side */
   sub_ids[3] = -1; /* not on any parent side */
@@ -1806,18 +1667,17 @@ ContourSubElement_Wedge_6::subpyramid_non_conformal_decomposition( const int fac
 }
 
 ContourSubElement_Tet_4::ContourSubElement_Tet_4(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,4> & coords,
+  const std::array<int,4> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth,
   const int subelement_sign )
-    : ContourSubElement( stk::topology::TETRAHEDRON_4,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TET_4>( coords,
+		  sideIds,
 		  in_owner,
 		  in_subelement_depth,
 		  subelement_sign )
-{ /* %TRACE% */  /* %TRACE% */
+{
   // if this is a conformal element, return quickly
   if ( subelement_sign != 0 )
     {
@@ -1825,37 +1685,28 @@ ContourSubElement_Tet_4::ContourSubElement_Tet_4(
     }
 
   // snap to mesh
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
   for (int n = 0; n < 4; ++n)
     {
-      if (std::fabs(my_dist[n]) < my_owner->edge_linear_tolerance() * my_owner->length_scale())
+      if (std::fabs(myDist[n]) < snapTol)
 	{
-	  my_dist[n] = 0.0;
+	  myDist[n] = 0.0;
 	}
     }
 
-  // see if there is a crossing
-  bool have_crossing = false;
-  for ( int i = 1; i < my_num_nodes; i++ )
-    {
-      if ( LevelSet::sign_change(my_dist[0], my_dist[i]) ) have_crossing = true;
-    }
+  my_sign = ContourElement::compute_linear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  if ( have_crossing )
+  if ( my_sign == 0 )
     {
       // attempt conformal decomposition
       int success = conformal_decomposition();
       ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
     }
-  else
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-    }
 }
 
 int
 ContourSubElement_Tet_4::conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
 
   // attempt to create 8 conforming tetrahedral subelements
   // This attempt may unsuccessful if the resulting subelements
@@ -1866,7 +1717,8 @@ ContourSubElement_Tet_4::conformal_decomposition()
   my_subelements.clear();
   my_subelements.reserve(8);
   ContourSubElement *sub  = NULL;
-  PointVec sub_coords(4,Vector3d::ZERO);
+  std::array<Vector3d,4> sub_coords;
+  std::array<int,4> sub_ids;
 
   // For any edge with a crossing, we will move the
   // mid side node for that egdge to the crossing
@@ -1874,36 +1726,35 @@ ContourSubElement_Tet_4::conformal_decomposition()
   // in a local vector of nodes (lcoords).
   // We will also create local vectors for the distance and side_ids
   // so that we can reorient the tet as discussed below.
-  PointVec lcoords = my_coords;
-  lcoords.resize(10,Vector3d::ZERO);
-  std::vector<int> lsides = my_side_ids;
-  std::vector<double> ldist = my_dist;
-  std::vector<int> sub_ids(4);
-  std::vector<int> is_on_surf(10); // initializes to 0 (false)
+  std::array<Vector3d,10> lcoords = {myCoords[0], myCoords[1], myCoords[2], myCoords[3],
+      Vector3d::ZERO, Vector3d::ZERO, Vector3d::ZERO, Vector3d::ZERO, Vector3d::ZERO, Vector3d::ZERO };
+  std::array<int,4> lsides = mySideIds;
+  std::array<double,4> ldist = { myDist[0], myDist[1], myDist[2], myDist[3] };
+  std::array<int,10> is_on_surf = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   int sub_sign;
 
   // Find orientation of tet
   // Specifically, orient such that we don't have nodes 0 and 2 on one side and
   // nodes 1 and 3 on the other
-  if ( LevelSet::sign_change(my_dist[0],my_dist[1]) &&
-       LevelSet::sign_change(my_dist[1],my_dist[2]) &&
-       LevelSet::sign_change(my_dist[2],my_dist[3]) )
+  if ( LevelSet::sign_change(myDist[0],myDist[1]) &&
+       LevelSet::sign_change(myDist[1],myDist[2]) &&
+       LevelSet::sign_change(myDist[2],myDist[3]) )
     {
-      lcoords[0] = my_coords[0];
-      lcoords[1] = my_coords[3];
-      lcoords[2] = my_coords[1];
-      lcoords[3] = my_coords[2];
-      ldist[0] = my_dist[0];
-      ldist[1] = my_dist[3];
-      ldist[2] = my_dist[1];
-      ldist[3] = my_dist[2];
-      lsides[0] = my_side_ids[2];
-      lsides[1] = my_side_ids[1];
-      lsides[2] = my_side_ids[3];
-      lsides[3] = my_side_ids[0];
+      lcoords[0] = myCoords[0];
+      lcoords[1] = myCoords[3];
+      lcoords[2] = myCoords[1];
+      lcoords[3] = myCoords[2];
+      ldist[0] = myDist[0];
+      ldist[1] = myDist[3];
+      ldist[2] = myDist[1];
+      ldist[3] = myDist[2];
+      lsides[0] = mySideIds[2];
+      lsides[1] = mySideIds[1];
+      lsides[2] = mySideIds[3];
+      lsides[3] = mySideIds[0];
     }
 
-  std::vector<int> edge_node_ids(10);
+  std::array<int,10> edge_node_ids;
   edge_node_ids[0] = 0;
   edge_node_ids[1] = 1;
   edge_node_ids[2] = 2;
@@ -2092,10 +1943,10 @@ int
 ContourSubElement_Tet_4::process_edge( const int i0,
 				const int i1,
 				const int i2,
-				std::vector<int> & is_on_surf,
-				PointVec & lcoords,
-				const std::vector<double> & ldist )
-{ /* %TRACE% */  /* %TRACE% */
+				std::array<int,10> & is_on_surf,
+				std::array<Vector3d,10> & lcoords,
+				const std::array<double,4> & ldist )
+{
   int edge_node_id = i2;
   is_on_surf[i2] = LevelSet::sign_change( ldist[i0], ldist[i1] );
   if ( is_on_surf[i2] )
@@ -2177,9 +2028,9 @@ ContourSubElement_Tet_4::process_edge( const int i0,
 }
 
 bool
-ContourSubElement_Tet_4::is_degenerate( const std::vector<int> & edge_node_ids,
+ContourSubElement_Tet_4::is_degenerate( const std::array<int,10> & edge_node_ids,
 				 const int i0, const int i1, const int i2, const int i3 )
-{ /* %TRACE% */  /* %TRACE% */
+{
 
   // DRN:  This is really ugly, hand-optimized code for looking for degenerate tets
   //       Basically, it checks if any of the edges are degenerate. Then it has to look for degenerate
@@ -2237,8 +2088,8 @@ ContourSubElement_Tet_4::is_degenerate( const std::vector<int> & edge_node_ids,
 int
 ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
 			       int side ) const
-{ /* %TRACE% */  /* %TRACE% */
-  ThrowAssert( my_side_ids[side] == -2 );
+{
+  ThrowAssert( mySideIds[side] == -2 );
 
   // just one linear facet per linear triangle
   const int num_facets = 1;
@@ -2247,161 +2098,111 @@ ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
 
   if ( LevelSet::sign_change(0.0, (double) my_sign) )
     {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(my_coords[lnn[0]]), my_owner->coordinates(my_coords[lnn[1]]), my_owner->coordinates(my_coords[lnn[2]]) );
+      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[2]]) );
       facets.add( std::move(facet) );
     }
   else
     {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(my_coords[lnn[0]]), my_owner->coordinates(my_coords[lnn[2]]), my_owner->coordinates(my_coords[lnn[1]]) );
+      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[2]]), my_owner->coordinates(myCoords[lnn[1]]) );
       facets.add( std::move(facet) );
     }
 
   return( num_facets );
 }
 
+double
+ContourSubElement_Tet_4::side_area( int side ) const
+{
+  ThrowAssert( mySideIds[side] == -2 );
+
+  const unsigned * const lnn = get_side_node_ordinals(topology(), side);
+
+  const std::array<Vector3d,3> facetOwnerCoords = { my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[2]]) };
+  return compute_tri_volume(facetOwnerCoords);
+}
+
 ContourSubElement_Tet_10::ContourSubElement_Tet_10(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,10> & coords,
+  const std::array<int,4> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth,
   const int subelement_sign )
-    : ContourSubElement( stk::topology::TETRAHEDRON_10,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TET_10>( coords,
+		  sideIds,
 		  in_owner,
 		  in_subelement_depth,
 		  subelement_sign )
-{ /* %TRACE% */  /* %TRACE% */
+{
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
-
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return;
-    }
-
-  // use a single non-conformal, adaptive 4-noded tet
-  my_subelements.clear();
-  my_subelements.reserve(1);
-  ContourSubElement *sub  = NULL;
-  PointVec sub_coords(4,Vector3d::ZERO);
-
-  sub_coords[0] = my_coords[0];
-  sub_coords[1] = my_coords[1];
-  sub_coords[2] = my_coords[2];
-  sub_coords[3] = my_coords[3];
-
-  sub = new ContourSubElement_Adaptive_Tet_4( sub_coords, my_side_ids, my_owner, my_subelement_depth+1 );
-  my_subelements.push_back( sub );
+  if (my_sign == 0)
+  {
+    const std::array<Vector3d,4> sub_coords = { myCoords[0], myCoords[1], myCoords[2], myCoords[3] };
+    ContourSubElement *sub = new ContourSubElement_Adaptive_Tet_4( sub_coords, mySideIds, my_owner, my_subelement_depth+1 );
+    my_subelements.push_back( sub );
+  }
 }
 
 const int ContourSubElement_Adaptive_Tet_4::MAX_REFINMENT_LEVELS = 6;
 
 ContourSubElement_Adaptive_Tet_4::ContourSubElement_Adaptive_Tet_4(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
+  const std::array<Vector3d,4> & coords,
+  const std::array<int,4> &  sideIds,
   const ContourElement * in_owner,
   const int in_subelement_depth )
-    : ContourSubElement( stk::topology::TETRAHEDRON_4,
-                  coords,
-                  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TET_4>( coords,
+                  sideIds,
                   in_owner,
                   in_subelement_depth,
                   0 )
-{ /* %TRACE% */  /* %TRACE% */
-  my_edge_age.resize(6); // initializes to zero
+{
+  my_edge_age.fill(0);
   non_conformal_decomposition();
 }
 
 ContourSubElement_Adaptive_Tet_4::ContourSubElement_Adaptive_Tet_4(
-  const PointVec & coords,
-  const std::vector<int> & side_ids,
-  const std::vector<int> &  edge_age,
+  const std::array<Vector3d,4> & coords,
+  const std::array<int,4> &  sideIds,
+  const std::array<int,6> &  edge_age,
   const ContourElement * in_owner,
   const int in_subelement_depth )
-    : ContourSubElement( stk::topology::TETRAHEDRON_4,
-		  coords,
-		  side_ids,
+    : ContourSubElementWithTopology<stk::topology::TET_4>( coords,
+		  sideIds,
 		  in_owner,
 		  in_subelement_depth,
 		  0 )
-{ /* %TRACE% */  /* %TRACE% */
+{
   my_edge_age = edge_age;
   non_conformal_decomposition();
 }
 
 int
 ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
-{ /* %TRACE% */  /* %TRACE% */
+{
   int success = true; // optimism
 
-  // Determine if we will continue to look for crossing within this element.
-  // This test should be conservative, proceeding to look for crossings if there
-  // is even a remote chance of a crossing (To avoid cracks in the surface).
+  const double snapTol = my_owner->edge_linear_tolerance() * my_owner->length_scale();
+  my_sign = ContourElement::compute_conservative_nonlinear_distance_sign(snapTol, myDist.size(), myDist.data());
 
-  // find extrema
-  double max_dist = -std::numeric_limits<double>::max();
-  double min_dist =  std::numeric_limits<double>::max();
-  for ( int n = 0; n < my_num_nodes; n++ )
-    {
-      if (my_dist[n] < min_dist) min_dist = my_dist[n];
-      if (my_dist[n] > max_dist) max_dist = my_dist[n];
-    }
-
-  const double variation = max_dist - min_dist;
-
-  const bool all_hi = (min_dist - variation) > 0.0;
-  const bool all_lo = (max_dist + variation) < 0.0;
-
-  if (all_hi || all_lo)
-    {
-      // correct the sign since we lie entirely on one side of the interface
-      my_sign = LevelSet::sign(my_dist[0]);
-      return success;
-    }
+  if (my_sign != 0)
+  {
+    return success;
+  }
 
   int longest_bad_edge = -1;
 
-  // use temporary storage for vertex and side nodes
-  PointVec lcoords = my_coords;
-  lcoords.resize(10,Vector3d::ZERO);
-  lcoords[4] = 0.5 * (my_coords[0] + my_coords[1]);
-  lcoords[5] = 0.5 * (my_coords[1] + my_coords[2]);
-  lcoords[6] = 0.5 * (my_coords[2] + my_coords[0]);
-  lcoords[7] = 0.5 * (my_coords[0] + my_coords[3]);
-  lcoords[8] = 0.5 * (my_coords[1] + my_coords[3]);
-  lcoords[9] = 0.5 * (my_coords[2] + my_coords[3]);
+  const std::array<Vector3d,10> lcoords = {myCoords[0], myCoords[1], myCoords[2], myCoords[3],
+      0.5*(myCoords[0] + myCoords[1]), 0.5*(myCoords[1] + myCoords[2]), 0.5*(myCoords[2] + myCoords[0]),
+      0.5*(myCoords[0] + myCoords[3]), 0.5*(myCoords[1] + myCoords[3]), 0.5*(myCoords[2] + myCoords[3])};
 
-  PointVec lphyscoords(10);
+  std::array<Vector3d,10> lphyscoords;
   for (int n = 0; n < 10; ++n)
-    {
-      lphyscoords[n] = my_owner->coordinates( lcoords[n] );
-    }
+    lphyscoords[n] = my_owner->coordinates( lcoords[n] );
 
-  std::vector<double> ldist = my_dist;
-  ldist.resize(10);
+  std::array<double,10> ldist = {myDist[0], myDist[1], myDist[2], myDist[3], 0., 0., 0., 0., 0., 0.};
   for (int n = 4; n < 10; ++n)
-    {
-      ldist[n] = my_owner->distance( lcoords[n] );
-    }
+    ldist[n] = my_owner->distance( lcoords[n] );
 
   const stk::topology Top = stk::topology::TETRAHEDRON_10;
   int num_edges = Top.num_edges();
@@ -2478,7 +2279,7 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
       my_subelements.clear();
       my_subelements.reserve(1);
 
-      ContourSubElement *sub = new ContourSubElement_Tet_4( my_coords, my_side_ids, my_owner, my_subelement_depth+1 );
+      ContourSubElement *sub = new ContourSubElement_Tet_4( myCoords, mySideIds, my_owner, my_subelement_depth+1 );
       my_subelements.push_back( sub );
     }
   else
@@ -2490,9 +2291,9 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
       my_subelements.clear();
       my_subelements.reserve(2);
       ContourSubElement *sub  = NULL;
-      PointVec sub_coords(4,Vector3d::ZERO);
-      std::vector<int> sub_ids(4);
-      std::vector<int> sub_edge_age(6);
+      std::array<Vector3d,4> sub_coords;
+      std::array<int, 4> sub_ids;
+      std::array<int, 6> sub_edge_age;
 
       static const unsigned node_permute_0[] = { 0,1,2,3 };
       static const unsigned node_permute_1[] = { 1,2,0,3 };
@@ -2520,17 +2321,17 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
       const unsigned * lsn = side_permute_table[longest_bad_edge];
       const unsigned * len = edge_permute_table[longest_bad_edge];
 
-      const Vector3d edge_node = 0.5 * (my_coords[lnn[0]] + my_coords[lnn[1]]);
+      const Vector3d edge_node = 0.5 * (myCoords[lnn[0]] + myCoords[lnn[1]]);
 
       // tet #1
-      sub_coords[0] = my_coords[lnn[0]];
+      sub_coords[0] = myCoords[lnn[0]];
       sub_coords[1] = edge_node;
-      sub_coords[2] = my_coords[lnn[2]];
-      sub_coords[3] = my_coords[lnn[3]];
-      sub_ids[0] = my_side_ids[lsn[0]];
+      sub_coords[2] = myCoords[lnn[2]];
+      sub_coords[3] = myCoords[lnn[3]];
+      sub_ids[0] = mySideIds[lsn[0]];
       sub_ids[1] = -1; /* not on any parent side */
-      sub_ids[2] = my_side_ids[lsn[2]];
-      sub_ids[3] = my_side_ids[lsn[3]];
+      sub_ids[2] = mySideIds[lsn[2]];
+      sub_ids[3] = mySideIds[lsn[3]];
       sub_edge_age[0] = my_edge_age[len[0]]+1;
       sub_edge_age[1] = my_edge_age[len[0]]+1;
       sub_edge_age[2] = my_edge_age[len[2]];
@@ -2542,13 +2343,13 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
 
       // tet #2
       sub_coords[0] = edge_node;
-      sub_coords[1] = my_coords[lnn[1]];
-      sub_coords[2] = my_coords[lnn[2]];
-      sub_coords[3] = my_coords[lnn[3]];
-      sub_ids[0] = my_side_ids[lsn[0]];
-      sub_ids[1] = my_side_ids[lsn[1]];
+      sub_coords[1] = myCoords[lnn[1]];
+      sub_coords[2] = myCoords[lnn[2]];
+      sub_coords[3] = myCoords[lnn[3]];
+      sub_ids[0] = mySideIds[lsn[0]];
+      sub_ids[1] = mySideIds[lsn[1]];
       sub_ids[2] = -1; /* not on any parent side */
-      sub_ids[3] = my_side_ids[lsn[3]];
+      sub_ids[3] = mySideIds[lsn[3]];
       sub_edge_age[0] = my_edge_age[len[0]]+1;
       sub_edge_age[1] = my_edge_age[len[1]];
       sub_edge_age[2] = my_edge_age[len[0]]+1;

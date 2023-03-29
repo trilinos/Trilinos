@@ -16,6 +16,7 @@
 #include <utility>
 #include <map>
 #include <memory>
+#include "stk_util/parallel/MPIFinalizationCallback.hpp"
 
 namespace stk
 {
@@ -33,7 +34,8 @@ namespace impl {
 class SplitCommsImpl
 {
   public:
-  SplitCommsImpl() = default;
+  SplitCommsImpl();
+
   SplitCommsImpl(MPI_Comm parentComm, int localColor);
 
   ~SplitCommsImpl();
@@ -82,6 +84,7 @@ private:
   std::map<int, MPI_Comm> m_pairwiseComms;
   std::vector<int> m_otherColors;
   std::map<int, PairwiseRanks> m_rootRanks;
+  MPIFinalizationCallback m_finalizationDestructor;
   bool m_isInitialized = false;
   bool m_freeCommsInDestructor = false;
   bool m_haveFreedComms = false;

@@ -58,7 +58,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_NullspaceFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 
 #include <MueLu_SingleLevelFactoryBase.hpp>
 #include <MueLu_Factory.hpp>
@@ -174,7 +174,7 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
-    RCP<Factory> aggFact  = rcp(new CoupledAggregationFactory());
+    RCP<Factory> aggFact  = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Request("Aggregates", aggFact.get());
@@ -207,7 +207,7 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<Factory> graphFact = rcp(new CoalesceDropFactory());
-    RCP<Factory> aggFact   = rcp(new CoupledAggregationFactory());
+    RCP<Factory> aggFact   = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
@@ -247,7 +247,7 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
-    RCP<CoupledAggregationFactory> aggFact   = rcp(new CoupledAggregationFactory());
+    RCP<UncoupledAggregationFactory> aggFact   = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
@@ -315,7 +315,7 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
-    RCP<CoupledAggregationFactory> aggFact   = rcp(new CoupledAggregationFactory());
+    RCP<UncoupledAggregationFactory> aggFact   = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);

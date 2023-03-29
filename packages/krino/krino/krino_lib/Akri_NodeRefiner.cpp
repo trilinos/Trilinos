@@ -147,21 +147,30 @@ void unpack_shared_edges_to_refine(const stk::mesh::BulkData & mesh,
   });
 }
 
+static void fill_procs_that_own_elements_using_edge(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes, std::vector<stk::mesh::Entity> & workspaceForEdgeElems, std::vector<int> & procsThatOwnElementsUsingEdge)
+{
+  stk::mesh::get_entities_through_relations(mesh, {edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, workspaceForEdgeElems);
+  procsThatOwnElementsUsingEdge.clear();
+  for (auto edgeElem : workspaceForEdgeElems)
+    procsThatOwnElementsUsingEdge.push_back(mesh.parallel_owner_rank(edgeElem));
+  stk::util::sort_and_unique(procsThatOwnElementsUsingEdge);
+}
+
 static
 std::vector<std::pair<std::array<stk::mesh::EntityKey,2>,std::vector<int>>> get_shared_edges_and_sharing_procs(const stk::mesh::BulkData & mesh, const typename NodeRefiner::RefinedEdgeMap & edgesToRefine)
 {
+  ThrowAssert(mesh.is_automatic_aura_on()); // NOTE: Uses AURA to determine which procs have elements that use this edge and therefore should create the child node
   std::vector<int> sharingProcs;
   std::vector<std::pair<std::array<stk::mesh::EntityKey,2>,std::vector<int>>> edgesNodeKeysAndSharingProcs;
+  std::vector<stk::mesh::Entity> edgeElems;
   for (auto && edgeToRefine : edgesToRefine)
   {
     const Edge edge = edgeToRefine.first;
     const std::array<stk::mesh::Entity,2> edgeNodes = get_edge_nodes(edge);
     if (mesh.bucket(edgeNodes[0]).shared() && mesh.bucket(edgeNodes[1]).shared())
     {
-      const stk::mesh::EntityKey key0(stk::topology::NODE_RANK, mesh.identifier(edgeNodes[0]));
-      const stk::mesh::EntityKey key1(stk::topology::NODE_RANK, mesh.identifier(edgeNodes[1]));
-      mesh.shared_procs_intersection({key0, key1}, sharingProcs);
-      edgesNodeKeysAndSharingProcs.emplace_back(std::array<stk::mesh::EntityKey,2>{key0, key1}, sharingProcs);
+      fill_procs_that_own_elements_using_edge(mesh, edgeNodes, edgeElems, sharingProcs);
+      edgesNodeKeysAndSharingProcs.emplace_back(std::array<stk::mesh::EntityKey,2>{mesh.entity_key(edgeNodes[0]), mesh.entity_key(edgeNodes[1])}, sharingProcs);
     }
   }
   return edgesNodeKeysAndSharingProcs;

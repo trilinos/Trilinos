@@ -9,30 +9,33 @@
 #ifndef KRINO_INCLUDE_AKRI_CDMESH_REFINEMENT_H_
 #define KRINO_INCLUDE_AKRI_CDMESH_REFINEMENT_H_
 
-#include <Akri_CDFEM_Snapper.hpp>
-#include <Akri_CDFEM_Support.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
 namespace krino {
 
 class InterfaceGeometry;
+class CDFEM_Support;
+class CDFEM_Snapper;
+class RefinementSupport;
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
-      const CDFEM_Support & cdfem_support,
+      const RefinementSupport & refinementSupport,
       const int numRefinements);
 
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
-      const std::vector<InterfaceID> & active_interface_ids,
-      const CDFEM_Snapper & snapper,
-      const CDFEM_Support & cdfem_support,
+      const RefinementSupport & refinementSupport,
       const FieldRef coords_field,
       const int num_refinements);
+
+std::vector<std::pair<stk::mesh::Entity,unsigned>> get_owned_adaptivity_parents_and_their_element_part(const stk::mesh::BulkData& mesh,
+    const RefinementInterface & refinement,
+    const Phase_Support & phaseSupport);
 
 }
 

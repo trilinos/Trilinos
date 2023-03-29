@@ -93,7 +93,7 @@
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <list>
 
@@ -109,7 +109,7 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_EPETRA
   template <class GlobalOrdinal>
-  struct Converters<double, int, GlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode> {
+  struct Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
     static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
   };
 #endif
@@ -119,7 +119,7 @@ namespace Thyra {
       Add support for MueLu preconditioners in Thyra. This class provides an interface both
       for Epetra and Tpetra.
   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
 

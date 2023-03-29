@@ -22,6 +22,7 @@ endif()
 
 global_set(EXPECTED_B_DEPS
   "${EXPECTED_A_AND_DEPS_STR}${EXPECTED_INSERTEDPKG_AND_DEPS_STR}${EXPECTED_SIMPLECXX_AND_DEPS}")
+tribits_pkg_export_cache_var(EXPECTED_B_DEPS)
 
 tribits_add_test_directories(tests)
 

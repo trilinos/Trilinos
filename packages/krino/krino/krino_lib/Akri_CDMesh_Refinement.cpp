@@ -14,12 +14,17 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
+#include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <Akri_RefinementInterface.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Relation.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <Akri_RefinementSupport.hpp>
 
 namespace krino {
 
@@ -177,17 +182,25 @@ determine_which_interfaces_snap_to_each_node_and_unsnappable_nodes(const stk::me
 void
 resolve_fine_features(const stk::mesh::BulkData& mesh,
     const RefinementInterface & refinement,
+    const std::vector<Surface_Identifier> & surfaceIdentifiers,
     const std::vector<IntersectionPoint> & edgeIntersections,
-    const std::vector<InterfaceID> & active_interface_ids,
-    const CDFEM_Snapper & snapper,
     const int interface_max_refine_level,
     FieldRef elem_marker_field,
     FieldRef node_marker_field)
 {
+  if (!CDFEM_Support::is_active(mesh.mesh_meta_data()))
+    return;
+
+  ThrowRequireMsg(false, "Unfinished capability resolve_fine_features");
+  const std::vector<InterfaceID> activeInterfaceIds; // = cdmesh.active_interface_ids(surfaceIdentifiers); // FIXME: This should look at the actual edge intersections, right?
+
+  const auto & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
+
   std::unordered_map<stk::mesh::Entity, std::set<InterfaceID>> node_snapped_interfaces;
   std::set<stk::mesh::Entity> unsnappable_nodes;
 
-  determine_which_interfaces_snap_to_each_node_and_unsnappable_nodes(mesh, refinement, edgeIntersections, active_interface_ids, snapper, node_marker_field, node_snapped_interfaces, unsnappable_nodes);
+  // What should this look like for regular level set usage?
+  determine_which_interfaces_snap_to_each_node_and_unsnappable_nodes(mesh, refinement, edgeIntersections, activeInterfaceIds, cdfemSupport.get_snapper(), node_marker_field, node_snapped_interfaces, unsnappable_nodes);
 
   // Attempt at minimally aggressive. Works pretty well and has has lower element counts.
   refine_edges_with_multiple_unsnapped_crossings(mesh, refinement, edgeIntersections, interface_max_refine_level, elem_marker_field, node_snapped_interfaces);
@@ -239,14 +252,14 @@ void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
-      const CDFEM_Support & cdfem_support,
+      const RefinementSupport & refinementSupport,
       const int numRefinements)
 {
   // This refinement strategy cuts elements by the user-specified number of adapt levels
   // before the conformal decomposition.
 
   const FieldRef elementMarkerField = refinement.get_marker_field();
-  const int interfaceMinRefineLevel = cdfem_support.get_interface_minimum_refinement_level();
+  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
 
   std::vector<stk::mesh::Entity> possibleCutElems = interfaceGeometry.get_possibly_cut_elements(mesh);
   for( auto&& elem : possibleCutElems )
@@ -299,6 +312,11 @@ void write_refinement_level_sizes(const stk::mesh::BulkData& mesh,
     }
   }
 
+  std::vector<double> localVals = min_edge_lengths;
+  stk::all_reduce_min(mesh.parallel(), localVals.data(), min_edge_lengths.data(), min_edge_lengths.size());
+  localVals = max_edge_lengths;
+  stk::all_reduce_max(mesh.parallel(), localVals.data(), max_edge_lengths.data(), max_edge_lengths.size());
+
   for (int i=0; i<maxNumRefinementLevels; ++i)
   {
     krinolog << "Min and Max sizes for refinement level " << i <<  " " << min_edge_lengths[i] << " " << max_edge_lengths[i] << stk::diag::dendl;
@@ -322,9 +340,7 @@ void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
     const RefinementInterface & refinement,
     const InterfaceGeometry & interfaceGeometry,
-    const std::vector<InterfaceID> & active_interface_ids,
-    const CDFEM_Snapper & snapper,
-    const CDFEM_Support & cdfem_support,
+    const RefinementSupport & refinementSupport,
     const FieldRef coordsField,
     const int numRefinements)
 {
@@ -333,18 +349,16 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
   const FieldRef elementMarkerField = refinement.get_marker_field();
 
-  const stk::mesh::Selector active_selector(cdfem_support.get_active_part());
-  const stk::mesh::Selector locally_owned_selector(cdfem_support.get_locally_owned_part());
-  const stk::mesh::Selector parent_or_child_selector = cdfem_support.get_child_part() | cdfem_support.get_parent_part();
-  const int interfaceMinRefineLevel = cdfem_support.get_interface_minimum_refinement_level();
-  const int interfaceMaxRefineLevel = cdfem_support.get_interface_maximum_refinement_level();
+  const stk::mesh::Selector locally_owned_selector(mesh.mesh_meta_data().locally_owned_part());
+  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
+  const int interfaceMaxRefineLevel = refinementSupport.get_interface_maximum_refinement_level();
   std::vector<stk::mesh::Entity> entities;
   std::vector<stk::mesh::Entity> children;
 
   const NodeToCapturedDomainsMap nodesToCapturedDomains;
   const std::vector<IntersectionPoint> edgeIntersections = interfaceGeometry.get_edge_intersection_points(mesh, nodesToCapturedDomains);
 
-  FieldRef nodeMarkerField = cdfem_support.get_nonconforming_refinement_node_marker_field();
+  FieldRef nodeMarkerField = refinementSupport.get_nonconforming_refinement_node_marker_field();
   mark_nearest_node_on_cut_edges(mesh, edgeIntersections, nodeMarkerField);
 
   stk::mesh::get_selected_entities( locally_owned_selector, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
@@ -362,7 +376,7 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
   if (interfaceMinRefineLevel > interfaceMaxRefineLevel)
   {
-    resolve_fine_features(mesh, refinement, edgeIntersections, active_interface_ids, snapper, interfaceMaxRefineLevel, elementMarkerField, nodeMarkerField);
+    resolve_fine_features(mesh, refinement, interfaceGeometry.get_surface_identifiers(), edgeIntersections, interfaceMaxRefineLevel, elementMarkerField, nodeMarkerField);
   }
 }
 
@@ -392,6 +406,199 @@ refine_edges_with_unsnappable_nodes(const stk::mesh::BulkData& mesh,
       }
     }
   }
+}
+
+static unsigned determine_parent_element_part_ordinal_based_on_child_element_part_ordinals(const stk::mesh::BulkData& mesh, const Phase_Support & phaseSupport, const std::set<unsigned> & childElemPartOrdinals)
+{
+  ThrowRequire(!childElemPartOrdinals.empty());
+  const stk::mesh::Part & firstChildElementPart = mesh.mesh_meta_data().get_part(*childElemPartOrdinals.begin());
+
+  if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(&firstChildElementPart))
+  {
+    const stk::mesh::Part * parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
+    ThrowAssert(nullptr != parentElementPart);
+    return parentElementPart->mesh_meta_data_ordinal();
+  }
+  return firstChildElementPart.mesh_meta_data_ordinal();
+}
+
+static void fill_sorted_owned_leaf_children_and_their_element_part_and_their_unique_parents(const stk::mesh::BulkData& mesh,
+    const RefinementInterface & refinement,
+    std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart,
+    std::vector<stk::mesh::Entity> & nextIterationOfParentsToProcess)
+{
+  const stk::mesh::Selector adaptivityLeafChild = mesh.mesh_meta_data().locally_owned_part() & refinement.child_part() & !refinement.parent_part();
+  const auto & buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, adaptivityLeafChild);
+
+  for( auto&& bucket : buckets )
+  {
+    for (auto && elem : *bucket)
+    {
+      if (refinement.is_child(elem))  //FIXME: shouldnt be needed, but it is in percept right now
+      {
+        sortedChildIdsAndElementPart.emplace_back(mesh.identifier(elem), find_element_part(mesh, elem).mesh_meta_data_ordinal());
+        nextIterationOfParentsToProcess.push_back(refinement.get_parent(elem));
+      }
+    }
+  }
+  std::sort(sortedChildIdsAndElementPart.begin(), sortedChildIdsAndElementPart.end());
+  stk::util::sort_and_unique(nextIterationOfParentsToProcess);
+}
+
+static const unsigned * find_child_element_part_ordinal(const std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart, stk::mesh::EntityId childId)
+{
+  auto compare = [](const std::pair<stk::mesh::EntityId,unsigned> & idAndElementPart, const stk::mesh::EntityId id) { return idAndElementPart.first < id; };
+  auto it = std::lower_bound(sortedChildIdsAndElementPart.begin(), sortedChildIdsAndElementPart.end(), childId, compare);
+  if (it != sortedChildIdsAndElementPart.end() && it->first == childId)
+    return &(it->second);
+  return nullptr;
+}
+
+static std::set<unsigned> get_child_element_part_ordinals(const std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart,
+    const std::vector<stk::mesh::EntityId> & childElemIds)
+{
+  std::set<unsigned> childElemPartOrdinals;
+  for (auto&& childElemId : childElemIds)
+  {
+    const unsigned * childElemOrd = find_child_element_part_ordinal(sortedChildIdsAndElementPart, childElemId);
+    if (nullptr == childElemOrd)
+    {
+      // not ready to process, some children not yet available
+      childElemPartOrdinals.clear();
+      break;
+    }
+    childElemPartOrdinals.insert(*childElemOrd);
+  }
+  return childElemPartOrdinals;
+}
+
+struct RelocatedChildElemWithElemPart {
+  int parentElemOwningProc;
+  stk::mesh::EntityId childElemId;
+  stk::mesh::EntityId parentElemId;
+  unsigned childElemPartOrdinal;
+};
+
+static
+void pack_child_element_data_for_parent_element_processor(const stk::mesh::BulkData & mesh,
+    const std::vector<RelocatedChildElemWithElemPart> & childElemDataToCommunicate,
+    stk::CommSparse &commSparse)
+{
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto && data : childElemDataToCommunicate)
+    {
+      commSparse.send_buffer(data.parentElemOwningProc).pack(data.childElemId);
+      commSparse.send_buffer(data.parentElemOwningProc).pack(data.parentElemId);
+      commSparse.send_buffer(data.parentElemOwningProc).pack(data.childElemPartOrdinal);
+    }
+  });
+}
+
+static
+void unpack_child_element_data(const stk::mesh::BulkData & mesh,
+    std::vector<std::pair<stk::mesh::EntityId,unsigned>> & iterationChildIdsAndElementPart,
+    std::vector<stk::mesh::Entity> & parentsToProcess,
+    stk::CommSparse &commSparse)
+{
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityId childElemId;
+      commSparse.recv_buffer(procId).unpack(childElemId);
+      stk::mesh::EntityId parentElemId;
+      commSparse.recv_buffer(procId).unpack(parentElemId);
+      unsigned childElemPartOrdinal;
+      commSparse.recv_buffer(procId).unpack(childElemPartOrdinal);
+      iterationChildIdsAndElementPart.emplace_back(childElemId, childElemPartOrdinal);
+      const stk::mesh::Entity parentElem = mesh.get_entity(stk::topology::ELEMENT_RANK, parentElemId);
+      parentsToProcess.push_back(parentElem);
+    }
+  });
+}
+
+static void communicate_elements_to_parent_element_processor(const stk::mesh::BulkData& mesh,
+    const std::vector<RelocatedChildElemWithElemPart> & childElemDataToCommunicate,
+    std::vector<std::pair<stk::mesh::EntityId,unsigned>> & iterationChildIdsAndElementPart,
+    std::vector<stk::mesh::Entity> & parentsToProcess)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_child_element_data_for_parent_element_processor(mesh, childElemDataToCommunicate, commSparse);
+  unpack_child_element_data(mesh, iterationChildIdsAndElementPart, parentsToProcess, commSparse);
+}
+
+static void update_children_and_their_element_part_and_their_unique_parents(const stk::mesh::BulkData& mesh,
+    const RefinementInterface & refinement,
+    const std::vector<std::pair<stk::mesh::Entity,unsigned>> & iterationChildrenAndElementPart,
+    std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart,
+    std::vector<stk::mesh::Entity> & parentsToProcess)
+{
+  parentsToProcess.clear();
+
+  std::vector<std::pair<stk::mesh::EntityId,unsigned>> iterationChildIdsAndElementPart;
+  iterationChildIdsAndElementPart.reserve(iterationChildrenAndElementPart.size());
+
+  std::vector<RelocatedChildElemWithElemPart> childElemDataToCommunicate;
+
+  for (auto && childAndElementPart : iterationChildrenAndElementPart)
+  {
+    const stk::mesh::Entity child = childAndElementPart.first;
+    const stk::mesh::EntityId childId = mesh.identifier(child);
+    iterationChildIdsAndElementPart.emplace_back(childId, childAndElementPart.second);
+    const auto parentIdAndOwnerRank = refinement.get_parent_id_and_parallel_owner_rank(child);
+    if (parentIdAndOwnerRank.second == mesh.parallel_rank())
+      parentsToProcess.push_back(mesh.get_entity(stk::topology::ELEMENT_RANK, parentIdAndOwnerRank.first));
+    else
+      childElemDataToCommunicate.push_back(RelocatedChildElemWithElemPart{parentIdAndOwnerRank.second, childId, parentIdAndOwnerRank.first, childAndElementPart.second});
+  }
+
+  communicate_elements_to_parent_element_processor(mesh, childElemDataToCommunicate, iterationChildIdsAndElementPart, parentsToProcess);
+
+  std::sort(iterationChildIdsAndElementPart.begin(), iterationChildIdsAndElementPart.end());
+  stk::util::insert_keep_sorted(iterationChildIdsAndElementPart, sortedChildIdsAndElementPart, std::less<std::pair<stk::mesh::EntityId,unsigned>>());
+  stk::util::sort_and_unique(parentsToProcess);
+}
+
+std::vector<std::pair<stk::mesh::Entity,unsigned>> get_owned_adaptivity_parents_and_their_element_part(const stk::mesh::BulkData& mesh, const RefinementInterface & refinement, const Phase_Support & phaseSupport)
+{
+  // This used to be pretty simple.  We just recursed down to the leaves of the tree and checked the block
+  // parts of the conforming elements.  But now the tree may be spread across processors, so we need
+  // to communicate this information up the tree.
+
+  std::vector<std::pair<stk::mesh::Entity,unsigned>> parentsAndElementPart;
+
+  std::vector<std::pair<stk::mesh::EntityId,unsigned>> sortedChildIdsAndElementPart;
+  std::vector<stk::mesh::Entity> parentsToProcess;
+
+  fill_sorted_owned_leaf_children_and_their_element_part_and_their_unique_parents(mesh, refinement, sortedChildIdsAndElementPart, parentsToProcess);
+
+  std::vector<stk::mesh::EntityId> childElemIds;
+  std::vector<std::pair<stk::mesh::Entity,unsigned>> iterationChildrenAndElementPart;
+
+  while (stk::is_true_on_any_proc(mesh.parallel(), !parentsToProcess.empty()))
+  {
+    iterationChildrenAndElementPart.clear();
+
+    for( auto&& parent : parentsToProcess )
+    {
+      refinement.fill_child_element_ids(parent, childElemIds);
+      const std::set<unsigned> childElemPartOrdinals = get_child_element_part_ordinals(sortedChildIdsAndElementPart, childElemIds);
+      if (!childElemPartOrdinals.empty())
+      {
+        const unsigned elementPartOrdinal = determine_parent_element_part_ordinal_based_on_child_element_part_ordinals(mesh, phaseSupport, childElemPartOrdinals);
+        parentsAndElementPart.emplace_back(parent, elementPartOrdinal);
+
+        if (refinement.is_child(parent))
+          iterationChildrenAndElementPart.emplace_back(parent, elementPartOrdinal);
+      }
+    }
+
+    update_children_and_their_element_part_and_their_unique_parents(mesh, refinement, iterationChildrenAndElementPart, sortedChildIdsAndElementPart, parentsToProcess);
+  }
+  return parentsAndElementPart;
 }
 
 }

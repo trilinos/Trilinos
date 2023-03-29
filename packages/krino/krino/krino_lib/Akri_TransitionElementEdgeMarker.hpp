@@ -13,7 +13,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include "Akri_FieldRef.hpp"
 
 namespace krino {
 
@@ -28,7 +27,8 @@ public:
   virtual void mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const = 0;
   virtual bool is_element_a_candidate_for_refinement(const stk::mesh::Entity elem) const = 0;
   virtual void fill_element_refined_edge_nodes(const NodeRefiner & nodeRefiner, const stk::mesh::Entity elem, const stk::topology & elemTopology, std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const = 0;
-  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & elementsWithoutChildrenAfterUnrefinement, std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const = 0;
+  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & parentElementsModifiedByUnrefinement,
+      std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const = 0;
   virtual bool locally_have_elements_to_unrefine() const = 0;
 };
 
@@ -41,8 +41,9 @@ protected:
   virtual void mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const override;
   virtual bool is_element_a_candidate_for_refinement(const stk::mesh::Entity elem) const override;
   virtual void fill_element_refined_edge_nodes(const NodeRefiner & nodeRefiner, const stk::mesh::Entity elem, const stk::topology & elemTopology, std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const override;
-  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & elementsWithoutChildrenAfterUnrefinement, std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const override;
-  virtual bool locally_have_elements_to_unrefine() const { return false; }
+  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & parentElementsModifiedByUnrefinement,
+      std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const override;
+  virtual bool locally_have_elements_to_unrefine() const override { return false; }
 private:
   void locally_mark_edges_of_non_parent_elements(NodeRefiner & nodeRefiner) const;
   const stk::mesh::BulkData & myMesh;
@@ -56,17 +57,20 @@ public:
   virtual ~ElementBasedEdgeMarker() {}
   const std::string & get_marker_field_name() const;
 protected:
-  FieldRef get_marker_field() const { return myElementMarkerField; }
+  const stk::mesh::Field<int> & get_marker_field() const;
 private:
   const stk::mesh::BulkData & myMesh;
   Refinement & myRefinement;
-  FieldRef myElementMarkerField;
+  stk::mesh::Field<int> * myElementMarkerField{nullptr};
 };
 
 class TransitionElementEdgeMarker : public ElementBasedEdgeMarker
 {
 public:
-  TransitionElementEdgeMarker(const stk::mesh::BulkData & mesh, Refinement & refinement, const std::string & elementMarkerFieldName);
+  TransitionElementEdgeMarker(const stk::mesh::BulkData & mesh,
+      Refinement & refinement,
+      const std::string & elementMarkerFieldName);
+      
   TransitionElementEdgeMarker ( const TransitionElementEdgeMarker & ) = delete;
   TransitionElementEdgeMarker & operator= ( const TransitionElementEdgeMarker & ) = delete;
   virtual ~TransitionElementEdgeMarker() {}
@@ -74,8 +78,9 @@ public:
   virtual void mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const override;
   virtual bool is_element_a_candidate_for_refinement(const stk::mesh::Entity elem) const override;
   virtual void fill_element_refined_edge_nodes(const NodeRefiner & nodeRefiner, const stk::mesh::Entity elem, const stk::topology & elemTopology, std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const override;
-  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & elementsWithoutChildrenAfterUnrefinement, std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const override;
-  virtual bool locally_have_elements_to_unrefine() const;
+  virtual void fill_elements_modified_by_unrefinement(std::vector<stk::mesh::Entity> & parentElementsModifiedByUnrefinement,
+      std::vector<stk::mesh::Entity> & childElementsToDeleteForUnrefinement) const override;
+  virtual bool locally_have_elements_to_unrefine() const override;
 
   bool is_transition(const stk::mesh::Entity elem) const;
 
@@ -94,6 +99,15 @@ private:
   void locally_mark_edges_of_partially_refined_parent_elements_to_satisfy_template (NodeRefiner & nodeRefiner, bool & wasEdgeMarked) const;
   void locally_mark_edges_of_marked_non_transition_elements(NodeRefiner & nodeRefiner) const;
   bool are_all_children_leaves_and_marked_for_unrefinement(const std::vector<stk::mesh::Entity> & childElements) const;
+  bool child_elements_are_all_leaves_and_are_transition_elements_or_marked_for_unrefinement(const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & childElements) const;
+  bool can_edge_node_be_unrefined_based_on_locally_owned_elements(const stk::mesh::Entity refinedNode,
+    std::vector<stk::mesh::Entity> & workParentEdgeElements,
+    std::vector<stk::mesh::Entity> & workChildElements) const;
+  std::vector<stk::mesh::Entity> get_sorted_edge_nodes_that_will_be_removed_by_unrefinement() const;
+  bool is_parent_element_modified_by_unrefinement(const stk::mesh::Entity parentElem,
+    const std::vector<stk::mesh::Entity> & childElements,
+    const std::vector<stk::mesh::Entity> & sortedEdgeNodesThatWillBeUnrefined,
+    std::vector<stk::mesh::Entity> & workElemEdgeChildNodes) const;
 
   const stk::mesh::BulkData & myMesh;
   Refinement & myRefinement;

@@ -73,7 +73,7 @@ public:
 
     stk::transfer::do_communication(comm_data, tempResults, tempResultsReceived, fieldSizePerEntity);
 
-    ThrowRequire(recvAdapter != nullptr);
+    STK_ThrowRequire(recvAdapter != nullptr);
     write_to_mesh_data(tempResultsReceived, to_entity_keys_masked, *recvAdapter);
   }
 

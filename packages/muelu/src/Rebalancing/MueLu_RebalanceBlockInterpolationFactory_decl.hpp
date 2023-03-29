@@ -47,7 +47,6 @@
 #define MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DECL_HPP_
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_MapExtractorFactory_fwd.hpp>
 #include "Xpetra_MultiVector_fwd.hpp"

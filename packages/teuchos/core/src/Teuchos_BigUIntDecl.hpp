@@ -43,6 +43,7 @@
 #define TEUCHOS_BIG_UINT_DECL_HPP
 
 #include <iosfwd>
+#include <cstdint>
 
 /*! \file Teuchos_BigUIntDecl.hpp
     \brief Arbitrary-precision unsigned integer declaration.

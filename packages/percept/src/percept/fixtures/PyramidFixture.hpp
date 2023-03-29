@@ -20,13 +20,10 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <percept/fixtures/HeterogeneousFixture.hpp>
 #include <percept/FieldTypes.hpp>

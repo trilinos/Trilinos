@@ -163,7 +163,7 @@ single line::
  have the following contents::
 
   # To be safe, define your minimum CMake version
-  cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+  cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
   
   # Make CMake set WIN32 with CYGWIN for older CMake versions
   set(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)

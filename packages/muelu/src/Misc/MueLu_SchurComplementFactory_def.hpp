@@ -54,14 +54,11 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_SchurComplementFactory.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_SchurComplementFactory_decl.hpp"
 
 namespace MueLu {
 

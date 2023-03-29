@@ -53,16 +53,6 @@ void filter_refinement_marker(const RefinementInterface & refinement, const stk:
   }
 }
 
-stk::mesh::Selector cdfem_do_not_refine_or_unrefine_selector(const CDFEM_Support & cdfem_support)
-{
-  const stk::mesh::Selector parent_or_child_selector =
-      cdfem_support.get_child_part() | cdfem_support.get_parent_part();
-  const stk::mesh::Selector decomposed_blocks_selector =
-      krino::Phase_Support::get(cdfem_support.get_mesh_meta()).get_all_decomposed_blocks_selector();
-  const stk::mesh::Selector do_not_refine_selector = (!decomposed_blocks_selector) | parent_or_child_selector;
-  return do_not_refine_selector;
-}
-
 
 void perform_multilevel_adaptivity(RefinementInterface & refinement,
     stk::mesh::BulkData & mesh,
@@ -110,6 +100,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
     }
     else
     {
+      krinolog << "Skipping/Terminating refinement becuase no elements are marked for refinement.\n";
       done = true;
     }
   }

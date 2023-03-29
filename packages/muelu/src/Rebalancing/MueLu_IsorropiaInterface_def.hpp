@@ -39,7 +39,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

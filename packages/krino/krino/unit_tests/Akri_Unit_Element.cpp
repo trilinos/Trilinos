@@ -30,14 +30,14 @@ class Mesh_Element_Fixture : public ::testing::Test
 public:
   Mesh_Element_Fixture() :
     elem_fixture(static_cast<stk::topology::topology_t>(TOPO)),
-    krino_mesh(elem_fixture.stk_fixture.bulk_data(), std::shared_ptr<CDMesh>()),
-    interfaceGeometry(std::make_unique<LevelSetInterfaceGeometry>(AuxMetaData::get(stk_meta()).active_part(), CDFEM_Support::get(stk_meta()), Phase_Support::get(stk_meta())))
+    krino_mesh(elem_fixture.stk_fixture.bulk_data())
   {
     elem_fixture.generate_mesh();
     check_entity_counts();
     Phase_Support::get(stk_meta()).add_decomposed_part(stk_meta().universal_part());
     Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
     const NodeToCapturedDomainsMap nodesToCapturedDomains;
+    interfaceGeometry = std::make_unique<LevelSetInterfaceGeometry>(AuxMetaData::get(stk_meta()).active_part(), CDFEM_Support::get(stk_meta()), Phase_Support::get(stk_meta()));
     interfaceGeometry->prepare_to_process_elements(krino_mesh.stk_bulk(), nodesToCapturedDomains);
   }
   virtual ~Mesh_Element_Fixture() {};

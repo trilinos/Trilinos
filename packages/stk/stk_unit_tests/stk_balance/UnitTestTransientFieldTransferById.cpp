@@ -132,7 +132,7 @@ bool are_bulk_data_equivalent(const stk::mesh::BulkData& bulk1, const stk::mesh:
 stk::io::EntitySharingInfo get_four_hex_mesh_node_sharing_info(const stk::mesh::BulkData& inputBulk, int subdomain)
 {
   unsigned numProcs = inputBulk.parallel_size();
-  ThrowRequireMsg( (numProcs == 1 || numProcs == 2), "Invalid number of procs: " << numProcs);
+  STK_ThrowRequireMsg( (numProcs == 1 || numProcs == 2), "Invalid number of procs: " << numProcs);
   stk::io::EntitySharingInfo nodeSharingInfo;
 
   if(numProcs == 1) { return nodeSharingInfo; }
@@ -158,7 +158,7 @@ stk::io::EntitySharingInfo get_four_hex_mesh_node_sharing_info(const stk::mesh::
 stk::io::EntitySharingInfo get_two_hex_mesh_node_sharing_info(const stk::mesh::BulkData& inputBulk)
 {
   unsigned numProcs = inputBulk.parallel_size();
-  ThrowRequireMsg(numProcs == 1 || numProcs == 2, "Invalid number of procs: " << numProcs);
+  STK_ThrowRequireMsg(numProcs == 1 || numProcs == 2, "Invalid number of procs: " << numProcs);
   stk::io::EntitySharingInfo nodeSharingInfo;
 
   if(numProcs == 2) {

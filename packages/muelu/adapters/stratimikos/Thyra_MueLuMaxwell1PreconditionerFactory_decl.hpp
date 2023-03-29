@@ -51,7 +51,7 @@
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
@@ -64,7 +64,7 @@ namespace Thyra {
       @ingroup MueLuAdapters
       Add support for MueLu's Maxwell1 preconditioner in Thyra.
   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuMaxwell1PreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
 

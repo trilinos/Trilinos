@@ -50,20 +50,13 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
-#include "MueLu_SaPFactory_fwd.hpp"
 
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_SmootherBase.hpp"
-
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos_fwd.hpp"
-#endif
+#include "MueLu_SmootherBase_fwd.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
@@ -99,7 +92,8 @@ namespace MueLu {
     Maxwell1() :
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      HierarchyGmhd_(Teuchos::null)
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
@@ -107,7 +101,8 @@ namespace MueLu {
     Maxwell1(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
       Hierarchy11_(H11),
       Hierarchy22_(H22),
-      HierarchyGmhd_(Teuchos::null)
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
@@ -125,7 +120,8 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       RCP<Matrix> Kn_Matrix;
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
@@ -147,7 +143,8 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
@@ -169,10 +166,9 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List, const Teuchos::RCP<Matrix> & GmhdA_Matrix,
-               bool ComputePrec = true)
+             bool ComputePrec = true):
+            mode_(MODE_GMHD_STANDARD)
     {
-
-      mode_ = MODE_GMHD_STANDARD;
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
       GmhdA_Matrix_ = GmhdA_Matrix;
@@ -187,8 +183,9 @@ namespace MueLu {
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     Maxwell1(const Teuchos::RCP<Matrix> & SM_Matrix,
-               Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+             Teuchos::ParameterList& List,
+             bool ComputePrec = true):
+             mode_(MODE_STANDARD)
     {
 
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
@@ -294,10 +291,8 @@ namespace MueLu {
     //! dump out boolean ArrayView
     void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     //! dump out boolean Kokkos::View
     void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
-#endif
 
     //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
@@ -312,9 +307,7 @@ namespace MueLu {
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_, GmhdA_Matrix_;
 
     //! Vectors for BCs
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
-#endif
     int BCedges_, BCnodes_;
     Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace

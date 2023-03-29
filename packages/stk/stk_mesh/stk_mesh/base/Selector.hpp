@@ -128,25 +128,25 @@ struct SelectorNode
 
   SelectorNode const* lhs() const
   {
-    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    STK_ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
     return this - left_offset;
   }
 
   SelectorNode const* rhs() const
   {
-    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    STK_ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
     return this - right_offset;
   }
 
   SelectorNode const* unary() const
   {
-    ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
+    STK_ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
     return this - unary_offset;
   }
 
   PartOrdinal part() const
   {
-    ThrowAssert(m_type == SelectorNodeType::PART);
+    STK_ThrowAssert(m_type == SelectorNodeType::PART);
     return m_partOrd;
   }
 
@@ -157,7 +157,7 @@ struct SelectorNode
 
   FieldBase const* field() const
   {
-    ThrowAssert(m_type == SelectorNodeType::FIELD);
+    STK_ThrowAssert(m_type == SelectorNodeType::FIELD);
     return m_field_ptr;
   }
 
@@ -195,7 +195,7 @@ public:
     : m_expr(1, impl::SelectorNode(&part))
     , m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data()))
   {
-    ThrowAssertMsg(m_meta!=nullptr, "constructing Selector with bad part reference, probably from dereferencing a null part pointer.");
+    STK_ThrowAssertMsg(m_meta!=nullptr, "constructing Selector with bad part reference, probably from dereferencing a null part pointer.");
   }
 
   /** \brief  Bucket has field */

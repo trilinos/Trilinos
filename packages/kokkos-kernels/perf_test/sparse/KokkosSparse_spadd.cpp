@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #include <iostream>
 #include "KokkosKernels_config.h"
@@ -171,9 +143,6 @@ void run_experiment(const Params& params) {
       lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
       lno_nnz_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type const_lno_view_t;
-  typedef
-      typename crsMat_t::StaticCrsGraphType::entries_type const_lno_nnz_view_t;
 
   lno_view_t row_mapC;
   // entriesC, valuesC and cusparseBuffer are allocated inside
@@ -200,10 +169,8 @@ void run_experiment(const Params& params) {
   double numericTime  = 0;
 
   // Do an untimed warm up symbolic, and preallocate space for C entries/values
-  spadd_symbolic<KernelHandle, const_lno_view_t, const_lno_nnz_view_t,
-                 const_lno_view_t, const_lno_nnz_view_t, lno_view_t,
-                 lno_nnz_view_t>(&kh, A.graph.row_map, A.graph.entries,
-                                 B.graph.row_map, B.graph.entries, row_mapC);
+  spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
+                 B.graph.entries, row_mapC);
 
   bool use_kk = !params.use_cusparse && !params.use_mkl;
 
@@ -261,11 +228,8 @@ void run_experiment(const Params& params) {
   for (int sumRep = 0; sumRep < params.repeat; sumRep++) {
     timer.reset();
     if (use_kk) {
-      spadd_symbolic<KernelHandle, const_lno_view_t, const_lno_nnz_view_t,
-                     const_lno_view_t, const_lno_nnz_view_t, lno_view_t,
-                     lno_nnz_view_t>(&kh, A.graph.row_map, A.graph.entries,
-                                     B.graph.row_map, B.graph.entries,
-                                     row_mapC);
+      spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
+                     B.graph.entries, row_mapC);
       c_nnz = addHandle->get_c_nnz();
     } else if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE

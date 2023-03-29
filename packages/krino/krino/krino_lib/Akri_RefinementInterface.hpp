@@ -34,6 +34,9 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
     const int currentRefinementLevel,
     const uint64_t targetElemCount);
 
+template<class RefinementClass>
+void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementClass * refinement);
+
 void fill_leaf_children(const RefinementInterface & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children);
 void fill_leaf_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & leaf_children);
 void fill_all_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & all_children);
@@ -45,11 +48,19 @@ public:
   virtual ~RefinementInterface() {}
   virtual bool is_child(const stk::mesh::Entity entity) const = 0;
   virtual bool is_parent(const stk::mesh::Entity parent) const = 0;
+  virtual bool is_parent_side(const stk::mesh::Entity side) const = 0;
   virtual bool is_transition(const stk::mesh::Entity parent) const = 0;
   virtual stk::mesh::Part & parent_part() const = 0;
   virtual stk::mesh::Part & child_part() const = 0;
   virtual stk::mesh::Entity get_parent(const stk::mesh::Entity child) const = 0;
+  virtual std::pair<stk::mesh::EntityId,int> get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const = 0;
   virtual void fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const = 0;
+  virtual void fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const = 0;
+  //Dependents must stay on the same proc as the entity they are dependent on. 
+  //How many levels of children count as dependents is implementation specific
+  virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const = 0;
+  //Whether an entity is constrained or free to move in a rebalance
+  virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const = 0;
   virtual unsigned get_num_children(const stk::mesh::Entity elem) const = 0;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const = 0;
   virtual FieldRef get_marker_field() const = 0;
@@ -70,12 +81,17 @@ public:
 
   virtual bool is_child(const stk::mesh::Entity entity) const override;
   virtual bool is_parent(const stk::mesh::Entity parent) const override;
+  virtual bool is_parent_side(const stk::mesh::Entity side) const override;
   virtual bool is_transition(const stk::mesh::Entity parent) const override;
   virtual stk::mesh::Part & parent_part() const override;
   virtual stk::mesh::Part & child_part() const override;
   virtual stk::mesh::Entity get_parent(const stk::mesh::Entity child) const override;
+  virtual std::pair<stk::mesh::EntityId,int> get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const override;
   virtual unsigned get_num_children(const stk::mesh::Entity elem) const override;
   virtual void fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const override;
+  virtual void fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const override;
+  virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const override;
+  virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const override;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
   virtual FieldRef get_marker_field() const override;
   virtual bool require_post_refinement_fixups() const override { return true; };
@@ -107,20 +123,30 @@ public:
 
   virtual bool is_child(const stk::mesh::Entity entity) const override;
   virtual bool is_parent(const stk::mesh::Entity parent) const override;
+  virtual bool is_parent_side(const stk::mesh::Entity side) const override;
   virtual bool is_transition(const stk::mesh::Entity parent) const override;
   virtual stk::mesh::Part & parent_part() const override;
   virtual stk::mesh::Part & child_part() const override;
-  virtual stk::mesh::Entity get_parent(const stk::mesh::Entity child) const override;
+  virtual stk::mesh::Entity get_parent(const stk::mesh::Entity elem) const override;
+  virtual std::pair<stk::mesh::EntityId,int> get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const override;
   virtual unsigned get_num_children(const stk::mesh::Entity elem) const override;
   virtual void fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const override;
+  virtual void fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const override;
+  virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const override;
+  virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const override;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
+  int partially_refined_level(const stk::mesh::Entity elem) const;
+
   virtual FieldRef get_marker_field() const override;
   virtual bool require_post_refinement_fixups() const override { return false; };
 
   virtual void do_refinement(const int debugLevel = 0) override;
+
   virtual void do_uniform_refinement(const int numUniformRefinementLevels) override;
 
   void restore_after_restart();
+  void set_marker_field(const std::string & markerFieldName);
+
 private:
   KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit);
   std::pair<unsigned,unsigned> get_marked_element_counts() const;

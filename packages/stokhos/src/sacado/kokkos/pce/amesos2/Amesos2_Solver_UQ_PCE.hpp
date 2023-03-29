@@ -52,9 +52,9 @@ namespace Amesos2 {
   template <class S, class LO, class GO, class D>
   typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
       return Kokkos::cijk(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
@@ -80,17 +80,17 @@ namespace Amesos2 {
     public Solver< Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> >,
+                                     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >,
                    Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
-                                       Kokkos::Compat::KokkosDeviceWrapperNode<Device> >
+                                       Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >
                    >
   {
   public:
 
     typedef Sacado::UQ::PCE<Storage> Scalar;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
@@ -512,10 +512,10 @@ namespace Amesos2 {
              class ST, class LO, class GO, class D >
   struct create_solver_with_supported_type<
     ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >,
-    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
+    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> >,
+    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > > {
     typedef Sacado::UQ::PCE<ST> SC;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> NO;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> NO;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >

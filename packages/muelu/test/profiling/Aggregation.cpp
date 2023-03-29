@@ -65,7 +65,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
 
@@ -155,25 +155,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     factMngr->SetKokkosRefactor(false);
     Finest.SetFactoryManager(factMngr);
 
-    CoupledAggregationFactory CoupledAggFact;
-    Finest.Request(CoupledAggFact);
+    UncoupledAggregationFactory UncoupledAggFact;
+    Finest.Request(UncoupledAggFact);
     *out << "========================= Aggregate option summary  =========================" << std::endl;
     *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
     *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-    CoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-    CoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    UncoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+    UncoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
     std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
     if (aggOrdering == "natural" || aggOrdering == "graph" || aggOrdering == "random") {
       *out << "aggregate ordering :                    " << aggOrdering<< std::endl;
-      CoupledAggFact.SetOrdering(aggOrdering);
+      UncoupledAggFact.SetOrdering(aggOrdering);
     } else {
       std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
       throw(MueLu::Exceptions::RuntimeError(msg));
     }
-    CoupledAggFact.SetPhase3AggCreation(0.5);
     *out << "=============================================================================" << std::endl;
 
-    CoupledAggFact.Build(Finest);
+    UncoupledAggFact.Build(Finest);
 
     success = true;
   }

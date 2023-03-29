@@ -31,7 +31,7 @@ static Int dfs		/* returns new top of output stack */
     Int npiv,
     Int j,		/* node at which to start the DFS */
     Int mark,		/* mark value for Flag */
-    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
+    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or TRILINOS_CHOLMOD_EMPTY if
 			 * row i is not yet pivotal.  Only used in phase 1. */
     Int Llen [ ],
     Int Lip [ ],
@@ -77,7 +77,7 @@ static Int dfs		/* returns new top of output stack */
 	    /* first time that j has been visited */
 	    Flag [j] = mark ;
 	    /* set Pstack [head] to one past the last entry in col j to scan */
-	    Pstack [head] = (Lprune [jnew] == EMPTY) ?
+	    Pstack [head] = (Lprune [jnew] == TRILINOS_CHOLMOD_EMPTY) ?
 		(Llen [jnew]) : (Lprune [jnew]) ;
 	}
 
@@ -150,7 +150,7 @@ static void lsolve_symbolic
     Int kcol,		/* b = A (:,kcol) */
     Int Ap [ ],
     Int Ai [ ],
-    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or TRILINOS_CHOLMOD_EMPTY if row i
 			 * is not yet pivotal.  In phase 2, all rows are in
 			 * their final order, and Pinv is a complete inverse
 			 * permutation. */
@@ -328,7 +328,7 @@ static void lsolve_numeric
 (
     /* input, not modified on output: */
     Int npiv,
-    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or TRILINOS_CHOLMOD_EMPTY if row i
 			 * is not yet pivotal.  */
 
     /* TODO comment this */
@@ -517,10 +517,10 @@ static Int lpivot
 
     GET_COLUMN (Lip, Llen, LU, k, Li, Lx, llen) ;
 
-    pdiag = EMPTY ;
+    pdiag = TRILINOS_CHOLMOD_EMPTY ;
     abs_pivot = -1 ;
     max_entry = -1 ;
-    ppivrow = EMPTY ;
+    ppivrow = TRILINOS_CHOLMOD_EMPTY ;
 
     for (p = 0 ; p < llen ; p++)
     {
@@ -550,7 +550,7 @@ static Int lpivot
     }
 
     /* compare the diagonal with the largest entry */
-    if (pdiag != EMPTY)
+    if (pdiag != TRILINOS_CHOLMOD_EMPTY)
     {
 	x = fabs (Lx [pdiag]) ;
 	if (x >= tol_diag * max_entry)
@@ -562,22 +562,22 @@ static Int lpivot
 	else
 	{
 	    /* diagonal entry is too small, discard it */
-	    pdiag = EMPTY ;
+	    pdiag = TRILINOS_CHOLMOD_EMPTY ;
 	}
     }
 
     /* if diagonal not found or not chosen, try for an off-diagonal pivot */
-    if (pdiag == EMPTY && ppivrow != EMPTY)
+    if (pdiag == TRILINOS_CHOLMOD_EMPTY && ppivrow != TRILINOS_CHOLMOD_EMPTY)
     {
 	/* no diagonal pivot.  Try to pick the off-diagonal pivot */
 	if (abs_pivot < tol_offdiag * max_entry)
 	{
 	    /* off-diagonal pivot is too small, discard it */
-	    ppivrow = EMPTY ;
+	    ppivrow = TRILINOS_CHOLMOD_EMPTY ;
 	}
     }
 
-    pivot_found = (ppivrow != EMPTY && abs_pivot > 0) ;
+    pivot_found = (ppivrow != TRILINOS_CHOLMOD_EMPTY && abs_pivot > 0) ;
 
     if (pivot_found)
     {
@@ -645,7 +645,7 @@ static void prune
     {
 	j = Ui [p] ;
 	ASSERT (j >= 0 && j < k) ;
-	if (Lprune [j] == EMPTY)
+	if (Lprune [j] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* scan column j of L for the pivot row */
 	    GET_COLUMN (Lip, Llen, LU, j, Li, Lx, llen) ;
@@ -683,7 +683,7 @@ static void prune
 		     * first part of the column of L.  Entries in
 		     * Li [0 ... Lprune [j]-1] are the only part of
 		     * column j of L that needs to be scanned in the DFS.
-		     * Lprune [j] was EMPTY; setting it >= 0 also flags
+		     * Lprune [j] was TRILINOS_CHOLMOD_EMPTY; setting it >= 0 also flags
 		     * column j as pruned. */
 		    Lprune [j] = ptail ;
 		    break ;
@@ -801,8 +801,8 @@ Int amesos_paraklete_kernel
     for (k = 0 ; k < n ; k++)
     {
 	X [k] = 0 ;
-	Flag [k] = EMPTY ;	/* flag k as unmarked */
-	Lprune [k] = EMPTY ;	/* flag k as not pruned */
+	Flag [k] = TRILINOS_CHOLMOD_EMPTY ;	/* flag k as unmarked */
+	Lprune [k] = TRILINOS_CHOLMOD_EMPTY ;	/* flag k as not pruned */
     }
     mark = 0 ;
 
@@ -828,7 +828,7 @@ Int amesos_paraklete_kernel
 
     /* (P [k] = row) means that (UNFLIP (Pinv [row]) = k), and visa versa.
      * If row is pivotal, then Pinv [row] >= 0.  A row is initially "flipped"
-     * (Pinv [k] < EMPTY), and then marked "unflipped" when it becomes
+     * (Pinv [k] < TRILINOS_CHOLMOD_EMPTY), and then marked "unflipped" when it becomes
      * pivotal. */
 
     /* ---------------------------------------------------------------------- */
@@ -877,8 +877,8 @@ Int amesos_paraklete_kernel
 	/* ------------------------------------------------------------------ */
 
 	found = FALSE ;
-	diagrow = EMPTY ;
-	kcol = EMPTY ;
+	diagrow = TRILINOS_CHOLMOD_EMPTY ;
+	kcol = TRILINOS_CHOLMOD_EMPTY ;
 	while (!found && qhead != qtail)
 	{
 
@@ -1074,7 +1074,7 @@ Int amesos_paraklete_kernel
 
     for (j = 0 ; j < npiv ; j++)
     {
-	Qinv [j] = EMPTY ;
+	Qinv [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
     for (k = 0 ; k < nfound ; k++)
     {
@@ -1086,7 +1086,7 @@ Int amesos_paraklete_kernel
     k = nfound ;
     for (j = 0 ; j < npiv ; j++)
     {
-	if (Qinv [j] == EMPTY)
+	if (Qinv [j] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* a non-pivotal column */
 	    Q [k] = j ;
@@ -1126,7 +1126,7 @@ Int amesos_paraklete_kernel
 	    }
 	}
 
-	unpruned = (Lprune [j] == EMPTY) ;
+	unpruned = (Lprune [j] == TRILINOS_CHOLMOD_EMPTY) ;
 
 	phead = (unpruned) ? 1 : (Lprune [j]) ;
 	ptail = llen ;
@@ -1385,7 +1385,7 @@ Int amesos_paraklete_kernel
 	/* if slen is odd, this entry is allocated but not accessed */
 	if (slen % 2 == 1)
 	{
-	    Si [slen] = EMPTY ;
+	    Si [slen] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 
 	Slen [k - nfound] = slen ;

@@ -51,7 +51,7 @@
 
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_StructuredAggregationFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_HybridAggregationFactory.hpp>
@@ -133,39 +133,6 @@ public:
       return aggregates;
     }  // gimmeUncoupledAggregates
 
-    // Little utility to generate coupled aggregates.
-    static RCP<Aggregates>
-    gimmeCoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo)
-    //  RCP<Aggregates> gimmeCoupledAggregates(const RCP<xpetra_matrix_type> & A, RCP<AmalgamationInfo> & amalgInfo)
-    {
-      Level level;
-      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      amalgFact->SetDefaultVerbLevel(MueLu::None);
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-
-      // Setup aggregation factory (use default factory for graph)
-      RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
-      aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetMinNodesPerAggregate(3);
-      aggFact->SetMaxNeighAlreadySelected(0);
-      aggFact->SetOrdering("natural");
-      aggFact->SetPhase3AggCreation(0.5);
-
-      level.Request("Aggregates", aggFact.get());
-      level.Request("UnAmalgamationInfo", amalgFact.get());
-
-      level.Request(*aggFact);
-      aggFact->Build(level);
-      RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get()); // fix me
-      amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
-      level.Release("UnAmalgamationInfo", amalgFact.get());
-      level.Release("Aggregates", aggFact.get());
-      return aggregates;
-    }  // gimmeCoupledAggregates
 
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
@@ -312,9 +279,9 @@ public:
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeCoupledAggregates(A, amalgInfo);
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
     TEST_EQUALITY(aggregates != Teuchos::null, true);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),true);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -329,11 +296,11 @@ public:
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeCoupledAggregates(A, amalgInfo);
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
     GO numAggs = aggregates->GetNumAggregates();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),true);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
     ArrayRCP<LO> aggStart;

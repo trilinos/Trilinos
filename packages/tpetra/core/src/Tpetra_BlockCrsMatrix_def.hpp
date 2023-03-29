@@ -314,6 +314,11 @@ namespace Impl {
   public:
     typedef typename GraphType::device_type device_type;
 
+    //! Does this Functor get run on the host or on the device
+    static constexpr bool runOnHost = !std::is_same_v<typename device_type::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+
+
+
     //! Type of the (mesh) column indices in the sparse graph / matrix.
     typedef typename std::remove_const<typename GraphType::data_type>::type
     local_ordinal_type;
@@ -366,6 +371,7 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void
     operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
     {
+
       const local_ordinal_type lclRow = member.league_rank();
 
       using Kokkos::Details::ArithTraits;
@@ -424,16 +430,17 @@ namespace Impl {
                 scalar_type val(0);
                 for (local_ordinal_type k1=0;k1<blockSize_;++k1)
                   val += A_cur(k0,k1)*X_cur(k1);
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-                // host space team size is always 1
-                Y_cur(k0) += alpha_*val;
-#else
-                // cuda space team size can be larger than 1
-                // atomic is not allowed for sacado type;
-                // thus this needs to be specialized or 
-                // sacado atomic should be supported.
-                Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
-#endif
+                if constexpr(runOnHost) {
+                  // host space team size is always 1
+                  Y_cur(k0) += alpha_*val;
+                }
+                else {
+                  // cuda space team size can be larger than 1
+                  // atomic is not allowed for sacado type;
+                  // thus this needs to be specialized or 
+                  // sacado atomic should be supported.
+                  Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
+                }
               });
           }); // for each entry in current local block row of matrix
       }
@@ -2602,6 +2609,9 @@ public:
         const auto policy =
           policy_type(numExportLIDs, 1, 1)
           .set_scratch_size(0, Kokkos::PerTeam(sizeof(GO)*maxRowLength));
+        // The following parallel_for needs const access to the local values of src.
+        // (the local graph is also accessed on host, but this does not use WDVs).
+        getValuesHost();
         Kokkos::parallel_for
           (policy,
            [=](const typename policy_type::member_type &member) {
@@ -2870,6 +2880,9 @@ public:
       using host_scratch_space = typename host_exec::scratch_memory_space;
       
       using pair_type = Kokkos::pair<size_t, size_t>;
+
+      //The following parallel_for modifies values on host while unpacking.
+      getValuesHostNonConst();
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
          [=] (const typename policy_type::member_type& member) {

@@ -26,11 +26,9 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <percept/TopologyVerifier.hpp>
 #include <percept/GeometryVerifier.hpp>

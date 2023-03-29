@@ -59,10 +59,11 @@ public:
     const std::string defaultFileName = "generated:1x1x4|sideset:x";
     std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
 
-    stk::util::impl::set_coupling_version(coupling_version_override);
     stk::util::impl::set_error_on_reset(false);
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
+    m_splitComms.set_free_comms_in_destructor(true);
+    stk::util::impl::set_coupling_version(coupling_version_override);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     const std::vector<int>& otherColors = m_splitComms.get_other_colors();
     if (otherColors.size() != 1) {
@@ -90,7 +91,7 @@ public:
     }
 
     std::vector<std::string> fieldNames = {"not-set-yet1", "not-set-yet2"};
-    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
+    mock_utils::read_mesh(splitComm, meshFileName, "surface_1", fieldNames, m_mesh);
   }
 
   void communicate_initial_setup()

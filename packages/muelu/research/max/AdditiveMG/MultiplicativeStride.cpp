@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   typedef double                                      scalar_type;
   typedef int                                         local_ordinal_type;
   typedef int                                         global_ordinal_type;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
   // Convenient typedef's
   typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>    operator_type;

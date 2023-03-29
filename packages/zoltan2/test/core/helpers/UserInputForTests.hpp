@@ -68,7 +68,7 @@
 #include <Galeri_XpetraParameters.hpp>
 #endif
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "GeometricGenerator.hpp"
 #include <fstream>

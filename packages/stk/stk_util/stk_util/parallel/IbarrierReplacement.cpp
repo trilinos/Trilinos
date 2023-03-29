@@ -36,7 +36,7 @@ void IbarrierReplacement::startBarrier()
   if (useReplacementIbarrier()) {
     m_allreduce->startReduction(&impl::sum_op, m_input_data, m_output_data);
   } else {
-    ThrowRequireMsg(m_ibarrier_request == MPI_REQUEST_NULL, 
+    STK_ThrowRequireMsg(m_ibarrier_request == MPI_REQUEST_NULL, 
                     "Cannot start a new IbarrierReplacement before finishing the old one");
     MPI_Ibarrier(m_comm, &m_ibarrier_request);
   }

@@ -104,7 +104,7 @@ namespace Thyra {
     template <class SC,
               class LO,
               class GO,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
 
     protected:

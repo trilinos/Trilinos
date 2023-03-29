@@ -36,7 +36,6 @@
 // clang-format off
 #include <gtest/gtest.h>                        // for AssertHelper, etc
 #include <stddef.h>                             // for size_t
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/MetaData.hpp>           // for MetaData
 #include "stk_mesh/base/Field.hpp"              // for Field
 #include "stk_mesh/base/FieldBase.hpp"          // for FieldBase

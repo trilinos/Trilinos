@@ -50,6 +50,11 @@ sum
 ---
 .. doxygenfunction:: KokkosBlas::sum(const RV &R, const XMV &X, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0)
 
+swap
+---
+.. doxygenfunction:: KokkosBlas::swap(execution_space const& space, XVector const& X, YVector const& Y)
+.. doxygenfunction:: KokkosBlas::swap(XVector const& X, YVector const& Y)
+
 update
 ------
 .. doxygenfunction:: KokkosBlas::update

@@ -55,7 +55,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_UncoupledIndexManager.hpp"
 #include "MueLu_LocalLexicographicIndexManager.hpp"
 #include "MueLu_GlobalLexicographicIndexManager.hpp"

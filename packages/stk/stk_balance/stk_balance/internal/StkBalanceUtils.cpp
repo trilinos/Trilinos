@@ -157,7 +157,7 @@ SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMesh
                                                     const BalanceSettings &balanceSettings,
                                                     const stk::mesh::Selector& searchSelector)
 {
-  ThrowRequireWithSierraHelpMsg(!balanceSettings.usingColoring());
+  STK_ThrowRequireWithSierraHelpMsg(!balanceSettings.usingColoring());
 
   const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
 

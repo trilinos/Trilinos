@@ -138,7 +138,7 @@ public:
     stk::mesh::Selector selector = stk::mesh::selectField(stkField);
     const stk::mesh::BucketVector& allBuckets = bulk.buckets(stkField.entity_rank());
     const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selector);
-    unsigned numPerEntity = stkField.max_size(ngpField->rank);
+    unsigned numPerEntity = stkField.max_size();
 
     construct_debug_views(ngpField, allBuckets, buckets, numPerEntity);
 
@@ -351,7 +351,7 @@ public:
     stk::mesh::Selector selector = stk::mesh::selectField(stkField);
     const stk::mesh::BucketVector & allBuckets = bulk.buckets(stkField.entity_rank());
     const stk::mesh::BucketVector & buckets = bulk.get_buckets(stkField.entity_rank(), selector);
-    const unsigned numPerEntity = stkField.max_size(ngpField->rank);
+    const unsigned numPerEntity = stkField.max_size();
 
     ngpField->construct_new_index_view(allBuckets);
     construct_debug_views(ngpField, allBuckets, buckets, numPerEntity);

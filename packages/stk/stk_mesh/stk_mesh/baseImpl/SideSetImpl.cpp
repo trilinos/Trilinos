@@ -64,7 +64,7 @@ SideSet& SideSetImpl<KEY>::create_sideset(KEY sideset_key, bool fromInput)
     m_sideSetData.emplace(sideset_key, stk::mesh::SideSet(m_bulk, fromInput));
 
     iter = m_sideSetData.find(sideset_key);
-    ThrowRequire(iter != m_sideSetData.end());
+    STK_ThrowRequire(iter != m_sideSetData.end());
   }
 
   return iter->second;
@@ -82,7 +82,7 @@ template<typename KEY>
 const SideSet& SideSetImpl<KEY>::get_sideset(KEY sideset_key) const
 {
     auto iter = m_sideSetData.find(sideset_key);
-    ThrowRequire(iter != m_sideSetData.end());
+    STK_ThrowRequire(iter != m_sideSetData.end());
 
     return iter->second;
 }
@@ -97,7 +97,7 @@ template<typename KEY>
 SideSet& SideSetImpl<KEY>::get_sideset(KEY sideset_key)
 {
     auto iter = m_sideSetData.find(sideset_key);
-    ThrowRequire(iter != m_sideSetData.end());
+    STK_ThrowRequire(iter != m_sideSetData.end());
 
     return iter->second;
 }

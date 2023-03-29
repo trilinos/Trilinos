@@ -221,18 +221,18 @@ UF_long CHOLMOD(metis_bisector)	/* returns separator size */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (A, EMPTY) ;
-    RETURN_IF_NULL (Anw, EMPTY) ;
-    RETURN_IF_NULL (Aew, EMPTY) ;
-    RETURN_IF_NULL (Partition, EMPTY) ;
-    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (A, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Anw, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Aew, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (Partition, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, TRILINOS_CHOLMOD_EMPTY) ;
     if (A->stype || A->nrow != A->ncol)
     {
 	/* A must be square, with both upper and lower parts present */
 	ERROR (CHOLMOD_INVALID, "matrix must be square, symmetric,"
 		" and with both upper/lower parts present") ;
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
     Common->status = CHOLMOD_OK ;
 
@@ -263,7 +263,7 @@ UF_long CHOLMOD(metis_bisector)	/* returns separator size */
     if (sizeof (Int) > sizeof (idxtype) && MAX (n,nz) > INT_MAX / sizeof (int))
     {
 	/* CHOLMOD's matrix is too large for METIS */
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 #endif
 
@@ -311,7 +311,7 @@ UF_long CHOLMOD(metis_bisector)	/* returns separator size */
 	    CHOLMOD(free) (n1, sizeof (idxtype), Mp,    Common) ;
 	    CHOLMOD(free) (n,  sizeof (idxtype), Mnw,   Common) ;
 	    CHOLMOD(free) (n,  sizeof (idxtype), Mpart, Common) ;
-	    return (EMPTY) ;
+	    return (TRILINOS_CHOLMOD_EMPTY) ;
 	}
 	for (p = 0 ; p < nz ; p++)
 	{
@@ -346,7 +346,7 @@ UF_long CHOLMOD(metis_bisector)	/* returns separator size */
 	    CHOLMOD(free) (n,  sizeof (idxtype), Mnw,   Common) ;
 	    CHOLMOD(free) (n,  sizeof (idxtype), Mpart, Common) ;
 	}
-	return (EMPTY) ;
+	return (TRILINOS_CHOLMOD_EMPTY) ;
     }
 
     /* ---------------------------------------------------------------------- */

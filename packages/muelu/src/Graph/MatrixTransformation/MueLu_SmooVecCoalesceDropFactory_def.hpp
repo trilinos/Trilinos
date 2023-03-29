@@ -47,7 +47,6 @@
 #ifndef MUELU_SMOOVECCOALESCEDROPFACTORY_DEF_HPP
 #define MUELU_SMOOVECCOALESCEDROPFACTORY_DEF_HPP
 
-#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -61,8 +60,6 @@
 
 #include "MueLu_SmooVecCoalesceDropFactory_decl.hpp"
 
-#include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph.hpp"
@@ -71,11 +68,6 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PreDropFunctionBaseClass.hpp"
-#include "MueLu_PreDropFunctionConstVal.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_TopSmootherFactory.hpp"
-#include "MueLu_SmootherFactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
 
 
 #include <Xpetra_IO.hpp>

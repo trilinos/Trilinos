@@ -92,7 +92,7 @@ void move_entities_to_coloring_part(stk::mesh::BulkData& bulk,
       int color = coloredGraphVertices[localId];
       std::string partName = construct_coloring_part_name(color, rootTopologyPart);
       stk::mesh::Part* colorPart = meta.get_part(partName);
-      ThrowRequireMsg(nullptr != colorPart, "Color Part for " << bulk.entity_key(entity) << " cannot be null!");
+      STK_ThrowRequireMsg(nullptr != colorPart, "Color Part for " << bulk.entity_key(entity) << " cannot be null!");
       addParts.push_back({colorPart});
       removeParts.push_back({});
     }
@@ -115,7 +115,7 @@ void update_color_fields(stk::mesh::BulkData& bulk,
 {
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   stk::mesh::FieldBase* colorField = get_coloring_field(meta, rootTopologyPart);
-  ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
+  STK_ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
 
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(bulk, rank, rootTopologyPart, entities);
@@ -177,12 +177,12 @@ std::string construct_coloring_part_name(const int color, const stk::mesh::Part&
 
 bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk, const stk::mesh::PartVector& parts)
 {
-  ThrowRequireMsg(balanceSettings.usingColoring(), "colorMesh must be called with COLOR_MESH or COLOR_MESH_BY_TOPOLOGY Setting");
+  STK_ThrowRequireMsg(balanceSettings.usingColoring(), "colorMesh must be called with COLOR_MESH or COLOR_MESH_BY_TOPOLOGY Setting");
 
   internal::logMessage(bulk.parallel(), "Start Coloring Mesh");
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  ThrowRequireMsg(!check_if_mesh_has_coloring(meta), "Mesh has already been colored!");
+  STK_ThrowRequireMsg(!check_if_mesh_has_coloring(meta), "Mesh has already been colored!");
 
   const stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
 

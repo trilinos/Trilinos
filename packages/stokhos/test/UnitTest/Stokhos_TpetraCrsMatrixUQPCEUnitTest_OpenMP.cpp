@@ -46,10 +46,10 @@
 #include "Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // Instantiate tests for threads node
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> OpenMPWrapperNode;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::OpenMP> OpenMPWrapperNode;
 CRSMATRIX_UQ_PCE_TESTS_N( OpenMPWrapperNode )
 
 int main( int argc, char* argv[] ) {

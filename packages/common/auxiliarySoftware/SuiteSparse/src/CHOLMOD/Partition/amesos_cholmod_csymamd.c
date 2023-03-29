@@ -133,7 +133,7 @@ int CHOLMOD(csymamd)
     Head = Common->Head ;
     for (i = 0 ; i <= nrow ; i++)
     {
-	Head [i] = EMPTY ;
+	Head [i] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     return (ok) ;

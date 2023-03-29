@@ -134,6 +134,12 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
 
+    /*! @brief Set number of global aggregates on current processor.
+
+        This has to be done by the aggregation routines.
+    */
+    void SetNumGlobalAggregates(GO nGlobalAggregates) { nGlobalAggregates_ = nGlobalAggregates; }
+
     /*! @brief Get the index manager used by structured aggregation algorithms.
 
         This has to be done by the aggregation factory.
@@ -207,6 +213,13 @@ namespace MueLu {
      */
     void ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes,Array<LO> & unaggregated) const;
 
+    /*! \brief Get global number of aggregates
+
+    \note If # of global aggregates is unknown, this method does coummunication and internally record
+    the value.
+    */
+    GO GetNumGlobalAggregatesComputeIfNeeded();
+
     //! @name Overridden from Teuchos::Describable
     //@{
 
@@ -219,6 +232,7 @@ namespace MueLu {
 
   private:
     LO   nAggregates_;              ///< Number of aggregates on this processor
+    GO   nGlobalAggregates_;        ///< Number of global aggregates
 
     /*! vertex2AggId[k] gives a local id corresponding to the aggregate to which
      * local id k has been assigned. While k is the local id on my processor (MyPID),
@@ -245,12 +259,6 @@ namespace MueLu {
     //! Array of sizes of each local aggregate.
     mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
 
-    /*! \brief Get global number of aggregates
-
-    \note This method is private because it is used only for printing and because with the current implementation,
-    communication occurs each time this method is called.
-    */
-    GO GetNumGlobalAggregates() const;
   };
 
 } //namespace MueLu

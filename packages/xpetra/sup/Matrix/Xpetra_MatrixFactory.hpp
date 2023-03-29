@@ -62,7 +62,7 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -252,7 +252,6 @@ namespace Xpetra {
       return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc));
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     //! Constructor providing a local Kokkos::CrsMatrix together with a row and column map
     static RCP<Matrix> Build (
         const Teuchos::RCP<const Map>& rowMap,
@@ -273,7 +272,6 @@ namespace Xpetra {
       XPETRA_MONITOR("MatrixFactory::Build");
       return rcp(new CrsMatrixWrap(lclMatrix, rowMap, colMap, domainMap, rangeMap, params));
     }
-#endif
 
     //! Constructor specifying (possibly different) number of entries in each row.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc) {

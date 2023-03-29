@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
   int   int64_status    = 0;
   int   max_name_length = 0;
   int   fn_idx          = 1;
-  char  cversion[9];
 
   CPU_word_size = 0; /* float or double */
   IO_word_size  = 0; /* use what is stored in file */
@@ -210,7 +209,8 @@ int main(int argc, char *argv[])
   }
 
   version += 0.00005F;
-  sprintf(cversion, "%4.2f", version);
+  char cversion[9];
+  snprintf(cversion, 9, "%4.2f", version);
 
   k = strlen(cversion);
   for (j = 0; j < k; j++) {

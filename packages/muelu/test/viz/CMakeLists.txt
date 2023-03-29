@@ -68,9 +68,8 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     )
 
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_AztecOO AND NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  # AggregationExportFactory can't work with
-  # Aggregates_kokkos (yet)
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_AztecOO)
+
     TRIBITS_ADD_EXECUTABLE(
       Viz
       SOURCES Viz.cpp

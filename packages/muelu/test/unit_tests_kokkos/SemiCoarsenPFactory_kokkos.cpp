@@ -48,7 +48,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_LineDetectionFactory.hpp"
@@ -138,8 +138,8 @@ namespace MueLuTests {
     // Prolongate coarse coords and compute difference
     using STS = Teuchos::ScalarTraits<SC>;
     const auto one = STS::one();
-    RCP<MultiVector> coarseCoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(coarseCoords);
-    RCP<MultiVector> fineCoordsDiff = Utilities_kokkos::RealValuedToScalarMultiVector(fineCoords);
+    RCP<MultiVector> coarseCoordsSC = Utilities::RealValuedToScalarMultiVector(coarseCoords);
+    RCP<MultiVector> fineCoordsDiff = Utilities::RealValuedToScalarMultiVector(fineCoords);
     P->apply(*coarseCoordsSC, *fineCoordsDiff, Teuchos::NO_TRANS, one, -one);
 
     // check prolongation of coarse coordinates

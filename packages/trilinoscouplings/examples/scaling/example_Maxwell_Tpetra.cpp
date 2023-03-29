@@ -380,7 +380,8 @@ int body(int argc, char *argv[]);
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc,argv);
   body(argc,argv);
-  Kokkos::finalize();
+  if (!Kokkos::is_finalized())
+    Kokkos::finalize();
 }
 
 

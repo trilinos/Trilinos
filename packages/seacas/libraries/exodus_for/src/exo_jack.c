@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -104,15 +104,20 @@ static void ex_fcdcpy(char *fstring, /* output string to be blank-filled */
 static void ex_fstrncpy(char *target, /* space to be copied into */
                         char *source, /* string to be copied */
                         int   maxlen)
-{ /* maximum length of *source */
-  int len = maxlen;
-
-  while (len-- && *source != '\0') {
-    *target++ = *source++;
+{
+  if (*source == '\0') {
+    *target = '\0';
+    return;
   }
 
-  len = maxlen;
-  while (len-- && *(--target) == ' ') {
+  int len = maxlen;
+  int lcp = 0;
+  while (len-- && *source != '\0') {
+    *target++ = *source++;
+    lcp++;
+  }
+
+  while (lcp-- && *(--target) == ' ') {
     ; /* strip blanks */
   }
   *(++target) = '\0'; /* insert new EOS marker */
@@ -2710,7 +2715,7 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  if (ftypelen != 1) {
+  if (ftypelen > 1) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %lu in file id %d\n",
@@ -2747,7 +2752,7 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  if (ftypelen != 1) {
+  if (ftypelen > 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
@@ -3343,7 +3348,7 @@ void F2C(expneat, EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
 void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int *ierr,
                          size_t elem_typelen)
 {
-  /* WARNING: ftypelen SHOULD be MAX_STR_LENGTH, but may not be depending
+  /* WARNING: elem_typelen SHOULD be MAX_STR_LENGTH, but may not be depending
               on how the Fortran programmer passed it. It is best at
               this time to hard code it per NEMESIS spec. */
   size_t slen = MAX_STR_LENGTH;

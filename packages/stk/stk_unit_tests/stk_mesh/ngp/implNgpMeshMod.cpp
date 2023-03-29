@@ -84,14 +84,14 @@ void test_bucket_part_info(stk::mesh::BulkData& bulk)
                          result.d_view(3) = bucket.is_member(firstPartOrd) ? 1 : 0;
                          result.d_view(4) = bucket.is_member(lastPartOrd) ? 1 : 0;
                          unsigned numElemBuckets = ngpMesh.num_buckets(stk::topology::ELEM_RANK);
-                         NGP_ThrowRequire(2u == numElemBuckets);
+                         STK_NGP_ThrowRequire(2u == numElemBuckets);
                          const stk::mesh::DynamicBucket& bucket0 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 0);
                          const stk::mesh::UnmanagedPartOrdViewType& parts0 = bucket0.get_parts();
                          const stk::mesh::DynamicBucket& bucket1 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 1);
                          const stk::mesh::UnmanagedPartOrdViewType& parts1 = bucket1.get_parts();
                          unsigned numParts0 = parts0(0);
                          unsigned numParts1 = parts1(0);
-                         NGP_ThrowRequire(numParts0 == numParts1);
+                         STK_NGP_ThrowRequire(numParts0 == numParts1);
                          result.d_view(5) = stk::mesh::all_parts_match(parts0, parts1) ? 0 : 1; //expecting false
                        });
 

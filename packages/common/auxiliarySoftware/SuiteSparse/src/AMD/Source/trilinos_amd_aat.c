@@ -34,7 +34,7 @@ GLOBAL size_t TRILINOS_AMD_aat	/* returns nz in A+A' */
 
 #ifndef NDEBUG
     TRILINOS_AMD_debug_init ("AMD AAT") ;
-    for (k = 0 ; k < n ; k++) Tp [k] = EMPTY ;
+    for (k = 0 ; k < n ; k++) Tp [k] = TRILINOS_AMD_EMPTY ;
     ASSERT (TRILINOS_AMD_valid (n, n, Ap, Ai) == TRILINOS_AMD_OK) ;
 #endif
 
@@ -43,7 +43,7 @@ GLOBAL size_t TRILINOS_AMD_aat	/* returns nz in A+A' */
 	/* clear the Info array, if it exists */
 	for (i = 0 ; i < TRILINOS_AMD_INFO ; i++)
 	{
-	    Info [i] = EMPTY ;
+	    Info [i] = TRILINOS_AMD_EMPTY ;
 	}
 	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;
     }
@@ -91,7 +91,7 @@ GLOBAL size_t TRILINOS_AMD_aat	/* returns nz in A+A' */
 	    }
 	    /* scan lower triangular part of A, in column j until reaching
 	     * row k.  Start where last scan left off. */
-	    ASSERT (Tp [j] != EMPTY) ;
+	    ASSERT (Tp [j] != TRILINOS_AMD_EMPTY) ;
 	    ASSERT (Ap [j] <= Tp [j] && Tp [j] <= Ap [j+1]) ;
 	    pj2 = Ap [j+1] ;
 	    for (pj = Tp [j] ; pj < pj2 ; )

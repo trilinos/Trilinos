@@ -74,10 +74,8 @@
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 
 namespace MueLu {

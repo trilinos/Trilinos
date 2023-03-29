@@ -41,7 +41,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -76,7 +75,7 @@ public:
       stk::mesh::EntityVector elemsToChange;
       for (unsigned elemNum = 0; elemNum < elemCountAndPart.first; ++elemNum) {
         stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, ++elemId);
-        ThrowRequireMsg(get_bulk().is_valid(element), "Invalid element in fixture!");
+        STK_ThrowRequireMsg(get_bulk().is_valid(element), "Invalid element in fixture!");
         elemsToChange.push_back(element);
       }
       get_bulk().change_entity_parts(elemsToChange, addParts);

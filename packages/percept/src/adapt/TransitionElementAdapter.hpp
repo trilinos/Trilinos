@@ -614,7 +614,7 @@
         if (!m_refine_field_set)
           {
             m_refine_field_set = true;
-            m_refine_field = eMesh.get_fem_meta_data()->template get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+            m_refine_field = eMesh.get_fem_meta_data()->template get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
           }
 
         {

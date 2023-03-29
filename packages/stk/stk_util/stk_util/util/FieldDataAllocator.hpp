@@ -187,7 +187,7 @@ public:
     void* ret;
     cudaError_t status = cudaHostAlloc(&ret, size, cudaHostAllocMapped);
 
-    ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAllocator::allocate: " + std::string(cudaGetErrorString(status)));
+    STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAllocator::allocate: " + std::string(cudaGetErrorString(status)));
 
     return reinterpret_cast<T*>(ret);
   }
@@ -224,7 +224,7 @@ public:
     void* ret;
     hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
 
-    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
+    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
 
     return reinterpret_cast<T*>(ret);
   }
@@ -232,7 +232,7 @@ public:
   static void deallocate(Pointer p, SizeType)
   {
     hipError_t status = hipHostFree(p);
-    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
+    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
   }
 
 };
