@@ -96,12 +96,15 @@ namespace Amesos2 {
     typedef typename super_type::global_ordinal_type              global_ordinal_type;
     typedef typename super_type::global_size_type                    global_size_type;
 
+    // Version of scalar type that can be used in Kokkos device code
+    typedef typename MatrixTraits<Matrix>::impl_scalar_type          impl_scalar_type;
+
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
     typedef Kokkos::DefaultHostExecutionSpace              HostExecSpaceType;
     typedef Kokkos::View<int*, HostExecSpaceType>          host_size_type_array;
     typedef Kokkos::View<int*, HostExecSpaceType>          host_ordinal_type_array;
-    typedef Kokkos::View<scalar_type*, HostExecSpaceType> host_value_type_array;
+    typedef Kokkos::View<impl_scalar_type*, HostExecSpaceType>  host_value_type_array;
 
     /// \name Constructor/Destructor methods
     //@{ 
