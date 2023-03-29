@@ -50,7 +50,7 @@ message("*******************************")
 message("")
 
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 set(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -1290,9 +1290,9 @@ include(TribitsCTestDriverCoreHelpers)
 # packages and therefore is more robust.  But the package-by-package mode is
 # more expensive in several respects for many projects.
 #
-# For versions of CMake 3.17.0 and above and newer versions of CDash, the
-# CDash server for the all-at-once mode will break down build and test results
-# on a package-by-package basis on CDash together.
+# For newer versions of CDash 3.1+, for the all-at-once mode, the CDash server
+# will break down build and test results on a package-by-package basis on
+# CDash together.
 #
 # .. _Multiple ctest -S invocations (tribits_ctest_driver()):
 #
@@ -2274,8 +2274,9 @@ function(tribits_ctest_driver)
   select_final_set_of_packages_to_directly_test()
   # Above sets ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
 
-  tribits_print_packages_list_enable_status_from_var( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
-    "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
+  tribits_print_packages_list_enable_status_from_var(
+    ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
+    "\nFinal set of packages to be explicitly processed by CTest/CDash" "" ON NONEMPTY)
 
   message(
     "\n***"

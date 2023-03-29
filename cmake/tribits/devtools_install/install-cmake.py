@@ -45,7 +45,7 @@
 #
 
 cmakeBaseName = "cmake"
-cmakeDefaultVersion = "3.17.4"
+cmakeDefaultVersion = "3.23.4"
 
 
 #
@@ -105,9 +105,6 @@ This downloads tarballs from GitHub by default for the given cmake version.
 This build script sets the environment vars CXXFLAGS=-O3 AND CFLAGS=-O3
 when doing the configure.  Therefore, this builds and installs an optimized
 version of CMake by default.
-
-If CMake 3.17 is selected, a patch is applied which adds the CTEST_RESOURCE_SPEC_FILE
-variable.  (For versions 3.18+ this is not needed.)
 
 NOTE: To install CMake from the tip of a branch such as 'master', one must
 override the 'download' command and eliminate the 'untar' command.  One must
@@ -183,9 +180,6 @@ argument '--cmake-version=master'.
     createDir(self.cmakeSrcDir, verbose=True)
     echoRunSysCmnd("tar -xzf "+self.cmakeTarball \
      +" -C "+self.cmakeSrcDir+" --strip-components 1")
-    if self.inOptions.version.startswith("3.17"):
-      echoRunSysCmnd("patch -d "+self.cmakeSrcDir+" -p1 -i " \
-       +os.path.join(devtools_install_dir, "0001-CTest-Add-CTEST_RESOURCE_SPEC_FILE-variable.patch"))
 
   def doConfigure(self):
     createDir(self.cmakeBuildBaseDir, True, True)
