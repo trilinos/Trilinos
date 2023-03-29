@@ -46,206 +46,39 @@
 #ifndef IFPACK2_MDF_DECL_HPP
 #define IFPACK2_MDF_DECL_HPP
 
-#include "KokkosSparse_spiluk.hpp"
-
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
-#include "Ifpack2_MDF_handle.hpp"
+#include "KokkosSparse_mdf.hpp"
 
 #include <type_traits>
 
 namespace Teuchos {
   class ParameterList; // forward declaration
 }
-// namespace MDFImpl {
-//   template<class matrix_type>
-//   struct MDF_handle; // forward declaration
-// }
-
 namespace Ifpack2 {
 
-/** \class MDF
-\brief ILU(k) factorization of a given Tpetra::RowMatrix.
-\tparam MatrixType A specialization of Tpetra::RowMatrix.
-
-This class implements a "relaxed" incomplete ILU (ILU) factorization
-with level k fill.  It is based upon the ILU algorithms outlined in
-Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd
-edition, Chapter 10.
-
-\section Ifpack2_RILUK_Parameters Parameters
-
-For a complete list of valid parameters, see the documentation of setParameters().
-
-The computed factorization is a function of several parameters:
-<ul>
-<li>
-The graph structure (sparsity pattern) of the matrix: All fill is
-derived from the original matrix nonzero structure.  Level zero fill
-is defined as the original matrix pattern (nonzero structure), even if
-the matrix value at an entry is stored as a zero. (Thus it is possible
-to add entries to the ILU factors by adding zero entries to the
-original matrix.)
-</li>
-
-<li>
-Level of fill: Starting with the original matrix pattern as level
-fill of zero, the next level of fill is determined by analyzing the
-graph of the previous level and determining nonzero fill that is a
-result of combining entries that were from previous level only (not
-the current level).  This rule limits fill to entries that are direct
-decendents from the previous level graph.  Fill for level k is
-determined by applying this rule recursively.  For sufficiently large
-values of k, the fill would eventually be complete and an exact LU
-factorization would be computed.
-</li>
-
-<li>
-Fraction of relaxation: Ifpack2::MDF computes the ILU factorization
-row-by-row.  As entries at a given row are computed, some number of
-them will be dropped because they do match the prescribed sparsity
-pattern.  The relaxation factor determines how these dropped values
-will be handled.  If the factor is zero, then these extra entries will
-by dropped.  This is a classical ILU approach.  If the RelaxValue is
-1, then the sum of the extra entries will be added to the diagonal.
-This is a classical Modified ILU (MILU) approach.  If RelaxValue is
-between 0 and 1, then the factor times the sum of extra entries will
-be added to the diagonal.
-
-For most situations, the relaxation factor should be set to zero.  For
-certain kinds of problems, e.g., reservoir modeling, there is a
-conservation principle involved such that any operator should obey a
-zero row-sum property.  MILU was designed for these cases and you
-should set the relaxation factor to 1.  For other situations, setting
-RelaxValue to some nonzero value may improve the stability of
-factorization, and can be used if the computed ILU factors are poorly
-conditioned.
-</li>
-
-<li>
-Diagonal perturbation: Prior to computing the factorization, it is
-possible to modify the diagonal entries of the matrix for which the
-factorization will be computing.  If the absolute and relative
-perturbation values are zero and one, respectively, the factorization
-will be compute for the original user matrix A.  Otherwise, the
-factorization will computed for a matrix that differs from the
-original user matrix in the diagonal values only.  Below we discuss
-the details of diagonal perturbations.
-</li>
-
-</ul>
-
-\section Ifpack2_RILUK_GlobalOrdering An important note about ordering
-
-Note that the factorization is calculated based upon local ordering.   This means
-that the ordering of the GIDs in the row map is ignored.
-Initial entries in \f$L\f$, the strictly lower triangular part of A, and \f$U\f$, the strictly upper
-triangular part of A, are given by
-
-\f$L(i,j) = A(i,j)\f$ if \f$j < i\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$>\f$ GID\f$(i)\f$,
-
-and
-
-\f$U(i,j) = A(i,j)\f$ if \f$i < j\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$<\f$ GID\f$(i)\f$.
-
-In particular, if the row map GIDs are not in ascending
-order on processor, then the incomplete factors will be different than those produced by ILU(k) using global IDs.
-If the row map GIDs are in ascending order, then the factors produced based on LID and GID ordering are the same.
-
-\section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
-
-For ill-conditioned matrices, we often have difficulty computing
-usable incomplete factorizations.  The most common source of problems
-is that the factorization may encounter a small or zero pivot.  In
-that case, the factorization may fail.  Even if the factorization
-succeeds, the factors may be so poorly conditioned that use of them in
-the iterative phase produces meaningless results.  Before we can fix
-this problem, we must be able to detect it.  To this end, we use a
-simple but effective condition number estimate for \f$(LU)^{-1}\f$.
-
-The condition number of a matrix \f$B\f$, called \f$cond_p(B)\f$, is
-defined as \f$cond_p(B) = \|B\|_p\|B^{-1}\|_p\f$ in some appropriate
-norm \f$p\f$.  \f$cond_p(B)\f$ gives some indication of how many
-accurate floating point digits can be expected from operations
-involving the matrix and its inverse.  A condition number approaching
-the accuracy of a given floating point number system, about 15 decimal
-digits in IEEE double precision, means that any results involving
-\f$B\f$ or \f$B^{-1}\f$ may be meaningless.
-
-The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of
-the absolute values of the vector entries, and the \f$\infty\f$-norm
-of a matrix C is defined as \f$\|C\|_\infty = \max_{\|y\|_\infty = 1}
-\|Cy\|_\infty\f$.  A crude lower bound for the \f$cond_\infty(C)\f$ is
-\f$\|C^{-1}e\|_\infty\f$ where \f$e = (1, 1, \ldots, 1)^T\f$.  It is a
-lower bound because \f$cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
-\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty\f$.
-
-For our purposes, we want to estimate \f$cond_\infty(LU)\f$, where
-\f$L\f$ and \f$U\f$ are our incomplete factors.  Edmond in his
-Ph.D. thesis demonstrates that \f$\|(LU)^{-1}e\|_\infty\f$ provides an
-effective estimate for \f$cond_\infty(LU)\f$.  Furthermore, since
-finding \f$z\f$ such that \f$LUz = y\f$ is a basic kernel for applying
-the preconditioner, computing this estimate of \f$cond_\infty(LU)\f$
-is performed by setting \f$y = e\f$, calling the solve kernel to
-compute \f$z\f$ and then computing \f$\|z\|_\infty\f$.
-
-\section Ifpack2_RILUK_DiagPerturb A priori diagonal perturbations
-
-If we detect using the above method that our factorization is too
-ill-conditioned, we can improve the conditioning by perturbing the
-matrix diagonal and restarting the factorization using this more
-diagonally dominant matrix.  In order to apply perturbation, prior to
-starting the factorization, we compute a diagonal perturbation of our
-matrix \f$A\f$ and perform the factorization on this perturbed matrix.
-The overhead cost of perturbing the diagonal is minimal since the
-first step in computing the incomplete factors is to copy the matrix
-\f$A\f$ into the memory space for the incomplete factors.  We simply
-compute the perturbed diagonal at this point.
-
-The actual perturbation values we use are the diagonal values \f$(d_1,
-d_2, \ldots, d_n)\f$ with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$,
-\f$i=1, 2, \ldots, n\f$, where \f$n\f$ is the matrix dimension and
-\f$sgn(d_i)\f$ returns the sign of the diagonal entry.  This has the
-effect of forcing the diagonal values to have minimal magnitude of
-\f$\alpha\f$ and to increase each by an amount proportional to
-\f$\rho\f$, and still keep the sign of the original diagonal entry.
-
-\section Ifpack2_RILUK_Phases Phases of computation
-
-Every Ifpack2 preconditioner has the following phases of computation:
-<ol>
-  <li> initialize() </li>
-  <li> compute() </li>
-  <li> apply() </li>
-</ol>
-
-MDF constructs the symbolic incomplete factorization (that is, the
-structure of the incomplete factors) in the initialize() phase.  It
-computes the numerical incomplete factorization (that is, it fills in
-the factors' entries with their correct values) in the compute()
-phase.  The apply() phase applies the incomplete factorization to a
-given multivector using two triangular solves.
-
-\section Ifpack2_RILUK_Measuring Measuring performance
-
-Each MDF object keeps track of both the time required for various
-operations, and the number of times those operations have been applied
-for that object.  The operations tracked include:
-  - initialize() (via getNumInitialize() and getInitializeTime())
-  - compute() (via getNumCompute() and getComputeTime())
-  - apply() (via getNumApply() and getApplyTime())
-
-The <tt>getNum*</tt> methods return the number of times that operation
-was called.  The <tt>get*Time</tt> methods return the total number of
-seconds spent in <i>all</i> invocations of that operation.  For
-example, getApplyTime() returns the number of seconds spent in all
-apply() calls.  For an average time per apply() call, divide by
-getNumApply(), the total number of calls to apply().
-*/
+/// \class MDF
+/// \brief MDF (incomplete LU factorization with minimum discarded fill reordering) of a
+///   Tpetra sparse matrix
+/// \tparam A specialization of Tpetra::RowMatrix.
+///
+/// This class computes a sparse MDF (incomplete LU) factorization
+/// with a reordering that minimizes the discarded fill of the local part of a
+/// given sparse matrix represented as a Tpetra::RowMatrix or
+/// Tpetra::CrsMatrix.  The "local part" is the square diagonal block
+/// of the matrix owned by the calling process.  Thus, if the input
+/// matrix is distributed over multiple MPI processes, this
+/// preconditioner is equivalent to nonoverlapping additive Schwarz
+/// domain decomposition over the MPI processes, with MDF as the
+/// subdomain solver on each process.
+///
+/// @remark See the documentation of setParameters() for a list of valid
+/// parameters.
+///
 template<class MatrixType>
 class MDF:
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -310,7 +143,7 @@ class MDF:
 
 
   //@}
-  //! \name Implementation of Kokkos Kernels ILU(k).
+  //! \name Implementation of Kokkos Kernels MDF.
   //@{
 
   typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
@@ -345,16 +178,14 @@ class MDF:
 
  public:
   //! Destructor (declared virtual for memory safety).
-  virtual ~MDF ();
+  virtual ~MDF () = default;
 
   /// Set parameters for the incomplete factorization.
   ///
   /// This preconditioner supports the following parameters:
-  ///   - "fact: iluk level-of-fill" (int)
-  ///   - "fact: absolute threshold" (magnitude_type)
-  ///   - "fact: relative threshold" (magnitude_type)
+  ///   - "fact: mdf level-of-fill" (int)
   ///   - "fact: relax value" (magnitude_type)
-  ///   - "fact: iluk overalloc" (double)
+  ///   - "fact: mdf overalloc" (double)
   void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
@@ -407,8 +238,6 @@ class MDF:
 
   //! Get a rough estimate of cost per iteration
   size_t getNodeSmootherComplexity() const;  
-
-
 
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
@@ -495,6 +324,14 @@ class MDF:
   //@}
 
 private:
+
+  // Split off to a different impl call so that nested apply calls don't mess up apply counts/timers
+  void apply_impl (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+
   /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
   ///
   /// Given an incomplete factorization is \f$A \approx LDU\f$, this
@@ -521,22 +358,11 @@ private:
             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
             const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 public:
-  using MDF_handle_device_type = MDFImpl::MDF_handle<local_matrix_device_type>;
+  using MDF_handle_device_type = KokkosSparse::Experimental::MDF_handle<local_matrix_device_type>;
   using permutations_type = Teuchos::ArrayRCP<local_ordinal_type>;
 
   //! Get the input matrix.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
-
-  // Attribute access functions
-
-  //! Get RILU(k) relaxation parameter
-  magnitude_type getRelaxValue () const { return RelaxValue_; }
-
-  //! Get absolute threshold value
-  magnitude_type getAbsoluteThreshold () const { return Athresh_; }
-
-  //! Get relative threshold value
-  magnitude_type getRelativeThreshold () const {return Rthresh_;}
 
   //! Get level of fill (the "k" in ILU(k)).
   int getLevelOfFill () const { return LevelOfFill_; }
@@ -553,13 +379,6 @@ public:
   Tpetra::global_size_t getGlobalNumEntries () const {
     return getL ().getGlobalNumEntries () + getU ().getGlobalNumEntries ();
   }
-
-  // //! Return the Ifpack2::IlukGraph associated with this factored matrix.
-  // Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
-  //                                                  global_ordinal_type,
-  //                                                  node_type>, kk_handle_type> > getGraph () const {
-  //   return Graph_;
-  // }
 
   //! Return the L factor of the MDF factorization.
   const crs_matrix_type& getL () const;
@@ -599,12 +418,6 @@ protected:
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
-
-  // //! The ILU(k) graph.
-  // Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
-  //                                                  global_ordinal_type,
-  //                                                  node_type>, kk_handle_type> > Graph_;
-
 
   // The MDF handle
   Teuchos::RCP<MDF_handle_device_type> MDF_handle_;
@@ -648,30 +461,7 @@ protected:
   double initializeTime_;
   double computeTime_;
   mutable double applyTime_;
-
-  magnitude_type RelaxValue_;
-  magnitude_type Athresh_;
-  magnitude_type Rthresh_;
-
-  //! KokkosKernels implementation.
-  Teuchos::RCP<kk_handle_type> KernelHandle_;
 };
-
-// // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with
-// // different behavior of Tpetra::Crs{Graph,Matrix} for
-// // KokkosClassic::ThrustGPUNode.  In particular, fillComplete on a
-// // CrsMatrix used to make the graph go away by default, so we had to
-// // pass in a parameter to keep a host copy of the graph.  With the new
-// // (Kokkos refactor) version of Tpetra, this problem has gone away.
-// namespace detail {
-//   template<class MatrixType, class NodeType>
-//   struct setLocalSolveParams{
-//     static Teuchos::RCP<Teuchos::ParameterList>
-//     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
-//       return param;
-//     }
-//   };
-// } // namespace detail
 
 } // namespace Ifpack2
 

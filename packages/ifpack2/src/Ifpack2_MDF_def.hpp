@@ -47,27 +47,12 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Kokkos_Sort.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_Sorting.hpp"
 
 namespace Ifpack2 {
 
 namespace Details {
-// struct MDFImplType {
-//   enum Enum {
-//     Serial,
-//     KSPILUK   //!< Multicore/GPU KokkosKernels spiluk
-//   };
 
-//   static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
-//     type_strs.resize(2);
-//     type_strs[0] = "Serial";
-//     type_strs[1] = "KSPILUK";
-//     type_enums.resize(2);
-//     type_enums[0] = Serial;
-//     type_enums[1] = KSPILUK;
-//   }
-// };
 namespace MDFImpl
 {
 template<class array_t,class dev_view_t>
@@ -104,6 +89,50 @@ void applyReorderingPermutations(
       y_ptr[k][perm[i]] = x_ptr[k][i];
 }
 
+
+template<class scalar_type,class local_ordinal_type,class global_ordinal_type,class node_type>
+auto get_local_crs_row_matrix(
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> A_local)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Array;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+  
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+
+  using nonconst_local_inds_host_view_type = typename crs_matrix_type::nonconst_local_inds_host_view_type;
+  using nonconst_values_host_view_type =  typename crs_matrix_type::nonconst_values_host_view_type;
+
+  RCP<const crs_matrix_type> A_local_crs = rcp_dynamic_cast<const crs_matrix_type>(A_local);
+  if (A_local_crs.is_null ()) {
+    local_ordinal_type numRows = A_local->getLocalNumRows();
+    Array<size_t> entriesPerRow(numRows);
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      entriesPerRow[i] = A_local->getNumEntriesInLocalRow(i);
+    }
+    RCP<crs_matrix_type> A_local_crs_nc =
+      rcp (new crs_matrix_type (A_local->getRowMap (),
+                                A_local->getColMap (),
+                                entriesPerRow()));
+    // copy entries into A_local_crs
+    nonconst_local_inds_host_view_type indices("indices",A_local->getLocalMaxNumRowEntries());
+    nonconst_values_host_view_type values("values",A_local->getLocalMaxNumRowEntries());
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      size_t numEntries = 0;
+      A_local->getLocalRowCopy(i, indices, values, numEntries);
+      A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
+    }
+    A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+    A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+  }
+
+  return A_local_crs;
+};
+
+
+
 }
 
 }
@@ -121,10 +150,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     numApply_ (0),
     initializeTime_ (0.0),
     computeTime_ (0.0),
-    applyTime_ (0.0),
-    RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
+    applyTime_ (0.0)
 {
   allocateSolvers();
   allocatePermutations();
@@ -144,23 +170,10 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     numApply_ (0),
     initializeTime_ (0.0),
     computeTime_ (0.0),
-    applyTime_ (0.0),
-    RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
+    applyTime_ (0.0)
 {
   allocateSolvers();
   allocatePermutations();  
-}
-
-
-template<class MatrixType>
-MDF<MatrixType>::~MDF() 
-{
-  if (Teuchos::nonnull (KernelHandle_))
-  {
-    KernelHandle_->destroy_spiluk_handle();
-  }
 }
 
 template<class MatrixType>
@@ -181,6 +194,8 @@ void MDF<MatrixType>::allocatePermutations (bool force)
 template<class MatrixType>
 void MDF<MatrixType>::allocateSolvers ()
 {
+  L_solver_ = Teuchos::null;
+  U_solver_ = Teuchos::null;
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
   L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
@@ -340,9 +355,6 @@ setParameters (const Teuchos::ParameterList& params)
 
   // Default values of the various parameters.
   int fillLevel = 0;
-  magnitude_type absThresh = STM::zero ();
-  magnitude_type relThresh = STM::one ();
-  magnitude_type relaxValue = STM::zero ();
   double overalloc = 2.;
   int verbosity = 0;
 
@@ -367,23 +379,6 @@ setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<int, int, global_ordinal_type, double, float>
       (verbosity, params, paramName, prefix);
   }
-  // For the other parameters, we prefer magnitude_type, but allow
-  // double for backwards compatibility.
-  {
-    const std::string paramName ("fact: absolute threshold");
-    getParamTryingTypes<magnitude_type, magnitude_type, double>
-      (absThresh, params, paramName, prefix);
-  }
-  {
-    const std::string paramName ("fact: relative threshold");
-    getParamTryingTypes<magnitude_type, magnitude_type, double>
-      (relThresh, params, paramName, prefix);
-  }
-  {
-    const std::string paramName ("fact: relax value");
-    getParamTryingTypes<magnitude_type, magnitude_type, double>
-      (relaxValue, params, paramName, prefix);
-  }
   {
     const std::string paramName ("fact: mdf overalloc");
     getParamTryingTypes<double, double>
@@ -401,21 +396,6 @@ setParameters (const Teuchos::ParameterList& params)
   LevelOfFill_ = fillLevel;
   Overalloc_ = overalloc;
   Verbosity_ = verbosity;
-
-  // mfh 28 Nov 2012: The previous code would not assign Athresh_,
-  // Rthresh_, or RelaxValue_, if the read-in value was -1.  I don't
-  // know if keeping this behavior is correct, but I'll keep it just
-  // so as not to change previous behavior.
-
-  if (absThresh != -STM::one ()) {
-    Athresh_ = absThresh;
-  }
-  if (relThresh != -STM::one ()) {
-    Rthresh_ = relThresh;
-  }
-  if (relaxValue != -STM::one ()) {
-    RelaxValue_ = relaxValue;
-  }
 }
 
 
@@ -521,34 +501,12 @@ void MDF<MatrixType>::initialize ()
     // handle a Tpetra::RowGraph.)  However, to make it work for now,
     // we just copy the input matrix if it's not a CrsMatrix.
     {
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-      if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getLocalNumRows();
-        Array<size_t> entriesPerRow(numRows);
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
-        }
-        RCP<crs_matrix_type> A_local_crs_nc =
-          rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                    A_local_->getColMap (),
-                                    entriesPerRow()));
-        // copy entries into A_local_crs
-        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
-        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          size_t numEntries = 0;
-          A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
-        }
-        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
-      }
+      RCP<const crs_matrix_type> A_local_crs = Details::MDFImpl::get_local_crs_row_matrix(A_local_);
 
       auto A_local_device = A_local_crs->getLocalMatrixDevice();
       MDF_handle_ = rcp( new MDF_handle_device_type(A_local_device) );
       MDF_handle_->set_verbosity(Verbosity_);
-      MDFImpl::mdf_symbolic_phase(A_local_device,*MDF_handle_);
+      KokkosSparse::Experimental::mdf_symbolic(A_local_device,*MDF_handle_);
       isAllocated_ = true;
     }
 
@@ -624,37 +582,16 @@ void MDF<MatrixType>::compute ()
   isComputed_ = false;
 
   {//Make sure values in A is picked up even in case of pattern reuse
-    RCP<const crs_matrix_type> A_local_crs =
-      rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-    if (A_local_crs.is_null ()) {
-      local_ordinal_type numRows = A_local_->getLocalNumRows();
-      Array<size_t> entriesPerRow(numRows);
-      for(local_ordinal_type i = 0; i < numRows; i++) {
-        entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
-      }
-      RCP<crs_matrix_type> A_local_crs_nc =
-        rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                  A_local_->getColMap (),
-                                  entriesPerRow()));
-      // copy entries into A_local_crs
-      nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
-      nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
-      for(local_ordinal_type i = 0; i < numRows; i++) {
-        size_t numEntries = 0;
-        A_local_->getLocalRowCopy(i, indices, values, numEntries);
-        A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
-      }
-      A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-      A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
-    }
+    RCP<const crs_matrix_type> A_local_crs = Details::MDFImpl::get_local_crs_row_matrix(A_local_);
 
     // Compute the ordering and factorize
-    MDFImpl::mdf_numeric_phase(A_local_crs->getLocalMatrixDevice(),*MDF_handle_);
+    auto A_local_device = A_local_crs->getLocalMatrixDevice();
+    KokkosSparse::Experimental::mdf_numeric(A_local_device,*MDF_handle_);
   }
 
   // Ordering convention for MDF impl and here are reversed. Do reverse here to avoid confusion
-  Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->get_permutation());
-  Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->get_permutation_inv());
+  Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->permutation);
+  Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->permutation_inv);
 
   L_ = rcp(new crs_matrix_type(
     A_local_->getRowMap (),
@@ -676,6 +613,51 @@ void MDF<MatrixType>::compute ()
   isComputed_ = true;
   ++numCompute_;
   computeTime_ += (timer.wallTime() - startTime);
+}
+
+template<class MatrixType>
+void
+MDF<MatrixType>::
+apply_impl (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
+{
+  const scalar_type one = STS::one ();
+  const scalar_type zero = STS::zero ();
+
+  if (alpha == one && beta == zero) {
+    MV tmp (Y.getMap (), Y.getNumVectors ());
+    Details::MDFImpl::applyReorderingPermutations(X,tmp,permutations_);
+    if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
+      // Start by solving L Y = X for Y.
+      L_solver_->apply (tmp, Y, mode);
+      U_solver_->apply (Y, tmp, mode); // Solve U Y = Y.
+    }
+    else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
+      // Start by solving U^P Y = X for Y.
+      U_solver_->apply (tmp, Y, mode);
+      L_solver_->apply (Y, tmp, mode); // Solve L^P Y = Y.
+    }
+    Details::MDFImpl::applyReorderingPermutations(tmp,Y,reversePermutations_);
+  }
+  else { // alpha != 1 or beta != 0
+    if (alpha == zero) {
+      // The special case for beta == 0 ensures that if Y contains Inf
+      // or NaN values, we replace them with 0 (following BLAS
+      // convention), rather than multiplying them by 0 to get NaN.
+      if (beta == zero) {
+        Y.putScalar (zero);
+      } else {
+        Y.scale (beta);
+      }
+    } else { // alpha != zero
+      MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+      apply_impl (X, Y_tmp, mode);
+      Y.update (alpha, Y_tmp, beta);
+    }
+  }
 }
 
 template<class MatrixType>
@@ -723,44 +705,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   }
 #endif // HAVE_IFPACK2_DEBUG
 
-  const scalar_type one = STS::one ();
-  const scalar_type zero = STS::zero ();
-
   Teuchos::Time timer ("MDF::apply");
   double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
-    if (alpha == one && beta == zero) {
-      MV tmp (Y.getMap (), Y.getNumVectors ());
-      Details::MDFImpl::applyReorderingPermutations(X,tmp,permutations_);
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
-        // Start by solving L Y = X for Y.
-        L_solver_->apply (tmp, Y, mode);
-        U_solver_->apply (Y, tmp, mode); // Solve U Y = Y.
-      }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
-        // Start by solving U^P Y = X for Y.
-        U_solver_->apply (tmp, Y, mode);
-        L_solver_->apply (Y, tmp, mode); // Solve L^P Y = Y.
-      }
-      Details::MDFImpl::applyReorderingPermutations(tmp,Y,reversePermutations_);
-    }
-    else { // alpha != 1 or beta != 0
-      if (alpha == zero) {
-        // The special case for beta == 0 ensures that if Y contains Inf
-        // or NaN values, we replace them with 0 (following BLAS
-        // convention), rather than multiplying them by 0 to get NaN.
-        if (beta == zero) {
-          Y.putScalar (zero);
-        } else {
-          Y.scale (beta);
-        }
-      } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
-      }
-    }
+    apply_impl(X,Y,mode,alpha,beta);
   }//end timing
 
 #ifdef HAVE_IFPACK2_DEBUG

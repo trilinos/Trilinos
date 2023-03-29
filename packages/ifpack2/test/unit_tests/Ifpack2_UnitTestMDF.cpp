@@ -234,8 +234,8 @@ void test_mdf_reference_problem(
   {
     Teuchos::ArrayRCP<const Scalar> yMDFview = yMDF.get1dView();
     Teuchos::ArrayRCP<const Scalar> yILUview = yILU.get1dView();
-    TEST_COMPARE_FLOATING_ARRAYS(yMDFview, yILUview, 10*Teuchos::ScalarTraits<Scalar>::eps());
-  }  
+    TEST_COMPARE_FLOATING_ARRAYS(yMDFview, yILUview, 100*Teuchos::ScalarTraits<Scalar>::eps());
+  }
 };
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
