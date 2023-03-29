@@ -75,19 +75,12 @@ back-end build system.  It also provides some other nice features like ``ninja
 -n -d explain`` to show why the build system decides to (re)build the targets
 that it decides to build.
 
-The Kitware fork of Ninja at:
-
-  https://github.com/Kitware/ninja/releases
-
-provides releases of Ninja that allows CMake 3.7.0+ to build Fortran code with
-Ninja.  For example, the Kitware Ninja release ``1.7.2.git.kitware.dyndep-1``
-works with Fortran.  As of Ninja 1.10+, Fortran support is part of the
-official Google-maintained version of Ninja as can be obtained from:
+As of Ninja 1.10+, Fortran support is part of the official GitHub version of
+Ninja as can be obtained from:
 
   https://github.com/ninja-build/ninja/releases
 
-and as of CMake 3.17+, cmake will recognize native Fortran support for Ninja
-1.10+ (see `CMake Ninja Fortran Support`_).
+(see `CMake Ninja Fortran Support`_).
 
 Ninja is easy to install from source on almost any machine.  On Unix/Linux
 systems it is as simple as ``configure --prefix=<dir>``, ``make`` and ``make
@@ -1965,6 +1958,81 @@ and module files.  Therefore, don't enable this if Fortran code in your
 project is pulling in module files from TPLs.
 
 
+Building against pre-installed packages
+---------------------------------------
+
+The <Project> project can build against any pre-installed packages defined in
+the project and ignore the internally defined packages.  To trigger the enable
+of a pre-installed internal package treated as an external package, configure
+with::
+
+  -D TPL_ENABLE_<TRIBITS_PACKAGE>=ON
+
+That will cause the <Project> CMake project to pull in the pre-installed
+package ``<TRIBITS_PACKAGE>`` as an external package using
+``find_package(<TRIBITS_PACKAGE>)`` instead of configuring and building the
+internally defined ``<TRIBITS_PACKAGE>`` package.
+
+Configuring and building against a pre-installed package treated as an
+external packages has several consequences:
+
+* Any internal packages that are upstream from ``<TRIBITS_PACKAGE>`` from an
+  enabled set of dependencies will also be treated as external packages (and
+  therefore must be pre-installed as well).
+
+* The TriBITS package ``Dependencies.cmake`` files for the
+  ``<TRIBITS_PACKAGE>`` package and all of its upstream packages must still
+  exist and will still be read in by the <Project> CMake project and the same
+  enable/disable logic will be performed as if the packages were being treated
+  internal.  (However, the base ``CMakeLists.txt`` and all of other files for
+  these internally defined packages being treated as external packages can be
+  missing and will be ignored.)
+
+* The same set of enabled and disabled upstream dependencies must be specified
+  to the <Project> CMake project that was used to pre-build and pre-install
+  these internally defined packages being treated as external packages.
+  (Otherwise, a configure error will result from the mismatch.)
+
+* The definition of any TriBITS external packages/TPLs that are enabled
+  upstream dependencies from any of these internally defined packages being
+  treated as external packages will be defined by the calls to
+  ``find_package(<TRIBITS_PACKAGE>)`` and will **not** be found again.
+
+The logic for treating internally defined packages as external packages will
+be printed in the CMake configure output in the section ``Adjust the set of
+internal and external packages`` with output like::
+
+  Adjust the set of internal and external packages ...
+
+  -- Treating internal package <PKG2> as EXTERNAL because TPL_ENABLE_<PKG2>=ON
+  -- Treating internal package <PKG1> as EXTERNAL because downstream package <PKG2> being treated as EXTERNAL
+  -- NOTE: <TPL2> is indirectly downstream from a TriBITS-compliant external package
+  -- NOTE: <TPL1> is indirectly downstream from a TriBITS-compliant external package
+
+All of these internally defined being treated as external (and all of their
+upstream dependencies) are processed in a loop over these just these
+TriBITS-compliant external packages and ``find_package()`` is only called on
+the terminal TriBITS-compliant external packages.  This is shown in the CMake
+output in the section ``Getting information for all enabled TriBITS-compliant
+or upstream external packages/TPLs`` and looks like::
+
+  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs ...
+
+  Processing enabled external package/TPL: <TPL1> (...)
+  -- The external package/TPL <TPL1> will be read in by a downstream TriBITS-compliant external package
+  Processing enabled external package/TPL: <TPL2> (...)
+  -- The external package/TPL <TPL2> will be read in by a downstream TriBITS-compliant external package
+  Processing enabled external package/TPL: <PKG1> (...)
+  -- The external package/TPL <PKG1> will be read in by a downstream TriBITS-compliant external package
+  Processing enabled external package/TPL: <PKG2> (...)
+  -- Calling find_package(<PKG2> for TriBITS-compliant external package
+
+In the above example ``<TPL1>``, ``<TPL2>`` and ``<PKG1>`` are all direct or
+indirect dependencies of ``<PKG2>`` and therefore calling just
+``find_package(<PKG2>)`` fully defines those TriBITS-compliant external
+packages as well.
+
+
 xSDK Configuration Options
 --------------------------
 
@@ -2558,11 +2626,6 @@ NOTES:
   for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable was not added until
   CMake 3.18.)
 
-* CMake versions 3.18+ can be used to get built-in CMake/CTest support for the
-  ``CTEST_RESOURCE_SPEC_FILE`` cache variable.  This avoids needing to
-  explicitly pass the ctest resource file to ``ctest`` at runtime for
-  CMake/CTest versions 3.17.z.
-
 * **WARNING:** This currently only works for a single node, not multiple
   nodes.  (CTest needs to be extended to work correctly for multiple nodes
   where each node has multiple GPUs.  Alternatively, TriBITS could be extended
@@ -2816,12 +2879,25 @@ of packages the files are requested for with::
 
   -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_PACKAGES="<pkg0>;<pkg1>"
 
+To only install the package ``<Package>Config.cmake`` files and **not** the
+project-level ``<Project>Config.cmake`` file, configure with::
+
+   -D <Project>_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON \
+   -D <Project>_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES=ON \
+
 NOTES:
 
 * Only enabled packages will have their export files generated.
 
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
+
+* One would want to skip the installation of the project-level
+  ``<Project>Config.cmake`` file in cases where the TriBITS project's packages
+  may be built in smaller subsets of packages in different individual CMake
+  project builds where there is no clear completion to the installation of the
+  packages for a given TriBITS project containing a larger collection of
+  packages.
 
 
 Generating a project repo version file
