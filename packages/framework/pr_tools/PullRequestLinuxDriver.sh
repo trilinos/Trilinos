@@ -71,7 +71,7 @@ envvar_set_or_create no_proxy    'localhost,.sandia.gov,localnets,127.0.0.1,169.
 #export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 # bootstrap the python and git modules for this system
-if [[ ${bootstrap} == "0" ]]; then
+if [[ ${bootstrap} == "1" ]]; then
     bootstrap_modules
 fi
 
