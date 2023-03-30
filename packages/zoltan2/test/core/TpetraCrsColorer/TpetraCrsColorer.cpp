@@ -114,7 +114,7 @@ public:
 
     // test with cyclic maps
     ok &= buildAndCheckSeedMatrix(testname, params, false);
-    if (matrixFileName != "west0067") {
+    // if (matrixFileName != "west0067") {
 
       params.set("library", "zoltan2");
       // test with default maps
@@ -122,7 +122,7 @@ public:
 
       // test with cyclic maps
       ok &= buildAndCheckSeedMatrix(testname, params, false);
-    }
+    // }
 
     return ok;
   }
@@ -140,7 +140,7 @@ public:
     Teuchos::RCP<matrix_t> J = (useBlock ? JBlock : JCyclic);
     int me = J->getRowMap()->getComm()->getRank();
 
-    std::cout << "Running " << testname << " with "
+    std::cout << params.get("library", "zoltan2") << " Running " << testname << " with "
               << (useBlock ? "Block maps" : "Cyclic maps")
               << std::endl;
 

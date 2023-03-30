@@ -3,6 +3,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
 
+#include "Tpetra_CrsMatrix_decl.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 
@@ -39,16 +40,41 @@ public:
                        list_of_colors_t &list_of_colors) {
     Teuchos::RCP<matrix_t> inputMat = this->matrix;
     const auto transpose = coloring_params.get<bool>("transpose", false);
+    const auto symmetrize = coloring_params.get<bool>("symmetrize", false);
+    const auto matrixType = coloring_params.get("matrixType", "Jacobian");
+    const auto symmetric = coloring_params.get("symmetric",
+                                            (matrixType == "Jacobian" ? false
+                                                                      : true));
+
+
     if (transpose) {
       Tpetra::RowMatrixTransposer<SC, LO, GO, node_t> transposer(matrix);
       inputMat = transposer.createTranspose();
     }
+    if (!symmetric and symmetrize) {
+      const auto nzpr = this->matrix->getGlobalMaxNumRowEntries();
+      // inputMat = rcp(new matrix_t(this->matrix->getRowMap(), nzpr * nzpr));
+      inputMat = Teuchos::rcp(new CrsMatrixType(matrix->getRowMap(), nzpr * nzpr));
+
+      Tpetra::MatrixMatrix::Add(*(this->matrix), false, 1.0, *(this->matrix), true,
+                                1.0, inputMat);
+
+      inputMat->fillComplete();
+    }
+
     // Create Zoltan2 coloring problem and solve
     using Z2Adapter_t = Zoltan2::XpetraCrsMatrixAdapter<matrix_t>;
     Z2Adapter_t z2_adapter(inputMat);
 
     auto z2_params = coloring_params.sublist("Zoltan2");
     z2_params.set("color_method", "D2");
+    if (symmetric || symmetrize) {
+      z2_params.set("color_method", "D2");
+    }
+    else{
+      z2_params.set("color_method", "PD2");
+    }
+
 
     Zoltan2::ColoringProblem<Z2Adapter_t> z2_problem(&z2_adapter, &z2_params);
     z2_problem.solve();
