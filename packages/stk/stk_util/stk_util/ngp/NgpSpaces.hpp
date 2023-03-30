@@ -45,9 +45,34 @@ using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
 
 using MemSpace = ExecSpace::memory_space;
 
+#ifdef KOKKOS_HAS_SHARED_SPACE
 using UVMMemSpace = Kokkos::SharedSpace;
+#else
+#ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA_UVM
+using UVMMemSpace = Kokkos::CudaUVMSpace;
+#else
+using UVMMemSpace = Kokkos::CudaHostPinnedSpace;
+#endif
+#elif defined(KOKKOS_ENABLE_HIP)
+using UVMMemSpace = Kokkos::Experimental::HIPHostPinnedSpace;
+#elif defined(KOKKOS_ENABLE_OPENMP)
+using UVMMemSpace = Kokkos::OpenMP;
+#else
+using UVMMemSpace = Kokkos::HostSpace;
+#endif
+#endif
 
+#ifdef KOKKOS_HAS_SHARED_SPACE
 using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
+#else
+using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+using HostPinnedSpace = Kokkos::Experimental::HIPHostPinnedSpace;
+#else
+using HostPinnedSpace = MemSpace;
+#endif
+#endif
 
 #ifdef KOKKOS_ENABLE_HIP
 template <typename ExecutionSpace>
