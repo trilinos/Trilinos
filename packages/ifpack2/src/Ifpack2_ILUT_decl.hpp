@@ -46,6 +46,8 @@
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
 
+#include "KokkosSparse_par_ilut.hpp"
+
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -442,6 +444,11 @@ private:
   //! \c true if \c this object has been computed
   bool IsComputed_;
   //@}
+
+  //! Optional KokkosKernels implementation.
+  bool isKokkosKernelsPar_ilut_;
+  Teuchos::RCP<kk_handle_type> KernelHandle_;
+
 }; // class ILUT
 
 } // namespace Ifpack2

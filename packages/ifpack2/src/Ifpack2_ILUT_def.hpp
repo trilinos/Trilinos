@@ -62,6 +62,23 @@ namespace Ifpack2 {
 
   namespace {
 
+    struct IlutImplType {
+      enum Enum {
+        Serial,
+        PAR_ILUT   //!< KokkosKernels par_ilut (parallel ILUT)
+      };
+
+      static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
+        type_strs.resize(2);
+        type_strs[0] = "Serial";
+        type_strs[1] = "PAR_ILUT";
+        type_enums.resize(2);
+        type_enums[0] = Serial;
+        type_enums[1] = PAR_ILUT;
+      }
+    };
+
+
     /// \brief Default drop tolerance for ILUT.
     ///
     /// \tparam ScalarType The "scalar type"; the type of entries in
@@ -196,6 +213,32 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<magnitude_type, magnitude_type, double>
       (dropTol, params, paramName, prefix);
   }
+
+
+  // Parsing implementation type
+  Details::IlutImplType::Enum ilutimplType = Details::IlutImplType::Serial;
+  do {
+    static const char typeName[] = "fact: type";
+
+    if ( ! params.isType<std::string>(typeName)) break;
+
+    // Map std::string <-> IlutImplType::Enum.
+    Array<std::string> ilutimplTypeStrs;
+    Array<Details::IlutImplType::Enum> ilutimplTypeEnums;
+    Details::IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
+    Teuchos::StringToIntegralParameterEntryValidator<Details::IlutImplType::Enum>
+      s2i(ilutimplTypeStrs (), ilutimplTypeEnums (), typeName, false);
+
+    ilutimplType = s2i.getIntegralValue(params.get<std::string>(typeName));
+  } while (0);
+
+  if (ilutimplType == Details::IlutImplType::PAR_ILUT) {
+    this->isKokkosKernelsPar_ilut_ = true;
+  }
+  else {
+    this->isKokkosKernelsPar_ilut_ = false;
+  }
+
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
