@@ -94,6 +94,7 @@ endif()
 
 tribits_add_advanced_test(find_package_Trilinos
   OVERALL_NUM_MPI_PROCS 1
+  OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0
     MESSAGE "Configure a dummy project that calls find_package(Trilinos)"
     CMND "${CMAKE_COMMAND}"
