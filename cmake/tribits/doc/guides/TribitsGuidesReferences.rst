@@ -116,7 +116,7 @@ Scott, Craig.  *Professional CMake: A Practical Guide (5th Edition).* ISBN 978-1
 
 .. Common references to raw CMake commands:
 
-.. _configure_file(): https://cmake.org/cmake/help/v3.17/command/configure_file.html
+.. _configure_file(): https://cmake.org/cmake/help/v3.23/command/configure_file.html
 
 .. Other references
 

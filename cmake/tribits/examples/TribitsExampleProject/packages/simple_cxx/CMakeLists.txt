@@ -32,6 +32,7 @@ endif()
 
 global_set(EXPECTED_SIMPLECXX_AND_DEPS
   "SimpleCxx ${simpletplText}headeronlytpl")
+tribits_pkg_export_cache_var(EXPECTED_SIMPLECXX_AND_DEPS)
 
 #
 # E) Do standard post processing
