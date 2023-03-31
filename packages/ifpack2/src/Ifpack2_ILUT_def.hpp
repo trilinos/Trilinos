@@ -48,15 +48,17 @@
 #pragma clang system_header
 #endif
 
+#include <type_traits>
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_Time.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -70,8 +72,8 @@ namespace Ifpack2 {
 
       static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
         type_strs.resize(2);
-        type_strs[0] = "Serial";
-        type_strs[1] = "PAR_ILUT";
+        type_strs[0] = "serial";
+        type_strs[1] = "par_ilut";
         type_enums.resize(2);
         type_enums[0] = Serial;
         type_enums[1] = PAR_ILUT;
@@ -145,7 +147,10 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumCompute_ (0),
   NumApply_ (0),
   IsInitialized_ (false),
-  IsComputed_ (false)
+  IsComputed_ (false),
+  isKokkosKernelsPar_ilut_(false),
+  par_ilut_options_{1, 0., -1, -1, 0.75, false}
+  
 {
   allocateSolvers();
 }
@@ -154,13 +159,15 @@ template<class MatrixType>
 void ILUT<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  using Details::getParamTryingTypes;
+  using Ifpack2::Details::getParamTryingTypes;
   const char prefix[] = "Ifpack2::ILUT: ";
 
   // Don't actually change the instance variables until we've checked
@@ -216,29 +223,67 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 
 
   // Parsing implementation type
-  Details::IlutImplType::Enum ilutimplType = Details::IlutImplType::Serial;
+  IlutImplType::Enum ilutimplType = IlutImplType::Serial;
   do {
     static const char typeName[] = "fact: type";
 
     if ( ! params.isType<std::string>(typeName)) break;
 
     // Map std::string <-> IlutImplType::Enum.
-    Array<std::string> ilutimplTypeStrs;
-    Array<Details::IlutImplType::Enum> ilutimplTypeEnums;
-    Details::IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
-    Teuchos::StringToIntegralParameterEntryValidator<Details::IlutImplType::Enum>
+    Teuchos::Array<std::string> ilutimplTypeStrs;
+    Teuchos::Array<IlutImplType::Enum> ilutimplTypeEnums;
+    IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
+    Teuchos::StringToIntegralParameterEntryValidator<IlutImplType::Enum>
       s2i(ilutimplTypeStrs (), ilutimplTypeEnums (), typeName, false);
 
     ilutimplType = s2i.getIntegralValue(params.get<std::string>(typeName));
   } while (0);
 
-  if (ilutimplType == Details::IlutImplType::PAR_ILUT) {
+  if (ilutimplType == IlutImplType::PAR_ILUT) {
     this->isKokkosKernelsPar_ilut_ = true;
   }
   else {
     this->isKokkosKernelsPar_ilut_ = false;
   }
 
+  int par_ilut_max_iter;
+  magnitude_type par_ilut_residual_norm_delta_stop;
+  int par_ilut_team_size;
+  int par_ilut_vector_size;
+  float par_ilut_fill_in_limit;
+  bool par_ilut_verbose;
+  if (this->isKokkosKernelsPar_ilut_) {
+    par_ilut_max_iter = par_ilut_options_.max_iter;
+    par_ilut_residual_norm_delta_stop = par_ilut_options_.residual_norm_delta_stop;
+    par_ilut_team_size = par_ilut_options_.team_size;
+    par_ilut_vector_size = par_ilut_options_.vector_size;
+    par_ilut_fill_in_limit = par_ilut_options_.fill_in_limit;
+    par_ilut_verbose = par_ilut_options_.verbose;
+
+    std::string par_ilut_plist_name("parallel ILUT options");
+    if (params.isSublist(par_ilut_plist_name)) {
+      Teuchos::ParameterList const &par_ilut_plist = params.sublist(par_ilut_plist_name);
+
+      std::string paramName("maximum iterations");
+      getParamTryingTypes<int, int>(par_ilut_max_iter, par_ilut_plist, paramName, prefix);
+
+      paramName = "residual norm delta stop";
+      getParamTryingTypes<magnitude_type, magnitude_type, double>(par_ilut_residual_norm_delta_stop, par_ilut_plist, paramName, prefix);
+
+      paramName = "team size";
+      getParamTryingTypes<int, int>(par_ilut_team_size, par_ilut_plist, paramName, prefix);
+
+      paramName = "vector size";
+      getParamTryingTypes<int, int>(par_ilut_vector_size, par_ilut_plist, paramName, prefix);
+
+      paramName = "fill in limit";
+      getParamTryingTypes<float, float, magnitude_type, double>(par_ilut_fill_in_limit, par_ilut_plist, paramName, prefix);
+
+      paramName = "verbose";
+      getParamTryingTypes<bool, bool>(par_ilut_verbose, par_ilut_plist, paramName, prefix);
+    } // if (params.isSublist(par_ilut_plist_name))
+
+  } //if (this->isKokkosKernelsPar_ilut_)
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
@@ -249,6 +294,12 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   Rthresh_ = relThresh;
   RelaxValue_ = relaxValue;
   DropTolerance_ = dropTol;
+  par_ilut_options_.max_iter = par_ilut_max_iter;
+  par_ilut_options_.residual_norm_delta_stop = par_ilut_residual_norm_delta_stop;
+  par_ilut_options_.team_size = par_ilut_team_size;
+  par_ilut_options_.vector_size = par_ilut_vector_size;
+  par_ilut_options_.fill_in_limit = par_ilut_fill_in_limit;
+  par_ilut_options_.verbose = par_ilut_verbose;
 }
 
 
@@ -453,7 +504,24 @@ void ILUT<MatrixType>::initialize ()
     L_ = Teuchos::null;
     U_ = Teuchos::null;
 
-    A_local_ = makeLocalFilter (A_); // Compute the local filter.
+    A_local_ = makeLocalFilter(A_); // Compute the local filter.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local_.is_null(), std::logic_error, "Ifpack2::RILUT::initialize: "
+      "makeLocalFilter returned null; it failed to compute A_local.  "
+      "Please report this bug to the Ifpack2 developers.");
+
+    if (this->isKokkosKernelsPar_ilut_) {
+      this->KernelHandle_ = Teuchos::rcp(new kk_handle_type());
+      KernelHandle_->create_par_ilut_handle( A_local_->getLocalNumRows(),
+                                             0, 0, par_ilut_options_.max_iter);
+
+      auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
+      par_ilut_handle->set_residual_norm_delta_stop(par_ilut_options_.residual_norm_delta_stop);
+      par_ilut_handle->set_team_size(par_ilut_options_.team_size);
+      par_ilut_handle->set_vector_size(par_ilut_options_.vector_size);
+      par_ilut_handle->set_fill_in_limit(par_ilut_options_.fill_in_limit);
+      //par_ilut_handle->set_verbose(par_ilut_options_.verbose); //FIXME need to pull in KK snapshot
+    }
 
     IsInitialized_ = true;
     ++NumInitialize_;

@@ -141,6 +141,18 @@ public:
                             global_ordinal_type,
                             node_type> crs_matrix_type;
 
+  //! \name For implementation of Kokkos Kernels parallel ILUt (thresholded ILU)
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
@@ -422,6 +434,15 @@ private:
   double LevelOfFill_; //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
+  // JHU FIXME Once Kokkos-Kernels documentation is available, link to it here.
+  mutable struct par_ilut_option_struct {
+    int max_iter;
+    magnitude_type residual_norm_delta_stop;
+    int team_size;
+    int vector_size;
+    double fill_in_limit; //Note: par_ilut declares this as float
+    bool verbose;
+  } par_ilut_options_;
 
   //@}
   // \name Other internal data
