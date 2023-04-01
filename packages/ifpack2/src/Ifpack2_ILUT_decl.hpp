@@ -173,7 +173,7 @@ public:
   explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
-  virtual ~ILUT () = default;
+  virtual ~ILUT ();
 
   //@}
   //! \name Methods for setting up and computing the incomplete factorization
@@ -212,13 +212,17 @@ public:
   /// The "fact: relax value" parameter currently has no effect.
   void setParameters (const Teuchos::ParameterList& params);
 
-  /// \brief Clear any previously computed factors.
+  /// \brief Clear any previously computed factors, and potentially
+  ///        compute sparsity patterns of factors.
   ///
   /// You may call this before calling compute().  The compute()
   /// method will call this automatically if it has not yet been
   /// called.  If you call this after calling compute(), you must
   /// recompute the factorization (by calling compute() again) before
   /// you may call apply().
+  ///
+  /// If your are using Par_ILUT from Kokkos Kernels, initialize()
+  /// will also perform a symbolic factorization (i.e., compute sparsity patterns of factors).
   void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
@@ -442,6 +446,7 @@ private:
     int vector_size;
     double fill_in_limit; //Note: par_ilut declares this as float
     bool verbose;
+    bool deterministic;
   } par_ilut_options_;
 
   //@}
@@ -467,7 +472,7 @@ private:
   //@}
 
   //! Optional KokkosKernels implementation.
-  bool isKokkosKernelsPar_ilut_;
+  bool useKokkosKernelsParILUT_;
   Teuchos::RCP<kk_handle_type> KernelHandle_;
 
 }; // class ILUT

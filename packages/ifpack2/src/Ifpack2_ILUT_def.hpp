@@ -148,11 +148,20 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false),
-  isKokkosKernelsPar_ilut_(false),
-  par_ilut_options_{1, 0., -1, -1, 0.75, false}
+  useKokkosKernelsParILUT_(false),
+  par_ilut_options_{1, 0., -1, -1, 0.75, false, false}
   
 {
   allocateSolvers();
+}
+
+template<class MatrixType>
+ILUT<MatrixType>::~ILUT()
+{
+  if (Teuchos::nonnull (KernelHandle_))
+  {
+    KernelHandle_->destroy_par_ilut_handle();
+  }
 }
 
 template<class MatrixType>
@@ -240,10 +249,10 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   } while (0);
 
   if (ilutimplType == IlutImplType::PAR_ILUT) {
-    this->isKokkosKernelsPar_ilut_ = true;
+    this->useKokkosKernelsParILUT_ = true;
   }
   else {
-    this->isKokkosKernelsPar_ilut_ = false;
+    this->useKokkosKernelsParILUT_ = false;
   }
 
   int par_ilut_max_iter;
@@ -252,13 +261,15 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   int par_ilut_vector_size;
   float par_ilut_fill_in_limit;
   bool par_ilut_verbose;
-  if (this->isKokkosKernelsPar_ilut_) {
+  bool par_ilut_deterministic;
+  if (this->useKokkosKernelsParILUT_) {
     par_ilut_max_iter = par_ilut_options_.max_iter;
     par_ilut_residual_norm_delta_stop = par_ilut_options_.residual_norm_delta_stop;
     par_ilut_team_size = par_ilut_options_.team_size;
     par_ilut_vector_size = par_ilut_options_.vector_size;
     par_ilut_fill_in_limit = par_ilut_options_.fill_in_limit;
     par_ilut_verbose = par_ilut_options_.verbose;
+    par_ilut_deterministic = par_ilut_options_.deterministic;
 
     std::string par_ilut_plist_name("parallel ILUT options");
     if (params.isSublist(par_ilut_plist_name)) {
@@ -281,9 +292,12 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 
       paramName = "verbose";
       getParamTryingTypes<bool, bool>(par_ilut_verbose, par_ilut_plist, paramName, prefix);
+
+      paramName = "deterministic";
+      getParamTryingTypes<bool, bool>(par_ilut_deterministic, par_ilut_plist, paramName, prefix);
     } // if (params.isSublist(par_ilut_plist_name))
 
-  } //if (this->isKokkosKernelsPar_ilut_)
+  } //if (this->useKokkosKernelsParILUT_)
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
@@ -510,7 +524,7 @@ void ILUT<MatrixType>::initialize ()
       "makeLocalFilter returned null; it failed to compute A_local.  "
       "Please report this bug to the Ifpack2 developers.");
 
-    if (this->isKokkosKernelsPar_ilut_) {
+    if (this->useKokkosKernelsParILUT_) {
       this->KernelHandle_ = Teuchos::rcp(new kk_handle_type());
       KernelHandle_->create_par_ilut_handle( A_local_->getLocalNumRows(),
                                              0, 0, par_ilut_options_.max_iter);
@@ -520,12 +534,14 @@ void ILUT<MatrixType>::initialize ()
       par_ilut_handle->set_team_size(par_ilut_options_.team_size);
       par_ilut_handle->set_vector_size(par_ilut_options_.vector_size);
       par_ilut_handle->set_fill_in_limit(par_ilut_options_.fill_in_limit);
-      //par_ilut_handle->set_verbose(par_ilut_options_.verbose); //FIXME need to pull in KK snapshot
+      //par_ilut_handle->set_verbose(par_ilut_options_.verbose); //JHU FIXME need to pull in KK snapshot
     }
+
+    //JHU TODO in the par_ilut case, do the symbolic factorization here
 
     IsInitialized_ = true;
     ++NumInitialize_;
-  }
+  } //timer scope
   InitializeTime_ += (timer.wallTime() - startTime);
 }
 
@@ -548,29 +564,6 @@ void ILUT<MatrixType>::compute ()
   using Teuchos::rcp;
   using Teuchos::reduceAll;
 
-  //--------------------------------------------------------------------------
-  // Ifpack2::ILUT is a translation of the Aztec ILUT implementation. The Aztec
-  // ILUT implementation was written by Ray Tuminaro.
-  //
-  // This isn't an exact translation of the Aztec ILUT algorithm, for the
-  // following reasons:
-  // 1. Minor differences result from the fact that Aztec factors a MSR format
-  // matrix in place, while the code below factors an input CrsMatrix which
-  // remains untouched and stores the resulting factors in separate L and U
-  // CrsMatrix objects.
-  // Also, the Aztec code begins by shifting the matrix pointers back
-  // by one, and the pointer contents back by one, and then using 1-based
-  // Fortran-style indexing in the algorithm. This Ifpack2 code uses C-style
-  // 0-based indexing throughout.
-  // 2. Aztec stores the inverse of the diagonal of U. This Ifpack2 code
-  // stores the non-inverted diagonal in U.
-  // The triangular solves (in Ifpack2::ILUT::apply()) are performed by
-  // calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
-  // this requires U to contain the non-inverted diagonal.
-  //
-  // ABW.
-  //--------------------------------------------------------------------------
-
   // Don't count initialization in the compute() time.
   if (! isInitialized ()) {
     initialize ();
@@ -579,7 +572,33 @@ void ILUT<MatrixType>::compute ()
   Teuchos::Time timer ("ILUT::compute");
   double startTime = timer.wallTime();
   { // Timer scope for timing compute()
-    Teuchos::TimeMonitor timeMon (timer, true);
+  Teuchos::TimeMonitor timeMon (timer, true);
+
+  if (!this->useKokkosKernelsParILUT_)
+  {
+    //--------------------------------------------------------------------------
+    // Ifpack2::ILUT's serial version is a translation of the Aztec ILUT
+    // implementation. The Aztec ILUT implementation was written by Ray Tuminaro.
+    //
+    // This isn't an exact translation of the Aztec ILUT algorithm, for the
+    // following reasons:
+    // 1. Minor differences result from the fact that Aztec factors a MSR format
+    // matrix in place, while the code below factors an input CrsMatrix which
+    // remains untouched and stores the resulting factors in separate L and U
+    // CrsMatrix objects.
+    // Also, the Aztec code begins by shifting the matrix pointers back
+    // by one, and the pointer contents back by one, and then using 1-based
+    // Fortran-style indexing in the algorithm. This Ifpack2 code uses C-style
+    // 0-based indexing throughout.
+    // 2. Aztec stores the inverse of the diagonal of U. This Ifpack2 code
+    // stores the non-inverted diagonal in U.
+    // The triangular solves (in Ifpack2::ILUT::apply()) are performed by
+    // calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
+    // this requires U to contain the non-inverted diagonal.
+    //
+    // ABW.
+    //--------------------------------------------------------------------------
+
     const scalar_type zero = STS::zero ();
     const scalar_type one  = STS::one ();
 
@@ -587,10 +606,10 @@ void ILUT<MatrixType>::compute ()
 
     // If this macro is defined, files containing the L and U factors
     // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
-    // #define IFPACK2_WRITE_FACTORS
-#ifdef IFPACK2_WRITE_FACTORS
-    std::ofstream ofsL("L.tif.mtx", std::ios::out);
-    std::ofstream ofsU("U.tif.mtx", std::ios::out);
+    // #define IFPACK2_WRITE_ILUT_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
+    std::ofstream ofsL("L.ifpack2_ilut.mtx", std::ios::out);
+    std::ofstream ofsU("U.ifpack2_ilut.mtx", std::ios::out);
 #endif
 
     // Calculate how much fill will be allowed in addition to the
@@ -775,7 +794,7 @@ void ILUT<MatrixType>::compute ()
       // triangular solve can assume a unit diagonal, take a short-cut
       // and perform faster.
 
-#ifdef IFPACK2_WRITE_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
       for (size_type ii = 0; ii < L_tmp_idx[row_i].size (); ++ii) {
         ofsL << row_i << " " << L_tmp_idx[row_i][ii] << " " 
                              << L_tmpv[row_i][ii] << std::endl;
@@ -832,7 +851,7 @@ void ILUT<MatrixType>::compute ()
 
       unorm[row_i] /= (orig_U_len + U_vals_heaplen);
 
-#ifdef IFPACK2_WRITE_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
       for(int ii=0; ii<U_tmp_idx[row_i].size(); ++ii) {
         ofsU <<row_i<< " " <<U_tmp_idx[row_i][ii]<< " " 
                            <<U_tmpv[row_i][ii]<< std::endl;
@@ -888,11 +907,22 @@ void ILUT<MatrixType>::compute ()
     U_solver_->setMatrix(U_);
     U_solver_->initialize ();
     U_solver_->compute ();
+
+  } else {
+    //FIXME par_ilut compute goes here
+
+     KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(), LevelOfFill_,
+                                                  A_local_rowmap_, A_local_entries_, A_local_values_,
+                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values,
+                                                  par_ilut_options_.deterministic);
+
   }
+
+  } // Timer scope for timing compute()
   ComputeTime_ += (timer.wallTime() - startTime);
   IsComputed_ = true;
   ++NumCompute_;
-}
+} //compute()
 
 
 template <class MatrixType>
@@ -963,7 +993,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
   ++NumApply_;
   ApplyTime_ += (timer.wallTime() - startTime);
-}
+} //apply()
 
 
 template <class MatrixType>
