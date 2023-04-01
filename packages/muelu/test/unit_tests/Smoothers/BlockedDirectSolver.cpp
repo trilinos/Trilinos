@@ -279,7 +279,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
+      std::array<std::string, 3> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -396,7 +396,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
+    std::array<std::string, 3> solver_types{"", "Klu", "Superlu"};
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -521,7 +521,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
+    std::array<std::string, 3> solver_types{"", "Klu", "Superlu"};
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -649,7 +649,7 @@ namespace MueLuTests {
     // TODO test only Tpetra because of Ifpack2 smoother!
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
+      std::array<std::string, 3> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
       Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -660,23 +660,23 @@ namespace MueLuTests {
         return;
       }
 
-      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrix(lib, 3, comm);
-      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
-      Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
-
-      //I don't use the testApply infrastructure because it has no provision for an initial guess.
-      Level level;
-      TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-      level.setlib(Xpetra::UseTpetra);
-
-      // Test ReorderBlockAFactory
-      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
-      rAFact->SetFactory("A", MueLu::NoFactory::getRCP());
-      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ [2 0] 1]")));
-
       for(const auto& solver_type : solver_types)
       {
+        Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrix(lib, 3, comm);
+        Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+        Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+        //I don't use the testApply infrastructure because it has no provision for an initial guess.
+        Level level;
+        TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+        level.Set("A", A);
+        level.setlib(Xpetra::UseTpetra);
+
+        // Test ReorderBlockAFactory
+        Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+        rAFact->SetFactory("A", MueLu::NoFactory::getRCP());
+        rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ [2 0] 1]")));
+
         //////////////////////////////////////////////////////////////////////
         // Smoothers
         RCP<SimpleSmoother> smootherPrototype = rcp(new SimpleSmoother());
@@ -838,7 +838,7 @@ namespace MueLuTests {
     // TODO test only Tpetra because of Ifpack2 smoother!
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      std::array<std::string, 4> solver_types{"", "Klu", "Superlu"};
+      std::array<std::string, 3> solver_types{"", "Klu", "Superlu"};
 
       RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
       Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -849,23 +849,23 @@ namespace MueLuTests {
         return;
       }
 
-      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrixThyra(lib, 3, comm);
-      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
-      Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
-
-      //I don't use the testApply infrastructure because it has no provision for an initial guess.
-      Level level;
-      TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-      level.setlib(Xpetra::UseTpetra);
-
-      // Test ReorderBlockAFactory
-      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
-      rAFact->SetFactory("A", MueLu::NoFactory::getRCP());
-      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ [2 0] 1]")));
-
       for(const auto& solver_type : solver_types)
       {
+        Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrixThyra(lib, 3, comm);
+        Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+        Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+        //I don't use the testApply infrastructure because it has no provision for an initial guess.
+        Level level;
+        TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+        level.Set("A", A);
+        level.setlib(Xpetra::UseTpetra);
+
+        // Test ReorderBlockAFactory
+        Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+        rAFact->SetFactory("A", MueLu::NoFactory::getRCP());
+        rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ [2 0] 1]")));
+
         //////////////////////////////////////////////////////////////////////
         // Smoothers
         RCP<SimpleSmoother> smootherPrototype = rcp(new SimpleSmoother());
