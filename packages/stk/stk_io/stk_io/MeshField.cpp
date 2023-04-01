@@ -76,7 +76,7 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
     m_dbName = field->name();
   }
 
-  ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
+  STK_ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
 		  "ERROR: Input interpolation field '" << m_field->name()
 		  << "' is an integer field.  Only double fields can be interpolated.");
 }
@@ -96,7 +96,7 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
     m_dbName = field.name();
   }
 
-  ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
+  STK_ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
 		  "ERROR: Input interpolation field '" << m_field->name()
 		  << "' is an integer field.  Only double fields can be interpolated.");
 }

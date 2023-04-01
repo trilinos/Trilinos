@@ -80,8 +80,8 @@ struct DataTypeKey
   DataTypeKey(data_t argType, unsigned argLength)
     : m_value(static_cast<key_t>(static_cast<uint32_t>(argType) << RANK_SHIFT | argLength) )
   {
-    NGP_ThrowRequireMsg(argType <= static_cast<data_t>(255), "Error: given an out of range data type");
-    NGP_ThrowRequireMsg(argLength <= MAX_LENGTH, "Error: given an out of range length value");
+    STK_NGP_ThrowRequireMsg(argType <= static_cast<data_t>(255), "Error: given an out of range data type");
+    STK_NGP_ThrowRequireMsg(argLength <= MAX_LENGTH, "Error: given an out of range length value");
   }
 
   KOKKOS_FUNCTION
@@ -135,8 +135,8 @@ class DataTypeTranslator : public TranslatorBase
   }
   
   void translate(const void* srcAddr, unsigned srcDataByteSize, DataTypeKey::data_t destType, void* destAddr, unsigned destDataByteSize) const {
-    ThrowRequire(DataTypeKey::is_valid_data_type(destType));
-    ThrowRequire(srcDataByteSize % sizeof(TYPE) == 0);
+    STK_ThrowRequire(DataTypeKey::is_valid_data_type(destType));
+    STK_ThrowRequire(srcDataByteSize % sizeof(TYPE) == 0);
     unsigned srcCount = srcDataByteSize / sizeof(TYPE);
     unsigned destCount = destDataByteSize / m_translators[destType].typeSize;
 

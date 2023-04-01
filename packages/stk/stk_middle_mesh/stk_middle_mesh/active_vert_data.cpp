@@ -145,8 +145,10 @@ int ActiveVertData::get_local_idx(mesh::MeshEntityPtr el, mesh::MeshEntityPtr ve
   int dim   = get_type_dimension(vert->get_type());
   int ndown = mesh::get_downward(el, dim, verts);
   for (int i = 0; i < ndown; ++i)
+  {  
     if (verts[i] == vert)
       return i;
+  }
 
   throw std::invalid_argument("vert is not downward adjacent to el");
 }

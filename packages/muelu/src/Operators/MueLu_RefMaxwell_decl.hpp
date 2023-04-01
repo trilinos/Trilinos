@@ -59,6 +59,7 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_MasterList.hpp"
+#include "MueLu_FactoryManager.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"

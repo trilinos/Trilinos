@@ -91,7 +91,7 @@ public:
     }
 
     std::vector<std::string> fieldNames = {"not-set-yet1", "not-set-yet2"};
-    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
+    mock_utils::read_mesh(splitComm, meshFileName, "surface_1", fieldNames, m_mesh);
   }
 
   void communicate_initial_setup()

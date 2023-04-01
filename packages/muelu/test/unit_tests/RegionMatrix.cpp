@@ -346,10 +346,10 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   typename values_type::HostMirror compositeValues_h = Kokkos::create_mirror_view(compositeValues);
   Kokkos::deep_copy(compositeValues_h, compositeValues);
 
-  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries.extent(0));
+  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries_h.extent(0));
   TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
   for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
-    TEST_EQUALITY(compositeEntries_h(idx), refEntries(idx));
+    TEST_EQUALITY(compositeEntries_h(idx), refEntries_h(idx));
     TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
                            TST::magnitude(refValues_h(idx)),
                            100*TMT::eps());

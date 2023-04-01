@@ -88,12 +88,12 @@ public:
     stk::mesh::Part& block2 = *get_meta().get_part("block_2");
     stk::mesh::Selector sharedButNotBlock2 = get_meta().globally_shared_part() & !block2;
     const stk::mesh::BucketVector& nodeBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK, sharedButNotBlock2);
-    ThrowRequire(!nodeBuckets.empty());
-    ThrowRequire(nodeBuckets[0]->size() > 0);
+    STK_ThrowRequire(!nodeBuckets.empty());
+    STK_ThrowRequire(nodeBuckets[0]->size() > 0);
 
     stk::mesh::Entity node = (*nodeBuckets[0])[0];
     stk::mesh::Entity elem = get_owned_element(node);
-    ThrowRequire(get_bulk().is_valid(elem));
+    STK_ThrowRequire(get_bulk().is_valid(elem));
     get_bulk().change_entity_parts(elem, stk::mesh::ConstPartVector{&block2});
   }
 };

@@ -52,7 +52,7 @@
 #include <Galeri_XpetraUtils.hpp>
 //#include <Galeri_XpetraMaps.hpp>
 
-#include <MueLu_AmalgamationFactory_kokkos.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory_kokkos.hpp>
 #include <MueLu_config.hpp>
 #include <MueLu_TestHelpers_kokkos.hpp>
@@ -121,7 +121,7 @@ namespace MueLuTests {
       aLevel.Request("A");
       aLevel.Set("A",A);
 
-      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -168,7 +168,7 @@ namespace MueLuTests {
       aLevel.Request("A");
       aLevel.Set("A",A);
 
-      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -217,7 +217,7 @@ namespace MueLuTests {
       aLevel.Request("A");
       aLevel.Set("A",A);
 
-      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 

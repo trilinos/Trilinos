@@ -554,10 +554,10 @@ endfunction()
 # Implementation macro for tribits_set_dep_packages() to deal with a package
 # that is not defined by TriBITS.
 #
-# ToDo #63: This may need to be modified when dealing with TriBITS-compatible
+# ToDo #63: This may need to be modified when dealing with TriBITS-compliant
 # packages already installed out on the system.  We may need a mode where we
 # don't assert packages that are not defined but instead just assume they are
-# TriBITS-compatible packages already installed.
+# TriBITS-compliant packages already installed.
 #
 macro(tribits_set_dep_packages__handle_undefined_pkg  packageName  depPkg
     requiredOrOptional  pkgsOrTpls  packageEnableVar
@@ -959,6 +959,8 @@ macro(tribits_read_subpackage_deps_file_add_to_graph  PACKAGE_NAME
     tribits_assert_read_dependency_vars(${SUBPACKAGE_FULLNAME})
 
     tribits_process_package_dependencies_lists(${SUBPACKAGE_FULLNAME})
+
+    set(${SUBPACKAGE_FULLNAME}_IS_TRIBITS_COMPLIANT TRUE)
 
     set(${SUBPACKAGE_FULLNAME}_REGRESSION_EMAIL_LIST
       ${${PACKAGE_NAME}_REGRESSION_EMAIL_LIST})

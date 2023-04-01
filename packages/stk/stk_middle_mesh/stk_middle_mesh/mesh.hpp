@@ -85,7 +85,8 @@ class Mesh
   private:
     explicit Mesh(MPI_Comm comm = MPI_COMM_WORLD)
       : m_comm(comm)
-    {}
+    {
+    }
 
     void set_geo_classification(std::shared_ptr<Field<impl::GeoClassification>> field);
 
@@ -256,6 +257,9 @@ bool is_unique(std::vector<MeshEntityPtr> entities);
 bool is_null(std::vector<MeshEntityPtr> entities);
 
 void check_vertices_null(std::vector<MeshEntityPtr> entities);
+
+int count_entities_of_type(std::shared_ptr<mesh::Mesh> mesh, MeshEntityType type);
+
 
 std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm = MPI_COMM_WORLD);
 

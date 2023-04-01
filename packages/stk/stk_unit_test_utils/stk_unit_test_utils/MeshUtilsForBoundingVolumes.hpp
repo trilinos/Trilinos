@@ -133,7 +133,7 @@ inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bul
         }
     }
 
-    ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
+    STK_ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
 inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<FloatBox> &domainBoxes)
@@ -507,7 +507,7 @@ inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bul
         }
     }
 
-    ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
+    STK_ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
 inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<FloatBox> &domainBoxes)

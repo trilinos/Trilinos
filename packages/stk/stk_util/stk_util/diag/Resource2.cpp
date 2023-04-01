@@ -137,7 +137,7 @@ Resource Resource::create(const String& resource_name, AnyData* any_data)
 {
   auto& resource_list = getResourceMap(m_resource_);
 
-  ThrowRequireMsg(resource_list.find(resource_name) == resource_list.end(),
+  STK_ThrowRequireMsg(resource_list.find(resource_name) == resource_list.end(),
                   "Resource " << resource_name << " already exists in resource group ");
 
   auto new_resource_ = new Resource_(m_resource_, resource_name, any_data);

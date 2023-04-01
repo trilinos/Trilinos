@@ -47,7 +47,7 @@ SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
 
   if (globalRank == myRootProc)
   {
-    ThrowRequireMsg(localRank == 0, "SyncInfo object " << m_name << ": Local rank on the root proc is not zero");
+    STK_ThrowRequireMsg(localRank == 0, "SyncInfo object " << m_name << ": Local rank on the root proc is not zero");
   }
 
   SyncInfo recvInfo;

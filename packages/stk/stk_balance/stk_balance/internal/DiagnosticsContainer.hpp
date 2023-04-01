@@ -81,7 +81,7 @@ void DiagnosticsContainer::register_diagnostic(Args&&... args)
   if constexpr (std::is_base_of_v<Diagnostic, T>)
   {
     const std::type_info * newType = &typeid(T);
-    ThrowRequireMsg(std::none_of(m_types.begin(), m_types.end(),
+    STK_ThrowRequireMsg(std::none_of(m_types.begin(), m_types.end(),
                                  [newType](const std::type_info * existingType) { return *newType == *existingType; }),
                     std::string("Can only register each Diagnostic once: ") + sierra::demangle(newType->name()));
     m_types.push_back(newType);

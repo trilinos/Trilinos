@@ -32,13 +32,19 @@ class XiCoordinatesForTest : public XiCoordinates
 class ApplicationInterfaceSPMDTester : public ::testing::Test
 {
   protected:
-    void runtest(int nprocs, const ParallelSearchOpts& parallelSearchOpts, const VolumeSnapOpts& volumeSnapOpts,
+    void runtest(int nprocs1, int nprocs2, const ParallelSearchOpts& parallelSearchOpts, const VolumeSnapOpts& volumeSnapOpts,
                  const BoundarySnapAndQualityImprovementOpts& boundarySnapOpts, const MiddleGridOpts& middleGridOpts)
     {
-      if (nprocs == 0)
+      if (nprocs1 == 0)
         throw std::runtime_error("nprocs cannot be zero");
 
-      if (nprocs > utils::impl::comm_size(MPI_COMM_WORLD))
+      if (nprocs1 > utils::impl::comm_size(MPI_COMM_WORLD))
+        throw std::runtime_error("too many processes specified");
+
+      if (nprocs2 == 0)
+        throw std::runtime_error("nprocs cannot be zero");
+
+      if (nprocs2 > utils::impl::comm_size(MPI_COMM_WORLD))
         throw std::runtime_error("too many processes specified");
 
       inputMesh1 = nullptr;
@@ -46,65 +52,75 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       middleGrid1 = nullptr;
       middleGrid2 = nullptr;
 
-      bool onMeshComm = create_mesh_comm(nprocs);
+      create_mesh_comms(nprocs1, nprocs2);
 
-      if (onMeshComm)
+      create_input_meshes();
+
+      auto xiPts = std::make_shared<XiCoordinatesForTest>();
+      auto interface =
+          application_interface_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, MPI_COMM_WORLD,
+                                        xiPts,
+                                        parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+
+      interface->create_middle_grid();
+      middleGrid1        = inputMesh1 ? interface->get_middle_grid_for_mesh1() : nullptr;
+      middleGrid2        = inputMesh2 ? interface->get_middle_grid_for_mesh2() : nullptr;
+      auto classification1    = inputMesh1 ? interface->get_mesh1_classification() : nullptr;
+      auto classification2    = inputMesh2 ? interface->get_mesh2_classification() : nullptr;
+      auto invClassification1 = inputMesh1 ? interface->compute_mesh1_inverse_classification() : nullptr;
+      auto invClassification2 = inputMesh2 ? interface->compute_mesh2_inverse_classification() : nullptr;
+      auto remoteInfoOneToTwo = inputMesh1 ? interface->get_remote_info_mesh_one_to_two() : nullptr;
+      auto remoteInfoTwoToOne = inputMesh2 ? interface->get_remote_info_mesh_two_to_one() : nullptr;
+      auto xiPtsOnMesh1       = inputMesh1 ? interface->get_xi_points_on_mesh1() : nullptr;
+      auto xiPtsOnMesh2       = inputMesh2 ? interface->get_xi_points_on_mesh2() : nullptr;
+
+
+      if (inputMesh1)
       {
-        create_input_meshes();
-
-        auto xiPts = std::make_shared<XiCoordinatesForTest>();
-        auto interface =
-            application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, inputMesh1->get_comm(),
-                                               xiPts,
-                                               parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
-
-        interface->create_middle_grid();
-        middleGrid1        = interface->get_middle_grid_for_mesh1();
-        middleGrid2        = interface->get_middle_grid_for_mesh2();
-        auto classification1    = interface->get_mesh1_classification();
-        auto classification2    = interface->get_mesh2_classification();
-        auto invClassification1 = interface->compute_mesh1_inverse_classification();
-        auto invClassification2 = interface->compute_mesh2_inverse_classification();
-        auto remoteInfoOneToTwo = interface->get_remote_info_mesh_one_to_two();
-        auto remoteInfoTwoToOne = interface->get_remote_info_mesh_two_to_one();
-        auto xiPtsOnMesh1       = interface->get_xi_points_on_mesh1();
-        auto xiPtsOnMesh2       = interface->get_xi_points_on_mesh2();
-
-
         EXPECT_EQ(classification1->get_mesh(), middleGrid1);
-        EXPECT_EQ(classification2->get_mesh(), middleGrid2);
         EXPECT_EQ(invClassification1->get_mesh(), inputMesh1);
-        EXPECT_EQ(invClassification2->get_mesh(), inputMesh2);
-
         test_util::test_areas_positive(middleGrid1);
-        test_util::test_areas_positive(middleGrid2);
-
         test_util::test_every_element_classified(middleGrid1, classification1);
-        test_util::test_every_element_classified(middleGrid2, classification2);
-
         test_util::test_every_element_classified_inverse(inputMesh1, invClassification1);
-        test_util::test_every_element_classified_inverse(inputMesh2, invClassification2);
-
         test_util::test_area_per_element(inputMesh1, invClassification1);
-        test_util::test_area_per_element(inputMesh2, invClassification2);
-
-        test_remote_info(remoteInfoOneToTwo, remoteInfoTwoToOne, true);
-        test_remote_info(remoteInfoOneToTwo, remoteInfoTwoToOne, false);
-
         test_xi_points(inputMesh1, middleGrid1, xiPtsOnMesh1, classification1, xiPts);
-        test_xi_points(inputMesh2, middleGrid2, xiPtsOnMesh2, classification2, xiPts);
 
-        MPI_Comm_free(&meshComm);
       }
+
+      if (inputMesh2)
+      {
+        EXPECT_EQ(classification2->get_mesh(), middleGrid2);
+        EXPECT_EQ(invClassification2->get_mesh(), inputMesh2);
+        test_util::test_areas_positive(middleGrid2);
+        test_util::test_every_element_classified(middleGrid2, classification2);
+        test_util::test_every_element_classified_inverse(inputMesh2, invClassification2);
+        test_util::test_area_per_element(inputMesh2, invClassification2);  
+        test_xi_points(inputMesh2, middleGrid2, xiPtsOnMesh2, classification2, xiPts);
+      }
+
+      test_remote_info(remoteInfoOneToTwo, remoteInfoTwoToOne, true);
+      test_remote_info(remoteInfoOneToTwo, remoteInfoTwoToOne, false);
+
+
+
+
+      if (meshComm1 != MPI_COMM_NULL)
+        MPI_Comm_free(&meshComm1);
+
+      if (meshComm2 != MPI_COMM_NULL)
+        MPI_Comm_free(&meshComm2);
     }
 
-    bool create_mesh_comm(int nprocs)
+    bool create_mesh_comms(int nprocs1, int nprocs2)
     {
       int myrank = utils::impl::comm_rank(MPI_COMM_WORLD);
-      int color  = myrank < nprocs ? 0 : MPI_UNDEFINED;
-      MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
+      int color1  = myrank < nprocs1 ? 0 : MPI_UNDEFINED;
+      MPI_Comm_split(MPI_COMM_WORLD, color1, 0, &meshComm1);
 
-      return color == 0;
+      int color2  = myrank < nprocs2 ? 0 : MPI_UNDEFINED;
+      MPI_Comm_split(MPI_COMM_WORLD, color2, 0, &meshComm2);
+
+      return color1 == 0 || color2 == 0;
     }
 
     void create_input_meshes()
@@ -124,8 +140,12 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       spec2.numelY = 5;
 
       auto f     = [](const utils::Point& pt) { return pt; };
-      inputMesh1 = create_mesh(spec1, f, meshComm);
-      inputMesh2 = create_mesh(spec2, f, meshComm);
+
+      if (meshComm1 != MPI_COMM_NULL)
+        inputMesh1 = create_mesh(spec1, f, meshComm1);
+
+      if (meshComm2 != MPI_COMM_NULL)
+        inputMesh2 = create_mesh(spec2, f, meshComm2);
     }
 
     void test_remote_info(mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfoOneToTwo, 
@@ -136,33 +156,40 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       auto middleGridSend = sendOneToTwo ? middleGrid1 : middleGrid2;
       auto middleGridRecv = sendOneToTwo ? middleGrid2 : middleGrid1;
 
-      auto centroidFieldSendPtr = mesh::create_field<utils::Point>(middleGridSend,
-                                                            mesh::impl::FieldShape(0, 0, 1), 1);
+      mesh::FieldPtr<utils::Point> centroidFieldSendPtr, centroidFieldRecvPtr;
+      if (middleGridSend)
+      {
+        centroidFieldSendPtr = mesh::create_field<utils::Point>(middleGridSend,
+                                                                mesh::impl::FieldShape(0, 0, 1), 1);
+        auto& centroidFieldSend = *centroidFieldSendPtr;
+        for (auto el : middleGridSend->get_elements())
+          if (el)
+          {
+            centroidFieldSend(el, 0, 0) = mesh::compute_centroid(el);
+          }                                                                
+      }
 
-      auto centroidFieldRecvPtr = mesh::create_field<utils::Point>(middleGridRecv,
-                                                            mesh::impl::FieldShape(0, 0, 1), 1);
+      if (middleGridRecv)
+        centroidFieldRecvPtr = mesh::create_field<utils::Point>(middleGridRecv,
+                                                                mesh::impl::FieldShape(0, 0, 1), 1);
 
-      auto& centroidFieldSend = *centroidFieldSendPtr;
-      for (auto el : middleGridSend->get_elements())
-        if (el)
-        {
-          centroidFieldSend(el, 0, 0) = mesh::compute_centroid(el);
-        }
-
-      MiddleMeshFieldCommunication<utils::Point> exchanger(middleGrid1->get_comm(), middleGrid1, middleGrid2,
+      MiddleMeshFieldCommunication<utils::Point> exchanger(MPI_COMM_WORLD, middleGrid1, middleGrid2,
                                                            remoteInfoOneToTwo, remoteInfoTwoToOne);
       exchanger.start_exchange(centroidFieldSendPtr, centroidFieldRecvPtr);
       exchanger.finish_exchange(centroidFieldRecvPtr);
 
-      auto& centroidFieldRecv = *centroidFieldRecvPtr;
-      for (auto el : middleGridRecv->get_elements())
-        if (el)
-        {
-          utils::Point centroidLocal  = mesh::compute_centroid(el);
-          utils::Point centroidRemote = centroidFieldRecv(el, 0, 0);
-          for (int i=0; i < 3; ++i)
-            EXPECT_NEAR(centroidLocal[i], centroidRemote[i], 1e-13);
-        }
+      if (middleGridRecv)
+      {
+        auto& centroidFieldRecv = *centroidFieldRecvPtr;
+        for (auto el : middleGridRecv->get_elements())
+          if (el)
+          {
+            utils::Point centroidLocal  = mesh::compute_centroid(el);
+            utils::Point centroidRemote = centroidFieldRecv(el, 0, 0);
+            for (int i=0; i < 3; ++i)
+              EXPECT_NEAR(centroidLocal[i], centroidRemote[i], 1e-13);
+          }
+      }
     }
 
     void test_xi_points(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleGrid,
@@ -196,7 +223,8 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
         }      
     }
 
-    MPI_Comm meshComm = MPI_COMM_NULL;
+    MPI_Comm meshComm1 = MPI_COMM_NULL;
+    MPI_Comm meshComm2 = MPI_COMM_NULL;
     std::shared_ptr<mesh::Mesh> inputMesh1;
     std::shared_ptr<mesh::Mesh> inputMesh2;
     std::shared_ptr<mesh::Mesh> middleGrid1;
@@ -219,8 +247,27 @@ TEST_F(ApplicationInterfaceSPMDTester, Defaults)
 
   for (int nprocs = 1; nprocs <= commsize; ++nprocs)
   {
-    runtest(nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
   }
+}
+
+TEST_F(ApplicationInterfaceSPMDTester, MToN)
+{
+  int commsize = utils::impl::comm_size(MPI_COMM_WORLD);
+  if (commsize > 4)
+    GTEST_SKIP();
+
+  ParallelSearchOpts parallelSearchOpts;
+  VolumeSnapOpts volumeSnapOpts;
+  BoundarySnapAndQualityImprovementOpts boundarySnapOpts;
+  boundarySnapOpts.type = BoundarySnapAndQualityImprovementType::None;
+  MiddleGridOpts middleGridOpts;
+
+  for (int nprocs1 = 1; nprocs1 <= commsize; ++nprocs1)
+    for (int nprocs2 = 1; nprocs2 <= commsize; ++nprocs2)
+    {
+      runtest(nprocs1, nprocs2, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    }
 }
 
 TEST_F(ApplicationInterfaceSPMDTester, EnableVolumeSnap)
@@ -237,7 +284,7 @@ TEST_F(ApplicationInterfaceSPMDTester, EnableVolumeSnap)
 
   for (int nprocs = 1; nprocs <= commsize; ++nprocs)
   {
-    runtest(nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
   }
 }
 
@@ -255,7 +302,7 @@ TEST_F(ApplicationInterfaceSPMDTester, BoundarySnapThenQuality)
 
   for (int nprocs = 1; nprocs < commsize; ++nprocs)
   {
-    runtest(nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
   }
 }
 
@@ -278,7 +325,7 @@ TEST(ApplicationInterfaceSPMD, MeshNotCreatedError)
   auto inputMesh1 = mesh::impl::create_mesh(spec1, f, comm1);
   auto inputMesh2 = mesh::impl::create_mesh(spec1, f, comm1);
 
-  auto interface = application_interface_spmd_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, comm1);
+  auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, comm1);
 
   EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh1());
   EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh2());

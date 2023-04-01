@@ -11,9 +11,6 @@ using AggregateQualityEstimateFactory [[maybe_unused]] = MueLu::AggregateQuality
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT
 using AmalgamationFactory [[maybe_unused]] = MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_AMALGAMATIONFACTORY_KOKKOS_SHORT
-using AmalgamationFactory_kokkos [[maybe_unused]] = MueLu::AmalgamationFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_AMESOS2SMOOTHER_SHORT
 using Amesos2Smoother [[maybe_unused]] = MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif

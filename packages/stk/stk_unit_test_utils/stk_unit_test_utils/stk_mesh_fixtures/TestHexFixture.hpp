@@ -65,7 +65,7 @@ protected:
   void setup_mesh(size_t nx, size_t ny, size_t nz,
                   const std::vector<std::string>& entityRankNames = std::vector<std::string>())
   {
-    ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
+    STK_ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
     m_meta.initialize(3, entityRankNames, m_coord_field.name());
     m_hexFixture = new HexFixture(m_meta, *m_bulk, nx, ny, nz, 1, 1);
     m_hexFixture->m_meta.commit();
@@ -112,7 +112,7 @@ protected:
   void setup_mesh(size_t nx, size_t ny, size_t nz,
                   const std::vector<std::string>& entityRankNames = std::vector<std::string>())
   {
-    ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
+    STK_ThrowRequireMsg(m_hexFixture == nullptr, "TestHexFixture::setup_mesh may only be called once.");
     m_meta.initialize(3, entityRankNames, m_coord_field->name());
     m_hexFixture = new HexFixture(m_meta, *m_bulk, nx, ny, nz, 1, 1);
     m_hexFixture->m_meta.commit();

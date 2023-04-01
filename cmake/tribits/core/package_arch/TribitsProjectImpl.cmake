@@ -190,10 +190,6 @@ macro(tribits_project_impl)
   # G) Go get the information for all enabled TPLS
   #
 
-  message("")
-  message("Getting information for all enabled external packages/TPLs ...")
-  message("")
-
   tribits_process_enabled_tpls()
 
   #

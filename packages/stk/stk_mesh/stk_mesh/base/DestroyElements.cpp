@@ -46,8 +46,8 @@ void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityV
         if(!bulk.is_valid(element))
             continue;
 
-        ThrowRequireMsg(!impl::has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
-        ThrowRequireMsg(bulk.entity_rank(element) == stk::topology::ELEM_RANK, "Entity to be destroyed must be an element");
+        STK_ThrowRequireMsg(!impl::has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
+        STK_ThrowRequireMsg(bulk.entity_rank(element) == stk::topology::ELEM_RANK, "Entity to be destroyed must be an element");
 
         for(stk::mesh::EntityRank conRank = stk::topology::NODE_RANK; conRank < stk::topology::ELEM_RANK; ++conRank) {
             unsigned numConnected = bulk.num_connectivity(element, conRank);

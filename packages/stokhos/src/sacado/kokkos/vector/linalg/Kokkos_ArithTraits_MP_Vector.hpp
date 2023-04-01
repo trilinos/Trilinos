@@ -51,7 +51,9 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+#if KOKKOS_VERSION < 40099
 namespace Details {
+#endif
 
 template <typename S>
 class ArithTraits< Sacado::MP::Vector<S> > {
@@ -211,15 +213,21 @@ public:
   }
 };
 
-}
-}
+#if KOKKOS_VERSION < 40099
+} // namespace Details - removed after Kokkos 4.0
+#endif
+} // namespace Kokkos
 
 namespace KokkosBatched {
 
   template <typename S>
   struct MagnitudeScalarType< Sacado::MP::Vector<S> > {
     typedef Sacado::MP::Vector<S> val_type;
+#if KOKKOS_VERSION < 40099
     typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type type;
+#else
+    typedef typename Kokkos::ArithTraits<val_type>::mag_type type;
+#endif
   };
 
 }

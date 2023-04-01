@@ -42,7 +42,7 @@ void copy_field_attributes(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaDa
 {
   const stk::mesh::FieldVector &oldFields = oldMeta.get_fields();
   const stk::mesh::FieldVector &newFields = newMeta.get_fields();
-  ThrowRequire(oldFields.size() == newFields.size());
+  STK_ThrowRequire(oldFields.size() == newFields.size());
 
   for (size_t i = 0; i < oldFields.size(); ++i) {
     stk::mesh::impl::get_attributes(*newFields[i]) = stk::mesh::impl::get_attributes(*oldFields[i]);

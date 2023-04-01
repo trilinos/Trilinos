@@ -125,7 +125,7 @@ void separate_wedge(
     // Replace wedge's nodes with new nodes because any nodes shared with other
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
-    ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
+    STK_ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
     stk::mesh::Entity const *rel_nodes = fixture.bulk_data.begin_nodes(wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {

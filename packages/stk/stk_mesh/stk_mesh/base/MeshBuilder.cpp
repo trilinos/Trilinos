@@ -133,7 +133,7 @@ std::shared_ptr<impl::AuraGhosting> MeshBuilder::create_aura_ghosting()
 
 std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
 {
-  ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
+  STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
 
   return std::unique_ptr<BulkData>(new BulkData(metaData,
                                                 m_comm,

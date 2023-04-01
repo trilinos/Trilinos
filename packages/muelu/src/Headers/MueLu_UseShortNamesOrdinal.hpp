@@ -41,9 +41,6 @@ using AggregationStructuredAlgorithm_kokkos [[maybe_unused]] = MueLu::Aggregatio
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 using AmalgamationInfo [[maybe_unused]] = MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
-using AmalgamationInfo_kokkos [[maybe_unused]] = MueLu::AmalgamationInfo_kokkos<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_GLOBALLEXICOGRAPHICINDEXMANAGER_SHORT
 using GlobalLexicographicIndexManager [[maybe_unused]] = MueLu::GlobalLexicographicIndexManager<LocalOrdinal,GlobalOrdinal,Node>;
 #endif

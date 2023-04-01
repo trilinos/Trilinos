@@ -63,6 +63,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CUSPARSE        "cmake/TPLs/"    PT
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
+  ROCBLAS         "cmake/TPLs/"    PT
+  ROCSPARSE       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST

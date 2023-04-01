@@ -134,7 +134,7 @@ void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsI
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   const unsigned numBlocks = elemBlocks.size();
 
-  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+  STK_ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
                   "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
 
   stk::mesh::EntityVector elems;
@@ -172,7 +172,7 @@ void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigne
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   const unsigned numBlocks = elemBlocks.size();
 
-  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+  STK_ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
                   "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
 
   stk::mesh::EntityVector elems;
@@ -188,7 +188,7 @@ void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigne
     stk::mesh::EntityId id = bulk.identifier(elem);
     unsigned blockIdx = ((id - 1)%numElemsInDimX)/numElemsInDimXPerBlock;
 
-    ThrowRequire(blockIdx < numBlocks);
+    STK_ThrowRequire(blockIdx < numBlocks);
     elemsToMove[blockIdx].push_back(elem);
   }
 

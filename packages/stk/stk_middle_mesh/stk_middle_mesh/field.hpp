@@ -16,15 +16,19 @@ class Field : public impl::FieldBase
 {
   public:
     Field(const FieldShape& fshape, int ncomp, const impl::EntityCount count, std::shared_ptr<Mesh> mesh,
-          const T& init = T())
+          const T& init = T(), bool isFieldHeldByMesh=false)
       : m_fshape(fshape)
       , m_ncomp(ncomp)
-      , m_mesh(mesh)
+      , m_meshSharedPtr(mesh)
+      , m_mesh(mesh.get())
     {
       for (int dim = 0; dim < 3; ++dim)
         m_data[dim].resize(fshape.count[dim] * count.count[dim] * ncomp);
 
       set(init);
+
+      if (isFieldHeldByMesh)
+        m_meshSharedPtr = nullptr; // dont create reference cycle
     }
 
     Field(const Field<T>&) = delete;
@@ -61,7 +65,11 @@ class Field : public impl::FieldBase
 
     const FieldShape& get_field_shape() const { return m_fshape; }
 
-    std::shared_ptr<Mesh> get_mesh() const { return m_mesh; }
+    std::shared_ptr<Mesh> get_mesh() const
+    { 
+      assert(m_meshSharedPtr);
+      return m_meshSharedPtr;
+    }
 
   protected:
     void add_entity(const int dim) override
@@ -144,7 +152,8 @@ class Field : public impl::FieldBase
     std::array<std::vector<T>, 3> m_data;
     FieldShape m_fshape;
     int m_ncomp;
-    std::shared_ptr<Mesh> m_mesh;
+    std::shared_ptr<Mesh> m_meshSharedPtr;
+    Mesh* m_mesh;
 };
 
 template <typename T>
@@ -152,10 +161,10 @@ using FieldPtr = std::shared_ptr<Field<T>>;
 
 template <typename T>
 FieldPtr<T> create_field(std::shared_ptr<Mesh> mesh, const FieldShape& fshape, const int ncomp,
-                         const T& init = T())
+                         const T& init = T(), bool isFieldHeldByMesh=false)
 {
   impl::EntityCount count(mesh->get_vertices().size(), mesh->get_edges().size(), mesh->get_elements().size());
-  auto field = std::make_shared<Field<T>>(fshape, ncomp, count, mesh, init);
+  auto field = std::make_shared<Field<T>>(fshape, ncomp, count, mesh, init, isFieldHeldByMesh);
   mesh->attach_field(field);
 
   return field;

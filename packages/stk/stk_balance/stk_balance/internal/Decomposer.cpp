@@ -106,7 +106,7 @@ NestedDecomposer::NestedDecomposer(stk::mesh::BulkData& bulkData,
 {
   const int numInitialSubdomains = m_bulkData.parallel_size();
   const int numFinalSubdomains = m_balanceSettings.get_num_output_processors();
-  ThrowRequireMsg((numFinalSubdomains % numInitialSubdomains) == 0,
+  STK_ThrowRequireMsg((numFinalSubdomains % numInitialSubdomains) == 0,
                   "Final subdomains (" << numFinalSubdomains << ") must be an integer multiple of initial subdomains ("
                   << numInitialSubdomains << ")");
 

@@ -42,7 +42,7 @@ std::shared_ptr<Mesh> MeshScatterFromRoot::scatter()
   return m_outputMesh;
 }
 
-VariableSizeFieldPtr<RemoteSharedEntity> MeshScatterFromRoot::get_entity_desintations()
+VariableSizeFieldPtr<RemoteSharedEntity> MeshScatterFromRoot::get_entity_destinations()
 {
   return m_entityDestinations;
 }

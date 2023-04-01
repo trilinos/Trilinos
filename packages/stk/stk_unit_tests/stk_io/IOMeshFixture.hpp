@@ -90,7 +90,7 @@ protected:
 
     for (stk::mesh::EntityId nodeId : nodeIds) {
       stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
-      ThrowRequire(get_bulk().is_valid(node));
+      STK_ThrowRequire(get_bulk().is_valid(node));
       nodes.push_back(node);
     }
 
@@ -118,7 +118,7 @@ protected:
       stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlocks);
       for(const stk::mesh::Part* excludedBlock : blocksToExclude) {
         auto foundBlock = std::find(elemBlocks.begin(), elemBlocks.end(), excludedBlock);
-        ThrowRequire(foundBlock != elemBlocks.end());
+        STK_ThrowRequire(foundBlock != elemBlocks.end());
         elemBlocks.erase(foundBlock);
       }
       meshSubsetSelector = stk::mesh::selectUnion(elemBlocks);
@@ -166,7 +166,7 @@ protected:
 
     for (stk::mesh::EntityId nodeId : nodeIds) {
       stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
-      ThrowRequire(get_bulk().is_valid(node));
+      STK_ThrowRequire(get_bulk().is_valid(node));
       nodes.push_back(node);
     }
 
@@ -194,7 +194,7 @@ protected:
       stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlocks);
       for(const stk::mesh::Part* excludedBlock : blocksToExclude) {
         auto foundBlock = std::find(elemBlocks.begin(), elemBlocks.end(), excludedBlock);
-        ThrowRequire(foundBlock != elemBlocks.end());
+        STK_ThrowRequire(foundBlock != elemBlocks.end());
         elemBlocks.erase(foundBlock);
       }
       meshSubsetSelector = stk::mesh::selectUnion(elemBlocks);

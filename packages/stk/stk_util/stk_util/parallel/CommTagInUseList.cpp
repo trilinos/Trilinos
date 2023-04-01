@@ -32,7 +32,7 @@ void CommTagInUseList::insert(std::shared_ptr<MPITagData> newTag)
   #endif
 
   int tagVal = newTag->get_tag();
-  ThrowRequireMsg(m_tags.count(tagVal) == 0, "Cannot create new tag with same value as existing tag");
+  STK_ThrowRequireMsg(m_tags.count(tagVal) == 0, "Cannot create new tag with same value as existing tag");
 
   auto iteratorBoolPair = m_tags.insert(std::make_pair(tagVal, newTag));
   assert(iteratorBoolPair.second);
@@ -158,7 +158,7 @@ bool CommTagInUseList::is_delay_satisfied(EntryCountInt startCount)
 void CommTagInUseList::erase_internal(const std::vector<int>& tagVals)
 {
   for (auto& tag_val : tagVals) {
-    ThrowRequireMsg(m_tags.count(tag_val) == 1, "Cannot free tag this has not been assigned (possible double free)");
+    STK_ThrowRequireMsg(m_tags.count(tag_val) == 1, "Cannot free tag this has not been assigned (possible double free)");
     m_tags.erase(tag_val);
     m_minFreeTag = std::min(m_minFreeTag, tag_val);
   }

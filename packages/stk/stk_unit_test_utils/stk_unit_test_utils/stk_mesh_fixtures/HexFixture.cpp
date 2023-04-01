@@ -333,7 +333,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
@@ -634,7 +634,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node

@@ -298,7 +298,7 @@ protected:
   {
     for (const std::string & partName : partNames) {
       stk::mesh::Part * part = get_meta().get_part(partName);
-      ThrowRequire(part != nullptr);
+      STK_ThrowRequire(part != nullptr);
       get_meta().declare_attribute_no_delete(*part, &m_noDeleteAttribute);
       get_meta().declare_attribute_with_delete(*part, new WithDeleteAttribute);
     }
