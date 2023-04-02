@@ -517,10 +517,9 @@ int main(int narg, char *arg[])
     }
     else{
        std::cout << "Problem to be solved with user-provided vectors." << std::endl;
-       //std::cout << "NEVERMIND. That option has been disabled." << std::endl;
        std::cout << "DANGER!!! Use this option at your own risk!" << std::endl;
-       //return 0;
-       problem->solve(V);
+       problem->setUserEigenvectors(V);
+       problem->solve();
     }
   }
 	pComm->barrier();

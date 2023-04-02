@@ -176,9 +176,7 @@ namespace Zoltan2 {
     ///////////////////// FORWARD DECLARATIONS  ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
-    void partition(const RCP<PartitioningSolution<Adapter> > &solution);
-    void partition(const RCP<PartitioningSolution<Adapter>> &solution, RCP<mvector_t> &userEigenVects);
-
+    void partition(const Teuchos::RCP<PartitioningSolution<Adapter> > &solution);
 
     int AnasaziWrapper(const int numEigenVectors);
 
@@ -194,22 +192,21 @@ namespace Zoltan2 {
     template<typename problem_t>
     void setPolynomialPreconditioner(Teuchos::RCP<problem_t> &problem);
 
-
     void eigenvecsToCoords(Teuchos::RCP<mvector_t> &eigenVectors,
 			   int computedNumEv,
 			   Teuchos::RCP<mvector_t> &coordinates);
 
-
     void computeWeights(std::vector<const weight_t *> vecweights,
 			std::vector<int> strides);
-
 
     void MJwrapper(const Teuchos::RCP<const mvector_t> &coordinates,
 		   std::vector<const weight_t *> weights,
 		   std::vector<int> strides,
 		   const Teuchos::RCP<PartitioningSolution<Adapter>> &solution);
 
+    void setUserEigenvectors(const Teuchos::RCP<mvector_t> &userEvects);
 
+    Teuchos::RCP<mvector_t> getSphynxEigenvectors();
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////// MEMBER FUNCTIONS - Laplacian-related ones ///////////
     ///////////////////////////////////////////////////////////////////////////
@@ -556,6 +553,26 @@ namespace Zoltan2 {
   /////////////////////// MORE MEMBER FUNCTIONS  ////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
 
+  ///////////////////////////////////////////////////////////////////////////
+  // Allows the user to manually set eigenvectors for the Sphynx partitioner
+  // to use rather than solving for them with Anasazi. Mainly intended 
+  // for debugging purposes.
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  void Sphynx<Adapter>::setUserEigenvectors(const Teuchos::RCP<mvector_t> &userEvects)
+  {
+    eigenVectors_ = userEvects; 
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Returns an RCP containing a deep copy of the eigenvectors used by Sphynx.
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  Teuchos::RCP<Tpetra::MultiVector<double, typename Adapter::lno_t, typename Adapter::gno_t, typename Adapter::node_t> >
+  Sphynx<Adapter>::getSphynxEigenvectors()
+  {
+      return Anasazi::MultiVecTraits<scalar_t, mvector_t>::CloneCopy(eigenVectors_);
+  }
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute a partition using the Laplacian matrix (and possibly the degree
@@ -564,7 +581,7 @@ namespace Zoltan2 {
   // transform the eigenvectors to coordinates, and finally call MJ to compute
   // a partition on the coordinates.
   template <typename Adapter>
-  void Sphynx<Adapter>::partition(const RCP<PartitioningSolution<Adapter>> &solution)
+  void Sphynx<Adapter>::partition(const Teuchos::RCP<PartitioningSolution<Adapter>> &solution)
   {
     // Return a trivial solution if only one part is requested
     if(numGlobalParts_ == 1) {
@@ -579,16 +596,30 @@ namespace Zoltan2 {
 
     // The number of eigenvectors to be computed
     int numEigenVectors = (int) log2(numGlobalParts_)+1;
+    int computedNumEv;
 
-    // Compute the eigenvectors using LOBPCG
-    // or Randomized eigensolver
-    int computedNumEv = Sphynx::AnasaziWrapper(numEigenVectors);
+    if(eigenVectors_ == Teuchos::null){
+      // Compute the eigenvectors using LOBPCG
+      // or Randomized eigensolver
+      computedNumEv = Sphynx::AnasaziWrapper(numEigenVectors);
 
-    if(computedNumEv <= 1 && solverType_ == "LOBPCG") { 
-      throw
-	std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
-			   "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
-			   "               Increase either max iters or tolerance.\n");
+      if(computedNumEv <= 1 && solverType_ == "LOBPCG") { 
+        throw
+          std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
+              "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
+              "               Increase either max iters or tolerance.\n");
+
+      }
+    }
+    else{
+
+      computedNumEv = (int) eigenVectors_->getNumVectors();
+
+      if(computedNumEv <= numEigenVectors) {
+        throw 
+          std::runtime_error("\nSphynx Error: Number of eigenvectors given by user\n"
+              " is less than number of Eigenvectors needed for partition." );
+      }
 
     }
     //std::cout << "DEBUG: going to call eigenvecsToCoords." << std::endl;
@@ -604,46 +635,6 @@ namespace Zoltan2 {
     Sphynx::computeWeights(weights, wstrides);
 
 
-    // Compute the partition using MJ on coordinates
-    Sphynx::MJwrapper(coordinates, weights, wstrides, solution);
-
-  }
-
-  template <typename Adapter>
-  void Sphynx<Adapter>::partition(const RCP<PartitioningSolution<Adapter>> &solution, RCP<mvector_t> &userEigenVects)
-  {
-    // Return a trivial solution if only one part is requested
-    if(numGlobalParts_ == 1) {
-      std::cout << "NumGlobalParts 1 block " << std::endl;
-      size_t numRows =adapter_->getUserGraph()->getLocalNumRows();
-      Teuchos::ArrayRCP<part_t> parts(numRows,0);
-      solution->setParts(parts);
-      
-      return;
-
-    }
-
-    // The number of eigenvectors to be computed
-    int numEigenVectors = (int) log2(numGlobalParts_)+1;
-
-    int computedNumEv = (int) userEigenVects->getNumVectors();
-
-    if(computedNumEv <= numEigenVectors) {
-      throw 
-	std::runtime_error("\nSphynx Error: Number of eigenvectors given by user\n"
-        " is less than number of Eigenvectors needed for partition." );
-    
-    }
-    // Transform the eigenvectors into coordinates 
-    Teuchos::RCP<mvector_t> coordinates;
-    Sphynx::eigenvecsToCoords(userEigenVects, numEigenVectors, coordinates);
-
-    // Get the weights from the adapter
-    std::vector<const weight_t *> weights;
-    std::vector<int> wstrides;
-    Sphynx::computeWeights(weights, wstrides);
-  
-    
     // Compute the partition using MJ on coordinates
     Sphynx::MJwrapper(coordinates, weights, wstrides, solution);
 
@@ -711,7 +702,7 @@ namespace Zoltan2 {
     anasaziParams.set("Full Ortho", useFullOrtho);
 
     // Create and set initial vectors
-    RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
+    Teuchos::RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
 
     if (randomInit_) {
 
