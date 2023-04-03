@@ -28,34 +28,31 @@ void findLargestComponent(ord_type seed,
   root = seed;
   lastSearch = 0;
 
-
-  while(popCnt < inn)
-  {
-
+  while(popCnt < inn) {
     active.push(root);
     mark[root] = ncc;
   
     while(active.empty() == false) {
-      
+
       i = active.front();
       active.pop();
       popCnt ++;
-      
+
       for(ord_type j = inRowPtr[i]; j < inRowPtr[i+1]; ++j) {
-	v = inColInd[j];
-	if(mark[v] == -1) {
-	  mark[v] = ncc;
-	  active.push(v);
-	}
+        v = inColInd[j];
+        if(mark[v] == -1) {
+          mark[v] = ncc;
+          active.push(v);
+        }
       }
     }
-    
+
     //search for an unmarked vertex to be the next root
     for(ord_type i = lastSearch; i < inn; ++i) {
       if(mark[i] == -1) {
-	root = i;
-	lastSearch = i;
-	break;
+        root = i;
+        lastSearch = i;
+        break;
       }
     }
 
@@ -83,8 +80,7 @@ void findLargestComponent(ord_type seed,
       maxId = i;
     }
   }
-    
-  
+
   // renumber the vertices
   outn = 0;
   for(ord_type i = 0; i < inn; ++i) {
@@ -93,12 +89,12 @@ void findLargestComponent(ord_type seed,
     else
       mark[i] = -1;
   }
-  
+
   if(outn != maxSize) {
     std::cout << "The number of vertices in this component: " << outn << " does not match the maximum component size: " << maxSize << "\n";
     exit(1);
   }
-   
+
   // write the largest component to the output arrays
   ord_type ptr = 0;
   outn = 0;
@@ -106,12 +102,12 @@ void findLargestComponent(ord_type seed,
   for(ord_type i = 0; i < inn; i++) {
     if(mark[i] > -1){
       for(ord_type j = inRowPtr[i]; j < inRowPtr[i+1]; ++j) {
-	v = inColInd[j];
-	if(mark[v] == -1) {
-	  std::cout << "Neighbor " << v << " of " << i  << " is found to be absent in the component\n";
-	  exit(1);
-	}
-	outColInd[ptr++] = mark[v];
+        v = inColInd[j];
+        if(mark[v] == -1) {
+          std::cout << "Neighbor " << v << " of " << i  << " is found to be absent in the component\n";
+          exit(1);
+        }
+        outColInd[ptr++] = mark[v];
       }
       outn++;
       outRowPtr[outn] = ptr;
@@ -122,7 +118,7 @@ void findLargestComponent(ord_type seed,
     std::cout << "The number of vertices written: " << outn << " does not match the maximum component size: " << maxSize << "\n";
     exit(1);
   }
-  
+
 }
 
 int main(int argc, char* argv[])
@@ -137,7 +133,7 @@ int main(int argc, char* argv[])
     getline(in, line);
   }
   while(line[0] == '%');
-  
+
   std::stringstream ss1(line);
   ss1 >> nrows >> nrows >> nnzs;
 
@@ -200,7 +196,7 @@ int main(int argc, char* argv[])
 
   ord_type *rowPtrNew = new ord_type[nrows+1];
   ord_type *colIndNew = new ord_type[rowPtr[nrows+1]];
-  
+
   rowPtrNew[0] = 0;
   ord_type ptr = 0;
   ord_type prev = -1;
@@ -213,59 +209,50 @@ int main(int argc, char* argv[])
       colIndNew[ptr++] = colInd[rowPtr[i]];
       prev = colInd[rowPtr[i]];
       for(ord_type j = rowPtr[i]+1; j < rowPtr[i+1]; j++) {
-	if(colInd[j] != prev) {
-	  colIndNew[ptr++] = colInd[j];
-	  prev = colInd[j];
-	}
+        if(colInd[j] != prev) {
+          colIndNew[ptr++] = colInd[j];
+          prev = colInd[j];
+        }
       }
     }
 
     rowPtrNew[i+1] = ptr;
   }
 
-
-
   ord_type diagcnt = 0;
   for(ord_type i = 0; i < nrows; i++) {
     for(ord_type j = rowPtrNew[i]; j < rowPtrNew[i+1]; ++j)
       if(colIndNew[j] == i)
-  	diag[i] = true;
+        diag[i] = true;
 
     if(diag[i] == false)
       std::cout << "ROW " << i << " misses diagonal\n";
   }
 
-
-
-
   std::cout << argv[1] << " " << nrows << " " << ptr << " "; 
 
-
-  
   ord_type newnrows = -1;
   findLargestComponent(0, //seed
-		       nrows, rowPtrNew, colIndNew,
-		       newnrows, rowPtr, colInd );
+      nrows, rowPtrNew, colIndNew,
+      newnrows, rowPtr, colInd );
   ptr = rowPtr[newnrows]; //new number of nonzeros 
 
-  ord_type deg,  max = 0;
+  ord_type deg, max = 0;
   for(ord_type i = 0; i < nrows; i++) {
     deg = rowPtrNew[i+1] - rowPtrNew[i];
     if(deg > max)
       max = deg;
   }
-    
 
   // write into the output file
   std::ofstream out(argv[2], std::ios::out | std::ios::binary);
   out.write((char*)&newnrows, sizeof(ord_type));
   out.write((char*)&ptr, sizeof(ord_type));
-  
+
   out.write((char*)rowPtr, sizeof(ord_type)*(newnrows+1));
   out.write((char*)colInd, sizeof(ord_type)*(ptr));
 
   out.close();
-
 
   std::cout << newnrows << " " << ptr << " " << max << "\n";
 
@@ -274,7 +261,6 @@ int main(int argc, char* argv[])
 
   delete [] rowPtrNew;
   delete [] colIndNew;
-
 
   return 0;
 }

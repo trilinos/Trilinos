@@ -237,7 +237,6 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
 
   
   part_view_t localParts(Kokkos::view_alloc("localParts", Kokkos::WithoutInitializing), numGblRows);
-  //part_view_t localParts("localParts", numGblRows);
   part_view_t globalParts("globalParts", numGblRows);
   auto localPartsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), localParts);
   
@@ -305,7 +304,7 @@ int main(int narg, char *arg[])
     int nparts = 64;     
     int max_iters = 1000;
     int block_size = -1;
-    int rand_seed =1;
+    int rand_seed = 1;
     std::string matrix_file = "";
     std::string vector_file = "";
     std::string eigensolve = "LOBPCG"; 
@@ -334,7 +333,7 @@ int main(int narg, char *arg[])
     cmdp.setOption("nparts",&nparts,
 		   "Number of global parts desired in the resulting partition.");
     cmdp.setOption("rand_seed",&rand_seed,
-		   "Seed for the random multivector."); //TODO: Final randomized solver maybe should have param??  Or notes in the docs?
+		   "Seed for the random multivector."); 
     cmdp.setOption("max_iters",&max_iters,
 		   "Maximum iters (LOBPCG) or mulitplies by A (randomized).");
     cmdp.setOption("block_size",&block_size,
@@ -347,11 +346,10 @@ int main(int narg, char *arg[])
 		   "Whether to use pulp.");
     cmdp.setOption("prec", &prec,
 		   "Prec type to use.");
-    cmdp.setOption("eigensolve", &eigensolve,
-		   "Eigensolver to use: LOBPCG or randomized.");
+    //cmdp.setOption("eigensolve", &eigensolve,
+		 //  "Eigensolver to use: LOBPCG or randomized."); //TODO: Uncomment when randomized eigensolver in Anasazi. 
     cmdp.setOption("prob", &ptype,
 		   "Problem type to use. Options are combinatorial, normalized or generalized.");
-       //Default is combinatorial??  Or different for structured vs unstructured??
     cmdp.setOption("tol", &tol,
 		   "Tolerance to use.");
     cmdp.setOption("init",  &init,
@@ -387,24 +385,27 @@ int main(int narg, char *arg[])
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
     using solution_type = Zoltan2::PartitioningSolution<adapter_type>;  
 
+    // Set the random seed.
+    std::srand(rand_seed);
 
     // Read the input matrix
     Teuchos::RCP<adapter_type> adapter;
     Teuchos::RCP<crs_matrix_type> tmatrix;
 
-    // Set the random seed and hope it goes through to Tpetra.
-    std::srand(rand_seed);
-
     std::string mtx = ".mtx", lc = ".largestComp";
     if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {
       tmatrix  = readMatrixFromFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
-      std::cout << "Used Seher's reader for Largest Comp." << std::endl;
+      if (me==0){
+        std::cout << "Used reader for Largest Comp." << std::endl;
+      }
     }
     else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
       reader_type r;
       tmatrix = r.readSparseFile(matrix_file, pComm);
-      std::cout << "Used standard reader." << std::endl;
+      if (me==0){
+        std::cout << "Used standard Matrix Market reader." << std::endl;
+      }
     }
     else {
       int meshdim = 100;
@@ -413,32 +414,31 @@ int main(int narg, char *arg[])
       else if(matrix_file == "400")
     	meshdim = 400;
       buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
-    	(meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
+        (meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
       //Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(matrix_file+".mtx", tmatrix);
+      if(me == 0){
+        std::cout << "Generated Brick3D matrix." << std::endl;
+      }
     }
-    if(me == 0)
+    if(me == 0){
       std::cout << "Done with reading/creating the matrix." << std::endl;
-  Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
-  
-  using ST = double;
-  using MultiVector  = Tpetra::MultiVector<ST>;
- 
-  Teuchos::RCP<MultiVector > V;
-  if (vector_file ==""){
-    V = Teuchos::rcp(new MultiVector(map, 10));
-    V->randomize();
-    // std::cout << "Randomized some pretend evects." << std::endl;
-  }
-  else{
-    V = Tpetra::MatrixMarket::Reader<MultiVector >::readDenseFile(vector_file,pComm,map);
-    Teuchos::RCP<const Tpetra::Map<> > vector_map = V->getMap();
-    if(me == 0)
-      std::cout << "Done with reading/creating the eigenvector." << std::endl;
-  }
-   // TODO Insert MultiVector Reader 
+    }
+
+    Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
+
+    using ST = double;
+    using MultiVector  = Tpetra::MultiVector<ST>;
+
+    Teuchos::RCP<MultiVector > V;
+    if (vector_file !=""){
+      V = Tpetra::MatrixMarket::Reader<MultiVector >::readDenseFile(vector_file,pComm,map);
+      if(me == 0){
+        std::cout << "Done with reading user-provided eigenvectors." << std::endl;
+      }
+    }
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
-    
+
     // Set the parameters
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
     Teuchos::RCP<Teuchos::ParameterList> sphynxParams(new Teuchos::ParameterList);
@@ -488,7 +488,7 @@ int main(int narg, char *arg[])
         sphynxParams->set("sphynx_block_size", block_size);
       }
       sphynxParams->set("sphynx_skip_preprocessing", true);
-      sphynxParams->set("sphynx_eigensolver", eigensolve);
+      //sphynxParams->set("sphynx_eigensolver", eigensolve); //TODO: Uncomment when randomized solver in Anasazi. 
       if (ptype != "") sphynxParams->set("sphynx_problem_type", ptype);
       if (init != "") sphynxParams->set("sphynx_initial_guess", init);
       if (prec != "") sphynxParams->set("sphynx_preconditioner_type", prec);
@@ -511,8 +511,7 @@ int main(int narg, char *arg[])
        problem->solve();
     }
     else{
-       std::cout << "Problem to be solved with user-provided vectors." << std::endl;
-       std::cout << "DANGER!!! Use this option at your own risk!" << std::endl;
+       std::cout << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
        problem->setUserEigenvectors(V);
        problem->solve();
     }

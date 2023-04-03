@@ -1,7 +1,6 @@
 #ifndef __READMATRIXFROMFILE_HPP
 #define __READMATRIXFROMFILE_HPP
 
-
 #include <climits> 
 #include "Tpetra_Details_makeColMap.hpp"
 
@@ -14,7 +13,6 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 	    const Teuchos::RCP<const map_type>& pRowMap,
 	    global_ordinal_type *rowPtr,
 	    global_ordinal_type *colInd,
-	    // scalar_type *values,
 	    const bool debug=false)
 {
   
@@ -46,27 +44,23 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
       myColInd = Teuchos::ArrayRCP<global_ordinal_type> (myNumEntries);
       myValues = Teuchos::ArrayRCP<scalar_type> (myNumEntries, 1.0);
       if (myNumEntries > 0) {
-	
-	if(myNumEntries < maxNumEnt)
-	  Teuchos::receive (*pComm, rootRank, static_cast<int> (myNumEntries), &myColInd[0]); //myColInd.getRawPtr()
-	else {
-	  int nchunks = myNumEntries/maxNumEnt;
-	  if(myNumEntries % maxNumEnt != 0)
-	    nchunks ++;
-	  for(int i = 0; i < nchunks-1; i++) {
-	    Teuchos::receive (*pComm, rootRank, maxNumEnt, &myColInd[maxNumEnt*i]);
-	    std::cout << "Chunk " << i << " received by myRank "<< myRank << ", size: " << maxNumEnt << "\n";
-	  }
-	  int lastsize = (int)(myNumEntries - (nchunks-1)*maxNumEnt);
-	  Teuchos::receive (*pComm, rootRank, lastsize, &myColInd[maxNumEnt*(nchunks-1)]);
-	  std::cout << "Chunk " << nchunks-1 << " received by myRank " << myRank << ", size: " << lastsize << "\n";
-	}
 
-	// receive (*pComm, rootRank,
-	// 	 static_cast<int> (myNumEntries),
-	// 	 myValues.getRawPtr());
+        if(myNumEntries < maxNumEnt)
+          Teuchos::receive (*pComm, rootRank, static_cast<int> (myNumEntries), &myColInd[0]); 
+        else {
+          int nchunks = myNumEntries/maxNumEnt;
+          if(myNumEntries % maxNumEnt != 0)
+            nchunks ++;
+          for(int i = 0; i < nchunks-1; i++) {
+            Teuchos::receive (*pComm, rootRank, maxNumEnt, &myColInd[maxNumEnt*i]);
+            std::cout << "Chunk " << i << " received by myRank "<< myRank << ", size: " << maxNumEnt << "\n";
+          }
+          int lastsize = (int)(myNumEntries - (nchunks-1)*maxNumEnt);
+          Teuchos::receive (*pComm, rootRank, lastsize, &myColInd[maxNumEnt*(nchunks-1)]);
+          std::cout << "Chunk " << nchunks-1 << " received by myRank " << myRank << ", size: " << lastsize << "\n";
+        }
+
       }
-      
 
     } // If I own at least one row
 
@@ -104,7 +98,6 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
       	}
       }
     }
-
     
     for (int p = 1; p < numProcs; ++p) {
       if (debug) {
@@ -117,7 +110,6 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 	std::cout << "-- Proc 0: Proc " << p << " owns "
 		  << theirNumRows << " rows" << std::endl;
       }
-      
      
       if (theirNumRows != 0) {
 	Teuchos::ArrayRCP<global_ordinal_type> theirRows(theirNumRows);
@@ -170,11 +162,9 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 	    Teuchos::send (*pComm, maxNumEnt, &theirColInd[maxNumEnt*i], p);
 	    std::cout << "Chunk " << i << " sent to Rank "<< p << ", size: " << maxNumEnt << "\n";
 	  }
-
 	  int lastsize = (int)(theirNumEntries - (nchunks-1)*maxNumEnt);
 	  Teuchos::send (*pComm, lastsize, &theirColInd[maxNumEnt*(nchunks-1)], p);
 	  std::cout << "Chunk " << nchunks-1 << " sent to Rank "<< p << ", size: " << lastsize << "\n";
-	    
 	}
 	  
 	if (debug) {
@@ -182,8 +172,6 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 	}
 	
       } // If proc p owns at least one row
-
-      
     } // For each proc p not the root proc 0
   } // If I'm (not) the root proc 0
 
@@ -199,15 +187,12 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
   if (debug && myRank == 0) {
     std::cout << "-- Proc 0: Done with distribute" << std::endl;
   }
-
-
 }
 
 template <typename crs_matrix_type>
 Teuchos::RCP<crs_matrix_type>
 readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>> pComm, bool callFillComplete=true, bool debug=false)
 {
-
   typedef typename crs_matrix_type::global_ordinal_type global_ordinal_type;
   typedef typename crs_matrix_type::local_ordinal_type local_ordinal_type;
   typedef typename crs_matrix_type::scalar_type scalar_type;
@@ -236,20 +221,13 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     in->read((char *)&globalNumRows, sizeof(global_ordinal_type));
     in->read((char *)&globalNumNonzeros, sizeof(global_ordinal_type));
 
-    
-
     TEUCHOS_TEST_FOR_EXCEPTION(globalNumRows <= 0 || globalNumNonzeros <= 0, std::invalid_argument,
     			       "Global number of rows or nonzeros have nonpositive value." << globalNumRows << " " << globalNumNonzeros << " " << sizeof(global_ordinal_type) );
-
-
-
   }
   
   broadcast (*pComm, rootRank, 1, &globalNumRows);
   broadcast (*pComm, rootRank, 1, &globalNumNonzeros);
 
-  //std::cout << globalNumRows << " " << globalNumNonzeros << ", sizeof ord: " << sizeof(global_ordinal_type) << std::endl;
-  
   global_ordinal_type *rowPtr = 0;
   global_ordinal_type *colInd = 0;
   
@@ -262,7 +240,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     in->read((char*)colInd, sizeof(global_ordinal_type)*(globalNumNonzeros));
 
   }
-
   
   Teuchos::RCP<const map_type> pRowMap = Teuchos::rcp (new map_type (static_cast<Tpetra::global_size_t> (globalNumRows),
   								     static_cast<global_ordinal_type> (0),
@@ -281,7 +258,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   Teuchos::ArrayRCP<size_t> myRowPtr;
   Teuchos::ArrayRCP<global_ordinal_type> myColInd;
   Teuchos::ArrayRCP<scalar_type> myValues;
- 
    
   distribute<global_ordinal_type, local_ordinal_type, scalar_type, map_type>(myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap, rowPtr, colInd, debug);
   pComm->barrier();
@@ -316,8 +292,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   if (debug && myRank == rootRank) {
     std::cout << "-- Done with inserting." << std::endl;
   }
-  
-
 
   myNumEntriesPerRow = Teuchos::null;
   myRowPtr = Teuchos::null;
@@ -339,8 +313,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   }
     
   return pMatrix;
-  
-
 }
 
 template <typename crs_matrix_type>
@@ -389,8 +361,6 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
   broadcast (*pComm, rootRank, 1, &globalNumRows);
   broadcast (*pComm, rootRank, 1, &globalNumNonzeros);
 
-  //std::cout << globalNumRows << " " << globalNumNonzeros << ", sizeof ord: " << sizeof(global_ordinal_type) << std::endl;
-  
   global_ordinal_type *rowPtr = 0;
   global_ordinal_type *colInd = 0;
   
@@ -435,9 +405,6 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
     std::cout << std::endl;
   }
   
-  //Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesPerRow.view(0, myNumRows)));
-  
-
   // get the colIds
   std::vector<bool> mark(globalNumRows, false);
   size_t myNumEntries = myRowPtr[myNumRows]; 
@@ -492,11 +459,6 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
   Teuchos::RCP<crs_matrix_type> pMatrix (new crs_matrix_type(graph, values));
   pMatrix->fillComplete(pDomainMap, pRangeMap);
   
-  // myNumEntriesPerRow = Teuchos::null;
-  // myRowPtr = Teuchos::null;
-  // myColInd = Teuchos::null;
-  // myValues = Teuchos::null;
-  
   pComm->barrier();
   if (debug && myRank == rootRank) {
     std::cout << "-- Done with fill complete." << std::endl;
@@ -513,16 +475,12 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
 
 }
 
-
-
 template <typename crs_matrix_type>
 Teuchos::RCP<crs_matrix_type>
 readMatrixFromFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>> pComm, bool binary=true, bool debug=false)
 {
   return readBinaryFileFast<crs_matrix_type>(filename, pComm, true, debug);
 }
-
-
 
 #endif
 
