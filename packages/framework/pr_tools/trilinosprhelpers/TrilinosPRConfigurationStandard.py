@@ -93,7 +93,8 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         for i in range(len(cmd)):
             self.message(f"  ARG {i} {cmd[i]}")
         self.message("")
-
+        print("###############################################")
+        print(os.listdir(self.arg_build_dir))
         if not self.args.dry_run:
             try:
                 subprocess.check_call(cmd, env=os.environ)
