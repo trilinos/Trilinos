@@ -1032,7 +1032,6 @@ namespace Zoltan2 {
 
     using mvector_adapter_t = Zoltan2::XpetraMultiVectorAdapter<mvector_t>;
     using base_adapter_t = typename mvector_adapter_t::base_adapter_t;
-    using cmodel_t = Zoltan2::CoordinateModel<base_adapter_t>;
     using mj_t = Zoltan2::Zoltan2_AlgMJ<mvector_adapter_t>;
     using solution_t = Zoltan2::PartitioningSolution<mvector_adapter_t>;
 

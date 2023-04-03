@@ -99,7 +99,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
       global_ordinal_type curPos = rowPtr[myRow];
 
       if (curNumEntries > 0) {
-      	for(size_t ii = 0; ii < curNumEntries; ++ii) {
+      	for(global_ordinal_type ii = 0; ii < curNumEntries; ++ii) {
       	  myColInd[myCurPos++] = colInd[curPos++];
       	}
       }
@@ -153,7 +153,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 
 	  if (curNumEntries > 0) {
 
-	    for(size_t ii = 0; ii < curNumEntries; ++ii) {
+	    for(global_ordinal_type ii = 0; ii < curNumEntries; ++ii) {
 	      theirColInd[theirCurPos++] = colInd[curPos++];
 	    }
 	    
@@ -250,8 +250,8 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
 
   //std::cout << globalNumRows << " " << globalNumNonzeros << ", sizeof ord: " << sizeof(global_ordinal_type) << std::endl;
   
-  global_ordinal_type *rowPtr;
-  global_ordinal_type *colInd;
+  global_ordinal_type *rowPtr = 0;
+  global_ordinal_type *colInd = 0;
   
   if (myRank == rootRank) {
 
@@ -391,8 +391,8 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
 
   //std::cout << globalNumRows << " " << globalNumNonzeros << ", sizeof ord: " << sizeof(global_ordinal_type) << std::endl;
   
-  global_ordinal_type *rowPtr;
-  global_ordinal_type *colInd;
+  global_ordinal_type *rowPtr = 0;
+  global_ordinal_type *colInd = 0;
   
   if (myRank == rootRank) {
 

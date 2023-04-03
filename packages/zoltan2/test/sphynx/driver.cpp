@@ -1,6 +1,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
+#include "Tpetra_KokkosCompat_DefaultNode.hpp"
 #include "Zoltan2_PartitioningProblem.hpp"
 
 #include "Zoltan2_SphynxProblem.hpp"
@@ -105,8 +106,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   auto localPartsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), localParts);
   
   auto parts = solution.getPartListView();
-  for(LO i = 0; i < numLclRows; i++){
-    
+  for(size_t i = 0; i < numLclRows; i++){
     GO gi = rowMap->getGlobalElement(i);
     localPartsHost(gi) = parts[i];
   }
@@ -163,7 +163,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
     gpartw[i] = 0; gpartc[i] = 0;
   }
 
-  for(LO i = 0; i < numLclRows; i++){
+  for(size_t i = 0; i < numLclRows; i++){
     partw[parts[i]] += rowPtr_h(i+1) - rowPtr_h(i) - 1;
     partc[parts[i]] ++;
   }
@@ -300,7 +300,6 @@ int main(int narg, char *arg[])
     const Teuchos::RCP<const Teuchos::Comm<int>> pComm= Tpetra::getDefaultComm();
 
     int me = pComm->getRank();
-    int np = pComm->getSize();
 
     // Parameters
     int nparts = 64;     
@@ -382,10 +381,7 @@ int main(int narg, char *arg[])
     using scalar_type = double;
     using local_ordinal_type = int;
     using global_ordinal_type = long long;
-    //using node_type = Kokkos::Compat::KokkosCudaWrapperNode;
-    //using node_type = Kokkos::Compat::KokkosHIPWrapperNode;
-    //using node_type = Kokkos::Compat::KokkosSerialWrapperNode; 
-    using node_type = Kokkos::Compat::KokkosOpenMPWrapperNode; 
+    using node_type = Tpetra::Details::DefaultTypes::node_type;
     
     using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;  
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
@@ -416,7 +412,7 @@ int main(int narg, char *arg[])
     	meshdim = 200;
       else if(matrix_file == "400")
     	meshdim = 400;
-      int ierr = buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
+      buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
     	(meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
       //Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(matrix_file+".mtx", tmatrix);
     }
@@ -426,7 +422,6 @@ int main(int narg, char *arg[])
   
   using ST = double;
   using MultiVector  = Tpetra::MultiVector<ST>;
-  typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
  
   Teuchos::RCP<MultiVector > V;
   if (vector_file ==""){
