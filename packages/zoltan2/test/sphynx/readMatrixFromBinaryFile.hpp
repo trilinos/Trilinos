@@ -1,5 +1,5 @@
-#ifndef __READMATRIXFROMFILE_HPP
-#define __READMATRIXFROMFILE_HPP
+#ifndef __READMATRIXFROMBINARYFILE_HPP
+#define __READMATRIXFROMBINARYFILE_HPP
 
 #include <climits> 
 #include "Tpetra_Details_makeColMap.hpp"
@@ -238,7 +238,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
 
     in->read((char*)rowPtr, sizeof(global_ordinal_type)*(globalNumRows+1));
     in->read((char*)colInd, sizeof(global_ordinal_type)*(globalNumNonzeros));
-
   }
   
   Teuchos::RCP<const map_type> pRowMap = Teuchos::rcp (new map_type (static_cast<Tpetra::global_size_t> (globalNumRows),
@@ -271,7 +270,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   }
   
   Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesPerRow()));
-  
 
   const global_ordinal_type indexBase = pRowMap->getIndexBase ();
   for (size_t i = 0; i < myNumRows; ++i) {
@@ -319,7 +317,6 @@ template <typename crs_matrix_type>
 Teuchos::RCP<crs_matrix_type>
 readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>> pComm, bool callFillComplete=true, bool debug=false)
 {
-
   typedef typename crs_matrix_type::global_ordinal_type global_ordinal_type;
   typedef typename crs_matrix_type::local_ordinal_type local_ordinal_type;
   typedef typename crs_matrix_type::scalar_type scalar_type;
@@ -349,13 +346,8 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
     in->read((char *)&globalNumRows, sizeof(global_ordinal_type));
     in->read((char *)&globalNumNonzeros, sizeof(global_ordinal_type));
 
-    
-
     TEUCHOS_TEST_FOR_EXCEPTION(globalNumRows <= 0 || globalNumNonzeros <= 0, std::invalid_argument,
     			       "Global number of rows or nonzeros have nonpositive value." << globalNumRows << " " << globalNumNonzeros << " " << sizeof(global_ordinal_type) );
-
-
-
   }
   
   broadcast (*pComm, rootRank, 1, &globalNumRows);
@@ -464,20 +456,17 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
     std::cout << "-- Done with fill complete." << std::endl;
   }
   
-
   if(myRank == rootRank) {
     delete [] rowPtr;
     delete [] colInd;
   }
     
   return pMatrix;
-  
-
 }
 
 template <typename crs_matrix_type>
 Teuchos::RCP<crs_matrix_type>
-readMatrixFromFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>> pComm, bool binary=true, bool debug=false)
+readMatrixFromBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>> pComm, bool binary=true, bool debug=false)
 {
   return readBinaryFileFast<crs_matrix_type>(filename, pComm, true, debug);
 }

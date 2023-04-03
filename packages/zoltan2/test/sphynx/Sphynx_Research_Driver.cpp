@@ -31,7 +31,6 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
     else
       std::cout << "x 1 x 1 ";
     std::cout << " mesh)" << std::endl;
-
   }
 
   Teuchos::CommandLineProcessor tclp;
@@ -62,15 +61,11 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
     return 0;
 }
 
-
-
 template <typename adapter_type>
 void 
 compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
 		Zoltan2::PartitioningSolution<adapter_type> &solution )
 {
-
-
   typedef typename adapter_type::user_t graph_type;
   typedef typename graph_type::global_ordinal_type GO;
   typedef typename graph_type::local_ordinal_type LO;
@@ -118,7 +113,6 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   auto rowPtr = graph->getLocalGraphHost().row_map;
   auto colInd = graph->getLocalGraphHost().entries;
 
-  
   size_t localtotalcut = 0, totalcut = 0;
 
   using execution_space = typename NO::device_type::execution_space;
@@ -140,17 +134,12 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
 			 }
 		       }, localtotalcut);
 
-
-  
   Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, 1, &localtotalcut, &totalcut);
   
-
-
   // compute imbalance
   auto rowPtr_h = Kokkos::create_mirror_view(rowPtr);
   Kokkos::deep_copy(rowPtr_h, rowPtr);
   int nparts = (int)solution.getTargetGlobalNumberOfParts();
-
 
   size_t *partw = new size_t[nparts];
   size_t *partc = new size_t[nparts];
@@ -195,7 +184,6 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
     std::cout << "************************************************\n\n" << std::endl;
 
   }
-  
 }
 
 template <typename adapter_type>
@@ -203,8 +191,6 @@ void
 compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
 		Zoltan2::PartitioningSolution<adapter_type> &solution )
 {
-
-
   typedef typename adapter_type::user_t graph_type;
   typedef typename graph_type::global_ordinal_type GO;
   typedef typename graph_type::local_ordinal_type LO;
@@ -254,7 +240,6 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
   auto rowPtr = graph->getLocalGraphHost().row_map;
   auto colInd = graph->getLocalGraphHost().entries;
 
-  
   size_t localtotalcut = 0, totalcut = 0;
 
   using execution_space = typename NO::device_type::execution_space;
@@ -276,8 +261,6 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
 			 }
 		       }, localtotalcut);
 
-
-  
   Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, 1, &localtotalcut, &totalcut);
 
   if(comm->getRank() == 0) {
@@ -320,8 +303,9 @@ int main(int narg, char *arg[])
     
     // Echo the command line
     if (me == 0)  {
-      for (int i = 0; i < narg; i++)
-	std::cout << arg[i] << " ";
+      for (int i = 0; i < narg; i++){
+        std::cout << arg[i] << " ";
+      }
       std::cout << std::endl;
     }
 
@@ -359,7 +343,6 @@ int main(int narg, char *arg[])
       return -1;
     }
 
-
     // Print the most essential options (not in the MyPL parameters later)
     if (me==0){
       std::cout << "matrix file = " << matrix_file << std::endl;
@@ -373,7 +356,6 @@ int main(int narg, char *arg[])
       std::cout << "prob = " << ptype << std::endl;
       std::cout << "tol = " << tol << std::endl;
       std::cout << "init = " << init << std::endl;
-
     }
 
     using scalar_type = double;
@@ -401,8 +383,7 @@ int main(int narg, char *arg[])
     }
     else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-      reader_type r;
-      tmatrix = r.readSparseFile(matrix_file, pComm);
+      tmatrix = reader_type.readSparseFile(matrix_file, pComm);
       if (me==0){
         std::cout << "Used standard Matrix Market reader." << std::endl;
       }
@@ -452,36 +433,36 @@ int main(int narg, char *arg[])
       params->set("partitioning_approach", "partition");
       params->set("imbalance_tolerance", 1.01);
       if(parmetis) {
-	      params->set("algorithm", "parmetis");
-	      params->set("imbalance_tolerance", 1.01);
+        params->set("algorithm", "parmetis");
+        params->set("imbalance_tolerance", 1.01);
       }
       else {
-	      params->set("algorithm", "pulp");
-	      params->set("pulp_vert_imbalance", 1.01);
+        params->set("algorithm", "pulp");
+        params->set("pulp_vert_imbalance", 1.01);
       }
 
       using problem_type = Zoltan2::SphynxProblem<adapter_type>;
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-	Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
-	{
-	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
-	  problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), sphynxParams, Tpetra::getDefaultComm()));
-	}
-	{
-	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-	  problem->solve();
-	}
+        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        {
+          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
+          problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), sphynxParams, Tpetra::getDefaultComm()));
+        }
+        {
+          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+          problem->solve();
+        }
       }
       pComm->barrier();
-      
+
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
-	
+
     }
     else {
-   
+
       sphynxParams->set("sphynx_verbosity", verbosity);
       sphynxParams->set("sphynx_max_iterations", max_iters);
       if(block_size > 0){
@@ -498,36 +479,36 @@ int main(int narg, char *arg[])
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-  	Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
-	{
-	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
-	  problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
-	}
-  {
-    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-    if (vector_file ==""){
-       if(me == 0)
-           std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
-       problem->solve();
-    }
-    else{
-       std::cout << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
-       problem->setUserEigenvectors(V);
-       problem->solve();
-    }
-  }
-	pComm->barrier();
+        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        {
+          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
+          problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
+        }
+        {
+          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+          if (vector_file ==""){
+            if(me == 0)
+              std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
+            problem->solve();
+          }
+          else{
+            std::cout << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
+            problem->setUserEigenvectors(V);
+            problem->solve();
+          }
+        }
+        pComm->barrier();
       }
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
       /*
-      const int *SolArray = solution.getPartListView();
-      std::cout << "Pointer is: " << SolArray << std::endl;
-      int numparts = int(V->getGlobalLength());
-      for(int i=0;i<numparts;i++)
-        std::cout << *(SolArray+i) << std::endl;
-       */
-    // TODO: Uncomment the above lines and use >> out.txt to isolate the solution array file
+         const int *SolArray = solution.getPartListView();
+         std::cout << "Pointer is: " << SolArray << std::endl;
+         int numparts = int(V->getGlobalLength());
+         for(int i=0;i<numparts;i++)
+         std::cout << *(SolArray+i) << std::endl;
+         */
+      // TODO: Uncomment the above lines and use >> out.txt to isolate the solution array file
     }
     stacked_timer->stopBaseTimer();       
 
@@ -538,7 +519,7 @@ int main(int narg, char *arg[])
     stacked_timer->report(out2, pComm, options);
 
     Teuchos::TimeMonitor::summarize();
-    
+
   } //End Tpetra scope  guard
- return 0;
+  return 0;
 } 
