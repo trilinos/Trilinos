@@ -65,6 +65,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-Dbuild_name:STRING={self.pullrequest_build_name}",
                 "-Dskip_by_parts_submit:BOOL=OFF",
                 "-Dskip_update_step:BOOL=ON",
+                "-Dskip_clean_build_dir:BOOL=ON",
                f"-Ddashboard_model:STRING='{self.dashboard_model}'",
                f"-Ddashboard_track:STRING='{self.arg_pullrequest_cdash_track}'",
                f"-DPARALLEL_LEVEL:STRING={self.concurrency_build}",
