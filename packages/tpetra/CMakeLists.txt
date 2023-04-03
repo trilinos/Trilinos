@@ -30,13 +30,13 @@ SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.0.0")
 # Option to allow developers to ignore incompatible Kokkos versions
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_IGNORE_KOKKOS_COMPATIBILITY
-  TPETRA_IGNORE_KOKKOS_COMPATIBILITY
+  ""
   "If true, disables the Kokkos version compatibility checking in Tpetra"
   OFF
 )
 # Kokkos version checking
 ASSERT_DEFINED (Tpetra_IGNORE_KOKKOS_COMPATIBILITY)
-IF(DEFINED TPL_ENABLE_Kokkos AND TPL_ENABLE_Kokkos)
+IF(TPL_ENABLE_Kokkos)
   # If we're using external Kokkos, we check the supported version, unless the cmake option says otherwise
   IF(DEFINED Kokkos_VERSION)
     IF(Kokkos_VERSION VERSION_EQUAL Tpetra_SUPPORTED_KOKKOS_VERSION)
