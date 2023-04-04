@@ -54,7 +54,7 @@
 
 #include "Teuchos_TimeMonitor.hpp" 
 #include "Teuchos_StackedTimer.hpp"
-#include "ReadMatrixFromFile.hpp"
+#include "readMatrixFromBinaryFile.hpp"
 
 #include <Galeri_MultiVectorTraits.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
@@ -427,14 +427,15 @@ int main(int narg, char *arg[])
 
     std::string mtx = ".mtx", lc = ".largestComp";
     if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {
-      tmatrix  = readMatrixFromFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
+      tmatrix  = readMatrixFromBinaryFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
       if (me==0){
         std::cout << "Used reader for Largest Comp." << std::endl;
       }
     }
     else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-      tmatrix = reader_type.readSparseFile(matrix_file, pComm);
+      reader_type r;
+      tmatrix = r.readSparseFile(matrix_file, pComm);
       if (me==0){
         std::cout << "Used standard Matrix Market reader." << std::endl;
       }

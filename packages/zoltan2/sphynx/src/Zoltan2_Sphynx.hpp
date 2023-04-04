@@ -81,7 +81,7 @@
 #include "Zoltan2_AlgMultiJagged.hpp"
 
 #include "AnasaziLOBPCGSolMgr.hpp"
-#include "AnasaziRandomizedSolMgr.hpp"
+//#include "AnasaziRandomizedSolMgr.hpp" //TODO: Uncomment when randomized solver available. 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziTpetraAdapter.hpp"
 
@@ -289,7 +289,6 @@ namespace Zoltan2 {
       }
 
     solverType_ = sphynxParams_->get("sphynx_eigensolver","LOBPCG");
-    //std::cout << "DEBUG: SolverType is: " << solverType_ << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!(solverType_ == "LOBPCG" || solverType_ == "randomized"), 
       std::invalid_argument, "Sphynx: sphynx_eigensolver must be set to LOBPCG or randomized.");
 
@@ -308,48 +307,48 @@ namespace Zoltan2 {
 	std::string probType = "";
 	probType = pe->getValue<std::string>(&probType);
 
-	if(probType == "combinatorial")
-	  problemType_ = COMBINATORIAL;
-	else if(probType == "generalized")
-	  problemType_ = GENERALIZED;
-	else if(probType == "normalized")
-	  problemType_ = NORMALIZED;
-	else
-	  throw std::runtime_error("\nSphynx Error: " + probType + " is not recognized as a problem type.\n"
-				 + "              Possible values: combinatorial, generalized, and normalized.\n");
+  if(probType == "combinatorial")
+    problemType_ = COMBINATORIAL;
+  else if(probType == "generalized")
+    problemType_ = GENERALIZED;
+  else if(probType == "normalized")
+    problemType_ = NORMALIZED;
+  else
+    throw std::runtime_error("\nSphynx Error: " + probType + " is not recognized as a problem type.\n"
+        + "              Possible values: combinatorial, generalized, and normalized.\n");
       }
 
 
       // Set the default for tolerance
       tolerance_ = 1.0e-2;
       if(!irregular_ && (precType_ == "jacobi" || precType_ == "polynomial"))
-	tolerance_ = 1.0e-3;
+        tolerance_ = 1.0e-3;
 
 
       // Override the tolerance with the user's preference
       pe = sphynxParams_->getEntryPtr("sphynx_tolerance");
       if (pe)
-	tolerance_ = pe->getValue<scalar_t>(&tolerance_);
+        tolerance_ = pe->getValue<scalar_t>(&tolerance_);
 
 
       // Set the default for initial vectors
       randomInit_ = true;
       if(irregular_)
-	randomInit_ = false;
+        randomInit_ = false;
 
       // Override the initialization method with the user's preference
       pe = sphynxParams_->getEntryPtr("sphynx_initial_guess");
       if (pe) {
-	std::string initialGuess = "";
-	initialGuess = pe->getValue<std::string>(&initialGuess);
+        std::string initialGuess = "";
+        initialGuess = pe->getValue<std::string>(&initialGuess);
 
-	if(initialGuess == "random")
-	  randomInit_ = true;
-	else if(initialGuess == "constants")
-	  randomInit_ = false;
-	else
-	  throw std::runtime_error("\nSphynx Error: " + initialGuess + " is not recognized as an option for initial guess.\n"
-				 + "              Possible values: random and constants.\n");
+        if(initialGuess == "random")
+          randomInit_ = true;
+        else if(initialGuess == "constants")
+          randomInit_ = false;
+        else
+          throw std::runtime_error("\nSphynx Error: " + initialGuess + " is not recognized as an option for initial guess.\n"
+              + "              Possible values: random and constants.\n");
       }
 
     }
@@ -742,20 +741,17 @@ namespace Zoltan2 {
     if(solverType_ == "LOBPCG"){
 
     // Set preconditioner
-    //std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
     Sphynx::setPreconditioner(problem);
 
     if(problemType_ == Sphynx::GENERALIZED)
       problem->setM(degMatrix_);
     }
-    //std::cout << "DEBUG: Past set preconditioner. Setting problem. " << std::endl;
 
     // Inform the eigenproblem that you are finished passing it information
     bool boolret = problem->setProblem();
     if (boolret != true) {
       throw std::runtime_error("\nAnasazi::BasicEigenproblem::setProblem() returned with error.\n");
     }
-    //std::cout << "DEBUG: Past set problem." << std::endl;
     // Set Eigensolver
     Teuchos::RCP<Anasazi::SolverManager<scalar_t, mvector_t, op_t>> solver;
 
@@ -763,7 +759,9 @@ namespace Zoltan2 {
       solver = Teuchos::rcp(new Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
     }
     else{
-      solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      //solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      //TODO: Uncomment when randomized solver available. 
+      throw std::runtime_error("\nInvalid solver type.\n");
     }
 
     if (verbosity_ > 0 && comm_->getRank() == 0)
@@ -778,15 +776,12 @@ namespace Zoltan2 {
     if (returnCode != Anasazi::Converged) {
       ++numfailed;
     }
-    //std::cout << "DEBUG: calling getNumIters." << std::endl;
     iter = solver->getNumIters();
-    //std::cout << "DEBUG: calling getTimers." << std::endl;
     //solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
 
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
-    //std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
     solution_t sol = problem->getSolution();
     eigenVectors_ = sol.Evecs;
     int numev = sol.numVecs;
