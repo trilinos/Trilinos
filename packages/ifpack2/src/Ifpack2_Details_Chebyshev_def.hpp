@@ -1329,7 +1329,7 @@ fourthKindApplyImpl (const op_type& A,
                      MV& X,
                      const int numIters,
                      const ST lambdaMax,
-                     const V& D_inv) const
+                     const V& D_inv)
 {
   // standard 4th kind Chebyshev smoother has \beta_i := 1
   std::vector<ScalarType> betas(numIters, 1.0);
@@ -1342,38 +1342,56 @@ fourthKindApplyImpl (const op_type& A,
   const ST mone = Teuchos::as<ST> (-1);
   const ST invEig = 1.0 / (lambdaMax * boostFactor_);
 
-  if (zeroStartingSolution_) {
-    X.putScalar (zero);
+  // Fetch cached temporary (multi)vector.
+  Teuchos::RCP<MV> Z_ptr = makeTempMultiVector (B);
+  MV& Z = *Z_ptr;
+  
+  // Store 4th-kind result (needed as temporary for bootstrapping opt. 4th-kind Chebyshev)
+  Teuchos::RCP<MV> X4_ptr = makeTempMultiVector (B);
+  MV& X4 = *X4_ptr;
+  
+  // Special case for the first iteration.
+  if (! zeroStartingSolution_) {
+    
+    // X4 = X
+    Tpetra::deep_copy (X4, X);
+
+    if (ck_.is_null ()) {
+      Teuchos::RCP<const op_type> A_op = A_;
+      ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
+    }
+    // Z := (4/3 * invEig)*D_inv*(B-A*X4)
+    // X4 := X4 + Z
+    ck_->compute (Z, 4.0/3.0 * invEig, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), X4, zero);
+
+    // X := X + beta[0] * Z
+    X.update (betas[0], Z, STS::one());
   }
-  MV R (B.getMap (), B.getNumVectors (), false);
-  MV P (B.getMap (), B.getNumVectors (), false);
-  MV Z (B.getMap (), B.getNumVectors (), false);
+  else {
+    // Z := (4/3 * invEig)*D_inv*B and X := 0 + Z.
+    firstIterationWithZeroStartingSolution (Z, 4.0/3.0 * invEig, D_inv, B, X4);
 
-  Z.putScalar(zero);
-
-  if(zeroStartingSolution_){
-    Tpetra::deep_copy (R, B); // R = B, as X = 0
-  } else {
-    computeResidual (R, B, A, X); // R = B - A*X
+    // X := 0 + beta * Z
+    X.update (betas[0], Z, STS::zero());
+  }
+  
+  if (numIters > 1 && ck_.is_null ()) {
+    Teuchos::RCP<const op_type> A_op = A_;
+    ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
   }
 
-  for (int i = 0; i < numIters; ++i) {
+  for (int i = 1; i < numIters; ++i) {
     const ST zScale = (2.0 * i - 1.0) / (2.0 * i + 3.0);
     const ST rScale = (8.0 * i + 4.0) / (2.0 * i + 3.0) * invEig;
-
-    solve (P, D_inv, R); // P = D_inv * R, that is, D \ R.
-
-    // Z = zScale * Z + rScale * D_inv * R
-    Z.update(rScale, P, zScale);
-
-    // X = X + betas[i] * Z
-    X.update(betas[i], Z, one);
-
-    // R = R - A*Z
-    A.apply(Z, P);
-
-    R.update(mone, P, one);
-
+    
+    // Z := rScale*D_inv*(B - A*X4) + zScale*Z.
+    // X4 := X4 + Z
+    ck_->compute (Z, rScale, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), (X4), zScale);
+    
+    // X := X + beta[i] * Z
+    X.update (betas[i], Z, STS::one());
   }
 }
 

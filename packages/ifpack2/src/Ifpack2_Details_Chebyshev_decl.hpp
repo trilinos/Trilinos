@@ -663,7 +663,7 @@ private:
                        MV& X,
                        const int numIters,
                        const ST lambdaMax,
-                       const V& D_inv) const;
+                       const V& D_inv);
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
