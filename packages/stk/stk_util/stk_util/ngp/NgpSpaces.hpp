@@ -66,6 +66,7 @@ using UVMMemSpace = Kokkos::HostSpace;
 #ifdef KOKKOS_HAS_SHARED_SPACE
 using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
 #else
+#ifdef KOKKOS_ENABLE_CUDA
 using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
 using HostPinnedSpace = Kokkos::Experimental::HIPHostPinnedSpace;
