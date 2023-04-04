@@ -433,15 +433,12 @@ namespace Zoltan2 {
           );
       Kokkos::fence ();
 
-      // Create the Laplacian maatrix using the input graph and with the new values
+      // Create the Laplacian matrix using the input graph and with the new values
       Teuchos::RCP<matrix_t> laplacian (new matrix_t(graph_, newVal));
       laplacian->fillComplete (graph_->getDomainMap(), graph_->getRangeMap());
 
-      // Create the Laplacian maatrix using the input graph and with the new values
       return laplacian;
-
     }
-
 
     ///////////////////////////////////////////////////////////////////////////
     // For AHat = false:
@@ -707,13 +704,13 @@ namespace Zoltan2 {
         ivec->getVectorNonConst(j)->putScalar(0.);
 
       auto map = laplacian_->getRangeMap();
-      gno_t blockSize = map->getGlobalNumElements() / numEigenVectors;
-      TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0, std::runtime_error, "Blocksize too small for \"constants\" initial guess. Try \"random\".");
+      gno_t blkSize = map->getGlobalNumElements() / numEigenVectors;
+      TEUCHOS_TEST_FOR_EXCEPTION(blkSize <= 0, std::runtime_error, "Blocksize too small for \"constants\" initial guess. Try \"random\".");
 
       for (size_t lid = 0; lid < ivec->getLocalLength(); lid++) {
         gno_t gid = map->getGlobalElement(lid);
         for (int j = 1; j < numEigenVectors; j++){
-          if (((j-1)*blockSize <= gid) && (j*blockSize > gid))
+          if (((j-1)*blkSize <= gid) && (j*blkSize > gid))
             ivec->replaceLocalValue(lid,j,1.);
         }
       }

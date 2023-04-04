@@ -97,10 +97,10 @@ void findLargestComponent(ord_type seed,
     }
 
     //search for an unmarked vertex to be the next root
-    for(ord_type i = lastSearch; i < inn; ++i) {
-      if(mark[i] == -1) {
-        root = i;
-        lastSearch = i;
+    for(ord_type i_r = lastSearch; i_r < inn; ++i_r) {
+      if(mark[i_r] == -1) {
+        root = i_r;
+        lastSearch = i_r;
         break;
       }
     }
@@ -111,32 +111,32 @@ void findLargestComponent(ord_type seed,
 
   // find component sizes
   std::vector<ord_type> compSize(ncc, 0);
-  for(ord_type i = 0; i < inn; ++i) {
-    if(mark[i] == -1) {
-      std::cout << "Vertex " << i << " is untouched,, Exiting!\n";
+  for(ord_type i_c = 0; i_c < inn; ++i_c) {
+    if(mark[i_c] == -1) {
+      std::cout << "Vertex " << i_c << " is untouched,, Exiting!\n";
       exit(1);
     }
     else
-      compSize[mark[i]]++;
+      compSize[mark[i_c]]++;
   }
 
   // find the largest component
   ord_type maxSize = 0;
   ord_type maxId = -1; 
-  for(ord_type i = 0; i < ncc; ++i) {
-    if(compSize[i] > maxSize) {
-      maxSize = compSize[i];
-      maxId = i;
+  for(ord_type i_l = 0; i_l < ncc; ++i_l) {
+    if(compSize[i_l] > maxSize) {
+      maxSize = compSize[i_l];
+      maxId = i_l;
     }
   }
 
   // renumber the vertices
   outn = 0;
-  for(ord_type i = 0; i < inn; ++i) {
-    if(mark[i] == maxId)
-      mark[i] = outn++;
+  for(ord_type i_v = 0; i_v < inn; ++i_v) {
+    if(mark[i_v] == maxId)
+      mark[i_v] = outn++;
     else
-      mark[i] = -1;
+      mark[i_v] = -1;
   }
 
   if(outn != maxSize) {
@@ -148,12 +148,12 @@ void findLargestComponent(ord_type seed,
   ord_type ptr = 0;
   outn = 0;
   outRowPtr[outn] = 0;
-  for(ord_type i = 0; i < inn; i++) {
-    if(mark[i] > -1){
-      for(ord_type j = inRowPtr[i]; j < inRowPtr[i+1]; ++j) {
+  for(ord_type ii = 0; ii < inn; ii++) {
+    if(mark[ii] > -1){
+      for(ord_type j = inRowPtr[ii]; j < inRowPtr[ii+1]; ++j) {
         v = inColInd[j];
         if(mark[v] == -1) {
-          std::cout << "Neighbor " << v << " of " << i  << " is found to be absent in the component\n";
+          std::cout << "Neighbor " << v << " of " << ii  << " is found to be absent in the component\n";
           exit(1);
         }
         outColInd[ptr++] = mark[v];
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
 {
   
   std::string line;
-  ord_type nrows, nnzs, r, c, ndd = 0;
+  ord_type nrows, nnzs, r, c = 0;
 
   std::ifstream in(argv[1]);
 
@@ -206,12 +206,12 @@ int main(int argc, char* argv[])
   }
   in.close();
 
-  for(ord_type i = 0; i < nrows; i++)
-    rowPtr[i+2]++;
+  for(ord_type j0 = 0; j0 < nrows; j0++)
+    rowPtr[j0+2]++;
 
 
-  for(ord_type i = 2; i < nrows+2; i++)
-    rowPtr[i] += rowPtr[i-1];
+  for(ord_type k = 2; k < nrows+2; k++)
+    rowPtr[k] += rowPtr[k-1];
 
   ord_type *colInd = new ord_type[rowPtr[nrows+1]];
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
   in.close();
 
 
-  for(ord_type i = 0; i < nrows; i++)
-    colInd[rowPtr[i+1]++] = i;
+  for(ord_type i0 = 0; i0 < nrows; i0++)
+    colInd[rowPtr[i0+1]++] = i0;
 
 
   ord_type *rowPtrNew = new ord_type[nrows+1];
@@ -249,33 +249,32 @@ int main(int argc, char* argv[])
   rowPtrNew[0] = 0;
   ord_type ptr = 0;
   ord_type prev = -1;
-  for(ord_type i = 0; i < nrows; i++) {
+  for(ord_type i1 = 0; i1 < nrows; i1++) {
 
-    ord_type deg = rowPtr[i+1] - rowPtr[i];
+    ord_type deg = rowPtr[i1+1] - rowPtr[i1];
     if(deg > 0) {
 
-      std::sort(&colInd[rowPtr[i]], &colInd[rowPtr[i+1]]);
-      colIndNew[ptr++] = colInd[rowPtr[i]];
-      prev = colInd[rowPtr[i]];
-      for(ord_type j = rowPtr[i]+1; j < rowPtr[i+1]; j++) {
-        if(colInd[j] != prev) {
-          colIndNew[ptr++] = colInd[j];
-          prev = colInd[j];
+      std::sort(&colInd[rowPtr[i1]], &colInd[rowPtr[i1+1]]);
+      colIndNew[ptr++] = colInd[rowPtr[i1]];
+      prev = colInd[rowPtr[i1]];
+      for(ord_type j1 = rowPtr[i1]+1; j1 < rowPtr[i1+1]; j1++) {
+        if(colInd[j1] != prev) {
+          colIndNew[ptr++] = colInd[j1];
+          prev = colInd[j1];
         }
       }
     }
 
-    rowPtrNew[i+1] = ptr;
+    rowPtrNew[i1+1] = ptr;
   }
 
-  ord_type diagcnt = 0;
-  for(ord_type i = 0; i < nrows; i++) {
-    for(ord_type j = rowPtrNew[i]; j < rowPtrNew[i+1]; ++j)
-      if(colIndNew[j] == i)
-        diag[i] = true;
+  for(ord_type i2 = 0; i2 < nrows; i2++) {
+    for(ord_type j2 = rowPtrNew[i2]; j2 < rowPtrNew[i2+1]; ++j2)
+      if(colIndNew[j2] == i2)
+        diag[i2] = true;
 
-    if(diag[i] == false)
-      std::cout << "ROW " << i << " misses diagonal\n";
+    if(diag[i2] == false)
+      std::cout << "ROW " << i2 << " misses diagonal\n";
   }
 
   std::cout << argv[1] << " " << nrows << " " << ptr << " "; 
@@ -287,8 +286,8 @@ int main(int argc, char* argv[])
   ptr = rowPtr[newnrows]; //new number of nonzeros 
 
   ord_type deg, max = 0;
-  for(ord_type i = 0; i < nrows; i++) {
-    deg = rowPtrNew[i+1] - rowPtrNew[i];
+  for(ord_type i3 = 0; i3 < nrows; i3++) {
+    deg = rowPtrNew[i3+1] - rowPtrNew[i3];
     if(deg > max)
       max = deg;
   }

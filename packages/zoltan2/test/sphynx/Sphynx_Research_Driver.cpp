@@ -497,13 +497,13 @@ int main(int narg, char *arg[])
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        Teuchos::TimeMonitor t1(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
         {
-          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
+          Teuchos::TimeMonitor t2(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
           problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), sphynxParams, Tpetra::getDefaultComm()));
         }
         {
-          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+          Teuchos::TimeMonitor t3(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
           problem->solve();
         }
       }
@@ -531,13 +531,13 @@ int main(int narg, char *arg[])
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        Teuchos::TimeMonitor t1b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
         {
-          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
+          Teuchos::TimeMonitor t2b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
           problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
         }
         {
-          Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+          Teuchos::TimeMonitor t3b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
           if (vector_file ==""){
             if(me == 0)
               std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
