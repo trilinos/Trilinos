@@ -630,7 +630,7 @@ public:
     projStruct.createL2ProjectionStruct(dstBasis, srcBasis->getDegree());
 
     ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-    ordinal_type numCells = cellOrientations.extent(0);
+    ordinal_type numCells = srcCoeffs.extent(0);
     ordinal_type dim = srcBasis->getBaseCellTopology().getDimension();
     ordinal_type srcBasisCardinality = srcBasis->getCardinality();
     ordinal_type fieldDimension = (srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HCURL || srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HDIV) ? dim : 1;
