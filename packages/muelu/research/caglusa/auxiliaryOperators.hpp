@@ -291,7 +291,7 @@ namespace MueLu {
       }
     }
 
-    RCP<HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
+    RCP<HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mueLuFactory = rcp(new ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>(params,op->getDomainMap()->getComm()));
     H->setlib(op->getDomainMap()->lib());
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
     mueLuFactory->SetupHierarchy(*H);
