@@ -509,15 +509,8 @@ private:
   /// which we have not yet computed before.
   bool assumeMatrixUnchanged_;
 
-  //! Whether to use the textbook version of the algorithm.
-  bool textbookAlgorithm_;
-
-  //! Whether to use Chebyshev polynomials of the 4th kind with optimal weights.
-  bool fourthKindAlgorithm_;
-
-  //! Whether to use optimal weights for the Chebyshev polynomial.
-  //  Only applicable when using the Chebyshev polynomials of the 4th kind.
-  bool useOptimalWeights_;
+  //! Chebyshev type
+  std::string chebyshevKind_;
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;

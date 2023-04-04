@@ -305,9 +305,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  textbookAlgorithm_ (false),
-  fourthKindAlgorithm_ (false),
-  useOptimalWeights_ (false),
+  chebyshevKind_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -340,9 +338,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  textbookAlgorithm_ (false),
-  fourthKindAlgorithm_ (false),
-  useOptimalWeights_ (false),
+  chebyshevKind_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -389,9 +385,7 @@ setParameters (Teuchos::ParameterList& plist)
   const int defaultEigNormalizationFreq = 1;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
-  const bool defaultTextbookAlgorithm = false;
-  const bool defaultFourthKindAlgorithm = false;
-  const bool defaultUseOptimalWeights = false;
+  const std::string defaultChebyshevKind = "first";
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
@@ -414,9 +408,7 @@ setParameters (Teuchos::ParameterList& plist)
   int eigNormalizationFreq = defaultEigNormalizationFreq;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
-  bool textbookAlgorithm = defaultTextbookAlgorithm;
-  bool fourthKindAlgorithm = defaultFourthKindAlgorithm;
-  bool useOptimalWeights = defaultUseOptimalWeights;
+  std::string chebyshevKind = defaultChebyshevKind;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
   bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
@@ -647,21 +639,34 @@ setParameters (Teuchos::ParameterList& plist)
 
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
+  if (plist.isParameter ("chebyshev: kind")) {
+    chebyshevKind = plist.get<std::string> ("chebyshev: kind");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      chebyshevKind != "first" &&
+      chebyshevKind != "textbook" &&
+      chebyshevKind != "fourth" &&
+      chebyshevKind != "opt_fourth",
+      std::invalid_argument,
+      "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: kind\".");
+  }
+
+#ifndef IFPACK2_ENABLE_DEPRECATED_CODE
   if (plist.isParameter ("chebyshev: textbook algorithm")) {
-    textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+    const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+    if(textbookAlgorithm){
+      chebyshevKind = "textbook";
+    }
   }
-  if (plist.isParameter ("chebyshev: fourth kind algorithm")) {
-    fourthKindAlgorithm = plist.get<bool> ("chebyshev: fourth kind algorithm");
-  }
-  if (plist.isParameter ("chebyshev: use optimal weights")) {
-    useOptimalWeights = plist.get<bool> ("chebyshev: use optimal weights");
-  }
+#endif
+
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
   if (plist.isParameter ("chebyshev: compute spectral radius")) {
     computeSpectralRadius = plist.get<bool> ("chebyshev: compute spectral radius");
   }
+
+
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -714,9 +719,7 @@ setParameters (Teuchos::ParameterList& plist)
   eigenAnalysisType_ = eigenAnalysisType;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
-  textbookAlgorithm_ = textbookAlgorithm;
-  fourthKindAlgorithm_ = fourthKindAlgorithm;
-  useOptimalWeights_ = useOptimalWeights;
+  chebyshevKind_ = chebyshevKind;
   computeMaxResNorm_ = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
@@ -978,7 +981,7 @@ Chebyshev<ScalarType, MV>::compute ()
   lambdaMinForApply_ = lambdaMaxForApply_ / userEigRatio_;
   eigRatioForApply_ = userEigRatio_;
 
-  if (! textbookAlgorithm_ && ! fourthKindAlgorithm_) {
+  if (chebyshevKind_ == "first") {
     // Ifpack has a special-case modification of the eigenvalue bounds
     // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
@@ -1032,10 +1035,10 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
      "diagonal entries of the matrix has not yet been computed."
      << std::endl << computeBeforeApplyReminder);
 
-  if (fourthKindAlgorithm_) {
+  if (chebyshevKind_ == "fourth" || chebyshevKind_ == "opt_fourth") {
     fourthKindApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, *D_);
   }
-  else if (textbookAlgorithm_) {
+  else if (chebyshevKind_ == "textbook") {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -1330,7 +1333,7 @@ fourthKindApplyImpl (const op_type& A,
 {
   // standard 4th kind Chebyshev smoother has \beta_i := 1
   std::vector<ScalarType> betas(numIters, 1.0);
-  if(useOptimalWeights_){
+  if(chebyshevKind_ == "opt_fourth"){
     betas = optimalWeightsImpl<ScalarType>(numIters);
   }
 
@@ -1786,9 +1789,7 @@ describe (Teuchos::FancyOStream& out,
           << "eigNormalizationFreq_: " << eigNormalizationFreq_ << endl
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
-          << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
-          << "fourthKindAlgorithm_: " << fourthKindAlgorithm_ << endl
-          << "useOptimalWeights_: " << useOptimalWeights_ << endl
+          << "chebyshevKind_: " << chebyshevKind_ << endl
           << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
     }
   } // print user parameters
