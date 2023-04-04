@@ -327,7 +327,7 @@ namespace Adelus {
   #if defined(KOKKOS_ENABLE_CUDA)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
   #elif defined(KOKKOS_ENABLE_HIP)
-    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
   #endif
   #endif
 

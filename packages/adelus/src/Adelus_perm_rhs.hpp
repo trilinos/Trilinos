@@ -69,7 +69,7 @@ namespace Adelus {
   #if defined(KOKKOS_ENABLE_CUDA)
     using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
   #elif defined(KOKKOS_ENABLE_HIP)
-    using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+    using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
   #endif
 #endif
 

@@ -282,7 +282,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace,
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::HIPSpace,
 #endif
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > AA_Internal;
 
@@ -326,7 +326,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -380,7 +380,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -440,7 +440,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace,
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::HIPSpace,
 #endif
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > AA_Internal;
 
@@ -484,7 +484,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -538,7 +538,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -598,7 +598,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace,
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::HIPSpace,
 #endif
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > AA_Internal;
 
@@ -642,7 +642,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -696,7 +696,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -756,7 +756,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace,
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::HIPSpace,
 #endif
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> > AA_Internal;
 
@@ -800,7 +800,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
@@ -854,7 +854,7 @@ namespace Adelus {
 #ifdef KOKKOS_ENABLE_CUDA
                          Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
+                         Kokkos::HIPSpace> AA_Internal_dev;
 #endif
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
