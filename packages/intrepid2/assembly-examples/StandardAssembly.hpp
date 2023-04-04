@@ -162,16 +162,16 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   ViewType basis1Values = basis1->allocateOutputView(numPoints, op1); // (F1,P[,D])
   ViewType basis2Values = basis2->allocateOutputView(numPoints, op2); // (F2,P[,D])
   
-  ViewType unorientedTransformedValues1, transformedValues1;
-  ViewType unorientedTransformedValues2, transformedValues2, transformedWeightedValues2;
+  ViewType orientedValues1, transformedValues1;
+  ViewType orientedValues2, transformedValues2, transformedWeightedValues2;
   
   INTREPID2_TEST_FOR_EXCEPTION(basis1Values.rank() != basis2Values.rank(), std::invalid_argument, "basis1 and basis2 must agree on their rank under the respective operators");
   
   const bool scalarValued = (basis1Values.rank() == 2); // (F1,P): scalar-valued
   if (scalarValued)
   {
-    unorientedTransformedValues1 = ViewType("unoriented transformed values 1", worksetSize, numFields1, numPoints);
-    unorientedTransformedValues2 = ViewType("unoriented transformed values 2", worksetSize, numFields2, numPoints);
+    orientedValues1 = ViewType("oriented values 1", worksetSize, numFields1, numPoints);
+    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints);
     
     transformedValues1 = ViewType("transformed values 1", worksetSize, numFields1, numPoints);
     transformedValues2 = ViewType("transformed values 2", worksetSize, numFields2, numPoints);
@@ -181,8 +181,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   else // (F1, P, D)
   {
     const int finalDim = basis1Values.extent_int(2);
-    unorientedTransformedValues1 = ViewType("unoriented transformed values 1", worksetSize, numFields1, numPoints, finalDim);
-    unorientedTransformedValues2 = ViewType("unoriented transformed values 2", worksetSize, numFields2, numPoints, finalDim);
+    orientedValues1 = ViewType("oriented values 1", worksetSize, numFields1, numPoints, finalDim);
+    orientedValues2 = ViewType("oriented values 2", worksetSize, numFields2, numPoints, finalDim);
     
     transformedValues1 = ViewType("transformed values 1", worksetSize, numFields1, numPoints, finalDim);
     transformedValues2 = ViewType("transformed values 2", worksetSize, numFields2, numPoints, finalDim);
@@ -238,20 +238,20 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
       
       if (scalarValued)
       {
-        Kokkos::resize(unorientedTransformedValues1, numCellsInWorkset, numFields1, numPoints);
-        Kokkos::resize(unorientedTransformedValues2, numCellsInWorkset, numFields2, numPoints);
-        Kokkos::resize(transformedValues1,           numCellsInWorkset, numFields1, numPoints);
-        Kokkos::resize(transformedValues2,           numCellsInWorkset, numFields2, numPoints);
-        Kokkos::resize(transformedWeightedValues2,   numCellsInWorkset, numFields2, numPoints);
+        Kokkos::resize(orientedValues1,            numCellsInWorkset, numFields1, numPoints);
+        Kokkos::resize(orientedValues2,            numCellsInWorkset, numFields2, numPoints);
+        Kokkos::resize(transformedValues1,         numCellsInWorkset, numFields1, numPoints);
+        Kokkos::resize(transformedValues2,         numCellsInWorkset, numFields2, numPoints);
+        Kokkos::resize(transformedWeightedValues2, numCellsInWorkset, numFields2, numPoints);
       }
       else
       {
         const int finalDim = basis1Values.extent_int(2);
-        Kokkos::resize(unorientedTransformedValues1, numCellsInWorkset, numFields1, numPoints, finalDim);
-        Kokkos::resize(unorientedTransformedValues2, numCellsInWorkset, numFields2, numPoints, finalDim);
-        Kokkos::resize(transformedValues1,           numCellsInWorkset, numFields1, numPoints, finalDim);
-        Kokkos::resize(transformedValues2,           numCellsInWorkset, numFields2, numPoints, finalDim);
-        Kokkos::resize(transformedWeightedValues2,   numCellsInWorkset, numFields2, numPoints, finalDim);
+        Kokkos::resize(orientedValues1,            numCellsInWorkset, numFields1, numPoints, finalDim);
+        Kokkos::resize(orientedValues2,            numCellsInWorkset, numFields2, numPoints, finalDim);
+        Kokkos::resize(transformedValues1,         numCellsInWorkset, numFields1, numPoints, finalDim);
+        Kokkos::resize(transformedValues2,         numCellsInWorkset, numFields2, numPoints, finalDim);
+        Kokkos::resize(transformedWeightedValues2, numCellsInWorkset, numFields2, numPoints, finalDim);
       }
     }
     jacobianAndCellMeasureTimer->start();
@@ -265,10 +265,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
-    transform(unorientedTransformedValues1, basis1Values, fs1, op1, jacobian, jacobianDeterminant, jacobianInverse);
-    transform(unorientedTransformedValues2, basis2Values, fs2, op2, jacobian, jacobianDeterminant, jacobianInverse);
-    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedValues1, unorientedTransformedValues1, orientationsWorkset, basis1.get());
-    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedValues2, unorientedTransformedValues2, orientationsWorkset, basis2.get());
+    OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues1, basis1Values, orientationsWorkset, basis1.get());
+    OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues2, basis2Values, orientationsWorkset, basis2.get());
+    transform(transformedValues1, orientedValues1, fs1, op1, jacobian, jacobianDeterminant, jacobianInverse);
+    transform(transformedValues2, orientedValues2, fs2, op2, jacobian, jacobianDeterminant, jacobianInverse);
     
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedValues2, cellMeasures, transformedValues2);
