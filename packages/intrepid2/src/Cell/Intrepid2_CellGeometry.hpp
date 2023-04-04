@@ -271,7 +271,7 @@ namespace Intrepid2
     //! \param [out] orientationsView - the container that will be filled.
     //! \param [in] startCell - the first cell ordinal whose orientation will be copied.
     //! \param [in] endCell - the first cell ordinal whose orientation will not be copied; use -1 to indicate that orientations for all cells from startCell on should be copied.
-    void orientations(ScalarView<Orientation,DeviceType> orientationsView, const int &startCell, const int &endCell);
+    void orientations(ScalarView<Orientation,DeviceType> orientationsView, const int &startCell = 0, const int &endCell = -1);
     
     //! returns coordinate in dimension dim of the indicated node in the indicated grid cell
     KOKKOS_INLINE_FUNCTION
