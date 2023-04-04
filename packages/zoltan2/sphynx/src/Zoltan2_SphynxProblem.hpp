@@ -155,8 +155,6 @@ static void setSphynxValidatorsInList(
           const RCP<const Teuchos::Comm<int> > &comm):
       PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
-        //std::cout << "DEBUG: In SphynxProblem constructor." << std::endl;
-        //std::cout << "params_ is " << params_ << std::endl;
         // Validation of SphynxParameter
         ParameterList validParams;
         try{
@@ -166,25 +164,18 @@ static void setSphynxValidatorsInList(
             setSphynxValidatorsInList(*(sphynxParams_.get()), allParameters, validParams);
         }
         Z2_FORWARD_EXCEPTIONS
-        //std::cout << "DEBUG: past getSphynxValidParameters." << std::endl;
 
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
         this->env_->convertStringToInt(*sphynxParams_.get());
         
-        //std::cout << "DEBUG: Past validateParameters." << std::endl;
-
-        //std::cout << "params_ is " << params_ << std::endl;
-
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
-        //std::cout << "DEBUG: got past getEntryPtr." << std::endl;
         if(pe)
           nparts = pe->getValue<int>(&nparts);
 
         if(nparts == -1)
           throw std::runtime_error("\nUser did not set num_global_parts"
                                    "in the parameter list!n");
-        //std::cout << "DEBUG: Exiting SphynxProblem constructor." << std::endl;
     }
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -248,35 +239,6 @@ static void setSphynxValidatorsInList(
     this->algName_ = std::string("sphynx");
   }
 
-  /*template <typename Adapter>
-  void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
-  {
-
-    this->createPartitioningProblem(true);
-    // Create the algorithm
-    try {
-      this->createAlgorithm();
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    PartitioningSolution<Adapter> *soln = NULL;
-
-    try{
-    
-      soln = new PartitioningSolution<Adapter>(this->envConst_, this->comm_, this->numberOfWeights_,
-					       this->partIds_.view(0, this->numberOfCriteria_),
-					       this->partSizes_.view(0, this->numberOfCriteria_), this->algorithm_);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-    this->solution_ = Teuchos::rcp(soln);
-
-    // Call the algorithm
-    try {
-      this->algorithm_->partition(this->solution_, userEigenVects);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-  }*/
-
   template <typename Adapter>
   void SphynxProblem<Adapter>::createAlgorithm()
   {
@@ -306,6 +268,7 @@ static void setSphynxValidatorsInList(
   {
     eigenVectors_ = userEvects; 
   }
+
   ///////////////////////////////////////////////////////////////////////////
   // Returns an RCP containing a deep copy of the eigenvectors used by Sphynx.
   ///////////////////////////////////////////////////////////////////////////
@@ -320,6 +283,7 @@ static void setSphynxValidatorsInList(
       return Teuchos::null;
     }
   }
+
 } // namespace Zoltan2
 
 #endif
