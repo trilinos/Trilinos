@@ -644,7 +644,8 @@ private:
   ///   for details.
   ///
   /// \pre A must be real-valued and symmetric positive definite.
-  /// \pre numIters <= 16 -- this is an arbitrary distinction,
+  /// \pre numIters <= 16 if using the opt. 4th-kind Chebyshev smoothers
+  ///      -- this is an arbitrary distinction,
   ///      but the weights are currently hard-coded from the
   ///      MATLAB scripts from https://arxiv.org/pdf/2202.08830.pdf.
   /// \pre 0 < lambdaMax

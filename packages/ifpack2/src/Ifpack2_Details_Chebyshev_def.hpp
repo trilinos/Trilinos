@@ -1337,9 +1337,6 @@ fourthKindApplyImpl (const op_type& A,
     betas = optimalWeightsImpl<ScalarType>(numIters);
   }
 
-  const ST zero = Teuchos::as<ST> (0);
-  const ST one = Teuchos::as<ST> (1);
-  const ST mone = Teuchos::as<ST> (-1);
   const ST invEig = 1.0 / (lambdaMax * boostFactor_);
 
   // Fetch cached temporary (multi)vector.
@@ -1347,8 +1344,7 @@ fourthKindApplyImpl (const op_type& A,
   MV& Z = *Z_ptr;
   
   // Store 4th-kind result (needed as temporary for bootstrapping opt. 4th-kind Chebyshev)
-  Teuchos::RCP<MV> X4_ptr = makeTempMultiVector (B);
-  MV& X4 = *X4_ptr;
+  MV X4 (B.getMap (), B.getNumVectors (), false);
   
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
@@ -1363,7 +1359,7 @@ fourthKindApplyImpl (const op_type& A,
     // Z := (4/3 * invEig)*D_inv*(B-A*X4)
     // X4 := X4 + Z
     ck_->compute (Z, 4.0/3.0 * invEig, const_cast<V&> (D_inv),
-                   const_cast<MV&> (B), X4, zero);
+                   const_cast<MV&> (B), X4, STS::zero());
 
     // X := X + beta[0] * Z
     X.update (betas[0], Z, STS::one());
