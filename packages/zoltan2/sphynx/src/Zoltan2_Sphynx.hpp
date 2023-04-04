@@ -613,21 +613,17 @@ namespace Zoltan2 {
           std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
               "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
               "               Increase either max iters or tolerance.\n");
-
       }
     }
     else{
-
+      // Use eigenvectors provided by user. 
       computedNumEv = (int) eigenVectors_->getNumVectors();
-
       if(computedNumEv <= numEigenVectors) {
         throw 
           std::runtime_error("\nSphynx Error: Number of eigenvectors given by user\n"
               " is less than number of Eigenvectors needed for partition." );
       }
-
     }
-    //std::cout << "DEBUG: going to call eigenvecsToCoords." << std::endl;
 
     // Transform the eigenvectors into coordinates 
     Teuchos::RCP<mvector_t> coordinates;
