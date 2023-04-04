@@ -444,10 +444,16 @@ namespace Zoltan2 {
 
 
     ///////////////////////////////////////////////////////////////////////////
+    // For AHat = false:
     // Compute the normalized Laplacian: L_N = D^{-1/2} L D^{-1/2}, where L = D - A.
     // l_ij = 1
     // l_ij = -1/(sqrt(deg(v_i))sqrt(deg(v_j)) if i != j and a_ij != 0
     // l_ij = 0 if i != j and a_ij = 0
+    //
+    // For AHat = true:
+    // AHat is turned to true if (and only if) using the randomized Eigensolver.
+    // For the randomized Eigensolver, we find eigenvalues of the matrix
+    // AHat =  2*I - L_N, and this is the matrix computed by this function.
     Teuchos::RCP<matrix_t> computeNormalizedLaplacian(bool AHat = false)
     {
       using range_policy = Kokkos::RangePolicy<
@@ -649,6 +655,7 @@ namespace Zoltan2 {
     Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::Anasazi"));
 
     // Set defaults for the parameters
+    // and get user-set values.
     std::string which = (solverType_ == "randomized" ? "LM" : "SR");
     std::string ortho = "SVQB";
     bool relConvTol = false;
@@ -657,23 +664,11 @@ namespace Zoltan2 {
     bool isHermitian = true;
     bool relLockTol = false;
     bool lock = false;
-    bool useFullOrtho = true;
+    bool useFullOrtho = sphynxParams_->get("sphynx_use_full_ortho",true);
     // Information to output in a verbose run
     int numfailed = 0;
     int iter = 0;
-    //double solvetime = 0;
-
-    // Get the user values for the parameters
-    const Teuchos::ParameterEntry *pe;
-
-    //pe = sphynxParams_->getEntryPtr("sphynx_maxiterations");
-    //if (pe)
-      //maxIterations = pe->getValue<int>(&maxIterations);
-
-    pe = sphynxParams_->getEntryPtr("sphynx_use_full_ortho");
-    if (pe)
-      useFullOrtho = pe->getValue<bool>(&useFullOrtho);
-
+    double solvetime = 0;
 
     // Set Anasazi verbosity level
     int anasaziVerbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -684,7 +679,6 @@ namespace Zoltan2 {
     if (verbosity_ >= 3)  // high
       anasaziVerbosity += Anasazi::StatusTestDetails + Anasazi::OrthoDetails
         + Anasazi::Debug;
-
 
     // Create the parameter list to pass into solver
     Teuchos::ParameterList anasaziParams;
@@ -774,7 +768,7 @@ namespace Zoltan2 {
       ++numfailed;
     }
     iter = solver->getNumIters();
-    //solvetime = (solver->getTimers()[0])->totalElapsedTime();
+    solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
 
     // Retrieve the solution
@@ -789,7 +783,7 @@ namespace Zoltan2 {
       std::cout << "ANASAZI SUMMARY" << std::endl;
       std::cout << "Failed to converge:    " << numfailed << std::endl;
       std::cout << "No of iterations :     " << iter << std::endl;
-      std::cout << "Solve time:            "; //<< solvetime << std::endl;
+      std::cout << "Solve time:            " << solvetime << std::endl;
       std::cout << "No of comp. vecs. :    " << numev << std::endl;
     }
     std::cout << "Returning from Anasazi Wrapper." << std::endl;
