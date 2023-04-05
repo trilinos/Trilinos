@@ -303,6 +303,7 @@ namespace
     double relTol = 1e-13;
     double absTol = 1e-13;
     
+    // CASE 1
     // Use two Data objects A and B, each with logical shape (10,3,2,2) -- (C,P,D,D), say.
     // with A having variation types of CONSTANT, CONSTANT, and BLOCK_DIAGONAL (with the final two dimensions being purely diagonal)
     // and B having variation types of CONSTANT for all entries
@@ -349,6 +350,7 @@ namespace
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
     
+    // CASE 2
     // now do the same, but with A having a full matrix, rather than just a diagonal
     AView = getView<Scalar,DeviceType>("A", spaceDim, spaceDim);
     ABView = getView<Scalar,DeviceType>("A .* B", spaceDim, spaceDim); // should be same shape as A
@@ -383,10 +385,21 @@ namespace
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
     
+    // CASE 3
     // now try a case where B has logical shape (C,P), and we use DataTools to produce the result.  This is what gets invoked by TransformedBasisValues.
     Kokkos::Array<int,2> b_extents {cellCount, pointCount};
     B = Data<Scalar,DeviceType> (bValue,b_extents);
     
+    AB_actual = DataTools::multiplyByCPWeights(A, B);
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
+    testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
+    
+    // CASE 4
+    // and now one with an actual (C,P) view for B (instead of CONSTANT data in (C,P))
+    auto BView = getView<Scalar,DeviceType>("B", cellCount, pointCount);
+    Kokkos::deep_copy(BView, bValue);
+    Kokkos::Array<DataVariationType,2> B_variation {GENERAL, GENERAL};
+    B = Data<Scalar,DeviceType> (BView,b_extents,B_variation);
     AB_actual = DataTools::multiplyByCPWeights(A, B);
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
