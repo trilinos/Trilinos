@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandar
 {
   using DataScalar  = double;
   using PointScalar = double;
-  const int meshWidth = 1;
+  const int meshWidth = 2;
   const int spaceDim = 3;
   const int p1 = 1;
   const int p2 = 1;
