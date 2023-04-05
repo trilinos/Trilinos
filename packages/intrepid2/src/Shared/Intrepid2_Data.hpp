@@ -727,7 +727,7 @@ public:
             {
               // A is full; B is not full, but not constant or full-extent 1D
               // unoptimized in B access:
-              auto BAE = fullArgsData;
+              FullArgExtractor<const_reference_type> BAE;
               storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
             }
           }
