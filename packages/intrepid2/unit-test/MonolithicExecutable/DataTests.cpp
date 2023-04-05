@@ -347,6 +347,40 @@ namespace
     
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
+    
+    // now do the same, but with A having a full matrix, rather than just a diagonal
+    AView = getView<Scalar,DeviceType>("A", spaceDim, spaceDim);
+    ABView = getView<Scalar,DeviceType>("A .* B", spaceDim, spaceDim); // should be same shape as A
+    
+    AViewHost  = Kokkos::create_mirror(AView);
+    ABViewHost = Kokkos::create_mirror(ABView);
+    for (int d0=0; d0<spaceDim; d0++)
+    {
+      for (int d1=0; d1<spaceDim; d1++)
+      {
+        AViewHost(d0,d1)  = d0 + d0 * d1 + 1.; // some arbitrary data
+        ABViewHost(d0,d1) = AViewHost(d0,d1) * bValue;
+      }
+    }
+    Kokkos::deep_copy( AView,  AViewHost);
+    Kokkos::deep_copy(ABView, ABViewHost);
+   
+    A_variation[2] = GENERAL; // replaces BLOCK_PLUS_DIAGONAL
+    A_variation[3] = GENERAL; // replaces BLOCK_PLUS_DIAGONAL
+    
+    A = Data<Scalar,DeviceType>(AView,extents,A_variation);
+    
+    // expected variation for A*B:
+    AB_variation  = A_variation;
+    // expected Data object for A*B:
+    AB_expected = Data<Scalar,DeviceType>(ABView,extents,AB_variation);
+    
+    AB_actual = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(A, B);
+    
+    AB_actual.storeInPlaceProduct(A, B);
+    
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
+    testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
   }
 
 // #pragma mark Data: MatVec
