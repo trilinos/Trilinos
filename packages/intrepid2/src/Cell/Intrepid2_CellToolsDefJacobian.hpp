@@ -920,8 +920,13 @@ namespace Intrepid2 {
                           const Data<Scalar,DeviceType> & jacobian,
                           const Data<Scalar,DeviceType> & jacobianDetInv)
   {
-    auto variationTypes = jacobianDetInv.getVariationTypes(); // defaults to CONSTANT in ranks beyond the rank of the container; this is what we want for our new extents
+    // TODO: replace this implementation with a call to DataTools::multiplyByCPWeights() ?
+    // (but the advantage of this as it stands is that it does not do an allocation…)
+    auto variationTypes = jacobianDetInv.getVariationTypes();
     auto extents        = jacobian.getExtents();
+    
+    variationTypes[2] = CONSTANT;
+    variationTypes[3] = CONSTANT;
     
     // jacobianDetInvExtended container with same underlying data as jacobianDet, but extended with CONSTANT type to have same logical shape as Jacobian
     Data<Scalar,DeviceType> jacobianDetInvExtended = jacobianDetInv.shallowCopy(jacobian.rank(), extents, variationTypes);
