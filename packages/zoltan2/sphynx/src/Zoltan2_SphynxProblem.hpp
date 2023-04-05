@@ -83,6 +83,11 @@ static void getSphynxValidParameters(ParameterList & pl)
 
   pl.set("sphynx_initial_guess", "random", "Sphynx initial guess", sphynx_initial_guess_method_Validator);
 
+  RCP<Teuchos::StringValidator> sphynx_eigensolver_Validator =
+    Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "LOBPCG", "randomized")));
+
+  pl.set("sphynx_eigensolver", "LOBPCG", "Sphynx eigensolver", sphynx_eigensolver_Validator);
+
   RCP<Teuchos::StringValidator> sphynx_problem_type_method_Validator =
     Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "combinatorial", "normalized", "generalized")));
 
@@ -92,6 +97,8 @@ static void getSphynxValidParameters(ParameterList & pl)
     Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
   pl.set("sphynx_verbosity", 0, "Sphynx verbosity.", sphynx_verbosity_validator);
 
+  pl.set("sphynx_max_iterations", 1000, "Sphynx max iterations");
+  pl.set("sphynx_block_size", 0, "Sphynx block size");
   // bool parameter
   pl.set("sphynx_skip_preprocessing", false, "Sphynx skip preprocessing.", Environment::getBoolValidator());
   pl.set("sphynx_use_full_ortho", true, "Sphynx use full ortho.", Environment::getBoolValidator());
@@ -130,6 +137,11 @@ static void setSphynxValidatorsInList(
 
     using part_t = typename Adapter::part_t;
     using weight_t = typename Adapter::scalar_t;
+    using scalar_t = double; // Sphynx with scalar_t=double obtains better cutsize
+    using lno_t = typename Adapter::lno_t;
+    using gno_t = typename Adapter::gno_t;
+    using node_t = typename Adapter::node_t;
+    using mvector_t = typename Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>;  
     typedef typename Adapter::base_adapter_t base_adapter_t; // CHeck to Remove
 
     ///////////////////////////////////////////////////////////////////////////
@@ -155,7 +167,7 @@ static void setSphynxValidatorsInList(
 
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
         this->env_->convertStringToInt(*sphynxParams_.get());
-
+        
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
         if(pe)
@@ -190,6 +202,8 @@ static void setSphynxValidatorsInList(
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
                          Environment &env, bool& removeSelfEdges, bool& isGraphType, bool& needConsecutiveGlobalIds) override;
+    RCP<mvector_t> getSphynxEigenvectors();
+    void setUserEigenvectors(const RCP<mvector_t> &userEvects);
 
     ///////////////////////////////////////////////////////////////////////////
     /////////////////////// MEMBER FUNCTIONS  /////////////////////////////////
@@ -207,6 +221,7 @@ static void setSphynxValidatorsInList(
   private:
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
     RCP<ParameterList> sphynxParams_;
+    RCP<mvector_t> eigenVectors_;
 
 
   };
@@ -234,10 +249,39 @@ static void setSphynxValidatorsInList(
                                                                        this->sphynxParams_,
                                                                        this->comm_,
                                                                        this->inputAdapter_));
+        if( this->eigenVectors_!=Teuchos::null ){
+          Teuchos::rcp_dynamic_cast<Zoltan2::Sphynx<Adapter>>(this->algorithm_)->setUserEigenvectors(eigenVectors_);
+        }
       }
       else {
           throw std::logic_error("partitioning algorithm not supported");
       }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Allows the user to manually set eigenvectors for the Sphynx partitioner
+  // to use rather than solving for them with Anasazi. Mainly intended 
+  // for debugging purposes.
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  void SphynxProblem<Adapter>::setUserEigenvectors(const RCP<mvector_t> &userEvects)
+  {
+    eigenVectors_ = userEvects; 
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Returns an RCP containing a deep copy of the eigenvectors used by Sphynx.
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  Teuchos::RCP<Tpetra::MultiVector<double, typename Adapter::lno_t, typename Adapter::gno_t, typename Adapter::node_t> >
+  SphynxProblem<Adapter>::getSphynxEigenvectors()
+  {
+    if(this->algorithm_!=Teuchos::null){
+      return Teuchos::rcp_dynamic_cast<Zoltan2::Sphynx<Adapter>>(this->algorithm_)->getSphynxEigenvectors();
+    }
+    else{
+      return Teuchos::null;
+    }
   }
 
 } // namespace Zoltan2
