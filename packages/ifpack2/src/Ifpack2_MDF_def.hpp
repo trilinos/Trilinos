@@ -42,12 +42,16 @@
 #define IFPACK2_MDF_DEF_HPP
 
 #include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_ScalingType.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosKernels_Sorting.hpp"
+#include <exception>
+#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -64,7 +68,7 @@ void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
   const auto ext = dev_view.extent(0);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ext != array.size(), std::logic_error, "Ifpack2::MDF::copy_dev_view_to_host_array: "
+    ext != size_t(array.size()), std::logic_error, "Ifpack2::MDF::copy_dev_view_to_host_array: "
     "Size of permuations on host and device do not match.  "
     "Please report this bug to the Ifpack2 developers.");
 
@@ -129,7 +133,7 @@ auto get_local_crs_row_matrix(
   }
 
   return A_local_crs;
-};
+}
 
 
 
@@ -182,7 +186,7 @@ void MDF<MatrixType>::allocatePermutations (bool force)
   if (A_.is_null()) return;
 
   // Allocate arrays as soon as size as known so their pointer is availabe
-  if (force || permutations_.is_null() || A_->getLocalNumRows() != permutations_.size())
+  if (force || permutations_.is_null() || A_->getLocalNumRows() != size_t(permutations_.size()))
   {
     permutations_ = Teuchos::null;
     reversePermutations_ = Teuchos::null;
@@ -506,7 +510,19 @@ void MDF<MatrixType>::initialize ()
       auto A_local_device = A_local_crs->getLocalMatrixDevice();
       MDF_handle_ = rcp( new MDF_handle_device_type(A_local_device) );
       MDF_handle_->set_verbosity(Verbosity_);
-      KokkosSparse::Experimental::mdf_symbolic(A_local_device,*MDF_handle_);
+
+      // if constexpr (Details::MDFImpl::is_supported_scalar_type<scalar_type>::value)
+      if constexpr (std::is_arithmetic_v<scalar_type>)
+      {
+        KokkosSparse::Experimental::mdf_symbolic(A_local_device,*MDF_handle_);
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Ifpack2::MDF::initialize: "
+          "MDF on complex scalar types is not currently supported. "
+          "Please report this to the Ifpack2 developers.");
+      }
+    
       isAllocated_ = true;
     }
 
@@ -586,7 +602,17 @@ void MDF<MatrixType>::compute ()
 
     // Compute the ordering and factorize
     auto A_local_device = A_local_crs->getLocalMatrixDevice();
-    KokkosSparse::Experimental::mdf_numeric(A_local_device,*MDF_handle_);
+
+    if constexpr (std::is_arithmetic_v<scalar_type>)
+    {
+      KokkosSparse::Experimental::mdf_numeric(A_local_device,*MDF_handle_);
+    }
+    else
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, prefix <<
+        "MDF on complex scalar types is not currently supported. "
+        "Please report this to the Ifpack2 developers.");
+    }
   }
 
   // Ordering convention for MDF impl and here are reversed. Do reverse here to avoid confusion

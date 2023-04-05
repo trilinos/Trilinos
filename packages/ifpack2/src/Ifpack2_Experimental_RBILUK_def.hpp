@@ -272,6 +272,7 @@ getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
   using row_matrix_type = typename RBILUK<MatrixType>::row_matrix_type;
   using crs_graph_type = typename RBILUK<MatrixType>::crs_graph_type;
@@ -376,10 +377,6 @@ void RBILUK<MatrixType>::initialize ()
     this->isAllocated_ = false;
     this->isComputed_ = false;
     this->Graph_ = Teuchos::null;
-
-    typedef Tpetra::CrsGraph<local_ordinal_type,
-                             global_ordinal_type,
-                             node_type> crs_graph_type;
 
     RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_,blockSize_);
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
