@@ -5,25 +5,40 @@ Rebalancing - Hypergraph repartitioning
 Basic concepts and parameters
 =============================
 
-Especially when using the uncoupled aggregation strategy it is essential to reduce the number of processors used on the coarser levels. A natural strategy is to make sure that each processor gets a minimum number of equations to solve and reduce the number of active processors accordingly.
+Especially when using the uncoupled aggregation strategy it is essential to reduce the number of processors used on the coarser levels.
+A natural strategy is to make sure that each processor gets a minimum number of equations to solve and reduce the number of active processors accordingly.
 
-In this tutorial we use a hypergraph based repartitioning for the coarse level matrices $A_c$ to rebalance the coarse level problems. The repartitioning algorithm is implemented in the Zoltan package of Trilinos. The advantage of the hypergraph based repartitioning methods is, that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners.
+In this tutorial we use a hypergraph-based repartitioning for the coarse level matrices $A_c$ to rebalance the coarse level problems.
+The repartitioning algorithm is implemented in the Zoltan2 package of Trilinos.
+The advantage of the hypergraph-based repartitioning methods is,
+that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners.
 
 .. note::
 
-    Hypergraph partitioning algorithms as PHG are not available in the new Zoltan2 package of Trilinos, yet. Therefore we can use this type of repartitioning only in context of Epetra based applications. If you use the new templated Tpetra stack you have to use repartitioning algorithms which are available in Zoltan2 such as RCB.
+    Hypergraph partitioning algorithms as PHG are not available in the new Zoltan2 package of Trilinos, yet.
+    Therefore we can use this type of repartitioning only in context of Epetra based applications.
+    If you use the new templated Tpetra stack, you have to use repartitioning algorithms which are available in Zoltan2 such as RCB.
 
 
-Repartitioning algorithms are a very wide field of research and can be very complicated. Here, we cannot go into details and just focus on how to use them. Basically there are only a few really important parameters that the user has to set properly:
+Repartitioning algorithms are a very wide field of research and can be very complicated.
+Here, we cannot go into details and just focus on how to use them.
+Basically there are only a few really important parameters that the user has to set properly:
 
 .. admonition:: Description
 
   repartition: min rows per proc
-        the minimum number of rows each processor shall handle. This parameter is used to reduce the number of involved processors on the coarser levels. If for example the parameter value is chosen to be 1000 and the fine level problem has 10000 rows whereas the coarse level problem has 2000 rows, then the fine level problem is solved on not more than 10 processors at maximum and for the coarse level problem there are not more processors than at maximum 2 being used.
+        The minimum number of rows each processor shall handle.
+        This parameter is used to reduce the number of involved processors on the coarser levels.
+        If for example the parameter value is chosen to be 1000 and the fine level problem has 10000 rows whereas the coarse level problem has 2000 rows,
+        then the fine level problem is solved on not more than 10 processors at maximum
+        and for the coarse level problem there are not more processors than at maximum 2 being used.
   repartition: max imbalance
-        This parameter defines the maximum allowed imbalance ratio of nonzeros on all processors. If the value is set to 1.2, and there is one processor with more than 20% nonzeros compared to another processor, than the problem will be rebalanced.
+        This parameter defines the maximum allowed imbalance ratio of nonzeros on all processors.
+        If the value is set to 1.2, and there is one processor with more than 20% nonzeros compared to another processor,
+        then the problem will be rebalanced.
   repartition: start level
-        start rebalancing on given level and coarser levels. This allows to avoid the costs of rebalancing on the finer levels (where it is not really necessary).
+        Start rebalancing on the given level and coarser levels.
+        This allows to avoid the costs of rebalancing on the finer levels (where it is not really necessary).
 
 
 Transfer operator design
@@ -33,12 +48,20 @@ Transfer operator design
 
     Insert and link missing figures
 
-Figure **\ref{fig:rebalanceddesignpgamg}** gives the extended factory design for smoothed aggregation based AMG for non-symmetric linear systems with rebalancing enabled. Nothing has changed in the upper part where the non-rebalanced Galerkin product has been calculated using the *RAPFactory*. The coarse level matrix :math:`A_c` as output from the *RAPFactory* then is checked for its partition and rebalanced.
+Figure **\ref{fig:rebalanceddesignpgamg}** gives the extended factory design for smoothed aggregation based AMG for non-symmetric linear systems with rebalancing enabled.
+Nothing has changed in the upper part where the non-rebalanced Galerkin product has been calculated using the *RAPFactory*.
+The coarse level matrix :math:`A_c` as output from the *RAPFactory* then is checked for its partition and rebalanced.
 
-The *AmalgamationFactory* amalgamates the matrix, i.e. it generates some mapping between the actual degrees of freedom and the corresponding nodes or supernodes. In fact the *AmalgamationFactory* is only important if there are more than one degree of freedom per node. Otherwise the mappings are trivial to build.
+The *AmalgamationFactory* amalgamates the matrix, i.e. it generates some mapping between the actual degrees of freedom and the corresponding nodes or supernodes.
+In fact the *AmalgamationFactory* is only important if there are more than one degree of freedom per node.
+Otherwise the mappings are trivial to build.
 
-The *RepartitionHeuristicFactory* contains the rebalancing logic. Depending on the chosen repartitioning parameters it determines the number of partitions (variable name *number of partitions*) for the coarse level problem.
-The *IsorropiaInterface* class first builds internally the graph of the coarse level matrix :math:`A_c` using the information from the *AmalgamationInformation* and then calls the repartitioning algorithm from Zoltan through the Isorropia interface [1]_. The output is an amalgamated repartitioning information. Then the *RepartitionInterface* factory resembles the un-amalgamated repartitioning information which is put into the *RepartitionFactory*.
+The *RepartitionHeuristicFactory* contains the rebalancing logic.
+Depending on the chosen repartitioning parameters, it determines the number of partitions (variable name *number of partitions*) for the coarse level problem.
+The *IsorropiaInterface* class first builds internally the graph of the coarse level matrix :math:`A_c` using the information from the *AmalgamationInformation*
+and then calls the repartitioning algorithm from Zoltan through the Isorropia interface.
+The output is an amalgamated repartitioning information.
+Then the *RepartitionInterface* factory resembles the un-amalgamated repartitioning information which is put into the *RepartitionFactory*.
 
 The *RepartitionFactory* creates the communication "plan" that is used to rebalance the transfer operators and the coarse level matrix.
 
@@ -47,13 +70,18 @@ The *RepartitionFactory* creates the communication "plan" that is used to rebala
 XML interface
 =============
 
-The corresponding XML parameter file looks as
+The corresponding XML parameter file looks like
 
 .. literalinclude:: ../../../test/tutorial/s5a.xml
   :language: xml
   :caption:
 
-It is stored in **../../../test/tutorial/s5a.xml**. In this example we define a smoothed aggregation transfer operator strategy (using the *PgPFactory*) for non-symmetric systems. The level smoother is chosen to be an over-relaxed symmetric Gauss--Seidel method. A direct solver is applied on the coarsest level. Please compare the building blocks in the xml file with Figure **\ref{fig:rebalanceddesignpgamg}**. Be aware that the *Nullspace* variable now is also generated by the *myRebalanceProlongatorFact*.
+It is stored in **../../../test/tutorial/s5a.xml**. In this example we define a smoothed aggregation transfer operator strategy
+(using the *PgPFactory*) for non-symmetric systems.
+The level smoother is chosen to be an over-relaxed symmetric Gauss--Seidel method.
+A direct solver is applied on the coarsest level.
+Please compare the building blocks in the xml file with Figure **\ref{fig:rebalanceddesignpgamg}**.
+Be aware that the *Nullspace* variable now is also generated by the *myRebalanceProlongatorFact*.
 
 .. admonition:: Exercise 1
     Choose option 1 in the problem menu of **hands-on.py** to run the *Laplace 2D* example on a :math:`300\times 300` mesh.
@@ -63,7 +91,8 @@ It is stored in **../../../test/tutorial/s5a.xml**. In this example we define a 
 
     .. note::
 
-        The XML parameters in **../../../test/tutorial/s5a.xml** write out the aggregation data for debugging. See the next tutorial for some more background information on aggregation and debugging.
+        The XML parameters in **../../../test/tutorial/s5a.xml** write out the aggregation data for debugging.
+        See the next tutorial for some more background information on aggregation and debugging.
 
 
 
@@ -74,7 +103,3 @@ You should observe a multigrid hierarchy as follows
     Insert missing Screen output
 
 **\printScreenOutput{s5a.txt_3.fragment_3.fragment}**
-
-Footnotes
-=========
-.. [1] Isorropia is a Trilinos package which provides an easy-to-use interface to many partitioning algorithms in Zoltan.
