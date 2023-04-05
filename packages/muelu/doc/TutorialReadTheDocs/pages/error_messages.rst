@@ -15,7 +15,7 @@ Parser errors
     XML parse error at line 27: file ended before closing element 'ParameterList' from line 1
 
 It seems like you forgot to close the **<ParameterList>** section that is opened in line 1 of the xml file.
-Close it by adding the line **/ParameterList>** at the end of the (sub-)list.
+Close it by adding the line **</ParameterList>** at the end of the (sub-)list.
 
 ::
 
