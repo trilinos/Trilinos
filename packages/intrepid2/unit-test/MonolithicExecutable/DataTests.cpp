@@ -403,6 +403,44 @@ namespace
     AB_actual = DataTools::multiplyByCPWeights(A, B);
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
+    
+    // CASE 5
+    // and now one with an actual (C,P,D,D) view for A (instead of CONSTANT data in (C,P))
+    AView = getView<Scalar,DeviceType>("A", cellCount, pointCount, spaceDim, spaceDim);
+    ABView = getView<Scalar,DeviceType>("A .* B", cellCount, pointCount, spaceDim, spaceDim); // same shape as A
+    
+    AViewHost  = Kokkos::create_mirror(AView);
+    ABViewHost = Kokkos::create_mirror(ABView);
+    for (int cellOrdinal=0; cellOrdinal<cellCount; cellOrdinal++)
+    {
+      for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
+      {
+        for (int d0=0; d0<spaceDim; d0++)
+        {
+          for (int d1=0; d1<spaceDim; d1++)
+          {
+            AViewHost(cellOrdinal,pointOrdinal,d0,d1)  = d0 + d0 * d1 + 1. + cellOrdinal * (pointOrdinal+1); // some arbitrary data
+            ABViewHost(cellOrdinal,pointOrdinal,d0,d1) = AViewHost(cellOrdinal,pointOrdinal,d0,d1) * bValue;
+          }
+        }
+      }
+    }
+    Kokkos::deep_copy( AView,  AViewHost);
+    Kokkos::deep_copy(ABView, ABViewHost);
+   
+    A_variation = Kokkos::Array<DataVariationType,rank>{GENERAL,GENERAL,GENERAL,GENERAL};
+    
+    A = Data<Scalar,DeviceType>(AView,extents,A_variation);
+    
+    // expected variation for A*B:
+    AB_variation  = A_variation;
+    // expected Data object for A*B:
+    AB_expected = Data<Scalar,DeviceType>(ABView,extents,AB_variation);
+    
+    AB_actual = DataTools::multiplyByCPWeights(A, B);
+    
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
+    testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
   }
 
 // #pragma mark Data: MatVec
