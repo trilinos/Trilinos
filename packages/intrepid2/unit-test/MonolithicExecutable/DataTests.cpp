@@ -49,6 +49,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Intrepid2_Data.hpp"
+#include "Intrepid2_DataTools.hpp"
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_TestUtils.hpp"
@@ -379,6 +380,14 @@ namespace
     
     AB_actual.storeInPlaceProduct(A, B);
     
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
+    testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
+    
+    // now try a case where B has logical shape (C,P), and we use DataTools to produce the result.  This is what gets invoked by TransformedBasisValues.
+    Kokkos::Array<int,2> b_extents {cellCount, pointCount};
+    B = Data<Scalar,DeviceType> (bValue,b_extents);
+    
+    AB_actual = DataTools::multiplyByCPWeights(A, B);
     // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
   }
