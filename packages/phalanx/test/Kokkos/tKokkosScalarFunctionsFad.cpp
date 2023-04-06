@@ -56,12 +56,13 @@ namespace phalanx_test {
   // ******************************
 
   // This explores the performance of a function called within a
-  // device kernel.In particular, an application team wanted to return
-  // scalar types from an equation of state, but this can be very
-  // inefficient with AD types if because scalars include a derivative
-  // array. The app team wanted an individual scalar interface so that
-  // they could reuse the same function for both device assembly and
-  // on host for initial conditions.
+  // device kernel. In particular, an application team wanted to
+  // return scalar types from an equation of state, but this can be
+  // inefficient with AD types if temporary scalars are generated
+  // since the scalars contain a derivative array that needs to be
+  // copied. The app team wanted an individual scalar interface so
+  // that they could reuse the same function for both device and host
+  // functions that may or may not use Kokkos::View.
 
   // ******************************
 
@@ -74,46 +75,58 @@ namespace phalanx_test {
      on device and copying fad array.
      CLANG: works but slow
      CUDA:  works but slow
+     HIP:   works but slow
 
      2. Change return type from Scalar to auto. Seems to work on CUDA
      - order of magnitued faster - but runtime seg faults on
-     clang. This seems to get it into the Expression Template tree on
-     cuda but not on clang?
+     clang.
      CLANG: seg faults
      CUDA:  works, FAST
 
      3. Add the return type to the function arguments.
      CLANG: works and is fast!
      CUDA:  works and is fast!
+     HIP:   works and is fast!
 
      4. Use the sacado macro from expression templates so that the
-     function is handled correctly? Look at how Sacado implements sin
-     operator. Difference in class vs function?
+     function can be nested in expression templates. Not sure this can
+     be done for arbitrary functions. Was not explored.
 
-     5. Worst case: rewrite the EoS to use views and looping over data.
+     5. Abandon scalar EoS models and rewrite evaluators to use views
+     directly. This is the BASELINE results.
 
-     Results from CLANG
+     Results from CLANG (Intel Xeon, 48 threads)
      ==================
+Teuchos::StackedTimer:4.98867 [1] (0)
+   Init  DOUBLE:0.00238513 [4] (0)
+   Check DOUBLE:0.0564357 [404] (0)
+   DOUBLE: return type Scalar:0.0327226 [100] (0)
+   DOUBLE: return type AUTO  :0.0313885 [100] (0)
+   DOUBLE: Baseline          :0.031126 [100] (0)
+   DOUBLE: return type FUNC  :0.0314542 [100] (0)
+   Init  FAD:0.0260142 [3] (0)
+   Check FAD:2.11533 [303] (0)
+   FAD:    return type Scalar:1.05778 [100] (0)
+   FAD:    Baseline          :0.600068 [100] (0)
+   FAD:    return type FUNC  :0.599805 [100] (0)
+   Remainder: 0.404158
 
-   DOUBLE: return type Scalar:0.0247045 [5] (0)
-   DOUBLE: return type AUTO:0.0239159 [5] (0)
-   DOUBLE: return type FUNC:0.0238791 [5] (0)
-   DOUBLE: Baseline:0.0209992 [5] (0)
-   FAD: return type Scalar:3.9514 [5] (0)
-   FAD: return type FUNC:3.08922 [5] (0)
-   FAD: Baseline:0.855154 [5] (0)
 
-     Results from CUDA
+     Results from CUDA (V100)
      ==================
-
-   DOUBLE: return type Scalar:0.000803348 [5] (0)
-   DOUBLE: return type AUTO:0.000795452 [5] (0)
-   DOUBLE: return type FUNC:0.000798158 [5] (0)
-   DOUBLE: Baseline:0.00224406 [5] (0)
-   FAD: return type Scalar:2.39517 [5] (0)
-   FAD: return type AUTO:0.235842 [5] (0)
-   FAD: return type FUNC:0.22669 [5] (0)
-   FAD: Baseline:0.236533 [5] (0)
+Teuchos::StackedTimer:12.5579 [1] (0)
+   Init  DOUBLE:0.00365521 [4] (0)
+   Check DOUBLE:0.0107127 [404] (0)
+   DOUBLE: return type Scalar:0.00315721 [100] (0)
+   DOUBLE: return type AUTO  :0.00316893 [100] (0)
+   DOUBLE: Baseline          :0.00311996 [100] (0)
+   DOUBLE: return type FUNC  :0.00312184 [100] (0)
+   Init  FAD:0.00138992 [3] (0)
+   Check FAD:6.63752 [303] (0)
+   FAD:    return type Scalar:1.6413 [100] (0)
+   FAD:    Baseline          :0.0118113 [100] (0)
+   FAD:    return type FUNC  :0.0117849 [100] (0)
+   Remainder: 4.22719
 
   */
 
