@@ -61,6 +61,7 @@
 
 #if defined(HAVE_MUELU_TPETRA)
 #include <TpetraCore_config.h>
+#include <Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp>
 #endif
 
 #include <KokkosKernels_config.h>
@@ -125,6 +126,10 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_STACKTRACE
     bool stacktrace = true;     clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
 #endif
+
+#ifdef HAVE_MUELU_TPETRA
+    bool timedeepcopy = true;   clp.setOption("timedeepcopy", "notimedeepcopy", &timedeepcopy, "instrument Kokkos::deep_copy() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_DEEP_COPY=ON");
+#endif
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
@@ -134,6 +139,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
+
+#ifdef HAVE_MUELU_TPETRA
+    if(timedeepcopy)
+      Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
+#endif
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
     if (stacktrace)
