@@ -52,277 +52,249 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
     s6_export.xml
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri AND
-${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra)
 
-TRIBITS_ADD_EXECUTABLE(
-  Tutorial_laplace2d
-  SOURCES laplace2d.cpp
-  COMM serial mpi
-  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tutorial_laplace2d
+    SOURCES laplace2d.cpp
+    COMM serial mpi
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy"
-  ARGS "--xml=s1_easy.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy"
+    ARGS "--xml=s1_easy.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy_3levels_smoothed"
-  ARGS "--xml=s1_easy_3levels_smoothed.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy_3levels_smoothed"
+    ARGS "--xml=s1_easy_3levels_smoothed.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy_3levels_unsmoothed"
-  ARGS "--xml=s1_easy_3levels_unsmoothed.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy_3levels_unsmoothed"
+    ARGS "--xml=s1_easy_3levels_unsmoothed.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy_exercise"
-  ARGS "--xml=s1_easy_exercise.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy_exercise"
+    ARGS "--xml=s1_easy_exercise.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy_jacobi"
-  ARGS "--xml=s1_easy_jacobi.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy_jacobi"
+    ARGS "--xml=s1_easy_jacobi.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s1_easy_jacobi2"
-  ARGS "--xml=s1_easy_jacobi2.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s1_easy_jacobi2"
+    ARGS "--xml=s1_easy_jacobi2.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2a"
-  ARGS "--xml=s2a.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2a"
+    ARGS "--xml=s2a.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2_adv_a"
-  ARGS "--xml=s2_adv_a.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2_adv_a"
+    ARGS "--xml=s2_adv_a.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2_adv_b"
-  ARGS "--xml=s2_adv_b.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2_adv_b"
+    ARGS "--xml=s2_adv_b.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2_adv_c"
-  ARGS "--xml=s2_adv_c.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2_adv_c"
+    ARGS "--xml=s2_adv_c.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2b"
-  ARGS "--xml=s2b.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2b"
+    ARGS "--xml=s2b.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s2_easy"
-  ARGS "--xml=s2_easy.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s2_easy"
+    ARGS "--xml=s2_easy.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3a"
-  ARGS "--xml=s3a.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3a"
+    ARGS "--xml=s3a.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3a_easy"
-  ARGS "--xml=s3a_easy.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3a_easy"
+    ARGS "--xml=s3a_easy.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3b"
-  ARGS "--xml=s3b.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3b"
+    ARGS "--xml=s3b.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3b1"
-  ARGS "--xml=s3b1.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3b1"
+    ARGS "--xml=s3b1.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3b2"
-  ARGS "--xml=s3b2.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3b2"
+    ARGS "--xml=s3b2.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3b3"
-  ARGS "--xml=s3b3.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3b3"
+    ARGS "--xml=s3b3.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3b_easy"
-  ARGS "--xml=s3b_easy.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3b_easy"
+    ARGS "--xml=s3b_easy.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s3c"
-  ARGS "--xml=s3c.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s3c"
+    ARGS "--xml=s3c.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-# TRIBITS_ADD_TEST(
-#   Tutorial_laplace2d
-#   NAME "Test_Tutorial_laplace2d_s3c_easy"
-#   ARGS "--xml=s3c_easy.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_laplace2d
+  #   NAME "Test_Tutorial_laplace2d_s3c_easy"
+  #   ARGS "--xml=s3c_easy.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 2
+  #   )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s4a"
-  ARGS "--xml=s4a.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s4a"
+    ARGS "--xml=s4a.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-# TRIBITS_ADD_TEST(
-#   Tutorial_laplace2d
-#   NAME "Test_Tutorial_laplace2d_s4av"
-#   ARGS "--xml=s4av.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_laplace2d
+  #   NAME "Test_Tutorial_laplace2d_s4av"
+  #   ARGS "--xml=s4av.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 2
+  #   )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s4b"
-  ARGS "--xml=s4b.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s4b"
+    ARGS "--xml=s4b.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-# TRIBITS_ADD_TEST(
-#   Tutorial_laplace2d
-#   NAME "Test_Tutorial_laplace2d_s4c"
-#   ARGS "--xml=s4c.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_laplace2d
+  #   NAME "Test_Tutorial_laplace2d_s4c"
+  #   ARGS "--xml=s4c.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 2
+  #   )
 
-# TRIBITS_ADD_TEST(
-#   Tutorial_laplace2d
-#   NAME "Test_Tutorial_laplace2d_s5a"
-#   ARGS "--xml=s5a.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_laplace2d
+  #   NAME "Test_Tutorial_laplace2d_s5a"
+  #   ARGS "--xml=s5a.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 2
+  #   )
 
-# TRIBITS_ADD_TEST(
-#   Tutorial_laplace2d
-#   NAME "Test_Tutorial_laplace2d_s5b"
-#   ARGS "--xml=s5b.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_laplace2d
+  #   NAME "Test_Tutorial_laplace2d_s5b"
+  #   ARGS "--xml=s5b.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 2
+  #   )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s6_dep"
-  ARGS "--xml=s6_dep.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s6_dep"
+    ARGS "--xml=s6_dep.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_TEST(
-  Tutorial_laplace2d
-  NAME "Test_Tutorial_laplace2d_s6_export"
-  ARGS "--xml=s6_export.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_TEST(
+    Tutorial_laplace2d
+    NAME "Test_Tutorial_laplace2d_s6_export"
+    ARGS "--xml=s6_export.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
 ENDIF()
 
 # IF (${PACKAGE_NAME}_ENABLE_Epetra)
-
-
-# #C++-Files
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tutorial_laplace2d
-#     SOURCES laplace2d.cpp
-#     COMM serial mpi
-#     )
-
-#   TRIBITS_ADD_TEST(
-#     Tutorial_laplace2d
-#     NAME "Test_Tutorial_laplace2d"
-#     ARGS "--xml=s1_easy.xml --xml=s1_easy_3levels_smoothed.xml --xml=s1_easy_3levels_unsmoothed.xml --xml=s1_easy_exercise.xml --xml=s1_easy_jacobi.xml --xml=s1_easy_jacobi2.xml --xml=s2a.xml --xml=s2_adv_a.xml --xml=s2_adv_b.xml --xml=s2_adv_c.xml --xml=s2b.xml --xml=s2_easy.xml --xml=s3a.xml --xml=s3a_easy.xml --xml=s3b.xml --xml=s3b1.xml --xml=s3b2.xml --xml=s3b3.xml --xml=s3b_easy.xml --xml=s3c.xml--xml=s3c_easy.xml --xml=s4a.xml --xml=s4av.xml --xml=s4b.xml --xml=s4c.xml --xml=s5a.xml --xml=s5b.xml --xml=s6_dep.xml --xml=s6_export.xml"
-#     COMM serial mpi
-#     NUM_MPI_PROCS 2
-#     )
-
-#   IF (${PACKAGE_NAME}_ENABLE_Isorropia)
-#     TRIBITS_ADD_TEST(
-#       Tutorial_laplace2d
-#       NAME "Test_Tutorial_laplace2d_repartitioning"
-#       ARGS "--xml=s1_easy.xml --xml=s1_easy_3levels_smoothed.xml --xml=s1_easy_3levels_unsmoothed.xml --xml=s1_easy_exercise.xml --xml=s1_easy_jacobi.xml --xml=s1_easy_jacobi2.xml --xml=s2a.xml --xml=s2_adv_a.xml --xml=s2_adv_b.xml --xml=s2_adv_c.xml --xml=s2b.xml --xml=s2_easy.xml --xml=s3a.xml --xml=s3a_easy.xml --xml=s3b.xml --xml=s3b1.xml --xml=s3b2.xml --xml=s3b3.xml --xml=s3b_easy.xml --xml=s3c.xml--xml=s3c_easy.xml --xml=s4a.xml --xml=s4av.xml --xml=s4b.xml --xml=s4c.xml --xml=s5a.xml --xml=s5b.xml --xml=s6_dep.xml --xml=s6_export.xml"
-#       COMM serial mpi
-#       NUM_MPI_PROCS 4
-#       )
-#   ENDIF()
 
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tutorial_recirc2d
