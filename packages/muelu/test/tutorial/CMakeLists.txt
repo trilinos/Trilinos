@@ -55,6 +55,28 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
 IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra)
 
   TRIBITS_ADD_EXECUTABLE(
+    Tutorial_MLParameterList
+    SOURCES MLParameterList.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_MLParameterList
+    NAME "Test_Tutorial_MLParameterList"
+    ARGS "--xml=ml_ParameterList.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_MLParameterList
+  #   NAME "Test_Tutorial_MLParameterList_Rebalanced"
+  #   ARGS "--xml=ml_RebalancedParameterList.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 4
+  #   )
+
+    TRIBITS_ADD_EXECUTABLE(
     Tutorial_laplace2d
     SOURCES laplace2d.cpp
     COMM serial mpi
@@ -306,20 +328,6 @@ ENDIF()
 #     Tutorial_recirc2d
 #     NAME "Test_Tutorial_recirc2d"
 #     ARGS "--xml=n1_easy.xml --xml=n1_easy_pg.xml --xml=n2_easy_agg.xml --xml=n2_easy_agg2.xml --xml=n2_easy_agg3.xml --xml=n2_easy_export.xml"
-#     COMM serial mpi
-#     NUM_MPI_PROCS 4
-#     )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tutorial_MLParameterList
-#     SOURCES MLParameterList.cpp
-#     COMM serial mpi
-#     )
-
-#   TRIBITS_ADD_TEST(
-#     Tutorial_MLParameterList
-#     NAME "Test_Tutorial_MLParameterList"
-#     ARGS "--xml=ml_ParameterList.xml --xml=ml_RebalancedParameterList.xml"
 #     COMM serial mpi
 #     NUM_MPI_PROCS 4
 #     )

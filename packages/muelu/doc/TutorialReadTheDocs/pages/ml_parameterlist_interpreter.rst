@@ -38,16 +38,19 @@ Please refer to the ML guide [1]_ for a complete list of available parameters.
   :end-before: ParameterList end
 
 .. note::
-	Be aware that the MLParameterListInterpreter does not support all ML parameters but only the most important ones (e.g., smoothers, transfer operators, rebalancing, ...).
+	Be aware that the MLParameterListInterpreter does not support all ML parameters,
+  but only the most important ones (e.g., smoothers, transfer operators, rebalancing, ...).
 
-Instead of defining the ML parameters by hand in the ParameterList, you can also read in XML files with ML parameters using
+Instead of defining the ML parameters by hand in the ParameterList,
+you can also read in XML files with ML parameters using
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
   :language: cpp
   :start-after: GetParametersFromXMLFile begin
   :end-before: GetParametersFromXMLFile end
 
-Next, you create a MLParameterListInterpreter object using the parameters and create a new **MueLu::Hierarchy** from it.
+Next, you create a **MLParameterListInterpreter** object using the parameters
+and create a new **MueLu::Hierarchy** from it.
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
   :language: cpp
@@ -84,28 +87,20 @@ we can use it the same way as described in :ref:`Iteration Phase <user_api/itera
 .. admonition:: Exercise 1
 
 	Study the source code of **../../../test/tutorial/MLParameterList.cpp** and compile it.
-  Run the executable **MueLu_tutorial_MLParameterList.exe** with the **--help** command line parameter to get an overview of all available command line parameters.
+  Run the executable **MueLu_tutorial_MLParameterList.exe** with the **--help** command line parameter
+  to get an overview of all available command line parameters.
   Run the example using
 
-		**./MueLu_tutorial_MLParameterList.exe --ml=1 --muelu=0**
-		**--xml=xml/ml_ParameterList.xml --linAlgebra=Epetra**
+		**./MueLu_tutorial_MLParameterList.exe --xml=xml/ml_ParameterList.xml**
 
-	and study the ML output.
-  Compare the output and results when switching to MueLu using the same input file
-
-		**./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1**
-		**--xml=xml/ml_ParameterList.xml --linAlgebra=Epetra**
-
+	and study the MueLu output.
 
 .. admonition:: Exercise 2
 
 	Play around with the parameters from **MueLu_tutorial_MLParameterList.exe**.
   Change, e.g., the problem type to a 2D Laplace problem (**--matrixType=Laplace2D**) and adapt the **--nx** and **--ny** parameters accordingly.
 
-	Try to run both ML and MueLu and compare the results. Do you find significant differences?
-
-
 Footnotes
 =========
-.. [1] M.W. Gee, C.M. Siefert, J.J. Hu, R.S. Tuminaro and M.G. Sala, ML 5.0 Smoothed Aggregation User's Guide, Sandia National Laboratories, 2006, SAND2006-2649
+.. [1] M. W. Gee, C. M. Siefert, J. J. Hu, R. S. Tuminaro, and M. G. Sala. ML 5.0 Smoothed Aggregation User's Guide, Sandia National Laboratories, 2006, SAND2006-2649
 .. [2] L. Berger-Vergiat, C. A. Glusa, G. Harper, J. J. Hu, M. Mayr, P. Ohm, A. Prokopenko, C. M. Siefert, R. S. Tuminaro, and T. A. Wiesner. MueLu User's Guide. Technical Report SAND2023-12265, Sandia National Laboratories, Albuquerque, NM (USA) 87185, 2023.

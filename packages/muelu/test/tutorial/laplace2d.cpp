@@ -64,7 +64,7 @@
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
-#include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>

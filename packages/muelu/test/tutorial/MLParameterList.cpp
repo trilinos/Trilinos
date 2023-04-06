@@ -37,7 +37,6 @@
 //
 // Questions? Contact
 //                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -47,35 +46,27 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-#include <Epetra_CrsMatrix.h>
+#include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
+
+#if defined(HAVE_MUELU_ML)
 #include <ml_MultiLevelPreconditioner.h>
-#include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
+#include <Tpetra_CrsMatrix.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
 
-#ifdef HAVE_MUELU_AZTECOO
-#include <AztecOO.h>
-#endif
-
-#if defined(HAVE_MUELU_EPETRA)
-#include <MueLu_EpetraOperator.hpp>
-
+#include <MueLu_ConfigDefs.hpp>
 #include <MueLu.hpp>
+#include <MueLu_BaseClass.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_MutuallyExclusiveTime.hpp>
+#include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_Utilities.hpp>
 
-// Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
-
-// prescribe types
-// run plain Epetra
-typedef double Scalar;
-typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
-typedef Xpetra::EpetraNode Node;
-#endif
 
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraVector.hpp>
@@ -83,120 +74,96 @@ typedef Xpetra::EpetraNode Node;
 #endif
 
 
-#include <MueLu_UseShortNames.hpp>
-
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
-int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
+{
 #include <MueLu_UseShortNames.hpp>
 
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  //
-  // MPI initialization using Teuchos
-  //
+  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  // using MV = MultiVector;
+  // using OP = Belos::OperatorT<MV>;
 
-  //
-  // Parameters
-  //
+  bool success = false;
+  try {
+    // MPI initialization using Teuchos
+    RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+    int MyPID = comm->getRank();
+    int NumProc = comm->getSize();
 
-  //TODO: FIXME: option by default does not work for MueLu/Tpetra
+    // Instead of checking each time for rank, create a rank 0 stream
+    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream& fancyout = *fancy;
+    fancyout.setOutputToRootOnly(0);
 
-  int nIts = 9;
+    // Convenient definitions
+    using STS = Teuchos::ScalarTraits<SC>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using real_type = typename STS::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    const SC zero = Teuchos::ScalarTraits<SC>::zero();
+    const SC one = Teuchos::ScalarTraits<SC>::one();
 
-  Teuchos::CommandLineProcessor clp(false); // Note:
+    // Initialize and read parameters from command line
+    Teuchos::CommandLineProcessor clp(false);
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256);
+    Xpetra::Parameters xpetraParameters(clp);
+    std::string xmlFileName; clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
+    int num_iters = 9;       clp.setOption("numIters", &num_iters, "Max number of iterations");
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
-  Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
+    switch (clp.parse(argc,argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
 
-  std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
-  int muelu = true;        clp.setOption("muelu", &muelu,       "use muelu"); //TODO: bool instead of int
-  int ml    = true;
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-  clp.setOption("ml",    &ml,          "use ml");
-#endif
+    // Construct the problem
+    RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<Matrix>  A = Pr->BuildMatrix();
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
+    // Preconditioner configuration
+    RCP<Teuchos::ParameterList> params;
+    if (xmlFileName != "")
+    {
+      fancyout << "Reading " << xmlFileName << " ..." << std::endl;
+      //! [GetParametersFromXMLFile begin]
+      params = Teuchos::getParametersFromXmlFile(xmlFileName);
+      //! [GetParametersFromXMLFile end]
 
-  // TODO: check -ml and --linAlgebra
-
-  if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
-  if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-    ml = false;
-    std::cout << "ML preconditionner can only be built if --linAlgebra=Epetra. Option --ml ignored" << std::endl;
-  }
-
-  //
-  // Construct the problem
-  //
-
-  // TUTORIALSPLIT ===========================================================
-  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-  RCP<Matrix>  A = Pr->BuildMatrix();
-  // TUTORIALSPLIT ===========================================================
-
-  //
-  // Preconditionner configuration
-  //
-
-  // ML parameter list
-  RCP<Teuchos::ParameterList> params;
-  if (xmlFileName != "") {
-
-    std::cout << "Reading " << xmlFileName << " ..." << std::endl;
-    //! [GetParametersFromXMLFile begin]
-    params = Teuchos::getParametersFromXmlFile(xmlFileName);
-    //! [GetParametersFromXMLFile end]
-
-  } else {
-
-    std::cout << "Using hard-coded parameter list:" << std::endl;
-    //! [ParameterList begin]
-    params = rcp(new Teuchos::ParameterList());
-
-    params->set("ML output",  10);
-    params->set("max levels", 2);
-    params->set("smoother: type", "symmetric Gauss-Seidel");
-
-    if (xpetraParameters.GetLib() == Xpetra::UseTpetra)
-      params->set("coarse: type","Amesos-Superlu");
+    }
     else
+    {
+      fancyout << "Using hard-coded parameter list:" << std::endl;
+      //! [ParameterList begin]
+      params = rcp(new Teuchos::ParameterList());
+
+      params->set("ML output", 10);
+      params->set("max levels", 2);
+      params->set("smoother: type", "symmetric Gauss-Seidel");
       params->set("coarse: type","Amesos-KLU");
-    //! [ParameterList end]
+      //! [ParameterList end]
+    }
 
-  }
+    fancyout << "Initial parameter list" << std::endl;
+    fancyout << *params << std::endl;
 
-  std::cout << "Initial parameter list" << std::endl;
-  std::cout << *params << std::endl;
-
-  if (muelu) {
-
-    //
     // Construct a multigrid preconditioner
-    //
 
-    // Multigrid Hierarchy
-    //! [MultigridHierarchy begin]
-    MLParameterListInterpreter mueLuFactory(*params);
-    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-    //! [MultigridHierarchy end]
-
-    // build default null space
+    // Build default null space
     LocalOrdinal numPDEs = 1;
-    if(A->IsView("stridedMaps")==true) {
-      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+    if(A->IsView("stridedMaps")==true)
+    {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps");
       numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
       oldView = A->SwitchToView(oldView);
     }
@@ -204,169 +171,58 @@ int main(int argc, char *argv[]) {
     //! [BuildDefaultNullSpace begin]
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
 
-    for (int i=0; i<numPDEs; ++i) {
+    for (int i=0; i<numPDEs; ++i)
+    {
       Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-      int numBlocks = nsValues.size() / numPDEs;
-      for (int j=0; j< numBlocks; ++j) {
-        nsValues[j*numPDEs + i] = 1.0;
-      }
+      const int numBlocks = nsValues.size() / numPDEs;
+
+      for (int j = 0; j < numBlocks; ++j)
+        nsValues[j*numPDEs + i] = STS::one();
     }
     //! [BuildDefaultNullSpace end]
+
+    //! [MultigridHierarchy begin]
+    MLParameterListInterpreter mueLuFactory(*params);
+    RCP<Hierarchy> hierarchy = mueLuFactory.CreateHierarchy();
+    //! [MultigridHierarchy end]
+
     //! [FeedInInformation begin]
-    H->GetLevel(0)->Set("Nullspace", nullspace);
-    H->GetLevel(0)->Set("A", A);
+    hierarchy->GetLevel(0)->Set("Nullspace", nullspace);
+    hierarchy->GetLevel(0)->Set("A", A);
     //! [FeedInInformation end]
 
-    //
     // build hierarchy
-    //
     //! [CallSetupRoutine begin]
-    mueLuFactory.SetupHierarchy(*H);
+    mueLuFactory.SetupHierarchy(*hierarchy);
     //! [CallSetupRoutine end]
 
-    //
-    // Solve Ax = b
-    //
+    // Setup vectors X and B to complete the linear system Ax = b
+    RCP<Vector> x_vec = VectorFactory::Build(map);
+    RCP<Vector> b_vec = VectorFactory::Build(map);
 
-    RCP<Vector> X = VectorFactory::Build(map);
-    RCP<Vector> B = VectorFactory::Build(map);
+    x_vec->putScalar(STS::zero());
+    b_vec->setSeed(846930886);
+    b_vec->randomize();
 
-    X->putScalar((Scalar) 0.0);
-    B->setSeed(846930886); B->randomize();
-
-    // AMG as a standalone solver
-    H->IsPreconditioner(false);
-    H->Iterate(*B, *X, nIts);
+    // Solve Ax = b with AMG as a standalone solver
+    hierarchy->IsPreconditioner(false);
+    hierarchy->Iterate(*b_vec, *x_vec, num_iters);
 
     // Print relative residual norm
-    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *X, *B)[0];
-    if (comm->getRank() == 0)
-      std::cout << "||Residual|| = " << residualNorms << std::endl;
+    magnitude_type residualNorms = Utilities::ResidualNorm(*A, *x_vec, *b_vec)[0];
+    fancyout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
-    if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
+    success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-      // AMG as a preconditioner
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+} // main_
 
-      //TODO: name mueluPrec and mlPrec not
+//-----------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
 
-      H->IsPreconditioner(true);
-      MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
-
-      //
-      // Solve Ax = b
-      //
-      RCP<Epetra_CrsMatrix> eA; //duplicate code
-      { // TODO: simplify this
-        RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-        RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-        RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > eCrsMtx = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(xCrsMtx, true);
-        eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
-      }
-
-      RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
-      RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
-
-      eX->PutScalar((Scalar) 0.0);
-      eB->SetSeed(846930886); eB->Random();
-
-      Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
-
-      // AMG as a standalone solver
-      AztecOO solver(eProblem);
-      solver.SetPrecOperator(&mueluPrec);
-      solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-      solver.SetAztecOption(AZ_output, 1);
-
-      solver.Iterate(nIts, 1e-10);
-
-      { //TODO: simplify this
-        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eX));
-        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<GlobalOrdinal,Node>(eB));
-        // Print relative residual norm
-        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
-        if (comm->getRank() == 0)
-          std::cout << "||Residual|| = " << residualNorms2 << std::endl;
-      }
-
-      // TODO: AMG as a preconditioner (AZ_cg)
-    }
-#endif // HAVE_MUELU_AZTECOO
-
-  } // if (muelu)
-
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-  if (ml) {
-
-    std::cout << std::endl << std::endl << std::endl << std::endl << "**** ML ml ML ml ML" << std::endl << std::endl << std::endl << std::endl;
-
-    //
-    // Construct a multigrid preconditioner
-    //
-
-    // Multigrid Hierarchy
-    // TUTORIALSPLIT ===========================================================
-    RCP<CrsMatrixWrap>                crsOp         = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-    RCP<CrsMatrix>                    crsMtx        = crsOp->getCrsMatrix();
-    RCP<EpetraCrsMatrixT<int,Node> >  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrixT<int,Node> >(crsMtx, true);
-    RCP<const Epetra_CrsMatrix> epetra_CrsMtx = epetraCrsMtx->getEpetra_CrsMatrix();
-
-    RCP<Epetra_CrsMatrix> eA;
-    {
-      // TUTORIALSPLIT ===========================================================
-      RCP<CrsMatrixWrap>                 xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-      RCP<CrsMatrix>                     xCrsMtx = xCrsOp->getCrsMatrix();
-      RCP<EpetraCrsMatrixT<int,Node> >   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrixT<int,Node> >(xCrsMtx, true);
-      eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
-      // TUTORIALSPLIT ===========================================================
-    }
-    // TUTORIALSPLIT ===========================================================
-    RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
-    // TUTORIALSPLIT ===========================================================
-#ifdef HAVE_MUELU_AZTECOO
-
-    //
-    // Solve Ax = b
-    //
-
-    RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
-    RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
-
-    eX->PutScalar((Scalar) 0.0);
-    eB->SetSeed(846930886); eB->Random();
-
-    Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
-
-    // AMG as a standalone solver
-    AztecOO solver(eProblem);
-    solver.SetPrecOperator(mlPrec.get());
-    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-    solver.SetAztecOption(AZ_output, 1);
-
-    solver.Iterate(nIts, 1e-10);
-
-    { //TODO: simplify this
-      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
-      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
-      // Print relative residual norm
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
-      if (comm->getRank() == 0)
-        std::cout << "||Residual|| = " << residualNorms << std::endl;
-    }
-
-    // TODO: AMG as a preconditioner (AZ_cg)
-#else
-    std::cout << "Enable AztecOO to see solution" << std::endl;
-#endif // HAVE_MUELU_AZTECOO
-
-    std::cout << "Parameter list after ML run" << std::endl;
-    const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
-    std::cout << paramsAfterML << std::endl;
-
-  } // if (ml)
-
-
-#endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
-#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
-  return EXIT_SUCCESS;
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }
