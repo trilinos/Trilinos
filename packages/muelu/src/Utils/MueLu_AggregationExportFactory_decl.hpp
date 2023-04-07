@@ -153,11 +153,6 @@ namespace MueLu {
     //Break different viz styles into separate functions for organization:
     void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #ifdef HAVE_MUELU_CGAL
-    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #endif
     void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
 
     // write VTK data
