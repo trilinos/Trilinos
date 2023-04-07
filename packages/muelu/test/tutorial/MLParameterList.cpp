@@ -68,12 +68,6 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraVector.hpp>
-#include <Xpetra_Vector.hpp>
-#endif
-
-
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
