@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 #if defined(KOKKOS_ENABLE_CUDA)
   using TestSpace = Kokkos::CudaSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
-  using TestSpace = Kokkos::Experimental::HIPSpace;
+  using TestSpace = Kokkos::HIPSpace;
 #else
   using TestSpace = Kokkos::HostSpace;
 #endif
