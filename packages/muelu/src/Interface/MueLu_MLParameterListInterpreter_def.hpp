@@ -234,9 +234,9 @@ namespace MueLu {
                                    "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
 #else
         // If no validator available: issue a warning and set parameter value to false in the output list
-        this->GetOStream(Warnings0) << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
+        this->GetOStream(Warnings0) << "Warning: MueLu_ENABLE_Epetra and/or MueLu_ENABLE_ML=OFF."
+            << " The ML parameter list for MueLu cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
-
 #endif // HAVE_MUELU_ML
       } // if(validate)
     } // scope
