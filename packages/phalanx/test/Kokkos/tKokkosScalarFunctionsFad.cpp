@@ -279,7 +279,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
             for (size_t d = 0; d < num_derivatives; ++d)
             {
               const double dx = a_(c, p).fastAccessDx(d);
-              if (d == p)
+              if (static_cast<int>(d) == p)
               {
                 if (std::abs(dx - dx_exp) > tol * std::abs(dx_exp))
                   ++count;
