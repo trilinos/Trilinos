@@ -107,10 +107,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Initialize and read parameters from command line
     Teuchos::CommandLineProcessor clp(false);
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256);
-    Xpetra::Parameters xpetraParameters(clp);
     std::string xmlFileName; clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
     int num_iters = 9;       clp.setOption("numIters", &num_iters, "Max number of iterations");
+
+    Xpetra::Parameters xpetraParameters(clp);
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp);
 
     switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
