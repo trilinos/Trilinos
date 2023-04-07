@@ -46,8 +46,8 @@ you can also read in XML files with ML parameters using
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
   :language: cpp
-  :start-after: GetParametersFromXMLFile begin
-  :end-before: GetParametersFromXMLFile end
+  :start-after: ReadParametersFromXMLFile begin
+  :end-before: ReadParametersFromXMLFile end
 
 Next, you create a **MLParameterListInterpreter** object using the parameters
 and create a new **MueLu::Hierarchy** from it.

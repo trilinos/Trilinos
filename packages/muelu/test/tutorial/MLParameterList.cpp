@@ -136,10 +136,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (xmlFileName != "")
     {
       fancyout << "Reading " << xmlFileName << " ..." << std::endl;
-      //! [GetParametersFromXMLFile begin]
+      //! [ReadParametersFromXMLFile begin]
       params = Teuchos::getParametersFromXmlFile(xmlFileName);
-      //! [GetParametersFromXMLFile end]
-
+      //! [ReadParametersFromXMLFile end]
     }
     else
     {
