@@ -276,7 +276,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
           if constexpr (Sacado::IsADType<Scalar>::value)
           {
             const double dx_exp = 0.0234375;
-            for (int d = 0; d < num_derivatives; ++d)
+            for (size_t d = 0; d < num_derivatives; ++d)
             {
               const double dx = a_(c, p).fastAccessDx(d);
               if (d == p)
@@ -340,15 +340,15 @@ Teuchos::StackedTimer:12.5579 [1] (0)
   template<> const std::string TimerName<fad, EoS_FUNC>::name        = "FAD:    return type FUNC  ";
   template<> const std::string TimerName<fad, EoS_Baseline>::name    = "FAD:    Baseline          ";
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_Baseline);
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS);
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_AUTO);
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_FUNC);
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_Baseline)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_AUTO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_FUNC)
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_Baseline);
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS);
-  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_AUTO);
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_FUNC);
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_Baseline)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS)
+  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_AUTO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_FUNC)
 }
 
 int main(int argc, char* argv[])
