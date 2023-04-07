@@ -30,12 +30,13 @@ C++ interface
 In the following we assume that the linear operator :math:`A` is available as **RCP<Xpetra::Matrix> A**.
 
 Then we create a parameter list and fill it with ML parameters.
-Please refer to the ML guide [1]_ for a complete list of available parameters.
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
   :language: cpp
   :start-after: ParameterList begin
   :end-before: ParameterList end
+
+Please refer to the ML guide [1]_ for a complete list of available parameters.
 
 .. note::
 	Be aware that the MLParameterListInterpreter does not support all ML parameters,
@@ -57,10 +58,11 @@ and create a new **MueLu::Hierarchy** from it.
   :start-after: MultigridHierarchy begin
   :end-before: MultigridHierarchy end
 
-Of course, we have to provide all necessary information for the multigrid setup routine.
-This does not only include the fine level operator but also the set of near null space vectors.
-Assuming that **numPDEs** stores the number of equations (and near null space vectors,
-the following code allows to produce piecewise constant standard near null space vectors (which should be valid for many PDE discretizations).
+Of course, you have to provide all necessary information for the multigrid setup routine.
+This does not only include the fine level operator, but also the set of near null space vectors.
+Assuming that **numPDEs** stores the number of equations (and near null space vectors),
+the following code allows to produce piecewise constant standard near null space vectors
+(which should be valid for many PDE discretizations).
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
   :language: cpp
@@ -89,11 +91,19 @@ we can use it the same way as described in :ref:`Iteration Phase <user_api/itera
 	Study the source code of **../../../test/tutorial/MLParameterList.cpp** and compile it.
   Run the executable **MueLu_tutorial_MLParameterList.exe** with the **--help** command line parameter
   to get an overview of all available command line parameters.
-  Run the example using
 
-		**./MueLu_tutorial_MLParameterList.exe --xml=xml/ml_ParameterList.xml**
+  Run the example on a 1D mesh with 256 elements using
+
+		**./MueLu_tutorial_MLParameterList.exe --xml=xml/ml_ParameterList.xml --nx=256**
 
 	and study the MueLu output.
+
+.. note::
+  You will see a warning by the **MLParameterListInterpreter**,
+  that the parameter list could not be validated.
+  The reason is the follwing:
+  Since this tutorial example runs with the Tpetra backend,
+  ML, which is purely Epetra-based, cannot validate the parameter list.
 
 .. admonition:: Exercise 2
 
