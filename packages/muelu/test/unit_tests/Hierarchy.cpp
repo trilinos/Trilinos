@@ -1567,11 +1567,9 @@ namespace MueLuTests {
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Teuchos::ParameterList paramList;
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
     paramList.set("repartition: enable", true);
     paramList.set("repartition: start level", 1);
     paramList.set("repartition: min rows per proc", 6);
-#endif
     paramList.set("coarse: max size", 29);
     //    paramList.sublist("user data").set("Node Comm",nodeComm);
     paramList.set("verbosity", "high");
