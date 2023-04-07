@@ -54,6 +54,7 @@
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Kokkos_Random.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 #include "Kokkos_TaskScheduler.hpp"
@@ -889,5 +890,116 @@ namespace phalanx_test {
     Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
     Kokkos::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
     dyn_a_ll = static_a_ll;
+  }
+
+  struct StdDevAtomic {
+    size_t count_;
+    double mean_;
+    double M2_;
+
+    KOKKOS_FUNCTION
+    StdDevAtomic() : count_(0), mean_(0),M2_(0) {}
+
+    KOKKOS_FUNCTION
+    StdDevAtomic(int& count,double& mean,double& M2)
+      : count_(count), mean_(mean),M2_(M2) {}
+
+    KOKKOS_FUNCTION
+    StdDevAtomic(const StdDevAtomic& s)
+      : count_(s.count_), mean_(s.mean_),M2_(s.M2_) {}
+
+    KOKKOS_FUNCTION
+    void operator = (const StdDevAtomic& src)
+    {
+      count_ = src.count_;
+      mean_ = src.mean_;
+      M2_ = src.M2_;
+    }
+
+    KOKKOS_FUNCTION
+    bool operator == (const StdDevAtomic& src) const
+    {
+      if ( (count_ == src.count_) && (mean_ == src.mean_) && (M2_ == src.M2_) )
+        return true;
+      return false;
+    }
+
+    KOKKOS_FUNCTION
+    bool operator != (const StdDevAtomic& src) const
+    {
+      if ( (count_ != src.count_) || (mean_ != src.mean_) || (M2_ != src.M2_) )
+        return true;
+      return false;
+    }
+  };
+
+  TEUCHOS_UNIT_TEST(kokkos, OnlineStandardDeviation)
+  {
+    Kokkos::Random_XorShift64_Pool<> random_pool(/*seed=*/12345);
+    // const int N = 1'000'000; // This runs really slow. Runtime grows exponentially with size.
+    const int N = 10000;        // This runs fast!
+    // const int N = 3;         // For testing hand coded values, converges fine!
+    Kokkos::View<double*,PHX::Device> a("a",N);
+
+    Kokkos::parallel_for("random number generator",N,KOKKOS_LAMBDA(const int i) {
+      auto generator = random_pool.get_state();
+      a(i) = generator.drand(0.,1.);
+      random_pool.free_state(generator);
+    });
+
+    // Uncomment for checking hand coded values
+    // Kokkos::parallel_for("test",1,KOKKOS_LAMBDA(const int){
+    //     a(0) = 1;
+    //     a(1) = 5;
+    //     a(2) = 6;
+    //   });
+
+    PHX::Device().fence();
+
+    // Do an offline (two-pass) standard deviation for the gold value
+    double mean_gold = 0.0;
+    double stddev_gold = 0.0;
+    {
+      double sum = 0.0;
+      Kokkos::parallel_reduce("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i, double& tmp_sum) {
+          tmp_sum += a(i);
+      },sum);
+      mean_gold = sum/(static_cast<double>(N));
+
+      Kokkos::parallel_reduce("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i, double& tmp_sum) {
+          tmp_sum += (a(i) - mean_gold) * (a(i) - mean_gold);
+      },stddev_gold);
+      stddev_gold = std::sqrt(stddev_gold/static_cast<double>(N-1)); // unbiased
+    }
+
+    // Do an online standard deviation
+    double mean = 0.0;
+    double stddev = 0.0;
+    {
+      Kokkos::View<StdDevAtomic,PHX::Device> values("v");
+      Kokkos::parallel_for("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i) {
+        bool success = false;
+        do {
+          StdDevAtomic n_minus_one(values());
+          StdDevAtomic n(n_minus_one);
+          n.count_ += 1;
+          n.mean_ += ( a(i) - n_minus_one.mean_ ) / n.count_;
+          n.M2_ += ( a(i) - n_minus_one.mean_ ) * ( a(i) - n.mean_ );
+          success = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
+        } while (!success);
+      });
+      PHX::Device().fence();
+
+      auto values_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),values);
+      mean = values_host().mean_;
+      stddev = std::sqrt(values_host().M2_/static_cast<double>(values_host().count_ - 1)); //unbiased
+      TEUCHOS_ASSERT(values_host().count_ == N);
+    }
+
+    out << "\nmean_gold = " << mean_gold << ", std dev gold = " << stddev_gold << std::endl;
+    out << "mean      = " << mean << ", std dev = " << stddev << std::endl;
+    double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
+    TEST_FLOATING_EQUALITY(mean,mean_gold,tol);
+    TEST_FLOATING_EQUALITY(stddev,stddev_gold,tol);
   }
 }
