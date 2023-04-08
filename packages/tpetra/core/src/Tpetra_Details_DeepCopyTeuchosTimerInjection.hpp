@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -34,56 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
+*/
+#ifndef TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP
+#define TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP
 
-#include "Tpetra_Details_initializeKokkos.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Kokkos_Core.hpp"
-#include "Tpetra_Details_checkLaunchBlocking.hpp"
-#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
-#include <cstdlib> // std::atexit
-#include <string>
-#include <vector>
+/// \file Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp
+/// \brief Declaration of Tpetra::Details::DeepCopyTeuchosTimerInjection, a class that
+///  uses Kokkos' profiling library to add deep copies between memory spaces to the Teuchos::TimeMonitor
+///  system.  The idea being that you enable this capability and your regular timer  output now prints out 
+///  all of your traffic between memory spaces.  This does have the side effect of making Kokkos::deep_copy()
+///  calls on the host also call Kokkos::fence()
+
+
 
 namespace Tpetra {
 namespace Details {
 
-void finalizeKokkosIfNeeded() {
-  if(!Kokkos::is_finalized()) {
-    Kokkos::finalize();
-  }
-}
-  
-void
-initializeKokkos ()
-{
-  if (! Kokkos::is_initialized ()) {
-    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
-    int narg = static_cast<int> (args.size ()); // must be nonconst
-
-    std::vector<char*> args_c;
-    std::vector<std::unique_ptr<char[]>> args_;
-    for (auto const& x : args) {
-      args_.emplace_back(new char[x.size() + 1]);
-      char* ptr = args_.back().get();
-      strcpy(ptr, x.c_str());
-      args_c.push_back(ptr);
-    }
-    args_c.push_back(nullptr);
-
-    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
-    checkOldCudaLaunchBlocking();
-
-    std::atexit (finalizeKokkosIfNeeded);
-
-  }
-  // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
-  Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-}
+  // The force option overrides the environment variable control via TPETRA_TIME_KOKKOS_DEEP_COPY
+  // This is used for unit testing the capability
+  void AddKokkosDeepCopyToTimeMonitor(bool force = false);
 
 } // namespace Details
 } // namespace Tpetra
 
+#endif // TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP

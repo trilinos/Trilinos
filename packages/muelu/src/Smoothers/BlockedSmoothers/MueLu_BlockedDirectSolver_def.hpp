@@ -71,13 +71,11 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedDirectSolver()
-    : type_("blocked direct solver")
+  BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedDirectSolver(const std::string& type, const Teuchos::ParameterList& paramList)
   {
     MergedAFact_ = Teuchos::rcp(new MergedBlockedMatrixFactory());
-
-    Teuchos::ParameterList params;
-    s_ = Teuchos::rcp(new DirectSolver("", params));
+    s_ = Teuchos::rcp(new DirectSolver(type, paramList));
+    type_ = "blocked direct solver (" + type + ")";
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

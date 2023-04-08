@@ -276,6 +276,13 @@ public:
   static bool overlapCommunicationAndComputation();
 
 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
+  static bool timeKokkosDeepCopy();
+
 };
 
 } // namespace Details

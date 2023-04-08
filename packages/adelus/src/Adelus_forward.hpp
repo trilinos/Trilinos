@@ -71,7 +71,7 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   #if defined(KOKKOS_ENABLE_CUDA)
     using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
   #elif defined(KOKKOS_ENABLE_HIP)
-    using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+    using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
   #endif
 #endif
 

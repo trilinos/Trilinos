@@ -818,17 +818,17 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& /* paramList */, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
-      //if (paramList.begin() == paramList.end())
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
+      if (paramList.numParams() == 0)
         return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
 
-      /*TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedDirectSolver", Exceptions::RuntimeError, "FactoryFactory::BuildBlockedDirectSolver: Generating factory needs to be a BlockedDirectSolver.");
 
       std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));*/
+      return rcp(new SmootherFactory(rcp(new BlockedDirectSolver(type, params))));
     }
 
     //RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
