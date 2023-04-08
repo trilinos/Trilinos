@@ -650,11 +650,17 @@ setParameters (Teuchos::ParameterList& plist)
       "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: kind\".");
   }
 
-#ifndef IFPACK2_ENABLE_DEPRECATED_CODE
-  if (plist.isParameter ("chebyshev: textbook algorithm")) {
-    const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
-    if(textbookAlgorithm){
-      chebyshevKind = "textbook";
+#ifdef IFPACK2_ENABLE_DEPRECATED_CODE
+  // to preserve behavior with previous input decks, only read "chebyshev:textbook algorithm" setting
+  // if a user has not specified "chebyshev: kind"
+  if (!plist.isParameter ("chebyshev: kind")) {
+    if (plist.isParameter ("chebyshev: textbook algorithm")) {
+      const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+      if(textbookAlgorithm){
+        chebyshevKind = "textbook";
+      } else {
+        chebyshevKind = "first";
+      }
     }
   }
 #endif
