@@ -639,21 +639,21 @@ setParameters (Teuchos::ParameterList& plist)
 
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
-  if (plist.isParameter ("chebyshev: kind")) {
-    chebyshevKind = plist.get<std::string> ("chebyshev: kind");
+  if (plist.isParameter ("chebyshev: algorithm")) {
+    chebyshevKind = plist.get<std::string> ("chebyshev: algorithm");
     TEUCHOS_TEST_FOR_EXCEPTION(
       chebyshevKind != "first" &&
       chebyshevKind != "textbook" &&
       chebyshevKind != "fourth" &&
       chebyshevKind != "opt_fourth",
       std::invalid_argument,
-      "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: kind\".");
+      "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: algorithm\".");
   }
 
 #ifdef IFPACK2_ENABLE_DEPRECATED_CODE
   // to preserve behavior with previous input decks, only read "chebyshev:textbook algorithm" setting
-  // if a user has not specified "chebyshev: kind"
-  if (!plist.isParameter ("chebyshev: kind")) {
+  // if a user has not specified "chebyshev: algorithm"
+  if (!plist.isParameter ("chebyshev: algorithm")) {
     if (plist.isParameter ("chebyshev: textbook algorithm")) {
       const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
       if(textbookAlgorithm){

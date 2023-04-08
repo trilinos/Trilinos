@@ -498,7 +498,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.initialize ();
   ifpack2FourthCheby.compute ();
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -537,7 +537,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   ////////////////////////////////////////////////////////////////////
 
   // Reset parameters.
-  params.set ("chebyshev: kind", "first");
+  params.set ("chebyshev: algorithm", "first");
   params.set ("chebyshev: min eigenvalue", lambdaMin);
   params.set ("chebyshev: ratio eigenvalue", eigRatio);
 
@@ -553,7 +553,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run 4th-kind Chebyshev
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.compute ();
   ifpack2FourthCheby.apply (b, x);
@@ -564,7 +564,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -586,7 +586,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: kind", "first");
+  params.set ("chebyshev: algorithm", "first");
   // ParameterList is NOT a delta.  That is, if we remove these
   // parameters from the list, setParameters() will use default
   // values, rather than letting the current settings remain.
@@ -617,7 +617,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.initialize ();
   ifpack2FourthCheby.compute ();
@@ -629,7 +629,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -651,7 +651,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: kind", "first");
+  params.set ("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 4: set lambdaMax exactly, and set eigRatio = 30 (Ifpack's
@@ -675,7 +675,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.initialize ();
   ifpack2FourthCheby.compute ();
@@ -687,7 +687,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -709,7 +709,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters to their original values.
-  params.set ("chebyshev: kind", "first");
+  params.set ("chebyshev: algorithm", "first");
   params.remove ("chebyshev: ratio eigenvalue", false);
   eigRatio = lambdaMax / lambdaMin;
 
@@ -734,7 +734,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.initialize ();
   ifpack2FourthCheby.compute ();
@@ -746,7 +746,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -772,7 +772,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.print (os2);
 
   // Reset parameters.
-  params.set ("chebyshev: kind", "first");
+  params.set ("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 6: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
@@ -798,7 +798,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "fourth");
+  params.set ("chebyshev: algorithm", "fourth");
   ifpack2FourthCheby.setParameters (params);
   ifpack2FourthCheby.initialize ();
   ifpack2FourthCheby.compute ();
@@ -810,7 +810,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: kind", "textbook");
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
