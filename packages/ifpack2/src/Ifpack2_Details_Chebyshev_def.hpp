@@ -305,7 +305,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  chebyshevKind_("first"),
+  chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -338,7 +338,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  chebyshevKind_("first"),
+  chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -385,7 +385,7 @@ setParameters (Teuchos::ParameterList& plist)
   const int defaultEigNormalizationFreq = 1;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
-  const std::string defaultChebyshevKind = "first";
+  const std::string defaultChebyshevAlgorithm = "first";
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
@@ -408,7 +408,7 @@ setParameters (Teuchos::ParameterList& plist)
   int eigNormalizationFreq = defaultEigNormalizationFreq;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
-  std::string chebyshevKind = defaultChebyshevKind;
+  std::string chebyshevAlgorithm = defaultChebyshevAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
   bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
@@ -640,12 +640,12 @@ setParameters (Teuchos::ParameterList& plist)
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
   if (plist.isParameter ("chebyshev: algorithm")) {
-    chebyshevKind = plist.get<std::string> ("chebyshev: algorithm");
+    chebyshevAlgorithm = plist.get<std::string> ("chebyshev: algorithm");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      chebyshevKind != "first" &&
-      chebyshevKind != "textbook" &&
-      chebyshevKind != "fourth" &&
-      chebyshevKind != "opt_fourth",
+      chebyshevAlgorithm != "first" &&
+      chebyshevAlgorithm != "textbook" &&
+      chebyshevAlgorithm != "fourth" &&
+      chebyshevAlgorithm != "opt_fourth",
       std::invalid_argument,
       "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: algorithm\".");
   }
@@ -657,9 +657,9 @@ setParameters (Teuchos::ParameterList& plist)
     if (plist.isParameter ("chebyshev: textbook algorithm")) {
       const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
       if(textbookAlgorithm){
-        chebyshevKind = "textbook";
+        chebyshevAlgorithm = "textbook";
       } else {
-        chebyshevKind = "first";
+        chebyshevAlgorithm = "first";
       }
     }
   }
@@ -725,7 +725,7 @@ setParameters (Teuchos::ParameterList& plist)
   eigenAnalysisType_ = eigenAnalysisType;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
-  chebyshevKind_ = chebyshevKind;
+  chebyshevAlgorithm_ = chebyshevAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
@@ -987,7 +987,7 @@ Chebyshev<ScalarType, MV>::compute ()
   lambdaMinForApply_ = lambdaMaxForApply_ / userEigRatio_;
   eigRatioForApply_ = userEigRatio_;
 
-  if (chebyshevKind_ == "first") {
+  if (chebyshevAlgorithm_ == "first") {
     // Ifpack has a special-case modification of the eigenvalue bounds
     // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
@@ -1041,10 +1041,10 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
      "diagonal entries of the matrix has not yet been computed."
      << std::endl << computeBeforeApplyReminder);
 
-  if (chebyshevKind_ == "fourth" || chebyshevKind_ == "opt_fourth") {
+  if (chebyshevAlgorithm_ == "fourth" || chebyshevAlgorithm_ == "opt_fourth") {
     fourthKindApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, *D_);
   }
-  else if (chebyshevKind_ == "textbook") {
+  else if (chebyshevAlgorithm_ == "textbook") {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -1339,7 +1339,7 @@ fourthKindApplyImpl (const op_type& A,
 {
   // standard 4th kind Chebyshev smoother has \beta_i := 1
   std::vector<ScalarType> betas(numIters, 1.0);
-  if(chebyshevKind_ == "opt_fourth"){
+  if(chebyshevAlgorithm_ == "opt_fourth"){
     betas = optimalWeightsImpl<ScalarType>(numIters);
   }
 
@@ -1809,7 +1809,7 @@ describe (Teuchos::FancyOStream& out,
           << "eigNormalizationFreq_: " << eigNormalizationFreq_ << endl
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
-          << "chebyshevKind_: " << chebyshevKind_ << endl
+          << "chebyshevAlgorithm_: " << chebyshevAlgorithm_ << endl
           << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
     }
   } // print user parameters

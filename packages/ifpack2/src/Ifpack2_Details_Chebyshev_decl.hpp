@@ -510,7 +510,7 @@ private:
   bool assumeMatrixUnchanged_;
 
   //! Chebyshev type
-  std::string chebyshevKind_;
+  std::string chebyshevAlgorithm_;
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
