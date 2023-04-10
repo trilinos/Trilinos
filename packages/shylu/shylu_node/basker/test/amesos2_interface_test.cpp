@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_TRUE;
+    mybasker.Options.verbose            = BASKER_FALSE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
     mybaskertr.Options.transpose          = BASKER_TRUE; // CHANGE HERE TO TEST WITH TRANSPOSE via COPY
     //---Options
     mybaskertr.Options.same_pattern       = BASKER_FALSE;
-    mybaskertr.Options.verbose            = BASKER_TRUE;
+    mybaskertr.Options.verbose            = BASKER_FALSE;
     mybaskertr.Options.verbose_matrix_out = BASKER_FALSE;
     mybaskertr.Options.realloc            = BASKER_TRUE;
     mybaskertr.Options.symmetric          = BASKER_FALSE;

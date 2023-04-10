@@ -22,11 +22,7 @@
 
 //#define BASKER_DEBUG_SOLVE_RHS_TR
 //#define BASKER_DEBUG_SOLVE_RHS_TR_PRINT_MTX
-#define BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-#define BLOCK_START 7
-#define BLOCK_END 8
-#endif
+//#define BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
 
 
 namespace BaskerNS
@@ -297,13 +293,13 @@ namespace BaskerNS
 #endif
     Int bcol = btf_tabs(tab)- M.scol;
     Int ecol = btf_tabs(tab+1) - M.scol;
-    Int brow = M.srow;
     if (ecol > M.ncol) {
       // for D block, btf_tabs(tab+1) > ncol.
       ecol = M.ncol;
     }
 
 #if defined(BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS) || defined(BASKER_DEBUG_SOLVE_RHS_TR)
+    Int brow = M.srow;
     std::cout << "\n  spmv_BTF_tr tab = " << tab << "  M.scol = " << M.scol << "  bcol = " << bcol << "  ecol = " << ecol << std::endl;
     Int erow = 0;
     if(tab > 0)
@@ -329,12 +325,12 @@ namespace BaskerNS
       const Int gk = k+M.scol;
 
       for(Int i = istart; i < iend; ++i) {
-        const auto j = M.row_idx(i);
         const Int gj = (Options.no_pivot == BASKER_FALSE) ? 
                        gperm(M.row_idx(i) + M.srow) :
                        (M.row_idx(i) + M.srow) ;
 
 #if defined(BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS) || defined(BASKER_DEBUG_SOLVE_RHS_TR)
+        const auto j = M.row_idx(i);
         printf("   BTF_UPDATE-val, j: %d x: %f y: %f, val: %f \n",
             gj, x[gj], y[k+M.scol], M.val[i]);
         std::cout << "    inner loop : gk = " << gk << "  j = " << j << "  gj = " << gj << "  bcol = " << bcol << std::endl;
@@ -667,10 +663,16 @@ namespace BaskerNS
     if (BTF_A.nrow != 0 && BTF_A.ncol != 0)
       BTF_A.print();
 #endif
+#ifdef BASKER_DEBUG_SOLVE_RHS_TR
     std::cout << "BTF_A serial_backward_solve_tr" << std::endl;
+#endif
     u_tran_btfa_solve(x,y); // U^T*y=x
+                            //
+#ifdef BASKER_DEBUG_SOLVE_RHS_TR
     std::cout << "BTF_A serial_forward_solve_tr" << std::endl;
+#endif
     l_tran_brfa_solve(y,x); // L^T*x=y
+                            //
     // Checkpoint: in BTF_A range, y is mod. rhs (and has some garbage in BTF_A range), x stores solution
 #ifdef BASKER_DEBUG_SOLVE_RHS_TR
     printf(" Vector y after BTF_A solve \n");
@@ -694,7 +696,9 @@ namespace BaskerNS
 
     // P3 T
     Int nblks_c = btf_nblks-btf_tabs_offset;
-    std::cout << "\nnBTF_C^T region:" << std::endl;
+#ifdef BASKER_DEBUG_SOLVE_RHS_TR
+    std::cout << "\nBTF_C^T region:" << std::endl;
+#endif
 
 #ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
     if (BTF_C.nrow != 0 && BTF_C.ncol != 0) {
@@ -704,52 +708,14 @@ namespace BaskerNS
 #endif
 
     for(Int b = 0;  b < nblks_c; b++) {
-//#if defined(BASKER_DEBUG_SOLVE_RHS_TR) || #defined(BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS)
+#if defined(BASKER_DEBUG_SOLVE_RHS_TR) || defined(BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS)
       std::cout << "\n\nBTF_C^T diag block b = " << b << std::endl;
-//#endif
-
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        auto bstart = btf_tabs(b); auto bsize = btf_tabs(b+1)-btf_tabs(b);
-        std::cout << " Block "<< b << "  bsize = " << bsize << ": Pre spmv_BTF_tr update: " << std::endl;
-        for (auto it = 0; it < bstart; ++it)
-          std::cout << "  y(" << it << ") = " << y(it) << std::endl;
-
-        for (auto it = 0; it < bstart; ++it)
-          std::cout << "  x(" << it << ") = " << x(it) << std::endl;
-
-        for (auto it = bstart; it < bstart+bsize; ++it)
-          std::cout << "  x(" << it << ") = " << x(it) << std::endl;
-
-        printVec("x-b"+std::to_string(b)+"-presmpv.txt", x, bstart+bsize);
-        printVec("y-b"+std::to_string(b)+"-presmpv.txt", y, bstart+bsize);
-
-        FILE *fp;
-        std::string fname = "Block"+std::to_string(b)+"-size-info.txt";
-        fp = fopen(fname.c_str(), "w");
-          fprintf(fp, "block b=%ld\n", (long)b);
-          fprintf(fp, "bstart=%ld\n", (long)bstart);
-          fprintf(fp, "bsize=%ld\n", (long)bsize);
-          fprintf(fp, "bstart+bsize=%ld\n", (long)(bstart+bsize));
-        fclose(fp);
-      }
 #endif
 
 
       // Update off-diag
       if ( b > 0 )
         spmv_BTF_tr(b+btf_tabs_offset, BTF_C, x, y, true);
-
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        auto bstart = btf_tabs(b); auto bsize = btf_tabs(b+1)-btf_tabs(b);
-        std::cout << " Block "<< b << ": Post spmv_BTF_tr update modrhs x [" << bstart << " : " << bstart+bsize-1 << "] : " << std::endl;
-        for (auto it = bstart; it < bstart+bsize; ++it)
-          std::cout << "  x(" << it << ") = " << x(it) << std::endl;
-        printVec("x-b"+std::to_string(b)+"-postsmpv.txt", x, bstart+bsize);
-        printVec("y-b"+std::to_string(b)+"-postsmpv.txt", y, bstart+bsize);
-      }
-#endif
 
 #ifdef BASKER_DEBUG_SOLVE_RHS_TR
         printf(" Vector y print (after spmv_BTF_tr update )\n");
@@ -768,15 +734,6 @@ namespace BaskerNS
         UC.print();
 #endif
 
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        std::cout << "\n UC  b: " << b << "  UC.nrow = " << UC.nrow << "  UC.ncol = " << UC.ncol << "  UC.nnz = " << UC.nnz<< std::endl;
-        printMTX("UBTF_b"+std::to_string(b)+".mtx", UC);
-        if (UC.nrow != 0 && UC.ncol != 0)
-          UC.print();
-      }
-#endif
-
       if (UC.nrow != 0 && UC.ncol != 0) // Avoid degenerate case
         upper_tri_solve_tr(UC,x,y);
 #ifdef BASKER_DEBUG_SOLVE_RHS_TR
@@ -786,31 +743,11 @@ namespace BaskerNS
       printVec(x, gn);
 #endif
 
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        auto bstart = btf_tabs(b); auto bsize = btf_tabs(b+1)-btf_tabs(b);
-        std::cout << "\n Block " << b << ": Post UT Solve modrhs x [" << bstart << " : " << bstart+bsize-1 << "] : " << std::endl;
-        for (auto it = bstart; it < bstart+bsize; ++it)
-          std::cout << "  x(" << it << ") = " << x(it) << std::endl;
-        printVec("x-b"+std::to_string(b)+"-postUT.txt", x, bstart+bsize);
-        printVec("y-b"+std::to_string(b)+"-postUT.txt", y, bstart+bsize);
-      }
-#endif
-
       BASKER_MATRIX &LC = LBTF(b);
 #ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_MTX
       std::cout << "LC  b: " << b << std::endl;
       if (LC.nrow != 0 && LC.ncol != 0)
         LC.print();
-#endif
-
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        std::cout << "\n LC  b: " << b << "  LC.nrow = " << LC.nrow << "  LC.ncol = " << LC.ncol << "  LC.nnz = " << LC.nnz<< std::endl;
-        printMTX("LBTF_b"+std::to_string(b)+".mtx", LC);
-        if (LC.nrow != 0 && LC.ncol != 0)
-          LC.print();
-      }
 #endif
 
       if (LC.nrow != 0 && LC.ncol != 0) // Avoid degenerate case
@@ -820,17 +757,6 @@ namespace BaskerNS
       printVec(y, gn);
       printf(" Vector x print (after lower_tri_tr solves)\n");
       printVec(x, gn);
-#endif
-
-#ifdef BASKER_DEBUG_SOLVE_RHS_TR_PRINT_BLOCKS
-      if (b >= BLOCK_START && b <= BLOCK_END) {
-        auto bstart = btf_tabs(b); auto bsize = btf_tabs(b+1)-btf_tabs(b);
-        std::cout << "\n Block " << b << ": Post LT Solve modrhs x [" << bstart << " : " << bstart+bsize-1 << "] : " << std::endl;
-        for (auto it = bstart; it < bstart+bsize; ++it)
-          std::cout << "  x(" << it << ") = " << x(it) << std::endl;
-        printVec("x-b"+std::to_string(b)+"-postLT.txt", x, bstart+bsize);
-        printVec("y-b"+std::to_string(b)+"-postLT.txt", y, bstart+bsize);
-      }
 #endif
 
     }
