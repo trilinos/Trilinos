@@ -5,9 +5,9 @@ if( "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}" )
   message( FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files and delete CMakeCache.txt." )
 endif()
 
-if (COMMAND TRIBITS_PACKAGE_DECL)
-  TRIBITS_PACKAGE_DECL(Kokkos)
-endif()
+#if (COMMAND TRIBITS_PACKAGE_DECL)
+#  TRIBITS_PACKAGE_DECL(Kokkos)
+#endif()
 
 # We want to determine if options are given with the wrong case
 # In order to detect which arguments are given to compare against
@@ -33,11 +33,11 @@ SET(KOKKOS_PATH          ${Kokkos_SOURCE_DIR})
 SET(KOKKOS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # Is this a build as part of Trilinos?
-IF(COMMAND TRIBITS_PACKAGE_DECL)
-  SET(KOKKOS_HAS_TRILINOS ON)
-ELSE()
+#IF(COMMAND TRIBITS_PACKAGE_DECL)
+#  SET(KOKKOS_HAS_TRILINOS ON)
+#ELSE()
   SET(KOKKOS_HAS_TRILINOS OFF)
-ENDIF()
+#ENDIF()
 # Is this build a subdirectory of another project
 GET_DIRECTORY_PROPERTY(HAS_PARENT PARENT_DIRECTORY)
 
@@ -226,6 +226,11 @@ OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 SET(KOKKOS_COMPONENT_LIBRARIES kokkoscore kokkoscontainers kokkosalgorithms kokkossimd)
 SET_PROPERTY(GLOBAL PROPERTY KOKKOS_INT_LIBRARIES kokkos ${KOKKOS_COMPONENT_LIBRARIES})
 
+add_library(Kokkos_libs INTERFACE)
+FOREACH(LIBRARY ${KOKKOS_COMPONENT_LIBRARIES})
+  target_link_libraries(Kokkos_libs INTERFACE ${LIBRARY})
+ENDFOREACH()
+
 IF (KOKKOS_HAS_TRILINOS)
   SET(TRILINOS_INCDIR ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
   SET(KOKKOS_HEADER_DIR ${TRILINOS_INCDIR})
@@ -293,9 +298,9 @@ IF (KOKKOS_HAS_TRILINOS)
     $<$<COMPILE_LANGUAGE:CXX>:${KOKKOS_ALL_COMPILE_OPTIONS}>)
 ENDIF()
 
-if (NOT COMMAND TRIBITS_PACKAGE_DECL)
+#if (NOT COMMAND TRIBITS_PACKAGE_DECL)
   KOKKOS_PACKAGE_DECL()
-endif()
+#endif()
 
 
 #------------------------------------------------------------------------------
@@ -320,6 +325,7 @@ IF (NOT KOKKOS_HAS_TRILINOS AND NOT Kokkos_INSTALL_TESTING)
   #Make sure in-tree projects can reference this as Kokkos::
   #to match the installed target names
   ADD_LIBRARY(Kokkos::kokkos ALIAS kokkos)
+  ADD_LIBRARY(KokkosCore::all_libs ALIAS kokkos)
   TARGET_LINK_LIBRARIES(kokkos INTERFACE ${KOKKOS_COMPONENT_LIBRARIES})
   KOKKOS_INTERNAL_ADD_LIBRARY_INSTALL(kokkos)
 ENDIF()
