@@ -45,17 +45,6 @@
 #include <iostream>
 
 #include <MueLu_ConfigDefs.hpp>
-
-#include <Teuchos_StandardCatchMacros.hpp>
-#include <Teuchos_XMLParameterListHelpers.hpp>
-
-#if defined(HAVE_MUELU_ML)
-#include <ml_MultiLevelPreconditioner.h>
-#endif
-#include <Tpetra_CrsMatrix.hpp>
-#include <Xpetra_TpetraCrsMatrix.hpp>
-
-#include <MueLu_ConfigDefs.hpp>
 #include <MueLu.hpp>
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Level.hpp>
@@ -68,6 +57,19 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
+#if defined(HAVE_MUELU_ML)
+#include <ml_MultiLevelPreconditioner.h>
+#endif
+
+#include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
+
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -78,12 +80,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-  // using MV = MultiVector;
-  // using OP = Belos::OperatorT<MV>;
 
   bool success = false;
   try {
@@ -100,10 +96,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Convenient definitions
     using STS = Teuchos::ScalarTraits<SC>;
     using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-    using real_type = typename STS::coordinateType;
-    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-    const SC zero = Teuchos::ScalarTraits<SC>::zero();
-    const SC one = Teuchos::ScalarTraits<SC>::one();
+    // const SC zero = Teuchos::ScalarTraits<SC>::zero();
+    // const SC one = Teuchos::ScalarTraits<SC>::one();
 
     // Initialize and read parameters from command line
     Teuchos::CommandLineProcessor clp(false);
@@ -122,9 +116,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Construct the problem
     RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector>> Pr =
         Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    RCP<Matrix>  A = Pr->BuildMatrix();
+    RCP<Matrix> A = Pr->BuildMatrix();
 
     // Preconditioner configuration
     RCP<Teuchos::ParameterList> params;
@@ -144,7 +138,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       params->set("ML output", 10);
       params->set("max levels", 2);
       params->set("smoother: type", "symmetric Gauss-Seidel");
-      params->set("coarse: type","Amesos-KLU");
+      params->set("coarse: type", "Amesos-KLU");
       //! [ParameterList end]
     }
 
@@ -155,7 +149,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Build default null space
     LocalOrdinal numPDEs = 1;
-    if(A->IsView("stridedMaps")==true)
+    if(A->IsView("stridedMaps") == true)
     {
       Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps");
       numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
@@ -164,8 +158,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     //! [BuildDefaultNullSpace begin]
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-
-    for (int i=0; i<numPDEs; ++i)
+    for (int i = 0; i < numPDEs; ++i)
     {
       Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
       const int numBlocks = nsValues.size() / numPDEs;
