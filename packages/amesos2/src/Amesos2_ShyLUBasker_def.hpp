@@ -73,7 +73,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   , is_contiguous_(true)
 {
 
-  //Nothing
+  runtime_transpose_solve = false;
 
   // Override some default options
   // TODO: use data_ here to init
@@ -452,8 +452,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   if ( this->root_ ) { // do solve
     shylubasker_dtype * pxValues = function_map::convert_scalar(xValues_.data());
     shylubasker_dtype * pbValues = function_map::convert_scalar(bValues_.data());
-    if (!ShyluBaskerTransposeRequest)
+    if (!ShyluBaskerTransposeRequest && !ShyluBaskerRuntimeTransposeRequest)
       ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues);
+    else if (ShyluBaskerRuntimeTransposeRequest) // FIXME Hacked in route to test runtime transpose solve
+      ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues, true);
     else
       ierr = ShyLUbaskerTr->Solve(nrhs, pbValues, pxValues);
   }
@@ -579,6 +581,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       //ShyLUbasker->Options.transpose = parameterList->get<bool>("transpose");
       //ShyLUbaskerTr->Options.transpose = parameterList->get<bool>("transpose");
     }
+  if(parameterList->isParameter("runtime_transpose"))
+    {
+      runtime_transpose_solve = parameterList->get<bool>("runtime_transpose");
+    }
   if(parameterList->isParameter("use_sequential_diag_facto"))
     {
       ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
@@ -683,6 +689,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Run AMD on each diagonal blocks");
       pl->set("transpose", false,
               "Solve the transpose A");
+      pl->set("runtime_transpose", false,
+              "Solve the transpose A using runtime transpose solve (original matrix)");
       pl->set("use_sequential_diag_facto", false,
               "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
