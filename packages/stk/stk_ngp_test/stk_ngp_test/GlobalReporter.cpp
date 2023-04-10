@@ -34,12 +34,16 @@ sycl::ext::oneapi::experimental::device_global<
 
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  KOKKOS_IF_ON_DEVICE((
 #ifndef KOKKOS_ENABLE_SYCL
+  KOKKOS_IF_ON_DEVICE((
     __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
-#endif
     return deviceReporterOnDevice;
   ))
+#else
+  KOKKOS_IF_ON_DEVICE((
+    return deviceReporterOnDevice;
+  ))
+#endif
   KOKKOS_IF_ON_HOST((
     static ReporterBase* deviceReporterOnDevice = nullptr;
     return deviceReporterOnDevice;
