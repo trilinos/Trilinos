@@ -611,8 +611,9 @@ template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
-#if 0
-  back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
+#ifdef KOKKOS_ENABLE_HIP
+  //Workaround for GPU-aware MPI issue on HIP: always use back_solve_currcol_bcast
+  back_solve_currcol_bcast(ahandle, Z, RHS);
 #else
   if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
     back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
