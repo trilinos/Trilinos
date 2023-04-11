@@ -55,7 +55,6 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {

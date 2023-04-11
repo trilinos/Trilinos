@@ -56,7 +56,7 @@
 
 #include "Xpetra_CrsGraphFactory_fwd.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
@@ -153,7 +153,7 @@ namespace MueLu {
 
     // NOTE: All of thess should really be private, but CUDA doesn't like that
     
-    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo,
+    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo,
                                  RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
 
@@ -161,12 +161,12 @@ namespace MueLu {
 
 
 
-    void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+    void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates> aggregates,
                          RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                          RCP<MultiVector>& coarseNullspace) const;
 
-    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
                          RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                          RCP<MultiVector>& coarseNullspace, const int levelID) const;

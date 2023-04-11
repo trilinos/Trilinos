@@ -61,7 +61,6 @@
 #include "MueLu_CoarseMapFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -123,17 +122,9 @@ namespace MueLu {
     Level& currentLevel, const GlobalOrdinal domainGIDOffset) const
   {
 
-    GlobalOrdinal numAggs;
-    RCP<const Map> aggMap;
-    if (IsType<RCP<Aggregates> >(currentLevel, "Aggregates")) {
-      RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
-      numAggs = aggregates->GetNumAggregates();
-      aggMap = aggregates->GetMap();
-    } else {
-      RCP<Aggregates_kokkos> aggregates_kokkos = Get< RCP<Aggregates_kokkos> >(currentLevel, "Aggregates");
-      numAggs = aggregates_kokkos->GetNumAggregates();
-      aggMap = aggregates_kokkos->GetMap();
-    }
+    RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
+    RCP<const Map> aggMap = aggregates->GetMap();
 
     RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 

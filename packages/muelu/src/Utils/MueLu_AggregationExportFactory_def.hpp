@@ -169,8 +169,8 @@ namespace MueLu {
     Teuchos::RCP<Matrix> Ac;
     if(doCoarseGraphEdges_)
       Ac = Get<RCP<Matrix> >(coarseLevel, "A");
-    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords = Teuchos::null;
-    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coordsCoarse = Teuchos::null;
+    Teuchos::RCP<CoordinateMultiVector> coords = Teuchos::null;
+    Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
     Teuchos::RCP<GraphBase> fineGraph = Teuchos::null;
     Teuchos::RCP<GraphBase> coarseGraph = Teuchos::null;
     if(doFineGraphEdges_)
@@ -179,25 +179,28 @@ namespace MueLu {
       coarseGraph = Get<RCP<GraphBase> >(coarseLevel, "Graph");
     if(useVTK) //otherwise leave null, will not be accessed by non-vtk code
     {
-      coords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(fineLevel, "Coordinates");
+      coords = Get<RCP<CoordinateMultiVector> >(fineLevel, "Coordinates");
+      coords_ = coords;
       if(doCoarseGraphEdges_)
-        coordsCoarse = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(coarseLevel, "Coordinates");
+        coordsCoarse = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates");
       dims_ = coords->getNumVectors();  //2D or 3D?
       if(numProcs > 1)
       {
         if (aggregates->AggregatesCrossProcessors())
         { // Do we want to use the map from aggregates here instead of the map from A? Using the map from A seems to be problematic with multiple dofs per node
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), Amat->getColMap());
-          RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
+          RCP<CoordinateMultiVector> ghostedCoords = Xpetra::MultiVectorFactory<coordinate_type, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
           ghostedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
           coords = ghostedCoords;
+          coords_ = ghostedCoords;
         }
         if(doCoarseGraphEdges_)
         {
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coordsCoarse->getMap(), Ac->getColMap());
-          RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(Ac->getColMap(), dims_);
+          RCP<CoordinateMultiVector> ghostedCoords = Xpetra::MultiVectorFactory<coordinate_type, LocalOrdinal, GlobalOrdinal, Node>::Build(Ac->getColMap(), dims_);
           ghostedCoords->doImport(*coordsCoarse, *coordImporter, Xpetra::INSERT);
           coordsCoarse = ghostedCoords;
+          coordsCoarse_ = ghostedCoords;
         }
       }
     }
@@ -279,24 +282,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(coords.is_null(), Exceptions::RuntimeError,"AggExportFactory could not get coordinates, but they are required for VTK output.");
       numAggs_ = numAggs;
       numNodes_ = coords->getLocalLength();
-      //get access to the coord data
-      xCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(0));
-      yCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(1));
-      zCoords_ = Teuchos::null;
-      if(doCoarseGraphEdges_)
-      {
-        cx_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(0));
-        cy_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(1));
-        cz_ = Teuchos::null;
-      }
-      if(dims_ == 3)
-      {
-        zCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(2));
-        if(doCoarseGraphEdges_)
-          cz_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(2));
-      }
       //Get the sizes of the aggregates to speed up grabbing node IDs
-      aggSizes_ = aggregates->ComputeAggregateSizes();
+      aggSizes_ = aggregates->ComputeAggregateSizesArrayRCP();
       myRank_ = myRank;
       string aggStyle = "Point Cloud";
       try
@@ -375,10 +362,16 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
-    if(dims_ == 2)
-      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_);
-    else
-      this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_, zCoords_);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
+
+    if(dims_ == 2) {  
+      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords);
+    } else {
+      zCoords = coords_->getData(2);
+      this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords, zCoords);
+    }
   }
 
 #ifdef HAVE_MUELU_CGAL
@@ -418,7 +411,7 @@ namespace MueLu {
       {
         if(vertex2AggId_[j] == i)
         {
-          Point p(xCoords_[j], yCoords_[j]);
+          Point p(xCoords[j], yCoords[j]);
           aggPoints.push_back(p);
           aggNodes.push_back(j);
         }
@@ -432,7 +425,7 @@ namespace MueLu {
       {
         for(size_t k = 0; k < aggNodes.size(); k++)
         {
-          if(fabs(segments[j][0].x == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][0].y == yCoords_[aggNodes[k]]) < 1e-12)
+          if(fabs(segments[j][0].x == xCoords[aggNodes[k]]) < 1e-12 && fabs(segments[j][0].y == yCoords[aggNodes[k]]) < 1e-12)
           {
             vertices.push_back(aggNodes[k]);
             break;
@@ -440,7 +433,7 @@ namespace MueLu {
         }
         for(size_t k = 0; k < aggNodes.size(); k++)
         {
-          if(fabs(segments[j][1].x  == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][1].y == yCoords_[aggNodes[k]]) < 1e-12)
+          if(fabs(segments[j][1].x  == xCoords[aggNodes[k]]) < 1e-12 && fabs(segments[j][1].y == yCoords[aggNodes[k]]) < 1e-12)
           {
             vertices.push_back(aggNodes[k]);
             break;
@@ -479,7 +472,7 @@ namespace MueLu {
       {
         if(vertex2AggId[j] == i)
         {
-          Point p(xCoords_[j], yCoords_[j], zCoords_[j]);
+          Point p(xCoords[j], yCoords[j], zCoords[j]);
           aggPoints.push_back(p);
           aggNodes.push_back(j);
         }
@@ -502,9 +495,9 @@ namespace MueLu {
         {
           for(size_t l = 0; l < aggNodes.size(); l++)
           {
-            if(fabs(tetPoints[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].z - zCoords_[aggNodes[l]]) < 1e-12)
+            if(fabs(tetPoints[k].x - xCoords[aggNodes[l]]) < 1e-12 &&
+               fabs(tetPoints[k].y - yCoords[aggNodes[l]]) < 1e-12 &&
+               fabs(tetPoints[k].z - zCoords[aggNodes[l]]) < 1e-12)
             {
               vertices.push_back(aggNodes[l]);
               break;
@@ -528,9 +521,9 @@ namespace MueLu {
         //add triangles in terms of node indices
         for(size_t l = 0; l < aggNodes.size(); l++)
         {
-          if(fabs(facetPts[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].z - zCoords_[aggNodes[l]]) < 1e-12)
+          if(fabs(facetPts[k].x - xCoords[aggNodes[l]]) < 1e-12 &&
+             fabs(facetPts[k].y - yCoords[aggNodes[l]]) < 1e-12 &&
+             fabs(facetPts[k].z - zCoords[aggNodes[l]]) < 1e-12)
           {
             vertices.push_back(aggNodes[l]);
             break;
@@ -556,6 +549,19 @@ namespace MueLu {
     //Allow two different colors of connections (by setting "aggregates" scalar to CONTRAST_1 or CONTRAST_2)
     vector<pair<int, int> > vert1; //vertices (node indices)
     vector<pair<int, int> > vert2; //size of every cell is assumed to be 2 vertices, since all edges are drawn as lines
+    
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
+    if(dims_ == 3)
+      zCoords = coords_->getData(2);
+
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx = coordsCoarse_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy = coordsCoarse_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz = Teuchos::null;
+    if(dims_ == 3)
+      cz = coordsCoarse_->getData(2);
+
     if(A->isGloballyIndexed())
     {
       ArrayView<const GlobalOrdinal> indices;
@@ -722,9 +728,9 @@ namespace MueLu {
     {
       if(fine)
       {
-        fout << xCoords_[unique1[i]] << " " << yCoords_[unique1[i]] << " ";
+        fout << xCoords[unique1[i]] << " " << yCoords[unique1[i]] << " ";
         if(dims_ == 3)
-          fout << zCoords_[unique1[i]] << " ";
+          fout << zCoords[unique1[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -732,9 +738,9 @@ namespace MueLu {
       }
       else
       {
-        fout << cx_[unique1[i]] << " " << cy_[unique1[i]] << " ";
+        fout << cx[unique1[i]] << " " << cy[unique1[i]] << " ";
         if(dims_ == 3)
-          fout << cz_[unique1[i]] << " ";
+          fout << cz[unique1[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -745,9 +751,9 @@ namespace MueLu {
     {
       if(fine)
       {
-        fout << xCoords_[unique2[i]] << " " << yCoords_[unique2[i]] << " ";
+        fout << xCoords[unique2[i]] << " " << yCoords[unique2[i]] << " ";
         if(dims_ == 3)
-          fout << zCoords_[unique2[i]] << " ";
+          fout << zCoords[unique2[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -755,9 +761,9 @@ namespace MueLu {
       }
       else
       {
-        fout << cx_[unique2[i]] << " " << cy_[unique2[i]] << " ";
+        fout << cx[unique2[i]] << " " << cy[unique2[i]] << " ";
         if(dims_ == 3)
-          fout << cz_[unique2[i]] << " ";
+          fout << cz[unique2[i]] << " ";
         else
           fout << "0 ";
         if((i + unique1.size()) % 2)
@@ -816,6 +822,13 @@ namespace MueLu {
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
     using namespace std;
+    
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
+    if(dims_ == 3)
+      zCoords = coords_->getData(2);
+    
     vector<int> uniqueFine = this->makeUnique(vertices);
     string indent = "      ";
     fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
@@ -869,11 +882,11 @@ namespace MueLu {
     fout << indent;
     for(size_t i = 0; i < uniqueFine.size(); i++)
     {
-      fout << xCoords_[uniqueFine[i]] << " " << yCoords_[uniqueFine[i]] << " ";
+      fout << xCoords[uniqueFine[i]] << " " << yCoords[uniqueFine[i]] << " ";
       if(dims_ == 2)
         fout << "0 ";
       else
-        fout << zCoords_[uniqueFine[i]] << " ";
+        fout << zCoords[uniqueFine[i]] << " ";
       if(i % 3 == 2)
         fout << endl << indent;
     }
