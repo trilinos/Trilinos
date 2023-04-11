@@ -308,7 +308,7 @@ namespace MueLu {
         doConvexHulls(vertices, geomSizes);
       else
       {
-        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\n   Defaulting to Point Cloud." << std::endl;
+        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, and Convex Hulls.\n   Defaulting to Point Cloud." << std::endl;
         aggStyle = "Point Cloud";
         this->doPointCloud(vertices, geomSizes, numAggs_, numNodes_);
       }
