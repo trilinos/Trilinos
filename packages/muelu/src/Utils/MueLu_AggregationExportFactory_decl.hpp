@@ -85,7 +85,7 @@ namespace MueLu {
     | aggregation: output filename           | string  |   |  | * |   | filename for VTK-style visualization output |
     | aggregation: output file: time step    | int     | 0 |  | * |   | time step (overwrites '%TIMESTEP' in output file name) |
     | aggregation: output file: iter         | int     | 0 |  | * |   | nonlinear iteration (overwrites '%ITER' in output file name) |
-    | aggregation: output file: agg style    | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", "Convex Hulls" or "Alpha Hulls" |
+    | aggregation: output file: agg style    | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", or "Convex Hulls" |
     | aggregation: output file: fine graph edges | bool | false  |   | * |  | Draw fine node connections in VTK output (only works for 1 dofs per node!) |
     | aggregation: output file: build colormap | bool | false  |   | * |  | Output a random color map for paraView in a separate xml file. |
     | Output filename | string |   |    | * |  | Output file name for aggregation data export (outdated, do not use) |
@@ -153,11 +153,6 @@ namespace MueLu {
     //Break different viz styles into separate functions for organization:
     void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #ifdef HAVE_MUELU_CGAL
-    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #endif
     void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
 
     // write VTK data

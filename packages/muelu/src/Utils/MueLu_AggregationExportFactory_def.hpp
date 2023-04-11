@@ -71,15 +71,6 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cmath>
-//For alpha hulls (is optional feature requiring a third-party library)
-#ifdef HAVE_MUELU_CGAL //Include all headers needed for both 2D and 3D fixed-alpha alpha shapes
-#include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
-#include "CGAL/Delaunay_triangulation_2.h"
-#include "CGAL/Delaunay_triangulation_3.h"
-#include "CGAL/Alpha_shape_2.h"
-#include "CGAL/Fixed_alpha_shape_3.h"
-#include "CGAL/algorithm.h"
-#endif
 
 namespace MueLu {
 
@@ -315,18 +306,9 @@ namespace MueLu {
         doJacksPlus_(vertices, geomSizes);
       else if(aggStyle == "Convex Hulls")
         doConvexHulls(vertices, geomSizes);
-      else if(aggStyle == "Alpha Hulls")
-      {
-        #ifdef HAVE_MUELU_CGAL
-        doAlphaHulls_(vertices, geomSizes);
-        #else
-        GetOStream(Warnings0) << "   Trilinos was not configured with CGAL so Alpha Hulls not available.\n   Using Convex Hulls instead." << std::endl;
-        doConvexHulls(vertices, geomSizes);
-        #endif
-      }
       else
       {
-        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\n   Defaulting to Point Cloud." << std::endl;
+        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, and Convex Hulls.\n   Defaulting to Point Cloud." << std::endl;
         aggStyle = "Point Cloud";
         this->doPointCloud(vertices, geomSizes, numAggs_, numNodes_);
       }
@@ -373,172 +355,6 @@ namespace MueLu {
       this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords, zCoords);
     }
   }
-
-#ifdef HAVE_MUELU_CGAL
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    using namespace std;
-    if(dims_ == 2)
-      doAlphaHulls2D_(vertices, geomSizes);
-    else if(dims_ == 3)
-      doAlphaHulls3D_(vertices, geomSizes);
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    //const double ALPHA_VAL = 2; //Make configurable?
-    using namespace std;
-    //CGAL setup
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-    typedef K::FT FT;
-    typedef K::Point_2 Point;
-    typedef K::Segment_2 Segment;
-    typedef CGAL::Alpha_shape_vertex_base_2<K> Vb;
-    typedef CGAL::Alpha_shape_face_base_2<K> Fb;
-    typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
-    typedef CGAL::Delaunay_triangulation_2<K,Tds> Triangulation_2;
-    typedef CGAL::Alpha_shape_2<Triangulation_2> Alpha_shape_2;
-    typedef Alpha_shape_2::Alpha_shape_edges_iterator Alpha_shape_edges_iterator;
-#if 0 // taw: does not compile with CGAL 4.8
-    for(int i = 0; i < numAggs_; i++)
-    {
-      //Populate a list of Point_2 for this aggregate
-      list<Point> aggPoints;
-      vector<int> aggNodes;
-      for(int j = 0; j < numNodes_; j++)
-      {
-        if(vertex2AggId_[j] == i)
-        {
-          Point p(xCoords[j], yCoords[j]);
-          aggPoints.push_back(p);
-          aggNodes.push_back(j);
-        }
-      }
-      Alpha_shape_2 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL), Alpha_shape_2::GENERAL);
-      vector<Segment> segments;
-      CGAL::alpha_edges(hull, back_inserter(segments));
-      vertices.reserve(vertices.size() + 2 * segments.size());
-      geomSizes.reserve(geomSizes.size() + segments.size());
-      for(size_t j = 0; j < segments.size(); j++)
-      {
-        for(size_t k = 0; k < aggNodes.size(); k++)
-        {
-          if(fabs(segments[j][0].x == xCoords[aggNodes[k]]) < 1e-12 && fabs(segments[j][0].y == yCoords[aggNodes[k]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[k]);
-            break;
-          }
-        }
-        for(size_t k = 0; k < aggNodes.size(); k++)
-        {
-          if(fabs(segments[j][1].x  == xCoords[aggNodes[k]]) < 1e-12 && fabs(segments[j][1].y == yCoords[aggNodes[k]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[k]);
-            break;
-          }
-        }
-        geomSizes.push_back(2); //all cells are line segments
-      }
-    }
-#endif // if 0
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel Gt;
-#if 0 // does not compile with CGAL 4-8
-    typedef CGAL::Alpha_shape_cell_base_3<Gt> Fb;
-    typedef CGAL::Triangulation_data_structure_3<Vb,Fb> Tds;
-    typedef CGAL::Delaunay_triangulation_3<Gt,Tds> Triangulation_3;
-    typedef Gt::Point_3 Point;
-    typedef Alpha_shape_3::Alpha_iterator Alpha_iterator;
-    typedef Alpha_shape_3::Cell_handle Cell_handle;
-    typedef Alpha_shape_3::Vertex_handle Vertex_handle;
-    typedef Alpha_shape_3::Facet Facet;
-    typedef Alpha_shape_3::Edge Edge;
-    typedef Gt::Weighted_point Weighted_point;
-    typedef Gt::Bare_point Bare_point;
-    const double ALPHA_VAL = 2; //Make configurable?
-    using namespace std;
-
-    for(int i = 0; i < numAggs_; i++)
-    {
-      list<Point> aggPoints;
-      vector<int> aggNodes;
-      for(int j = 0; j < numNodes_; j++)
-      {
-        if(vertex2AggId[j] == i)
-        {
-          Point p(xCoords[j], yCoords[j], zCoords[j]);
-          aggPoints.push_back(p);
-          aggNodes.push_back(j);
-        }
-      }
-      Fixed_alpha_shape_3 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL));
-      list<Cell_handle> cells;
-      list<Facet> facets;
-      list<Edge> edges;
-      hull.get_alpha_shape_cells(back_inserter(cells));
-      hull.get_alpha_shape_facets(back_inserter(facets));
-      hull.get_alpha_shape_edges(back_inserter(edges));
-      for(size_t j = 0; j < cells.size(); j++)
-      {
-        Point tetPoints[4];
-        tetPoints[0] = cells[j]->vertex(0);
-        tetPoints[1] = cells[j]->vertex(1);
-        tetPoints[2] = cells[j]->vertex(2);
-        tetPoints[3] = cells[j]->vertex(3);
-        for(int k = 0; k < 4; k++)
-        {
-          for(size_t l = 0; l < aggNodes.size(); l++)
-          {
-            if(fabs(tetPoints[k].x - xCoords[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].y - yCoords[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].z - zCoords[aggNodes[l]]) < 1e-12)
-            {
-              vertices.push_back(aggNodes[l]);
-              break;
-            }
-          }
-        }
-        geomSizes.push_back(-10); //tetrahedron
-      }
-      for(size_t j = 0; j < facets.size(); j++)
-      {
-        int indices[3];
-        indices[0] = (facets[i].second + 1) % 4;
-        indices[1] = (facets[i].second + 2) % 4;
-        indices[2] = (facets[i].second + 3) % 4;
-        if(facets[i].second % 2 == 0)
-          swap(indices[0], indices[1]);
-        Point facetPts[3];
-        facetPts[0] = facets[i].first->vertex(indices[0])->point();
-        facetPts[1] = facets[i].first->vertex(indices[1])->point();
-        facetPts[2] = facets[i].first->vertex(indices[2])->point();
-        //add triangles in terms of node indices
-        for(size_t l = 0; l < aggNodes.size(); l++)
-        {
-          if(fabs(facetPts[k].x - xCoords[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].y - yCoords[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].z - zCoords[aggNodes[l]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[l]);
-            break;
-          }
-        }
-        geomSizes.push_back(3);
-      }
-      for(size_t j = 0; j < edges.size(); j++)
-      {
-
-      }
-    }
-#endif // if 0
-  }
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const
