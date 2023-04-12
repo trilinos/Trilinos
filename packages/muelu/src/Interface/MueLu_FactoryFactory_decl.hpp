@@ -315,6 +315,10 @@ namespace MueLu {
       if (factoryName == "MatrixFreeTentativePFactory")           return Build2<MatrixFreeTentativePFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
 
+      // Handle removed Kokkos factories
+      if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
+
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         return Build2<ZoltanInterface>(paramList, factoryMapIn, factoryManagersIn);
