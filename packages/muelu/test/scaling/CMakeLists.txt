@@ -421,7 +421,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
       )
 
-    ENDIF()
+    ENDIF() # INST_COMPLEX_INT_INT
 
     TRIBITS_ADD_TEST(
       Driver
@@ -447,11 +447,11 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       COMM mpi # HAVE_MPI required
       )
 
-  ENDIF()
+  ENDIF() # ENABLE_ZOLTAN
 
 
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
         Driver
