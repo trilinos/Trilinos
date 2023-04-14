@@ -127,6 +127,13 @@ First, we create and initialize a solution vector:
   :start-after: MueLuAsSolverCreateSolutionVector begin
   :end-before: MueLuAsSolverCreateSolutionVector end
 
+If necessary, extract the ``MueLu::Hiearchy`` from the Tpetra preconditioner object:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: ExtractHierarchyFromTpetraPrec begin
+  :end-before: ExtractHierarchyFromTpetraPrec end
+
 Then, the ``MueLu::Hierarchy`` object is set to the non-preconditioner mode:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp

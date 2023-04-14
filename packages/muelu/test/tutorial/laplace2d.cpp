@@ -279,11 +279,6 @@ int main (int argc, char *argv[])
           fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
       }
 
-      // Extract the underlying MueLu hierarchy
-      //! [ExtractHierarchyFromTpetraPrec begin]
-      RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
-      //! [ExtractHierarchyFromTpetraPrec end]
-
       // Solve Ax = b using AMG as a solver
       {
         //! [MueLuAsSolverCreateSolutionVector begin]
@@ -291,6 +286,11 @@ int main (int argc, char *argv[])
         RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
         multigridSolVec->update(0.0, *X, 1.0);
         //! [MueLuAsSolverCreateSolutionVector end]
+
+        //! [ExtractHierarchyFromTpetraPrec begin]
+        // Extract the underlying MueLu hierarchy
+        RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
+        //! [ExtractHierarchyFromTpetraPrec end]
 
         //! [MueLuAsSolverSetSolverMode begin]
         // Configure MueLu to be used as solver
