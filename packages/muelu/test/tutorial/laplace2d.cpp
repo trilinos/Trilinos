@@ -37,7 +37,6 @@
 //
 // Questions? Contact
 //                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -65,8 +64,6 @@
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -77,10 +74,6 @@
 #include <Tpetra_Vector.hpp>
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
 
 int main (int argc, char *argv[])
 {
@@ -89,37 +82,35 @@ int main (int argc, char *argv[])
   {
     Tpetra::ScopeGuard tpetraScope (&argc, &argv);
     {
+      //! [TpetraTemplateParameters begin]
+      using SC = Tpetra::MultiVector<>::scalar_type;
+      using LO = Tpetra::MultiVector<>::local_ordinal_type;
+      using GO = Tpetra::MultiVector<>::global_ordinal_type;
+      using NO = Tpetra::MultiVector<>::node_type;
+      //! [TpetraTemplateParameters end]
+
       // ================================
       // Convenient definitions
       // ================================
-      using scalar_type = Tpetra::MultiVector<>::scalar_type;
-      using local_ordinal_type = Tpetra::MultiVector<>::local_ordinal_type;
-      using global_ordinal_type = Tpetra::MultiVector<>::global_ordinal_type;
-      using node_type = Tpetra::MultiVector<>::node_type;
-
-      using Scalar = scalar_type;
-      using LocalOrdinal = local_ordinal_type;
-      using GlobalOrdinal = global_ordinal_type;
-      using Node = node_type;
-
+      //! [UsingStatements begin]
       using Teuchos::ParameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::TimeMonitor;
 
-      using crs_matrix_type = Tpetra::CrsMatrix<>;
-      using map_type = Tpetra::Map<>;
-      using multi_vector_type = Tpetra::MultiVector<>;
-      using operator_type = Tpetra::Operator<>;
+      using CrsMatrix = Tpetra::CrsMatrix<>;
+      using Map = Tpetra::Map<>;
+      using MultiVector = Tpetra::MultiVector<>;
+      using Operator = Tpetra::Operator<>;
 
-      using STS = Teuchos::ScalarTraits<scalar_type>;
-      using magnitude_type = typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+      using STS = Teuchos::ScalarTraits<SC>;
+      using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
       using real_type = typename STS::coordinateType;
-      using RealValuedMultiVector = Tpetra::MultiVector<real_type,local_ordinal_type,global_ordinal_type,node_type>;
+      using RealValuedMultiVector = Tpetra::MultiVector<real_type,LO,GO,NO>;
 
-      const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
-      const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
+      const SC one = Teuchos::ScalarTraits<SC>::one();
+      //! [UsingStatements end]
 
       //! [CommunicatorObject begin]
       RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
@@ -136,8 +127,8 @@ int main (int argc, char *argv[])
       // Parameters initialization
       // ================================
       Teuchos::CommandLineProcessor clp(false);
-      global_ordinal_type nx   = 100;   clp.setOption("nx",                       &nx, "mesh size in x direction");
-      global_ordinal_type ny   = 100;   clp.setOption("ny",                       &ny, "mesh size in y direction");
+      GO nx                    = 100;   clp.setOption("nx",                       &nx, "mesh size in x direction");
+      GO ny                    = 100;   clp.setOption("ny",                       &ny, "mesh size in y direction");
       std::string xmlFileName  = "";    clp.setOption("xml",             &xmlFileName, "read parameters from a file");
       int mgridSweeps          = 1;     clp.setOption("mgridSweeps",     &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
       std::string printTimings = "no";  clp.setOption("timings",        &printTimings, "print timings to screen [yes/no]");
@@ -167,17 +158,17 @@ int main (int argc, char *argv[])
       galeriList.set("my", 1);
 
       // Create node map (equals dof map, since one dof per node)
-      RCP<const Xpetra::Map<local_ordinal_type, global_ordinal_type, node_type>> xpetra_map = Galeri::Xpetra::CreateMap<local_ordinal_type, global_ordinal_type, node_type>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
-      RCP<const map_type> nodeMap = Xpetra::toTpetra(xpetra_map);
-      RCP<const map_type> dofMap = nodeMap;
+      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_map = Galeri::Xpetra::CreateMap<LO,GO,NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
+      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_map);
+      RCP<const Map> dofMap = nodeMap;
 
       // Create coordinates
-      RCP<const RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,map_type,RealValuedMultiVector>("2D", nodeMap, galeriList);
+      RCP<const RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
       // Create the matrix
-      RCP<Galeri::Xpetra::Problem<map_type,crs_matrix_type,multi_vector_type>> galeriProblem =
-          Galeri::Xpetra::BuildProblem<scalar_type,local_ordinal_type,global_ordinal_type,map_type,crs_matrix_type,multi_vector_type>("Laplace2D", dofMap, galeriList);
-      RCP<crs_matrix_type> matrix = galeriProblem->BuildMatrix();
+      RCP<Galeri::Xpetra::Problem<Map,CrsMatrix,MultiVector>> galeriProblem =
+          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrix,MultiVector>("Laplace2D", dofMap, galeriList);
+      RCP<CrsMatrix> matrix = galeriProblem->BuildMatrix();
 
       // Some safety checks to see, if Galeri delivered valid output
       TEUCHOS_ASSERT(!nodeMap.is_null());
@@ -187,18 +178,18 @@ int main (int argc, char *argv[])
 
       //! [RhsAndSolutionVector begin]
       // Create right-hand side (with all ones)
-      RCP<multi_vector_type> B = rcp(new multi_vector_type(dofMap, 1, true));
+      RCP<MultiVector> B = rcp(new MultiVector(dofMap, 1, true));
       B->putScalar(one);
 
       // Initilize solution vector with random values
-      RCP<multi_vector_type> X = rcp(new multi_vector_type(dofMap, 1, true));
+      RCP<MultiVector> X = rcp(new MultiVector(dofMap, 1, true));
       STS::seedrandom(100);
       X->randomize();
       //! [RhsAndSolutionVector end]
 
       //! [BuildNullSpaceVector begin]
       // Build null space vector for a scalar problem, i.e. vector with all ones
-      RCP<multi_vector_type> nullspace = rcp(new multi_vector_type(dofMap, 1));
+      RCP<MultiVector> nullspace = rcp(new MultiVector(dofMap, 1));
       nullspace->putScalar(one);
       //! [BuildNullSpaceVector end]
 
@@ -214,36 +205,36 @@ int main (int argc, char *argv[])
       //! [InsertNullspaceInUserData begin]
       // Register nullspace as user data in the MueLu parameter list
       ParameterList& userDataList = mueluParams->sublist("user data");
-      userDataList.set<RCP<multi_vector_type>>("Nullspace", nullspace);
+      userDataList.set<RCP<MultiVector>>("Nullspace", nullspace);
       //! [InsertNullspaceInUserData end]
 
       //! [CreateTpetraPreconditioner begin]
       // Create the MueLu preconditioner based on the Tpetra stack
-      RCP<MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> mueLuPreconditioner =
-          MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<operator_type>(matrix), *mueluParams);
+      RCP<MueLu::TpetraOperator<SC,LO,GO,NO>> mueLuPreconditioner =
+          MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Operator>(matrix), *mueluParams);
       //! [CreateTpetraPreconditioner end]
 
       // Generate exact solution using a direct solver
       //! [ExactSolutionVector begin]
-      RCP<multi_vector_type> exactSolution = rcp(new multi_vector_type(dofMap, 1, true));
+      RCP<MultiVector> exactSolution = rcp(new MultiVector(dofMap, 1, true));
       //! [ExactSolutionVector end]
       {
         exactSolution->update(0.0, *X, 1.0);
 
-        RCP<Amesos2::Solver<crs_matrix_type,multi_vector_type>> directSolver = Amesos2::create<crs_matrix_type,multi_vector_type>("KLU2", matrix, X, B);
+        RCP<Amesos2::Solver<CrsMatrix,MultiVector>> directSolver = Amesos2::create<CrsMatrix,MultiVector>("KLU2", matrix, X, B);
         directSolver->solve();
       }
 
       //! [MueLuHierarchyAsPreconditionerWithinBelos begin]
       // Solve Ax = b using AMG as a preconditioner in Belos
-      RCP<multi_vector_type> precSolVec = rcp(new multi_vector_type(dofMap, 1, true));
+      RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
       {
         // Set initial guess
         precSolVec->update(0.0, *X, 1.0);
 
         // Construct a Belos LinearProblem object and hand-in the MueLu preconditioner
-        RCP<Belos::LinearProblem<scalar_type,multi_vector_type,operator_type>> belosProblem =
-            rcp(new Belos::LinearProblem<scalar_type,multi_vector_type,operator_type>(matrix, precSolVec, B));
+        RCP<Belos::LinearProblem<SC,MultiVector,Operator>> belosProblem =
+            rcp(new Belos::LinearProblem<SC,MultiVector,Operator>(matrix, precSolVec, B));
         belosProblem->setLeftPrec(mueLuPreconditioner);
 
         bool set = belosProblem->setProblem();
@@ -261,8 +252,8 @@ int main (int argc, char *argv[])
         belosList->set("Output Style", Belos::Brief);
 
         // Create an iterative solver manager
-        Belos::SolverFactory<scalar_type,multi_vector_type,operator_type> solverFactory;
-        RCP<Belos::SolverManager<scalar_type,multi_vector_type,operator_type>> solver = solverFactory.create("Block GMRES", belosList);
+        Belos::SolverFactory<SC,MultiVector,Operator> solverFactory;
+        RCP<Belos::SolverManager<SC,MultiVector,Operator>> solver = solverFactory.create("Block GMRES", belosList);
         solver->setProblem(belosProblem);
 
         // Perform solve
@@ -283,13 +274,13 @@ int main (int argc, char *argv[])
 
       //! [UseMultigridHierarchyAsSolver begin]
       // Solve Ax = b using AMG as a solver
-      RCP<multi_vector_type> multigridSolVec = rcp(new multi_vector_type(dofMap, 1, true));
+      RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
       {
         // Set initial guess
         multigridSolVec->update(0.0, *X, 1.0);
 
         // Extract the underlying MueLu hierarchy
-        RCP<MueLu::Hierarchy<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> hierarchy = mueLuPreconditioner->GetHierarchy();
+        RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
 
         // Configure MueLu to be used as solver
         hierarchy->IsPreconditioner(false);

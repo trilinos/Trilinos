@@ -11,14 +11,26 @@ This will then be used as a preconditioner within Belos as well as a standalone 
    There is also support for Stratimikos.
    Please refer to the **examples** in the MueLu folder for more details.
 
-This tutorial aims at more advanced methods to use MueLu
-such as creating an explicit instance of some MueLu classes like **MueLu::Hierarchy** and **MueLu::HierarchyManager**.
 In the next sections, we give some code snippets.
 Most of them are borrowed form the **laplace2d.cpp** file in the tutorial.
 
 Preparations
 ============
-First of all, we need to grab a communicator object.
+First of all, we extract the template parameters from Tpetra:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: TpetraTemplateParameters begin
+  :end-before: TpetraTemplateParameters end
+
+Then, we define some abbreviations for better readibility of the code:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: UsingStatements begin
+  :end-before: UsingStatements end
+
+Now, we need to grab a communicator object.
 Therefore, it is easy to use some utilities from the Teuchos package:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
@@ -110,6 +122,11 @@ deactivate the preconditioner mode, and start the iteration process:
 
 XML Interphase using plain MueLu objects
 ----------------------------------------
+This tutorial aims at more advanced methods to use MueLu
+such as creating an explicit instance of some MueLu classes like **MueLu::Hierarchy** and **MueLu::HierarchyManager**.
+In the next sections, we give some code snippets.
+Most of them are borrowed form the **ScalingTest.cpp** file in the tutorial.
+
 Assuming that we have a **Teuchos::ParameterList** object with valid MueLu parameters,
 we can create a **MueLu::HierarchyManager** object
 
