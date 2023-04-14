@@ -272,15 +272,17 @@ int main (int argc, char *argv[])
       }
       //! [MueLuHierarchyAsPreconditionerWithinBelos end]
 
+      // Extract the underlying MueLu hierarchy
+      //! [ExtractHierarchyFromTpetraPrec begin]
+      RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
+      //! [ExtractHierarchyFromTpetraPrec end]
+
       //! [UseMultigridHierarchyAsSolver begin]
       // Solve Ax = b using AMG as a solver
       RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
       {
         // Set initial guess
         multigridSolVec->update(0.0, *X, 1.0);
-
-        // Extract the underlying MueLu hierarchy
-        RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
 
         // Configure MueLu to be used as solver
         hierarchy->IsPreconditioner(false);
