@@ -4,7 +4,7 @@ Using MueLu in User Applications
 
 This tutorial demonstrates how to use MueLu from within user applications in ``C++``.
 We will use the ``Tpetra`` linear algebra stack.
-We will read the configuration for MueLu from an xml file and then create a ``MueLu::Hierarchy``.
+We will read the configuration for MueLu from an XML file and then create a ``MueLu::Hierarchy``.
 This will then be used as a preconditioner within Belos as well as a standalone solver.
 
 .. note::
@@ -71,7 +71,7 @@ There is a simplified XML interface for multigrid users and a more advanced XML 
 Both XML file formats are introduced in the previous sections of this hands on tutorial.
 However, for the C++ code it makes no difference which type of XML interface is used.
 
-We first read the MueLu configuration from the xml file:
+We first read the MueLu configuration from the XML file:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
