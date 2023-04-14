@@ -3,9 +3,9 @@ Using MueLu in User Applications
 ================================
 
 This tutorial demonstrates how to use MueLu from within user applications in **C++**.
-In [[2]_, Section 3.3] it is explained how to use MueLu through the **MueLu::CreateE/T/XpetraPreconditioner** interface.
-This interface is designed for beginners,
-who want to try MueLu through standard Trilinos interfaces.
+We will use the **Tpetra** linear algebra stack.
+We will read the configuration for MueLu from an xml file and then create a **MueLu::Hierarchy**.
+This will then be used as a preconditioner within Belos as well as a standalone solver.
 
 .. note::
    There is also support for Stratimikos.
@@ -27,18 +27,14 @@ Therefore, it is easy to use some utilities from the Teuchos package:
   :end-before: CommunicatorObject end
 
 For the multigrid method, we need a linear operator :math:`A`.
-For demonstration purposes,
-here we just generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`).
-In this example, we use Tpetra (throught the Xpetra wrappers) for the underlying linear algebra framework.
-For convenience, we ask the Galeri package to create a matrix of a Laplace2D problem:
-
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
-  :language: cpp
-  :start-after: 2DLaplacianOperator begin
-  :end-before: 2DLaplacianOperator end
-
-For the linear system :math:`Ax=b`,
-we create a right-hand side vector (with all ones) and initialize the solution vector with random values:
+The linear operator is usually assembled by the application code.
+Hence, we will not covered it in detail in this tutorial.
+For the sake of simplicity,
+let us just assume that we have a Laplace operator in two dimensions readily available
+and stored in a **Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO>> matrix**.
+We complete the linear system :math:`Ax=b`
+with a right-hand side vector :math`b` (filled with all ones)
+and initialize the solution vector :math:`x` with random values:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
@@ -64,14 +60,56 @@ or XML files in two different XML file formats.
 Alternatively, one can use the MueLu C++ API to define the multigrid setup at compile time.
 In the next sections we show both variants.
 
-XML Interphase
---------------
+XML Interphase using CreateTpetraPreconditioner
+-----------------------------------------------
 The most comfortable way to declare the multigrid parameters for MueLu is using the XML interface.
 In fact, MueLu provides two different XML interfaces.
 There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of MueLu as a multigrid framework.
 Both XML file formats are introduced in the previous sections of this hands on tutorial.
 However, for the C++ code it makes no difference which type of XML interface is used.
 
+We first read the MueLu configuration from the xml file:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.xpp
+  :language: cpp
+  :start-after: ReadMueLuParamsFromXmlFile begin
+  :end-before: ReadMueLuParamsFromXmlFile end
+
+Then, we store the near null space vectors in the **"user data"** sublist of this parameter list:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.xpp
+  :language: cpp
+  :start-after: InsertNullspaceInUserData begin
+  :end-before: InsertNullspaceInUserData end
+
+We then can create a MueLu object ready to be used as a preconditioner:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.xpp
+  :language: cpp
+  :start-after: CreateTpetraPreconditioner begin
+  :end-before: CreateTpetraPreconditioner end
+
+Now, we can use this preconditioner within iterative solvers from the Belos package.
+Therefore, we create a **Belos::LinearProblem**, equip it with the MueLu preconditioner object,
+configure the iterative solver via a parameter list, and finally solver the linear system:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.xpp
+  :language: cpp
+  :start-after: MueLuHierarchyAsPreconditionerWithinBelos begin
+  :end-before: MueLuHierarchyAsPreconditionerWithinBelos end
+
+Alternatively, we can run MueLu as a stand-alone solver.
+Therefore, we extract the **MueLu::Hierarchy** from the preconditioner object,
+deactivate the preconditioner mode, and start the iteration process:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.xpp
+  :language: cpp
+  :start-after: UseMultigridHierarchyAsSolver begin
+  :end-before: UseMultigridHierarchyAsSolver end
+
+
+XML Interphase using plain MueLu objects
+----------------------------------------
 Assuming that we have a **Teuchos::ParameterList** object with valid MueLu parameters,
 we can create a **MueLu::HierarchyManager** object
 

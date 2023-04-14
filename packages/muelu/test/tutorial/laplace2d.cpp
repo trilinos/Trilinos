@@ -166,7 +166,6 @@ int main (int argc, char *argv[])
       galeriList.set("mx", comm->getSize());
       galeriList.set("my", 1);
 
-      //! [2DLaplacianOperator begin]
       // Create node map (equals dof map, since one dof per node)
       RCP<const Xpetra::Map<local_ordinal_type, global_ordinal_type, node_type>> xpetra_map = Galeri::Xpetra::CreateMap<local_ordinal_type, global_ordinal_type, node_type>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
       RCP<const map_type> nodeMap = Xpetra::toTpetra(xpetra_map);
@@ -179,7 +178,6 @@ int main (int argc, char *argv[])
       RCP<Galeri::Xpetra::Problem<map_type,crs_matrix_type,multi_vector_type>> galeriProblem =
           Galeri::Xpetra::BuildProblem<scalar_type,local_ordinal_type,global_ordinal_type,map_type,crs_matrix_type,multi_vector_type>("Laplace2D", dofMap, galeriList);
       RCP<crs_matrix_type> matrix = galeriProblem->BuildMatrix();
-      // //! [2DLaplacianOperator end]
 
       // Some safety checks to see, if Galeri delivered valid output
       TEUCHOS_ASSERT(!nodeMap.is_null());
@@ -208,16 +206,22 @@ int main (int argc, char *argv[])
       // Preconditioner construction
       // ================================
 
+      //! [ReadMueLuParamsFromXmlFile begin]
       // Read MueLu parameter list from xml file
       RCP<ParameterList> mueluParams =  Teuchos::getParametersFromXmlFile(xmlFileName);
+      //! [ReadMueLuParamsFromXmlFile end]
 
+      //! [InsertNullspaceInUserData begin]
       // Register nullspace as user data in the MueLu parameter list
       ParameterList& userDataList = mueluParams->sublist("user data");
       userDataList.set<RCP<multi_vector_type>>("Nullspace", nullspace);
+      //! [InsertNullspaceInUserData end]
 
+      //! [CreateTpetraPreconditioner begin]
       // Create the MueLu preconditioner based on the Tpetra stack
       RCP<MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> mueLuPreconditioner =
           MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<operator_type>(matrix), *mueluParams);
+      //! [CreateTpetraPreconditioner end]
 
       // Generate exact solution using a direct solver
       //! [ExactSolutionVector begin]
