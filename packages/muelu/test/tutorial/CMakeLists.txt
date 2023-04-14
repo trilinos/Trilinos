@@ -76,7 +76,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   #   NUM_MPI_PROCS 4
   #   )
 
-    TRIBITS_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
     Tutorial_laplace2d
     SOURCES laplace2d.cpp
     COMM serial mpi
