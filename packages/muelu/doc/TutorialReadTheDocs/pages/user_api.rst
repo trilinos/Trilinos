@@ -238,7 +238,7 @@ For example, the user has to provide the node coordinates for repartitioning.
   :end-before: CreateFineLevelObject end
 
 .. note::
-	When including the ``MueLu\_UseShortNames.hpp`` header file,
+	When including the ``MueLu_UseShortNames.hpp`` header file,
   the template parameters usually can be dropped for compiling.
   The most important template parameters are ``SC`` for the scalar type,
   ``LO`` for the local ordinal type and ``GO`` for the global ordinal type.
