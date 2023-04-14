@@ -2,14 +2,14 @@
 Using MueLu in User Applications
 ================================
 
-This tutorial demonstrates how to use MueLu from within user applications in **C++**.
-We will use the **Tpetra** linear algebra stack.
-We will read the configuration for MueLu from an xml file and then create a **MueLu::Hierarchy**.
+This tutorial demonstrates how to use MueLu from within user applications in ``C++``.
+We will use the ``Tpetra`` linear algebra stack.
+We will read the configuration for MueLu from an xml file and then create a ``MueLu::Hierarchy``.
 This will then be used as a preconditioner within Belos as well as a standalone solver.
 
 .. note::
    There is also support for Stratimikos.
-   Please refer to the **examples** in the MueLu folder for more details.
+   Please refer to the ``examples`` in the MueLu folder for more details.
 
 XML Interface using CreateTpetraPreconditioner
 ==============================================
@@ -22,7 +22,7 @@ However, for the C++ code it makes no difference which type of XML interface is 
 
 .. note::
   In the next sections, we give some code snippets.
-  THey are borrowed form the **laplace2d.cpp** file in the tutorial tests.
+  THey are borrowed form the ``laplace2d.cpp`` file in the tutorial tests.
 
 Preparations
 ------------
@@ -56,11 +56,11 @@ In case of a Laplace problem, we just use a constant vector.
 
 Setup phase
 -----------
-With a fine level operator :math:`A` available as **Tpetra::CrsMatrix** object
-and a set of near null space vectors (available as **Tpetra::MultiVector**),
+With a fine level operator :math:`A` available as ``Tpetra::CrsMatrix`` object
+and a set of near null space vectors (available as ``Tpetra::MultiVector``),
 all minimum requirements are fulfilled for generating an algebraic multigrid hierarchy.
 There are two different ways to setup a multigrid hierarchy in MueLu.
-One can either use a parameter list driven setup process which accepts either **Teuchos::ParameterList** objects
+One can either use a parameter list driven setup process which accepts either ``Teuchos::ParameterList`` objects
 or XML files in two different XML file formats.
 Alternatively, one can use the MueLu C++ API to define the multigrid setup at compile time.
 In the next sections we show both variants.
@@ -78,7 +78,7 @@ We first read the MueLu configuration from the xml file:
   :start-after: ReadMueLuParamsFromXmlFile begin
   :end-before: ReadMueLuParamsFromXmlFile end
 
-Then, we store the near null space vectors in the **"user data"** sublist of this parameter list:
+Then, we store the near null space vectors in the ``"user data"`` sublist of this parameter list:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
@@ -126,9 +126,9 @@ To use MueLu as standalone solver, one can use the following code:
   :start-after: UseMultigridHierarchyAsSolver begin
   :end-before: UseMultigridHierarchyAsSolver end
 
-The **MueLu::Hierarchy** object is set to the non-preconditioner mode and the **Iterate** routine is called
-to perform **mgridSweeps** sweeps with the chosen multigrid cycle.
-If successful, the **multigridSolVec** vector contains the solution.
+The ``MueLu::Hierarchy`` object is set to the non-preconditioner mode and the ``Iterate`` routine is called
+to perform ``mgridSweeps`` sweeps with the chosen multigrid cycle.
+If successful, the ``multigridSolVec`` vector contains the solution.
 
 .. _user_api/muelu as preconditioner for belos:
 
@@ -136,7 +136,7 @@ MueLu as preconditioner for Belos
 ---------------------------------
 Belos is the Krylov package in Trilinos and works both for Epetra and Tpetra.
 Here, we demonstrate how to use MueLu as preconditioner for Belos solvers using Tpetra.
-First, we create a **Belos::LinearProblem**, equip it with the MueLu preconditioner object,
+First, we create a ``Belos::LinearProblem``, equip it with the MueLu preconditioner object,
 configure the iterative solver via a parameter list, and finally solver the linear system:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
@@ -146,12 +146,12 @@ configure the iterative solver via a parameter list, and finally solver the line
 
 Full example using the XML interface
 ------------------------------------
-The reader may refer to **laplace2d.cpp** for a working example to study the source code.
+The reader may refer to ``laplace2d.cpp`` for a working example to study the source code.
 This demonstration program has some more features that are not discussed in this tutorial.
 
 .. admonition:: Exercise 1
 
-	Compile the example in **laplace2d.cpp** and then run the program in parallel using two processors
+	Compile the example in ``laplace2d.cpp`` and then run the program in parallel using two processors
 
         ``mpirun -np 2 ./MueLu_tutorial_laplace2d.exe --help``
 
@@ -168,7 +168,7 @@ As an alternative to the XML interfaces, the user can also define the multigrid 
 In contrary to the XML interface, which allows to build the layout of the multigrid preconditioner at runtime,
 the preconditioner is fully defined at compile time when using the C++ interface.
 
-First, a **MueLu::Hierarchy** object has to be defined, which manages the multigrid hierarchy including all multigrid levels.
+First, a ``MueLu::Hierarchy`` object has to be defined, which manages the multigrid hierarchy including all multigrid levels.
 It provides routines for the multigrid setup and the multigrid cycle algorithms (such as V-cycle and W-cycle).
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
@@ -177,21 +177,21 @@ It provides routines for the multigrid setup and the multigrid cycle algorithms 
   :end-before: CreateNewHierarchy end
 
 There are some member functions which can be used to describe the basic multigrid hierarchy.
-The **SetMaxCoarseSize** member function is used to set the maximum size of the coarse level problem before the coarsening process can be stopped.
+The ``SetMaxCoarseSize`` member function is used to set the maximum size of the coarse level problem before the coarsening process can be stopped.
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp
   :start-after: InstantiateNewHierarchyObject begin
   :end-before: InstantiateNewHierarchyObject end
 
-Next, one defines an empty **MueLu::Level** object for the finest level.
-The **MueLu::Level** objects represent a data container storing the internal variables on each multigrid level.
+Next, one defines an empty ``MueLu::Level`` object for the finest level.
+The ``MueLu::Level`` objects represent a data container storing the internal variables on each multigrid level.
 The user has to provide and fill the level container for the finest level only.
-The **MueLu::Hierarchy** object then automatically generates the coarse levels using the multigrid parameters.
+The ``MueLu::Hierarchy`` object then automatically generates the coarse levels using the multigrid parameters.
 The absolute minimum requirements for the finest level that the user has to provide is the fine level operator :math:`A` which represents the fine level matrix.
-MueLu is based on Xpetra. So, the matrix :math:`A` has to be of type **Xpetra::Matrix**.
+MueLu is based on Xpetra. So, the matrix :math:`A` has to be of type ``Xpetra::Matrix``.
 In addition, the user should also provide a valid set of near null space vectors.
-For a Laplace problem we can just use the constant **nullspace** vector that has previously been defined.
+For a Laplace problem we can just use the constant ``nullspace`` vector that has previously been defined.
 Some routines need additional information.
 For example, the user has to provide the node coordinates for repartitioning.
 
@@ -201,16 +201,16 @@ For example, the user has to provide the node coordinates for repartitioning.
   :end-before: CreateFineLevelObject end
 
 .. note::
-	When including the **MueLu\_UseShortNames.hpp** header file,
+	When including the ``MueLu\_UseShortNames.hpp`` header file,
   the template parameters usually can be dropped for compiling.
-  The most important template parameters are **SC** for the scalar type,
-  **LO** for the local ordinal type and **GO** for the global ordinal type.
+  The most important template parameters are ``SC`` for the scalar type,
+  ``LO`` for the local ordinal type and ``GO`` for the global ordinal type.
   For a detailed description of the template parameters,
   the reader may refer to the Tpetra documentation.
 
-A **MueLu::FactoryManager** object is used for the internal management of data dependencies and generating algorithms of the multigrid setup.
+A ``MueLu::FactoryManager`` object is used for the internal management of data dependencies and generating algorithms of the multigrid setup.
 Even though not absolutely necessary,
-we show the usage of the **MueLu::FactoryManager** object as it allows for user-specific enhancements of the multigrid code.
+we show the usage of the ``MueLu::FactoryManager`` object as it allows for user-specific enhancements of the multigrid code.
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp
@@ -219,14 +219,14 @@ we show the usage of the **MueLu::FactoryManager** object as it allows for user-
 
 The user can define its own factories for performing different tasks in the setup process.
 The following code shows how to define a smoothed aggregation transfer operator and a restriction operator.
-The **MueLu::RAPFactory** is used for the (standard) Galerkin product to generate the coarse level matrix :math:`A`.
+The ``MueLu::RAPFactory`` is used for the (standard) Galerkin product to generate the coarse level matrix :math:`A`.
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp
   :start-after: DeclareSomeFactories begin
   :end-before: DeclareSomeFactories end
 
-The user-defined factories have to be registered in the **FactoryManager** using the lines
+The user-defined factories have to be registered in the ``FactoryManager`` using the lines
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp
@@ -234,15 +234,15 @@ The user-defined factories have to be registered in the **FactoryManager** using
   :end-before: ConfigureFactoryManager end
 
 .. warning::
-	If you forget to register the new factories, the **FactoryManager** will use some internal default factories for being responsible to create the corresponding variables.
+	If you forget to register the new factories, the ``FactoryManager`` will use some internal default factories for being responsible to create the corresponding variables.
   Then your user-specified factories are just ignored during the multigrid setup!
 
 .. note::
-	The **FactoryManager** is also responsible for resolving all dependencies between different factories.
+	The ``FactoryManager`` is also responsible for resolving all dependencies between different factories.
   That is, after the user-defined factories have been registered,
-  all factories that request variable :math:`P` are provided with the prolongation operator :math:`P` that has been generated by the registered factory **PFact**.
+  all factories that request variable :math:`P` are provided with the prolongation operator :math:`P` that has been generated by the registered factory ``PFact``.
   If there is some data requested for which no factory has been registered by the user,
-  the **FactoryManager** manages an internal list for reasonable default choices and default factories.
+  the ``FactoryManager`` manages an internal list for reasonable default choices and default factories.
 
 Next, the user has to declare a level smoother.
 The following code can be used to define a symmetric Gauss-Seidel smoother.
@@ -253,9 +253,9 @@ Other methods can be set up in a similar way.
   :start-after: DefineSmootherObject begin
   :end-before: DefineSmootherObject end
 
-Before the level smoother can be used, a **MueLu::SmootherFactory** has to be defined for the smoother factory.
-The **SmootherFactory** is used in the multigrid setup to generate level smoothers for the corresponding levels using the prototyping design pattern.
-Note, that the **SmootherFactory** has also to be registered in the **FactoryManager** object.
+Before the level smoother can be used, a ``MueLu::SmootherFactory`` has to be defined for the smoother factory.
+The ``SmootherFactory`` is used in the multigrid setup to generate level smoothers for the corresponding levels using the prototyping design pattern.
+Note, that the ``SmootherFactory`` has also to be registered in the ``FactoryManager`` object.
 If the user forgets this, the multigrid setup will use some kind of default smoother, i.e., the user-chosen smoother options are just ignored.
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
@@ -263,7 +263,7 @@ If the user forgets this, the multigrid setup will use some kind of default smoo
   :start-after: CreateSmootherFactory begin
   :end-before: CreateSmootherFactory end
 
-Once the **FactoryManager** is set up, it can be used with the **Hierarchy::Setup** routine to initiate the coarsening process and set up the multigrid hierarchy.
+Once the ``FactoryManager`` is set up, it can be used with the ``Hierarchy::Setup`` routine to initiate the coarsening process and set up the multigrid hierarchy.
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp
