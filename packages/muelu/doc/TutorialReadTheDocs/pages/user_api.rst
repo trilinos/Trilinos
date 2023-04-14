@@ -62,14 +62,14 @@ all minimum requirements are fulfilled for generating an algebraic multigrid hie
 There are two different ways to setup a multigrid hierarchy in MueLu.
 One can either use a parameter list driven setup process which accepts either ``Teuchos::ParameterList`` objects
 or XML files in two different XML file formats.
-Alternatively, one can use the MueLu C++ API to define the multigrid setup at compile time.
+Alternatively, one can use the MueLu ``C++`` API to define the multigrid setup at compile time.
 In the next sections we show both variants.
 
 The most comfortable way to declare the multigrid parameters for MueLu is using the XML interface.
 In fact, MueLu provides two different XML interfaces.
 There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of MueLu as a multigrid framework.
 Both XML file formats are introduced in the previous sections of this hands on tutorial.
-However, for the C++ code it makes no difference which type of XML interface is used.
+However, for the ``C++`` code it makes no difference which type of XML interface is used.
 
 We first read the MueLu configuration from the XML file:
 
@@ -112,22 +112,36 @@ When using iterative solvers we also need an initial guess for the solution vect
   :start-after: SetRhsAndSolutionVector begin
   :end-before: SetRhsAndSolutionVector end
 
-In this example we just create Epetra vectors and wrap them into Xpetra objects.
-The right hand side vector is initialized with one and the solution vector is filled with random values.
+In this example we just create ``Tpetra::MultiVectors`` (with just a single vector each).
+The right-hand side vector :math:`b` is initialized with ones and the solution vector :math:`x` is filled with random values.
 
 .. _user_api/muelu as solver:
 
 MueLu as multigrid solver
 -------------------------
-To use MueLu as standalone solver, one can use the following code:
+MueLu can be used as standalone solver.
+First, we create and initialize a solution vector:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
-  :start-after: UseMultigridHierarchyAsSolver begin
-  :end-before: UseMultigridHierarchyAsSolver end
+  :start-after: MueLuAsSolverCreateSolutionVector begin
+  :end-before: MueLuAsSolverCreateSolutionVector end
 
-The ``MueLu::Hierarchy`` object is set to the non-preconditioner mode and the ``Iterate`` routine is called
+Then, the ``MueLu::Hierarchy`` object is set to the non-preconditioner mode:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: MueLuAsSolverSetSolverMode begin
+  :end-before: MueLuAsSolverSetSolverMode end
+
+Finally, we solve the system by calling the ``Iterate()`` routine
 to perform ``mgridSweeps`` sweeps with the chosen multigrid cycle.
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: MueLuAsSolverIterate begin
+  :end-before: MueLuAsSolverIterate end
+
 If successful, the ``multigridSolVec`` vector contains the solution.
 
 .. _user_api/muelu as preconditioner for belos:
@@ -136,13 +150,35 @@ MueLu as preconditioner for Belos
 ---------------------------------
 Belos is the Krylov package in Trilinos and works both for Epetra and Tpetra.
 Here, we demonstrate how to use MueLu as preconditioner for Belos solvers using Tpetra.
-First, we create a ``Belos::LinearProblem``, equip it with the MueLu preconditioner object,
-configure the iterative solver via a parameter list, and finally solver the linear system:
+
+First, we create and initialize a solution vector:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
-  :start-after: MueLuHierarchyAsPreconditionerWithinBelos begin
-  :end-before: MueLuHierarchyAsPreconditionerWithinBelos end
+  :start-after: MueLuAsPrecCreateSolutionVector begin
+  :end-before: MueLuAsPrecCreateSolutionVector end
+
+Then, we create a ``Belos::LinearProblem`` and hand in the MueLu preconditioner object:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: MueLuAsPrecSetupLinearSystem begin
+  :end-before: MueLuAsPrecSetupLinearSystem end
+
+Now, we define the linear solver configuration in a ``Teuchos::ParameterList``
+and create the Belos solver with this configuration:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: MueLuAsPrecConfigureAndCreateBelosSolver begin
+  :end-before: MueLuAsPrecConfigureAndCreateBelosSolver end
+
+Finally, we solve the linear system:
+
+.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+  :language: cpp
+  :start-after: MueLuAsPrecSolve begin
+  :end-before: MueLuAsPrecSolve end
 
 Full example using the XML interface
 ------------------------------------
@@ -159,14 +195,15 @@ This demonstration program has some more features that are not discussed in this
 
 .. admonition:: Exercise 2
 
-	Create large scale examples using the nx and ny parameters for a finer mesh.
-  Choose reasonable numbers for nx and ny for your machine and make use of your knowledge about MueLu for generating efficient preconditioners.
+	Create large scale examples using the ``--nx`` and ``--ny`` parameters for a finer mesh.
+  Choose reasonable numbers for ``--nx`` and ``--ny`` for your machine
+  and make use of your knowledge about MueLu for generating efficient preconditioners.
 
 C++ Interface
 =============
-As an alternative to the XML interfaces, the user can also define the multigrid hierarchy using the C++ API directly.
+As an alternative to the XML interfaces, the user can also define the multigrid hierarchy using the ``C++`` API directly.
 In contrary to the XML interface, which allows to build the layout of the multigrid preconditioner at runtime,
-the preconditioner is fully defined at compile time when using the C++ interface.
+the preconditioner is fully defined at compile time when using the ``C++`` interface.
 
 First, a ``MueLu::Hierarchy`` object has to be defined, which manages the multigrid hierarchy including all multigrid levels.
 It provides routines for the multigrid setup and the multigrid cycle algorithms (such as V-cycle and W-cycle).

@@ -225,24 +225,28 @@ int main (int argc, char *argv[])
         directSolver->solve();
       }
 
-      //! [MueLuHierarchyAsPreconditionerWithinBelos begin]
       // Solve Ax = b using AMG as a preconditioner in Belos
-      RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
       {
-        // Set initial guess
+        //! [MueLuAsPrecCreateSolutionVector begin]
+        // Create solution vector and set initial guess (already stored in X)
+        RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
         precSolVec->update(0.0, *X, 1.0);
+        //! [MueLuAsPrecCreateSolutionVector end]
 
+        //! [MueLuAsPrecSetupLinearSystem begin]
         // Construct a Belos LinearProblem object and hand-in the MueLu preconditioner
         RCP<Belos::LinearProblem<SC,MultiVector,Operator>> belosProblem =
             rcp(new Belos::LinearProblem<SC,MultiVector,Operator>(matrix, precSolVec, B));
         belosProblem->setLeftPrec(mueLuPreconditioner);
-
         bool set = belosProblem->setProblem();
+        //! [MueLuAsPrecSetupLinearSystem end]
+
         if (set == false) {
           fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
           return EXIT_FAILURE;
         }
 
+        //! [MueLuAsPrecConfigureAndCreateBelosSolver begin]
         // Belos parameter list
         RCP<ParameterList> belosList = Teuchos::parameterList();
         belosList->set("Maximum Iterations", 50); // Maximum number of iterations allowed
@@ -254,11 +258,16 @@ int main (int argc, char *argv[])
         // Create an iterative solver manager
         Belos::SolverFactory<SC,MultiVector,Operator> solverFactory;
         RCP<Belos::SolverManager<SC,MultiVector,Operator>> solver = solverFactory.create("Block GMRES", belosList);
-        solver->setProblem(belosProblem);
 
+        // Pass the linear problem to the solver
+        solver->setProblem(belosProblem);
+        //! [MueLuAsPrecConfigureAndCreateBelosSolver end]
+
+        //! [MueLuAsPrecSolve begin]
         // Perform solve
         Belos::ReturnType retStatus = Belos::Unconverged;
         retStatus = solver->solve();
+        //! [MueLuAsPrecSolve end]
 
         // Get the number of iterations for this solve
         fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
@@ -268,139 +277,36 @@ int main (int argc, char *argv[])
           fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
         else
           fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
       }
-      //! [MueLuHierarchyAsPreconditionerWithinBelos end]
 
       // Extract the underlying MueLu hierarchy
       //! [ExtractHierarchyFromTpetraPrec begin]
       RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = mueLuPreconditioner->GetHierarchy();
       //! [ExtractHierarchyFromTpetraPrec end]
 
-      //! [UseMultigridHierarchyAsSolver begin]
       // Solve Ax = b using AMG as a solver
-      RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
       {
-        // Set initial guess
+        //! [MueLuAsSolverCreateSolutionVector begin]
+        // Create solution vector and set initial guess (already stored in X)
+        RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
         multigridSolVec->update(0.0, *X, 1.0);
+        //! [MueLuAsSolverCreateSolutionVector end]
 
+        //! [MueLuAsSolverSetSolverMode begin]
         // Configure MueLu to be used as solver
         hierarchy->IsPreconditioner(false);
+        //! [MueLuAsSolverSetSolverMode end]
 
+        //! [MueLuAsSolverIterate begin]
         // Solve
         hierarchy->Iterate(*Xpetra::toXpetra(B), *Xpetra::toXpetra(multigridSolVec), mgridSweeps);
+        //! [MueLuAsSolverIterate end]
       }
-      //! [UseMultigridHierarchyAsSolver end]
 
     } // end of Tpetra::ScopeGuard
   success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
-
-
-  //   // ================================
-  //   // Preconditioner construction
-  //   // ================================
-
-  //   ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
-
-  //   RCP<Hierarchy> hierarchy = mueLuFactory.CreateHierarchy();
-  //   hierarchy->IsPreconditioner(true);
-  //   hierarchy->GetLevel(0)->Set("A", matrix);
-  //   hierarchy->GetLevel(0)->Set("Nullspace", nullspace);
-  //   // hierarchy->GetLevel(0)->Set("Coordinates", coordinates);
-
-  //   mueLuFactory.SetupHierarchy(*hierarchy);
-
-  //   // Generate exact solution using a direct solver
-  //   //! [ExactSolutionVector begin]
-  //   RCP<Vector> exactSolution = VectorFactory::Build(dofMap, true);
-  //   //! [EpetraSolutionVector end]
-  //   {
-  //     exactSolution->update(1.0, *X, 1.0);
-
-  //     // Amesos2 works with Tpetra objects directly, so we need to convert
-  //     RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(matrix);
-  //     RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*X);
-  //     RCP<Tpetra_MultiVector> tB = Utilities::MV2NonConstTpetraMV2(*B);
-
-  //     RCP<Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector>> directSolver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>("KLU2", tA, tX, tB);
-  //     directSolver->solve();
-  //   }
-
-  //   //! [MueLuHierarchyAsPreconditionerWithinBelos begin]
-  //   // Solve Ax = b using AMG as a preconditioner in Belos
-  //   RCP<Vector> precSolVec = VectorFactory::Build(dofMap, true);
-  //   {
-  //     // Set initial guess
-  //     precSolVec->update(0.0, *X, 1.0);
-
-  //     // Configure MueLu to be used as a preconditioner
-  //     hierarchy->IsPreconditioner(true);
-
-  //     // Turn the Xpetra::Matrix object into a Belos operator
-  //     Teuchos::RCP<OP> belosOp = Teuchos::rcp(new Belos::XpetraOp<SC,LO,GO,NO>(matrix));
-
-  //     // Turns a MueLu::Hierarchy object into a Belos operator
-  //     Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC,LO,GO,NO>(hierarchy));
-
-  //     // Construct a Belos LinearProblem object
-  //     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem =
-  //         rcp(new Belos::LinearProblem<SC,MV,OP>(belosOp, precSolVec, B));
-
-  //     bool set = belosProblem->setProblem();
-  //     if (set == false) {
-  //       fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-  //       return EXIT_FAILURE;
-  //     }
-
-  //     // Belos parameter list
-  //     RCP<ParameterList> belosList = Teuchos::parameterList();
-  //     belosList->set("Maximum Iterations", 50); // Maximum number of iterations allowed
-  //     belosList->set("Convergence Tolerance", tol); // Relative convergence tolerance requested
-  //     belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-  //     belosList->set("Output Frequency", 1);
-  //     belosList->set("Output Style", Belos::Brief);
-
-  //     // Create an iterative solver manager
-  //     Belos::SolverFactory<SC,MV,OP> solverFactory;
-  //     RCP<Belos::SolverManager<SC,MV,OP>> solver = solverFactory.create("Block GMRES", belosList);
-  //     solver->setProblem(belosProblem);
-
-  //     // Perform solve
-  //     Belos::ReturnType retStatus = Belos::Unconverged;
-  //     retStatus = solver->solve();
-
-  //     // Get the number of iterations for this solve
-  //     fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
-  //     // Check convergence status
-  //     if (retStatus != Belos::Converged)
-  //       fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-  //     else
-  //       fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
-  //   }
-  //   //! [MueLuHierarchyAsPreconditionerWithinBelos end]
-
-  //   //! [UseMultigridHierarchyAsSolver begin]
-  //   // Solve Ax = b using AMG as a solver
-  //   RCP<Vector> multigridSolVec = VectorFactory::Build(dofMap, true);
-  //   {
-  //     // Set initial guess
-  //     multigridSolVec->update(0.0, *X, 1.0);
-
-  //     // Configure MueLu to be used as solver
-  //     hierarchy->IsPreconditioner(false);
-
-  //     // Solve
-  //     hierarchy->Iterate(*B, *multigridSolVec, mgridSweeps);
-  //   }
-  //   //! [UseMultigridHierarchyAsSolver end]
-
-  //   success = true;
-  // }
-  // TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // main
