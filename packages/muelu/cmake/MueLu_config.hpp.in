@@ -86,8 +86,6 @@
 
 #cmakedefine HAVE_MUELU_AMGX
 
-#cmakedefine HAVE_MUELU_CGAL
-
 #cmakedefine HAVE_MUELU_VIENNACL
 
 #cmakedefine HAVE_MUELU_MKL

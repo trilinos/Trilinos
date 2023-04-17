@@ -271,7 +271,6 @@ PREDEFINED             = DOXYGEN_COMPILE \
                          HAVE_MUELU_AZTECOO \
                          HAVE_MUELU_BELOS \
                          HAVE_MUELU_BOOST \
-                         HAVE_MUELU_CGAL \
                          HAVE_MUELU_EPETRA \
                          HAVE_MUELU_EPETRAEXT \
                          HAVE_MUELU_EXPERIMENTAL \

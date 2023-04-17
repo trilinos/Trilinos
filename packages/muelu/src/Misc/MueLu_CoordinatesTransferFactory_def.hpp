@@ -52,7 +52,6 @@
 #include "Xpetra_IO.hpp"
 
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -204,16 +203,10 @@ namespace MueLu {
       coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
 
-      RCP<Aggregates>        aggregates;
-      RCP<Aggregates_kokkos> aggregatesKokkos;
+      RCP<Aggregates> aggregates;
       bool aggregatesCrossProcessors;
-      if (IsType<RCP<Aggregates> >(fineLevel, "Aggregates")) {
-        aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
-        aggregatesCrossProcessors = aggregates->AggregatesCrossProcessors();
-      } else {
-        aggregatesKokkos = Get<RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
-        aggregatesCrossProcessors = aggregatesKokkos->AggregatesCrossProcessors();
-      }
+      aggregates = Get<RCP<Aggregates> >(fineLevel, "Aggregates");
+      aggregatesCrossProcessors = aggregates->AggregatesCrossProcessors();
 
       // Create overlapped fine coordinates to reduce global communication
       RCP<xdMV> ghostedCoords = fineCoords;
@@ -225,66 +218,35 @@ namespace MueLu {
         ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
       }
 
-      if (!aggregates.is_null()) {
+      // The good news is that this graph has already been constructed for the
+      // TentativePFactory and was cached in Aggregates. So this is a no-op.
+      auto aggGraph = aggregates->GetGraph();
+      auto numAggs  = aggGraph.numRows();
 
-        // Get some info about aggregates
-        int                         myPID        = uniqueMap->getComm()->getRank();
-        LO                          numAggs      = aggregates->GetNumAggregates();
-        ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
-        const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
-        const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
+      auto fineCoordsView   = ghostedCoords->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
-        // Fill in coarse coordinates
-        for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-          ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> fineCoordsData = ghostedCoords->getData(j);
-          ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>     coarseCoordsData = coarseCoords->getDataNonConst(j);
+      // Fill in coarse coordinates
+      {
+        SubFactoryMonitor m2(*this, "AverageCoords", coarseLevel);
 
-          for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
-            if (procWinner[lnode] == myPID &&
-                lnode < vertex2AggID.size() &&
-                lnode < fineCoordsData.size() && // TAW do not access off-processor coordinates
-                vertex2AggID[lnode] < coarseCoordsData.size() &&
-                Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::isnaninf(fineCoordsData[lnode]) == false) {
-              coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
-            }
-          }
-          for (LO agg = 0; agg < numAggs; agg++) {
-            coarseCoordsData[agg] /= aggSizes[agg];
-          }
-        }
+        const auto dim = ghostedCoords->getNumVectors();
 
-      } else {
+        typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
+        for (size_t j = 0; j < dim; j++) {
+          Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
+                                KOKKOS_LAMBDA(const LO i) {
+                                  // A row in this graph represents all node ids in the aggregate
+                                  // Therefore, averaging is very easy
 
-        // The good new is that his graph has already been constructed for the
-        // TentativePFactory and was cached in Aggregates. So this is a no-op.
-        auto aggGraph = aggregatesKokkos->GetGraph();
-        auto numAggs  = aggGraph.numRows();
+                                  auto aggregate = aggGraph.rowConst(i);
 
-        auto fineCoordsView   = fineCoords  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
-        auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+                                  typename Teuchos::ScalarTraits<Scalar>::magnitudeType sum = 0.0; // do not use Scalar here (Stokhos)
+                                  for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
+                                    sum += fineCoordsRandomView(aggregate(colID),j);
 
-        // Fill in coarse coordinates
-        {
-          SubFactoryMonitor m2(*this, "AverageCoords", coarseLevel);
-
-          const auto dim = fineCoords->getNumVectors();
-
-          typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
-          for (size_t j = 0; j < dim; j++) {
-            Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
-                                 KOKKOS_LAMBDA(const LO i) {
-                                   // A row in this graph represents all node ids in the aggregate
-                                   // Therefore, averaging is very easy
-
-                                   auto aggregate = aggGraph.rowConst(i);
-
-                                   typename Teuchos::ScalarTraits<Scalar>::magnitudeType sum = 0.0; // do not use Scalar here (Stokhos)
-                                   for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
-                                     sum += fineCoordsRandomView(aggregate(colID),j);
-
-                                   coarseCoordsView(i,j) = sum / aggregate.length;
-                                 });
-          }
+                                  coarseCoordsView(i,j) = sum / aggregate.length;
+                                });
         }
       }
 

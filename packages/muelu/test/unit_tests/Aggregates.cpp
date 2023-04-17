@@ -938,14 +938,18 @@ public:
     level.Request(*aggFact);
     aggFact->Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
-    Array< LO > aggPtr;
-    Array< LO > aggNodes;
-    Array< LO > unaggregated;
+    typename Aggregates::LO_view aggPtr;
+    typename Aggregates::LO_view aggNodes;
+    typename Aggregates::LO_view unaggregated;
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+
+    typename Aggregates::LO_view::HostMirror unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+
     //     Test to check that the dirichlet node is aggregated:
-    for( int i = 0; i < unaggregated.size(); i++){
-      TEST_EQUALITY( unaggregated[i] == 2, false);
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++){
+      TEST_EQUALITY( unaggregated_h(i) == 2, false);
     }
     // Repeat with greedy Dirichlet
     Level levelGreedyAndNoPreserve;
@@ -969,7 +973,23 @@ public:
     aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    TEST_EQUALITY(unaggregated[0],2);// check that the node with the Dof flagged as dirichlet is unaggregated
+    unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+
+    // GH: loop over the unaggregated list and add to the counter each time node 2 appears
+    int unaggregated_count_node2 = 0;
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++)
+      if(unaggregated_h(i) == (LO)2)
+        unaggregated_count_node2++;
+
+    TEST_EQUALITY(unaggregated_count_node2,1);// check that the node with the Dof flagged as dirichlet appears in the list once
+
+    // GH: print this to out since the test can be sensitive to ordering issues
+    out << "unaggregated_h = [";
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0)-1; i++){
+      out << unaggregated_h(i) << ", ";
+    }
+    out << unaggregated_h(unaggregated_h.extent(0)-1) << "]\n";
 
     // Repeat with greedy Dirichlet and preserve Dirichlet points
     Level levelGreedyAndPreserve;
@@ -994,8 +1014,10 @@ public:
     aggregates = levelGreedyAndPreserve.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    for( int i = 0; i < unaggregated.size(); i++){
-      TEST_EQUALITY( unaggregated[i] == 2, false);
+    unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++){
+      TEST_EQUALITY( unaggregated_h(i) == 2, false);
     }
   }
 

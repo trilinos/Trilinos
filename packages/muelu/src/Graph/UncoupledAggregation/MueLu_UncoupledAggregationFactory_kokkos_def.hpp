@@ -65,7 +65,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -182,7 +182,7 @@ namespace MueLu {
     RCP<const LWGraph_kokkos> graph = Get< RCP<LWGraph_kokkos> >(currentLevel, "Graph");
 
     // Build
-    RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     aggregates->setObjectLabel("UC");
 
     const LO numRows = graph->GetNodeNumVertices();
