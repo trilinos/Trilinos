@@ -49,36 +49,42 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
+
 namespace Teuchos { class ParameterList; }
+
 
 namespace Thyra {
 
-  enum EBelosSolverType {
-    SOLVER_TYPE_BLOCK_GMRES,
-    SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-    SOLVER_TYPE_BLOCK_CG,
-    SOLVER_TYPE_PSEUDO_BLOCK_CG,
-    SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
-    SOLVER_TYPE_GCRODR,
-    SOLVER_TYPE_RCG,
-    SOLVER_TYPE_MINRES,
-    SOLVER_TYPE_TFQMR,
-    SOLVER_TYPE_BICGSTAB,
-    SOLVER_TYPE_FIXEDPOINT,
-    SOLVER_TYPE_TPETRA_GMRES,
-    SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
-    SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
-    SOLVER_TYPE_TPETRA_GMRES_SSTEP
-  };
 
-  inline std::istream& operator>>(
-    std::istream& is, EBelosSolverType& sType)
-  {
-    int intval;
-    is >> intval;
-    sType = (EBelosSolverType)intval;
-    return is;
-  }
+//! \brief
+enum EBelosSolverType {
+  SOLVER_TYPE_BLOCK_GMRES,
+  SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
+  SOLVER_TYPE_BLOCK_CG,
+  SOLVER_TYPE_PSEUDO_BLOCK_CG,
+  SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
+  SOLVER_TYPE_GCRODR,
+  SOLVER_TYPE_RCG,
+  SOLVER_TYPE_MINRES,
+  SOLVER_TYPE_TFQMR,
+  SOLVER_TYPE_BICGSTAB,
+  SOLVER_TYPE_FIXEDPOINT,
+  SOLVER_TYPE_TPETRA_GMRES,
+  SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
+  SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
+  SOLVER_TYPE_TPETRA_GMRES_SSTEP
+};
+
+
+//! \brief
+inline std::istream& operator>>(
+  std::istream& is, EBelosSolverType& sType)
+{
+  int intval;
+  is >> intval;
+  sType = (EBelosSolverType)intval;
+  return is;
+}
 
 
 /** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms

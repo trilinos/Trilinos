@@ -83,8 +83,10 @@ int Teuchos::TestForException_getThrowNumber()
 }
 
 
-void Teuchos::TestForException_break( const std::string &errorMsg )
+void Teuchos::TestForException_break(const std::string &errorMsg, int throwNumber)
 {
+  (void)throwNumber; // Ignore unused arg
+  // Provide a statement to break on
   size_t break_on_me;
   break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
   if (break_on_me) {} // Avoid warning

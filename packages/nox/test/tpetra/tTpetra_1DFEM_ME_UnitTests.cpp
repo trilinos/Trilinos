@@ -65,7 +65,6 @@
 #include "BelosTypes.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "ME_Tpetra_1DFEM.hpp"
