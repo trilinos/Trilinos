@@ -33,20 +33,12 @@
 
     <Parameter name="subdomain solver name"             type="string" value="DATABASE SCHWARZ"/>
     <ParameterList name="subdomain solver parameters">
-      <Parameter name= "database schwarz: patch size"             type="int" value="9"/> <!-- 9 DOFs per patch for degree 2 -->
+      <Parameter name= "database schwarz: patch size"             type="int" value="9"/> <!-- 9 DOFs per patch for degree 2 on quadrilaterals -->
       <Parameter name= "database schwarz: patch tolerance"        type="double" value="0.01"/> <!-- A==B if |A-B|_l1 < 0.01 -->
       <Parameter name= "database schwarz: skip database"          type="bool" value="false"/> <!-- don't skip constructing a database (for performance comparisons)-->
       <Parameter name= "database schwarz: print database summary" type="bool" value="true"/> <!-- print a summary of the compression after setup -->
     </ParameterList>
 
   </ParameterList>
-
-  <!-- ===========  REPARTITIONING  =========== -->
-  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
-  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan"/>
-  <Parameter        name="repartition: start level"             type="int"      value="2"/>
-  <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
-  <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
-  <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
 
 </ParameterList>

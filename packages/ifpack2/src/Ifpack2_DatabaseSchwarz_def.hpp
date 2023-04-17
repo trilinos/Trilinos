@@ -236,7 +236,7 @@ getRangeMap() const
 
 template<class MatrixType>
 bool DatabaseSchwarz<MatrixType>::hasTransposeApply() const {
-  return true; // GH: redo
+  return false;
 }
 
 
