@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -793,17 +793,19 @@ int main(int argc, char **argv)
   error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
   printf("\nafter ex_get_variable_param, error = %3d\n", error);
 
-  for (int i = 0; i < num_glo_vars; i++) {
-    var_names[i] = (char *)my_calloc((MAX_STR_LENGTH + 1), sizeof(char));
-  }
+  if (num_glo_vars > 0) {
+    for (int i = 0; i < num_glo_vars; i++) {
+      var_names[i] = (char *)my_calloc((MAX_STR_LENGTH + 1), sizeof(char));
+    }
 
-  error = ex_get_variable_name(exoid, EX_GLOBAL, 1, var_names[0]);
-  printf("\nafter ex_get_variable_name, error = %3d\n", error);
+    error = ex_get_variable_name(exoid, EX_GLOBAL, 1, var_names[0]);
+    printf("\nafter ex_get_variable_name, error = %3d\n", error);
 
-  printf("There are %2d global variables; their names are :\n", num_glo_vars);
-  for (int i = 0; i < num_glo_vars; i++) {
-    printf(" '%s'\n", var_names[i]);
-    free(var_names[i]);
+    printf("There are %2d global variables; their names are :\n", num_glo_vars);
+    for (int i = 0; i < num_glo_vars; i++) {
+      printf(" '%s'\n", var_names[i]);
+      free(var_names[i]);
+    }
   }
 
   /* read nodal variables parameters and names */

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace {
     return max;
   }
 
-  void find_range(std::vector<double> &coord, vector3d &min, vector3d &max)
+  void find_range(const std::vector<double> &coord, vector3d &min, vector3d &max)
   {
     if (!coord.empty()) {
       min.set(coord[0], coord[1], coord[2]);
@@ -68,7 +68,7 @@ namespace {
   }
 
   template <typename INT>
-  void find_in_range(std::vector<double> coord, vector3d &min, vector3d &max,
+  void find_in_range(const std::vector<double> &coord, const vector3d &min, const vector3d &max,
                      std::vector<INT> &in_range)
   {
     if (!coord.empty()) {

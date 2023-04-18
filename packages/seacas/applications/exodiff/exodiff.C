@@ -611,7 +611,6 @@ namespace {
     std::vector<MinMaxData> mm_glob;
     std::vector<MinMaxData> mm_node;
     std::vector<MinMaxData> mm_elmt;
-    std::vector<MinMaxData> mm_eatt;
     std::vector<MinMaxData> mm_ns;
     std::vector<MinMaxData> mm_ss;
     std::vector<MinMaxData> mm_eb;
@@ -621,7 +620,6 @@ namespace {
       initialize(mm_glob, interFace.glob_var_names.size(), ToleranceType::mm_global);
       initialize(mm_node, interFace.node_var_names.size(), ToleranceType::mm_nodal);
       initialize(mm_elmt, interFace.elmt_var_names.size(), ToleranceType::mm_element);
-      initialize(mm_eatt, interFace.elmt_att_names.size(), ToleranceType::mm_elematt);
       initialize(mm_ns, interFace.ns_var_names.size(), ToleranceType::mm_nodeset);
       initialize(mm_ss, interFace.ss_var_names.size(), ToleranceType::mm_sideset);
       initialize(mm_eb, interFace.eb_var_names.size(), ToleranceType::mm_edgeblock);
@@ -2747,7 +2745,7 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
 
 int timeStepIsExcluded(int ts)
 {
-  for (auto &elem : interFace.exclude_steps) {
+  for (const auto &elem : interFace.exclude_steps) {
     if (ts == elem) {
       return 1;
     }

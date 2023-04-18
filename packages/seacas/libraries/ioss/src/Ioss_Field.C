@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -162,6 +162,20 @@ void Ioss::Field::check_type(BasicType the_type) const
   }
 }
 
+Ioss::Field &Ioss::Field::set_zero_copy_enabled(bool true_false)
+{
+  if (has_transform()) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "Field {} is being set to `zero_copy_enabled`; however, it contains 1 or more "
+               "transforms which is not allowed.\n",
+               name_);
+    IOSS_ERROR(errmsg);
+  }
+  zeroCopyable_ = true_false;
+  return *this;
+}
+
 void Ioss::Field::reset_count(size_t new_count)
 {
   if (transCount_ == rawCount_) {
@@ -200,6 +214,15 @@ size_t Ioss::Field::get_size() const
 
 bool Ioss::Field::add_transform(Transform *my_transform)
 {
+  if (zero_copy_enabled()) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "Field {} is currently set to `zero_copy_enabled` which does not support adding a "
+               "transform.  The transform has *not* been added to this field.\n",
+               name_);
+    IOSS_ERROR(errmsg);
+  }
+
   const Ioss::VariableType *new_storage = my_transform->output_storage(transStorage_);
   size_t                    new_count   = my_transform->output_count(transCount_);
 
@@ -249,14 +272,16 @@ bool Ioss::Field::equal_(const Ioss::Field &rhs, bool quiet) const
 
   if (this->type_ != rhs.type_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD type mismatch ({} v. {})", this->type_string(), rhs.type_string());
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD type mismatch ({} v. {})", this->type_string(),
+                 rhs.type_string());
     }
     return false;
   }
 
   if (this->role_ != rhs.role_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD role mismatch ({} v. {})", this->role_string(), rhs.role_string());
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD role mismatch ({} v. {})", this->role_string(),
+                 rhs.role_string());
     }
     return false;
   }
@@ -281,6 +306,22 @@ bool Ioss::Field::equal_(const Ioss::Field &rhs, bool quiet) const
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "\n\tFIELD size mismatch ({} v. {})", this->get_size(),
                  rhs.get_size());
+    }
+    return false;
+  }
+
+  if (this->get_suffices_uppercase() != rhs.get_suffices_uppercase()) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD suffices_uppercase mismatch ({} v. {})",
+                 this->get_suffices_uppercase(), rhs.get_suffices_uppercase());
+    }
+    return false;
+  }
+
+  if (this->zero_copy_enabled() != rhs.zero_copy_enabled()) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD zero_copy_enabled mismatch ({} v. {})",
+                 this->zero_copy_enabled(), rhs.zero_copy_enabled());
     }
     return false;
   }
@@ -310,23 +351,20 @@ std::string Ioss::Field::type_string(Ioss::Field::BasicType type)
   }
 }
 
-std::string Ioss::Field::role_string() const
-{
-  return role_string(get_role());
-}
+std::string Ioss::Field::role_string() const { return role_string(get_role()); }
 
 std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
 {
-    switch (role) {
-    case Ioss::Field::INTERNAL: return std::string("Internal");
-    case Ioss::Field::MESH: return std::string("Mesh");
-    case Ioss::Field::ATTRIBUTE: return std::string("Attribute");
-    case Ioss::Field::COMMUNICATION: return std::string("Communication");
-    case Ioss::Field::MESH_REDUCTION: return std::string("Mesh Reduction");
-    case Ioss::Field::REDUCTION: return std::string("Reduction");
-    case Ioss::Field::TRANSIENT: return std::string("Transient");
-    default: return std::string("internal error");
-    }
+  switch (role) {
+  case Ioss::Field::INTERNAL: return std::string("Internal");
+  case Ioss::Field::MESH: return std::string("Mesh");
+  case Ioss::Field::ATTRIBUTE: return std::string("Attribute");
+  case Ioss::Field::COMMUNICATION: return std::string("Communication");
+  case Ioss::Field::MESH_REDUCTION: return std::string("Mesh Reduction");
+  case Ioss::Field::REDUCTION: return std::string("Reduction");
+  case Ioss::Field::TRANSIENT: return std::string("Transient");
+  default: return std::string("internal error");
+  }
 }
 
 namespace {

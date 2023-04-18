@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -231,9 +231,9 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
         mode64bit_ |= EX_ALL_INT64_DB;
       }
 
-      int max_name_length = static_cast<int>(ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH));
-      if (max_name_length > maximumNameLength_) {
-        maximumNameLength_ = max_name_length;
+      int max_name = static_cast<int>(ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH));
+      if (max_name > maximumNameLength_) {
+        maximumNameLength_ = max_name;
       }
 
       ex_close(exoid);

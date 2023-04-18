@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,7 +28,7 @@ void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
 
 Ioss::ETRegistry::~ETRegistry()
 {
-  for (auto &entry : m_deleteThese) {
+  for (const auto &entry : m_deleteThese) {
     delete entry;
   }
 }

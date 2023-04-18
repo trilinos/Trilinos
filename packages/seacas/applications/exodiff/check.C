@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -280,7 +280,7 @@ namespace {
         }
       }
     }
-    else if (!elmt_map.empty()) {
+    else {
       auto   offset1     = block1->offset();
       auto   offset2     = block2->offset();
       size_t num_element = block1->Size();

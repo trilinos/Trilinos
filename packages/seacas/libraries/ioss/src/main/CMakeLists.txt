@@ -278,6 +278,38 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+if (TPL_ENABLE_MPI)
+  set(EXTERNAL "--compose=external")
+endif()
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns

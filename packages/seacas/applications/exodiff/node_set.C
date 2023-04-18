@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -44,7 +44,7 @@ template <typename INT> const INT *Node_Set<INT>::Nodes() const
 
 template <typename INT> size_t Node_Set<INT>::Node_Id(size_t position) const
 {
-  if (numEntity <= 0) {
+  if (numEntity == 0) {
     return 0;
   }
 
@@ -59,7 +59,7 @@ template <typename INT> size_t Node_Set<INT>::Node_Id(size_t position) const
 
 template <typename INT> size_t Node_Set<INT>::Node_Index(size_t position) const
 {
-  if (numEntity <= 0) {
+  if (numEntity == 0) {
     return 0;
   }
 
