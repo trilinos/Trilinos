@@ -1,5 +1,5 @@
-#ifndef TPETRA_DETAILS_SPACES_HPP
-#define TPETRA_DETAILS_SPACES_HPP
+#ifndef TPETRA_DETAILS_EXECUTIONSPACES_HPP
+#define TPETRA_DETAILS_EXECUTIONSPACES_HPP
 
 #include <iostream>
 #include <sstream>
@@ -473,4 +473,4 @@ is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
 
 #undef TPETRA_DETAILS_SPACES_THROW
 
-#endif // TPETRA_DETAILS_SPACES_HPP
+#endif // TPETRA_DETAILS_EXECUTIONSPACES_HPP
