@@ -37,7 +37,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_OrientationsInterface.hpp"
 #include "Intrepid2_CellTools.hpp"
-#include "Intrepid2_LagrangianInterpolation.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_ProjectionTools.hpp"
 
 typedef Kokkos::DynRankView<double,PHX::Device> DynRankView;
 
@@ -58,7 +59,8 @@ WorksetsAndOrts getWorksetsAndOrtsForFields(
   std::map<std::string,panzer::BasisDescriptor> fmap);
 template <typename EvalType> 
 bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-                     std::map<std::string,panzer::BasisDescriptor> & fmap);
+                     std::map<std::string,panzer::BasisDescriptor> & fmap,
+                     std::string & eShape);
 
 struct Fun {
 typedef panzer::PureBasis::EElementSpace EElementSpace;
@@ -142,7 +144,8 @@ class GetCoeffsEvaluator
 {
   public:
 
-    GetCoeffsEvaluator(std::string name, Teuchos::RCP<panzer::PureBasis> basis /*, Functor ??*/);
+    GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis, 
+                       std::string & eShape /*, Functor ??*/);
 
     void
     evaluateFields(
@@ -157,13 +160,15 @@ class GetCoeffsEvaluator
     PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> coeffs;
     Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orts;
     DynRankView cellNodes;
+    std::string eShape;
   
 }; // end of class
 
 template<typename EvalT, typename Traits>
 GetCoeffsEvaluator<EvalT, Traits>::
-GetCoeffsEvaluator(std::string name, Teuchos::RCP<panzer::PureBasis> basis /*, Functor ?? */) 
-  : basis(basis)
+GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
+                   std::string & eShape /*, Functor ?? */) 
+  : basis(basis), eShape(eShape)
 {
 
   // grab information from quadrature rule
@@ -191,10 +196,13 @@ GetCoeffsEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 {
-  typedef Intrepid2::Experimental::LagrangianInterpolation<PHX::Device> li;
   typedef Intrepid2::CellTools<PHX::Device> ct;
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device> fst;
+  typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
+  // FYI, this all relies on a first-order mesh
   cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE 
+  auto numNodesPerElem = cellNodes.extent(1);
 
   auto numOwnedElems = cellNodes.extent(0);
   TEUCHOS_ASSERT(numOwnedElems==orts->size());
@@ -202,16 +210,6 @@ evaluateFields(
   auto dim = basis->dimension();
   auto basisCardinality = basis->cardinality();
   auto elemSpace = basis->getElementSpace();
-
-  DynRankView dofCoeffs, funAtDofPoints;
-
-  if (basis->isVectorBasis()) {
-    // vector basis
-    dofCoeffs = DynRankView("dofCoeffs",numOwnedElems,basisCardinality,dim);
-  } else {
-    dofCoeffs = DynRankView("dofCoeffs",numOwnedElems,basisCardinality);
-  }
-  auto dofCoords = DynRankView("dofCoords",numOwnedElems,basisCardinality,dim);
 
   // First, need to copy orientations to device
   auto orts_dev = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts_dev",orts->size());
@@ -221,33 +219,93 @@ evaluateFields(
   Kokkos::deep_copy(orts_dev,orts_host);
 
   auto it2basis = basis->template getIntrepid2Basis<PHX::exec_space,double,double>();
-
-  // get Dof coordinates and coefficients (reference frame)
-  li::getDofCoordsAndCoeffs(dofCoords,dofCoeffs,it2basis.get(),orts_dev);
-
-  if (basis->isVectorBasis()) {
-    // vector basis
-    funAtDofPoints = DynRankView("funAtDofPoints", numOwnedElems, basisCardinality, dim);
-  } else {
-    funAtDofPoints = DynRankView("funAtDofPoints", numOwnedElems, basisCardinality);
-  }
+  auto functionSpace = it2basis->getFunctionSpace();
+  auto cell_topology = it2basis->getBaseCellTopology(); // See note above
 
   {
-    auto physDofPoints = DynRankView("physDofPoints", numOwnedElems, basisCardinality, dim);
-    // TODO BWR update this (basecell)?
-    ct::mapToPhysicalFrame(physDofPoints,dofCoords,cellNodes,it2basis->getBaseCellTopology());
+    Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+    projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
 
-    // TODO BWR I don't think this works for HDiv or HCurl
-    // TODO BWR the jacobian is at least wrong
-    // TODO BWR for HGrad with uniform mesh, we are OK.
+    int numPoints = projStruct.getNumTargetEvalPoints();
+    DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
+
+    pts::getL2EvaluationPoints(evaluationPoints,
+        orts_dev,
+        it2basis.get(),
+        &projStruct);
+
+    DynRankView refTargetAtEvalPoints, physTargetAtEvalPoints;
+    if(functionSpace == Intrepid2::FUNCTION_SPACE_HCURL || functionSpace == Intrepid2::FUNCTION_SPACE_HDIV) {
+      refTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints, dim);
+      physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints, dim);
+    } else {
+      refTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
+      physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
+    }
+
+    DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
+    {
+      DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
+
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device::execution_space>(0,numOwnedElems),
+          KOKKOS_LAMBDA (const int &i) {
+        auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+        for(int j=0; j<numPoints; ++j){
+          auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+          if (eShape == "Hex") {
+            Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+          } else if (eShape == "Tet") {
+            Intrepid2::Impl::Basis_HGRAD_TET_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+          } else if (eShape == "Quad") {
+            Intrepid2::Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+          } else if (eShape == "Tri") {
+            Intrepid2::Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+          }
+          for(int k=0; k<numNodesPerElem; ++k)
+            for(int d=0; d<dim; ++d)
+              physEvalPoints(i,j,d) += cellNodes(i,k,d)*basisValuesAtEvalPoint(k);
+        }
+      });
+      Kokkos::fence();
+    }
+
+    //transform the target function and its derivative to the reference element (inverse of pullback operator)
+    DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
+    DynRankView jacobian_det("jacobian_det", numOwnedElems, numPoints);
+    DynRankView jacobian_inv("jacobian_inv", numOwnedElems, numPoints, dim, dim);
+    ct::setJacobian(jacobian, evaluationPoints, cellNodes, cell_topology);
+    ct::setJacobianDet (jacobian_det, jacobian);
+    ct::setJacobianInv (jacobian_inv, jacobian);
+
     EvalSolFunctor<DynRankView> functor(elemSpace);
-    functor.funAtPoints = funAtDofPoints;
-    functor.points = physDofPoints;
-    Kokkos::parallel_for("loop for evaluating the function at DoF points", numOwnedElems, functor);
-    Kokkos::fence(); //make sure that funAtDofPoints has been evaluated
-  }
+    functor.funAtPoints = physTargetAtEvalPoints;
+    functor.points = physEvalPoints;
+    Kokkos::parallel_for("loop for evaluating function in phys space", numOwnedElems, functor);
+    Kokkos::fence();
 
-    li::getBasisCoeffs(coeffs.get_view(), funAtDofPoints, dofCoeffs);
+    switch (functionSpace) {
+    case Intrepid2::FUNCTION_SPACE_HGRAD:
+      fst::mapHGradDataFromPhysToRef(refTargetAtEvalPoints,physTargetAtEvalPoints);
+      break;
+    case Intrepid2::FUNCTION_SPACE_HCURL:
+      fst::mapHCurlDataFromPhysToRef(refTargetAtEvalPoints,jacobian,physTargetAtEvalPoints);
+      break;
+    case Intrepid2::FUNCTION_SPACE_HDIV:
+      fst::mapHDivDataFromPhysToRef(refTargetAtEvalPoints,jacobian_inv,jacobian_det,physTargetAtEvalPoints);
+      break;
+    case Intrepid2::FUNCTION_SPACE_HVOL:
+      fst::mapHVolDataFromPhysToRef(refTargetAtEvalPoints,jacobian_det,physTargetAtEvalPoints);
+      break;
+    default: {}
+    }
+
+    pts::getL2BasisCoeffs(coeffs.get_view(),
+        refTargetAtEvalPoints,
+        evaluationPoints,
+        orts_dev,
+        it2basis.get(),
+        &projStruct);
+  }
 
   return;
 }
@@ -264,8 +322,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
   //////////////////////////////////////////////////////////
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    std::string eShape("Quad");
     pl->set("Mesh Dimension",2);
-    pl->set("Type","Quad");
+    pl->set("Type",eShape);
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("X Elements",2);
@@ -276,15 +335,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
   
     fmap["MyField"] = panzer::BasisDescriptor(2,"HGrad");
     // return true if successful
-    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap));
+    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap,eShape));
   }
 
   // HGRAD CHECKS Hex Mesh
   //////////////////////////////////////////////////////////
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    std::string eShape("Hex");
     pl->set("Mesh Dimension",3);
-    pl->set("Type","Hex");
+    pl->set("Type",eShape);
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Z Blocks",1);
@@ -297,15 +357,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
   
     fmap["MyField"] = panzer::BasisDescriptor(2,"HGrad");
     // return true if successful
-    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap));
+    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap,eShape));
   }
   
   // HGRAD CHECKS Tri Mesh
   //////////////////////////////////////////////////////////
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    std::string eShape("Tri");
     pl->set("Mesh Dimension",2);
-    pl->set("Type","Tri");
+    pl->set("Type",eShape);
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("X Elements",2);
@@ -314,17 +375,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     auto mesh = createInlineMesh(pl);
     std::map<std::string,panzer::BasisDescriptor> fmap;
   
-    fmap["MyField"] = panzer::BasisDescriptor(2,"HGrad");
+    fmap["MyField"] = panzer::BasisDescriptor(2,"HCurl");
     // return true if successful
-    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap));
+    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap,eShape));
   }
 
   // HGRAD CHECKS Tet Mesh
   //////////////////////////////////////////////////////////
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    std::string eShape("Tet");
     pl->set("Mesh Dimension",3);
-    pl->set("Type","Tet");
+    pl->set("Type",eShape);
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Z Blocks",1);
@@ -337,14 +399,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
   
     fmap["MyField"] = panzer::BasisDescriptor(2,"HGrad");
     // return true if successful
-    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap));
+    TEST_ASSERT(checkProjection<EvalType>(mesh,fmap,eShape));
   }
 
 }
 
 template <typename EvalType> 
 bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-                     std::map<std::string,panzer::BasisDescriptor> & fmap)
+                     std::map<std::string,panzer::BasisDescriptor> & fmap,
+                     std::string & eShape)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -381,7 +444,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   {
      RCP<panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits> > e =
        rcp(new panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits>(
-        fname,sourceBasis)
+        fname,sourceBasis,eShape)
        );
 
      fm->registerEvaluator<EvalType>(e);
@@ -427,9 +490,11 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   Kokkos::deep_copy(t_h, t.get_view());
 
   bool matched = true;
+  // TODO BWR Only works for HGrad, nested...
   for (size_t ncell=0;ncell<numCells;++ncell){
     for (int idx_dof=0;idx_dof<targetBasis->cardinality();++idx_dof){
       if (std::abs(s_h(ncell,idx_dof) - t_h(ncell,idx_dof)) > 1e-14) matched = false;
+      std::cout << s_h(ncell,idx_dof) << " " << t_h(ncell,idx_dof) << std::endl;
     }
   }
 
