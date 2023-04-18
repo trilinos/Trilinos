@@ -642,7 +642,7 @@ namespace Ioss {
     importElementCount.resize(m_processorCount + 1);
     importElementIndex.resize(m_processorCount + 1);
 
-    for (auto &proc : m_elementToProc) {
+    for (const auto &proc : m_elementToProc) {
       exportElementCount[proc]++;
     }
 

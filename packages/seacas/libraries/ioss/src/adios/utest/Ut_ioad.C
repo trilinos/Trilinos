@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -186,7 +186,6 @@ void CompareFieldData(const T entity_block1, const T entity_block2, const std::s
     CompareFieldData<T, char>(entity_block1, entity_block2, field_name);
     break;
   default:
-    std::ostringstream errmsg;
     throw("INTERNAL ERROR: Invalid field type. Something is wrong in the the input entity block.");
   }
 }

@@ -17,6 +17,7 @@ namespace Excn {
   public:
     explicit ExodusFile(size_t which);
     ~ExodusFile();
+
     ExodusFile(const ExodusFile &)           = delete;
     ExodusFile operator=(const ExodusFile &) = delete;
 

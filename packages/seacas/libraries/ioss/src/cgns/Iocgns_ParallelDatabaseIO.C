@@ -3,7 +3,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -174,7 +174,7 @@ namespace Iocgns {
 
   ParallelDatabaseIO::~ParallelDatabaseIO()
   {
-    for (auto &gtb : m_globalToBlockLocalNodeMap) {
+    for (const auto &gtb : m_globalToBlockLocalNodeMap) {
       delete gtb.second;
     }
     try {
@@ -683,7 +683,7 @@ namespace Iocgns {
       int64_t          top      = min + per_proc;
 
       // NOTE: nodes is sorted...
-      for (auto &node : nodes) {
+      for (const auto &node : nodes) {
         while (node >= top) {
           top += per_proc;
           proc++;
@@ -780,7 +780,7 @@ namespace Iocgns {
 //
 //
 #ifndef NDEBUG
-      for (auto &u_node : u_nodes) {
+      for (const auto &u_node : u_nodes) {
         assert(u_node > 0);
       }
 #endif
@@ -1299,17 +1299,16 @@ namespace Iocgns {
       }
 
       int field_offset = Utils::index(field);
-      int comp_count = field.get_component_count(Ioss::Field::InOut::INPUT);
+      int comp_count   = field.get_component_count(Ioss::Field::InOut::INPUT);
       if (comp_count == 1) {
-        CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index,
-				     field_offset, rmin, rmax, rdata));
+        CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index, field_offset,
+                                     rmin, rmax, rdata));
       }
       else {
         std::vector<double> cgns_data(num_to_get);
         for (int i = 0; i < comp_count; i++) {
-          std::string var_name = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
-          CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index, field_offset + i,
-				       rmin, rmax, cgns_data.data()));
+          CGCHECKM(cgp_field_read_data(get_file_pointer(), base, zone, solution_index,
+                                       field_offset + i, rmin, rmax, cgns_data.data()));
           for (cgsize_t j = 0; j < num_to_get; j++) {
             rdata[comp_count * j + i] = cgns_data[j];
           }

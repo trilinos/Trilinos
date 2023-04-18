@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -58,7 +58,7 @@ namespace Iotm {
   public:
     explicit TextMesh(const std::string &parameters, int proc_count = 1,
                       int my_proc = 0);
-    TextMesh(int proc_count = 1, int my_proc = 0);
+    explicit TextMesh(int proc_count = 1, int my_proc = 0);
     TextMesh();
     TextMesh(const TextMesh &)            = delete;
     TextMesh &operator=(const TextMesh &) = delete;

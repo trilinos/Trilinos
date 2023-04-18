@@ -270,12 +270,14 @@ install install-user-lib
     mapvarlib
     aprepro_lib
     ioex
+    ioexnl
     io_info_lib
     iocgns
     iopg
     iohb
     iogn
     iogs
+    ionull
     ioinit
     ioss
     iotr
@@ -327,6 +329,23 @@ lib ioex
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libioex.a
+    ]
+  ;
+
+lib ioexnl
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+         [ glob $(seacas-root)/libraries/ioss/src/exonull/*.[C] ]
+    ]
+    ioss
+    exodus
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libioexnl.a
     ]
   ;
 
@@ -418,6 +437,22 @@ lib iogn
         <file>$(seacas-root)/lib/libiogn.a
     ]
   ;
+lib ionull
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/null/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libionull.a
+    ]
+  ;
 lib iotm
   :
     [ ifdevbuild
@@ -461,6 +496,8 @@ lib ioinit
     ]
     iocgns
     ioex
+    ioexnl
+    ionull
     iopg
     iohb
     iogn

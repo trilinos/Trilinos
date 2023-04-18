@@ -517,12 +517,17 @@ static void gl_del(int loc, int killsave)
   if ((loc == -1 && gl_pos > 0) || (loc == 0 && gl_pos < gl_cnt)) {
     int j = 0;
     for (int i = gl_pos + loc; i < gl_cnt; i++) {
-      if ((j == 0) && (killsave != 0)) {
-        gl_killbuf[0] = gl_buf[i];
-        gl_killbuf[1] = '\0';
-        j             = 1;
+      if (i < GL_BUF_SIZE - 1) {
+        if ((j == 0) && (killsave != 0)) {
+          gl_killbuf[0] = gl_buf[i];
+          gl_killbuf[1] = '\0';
+          j             = 1;
+        }
+        gl_buf[i] = gl_buf[i + 1];
       }
-      gl_buf[i] = gl_buf[i + 1];
+      else {
+        gl_error("\n*** Error: getline(): logic error in gl_del().\n");
+      }
     }
     gl_fixup(gl_prompt, gl_pos + loc, gl_pos + loc);
   }
@@ -534,7 +539,7 @@ static void gl_kill(int pos)
 
 /* delete from pos to the end of line */
 {
-  if (pos < gl_cnt) {
+  if (pos < gl_cnt && pos < GL_BUF_SIZE) {
     copy_string(gl_killbuf, gl_buf + pos, GL_BUF_SIZE);
     gl_buf[pos] = '\0';
     gl_fixup(gl_prompt, pos, pos);

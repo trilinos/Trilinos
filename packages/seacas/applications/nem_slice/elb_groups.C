@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@
 #include <cstdlib> // for free, malloc
 #include <cstring> // for strchr, strlen
 #include <fmt/format.h>
-#include <vector> // for vector
+#include <vector>  // for vector
 
 /*****************************************************************************/
 namespace {
@@ -63,17 +63,8 @@ template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *
 
 template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_Description *prob)
 {
-  /* allocate memory for the groups */
-  prob->group_no = (int *)malloc(mesh->num_el_blks * sizeof(int));
-  if (!(prob->group_no)) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
-  }
-
   /* prepare the group number array, and copy the element block counts */
-  for (size_t i = 0; i < mesh->num_el_blks; i++) {
-    prob->group_no[i] = -1;
-  }
+  prob->group_no.resize(mesh->num_el_blks, -1);
 
   /* convert any comma's to blank spaces in the designator string */
   for (size_t i = 0; i < strlen(prob->groups); i++) {
@@ -124,7 +115,7 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
   }
 
   /* finished with the group designator string */
-  free(prob->groups);
+  delete[] prob->groups;
 
   return 1;
 }

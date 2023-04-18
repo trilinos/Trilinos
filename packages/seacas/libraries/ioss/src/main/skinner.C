@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -259,7 +259,7 @@ namespace {
     // Count faces per element block and create output element block...
     for (auto &eb : ebs) {
       const std::string &name      = eb->name();
-      auto              &boundary  = boundary_faces[name];
+      const auto        &boundary  = boundary_faces[name];
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
@@ -291,7 +291,7 @@ namespace {
     INT  fid               = 0;
     for (auto &eb : ebs) {
       const std::string &name       = eb->name();
-      auto              &boundary   = boundary_faces[name];
+      const auto        &boundary   = boundary_faces[name];
       auto              *block      = output_region.get_element_block(name);
       size_t             node_count = block->topology()->number_corner_nodes();
 
