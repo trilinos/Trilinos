@@ -72,7 +72,6 @@ ProjectField(const std::string name, Teuchos::RCP<panzer::PureBasis> src,
   Teuchos::RCP<PHX::DataLayout> srcBasis_layout = srcBasis_->functional;
   Teuchos::RCP<PHX::DataLayout> dstBasis_layout = dstBasis_->functional;
 
-  // TODO OK to have same name?
   result_ = PHX::MDField<double,Cell,BASIS>(field_name_,dstBasis_layout);
   this->addEvaluatedField(result_);
 
@@ -81,7 +80,6 @@ ProjectField(const std::string name, Teuchos::RCP<panzer::PureBasis> src,
   source_ = PHX::MDField<double,Cell,BASIS>(field_name_,srcBasis_layout);
   this->addNonConstDependentField(source_);
 
-  std::cout << "H I " << field_name_ << std::endl;
   this->setName("Project Field");
 }
 
@@ -103,7 +101,7 @@ void ProjectField<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
 
-  // TODO is there a chance workset is empty?
+  // Is there a chance workset is empty?
   if (workset.num_cells<=0) return;
 
   // Perform local L2 projection

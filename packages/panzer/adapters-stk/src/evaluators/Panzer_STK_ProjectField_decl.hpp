@@ -70,7 +70,7 @@ public:
                Teuchos::RCP<panzer::PureBasis> dst);
   
   void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+			     PHX::FieldManager<Traits>& fm);
   
   void evaluateFields(typename Traits::EvalData d);
 
