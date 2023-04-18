@@ -1709,25 +1709,29 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
     Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
     size_t &constantNumPackets, const execution_space &space) {
   /*
-  we're here if the derived class doesn't know how to do this in an
-  execution space instance, so just do it in the default instance
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
 
-  Sync with the requested space as appropriate
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
   */
 
-  // TODO: Details::Spaces::exec_space_wait(space, execution_space());
-  space.fence(); // make sure any work in space has finished
+  // wait for any work from prior operations in the provided instance to
+  // complete
+  space.fence(); // TODO: Details::Spaces::exec_space_wait
+
+  // pack and prepare in the default instance.
   packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
                  constantNumPackets); // default instance
-  // wait for pack to finish before caller inserts more work into space
-  execution_space
-      .fence(); // TODO: Details::Spaces::exec_space_wait(execution_space(),
-                // space);
+
+  // wait for the default instance to complete before returning, so any
+  // following work inserted into the provided instance will be done after this
+  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
 }
 // clang-format off
-
-
-
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1828,3 +1832,4 @@ void removeEmptyProcessesInPlace(Teuchos::RCP<DistObjectType> &input) {
 } // namespace Tpetra
 
 #endif // TPETRA_DISTOBJECT_DEF_HPP
+// clang-format on
