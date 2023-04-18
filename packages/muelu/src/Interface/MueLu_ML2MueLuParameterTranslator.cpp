@@ -396,6 +396,9 @@ namespace MueLu {
         adaptingParamList.remove(pname,false);
       }
 
+      // make sure that MueLu's phase2a matches ML's
+      mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
       // special handling for energy minimization
       // TAW: this is not optimal for symmetric problems but at least works.
       //      for symmetric problems the "energy minimization" parameter should not exist anyway...

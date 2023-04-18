@@ -5,9 +5,6 @@
 #ifdef MUELU_AGGREGATES_SHORT
 using Aggregates [[maybe_unused]] = MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_AGGREGATES_KOKKOS_SHORT
-using Aggregates_kokkos [[maybe_unused]] = MueLu::Aggregates_kokkos<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
 using AggregationPhase1Algorithm [[maybe_unused]] = MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node>;
 #endif

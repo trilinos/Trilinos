@@ -54,7 +54,7 @@
 #include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -64,7 +64,7 @@ namespace MueLu {
   void IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& /* params */,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& /* aggregates */,
+                  Aggregates& /* aggregates */,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");

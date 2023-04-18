@@ -729,10 +729,12 @@ namespace MueLuTests {
   // coordinates
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
-  for(size_t i = 0; i < (size_t) coordData.size(); ++i)
-    coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
-
+  // GH: scope data manipulation because we should not let a pointer to this data live once we call MueLu
+  {
+    Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
+    for(size_t i = 0; i < (size_t) coordData.size(); ++i)
+      coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  }
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
   Teuchos::ArrayRCP<SC> nspData = nullspace->getDataNonConst(0);
@@ -1019,9 +1021,12 @@ namespace MueLuTests {
   // coordinates
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
-  for(size_t i = 0; i < (size_t) coordData.size(); ++i)
-    coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  // GH: scope data manipulation because we should not let a pointer to this data live once we call MueLu
+  {
+    Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
+    for(size_t i = 0; i < (size_t) coordData.size(); ++i)
+      coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  }
 
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);

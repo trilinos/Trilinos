@@ -62,10 +62,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Tpetra_Core.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
@@ -158,13 +154,6 @@ int main(int argc, char *argv[]) {
         
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-
-  #ifdef HAVE_PIRO_IFPACK2
-        typedef Thyra::PreconditionerFactoryBase<double>              Base;
-        typedef Thyra::Ifpack2PreconditionerFactory<Tpetra_CrsMatrix> Impl;
-        linearSolverBuilder.setPreconditioningStrategyFactory(
-            Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-  #endif
 
   #ifdef HAVE_PIRO_MUELU
         using scalar_type = Tpetra::CrsMatrix<>::scalar_type;

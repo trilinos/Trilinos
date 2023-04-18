@@ -679,13 +679,13 @@ void CommandLineProcessor::add_extra_output_setup_options() const
 
 
 void CommandLineProcessor::setEnumOption(
-  const char    enum_option_name[]
-  ,int          *enum_option_val
-  ,const int    num_enum_opt_values
-  ,const int    enum_opt_values[]
-  ,const char*  enum_opt_names[]
-  ,const char   documentation[]
-  ,const bool   required
+  const char enum_option_name[],
+  int* enum_option_val,
+  const int num_enum_opt_values,
+  const int enum_opt_values[],
+  const char * const enum_opt_names[],
+  const char documentation[],
+  const bool required
   )
 {
   add_extra_output_setup_options();

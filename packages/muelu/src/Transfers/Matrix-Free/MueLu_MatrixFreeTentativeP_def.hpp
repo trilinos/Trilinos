@@ -48,7 +48,7 @@
 
 #include "MueLu_MatrixFreeTentativeP_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
@@ -76,7 +76,7 @@ namespace MueLu {
     Y.scale(beta);
 
     // TODO: probably smarter to sqrt the whole aggSizes once, but may be slower if it's done in a separate kernel launch?
-    typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizes = aggregates_->ComputeAggregateSizes();
+    typename Aggregates::aggregates_sizes_type::const_type aggSizes = aggregates_->ComputeAggregateSizes();
 
     auto kokkos_view_X = X.getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto kokkos_view_Y = Y.getDeviceLocalView(Xpetra::Access::ReadWrite);
