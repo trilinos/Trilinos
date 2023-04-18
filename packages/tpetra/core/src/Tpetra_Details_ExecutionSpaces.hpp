@@ -61,7 +61,7 @@ inline void success_or_throw(cudaError_t err, const char *file,
     throw std::runtime_error(ss.str());
   }
 }
-#define CUDA_RUNTIME(x)                                                        \
+#define TPETRA_DETAILS_SPACES_CUDA_RUNTIME(x)                                  \
   Tpetra::Details::Spaces::success_or_throw((x), __FILE__, __LINE__)
 #endif // KOKKOS_ENABLE_CUDA
 
@@ -169,7 +169,7 @@ Kokkos::Cuda make_instance() {
   default:
     throw std::runtime_error("unexpected static Tpetra Space priority");
   }
-  CUDA_RUNTIME(
+  TPETRA_DETAILS_SPACES_CUDA_RUNTIME(
       cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
   return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
 }
@@ -423,9 +423,9 @@ void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
     even if it overwrites the state of a shared event this means we only need
     one event even if many exec_space_waits are in flight at the same time
     */
-    CUDA_RUNTIME(
+    TPETRA_DETAILS_SPACES_CUDA_RUNTIME(
         cudaEventRecord(cudaInfo.execSpaceWaitEvent_, waitee.cuda_stream()));
-    CUDA_RUNTIME(cudaStreamWaitEvent(
+    TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaStreamWaitEvent(
         waiter.cuda_stream(), cudaInfo.execSpaceWaitEvent_, 0 /*flags*/));
   }
 }

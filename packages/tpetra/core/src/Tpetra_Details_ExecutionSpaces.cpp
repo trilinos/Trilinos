@@ -16,10 +16,10 @@ void lazy_init() {
 #if defined(KOKKOS_ENABLE_CUDA)
   if (!cudaInfo.initialized_) {
     cudaInfo.initialized_ = true;
-    CUDA_RUNTIME(cudaEventCreateWithFlags(&cudaInfo.execSpaceWaitEvent_,
-                                          cudaEventDisableTiming));
-    CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaInfo.lowPrio_,
-                                                  &cudaInfo.highPrio_));
+    TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaEventCreateWithFlags(
+        &cudaInfo.execSpaceWaitEvent_, cudaEventDisableTiming));
+    TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(
+        &cudaInfo.lowPrio_, &cudaInfo.highPrio_));
 
     // We expect
     //   medium priority should be 0
