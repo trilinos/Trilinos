@@ -419,6 +419,9 @@ private:
   Teuchos::RCP<const row_matrix_type> A_;
   //! "Local filter" version of A_.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  lno_row_view_t A_local_rowmap_;
+  lno_nonzero_view_t A_local_entries_;
+  scalar_nonzero_view_t A_local_values_;
   //! L factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<crs_matrix_type> L_;
   //! Sparse triangular solver for L

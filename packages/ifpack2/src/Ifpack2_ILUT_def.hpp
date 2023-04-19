@@ -188,6 +188,8 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   // arbitrary magnitude_type (e.g., Sacado::MP::Vector) to double.
   double fillLevel = LevelOfFill_;
   {
+    //JHU FIXME level-of-fill is meaningless for parilut
+    //    FIXME should we throw if it's set?
     const std::string paramName ("fact: ilut level-of-fill");
     getParamTryingTypes<double, double, float>
       (fillLevel, params, paramName, prefix);
@@ -500,6 +502,8 @@ ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 template<class MatrixType>
 void ILUT<MatrixType>::initialize ()
 {
+  using Teuchos::RCP;
+  using Teuchos::Array;
   Teuchos::Time timer ("ILUT::initialize");
   double startTime = timer.wallTime();
   {
@@ -535,9 +539,44 @@ void ILUT<MatrixType>::initialize ()
       par_ilut_handle->set_vector_size(par_ilut_options_.vector_size);
       par_ilut_handle->set_fill_in_limit(par_ilut_options_.fill_in_limit);
       //par_ilut_handle->set_verbose(par_ilut_options_.verbose); //JHU FIXME need to pull in KK snapshot
-    }
 
-    //JHU TODO in the par_ilut case, do the symbolic factorization here
+      RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_local_);
+      if (A_local_crs.is_null()) {
+         // the result is a host-based matrix, which is the same as what happens in RILUK
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
+        }
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      auto A_local_crs_device = A_local_crs->getLocalMatrixDevice();
+
+      typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
+      typedef typename crs_graph_type::local_graph_device_type local_graph_device_type;
+      typedef typename local_graph_device_type::array_layout   array_layout;
+      typedef typename local_graph_device_type::device_type    device_type;
+
+      typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+      const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
+      lno_row_view_t     L_rowmap("L_row_map", NumMyRows + 1);
+      lno_row_view_t     U_rowmap("U_row_map", NumMyRows + 1);
+
+      par_ilut_symbolic(KernelHandle_, A_local_crs_device.graph.row_map, A_local_crs_device.values, L_rowmap, U_rowmap);
+    }
 
     IsInitialized_ = true;
     ++NumInitialize_;
@@ -563,6 +602,7 @@ void ILUT<MatrixType>::compute ()
   using Teuchos::as;
   using Teuchos::rcp;
   using Teuchos::reduceAll;
+  using Teuchos::RCP;
 
   // Don't count initialization in the compute() time.
   if (! isInitialized ()) {
@@ -909,14 +949,61 @@ void ILUT<MatrixType>::compute ()
     U_solver_->compute ();
 
   } else {
-    //FIXME par_ilut compute goes here
+    {//Make sure values in A is picked up even in case of pattern reuse
+      RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_local_);
+      if(A_local_crs.is_null()) {
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+        }
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      auto lclMtx = A_local_crs->getLocalMatrixDevice();
+      A_local_rowmap_  = lclMtx.graph.row_map;
+      A_local_entries_ = lclMtx.graph.entries;
+      A_local_values_  = lclMtx.values;
+    }
 
-     KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(), LevelOfFill_,
-                                                  A_local_rowmap_, A_local_entries_, A_local_values_,
-                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values,
-                                                  par_ilut_options_.deterministic);
+    L_->resumeFill ();
+    U_->resumeFill ();
 
-  }
+    if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
+      L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+      U_->setAllToScalar (STS::zero ());
+    }
+
+    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
+    {
+      auto lclL = L_->getLocalMatrixDevice();
+      row_map_type L_rowmap  = lclL.graph.row_map;
+      auto L_entries = lclL.graph.entries;
+      auto L_values  = lclL.values;
+
+      auto lclU = U_->getLocalMatrixDevice();
+      row_map_type U_rowmap  = lclU.graph.row_map;
+      auto U_entries = lclU.graph.entries;
+      auto U_values  = lclU.values;
+      KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(),
+                                                   A_local_rowmap_, A_local_entries_, A_local_values_,
+                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values,
+                                                   par_ilut_options_.deterministic);
+    }
+
+  } //if (!this->useKokkosKernelsParILUT_)
 
   } // Timer scope for timing compute()
   ComputeTime_ += (timer.wallTime() - startTime);
