@@ -272,7 +272,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
     using T = typename exports_view_type::non_const_value_type;
-    T t;
+    T t{};
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
     const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                   imports.data(), recvcounts.data(), rdispls.data(), rawType,
@@ -604,7 +604,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
     using T = typename exports_view_type::non_const_value_type;
-    T t;
+    T t{};
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
     const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                   imports.data(), recvcounts.data(), rdispls.data(), rawType,
