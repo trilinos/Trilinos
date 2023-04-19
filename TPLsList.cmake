@@ -175,6 +175,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Check           "cmake/TPLs/"    EX
   SARMA           "cmake/TPLs/"    EX
   CDT             "cmake/TPLs/"    EX
+  mpi_advance     "cmake/TPLs/"    EX
   )
 
 # NOTES:
