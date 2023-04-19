@@ -305,9 +305,7 @@ namespace Adelus {
     int ptr1_idx, myfirstrow;
   
   #ifdef GET_TIMING
-  //#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  //Workaround for GPU-aware MPI issue on HIP: perm1_ always uses host pinned memory for MPI
-  #if defined(KOKKOS_ENABLE_HIP) || (defined(ADELUS_HOST_PINNED_MEM_MPI) && defined(KOKKOS_ENABLE_CUDA))
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
     double t1, copyhostpinnedtime;
   #endif
     double t2;
@@ -328,19 +326,15 @@ namespace Adelus {
   #ifdef ADELUS_HOST_PINNED_MEM_MPI
   #if defined(KOKKOS_ENABLE_CUDA)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
-  //#elif defined(KOKKOS_ENABLE_HIP)
-  //  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
-  #endif
-  #endif
-  #ifdef KOKKOS_ENABLE_HIP
+  #elif defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+  #endif
   #endif
 
     if (my_rhs_ > 0) {
   
       ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors
-  //#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  #if defined(KOKKOS_ENABLE_HIP) || (defined(ADELUS_HOST_PINNED_MEM_MPI) && defined(KOKKOS_ENABLE_CUDA))
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       View2DHostPinnType h_rhs_temp( "h_rhs_temp", nrows_matrix, my_rhs_ );
   #endif
 
@@ -381,8 +375,14 @@ namespace Adelus {
   
         ptr1_idx++;
       }
-  //#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  #if defined(KOKKOS_ENABLE_HIP) || (defined(ADELUS_HOST_PINNED_MEM_MPI) && defined(KOKKOS_ENABLE_CUDA))
+
+  //Workaround for GPU-aware MPI issue on HIP: fence here to make sure "zcopy_wr_global_index"
+  //                                           completes before MPI_Allreduce
+  #if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
+      Kokkos::fence();
+  #endif
+
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   #ifdef GET_TIMING
       t1 = MPI_Wtime();
   #endif
@@ -408,8 +408,7 @@ namespace Adelus {
   #endif
 
   #ifdef GET_TIMING
-  //#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  #if defined(KOKKOS_ENABLE_HIP) || (defined(ADELUS_HOST_PINNED_MEM_MPI) && defined(KOKKOS_ENABLE_CUDA))
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
     showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);   
   #endif
