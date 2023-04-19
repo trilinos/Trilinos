@@ -59,6 +59,17 @@ namespace Details {
 
 namespace MDFImpl
 {
+
+template<class dev_view_t>
+auto copy_view(const dev_view_t & vals)
+{
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  typename dev_view_t::non_const_type newvals (view_alloc (vals.label(), WithoutInitializing), vals.extent (0));
+  Kokkos::deep_copy(newvals,vals);
+  return newvals;
+}
+
 template<class array_t,class dev_view_t>
 void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
 {
@@ -73,7 +84,7 @@ void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
     "Please report this bug to the Ifpack2 developers.");
 
   //Wrap array data in view and copy
-  Kokkos::deep_copy(host_view_t(array.get(),ext),dev_view);    
+  Kokkos::deep_copy(host_view_t(array.get(),ext),dev_view);
 }
 
 template<class scalar_type,class local_ordinal_type,class global_ordinal_type,class node_type>
@@ -81,7 +92,7 @@ void applyReorderingPermutations(
   const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
   const Teuchos::ArrayRCP<local_ordinal_type> & perm)
-{ 
+{
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
                              "Ifpack2::MDF::applyReorderingPermuations ERROR: X.getNumVectors() != Y.getNumVectors().");
 
@@ -103,7 +114,7 @@ auto get_local_crs_row_matrix(
   using Teuchos::Array;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
-  
+
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
 
   using nonconst_local_inds_host_view_type = typename crs_matrix_type::nonconst_local_inds_host_view_type;
@@ -177,7 +188,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     applyTime_ (0.0)
 {
   allocateSolvers();
-  allocatePermutations();  
+  allocatePermutations();
 }
 
 template<class MatrixType>
@@ -192,7 +203,7 @@ void MDF<MatrixType>::allocatePermutations (bool force)
     reversePermutations_ = Teuchos::null;
     permutations_ = permutations_type(A_->getLocalNumRows());
     reversePermutations_ = permutations_type(A_->getLocalNumRows());
-  } 
+  }
 }
 
 template<class MatrixType>
@@ -388,7 +399,7 @@ setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<double, double>
       (overalloc, params, paramName, prefix);
   }
-  
+
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
@@ -475,7 +486,7 @@ void MDF<MatrixType>::initialize ()
      "matrix until the matrix is fill complete.  If your matrix is a "
      "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
      "range Maps, if appropriate) before calling this method.");
-  
+
   Teuchos::Time timer ("MDF::initialize");
   double startTime = timer.wallTime();
   { // Start timing
@@ -522,7 +533,7 @@ void MDF<MatrixType>::initialize ()
           "MDF on complex scalar types is not currently supported. "
           "Please report this to the Ifpack2 developers.");
       }
-    
+
       isAllocated_ = true;
     }
 
@@ -559,7 +570,6 @@ checkOrderingConsistency (const row_matrix_type& A)
                              << ".  Consistency is required, as all calculations are done with"
                              << std::endl << "local indexing.");
 }
-
 
 template<class MatrixType>
 void MDF<MatrixType>::compute ()
@@ -619,16 +629,30 @@ void MDF<MatrixType>::compute ()
   Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->permutation);
   Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->permutation_inv);
 
-  L_ = rcp(new crs_matrix_type(
-    A_local_->getRowMap (),
-    A_local_->getColMap (),
-    MDF_handle_->getL()
+  // TMR: Need to COPY the values held by the MDF handle because the CRS matrix needs to
+  // exclusively own them and the MDF_handles use_count contribution throws that off
+  {
+    auto L_mdf = MDF_handle_->getL();
+    L_ = rcp(new crs_matrix_type(
+      A_local_->getRowMap (),
+      A_local_->getColMap (),
+      Details::MDFImpl::copy_view(L_mdf.graph.row_map),
+      Details::MDFImpl::copy_view(L_mdf.graph.entries),
+      Details::MDFImpl::copy_view(L_mdf.values)
     ));
-  U_ = rcp(new crs_matrix_type(
-    A_local_->getRowMap (),
-    A_local_->getColMap (),
-    MDF_handle_->getU()
+  }
+  {
+    auto U_mdf = MDF_handle_->getU();
+    U_ = rcp(new crs_matrix_type(
+      A_local_->getRowMap (),
+      A_local_->getColMap (),
+      Details::MDFImpl::copy_view(U_mdf.graph.row_map),
+      Details::MDFImpl::copy_view(U_mdf.graph.entries),
+      Details::MDFImpl::copy_view(U_mdf.values)
     ));
+  }
+  L_->fillComplete ();
+  U_->fillComplete ();
   L_solver_->setMatrix (L_);
   L_solver_->initialize ();
   L_solver_->compute ();
@@ -656,12 +680,12 @@ apply_impl (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordi
   if (alpha == one && beta == zero) {
     MV tmp (Y.getMap (), Y.getNumVectors ());
     Details::MDFImpl::applyReorderingPermutations(X,tmp,permutations_);
-    if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
+    if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
       // Start by solving L Y = X for Y.
       L_solver_->apply (tmp, Y, mode);
       U_solver_->apply (Y, tmp, mode); // Solve U Y = Y.
     }
-    else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
+    else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
       // Start by solving U^P Y = X for Y.
       U_solver_->apply (tmp, Y, mode);
       L_solver_->apply (Y, tmp, mode); // Solve L^P Y = Y.
