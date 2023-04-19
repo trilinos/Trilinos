@@ -649,7 +649,7 @@ namespace SEAMS {
 
   double do_find_word(char *word, char *string, char *delm)
   {
-    auto       &tokens = get_tokenized_strings(string, delm);
+    const auto &tokens = get_tokenized_strings(string, delm);
     std::string sword{word};
     for (size_t i = 0; i < tokens.size(); i++) {
       if (tokens[i] == sword) {

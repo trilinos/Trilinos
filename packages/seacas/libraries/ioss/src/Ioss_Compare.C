@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -436,7 +436,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
 
       // Find matching output sideset
       typename std::vector<Ioss::SideSet *>::const_iterator it;
-      for (it = in_fss_2.begin(); it != in_fss_2.end(); it++) {
+      for (it = in_fss_2.begin(); it != in_fss_2.end(); ++it) {
         if (name.compare((*it)->name()) == 0) {
           break;
         }
@@ -477,7 +477,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
 
         // Find matching output sideblock
         typename std::vector<Ioss::SideBlock *>::const_iterator iter;
-        for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); iter++) {
+        for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); ++iter) {
           if (sbname.compare((*iter)->name()) == 0) {
             break;
           }
@@ -634,7 +634,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
 
         // Find matching output sideset
         typename std::vector<Ioss::SideSet *>::const_iterator it;
-        for (it = in_sss_2.begin(); it != in_sss_2.end(); it++) {
+        for (it = in_sss_2.begin(); it != in_sss_2.end(); ++it) {
           if (name.compare((*it)->name()) == 0) {
             break;
           }
@@ -667,7 +667,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
             const std::string &sbname = isb->name();
 
             typename std::vector<Ioss::SideBlock *>::const_iterator iter;
-            for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); iter++) {
+            for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); ++iter) {
               if (sbname.compare((*iter)->name()) == 0) {
                 break;
               }
@@ -831,7 +831,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
 
         // Find matching output sideset
         typename std::vector<Ioss::SideSet *>::const_iterator it;
-        for (it = in_sss_2.begin(); it != in_sss_2.end(); it++) {
+        for (it = in_sss_2.begin(); it != in_sss_2.end(); ++it) {
           if (name.compare((*it)->name()) == 0) {
             break;
           }
@@ -865,7 +865,7 @@ bool Ioss::Compare::compare_database(Ioss::Region &input_region_1, Ioss::Region 
             const std::string &sbname = isb->name();
 
             typename std::vector<Ioss::SideBlock *>::const_iterator iter;
-            for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); iter++) {
+            for (iter = in_sbs_2.begin(); iter != in_sbs_2.end(); ++iter) {
               if (sbname.compare((*iter)->name()) == 0) {
                 break;
               }
@@ -1335,7 +1335,7 @@ namespace {
       const std::string &name = in_entity_1->name();
 
       typename std::vector<T *>::const_iterator it;
-      for (it = in_entities_2.begin(); it != in_entities_2.end(); it++) {
+      for (it = in_entities_2.begin(); it != in_entities_2.end(); ++it) {
         if (name.compare((*it)->name()) == 0) {
           break;
         }
@@ -1403,7 +1403,7 @@ namespace {
       const std::string &name = in_entity_1->name();
 
       typename std::vector<T *>::const_iterator it;
-      for (it = in_entities_2.begin(); it != in_entities_2.end(); it++) {
+      for (it = in_entities_2.begin(); it != in_entities_2.end(); ++it) {
         if (name.compare((*it)->name()) == 0) {
           break;
         }

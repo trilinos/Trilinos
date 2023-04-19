@@ -754,7 +754,7 @@ namespace Ioss {
         prev                = hist_buf[hist_last];
         hist_last           = (hist_last + 1) % HIST_SIZE;
         if (hist_buf[hist_last] && *hist_buf[hist_last]) {
-          free(hist_buf[hist_last]);
+          delete[] hist_buf[hist_last];
         }
         hist_buf[hist_last] = hist_empty_elem;
       }
@@ -805,18 +805,13 @@ namespace {
     const char *nl  = strpbrk(p, "\n\r");
 
     if (nl) {
-      if ((s = (char *)malloc(len)) != nullptr) {
-        copy_string(s, p, len);
-        s[len - 1] = '\0';
-      }
+      s = new char[len];
+      copy_string(s, p, len);
+      s[len - 1] = '\0';
     }
     else {
-      if ((s = (char *)malloc(len + 1)) != nullptr) {
-        copy_string(s, p, len + 1);
-      }
-    }
-    if (s == nullptr) {
-      gl_error("\n*** Error: hist_save() failed on malloc\n");
+      s = new char[len + 1];
+      copy_string(s, p, len + 1);
     }
     return s;
   }

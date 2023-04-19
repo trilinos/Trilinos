@@ -8,6 +8,7 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
+#include <Ioss_MemoryUtils.h>
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -100,7 +101,6 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   IOSS_PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char             *result_string = nullptr;
-  std::vector<char> broadcast_string;
 
   int string_length = 0;
 
@@ -114,7 +114,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     broadcast(string_length);
 
     if (string_length > 0) {
-      broadcast_string.resize(string_length + 1);
+      std::vector<char> broadcast_string(string_length + 1);
       if (rank == 0) {
         Ioss::Utils::copy_string(broadcast_string.data(), result_string,
                                  static_cast<size_t>(string_length) + 1);
@@ -231,7 +231,7 @@ int Ioss::ParallelUtils::parallel_rank() const
 
 void Ioss::ParallelUtils::memory_stats(int64_t &min, int64_t &max, int64_t &avg) const
 {
-  int64_t my_memory = Ioss::Utils::get_memory_info();
+  int64_t my_memory = Ioss::MemoryUtils::get_memory_info();
   min = max = avg = my_memory;
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
@@ -245,7 +245,7 @@ void Ioss::ParallelUtils::memory_stats(int64_t &min, int64_t &max, int64_t &avg)
 
 void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &avg) const
 {
-  int64_t my_memory = Ioss::Utils::get_hwm_memory_info();
+  int64_t my_memory = Ioss::MemoryUtils::get_hwm_memory_info();
   min = max = avg = my_memory;
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {

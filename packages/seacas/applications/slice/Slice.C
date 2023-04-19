@@ -13,6 +13,7 @@
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
 #include <Ioss_SubSystem.h>
@@ -73,7 +74,7 @@ namespace {
       auto                          now  = std::chrono::steady_clock::now();
       std::chrono::duration<double> diff = now - start;
       fmt::print(stderr, " [{:.2f} - {}]\t{}\n", diff.count(),
-                 fmt::group_digits(Ioss::Utils::get_memory_info()), output);
+                 fmt::group_digits(Ioss::MemoryUtils::get_memory_info()), output);
     }
   }
 
@@ -139,8 +140,8 @@ namespace {
     // The chain / line data will be stored as an element map...
     const auto &blocks = region.get_element_blocks();
     for (const auto &block : blocks) {
-      Ioss::Field field{"chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP};
-      field.set_index(1);
+      auto field =
+          Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(1);
       block->field_add(field);
     }
   }
@@ -167,12 +168,13 @@ namespace {
     // The chain / line data will be stored as an element map...
     const auto &blocks = region.get_element_blocks();
     for (const auto &block : blocks) {
-      Ioss::Field field{decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP};
-      field.set_index(1);
+      auto field =
+          Ioss::Field(decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP)
+              .set_index(1);
       block->field_add(field);
       if (add_chain_info) {
-        Ioss::Field ch_field{"chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP};
-        ch_field.set_index(2);
+        auto ch_field =
+            Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(2);
         block->field_add(ch_field);
       }
     }
@@ -447,7 +449,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   fmt::print(stderr, "\nHigh-Water Memory Use: {} bytes\n",
-             fmt::group_digits(Ioss::Utils::get_hwm_memory_info()));
+             fmt::group_digits(Ioss::MemoryUtils::get_hwm_memory_info()));
   fmt::print(stderr, "Total execution time = {:.5}\n", seacas_timer() - begin);
   fmt::print(stderr, "\nSlice execution successful.\n");
   return EXIT_SUCCESS;
@@ -570,7 +572,7 @@ namespace {
         idx_t              common     = get_common_node_count(region);
         idx_t              proc_count = interFace.processor_count();
         idx_t              obj_val    = 0;
-        std::vector<idx_t> options(METIS_NOPTIONS);
+        std::vector<idx_t> options((METIS_NOPTIONS));
         METIS_SetDefaultOptions(&options[0]);
         if (interFace.decomposition_method() == "kway") {
           options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
@@ -851,10 +853,10 @@ namespace {
       }
 
       std::vector<INT> chain_proc_count(proc_count);
-      auto            &chain_elements = chain.second;
+      const auto      &chain_elements = chain.second;
 
       // * get processors used by elements in the chain...
-      for (auto &element : chain_elements) {
+      for (const auto &element : chain_elements) {
         auto proc = elem_to_proc[element - 1];
         chain_proc_count[proc]++;
       }
@@ -870,7 +872,7 @@ namespace {
 
       // * Assign all elements in the chain to `max_proc`.
       // * Update the deltas for all processors that gain/lose elements...
-      for (auto &element : chain_elements) {
+      for (const auto &element : chain_elements) {
         if (elem_to_proc[element - 1] != max_proc) {
           auto old_proc             = elem_to_proc[element - 1];
           elem_to_proc[element - 1] = max_proc;

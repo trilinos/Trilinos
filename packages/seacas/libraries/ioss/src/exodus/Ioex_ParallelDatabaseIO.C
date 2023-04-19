@@ -344,6 +344,8 @@ namespace Ioex {
     }
   }
 
+  ParallelDatabaseIO::~ParallelDatabaseIO() = default;
+
   void ParallelDatabaseIO::release_memory__()
   {
     free_file_pointer();

@@ -39,6 +39,7 @@
 #endif
 
 /********************* C library headers ********************************/
+#include <array>
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
@@ -56,29 +57,29 @@ namespace {
   /******************** external interface *********************************/
 
   bool gl_ellipses_during_completion = true;
-  char gl_buf[GL_BUF_SIZE]; /* input buffer */
+  char gl_buf[GL_BUF_SIZE];                                  /* input buffer */
 
-  int         gl_init_done = -1;            /* terminal mode flag  */
-  int         gl_termw     = 80;            /* actual terminal width */
-  int         gl_scroll    = 27;            /* width of EOL scrolling region */
-  int         gl_width     = 0;             /* net size available for input */
-  int         gl_extent    = 0;             /* how far to redraw, 0 means all */
-  int         gl_overwrite = 0;             /* overwrite mode */
-  int         gl_pos, gl_cnt = 0;           /* position and size of input */
-  char        gl_killbuf[GL_BUF_SIZE] = ""; /* killed text */
-  const char *gl_prompt;                    /* to save the prompt string */
-  int         gl_search_mode = 0;           /* search mode flag */
+  int         gl_init_done = -1;                             /* terminal mode flag  */
+  int         gl_termw     = 80;                             /* actual terminal width */
+  int         gl_scroll    = 27;                             /* width of EOL scrolling region */
+  int         gl_width     = 0;                              /* net size available for input */
+  int         gl_extent    = 0;                              /* how far to redraw, 0 means all */
+  int         gl_overwrite = 0;                              /* overwrite mode */
+  int         gl_pos, gl_cnt = 0;                            /* position and size of input */
+  char        gl_killbuf[GL_BUF_SIZE] = "";                  /* killed text */
+  const char *gl_prompt;                                     /* to save the prompt string */
+  int         gl_search_mode = 0;                            /* search mode flag */
 
-  void gl_init(void);         /* prepare to edit a line */
-  void gl_cleanup(void);      /* to undo gl_init */
-  void gl_char_init(void);    /* get ready for no echo input */
-  void gl_char_cleanup(void); /* undo gl_char_init */
-                              /* returns printable prompt width */
+  void gl_init(void);                                        /* prepare to edit a line */
+  void gl_cleanup(void);                                     /* to undo gl_init */
+  void gl_char_init(void);                                   /* get ready for no echo input */
+  void gl_char_cleanup(void);                                /* undo gl_char_init */
+                                                             /* returns printable prompt width */
 
-  void gl_addchar(int c);    /* install specified char */
-  void gl_del(int loc, int); /* del, either left (-1) or cur (0) */
+  void gl_addchar(int c);                                    /* install specified char */
+  void gl_del(int loc, int);                                 /* del, either left (-1) or cur (0) */
 
-  [[noreturn]] void gl_error(const char *const buf); /* write error msg and die */
+  [[noreturn]] void gl_error(const char *const buf);         /* write error msg and die */
 
   void gl_fixup(const char *prompt, int change, int cursor); /* fixup state variables and screen */
   int  gl_getc(void);                                        /* read one char from terminal */
@@ -90,10 +91,10 @@ namespace {
   void gl_transpose(void);                                   /* transpose two chars */
   void gl_yank(void);                                        /* yank killed text */
 
-  void  hist_init(void);          /* initializes hist pointers */
-  char *hist_next(void);          /* return ptr to next item */
-  char *hist_prev(void);          /* return ptr to prev item */
-  char *hist_save(const char *p); /* makes copy of a string, without NL */
+  void  hist_init(void);                                     /* initializes hist pointers */
+  char *hist_next(void);                                     /* return ptr to next item */
+  char *hist_prev(void);                                     /* return ptr to prev item */
+  char *hist_save(const char *p);   /* makes copy of a string, without NL */
 
   void search_addchar(int c);       /* increment search string */
   void search_term(void);           /* reset with current contents */
@@ -184,7 +185,7 @@ int pc_keymap(int c)
     c = 15; /* insert -> ^O */
     break;
   case K_DELETE:
-    c = 4; /* del -> ^D */
+    c = 4;        /* del -> ^D */
     break;
   default: c = 0; /* make it garbage */
   }
@@ -357,7 +358,7 @@ namespace SEAMS {
         case '\002':
           gl_fixup(gl_prompt, -1, gl_pos - 1); /* ^B */
           break;
-        case '\004': /* ^D */
+        case '\004':                           /* ^D */
           if (gl_cnt == 0) {
             gl_buf[0] = '\0';
             gl_cleanup();
@@ -385,14 +386,14 @@ namespace SEAMS {
         case '\014':
           gl_redraw(); /* ^L */
           break;
-        case '\016': /* ^N */
+        case '\016':   /* ^N */
           copy_string(gl_buf, hist_next(), GL_BUF_SIZE);
           gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
           break;
         case '\017':
           gl_overwrite = !gl_overwrite; /* ^O */
           break;
-        case '\020': /* ^P */
+        case '\020':                    /* ^P */
           copy_string(gl_buf, hist_prev(), GL_BUF_SIZE);
           gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
           break;
@@ -588,14 +589,14 @@ namespace {
    *            move just past the end of the input line.
    */
   {
-    static int  gl_shift;  /* index of first on screen character */
-    static int  off_right; /* true if more text right of screen */
-    static int  off_left;  /* true if more text left of screen */
+    static int  gl_shift;             /* index of first on screen character */
+    static int  off_right;            /* true if more text right of screen */
+    static int  off_left;             /* true if more text left of screen */
     static char last_prompt[80] = "";
     int         left = 0, right = -1; /* bounds for redraw */
     int         new_right = -1;       /* alternate right bound, using gl_extent */
 
-    if (change == -2) { /* reset */
+    if (change == -2) {               /* reset */
       gl_pos = gl_cnt = gl_shift = off_right = off_left = 0;
       gl_putc('\r');
       gl_puts(prompt);
@@ -637,7 +638,7 @@ namespace {
     }
     int extra = 0; /* adjusts when shift (scroll) happens */
     if (off_right || (off_left && cursor < gl_shift + gl_width - gl_scroll / 2)) {
-      extra = 2; /* shift the scrolling boundary */
+      extra = 2;   /* shift the scrolling boundary */
     }
     int new_shift = cursor + extra + gl_scroll - gl_width;
     if (new_shift > 0) {
@@ -716,9 +717,9 @@ namespace {
 #define HIST_SIZE 100
 #endif
 
-  int   hist_pos = 0, hist_last = 0;
-  char *hist_buf[HIST_SIZE];
-  char  hist_empty_elem[2] = "";
+  int                           hist_pos = 0, hist_last = 0;
+  std::array<char *, HIST_SIZE> hist_buf;
+  char                          hist_empty_elem[2] = "";
 
   void hist_init(void)
   {
@@ -822,7 +823,7 @@ namespace {
 
   /******************* Search stuff **************************************/
 
-  char search_prompt[101]; /* prompt includes search string */
+  char search_prompt[101];  /* prompt includes search string */
   char search_string[100];
   int  search_pos      = 0; /* current location in search_string */
   int  search_forw_flg = 0; /* search direction flag */

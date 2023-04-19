@@ -45,7 +45,7 @@ TRIBITS_ADD_LIBRARY(
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS Ioss ${EXODUSLIB}
-	        Iogn Iogs Iohb Iotm Iotr ${IOVISLIB}
+	        Iogn Iogs Iohb Iotm Iotr ${IOVISLIB} Ionull
           ${PAMGENLIB} ${CGNSLIB} ${VISLIB} ${FAODELLIB} ${ADIOS2LIB} ${CATALYST2LIB}
 )
 

@@ -76,7 +76,9 @@ struct NodeInfo
   NodeInfo() = default;
   NodeInfo(size_t id_, double x_, double y_, double z_) : id(id_), x(x_), y(y_), z(z_) {}
   size_t id{0};
-  double x{0.0}, y{0.0}, z{0.0};
+  double x{0.0};
+  double y{0.0};
+  double z{0.0};
 
   bool operator==(const NodeInfo &other) const
   {
@@ -396,7 +398,7 @@ int          main(int argc, char *argv[])
 
     time_t end_time = time(nullptr);
     add_to_log(argv[0], end_time - begin_time);
-    return (error);
+    return error;
   }
   catch (std::exception &e) {
     fmt::print(stderr, "ERROR: Standard exception: {}\n", e.what());
@@ -408,8 +410,8 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
 {
   SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
 
-  const double alive      = interFace.alive_value();
-  size_t       part_count = interFace.inputFiles_.size();
+  const T alive      = interFace.alive_value();
+  size_t  part_count = interFace.inputFiles_.size();
 
   auto mytitle = new char[MAX_LINE_LENGTH + 1];
   memset(mytitle, '\0', MAX_LINE_LENGTH + 1);
@@ -936,7 +938,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     fmt::print("{}", time_stamp(tsFormat));
   }
   fmt::print("******* END *******\n");
-  return (error);
+  return error;
 }
 
 namespace {
@@ -1198,7 +1200,7 @@ namespace {
           blocks[p][b].nodesPerElement = block_param.num_nodes_per_entry;
           blocks[p][b].attributeCount  = block_param.num_attribute;
           blocks[p][b].offset_         = block_param.num_entry;
-          copy_string(blocks[p][b].elType, block_param.topology);
+          blocks[p][b].elType          = block_param.topology;
 
           // NOTE: This is not correct, but fixed below.
           glob_blocks[b].elementCount += block_param.num_entry;
@@ -1212,7 +1214,7 @@ namespace {
           }
 
           glob_blocks[b].position_ = b;
-          copy_string(glob_blocks[b].elType, block_param.topology);
+          glob_blocks[b].elType    = block_param.topology;
         }
 
         if (block_param.num_attribute > 0 && glob_blocks[b].attributeNames.empty()) {
@@ -2567,10 +2569,10 @@ namespace {
 
     std::string var_name;
     int         out_position = -1;
-    for (auto &variable_name : variable_names) {
-      if (variable_name.second > 0) {
-        if (var_name != variable_name.first) {
-          var_name = variable_name.first;
+    for (auto [v_name, v_blkid] : variable_names) {
+      if (v_blkid > 0) {
+        if (var_name != v_name) {
+          var_name = v_name;
           // Find which exodus variable matches this name
           out_position = -1;
           for (size_t j = 0; j < exo_names.size(); j++) {
@@ -2582,7 +2584,7 @@ namespace {
           if (out_position < 0) {
             fmt::print(stderr,
                        "ERROR: Variable '{}' does not exist on any block in this database.\n",
-                       variable_name.first);
+                       v_name);
             exit(EXIT_FAILURE);
           }
 
@@ -2592,10 +2594,10 @@ namespace {
           // variable truly exists for the block that the user specified.
           found_it = false;
           for (size_t b = 0; b < global.count(vars.objectType); b++) {
-            if (glob_blocks[b].id == variable_name.second) {
+            if (glob_blocks[b].id == v_blkid) {
               if (glob_blocks[b].truthTable[out_position] == 0) {
-                fmt::print(stderr, "ERROR: Variable '{}' does not exist on block {}.\n",
-                           variable_name.first, variable_name.second);
+                fmt::print(stderr, "ERROR: Variable '{}' does not exist on block {}.\n", v_name,
+                           v_blkid);
                 exit(EXIT_FAILURE);
               }
               else {
@@ -2612,7 +2614,7 @@ namespace {
           if (!found_it) {
             fmt::print(stderr,
                        "ERROR: User-specified block id of {} for variable '{}' does not exist.\n",
-                       variable_name.second, variable_name.first);
+                       v_blkid, v_name);
             exit(EXIT_FAILURE);
           }
         }
@@ -2699,7 +2701,7 @@ namespace {
     const char *c2 = s2.c_str();
     for (;;) {
       if (::toupper(*c1) != ::toupper(*c2)) {
-        return (::toupper(*c1) - ::toupper(*c2));
+        return ::toupper(*c1) - ::toupper(*c2);
       }
       if (*c1 == '\0') {
         return 0;
@@ -2722,7 +2724,7 @@ namespace {
   inline bool is_whitespace(char c)
   {
     static char white_space[] = {' ', '\t', '\n', '\r', ',', '\0'};
-    return (std::strchr(white_space, c) != nullptr);
+    return std::strchr(white_space, c) != nullptr;
   }
 
   void compress_white_space(char *str)

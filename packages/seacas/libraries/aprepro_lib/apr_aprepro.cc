@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,8 +57,8 @@ namespace SEAMS {
     Symtable() = default;
     ~Symtable()
     {
-      for (auto &sym : sym_table) {
-        auto &ptr = sym.second;
+      for (const auto &sym : sym_table) {
+        const auto &ptr = sym.second;
         delete ptr;
       }
     }
@@ -170,7 +170,7 @@ namespace SEAMS {
   bool Aprepro::parse_strings(const std::vector<std::string> &input, const std::string &sname)
   {
     std::stringstream iss;
-    for (auto &elem : input) {
+    for (const auto &elem : input) {
       iss << elem << '\n';
     }
     return parse_stream(iss, sname);
@@ -323,8 +323,7 @@ namespace SEAMS {
 
     /* See if file exists in current directory (or as specified) */
     auto pointer = new std::fstream(file, smode);
-    if ((pointer->bad() || !pointer->good()) &&
-        !ap_options.include_path.empty()) {
+    if ((pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -356,8 +355,7 @@ namespace SEAMS {
 
     auto pointer = new std::fstream(file, smode);
 
-    if ((pointer->bad() || !pointer->good()) &&
-        !ap_options.include_path.empty()) {
+    if ((pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -493,9 +491,9 @@ namespace SEAMS {
       std::string value = get_value(option, optional_value);
       ret_value         = value == optional_value ? 1 : 0;
 
-      auto info = open_file(value, "w");
-      if (info != nullptr) {
-        set_error_streams(nullptr, nullptr, info);
+      auto do_info = open_file(value, "w");
+      if (do_info != nullptr) {
+        set_error_streams(nullptr, nullptr, do_info);
       }
     }
     else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
@@ -561,7 +559,8 @@ namespace SEAMS {
           << "                         (not for general interactive use)       \n"
           << "          --quiet or -q: Do not print the header output line     \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
-          << "                         Use var=\\\"sval\\\" for a string variable\n\n"
+          << "                         Use var=\\\"sval\\\" for a string variable. 'var' will be "
+             "immutable.\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
           << "\tEnter {DUMP()} for list of user-defined variables\n"
           << "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"

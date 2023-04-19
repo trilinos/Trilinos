@@ -23,6 +23,7 @@ files'
 copyable
 sucess
 msdos
+parm
 pard
 chatch
 mke
