@@ -34,7 +34,7 @@
 
 #include <stk_util/stk_config.h>
 #include "stk_unit_test_utils/getOption.h"
-#ifdef STK_HAVE_KOKKOSCORE
+#ifdef STK_HAVE_KOKKOS
 #include <Kokkos_Core.hpp>
 #endif
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 #ifdef STK_HAVE_STKNGP_TEST
     ngp_testing::NgpTestEnvironment testEnv(&argc, argv);
 #else
-#ifdef STK_HAVE_KOKKOSCORE
+#ifdef STK_HAVE_KOKKOS
     Kokkos::initialize(argc, argv);
 #endif
     testing::InitGoogleTest(&argc, argv);
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     testEnv.finalize();
 #else
     returnVal = RUN_ALL_TESTS();
-#ifdef STK_HAVE_KOKKOSCORE
+#ifdef STK_HAVE_KOKKOS
     Kokkos::finalize();
 #endif
 #endif

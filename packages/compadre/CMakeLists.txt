@@ -148,12 +148,12 @@ else() # Raw CMake Project
   endif()
 
   #KOKKOS
-  bob_input(KokkosCore_PREFIX "" PATH "Path to KokkosCore install")
-  if (KokkosCore_PREFIX)
-    if(NOT IS_ABSOLUTE ${KokkosCore_PREFIX})
-      set(KokkosCore_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/${KokkosCore_PREFIX}")
+  bob_input(Kokkos_PREFIX "" PATH "Path to KokkosCore install")
+  if (Kokkos_PREFIX)
+    if(NOT IS_ABSOLUTE ${Kokkos_PREFIX})
+      set(Kokkos_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/${Kokkos_PREFIX}")
     endif()
-    set(CMAKE_PREFIX_PATH ${KokkosCore_PREFIX} ${CMAKE_PREFIX_PATH})
+    set(CMAKE_PREFIX_PATH ${Kokkos_PREFIX} ${CMAKE_PREFIX_PATH})
   endif()
 
   #KOKKOS-KERNELS
@@ -213,7 +213,7 @@ else() # Raw CMake Project
     IF (KokkosCoreID GREATER -1 )
       MESSAGE(STATUS "Found KokkosCore inside Trilinos!")
       set(KOKKOS_IN_TRILINOS ON)
-      set(KokkosCore_FOUND ON)
+      set(Kokkos_FOUND ON)
     ELSE()
       MESSAGE(FATAL_ERROR "Found Trilinos but could not find KokkosCore.")
     ENDIF()
@@ -233,12 +233,12 @@ else() # Raw CMake Project
 
     #  Detect KokkosCore functionality from Trilinos
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/detect_kokkos_opts.cmake)
-    # cmake/detect_kokkos_opts.cmake populates KokkosCore_HAS_* 
+    # cmake/detect_kokkos_opts.cmake populates Kokkos_HAS_* 
     detect_kokkos_opts()
 
     # get kokkos settings, change our settings, error to user if we something they requested is not enabled
-    if (KokkosCore_HAS_CUDA)
-      if (NOT KokkosCore_HAS_CUDA_LAMBDA)
+    if (Kokkos_HAS_CUDA)
+      if (NOT Kokkos_HAS_CUDA_LAMBDA)
         message(FATAL_ERROR "Please reconfigure Trilinos with -DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
       endif()
       message(STATUS "CUDA enabled in KokkosCore in Trilinos, setting Compadre_USE_CUDA to ON")
@@ -254,7 +254,7 @@ else() # Raw CMake Project
   ENDIF()
 
   if (NOT KOKKOS_IN_TRILINOS)
-    if (KokkosCore_PREFIX STREQUAL "")
+    if (Kokkos_PREFIX STREQUAL "")
       SET(KOKKOS_BUILT_FOR_USER ON)
       if (APPLE)
         bob_option(Kokkos_ENABLE_CUDA "Whether to use CUDA" OFF)
@@ -272,8 +272,8 @@ else() # Raw CMake Project
       option(Kokkos_ENABLE_TESTS "" OFF)
       option(Kokkos_ENABLE_EXAMPLES "" OFF)
       if (NOT(KokkosKernels_PREFIX STREQUAL ""))
-          MESSAGE(FATAL_ERROR "KokkosKernels_PREFIX specified but KokkosCore_PREFIX not specified. \
-          Either provide KokkosCore_PREFIX as well, or remove KokkosKernels_PREFIX specification.")
+          MESSAGE(FATAL_ERROR "KokkosKernels_PREFIX specified but Kokkos_PREFIX not specified. \
+          Either provide Kokkos_PREFIX as well, or remove KokkosKernels_PREFIX specification.")
       endif()
       # older version of Kokkos shipped with Compadre still uses PTHREAD naming
       set(Kokkos_ENABLE_PTHREAD ${Kokkos_ENABLE_THREADS}) 
@@ -281,9 +281,9 @@ else() # Raw CMake Project
       set(Compadre_USE_CUDA ${Kokkos_ENABLE_CUDA})
       set(Kokkos_PREFIX ${CMAKE_INSTALL_PREFIX})
     else()
-      # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
+      # Existing KokkosCore indicated by user by setting Kokkos_PREFIX, so we look for it
       # where specified (only)
-      find_package(Kokkos PATHS "${KokkosCore_PREFIX}" NO_DEFAULT_PATH REQUIRED)
+      find_package(Kokkos PATHS "${Kokkos_PREFIX}" NO_DEFAULT_PATH REQUIRED)
       message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
       if (Kokkos_VERSION VERSION_LESS "${KOKKOS_MIN}")
           message(FATAL_ERROR "${Kokkos_VERSION}: Requires Kokkos version ${KOKKOS_MIN} or greater")
@@ -293,14 +293,14 @@ else() # Raw CMake Project
       if (TARGET Kokkos::CUDA)
         set(Compadre_USE_CUDA ON)
       endif()
-      set(Kokkos_PREFIX "${KokkosCore_PREFIX}")
+      set(Kokkos_PREFIX "${Kokkos_PREFIX}")
     endif()
   endif()
   message(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
 
   option(Kokkos_CXX_STANDARD "" "${CMAKE_CXX_STANDARD}")
 
-  if (NOT(KOKKOS_IN_TRILINOS) AND (KokkosCore_PREFIX STREQUAL ""))
+  if (NOT(KOKKOS_IN_TRILINOS) AND (Kokkos_PREFIX STREQUAL ""))
       add_subdirectory(kokkos)
       get_directory_property(Kokkos_VERSION DIRECTORY kokkos DEFINITION Kokkos_VERSION)
       message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
@@ -351,13 +351,13 @@ else() # Raw CMake Project
       OPTION(KokkosKernels_INST_EXECSPACE_OPENMP "" ${Kokkos_ENABLE_OPENMP})
       SET(KokkosKernels_INST_EXECSPACE_OPENMP ${Kokkos_ENABLE_OPENMP})
       add_subdirectory(kokkos-kernels)
-      if (NOT(KokkosCore_PREFIX STREQUAL ""))
-          MESSAGE(FATAL_ERROR "KokkosCore_PREFIX specified but KokkosKernels_PREFIX not specified. \
-          Either provide KokkosKernels_PREFIX as well, or remove KokkosCore_PREFIX specification.")
+      if (NOT(Kokkos_PREFIX STREQUAL ""))
+          MESSAGE(FATAL_ERROR "Kokkos_PREFIX specified but KokkosKernels_PREFIX not specified. \
+          Either provide KokkosKernels_PREFIX as well, or remove Kokkos_PREFIX specification.")
       endif()
       set(KokkosKernels_PREFIX ${CMAKE_INSTALL_PREFIX})
     else()
-      # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
+      # Existing KokkosCore indicated by user by setting Kokkos_PREFIX, so we look for it
       # where specified (only)
       find_package(KokkosKernels PATHS "${KokkosKernels_PREFIX}" NO_DEFAULT_PATH REQUIRED)
       if(Compadre_USE_CUDA AND NOT(TARGET Kokkos::CUDA))

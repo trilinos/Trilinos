@@ -55,9 +55,9 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Complex.hpp"
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include <arprec/mp_real.h>
@@ -1299,7 +1299,7 @@ struct ScalarTraits<
 };
 #endif //  HAVE_TEUCHOS_COMPLEX
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 // Partial specialization for Kokkos::complex<T>
 template<class T>
 struct ScalarTraits<
@@ -1365,7 +1365,7 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(std::complex<T>(x), std::complex<T>(y)); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

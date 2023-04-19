@@ -31,7 +31,7 @@
 #include "Sacado_mpl_if.hpp"
 #include "Sacado_mpl_type_wrap.hpp"
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
 #endif
@@ -271,7 +271,7 @@ namespace Sacado {
       view_fad_type& operator*() { *this; }
     };
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
     // Overload of Kokkos::atomic_add for ViewFad types.
     template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
     SACADO_INLINE_FUNCTION
