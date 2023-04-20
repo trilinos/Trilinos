@@ -207,10 +207,10 @@ void update_MP(
     // Get the dimensions
     const size_t m = y.extent(0);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const size_t N = execution_space::thread_pool_size();
+#if KOKKOS_VERSION < 40099
+    const size_t N = execution_space::concurrency();
 #else
-    const size_t N = execution_space::impl_thread_pool_size();
+    const size_t N = execution_space().concurrency();
 #endif
     const size_t m_c_star = Sacado_MP_Vector_GEMV_Tile_Size(sizeof(Scalar));
     const size_t n_tiles_per_thread = ceil(((double)m) / (N * m_c_star));
@@ -246,10 +246,10 @@ void inner_products_MP(
 
     const size_t team_size = STOKHOS_GEMV_TEAM_SIZE;
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const size_t N = execution_space::thread_pool_size();
+#if KOKKOS_VERSION < 40099
+    const size_t N = execution_space::concurrency();
 #else
-    const size_t N = execution_space::impl_thread_pool_size();
+    const size_t N = execution_space().concurrency();
 #endif
     const size_t m_c_star = Sacado_MP_Vector_GEMV_Tile_Size(sizeof(Scalar));
     const size_t n_tiles_per_thread = ceil(((double)n) / (N * m_c_star));
