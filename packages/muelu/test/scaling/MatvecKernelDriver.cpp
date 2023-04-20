@@ -161,8 +161,21 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   // Generate Lookup Tables  
   int v_log_max = ceil(log(nnz) / log(2))+1;
   PM.stream_vector_make_table(nrepeat,v_log_max);
+
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
+
+
+  if(A->hasCrsGraph()) {
+    auto importer = A->getCrsGraph()->getImporter();
+    size_t recv_size = importer->getRemoteLIDs().size() * sizeof(SC);
+    size_t send_size = importer->getExportLIDs().size() * sizeof(SC);
+    int local_log_max = ceil(log(std::max(send_size,recv_size)) / log(2))+1;
+    int global_log_max=local_log_max;
+    Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_MAX,1,&local_log_max,&global_log_max);
+    PM.halopong_make_table(nrepeat,global_log_max, importer);   
+  }
+
   if(verbose && rank == 0) {
     std::cout<<"********************************************************"<<std::endl;
     std::cout<<"Performance model results on "<<nproc<<" ranks"<<std::endl;
@@ -174,6 +187,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     PM.print_latency_corrected_stream_vector_table(std::cout);
     std::cout<<"****** Pingpong Table ******"<<std::endl;
     PM.print_pingpong_table(std::cout);
+    std::cout<<"****** Halopong Table ******"<<std::endl;
+    PM.print_halopong_table(std::cout);
   }
 
   // For convenience

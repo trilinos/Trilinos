@@ -263,7 +263,6 @@ namespace MueLu {
       auto Timport = Ximport->getTpetra_Import();
       auto distor = Timport->getDistributor();
 
-
       // Distributor innards
       Teuchos::ArrayView<const int> procsFrom = distor.getProcsFrom();
       Teuchos::ArrayView<const int> procsTo   = distor.getProcsTo();      
@@ -287,6 +286,7 @@ namespace MueLu {
 
       for(int i = 0; i < MAX_SIZE + 1 ;i ++) {
         int msg_size = (int) pow(2,i);
+
         MPI_Barrier(communicator);
         
         double t0 = MPI_Wtime();      
@@ -294,29 +294,28 @@ namespace MueLu {
           int ct=0;
           // Recv/Send the forward messsages
           for(int r=0; r<num_recvs;r++) {
-            const int tag = 1000;
-            MPI_Irecv(&f_recv_buf[buff_size_per_msg*r],buff_size_per_msg,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
+            const int tag = 1000+j;
+            MPI_Irecv(&f_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_sends;s++) {
-            const int tag = 1000;
-            MPI_Isend(&f_send_buf[buff_size_per_msg*s],buff_size_per_msg,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
+            const int tag = 1000+j;
+            MPI_Isend(&f_send_buf[msg_size*s],msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the forward messsages
           MPI_Waitall(ct,requests.data(),status.data());
 
-
           ct=0;
           // Recv/Send the reverse messsages
           for(int r=0; r<num_sends;r++) {
-            const int tag = 2000;
-            MPI_Irecv(&r_recv_buf[buff_size_per_msg*r],buff_size_per_msg,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
+            const int tag = 2000+j;
+            MPI_Irecv(&r_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_recvs;s++) {
-            const int tag = 2000;
-            MPI_Isend(&r_send_buf[buff_size_per_msg*s],buff_size_per_msg,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
+            const int tag = 2000+j;
+            MPI_Isend(&r_send_buf[msg_size*s],msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the forward messsages
@@ -327,7 +326,11 @@ namespace MueLu {
         sizes[i] = msg_size;
         times[i] = time_per_call;
       }
+
+  
+
 #endif
+
     }
 
 
