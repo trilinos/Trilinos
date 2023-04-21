@@ -66,8 +66,8 @@ class ProjectField
    
 public:
   
-  ProjectField(const std::string name, Teuchos::RCP<panzer::PureBasis> src,
-               Teuchos::RCP<panzer::PureBasis> dst);
+  ProjectField(const std::string & name, Teuchos::RCP<panzer::PureBasis> src,
+               Teuchos::RCP<panzer::PureBasis> dst, const std::string & suffix = "");
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& fm);
@@ -78,7 +78,7 @@ private:
 
   typedef typename EvalT::ScalarT ScalarT;
 
-  std::string field_name_;
+  const std::string field_name_;
   Teuchos::RCP<const panzer::PureBasis> srcBasis_;
   Teuchos::RCP<const panzer::PureBasis> dstBasis_;
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations_;

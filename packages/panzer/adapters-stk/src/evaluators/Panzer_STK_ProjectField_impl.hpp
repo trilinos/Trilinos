@@ -62,8 +62,9 @@ namespace panzer_stk {
 
 template<typename EvalT,typename Traits>
 ProjectField<EvalT, Traits>::
-ProjectField(const std::string name, Teuchos::RCP<panzer::PureBasis> src,
-             Teuchos::RCP<panzer::PureBasis> dst):
+ProjectField(const std::string & name, Teuchos::RCP<panzer::PureBasis> src,
+             Teuchos::RCP<panzer::PureBasis> dst, 
+             const std::string & suffix):
   field_name_(name), srcBasis_(src), dstBasis_(dst)
 { 
   using panzer::Cell;
@@ -72,7 +73,7 @@ ProjectField(const std::string name, Teuchos::RCP<panzer::PureBasis> src,
   Teuchos::RCP<PHX::DataLayout> srcBasis_layout = srcBasis_->functional;
   Teuchos::RCP<PHX::DataLayout> dstBasis_layout = dstBasis_->functional;
 
-  result_ = PHX::MDField<double,Cell,BASIS>(field_name_,dstBasis_layout);
+  result_ = PHX::MDField<double,Cell,BASIS>(field_name_+suffix,dstBasis_layout);
   this->addEvaluatedField(result_);
 
   // This shouldn't get modified but needs to be non const 
