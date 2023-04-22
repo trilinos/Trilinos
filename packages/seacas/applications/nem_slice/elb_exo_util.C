@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,9 +19,9 @@
 #include <string>
 #include <vector>
 
-#include "elb.h"      // for Weight_Description<INT>, etc
-#include "elb_elem.h" // for get_elem_type, E_Type, etc
-#include "elb_err.h"  // for Gen_Error, MAX_ERR_MSG
+#include "elb.h"        // for Weight_Description<INT>, etc
+#include "elb_elem.h"   // for get_elem_type, E_Type, etc
+#include "elb_err.h"    // for Gen_Error, MAX_ERR_MSG
 #include "elb_exo.h"
 #include "elb_groups.h" // for parse_groups
 #include "elb_util.h"   // for in_list, roundfloat
@@ -205,20 +205,9 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   }
 
   /* Allocate and initialize memory for the sphere adjustment */
-  sphere->adjust = (int *)malloc(sizeof(int) * 3 * (mesh->num_el_blks));
-  if (!(sphere->adjust)) {
-    Gen_Error(0, "fatal: insufficient memory");
-    ex_close(exoid);
-    return 0;
-  }
-
-  sphere->begin = sphere->adjust + mesh->num_el_blks;
-  sphere->end   = sphere->begin + mesh->num_el_blks;
-  for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
-    sphere->adjust[cnt] = 0;
-    sphere->begin[cnt]  = 0;
-    sphere->end[cnt]    = 0;
-  }
+  sphere->adjust.resize(mesh->num_el_blks);
+  sphere->begin.resize(mesh->num_el_blks);
+  sphere->end.resize(mesh->num_el_blks);
 
   /* Determine the maximum number of nodes per element */
   mesh->max_np_elem = 0;
@@ -316,9 +305,9 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 3: zptr = (mesh->coords) + 2 * (mesh->num_nodes); FALL_THROUGH;
-    case 2: yptr = (mesh->coords) + (mesh->num_nodes); FALL_THROUGH;
-    case 1: xptr = mesh->coords;
+    case 3: zptr = mesh->coords.data() + 2 * (mesh->num_nodes); FALL_THROUGH;
+    case 2: yptr = mesh->coords.data() + (mesh->num_nodes); FALL_THROUGH;
+    case 1: xptr = mesh->coords.data();
     }
 
     if (ex_get_coord(exoid, xptr, yptr, zptr) < 0) {
@@ -335,14 +324,11 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
       continue;
     }
 
-    INT *blk_connect = (INT *)malloc(sizeof(INT) * mesh->eb_cnts[cnt] * mesh->eb_npe[cnt]);
-    if (!blk_connect) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
+    std::vector<INT> blk_connect(mesh->eb_cnts[cnt] * mesh->eb_npe[cnt]);
 
     /* Get the connectivity for this element block */
-    if (ex_get_conn(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], blk_connect, nullptr, nullptr) < 0) {
+    if (ex_get_conn(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], blk_connect.data(), nullptr, nullptr) <
+        0) {
       Gen_Error(0, "fatal: failed to get element connectivity");
       return 0;
     }
@@ -434,9 +420,6 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
         gelem_cnt++;
       }
     }
-    /* Free up memory */
-    free(blk_connect);
-
   } /* End "for(cnt=0; cnt < mesh->num_el_blks; cnt++)" */
 
   /* if there is a group designator, then parse it here */

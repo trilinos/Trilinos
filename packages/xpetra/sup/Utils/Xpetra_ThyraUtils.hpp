@@ -372,26 +372,36 @@ public:
     return Teuchos::null;
   }
 
-  static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  toXpetra(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& op) {
+  static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+  toXpetra(const Teuchos::RCP<Thyra::LinearOpBase<Scalar>>& op) {
+
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    using Teuchos::rcp_dynamic_cast;
 
 #ifdef HAVE_XPETRA_TPETRA
     if(isTpetra(op)) {
       typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
-      Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getTpetraOperator(op);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(TpetraOp));
-      Teuchos::RCP<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraRowMat = Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TpetraOp, true);
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraCrsMat = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TpetraRowMat, true);
+      typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOperator_t;
+      RCP<const TpetraOperator_t> TpetraOp = TOE::getConstTpetraOperator(op);
+      TEUCHOS_TEST_FOR_EXCEPT(is_null(TpetraOp));
+      RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> TpetraRowMat =
+        rcp_dynamic_cast<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(TpetraOp, true);
+      RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> TpetraCrsMat =
+        rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(TpetraRowMat, true);
 
-      Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraCrsMat =
-          Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraCrsMat));
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraCrsMat));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpCrsMat =
-        Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraCrsMat, true);
-      Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpCrsWrap =
-        Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrsMat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpMat =
-        Teuchos::rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpCrsWrap, true);
+      RCP<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> xTpetraCrsMat =
+          rcp(new Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
+              rcp_const_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(TpetraCrsMat)
+              ));
+      TEUCHOS_TEST_FOR_EXCEPT(is_null(xTpetraCrsMat));
+      RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xpCrsMat =
+        rcp_dynamic_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xTpetraCrsMat, true);
+      RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xpCrsWrap =
+        rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrsMat));
+      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xpMat =
+        rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xpCrsWrap, true);
       return xpMat;
     }
 #endif

@@ -310,6 +310,7 @@
  */
 
 #include "svdi.h"
+
 /******************************************************************************/
 /*                                                                            */
 /*      type and constant declarations                                        */
@@ -334,6 +335,7 @@
 /* end cgimet.h */
 #include "data_def.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -2457,6 +2459,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the cell colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = cells[index--];
             }
 
@@ -2502,6 +2505,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index++] / 255.0f;
               garray[count] = (float)cells[index++] / 255.0f;
               barray[count] = (float)cells[index++] / 255.0f;
@@ -2537,6 +2541,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index] / 255.0f;
               garray[count] = (float)cells[index + 1] / 255.0f;
               barray[count] = (float)cells[index + 2] / 255.0f;
@@ -2837,6 +2842,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the pixel colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = pxclrs[index--];
             }
 
@@ -2881,6 +2887,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index++] / 255.0f;
               garray[count] = (float)pxclrs[index++] / 255.0f;
               barray[count] = (float)pxclrs[index++] / 255.0f;
@@ -2916,6 +2923,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index] / 255.0f;
               garray[count] = (float)pxclrs[index + 1] / 255.0f;
               barray[count] = (float)pxclrs[index + 2] / 255.0f;
@@ -5141,8 +5149,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
     else { /* after 1st time through, use new vertex list */
       curlen  = *lenout;
       *lenout = 0;
-      s.x     = xout[curlen - 1];
-      s.y     = yout[curlen - 1];
+      if (curlen > 0) {
+        s.x = xout[curlen - 1];
+        s.y = yout[curlen - 1];
+      }
     }
 
     for (i = 0; i < curlen; i++) { /* loop through all vertices */

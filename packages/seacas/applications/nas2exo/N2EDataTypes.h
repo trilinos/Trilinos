@@ -4,7 +4,7 @@
  *  Created on: Oct 10, 2020
  *      Author: Ramon J. Moral(Contractor, STRA LLC)
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
- *  Copyright: Sandia National Labs, 2020, 2021, 2022
+ *  Copyright: Sandia National Labs, 2020, 2021, 2022, 2023
  */
 #pragma once
 
@@ -29,8 +29,8 @@ namespace N2EModules {
     int64_t        numFacesPerElem{};
     int64_t        numAttrPerElem{};
 
-    supportedElements(ex_entity_type elType, std::string elDesc, int64_t nodesPer, int64_t edgesPer,
-                      int64_t facesPer, int64_t attrPer)
+    supportedElements(ex_entity_type elType, const std::string &elDesc, int64_t nodesPer,
+                      int64_t edgesPer, int64_t facesPer, int64_t attrPer)
     {
 
       elementType = elType;

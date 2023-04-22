@@ -226,7 +226,7 @@ namespace {
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
-    for (auto &nb : nbs) {
+    for (const auto &nb : nbs) {
       info_nodeblock(region, *nb, interFace, "");
     }
   }

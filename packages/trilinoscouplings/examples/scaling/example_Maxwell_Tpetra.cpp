@@ -2675,12 +2675,6 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
   /* Stratimikos setup */
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
   Stratimikos::enableMueLuRefMaxwell<SC,LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
-#ifdef HAVE_TRILINOSCOUPLINGS_IFPACK2
-  // Register Ifpack2 as a Stratimikos preconditioner strategy.
-  typedef Thyra::PreconditionerFactoryBase<double>                                   Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double,LO,GO,Node> > Impl;
-  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);

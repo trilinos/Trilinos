@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -415,10 +415,6 @@ namespace Ioss {
      *  \returns The platform information string.
      */
     static std::string platform_information();
-
-    /** \brief Return amount of memory being used on this processor */
-    static size_t get_memory_info();
-    static size_t get_hwm_memory_info();
 
     /** \brief Get a filename relative to the specified working directory (if any)
      *         of the current execution.

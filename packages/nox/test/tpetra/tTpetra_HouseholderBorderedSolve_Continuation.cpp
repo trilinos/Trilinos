@@ -65,7 +65,6 @@
 #include "BelosTypes.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #include "ME_Tpetra_1DFEM.hpp"
 
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
@@ -260,9 +259,6 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Householder, Manual_Continuation)
   // Create the linear solver and register on model evaluator
   {
     Stratimikos::DefaultLinearSolverBuilder builder;
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > Impl;
-    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Linear Solver Type", "Belos");
@@ -498,9 +494,6 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Householder, LOCA_Continuation)
   // Create the linear solver and register on model evaluator
   {
     Stratimikos::DefaultLinearSolverBuilder builder;
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > Impl;
-    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Linear Solver Type", "Belos");

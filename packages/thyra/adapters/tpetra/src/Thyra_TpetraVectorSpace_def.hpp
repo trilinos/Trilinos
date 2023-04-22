@@ -77,6 +77,20 @@ void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
 }
 
 
+// Utility functions
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+::createLocallyReplicatedVectorSpace(int size) const
+{
+  return tpetraVectorSpace<Scalar>(
+    Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      size, tpetraMap_->getComm() ) );
+}
+
+
 // Overridden from VectorSpace
 
 
@@ -99,18 +113,12 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembers(int num
 {
   return tpetraMultiVector<Scalar>(
     weakSelfPtr_.create_strong().getConst(),
-    tpetraVectorSpace<Scalar>(
-      Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(
-        numMembers, tpetraMap_->getComm()
-        )
-      ),
+    this->createLocallyReplicatedVectorSpace(numMembers),
     Teuchos::rcp(
       new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
         tpetraMap_, numMembers, false)
       )
     );
-  // ToDo: Create wrapper function to create locally replicated vector space
-  // and use it.
 }
 
 

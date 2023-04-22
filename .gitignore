@@ -32,6 +32,7 @@ doxygen_objdb_*.tmp
 /packages/moocho/
 /packages/optika/
 /packages/xSDKTrilinos/
+/packages/trilinos_linear_solvers/
 
 # Ignore local gitdist config file (.gitdis.default is in git repo)
 /.gitdist

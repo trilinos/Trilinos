@@ -82,11 +82,6 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 // Galeri includes
 #include <Galeri_XpetraParameters.hpp>
 
-// Ifpack2 includes
-#ifdef HAVE_MUELU_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#endif
-
 
 template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
@@ -196,12 +191,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
     // Register MueLu as a Stratimikos preconditioner strategy.
     Stratimikos::enableMueLu<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
-#ifdef HAVE_MUELU_IFPACK2
-    // Register Ifpack2 as a Stratimikos preconditioner strategy.
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 
     // add coordinates and nullspace to parameter list
     if (paramList->isSublist("Preconditioner Types") &&

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -387,7 +387,7 @@ namespace Ioex {
     offset = 0;
     sum    = 0; // Size of adjacency vector.
 
-    for (auto &block : ebs) {
+    for (const auto &block : ebs) {
       // Range of elements in element block b [)
       size_t b_start = offset; // offset is index of first element in this block...
       offset += block.num_entry;
@@ -555,11 +555,11 @@ namespace Ioex {
     }
 
     // Each processor knows how many of the entityset entities it
-    // owns; 
-    // 
+    // owns;
+    //
     // The first processor with non-zero entity count is the
-    // "root" for this entityset.  
-    // 
+    // "root" for this entityset.
+    //
     // A split communicator is created
     // containing only the ranks that have non-zero entity count
     {

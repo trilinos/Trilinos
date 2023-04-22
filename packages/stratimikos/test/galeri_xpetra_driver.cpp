@@ -39,6 +39,7 @@
 // ***********************************************************************
 //@HEADER
 */
+
 #include <iostream>
 
 /*
@@ -68,6 +69,7 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 
 // Stratimikos includes
 #include <Stratimikos_LinearSolverBuilder.hpp>
+#include <Stratimikos_InternalConfig.h>
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
@@ -239,7 +241,7 @@ main_(int argc, char *argv[], Teuchos::CommandLineProcessor& clp) {
     Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
     // Register Ifpack2 as a Stratimikos preconditioner strategy.
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> Impl;
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
     // Setup solver parameters using a Stratimikos parameter list.
@@ -323,6 +325,8 @@ enum scalarType {
 
 int
 main(int argc, char *argv[]) {
+  Teuchos::GlobalMPISession session (&argc, &argv, NULL);
+
   Teuchos::CommandLineProcessor clp(false);
   scalarType scalar = DOUBLE;
   std::vector<const char*> availableScalarTypeStrings;
@@ -351,8 +355,6 @@ main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
   }
-
-  Teuchos::GlobalMPISession session (&argc, &argv, NULL);
 
 #ifdef HAVE_TPETRA_INST_DOUBLE
   if (scalar == DOUBLE)

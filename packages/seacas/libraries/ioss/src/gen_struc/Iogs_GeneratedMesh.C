@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -310,7 +310,7 @@ namespace Iogs {
 
       if (doRotation) {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
-        for (auto &elem : rotmat) {
+        for (const auto &elem : rotmat) {
           for (double jj : elem) {
             fmt::print(Ioss::OUTPUT(), "{:14.e}\t", jj);
           }
