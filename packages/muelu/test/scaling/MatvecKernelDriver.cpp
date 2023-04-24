@@ -284,7 +284,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   // *** Calculate Remote part of the SPMV ***
   double time_pack_unpack_outofplace = 0.0;
   double time_pack_unpack_inplace    = 0.0;
-  double time_communicate            = 0.0;
+  double time_communicate_ping       = 0.0;
+  double time_communicate_halo       = 0.0;
   // Note: We'll assume that each of the permutes, remotes and exports is a unified
   // memory transaction, even though that's not strictly speaking correct.
   if(A->hasCrsGraph()) {
@@ -324,6 +325,9 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       // We now need to get the size of each message for the ping-pong costs.
       double send_time = 0.0;
       double recv_time = 0.0;
+      double halo_time = 0.0;
+      size_t total_send_length=0, total_recv_length=0;
+      double avg_size_per_msg = 0.0;
 #if defined(HAVE_MUELU_TPETRA)
       RCP<const Xpetra::TpetraImport<LO,GO,NO> > t_importer = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraImport<LO,GO,NO> >(importer);
       if(!t_importer.is_null()) {
@@ -332,30 +336,43 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
         Teuchos::ArrayView<const size_t> recv_lengths = distor.getLengthsFrom();
         Teuchos::ArrayView<const size_t> send_lengths = distor.getLengthsTo();
         
-        for (int i=0; i<(int) send_lengths.size(); i++) 
+        for (int i=0; i<(int) send_lengths.size(); i++) {
           send_time += PM.pingpong_device_lookup(send_lengths[i] * sizeof(SC));
+          total_send_length = send_lengths[i]*sizeof(SC);
+        }
         
-        for (int i=0; i<(int) recv_lengths.size(); i++) 
+        for (int i=0; i<(int) recv_lengths.size(); i++)  {
           recv_time += PM.pingpong_device_lookup(recv_lengths[i] * sizeof(SC));                  
-      }
+          total_recv_length = send_lengths[i]*sizeof(SC);
+        }
+ 
+        avg_size_per_msg = (double)total_send_length/(2.0*send_lengths.size()) +  (double)total_recv_length/(2.0*recv_lengths.size());
+        halo_time = PM.halopong_device_lookup(avg_size_per_msg);
+     }
 #endif
 
 
-      if(verbose && rank == 0)
+      if(verbose && rank == 0) {
+         std::cout<<"****** Remote Time Model Results ******"<<std::endl;
         std::cout << "Remote: same     = "<<same_time*1e6<<" us.\n"
                   << "Remote: permutes = "<<permute_time*1e6<<" us.\n"
                   << "Remote: exports  = "<<export_time*1e6<<" us.\n"
                   << "Remote: remotes  = "<<remote_time*1e6<<" us.\n"
-                  << "Remote: sends    = "<<send_time*1e6<<" us.\n"
-                  << "Remote: recvs    = "<<recv_time*1e6<<" us."<<std::endl;
+                  << "Remote: sends len = "<<total_send_length<<" time = "<<send_time*1e6<<" us.\n"
+                  << "Remote: recvs len = "<<total_recv_length<<" time  = "<<recv_time*1e6<<" us.\n"
+                  << "Remote: halo avg = "<<(size_t)avg_size_per_msg<<" time  = "<<halo_time*1e6<<" us.\n"<<std::endl;
+      }
 
       // NOTE: For now we'll do comm time as the larger of send/recv.  Not sure this is
       // really the optimal thing to do, but we'll start here.
-      time_communicate = std::max(send_time,recv_time);
+      time_communicate_ping = std::max(send_time,recv_time);
+      time_communicate_halo = halo_time;
     }
   }
-  double minimum_time_in_place     = time_communicate + time_pack_unpack_inplace;
-  double minimum_time_out_of_place = time_communicate + time_pack_unpack_outofplace;
+  double minimum_time_in_place_ping     = time_communicate_ping + time_pack_unpack_inplace;
+  double minimum_time_out_of_place_ping = time_communicate_ping + time_pack_unpack_outofplace;
+  double minimum_time_in_place_halo     = time_communicate_halo + time_pack_unpack_inplace;
+  double minimum_time_out_of_place_halo = time_communicate_halo + time_pack_unpack_outofplace;
 
 
   /***************************************************************************/
@@ -365,7 +382,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
               << "Minimum time model (all)       : " << minimum_local_all_time << std::endl
               << "Pack/unpack in-place           : " << time_pack_unpack_inplace << std::endl
               << "Pack/unpack out-of-place       : " << time_pack_unpack_outofplace << std::endl
-              << "Communication time             : " << time_communicate << std::endl;
+              << "Communication time (ping)      : " << time_communicate_ping << std::endl
+              << "Communication time (halo)      : " << time_communicate_halo << std::endl;
   
 
   // Iterate through all of the "MV" timers
@@ -381,18 +399,27 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(rank == 0) {
     if(!globalTimeMonitor.is_null()) {
-      printf("%-60s %30s %30s %30s %30s %30s %30s\n","Timer","Speedup vs. comp model ","Speedup vs. comp+inplace   ","Speedup vs. comp+ooplace   ","Speedup vs. all model      ","Speedup vs. all+inplace    ","Speedup vs. all+ooplace    ");
-      printf("%-60s %30s %30s %30s %30s %30s %30s\n","-----","-----------------------","---------------------------","---------------------------","---------------------------","---------------------------","---------------------------");
+      const std::string l[10]={"Comp","Comp+ping+inplace","Comp+ping+ooplace","Comp+halo+inplace","Comp+halo+ooplace",
+                                    "All", "All+ping+inplace", "All+ping+ooplace", "All+halo+inplace", "All+halo+ooplace"};
+      const std::string div={"-------------------"};
+      printf("%-60s %20s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n","Timer",l[0].c_str(),l[1].c_str(),l[2].c_str(),l[3].c_str(),l[4].c_str(),
+             l[5].c_str(),l[6].c_str(),l[7].c_str(),l[8].c_str(),l[9].c_str());
+      printf("%-60s %20s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n","-----",div.c_str(),div.c_str(),div.c_str(),div.c_str(),div.c_str(),
+             div.c_str(),div.c_str(),div.c_str(),div.c_str(),div.c_str());
       for(int i=0; i<(int)timer_names.size(); i++) {
         Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
         if(!t.is_null()) {
           double time_per_call = t->totalElapsedTime() / t->numCalls();
-          double p_comp = minimum_local_composite_time / time_per_call;
-          double p_all = minimum_local_all_time / time_per_call;
-          double p_inplace = minimum_time_in_place / time_per_call;
-          double p_ooplace = minimum_time_out_of_place / time_per_call;
+          double comp    = minimum_local_composite_time / time_per_call;
+          double alls     = minimum_local_all_time / time_per_call;
+          double p_inplace = minimum_time_in_place_ping / time_per_call;
+          double p_ooplace = minimum_time_out_of_place_ping / time_per_call;
+          double h_inplace = minimum_time_in_place_halo / time_per_call;
+          double h_ooplace = minimum_time_out_of_place_halo / time_per_call;
 
-          printf("%-60s %30.2f %30.2f %30.2f %30.2f %30.2f %30.2f\n",timer_names[i],p_comp,p_comp+p_inplace,p_comp+p_ooplace,p_all,p_all+p_inplace,p_all+p_ooplace);
+          printf("%-60s %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f\n",timer_names[i],
+                 comp,comp+p_inplace,comp+p_ooplace,comp+h_inplace,comp+h_ooplace,
+                 alls,alls+p_inplace,alls+p_ooplace,alls+h_inplace,alls+h_ooplace);
         }
       }
     }

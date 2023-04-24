@@ -318,7 +318,7 @@ namespace MueLu {
             MPI_Isend(&r_send_buf[msg_size*s],msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
             ct++;
           }
-          // Wait for the forward messsages
+          // Wait for the reverse messsages
           MPI_Waitall(ct,requests.data(),status.data());
         }
 
