@@ -223,34 +223,21 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       avg_time = PM.latency_corrected_stream_vector_lookup(size_in_bytes);
     else
       avg_time = PM.stream_vector_lookup(size_in_bytes);
-    double avg_distributed = avg_time;      
 
-    if(nproc > 1) {
-      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_time, &avg_distributed);
-      avg_distributed /= nproc;
-    }
     
     // The lookup divides by transactions-per-element already
     double memory_traffic = (double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-    gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_distributed,1,memory_traffic);
+    gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_time,1,memory_traffic);
     
     if(verbose && rank == 0) {
 
-      std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_distributed*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
+      std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_time*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
     }
   }
   
   // Get the latency info
-  double avg_latency;
-  if(nproc > 1) {
-    double avg_latency_local = PM.launch_latency_lookup();    
-    double avg_latency_distributed = avg_latency_local;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_latency_local, &avg_latency_distributed);
-    avg_latency  = avg_latency_distributed / nproc;
-  }
-  else {
-    avg_latency = PM.launch_latency_lookup();
-  }
+  double avg_latency = PM.launch_latency_lookup();    
+
 
 
   /***************************************************************************/
@@ -354,13 +341,13 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
       if(verbose && rank == 0) {
          std::cout<<"****** Remote Time Model Results ******"<<std::endl;
-        std::cout << "Remote: same     = "<<same_time*1e6<<" us.\n"
-                  << "Remote: permutes = "<<permute_time*1e6<<" us.\n"
-                  << "Remote: exports  = "<<export_time*1e6<<" us.\n"
-                  << "Remote: remotes  = "<<remote_time*1e6<<" us.\n"
+        std::cout << "Remote: same      = "<<same_time*1e6<<" us.\n"
+                  << "Remote: permutes  = "<<permute_time*1e6<<" us.\n"
+                  << "Remote: exports   = "<<export_time*1e6<<" us.\n"
+                  << "Remote: remotes   = "<<remote_time*1e6<<" us.\n"
                   << "Remote: sends len = "<<total_send_length<<" time = "<<send_time*1e6<<" us.\n"
                   << "Remote: recvs len = "<<total_recv_length<<" time  = "<<recv_time*1e6<<" us.\n"
-                  << "Remote: halo avg = "<<(size_t)avg_size_per_msg<<" time  = "<<halo_time*1e6<<" us.\n"<<std::endl;
+                  << "Remote: halo avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<halo_time*1e6<<" us.\n"<<std::endl;
       }
 
       // NOTE: For now we'll do comm time as the larger of send/recv.  Not sure this is
@@ -386,6 +373,34 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
               << "Communication time (halo)      : " << time_communicate_halo << std::endl;
   
 
+  // Get global average/max time sums
+  constexpr int NUM_TIMES=10;
+  double avg_times[NUM_TIMES];
+  double max_times[NUM_TIMES];
+  {
+    double comp      = minimum_local_composite_time;
+    double alls      = minimum_local_all_time;
+    double p_inplace = minimum_time_in_place_ping;
+    double p_ooplace = minimum_time_out_of_place_ping;
+    double h_inplace = minimum_time_in_place_halo;
+    double h_ooplace = minimum_time_out_of_place_halo;
+
+    double all_times_local[NUM_TIMES] = {
+                 comp,comp+p_inplace,comp+p_ooplace,comp+h_inplace,comp+h_ooplace,
+                 alls,alls+p_inplace,alls+p_ooplace,alls+h_inplace,alls+h_ooplace};
+
+    if(nproc > 1) {
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, NUM_TIMES, &all_times_local[0], &avg_times[0]);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, NUM_TIMES, &all_times_local[0], &max_times[0]);
+      for(int i=0; i<NUM_TIMES; i++)
+        avg_times[i] /= nproc;
+    }
+    else {
+      for(int i=0; i<NUM_TIMES; i++)
+        avg_times[i] = max_times[i] = all_times_local[i];
+    }
+  }
+
   // Iterate through all of the "MV" timers
   // NOTE: This is a hack since TimeMonitor does not give you a way to
   // iterate through the timers
@@ -399,7 +414,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(rank == 0) {
     if(!globalTimeMonitor.is_null()) {
-      const std::string l[10]={"Comp","Comp+ping+inplace","Comp+ping+ooplace","Comp+halo+inplace","Comp+halo+ooplace",
+      const std::string l[NUM_TIMES]={"Comp","Comp+ping+inplace","Comp+ping+ooplace","Comp+halo+inplace","Comp+halo+ooplace",
                                     "All", "All+ping+inplace", "All+ping+ooplace", "All+halo+inplace", "All+halo+ooplace"};
       const std::string div={"-------------------"};
       printf("%-60s %20s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n","Timer",l[0].c_str(),l[1].c_str(),l[2].c_str(),l[3].c_str(),l[4].c_str(),
@@ -410,16 +425,10 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
         Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
         if(!t.is_null()) {
           double time_per_call = t->totalElapsedTime() / t->numCalls();
-          double comp    = minimum_local_composite_time / time_per_call;
-          double alls     = minimum_local_all_time / time_per_call;
-          double p_inplace = minimum_time_in_place_ping / time_per_call;
-          double p_ooplace = minimum_time_out_of_place_ping / time_per_call;
-          double h_inplace = minimum_time_in_place_halo / time_per_call;
-          double h_ooplace = minimum_time_out_of_place_halo / time_per_call;
-
           printf("%-60s %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f\n",timer_names[i],
-                 comp,comp+p_inplace,comp+p_ooplace,comp+h_inplace,comp+h_ooplace,
-                 alls,alls+p_inplace,alls+p_ooplace,alls+h_inplace,alls+h_ooplace);
+                 max_times[0]/time_per_call,max_times[1]/time_per_call,max_times[2]/time_per_call,max_times[3]/time_per_call,max_times[4]/time_per_call,
+                 max_times[5]/time_per_call,max_times[6]/time_per_call,max_times[7]/time_per_call,max_times[8]/time_per_call,max_times[9]/time_per_call);
+
         }
       }
     }
