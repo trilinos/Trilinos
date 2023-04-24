@@ -1,5 +1,5 @@
 // Program to debug segfaults being reported in CDASH when
-// -D KokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode 
+// -D KokkosClassic_DefaultNode:STRING=Tpetra::KokkosCompat::KokkosOpenMPWrapperNode 
 // -D Trilinos_ENABLE_OpenMP:BOOL=ON  
 // Problem appears to be in creation of Xpetra::EpetraMapT
 

@@ -74,7 +74,7 @@ template<class S, class LO, class GO, class N> class Vector;
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+         class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class MultiVector
     : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {

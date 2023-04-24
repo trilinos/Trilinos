@@ -28,8 +28,7 @@ void StkMeshCreator::load_mesh(const std::string& fname)
 
 MeshPart StkMeshCreator::create_mesh_from_part(const std::string& name)
 {
-  std::cout << "creating mesh from part " << name << std::endl;
-  std::shared_ptr<mesh::Mesh> mesh = mesh::make_empty_mesh();
+  std::shared_ptr<mesh::Mesh> mesh = mesh::make_empty_mesh(m_bulkDataPtr->parallel());
   MeshFieldPtr stkEls =
       mesh::create_field<MeshFieldPtr::element_type::value_type>(mesh, mesh::impl::FieldShape(0, 0, 1), 1);
   m_part = m_metaDataPtr->get_part(name);

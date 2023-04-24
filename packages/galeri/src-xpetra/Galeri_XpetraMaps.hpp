@@ -114,23 +114,23 @@ namespace Galeri {
 #ifdef HAVE_XPETRA_EPETRA
 
     template <class LocalOrdinal, class GlobalOrdinal> struct privateCreateMapEpetra {
-      static RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+      static RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
          throw "Galeri::Xpetra::privateCreateMapEpetra: no default implementation";
       }
     };
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
     template <> struct privateCreateMapEpetra<int, int> {
-      static RCP< ::Xpetra::Map<int, int, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
-        return Galeri::Xpetra::CreateMap<int, int, ::Xpetra::EpetraMapT<int, KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
+      static RCP< ::Xpetra::Map<int, int, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+        return Galeri::Xpetra::CreateMap<int, int, ::Xpetra::EpetraMapT<int, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
       }
     };
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
     template <> struct privateCreateMapEpetra<int, long long> {
-      static RCP< ::Xpetra::Map<int, long long, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
-        return Galeri::Xpetra::CreateMap<int, long long, ::Xpetra::EpetraMapT<long long, KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
+      static RCP< ::Xpetra::Map<int, long long, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+        return Galeri::Xpetra::CreateMap<int, long long, ::Xpetra::EpetraMapT<long long, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
       }
     };
 #endif
@@ -155,11 +155,11 @@ namespace Galeri {
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
-    RCP< ::Xpetra::Map<int, int, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+    RCP< ::Xpetra::Map<int, int, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 
       typedef int LocalOrdinal;
       typedef int GlobalOrdinal;
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+      typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
@@ -175,11 +175,11 @@ namespace Galeri {
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
-    RCP< ::Xpetra::Map<int, long long, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap64(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+    RCP< ::Xpetra::Map<int, long long, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap64(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 
       typedef int LocalOrdinal;
       typedef long long GlobalOrdinal;
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+      typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)

@@ -54,10 +54,10 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
       std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2 = amIMesh1 ? nullptr   : inputMesh;
 
       auto xiPts = std::make_shared<XiCoordinatesForTest>();
-      auto interface = application_interface_spmd_factory(stk::middle_mesh::ApplicationInterfaceType::FakeParallel, inputMesh1,
-                                                          inputMesh2,
-                                                          m_unionComm, xiPts, parallelSearchOpts, volumeSnapOpts,
-                                                          boundarySnapOpts, middleGridOpts);
+      auto interface = application_interface_factory(stk::middle_mesh::ApplicationInterfaceType::FakeParallel, inputMesh1,
+                                                     inputMesh2,
+                                                     m_unionComm, xiPts, parallelSearchOpts, volumeSnapOpts,
+                                                     boundarySnapOpts, middleGridOpts);
 
       interface->create_middle_grid();
       middleGrid             = amIMesh1 ? interface->get_middle_grid_for_mesh1() : interface->get_middle_grid_for_mesh2();

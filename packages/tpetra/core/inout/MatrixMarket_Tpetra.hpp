@@ -3673,19 +3673,17 @@ namespace Tpetra {
                   << prvRow << ", at curPos = " << curPos << ".  Please report "
                   "this bug to the Tpetra developers.");
                 if (curRow > prvRow) {
-                  for (global_ordinal_type r = prvRow+1; r <= curRow; ++r) {
-                    rowPtr[r] = curPos;
-                  }
                   prvRow = curRow;
                 }
                 numEntriesPerRow[curRow]++;
                 colInd[curPos] = curEntry.colIndex();
                 values[curPos] = curEntry.value();
               }
-              // rowPtr has one more entry than numEntriesPerRow.  The
-              // last entry of rowPtr is the number of entries in
-              // colInd and values.
-              rowPtr[numRows] = numEntries;
+
+              rowPtr[0] = 0;
+              for (global_ordinal_type row = 1; row <= numRows; ++row) {
+                rowPtr[row] = numEntriesPerRow[row-1] + rowPtr[row-1];
+              }
             } // Finished conversion to CSR format
             catch (std::exception& e) {
               mergeAndConvertSucceeded = 0;
@@ -8788,8 +8786,10 @@ namespace Tpetra {
               localColsArray.push_back(curLocalCol);
             }
           }
-          //TODO Do the views eiData need to be released prior to the matvec?
 
+          // drop host views before apply
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = Teuchos::null;
           // probe
           A.apply(*ei,*colsA);
 
@@ -8798,6 +8798,18 @@ namespace Tpetra {
           if (myRank==0)
             globalNnz += writeColumns(os,*colsOnPid0, numMVs, importedGidsData(),
                                       globalColsArray, offsetToUseInPrinting);
+
+          // reconstruct dropped eiData
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = ei->getDataNonConst(i);
+          for (size_t j=0; j<numMVs; ++j ) {
+            GO curGlobalCol = minColGid + k*numMVs + j;
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+            }
+          }
 
           //zero out the ei's
           for (size_t j=0; j<numMVs; ++j ) {
@@ -8823,8 +8835,10 @@ namespace Tpetra {
               localColsArray.push_back(curLocalCol);
             }
           }
-          //TODO Do the views eiData need to be released prior to the matvec?
 
+          // drop host views before apply
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = Teuchos::null;
           // probe
           A.apply(*ei,*colsA);
 
@@ -8832,6 +8846,18 @@ namespace Tpetra {
           if (myRank==0)
             globalNnz += writeColumns(os,*colsOnPid0, rem, importedGidsData(),
                                       globalColsArray, offsetToUseInPrinting);
+
+          // reconstruct dropped eiData
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = ei->getDataNonConst(i);
+          for (int j=0; j<rem; ++j ) {
+            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+            }
+          }
 
           //zero out the ei's
           for (int j=0; j<rem; ++j ) {

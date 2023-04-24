@@ -50,7 +50,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 
@@ -58,9 +58,7 @@
 #include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 
 namespace MueLu {
 
@@ -97,12 +95,12 @@ namespace MueLu {
   class SaPFactory_kokkos;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+  class SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
   public:
     typedef LocalOrdinal                                        local_ordinal_type;
     typedef GlobalOrdinal                                       global_ordinal_type;
     typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
   private:
     // For compatibility

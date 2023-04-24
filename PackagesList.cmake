@@ -122,6 +122,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NOX                   packages/nox                      PT
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
+  TrilinosLinearSolvers packages/trilinos_linear_solvers  PT
   Zoltan2Sphynx         packages/zoltan2/sphynx           PT
   Zoltan2               packages/zoltan2                  PT
   ShyLU_DD              packages/shylu/shylu_dd           PT
@@ -174,6 +175,15 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(WebTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TrilinosLinearSolvers)
+
+# TRILFRAME-500
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Rythmos)    # 27115 targets
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Pike)       # 27048 targets
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Komplex)    # 27030 targets
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Moertel)    # 26995 targets
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TriKota)    # 26995 targets
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Domi)       # 26946 targets
 
 #
 # Disable certain packages on certain platforms.

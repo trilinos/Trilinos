@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include "ioex_export.h"
-
 #include <exodusII.h>
 #if defined PARALLEL_AWARE_EXODUS
+
+#include "ioex_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <vector>
@@ -35,6 +35,8 @@ namespace Ioex {
   {
   public:
     DecompositionDataBase(Ioss_MPI_Comm comm) : comm_(comm) {}
+    DecompositionDataBase(const DecompositionDataBase &)            = delete;
+    DecompositionDataBase &operator=(const DecompositionDataBase &) = delete;
 
     virtual ~DecompositionDataBase()            = default;
     virtual int    int_size() const             = 0;
@@ -215,14 +217,14 @@ namespace Ioex {
     int get_set_var(int filePtr, int step, int var_index, ex_entity_type type, ex_entity_id id,
                     int64_t num_entity, std::vector<double> &ioss_data) const;
 
-    bool i_own_node(size_t node)
-        const // T/F if node with global index node owned by this processors ioss-decomp.
+    bool i_own_node(size_t node) const
     {
+      // T/F if the node with global index `node` is owned by this processors ioss-decomp.
       return m_decomposition.i_own_node(node);
     }
 
-    bool i_own_elem(size_t elem)
-        const // T/F if node with global index elem owned by this processors ioss-decomp.
+    bool i_own_elem(size_t elem) const
+    // T/F if the element with global index `elem` is owned by this processors ioss-decomp.
     {
       return m_decomposition.i_own_elem(elem);
     }

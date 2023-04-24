@@ -76,10 +76,10 @@ class XiCoordinates
 
 // Class for constructing a middle grid when a given set of processes has
 // two meshes
-class ApplicationInterfaceSPMD
+class ApplicationInterface
 {
   public:
-    virtual ~ApplicationInterfaceSPMD() {}
+    virtual ~ApplicationInterface() {}
 
     // creates the middle grid
     virtual void create_middle_grid() = 0;
@@ -125,7 +125,7 @@ enum class ApplicationInterfaceType
   FakeParallel = 0
 };
 
-std::shared_ptr<ApplicationInterfaceSPMD> application_interface_spmd_factory(
+std::shared_ptr<ApplicationInterface> application_interface_factory(
     ApplicationInterfaceType type, std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
     MPI_Comm unionComm,
     std::shared_ptr<XiCoordinates> xiPts = nullptr,

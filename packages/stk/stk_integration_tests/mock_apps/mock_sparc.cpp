@@ -42,7 +42,9 @@ public:
       m_currentTime(),
       m_isTimeToStop(),
       m_doingSendTransfer(false),
-      m_sendFieldName()
+      m_wrongTransferOrder(false),
+      m_sendFieldName1(),
+      m_sendFieldName2()
   { }
 
   ~MockSparc()
@@ -56,14 +58,21 @@ public:
 
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+
     const std::string defaultFileName = "generated:1x1x4|sideset:x";
     std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
 
-    stk::util::impl::set_coupling_version(coupling_version_override);
+    const std::string defaultPartName = "surface_1";
+    std::string partName = stk::get_command_line_option(argc, argv, "part-name", defaultPartName);    
+
+    m_wrongTransferOrder = stk::get_command_line_option(argc, argv, "wrong-transfer-order", false);
+
     stk::util::impl::set_error_on_reset(false);
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     m_splitComms.set_free_comms_in_destructor(true);
+    stk::util::impl::set_coupling_version(coupling_version_override);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     int myAppRank = stk::parallel_machine_rank(splitComm);
     m_iAmRootRank = myAppRank == 0;
@@ -97,8 +106,8 @@ public:
       }
     }
 
-    std::vector<std::string> fieldNames = {"sparc-traction", "heat-transfer-coefficient"};
-    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
+    std::vector<std::string> fieldNames = {"sparc-traction1", "heat-transfer-coefficient1","heat-transfer-coefficient2"};
+    mock_utils::read_mesh(splitComm, meshFileName, partName, fieldNames, m_mesh);
 
     // TODO: put timeSyncMode in a command-line arg like mock-aria
     m_timeSyncMode = stk::coupling::Send; // This is usually Send, but could be Receive for SPARC-SPARC MPMD coupling
@@ -138,17 +147,19 @@ public:
 
     if (otherAppName=="Mock-Salinas") {
       m_doingSendTransfer = true;
-      m_sendFieldName = "sparc-traction";
+      m_sendFieldName1 = "sparc-traction1";
+      m_sendFieldName2 = "";
     }
     if (otherAppName=="Mock-Aria") {
       m_doingSendTransfer = true;
-      m_sendFieldName = "heat-transfer-coefficient";
+      m_sendFieldName1 = "heat-transfer-coefficient1";
+      m_sendFieldName2 = "heat-transfer-coefficient2";
     }
 
     {
       if (m_doingSendTransfer) {
         std::ostringstream os;
-        os << m_appName << ": will do send-transfer (field='"<<m_sendFieldName<<"') "
+        os << m_appName << ": will do send-transfer (fields='"<<m_sendFieldName1<<","<<m_sendFieldName2<<"') "
            <<" to other app: "<<otherAppName<<std::endl;
         if (m_iAmRootRank) std::cout << os.str() << std::endl;
       }
@@ -157,11 +168,11 @@ public:
     stk::coupling::check_sync_mode_consistency(m_myInfo, m_otherInfo);
 
     {
-      ThrowRequireMsg(stk::coupling::check_consistency<double>(m_myInfo, m_otherInfo, stk::coupling::InitialTime, m_timeSyncMode),
+      STK_ThrowRequireMsg(stk::coupling::check_consistency<double>(m_myInfo, m_otherInfo, stk::coupling::InitialTime, m_timeSyncMode),
           m_appName << ": initial time is inconsistent with " << m_otherInfo.get_value<std::string>(stk::coupling::AppName));
-      ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::TimeStep), 
+      STK_ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::TimeStep), 
           m_appName << ": other app ("<< m_otherInfo.get_value<std::string>(stk::coupling::AppName)<<") doesn't have time step");
-      ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::FinalTime), 
+      STK_ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::FinalTime), 
           m_appName << ": other app ("<< m_otherInfo.get_value<std::string>(stk::coupling::AppName)<<") doesn't have final time");
     }
   }
@@ -169,11 +180,11 @@ public:
   void check_field_sizes(std::vector<std::pair<std::string,int>> sendFields,
                          std::vector<std::pair<std::string,int>> recvFields)
   {
-    ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
+    STK_ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
        <<sendFields.size()<<") doesn't match number of recv-fields ("<<recvFields.size()
        <<")");
     for (unsigned i=0; i<sendFields.size(); ++i) {
-      ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
+      STK_ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
         "Send-field size ("<<sendFields[i].first<<","<<sendFields[i].second<<") "
         <<"doesn't match Recv-field size ("<<recvFields[i].first<<","<<recvFields[i].second<<")");
     }
@@ -185,7 +196,11 @@ public:
 
     std::vector<std::pair<std::string,int>> mySendFields;
     std::vector<std::pair<std::string,int>> myRecvFields;
-    mySendFields.push_back(std::make_pair(m_sendFieldName, m_mesh->get_field_size()));
+    mySendFields.push_back(std::make_pair(m_sendFieldName1, m_mesh->get_field_size()));
+    bool sending2fields = !m_sendFieldName2.empty();
+    if (sending2fields) {
+      mySendFields.push_back(std::make_pair(m_sendFieldName2, m_mesh->get_field_size()));
+    }
 
     stk::coupling::SyncInfo info = create_sync_info();
     info.set_value("SendFields", mySendFields);
@@ -198,24 +213,31 @@ public:
     check_field_sizes(mySendFields, otherRecvFields);
     check_field_sizes(otherSendFields, myRecvFields);
 
-    m_mesh->set_sparc_field_values(m_sendFieldName, 4.4);
-    std::shared_ptr<mock::SparcSendAdapter> sendAdapter =
-       std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName);
+    m_mesh->set_sparc_field_values(m_sendFieldName1, 4.4);
+    std::shared_ptr<mock::SparcSendAdapter> sendAdapter1 =
+       std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName1);
     std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;
-    m_sendTransfer.reset(new SendTransfer(sendAdapter, recvAdapter, "MockSparcSendTransfer", m_splitComms.get_parent_comm()));
+    m_sendTransfer1.reset(new SendTransfer(sendAdapter1, recvAdapter, "MockSparcSendTransfer1", m_splitComms.get_parent_comm()));
+    m_sendTransfer1->coarse_search();
+    m_sendTransfer1->communication();
+    m_sendTransfer1->local_search();
 
-    m_sendTransfer->coarse_search();
-    m_sendTransfer->communication();
-    m_sendTransfer->local_search();
+    if (sending2fields) {
+      m_mesh->set_sparc_field_values(m_sendFieldName2, 8.8);
+      std::shared_ptr<mock::SparcSendAdapter> sendAdapter2 =
+        std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName2);
+      m_sendTransfer2.reset(new SendTransfer(sendAdapter2, recvAdapter, "MockSparcSendTransfer2", m_splitComms.get_parent_comm()));
 
-    // todo Create Fields
-    // todo Construct transfers
-    // todo Loop transfers and initialize (In SPARC, we loop time solvers, and then loop transfers that are driven by each time solver)
-    // Each transfer (t) initialize looks like the following:
-    //   t->coarse_search();
-    //   t->communication();
-    //   t->local_search();
-    //   CheckFieldSize() - we would like STK to take care of this - this should check for field size consistency
+      m_sendTransfer2->coarse_search();
+      m_sendTransfer2->communication();
+      m_sendTransfer2->local_search();
+
+      if (m_wrongTransferOrder) {
+        std::cout<<"mock_sparc: swapping transfers for wrong-order..."<<std::endl;
+        std::swap(m_sendTransfer1, m_sendTransfer2);
+      }
+    }
+
     //   and ideally some way of checking that field transfers are in the same order between apps.
     //   Also, possibly printing this info including field names
     //   This will allow the user to at least see in the output what fields are being sent and received
@@ -271,10 +293,11 @@ public:
   void perform_transfers()
   {
     if (m_doingSendTransfer) {
-      m_sendTransfer->apply();
+      m_sendTransfer1->apply();
+      if (m_sendTransfer2 != nullptr) {
+        m_sendTransfer2->apply();
+      }
     }
-    //   for(auto t : transfers)
-    //     t->apply();
   }
 
   void compute_my_timestep_and_decide_if_i_want_to_stop()
@@ -330,9 +353,12 @@ private:
   double m_currentTime;
   bool m_isTimeToStop;
 
-  std::shared_ptr<SendTransfer> m_sendTransfer;
+  std::shared_ptr<SendTransfer> m_sendTransfer1;
+  std::shared_ptr<SendTransfer> m_sendTransfer2;
   bool m_doingSendTransfer;
-  std::string m_sendFieldName;
+  bool m_wrongTransferOrder;
+  std::string m_sendFieldName1;
+  std::string m_sendFieldName2;
 };
 
 int main(int argc, char** argv)

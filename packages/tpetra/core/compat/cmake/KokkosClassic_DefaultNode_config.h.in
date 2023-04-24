@@ -1,51 +1,13 @@
-#ifndef TPETRACLASSIC_DEFAULTNODE_CONFIG_H
-#define TPETRACLASSIC_DEFAULTNODE_CONFIG_H
+#ifndef KOKKOSCLASSIC_DEFAULTNODE_CONFIG_H
+#define KOKKOSCLASSIC_DEFAULTNODE_CONFIG_H
 
-// Tpetra's default Node type.
-#define TPETRA_DEFAULTNODE @Tpetra_DefaultNode@
-// For backwards compatibility ONLY.
-#define KOKKOSCLASSIC_DEFAULTNODE TPETRA_DEFAULTNODE
+#include "TpetraCore_config.h"
 
-// Defined if and only if Tpetra's default execution space is Kokkos::SYCL.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_SYCLWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#warning "KokkosClassic_DefaultNode_config.h is deprecated. Use Tpetra_KokkosClassic_DefaultNode_config.h"
+#include "Tpetra_KokkosClassic_DefaultNode_config.h"
+#else
+#error "KokkosClassic_DefaultNode_config.h is deprecated. Use Tpetra_KokkosClassic_DefaultNode_config.h"
+#endif
 
-// Defined if and only if Tpetra's default execution space is Kokkos::HIP.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_HIPWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
-
-// Defined if and only if Tpetra's default execution space is Kokkos::Cuda.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE
-
-// Defined if and only if Tpetra's default execution space is Kokkos::OpenMP.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE
-
-// Defined if and only if Tpetra's default execution space is Kokkos::Threads.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE
-
-// Defined if and only if Tpetra's default execution space is Kokkos::Serial.
-#cmakedefine HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE
-// For backwards compatibility ONLY.
-#ifdef HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE
-#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE 1
-#endif // HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE
-
-#endif /* TPETRACLASSIC_DEFAULTNODE_CONFIG_H */
+#endif /* KOKKOSCLASSIC_DEFAULTNODE_CONFIG_H */

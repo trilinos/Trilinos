@@ -572,6 +572,19 @@ bool Behavior::overlapCommunicationAndComputation ()
 }
 
 
+bool Behavior::timeKokkosDeepCopy() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+
 } // namespace Details
 } // namespace Tpetra
 

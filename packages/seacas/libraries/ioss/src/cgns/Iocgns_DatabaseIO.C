@@ -4,7 +4,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -555,7 +555,7 @@ namespace Iocgns {
 
   DatabaseIO::~DatabaseIO()
   {
-    for (auto &gtb : m_globalToBlockLocalNodeMap) {
+    for (const auto &gtb : m_globalToBlockLocalNodeMap) {
       delete gtb.second;
     }
     try {
@@ -1248,7 +1248,7 @@ namespace Iocgns {
 
     // If parallel, then all need to update the donor offset field since that was not known
     // at time of definition...
-    for (auto &block : blocks) {
+    for (const auto &block : blocks) {
       for (auto &conn : block->m_zoneConnectivity) {
         if (conn.m_donorZone < 0) {
           auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
@@ -1363,8 +1363,8 @@ namespace Iocgns {
                                 donor_datatype, donors.data()));
 
           // Fill in entries in m_blockLocalNodeMap for the shared nodes...
-          auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
-          auto &block_map = m_blockLocalNodeMap[zone];
+          const auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
+          auto       &block_map = m_blockLocalNodeMap[zone];
           for (int j = 0; j < npnts; j++) {
             cgsize_t point       = points[j];
             cgsize_t donor       = donors[j];

@@ -1213,7 +1213,7 @@ protected: //functions
 
   void entity_getter_debug_check(Entity entity) const
   {
-    ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_keys.size() - 1);
+    STK_ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_keys.size() - 1);
   }
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
@@ -1600,7 +1600,7 @@ protected:
 inline unsigned
 BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(bucket_ptr(entity));
+  STK_ThrowAssert(bucket_ptr(entity));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
 }
@@ -1608,11 +1608,11 @@ BulkData::num_connectivity(Entity entity, EntityRank rank) const
 inline unsigned
 BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordinal) const
 {
-  ThrowAssert(bucket_ptr(entity));
+  STK_ThrowAssert(bucket_ptr(entity));
   const MeshIndex &mesh_idx = mesh_index(entity);
   unsigned num_rels = mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
   ConnectivityOrdinal const *ords = mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
-  ThrowAssert(ords);
+  STK_ThrowAssert(ords);
 
   unsigned i = 0;
   for (; i < num_rels; ++i)
@@ -1626,7 +1626,7 @@ BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordin
 inline Entity const*
 BulkData::begin(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin(mesh_idx.bucket_ordinal, rank);
 }
@@ -1634,7 +1634,7 @@ BulkData::begin(Entity entity, EntityRank rank) const
 inline Entity const*
 BulkData::begin_nodes(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_nodes(mesh_idx.bucket_ordinal);
 }
@@ -1642,7 +1642,7 @@ BulkData::begin_nodes(Entity entity) const
 inline Entity const*
 BulkData::begin_edges(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_edges(mesh_idx.bucket_ordinal);
 }
@@ -1650,7 +1650,7 @@ BulkData::begin_edges(Entity entity) const
 inline Entity const*
 BulkData::begin_faces(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_faces(mesh_idx.bucket_ordinal);
 }
@@ -1658,7 +1658,7 @@ BulkData::begin_faces(Entity entity) const
 inline Entity const*
 BulkData::begin_elements(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_elements(mesh_idx.bucket_ordinal);
 }
@@ -1666,7 +1666,7 @@ BulkData::begin_elements(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::begin_ordinals(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
 }
@@ -1674,7 +1674,7 @@ BulkData::begin_ordinals(Entity entity, EntityRank rank) const
 inline ConnectivityOrdinal const*
 BulkData::begin_node_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_node_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1682,7 +1682,7 @@ BulkData::begin_node_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::begin_edge_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_edge_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1690,7 +1690,7 @@ BulkData::begin_edge_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::begin_face_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_face_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1698,7 +1698,7 @@ BulkData::begin_face_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::begin_element_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_element_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1706,7 +1706,7 @@ BulkData::begin_element_ordinals(Entity entity) const
 inline Permutation const*
 BulkData::begin_permutations(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_permutations(mesh_idx.bucket_ordinal, rank);
 }
@@ -1714,7 +1714,7 @@ BulkData::begin_permutations(Entity entity, EntityRank rank) const
 inline Permutation const*
 BulkData::begin_node_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_node_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1722,7 +1722,7 @@ BulkData::begin_node_permutations(Entity entity) const
 inline Permutation const*
 BulkData::begin_edge_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_edge_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1730,7 +1730,7 @@ BulkData::begin_edge_permutations(Entity entity) const
 inline Permutation const*
 BulkData::begin_face_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_face_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1738,7 +1738,7 @@ BulkData::begin_face_permutations(Entity entity) const
 inline Permutation const*
 BulkData::begin_element_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->begin_element_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1746,7 +1746,7 @@ BulkData::begin_element_permutations(Entity entity) const
 inline unsigned
 BulkData::num_nodes(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->num_nodes(mesh_idx.bucket_ordinal);
 }
@@ -1754,7 +1754,7 @@ BulkData::num_nodes(Entity entity) const
 inline unsigned
 BulkData::num_edges(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->num_edges(mesh_idx.bucket_ordinal);
 }
@@ -1762,7 +1762,7 @@ BulkData::num_edges(Entity entity) const
 inline unsigned
 BulkData::num_faces(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->num_faces(mesh_idx.bucket_ordinal);
 }
@@ -1770,7 +1770,7 @@ BulkData::num_faces(Entity entity) const
 inline unsigned
 BulkData::num_elements(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->num_elements(mesh_idx.bucket_ordinal);
 }
@@ -1778,7 +1778,7 @@ BulkData::num_elements(Entity entity) const
 inline Entity const*
 BulkData::end(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end(mesh_idx.bucket_ordinal, rank);
 }
@@ -1786,7 +1786,7 @@ BulkData::end(Entity entity, EntityRank rank) const
 inline Entity const*
 BulkData::end_nodes(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_nodes(mesh_idx.bucket_ordinal);
 }
@@ -1794,7 +1794,7 @@ BulkData::end_nodes(Entity entity) const
 inline Entity const*
 BulkData::end_edges(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_edges(mesh_idx.bucket_ordinal);
 }
@@ -1802,7 +1802,7 @@ BulkData::end_edges(Entity entity) const
 inline Entity const*
 BulkData::end_faces(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_faces(mesh_idx.bucket_ordinal);
 }
@@ -1810,7 +1810,7 @@ BulkData::end_faces(Entity entity) const
 inline Entity const*
 BulkData::end_elements(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_elements(mesh_idx.bucket_ordinal);
 }
@@ -1818,7 +1818,7 @@ BulkData::end_elements(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::end_ordinals(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_ordinals(mesh_idx.bucket_ordinal, rank);
 }
@@ -1826,7 +1826,7 @@ BulkData::end_ordinals(Entity entity, EntityRank rank) const
 inline ConnectivityOrdinal const*
 BulkData::end_node_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_node_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1834,7 +1834,7 @@ BulkData::end_node_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::end_edge_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_edge_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1842,7 +1842,7 @@ BulkData::end_edge_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::end_face_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_face_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1850,7 +1850,7 @@ BulkData::end_face_ordinals(Entity entity) const
 inline ConnectivityOrdinal const*
 BulkData::end_element_ordinals(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_element_ordinals(mesh_idx.bucket_ordinal);
 }
@@ -1858,7 +1858,7 @@ BulkData::end_element_ordinals(Entity entity) const
 inline Permutation const*
 BulkData::end_permutations(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(is_valid_connectivity(entity, rank));
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_permutations(mesh_idx.bucket_ordinal, rank);
 }
@@ -1866,7 +1866,7 @@ BulkData::end_permutations(Entity entity, EntityRank rank) const
 inline Permutation const*
 BulkData::end_node_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_node_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1874,7 +1874,7 @@ BulkData::end_node_permutations(Entity entity) const
 inline Permutation const*
 BulkData::end_edge_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_edge_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1882,7 +1882,7 @@ BulkData::end_edge_permutations(Entity entity) const
 inline Permutation const*
 BulkData::end_face_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_face_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1890,7 +1890,7 @@ BulkData::end_face_permutations(Entity entity) const
 inline Permutation const*
 BulkData::end_element_permutations(Entity entity) const
 {
-  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  STK_ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
   const MeshIndex &mesh_idx = mesh_index(entity);
   return mesh_idx.bucket->end_element_permutations(mesh_idx.bucket_ordinal);
 }
@@ -1898,7 +1898,7 @@ BulkData::end_element_permutations(Entity entity) const
 inline bool
 BulkData::has_permutation(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(bucket_ptr(entity));
+  STK_ThrowAssert(bucket_ptr(entity));
   return bucket(entity).has_permutation(rank);
 }
 
@@ -2015,7 +2015,7 @@ BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank rank) c
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
     const unsigned bucket_ord = mesh_idx.bucket_ordinal;
-    ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
+    STK_ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
                    count_valid_connectivity(entity,rank) << " = count_valid_connectivity("<<entity_key(entity)<<","<<rank<<") != b.num_connectivity("<<bucket_ord<<","<<rank<<") = " << b.num_connectivity(bucket_ord,rank);
                   );
 
@@ -2060,8 +2060,8 @@ BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, Relation
 inline VolatileFastSharedCommMapOneRank const&
 BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
-  ThrowAssert(this->in_synchronized_state());
-  ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+  STK_ThrowAssert(this->in_synchronized_state());
+  STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
   if (m_volatile_fast_shared_comm_map_sync_count < synchronized_count()) {
     internal_update_fast_comm_maps();
   }
@@ -2071,7 +2071,7 @@ BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 inline Part&
 BulkData::ghosting_part(const Ghosting& ghosting) const
 {
-  ThrowRequireMsg(ghosting.ordinal() < m_ghost_parts.size(), "BulkData::ghosting_part ERROR, no part corresponds to ghosting with name="<<ghosting.name()<<" and ordinal="<<ghosting.ordinal());
+  STK_ThrowRequireMsg(ghosting.ordinal() < m_ghost_parts.size(), "BulkData::ghosting_part ERROR, no part corresponds to ghosting with name="<<ghosting.name()<<" and ordinal="<<ghosting.ordinal());
   return *m_ghost_parts[ghosting.ordinal()];
 }
 
@@ -2084,7 +2084,7 @@ BulkData::in_index_range(Entity entity) const
 inline bool
 BulkData::is_valid(Entity entity) const
 {
-  ThrowAssertMsg(in_index_range(entity),
+  STK_ThrowAssertMsg(in_index_range(entity),
                  "Error in stk::mesh::BulkData::is_valid, entity not in index range. "
                  " entity.local_offset()="<<entity.local_offset()<<", valid range is < "
                  << get_size_of_entity_index_space());
@@ -2104,7 +2104,7 @@ BulkData::mesh_index(Entity entity) const
 inline MeshIndex&
 BulkData::mesh_index(Entity entity)
 {
-  ThrowAssert(entity.local_offset() > 0); // setter check due to non-const
+  STK_ThrowAssert(entity.local_offset() > 0); // setter check due to non-const
 
   return m_mesh_indexes[entity.local_offset()];
 }
@@ -2230,8 +2230,8 @@ BulkData::global_id(stk::mesh::Entity entity) const
 inline const RelationVector&
 BulkData::aux_relations(Entity entity) const
 {
-  ThrowAssert(m_add_fmwk_data);
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(m_add_fmwk_data);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -2242,8 +2242,8 @@ BulkData::aux_relations(Entity entity) const
 inline RelationVector&
 BulkData::aux_relations(Entity entity)
 {
-  ThrowAssert(m_add_fmwk_data);
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(m_add_fmwk_data);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -2254,7 +2254,7 @@ BulkData::aux_relations(Entity entity)
 inline void
 BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   m_modSummary.track_set_global_id(entity, id);
 
@@ -2264,9 +2264,9 @@ BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 inline RelationIterator
 BulkData::internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const
 {
-  ThrowAssert(m_add_fmwk_data);
+  STK_ThrowAssert(m_add_fmwk_data);
   if (impl::internal_is_handled_generically(relation_type)) {
-    ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
+    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
     return RelationIterator();
   }
   else {
@@ -2277,9 +2277,9 @@ BulkData::internal_begin_relation(Entity entity, const Relation::RelationType re
 inline RelationIterator
 BulkData::internal_end_relation(Entity entity, const Relation::RelationType relation_type) const
 {
-  ThrowAssert(m_add_fmwk_data);
+  STK_ThrowAssert(m_add_fmwk_data);
   if (impl::internal_is_handled_generically(relation_type)) {
-    ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
+    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
     return RelationIterator();
   }
   else {
@@ -2299,10 +2299,10 @@ BulkData::compress_relation_capacity(Entity entity)
 inline void
 BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
 {
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   if (in_bucket != NULL) {
-    ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
+    STK_ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
   }
   MeshIndex &mesh_idx = mesh_index(entity);
   mesh_idx.bucket = in_bucket;
@@ -2312,7 +2312,7 @@ BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
 inline void
 BulkData::set_entity_key(Entity entity, EntityKey key)
 {
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   m_entity_keys[entity.local_offset()] = key;
 }
@@ -2320,7 +2320,7 @@ BulkData::set_entity_key(Entity entity, EntityKey key)
 inline void
 BulkData::set_state(Entity entity, EntityState entity_state)
 {
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(entity.local_offset() > 0);
   m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
 }
@@ -2328,7 +2328,7 @@ BulkData::set_state(Entity entity, EntityState entity_state)
 inline void
 BulkData::set_local_id(Entity entity, unsigned id)
 {
-  ThrowAssert(entity.local_offset() > 0);
+  STK_ThrowAssert(entity.local_offset() > 0);
 
   m_local_ids[entity.local_offset()] = id;
 }

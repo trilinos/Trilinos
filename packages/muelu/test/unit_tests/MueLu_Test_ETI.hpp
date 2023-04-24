@@ -61,6 +61,7 @@
 
 #if defined(HAVE_MUELU_TPETRA)
 #include <TpetraCore_config.h>
+#include <Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp>
 #endif
 
 #include <KokkosKernels_config.h>
@@ -125,6 +126,10 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_STACKTRACE
     bool stacktrace = true;     clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
 #endif
+
+#ifdef HAVE_MUELU_TPETRA
+    bool timedeepcopy = false;   clp.setOption("timedeepcopy", "notimedeepcopy", &timedeepcopy, "instrument Kokkos::deep_copy() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_DEEP_COPY=ON");
+#endif
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
@@ -134,6 +139,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
+
+#ifdef HAVE_MUELU_TPETRA
+    if(timedeepcopy)
+      Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
+#endif
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
     if (stacktrace)
@@ -170,7 +180,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       auto inst = xpetraParameters.GetInstantiation();
 # endif
       if (node == "") {
-        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+        typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -204,7 +214,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "serial") {
 #ifdef KOKKOS_ENABLE_SERIAL
-        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -241,7 +251,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "openmp") {
 #ifdef KOKKOS_ENABLE_OPENMP
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -279,7 +289,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "cuda") {
 #ifdef KOKKOS_ENABLE_CUDA
-        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -316,7 +326,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
       } else if (node == "hip") {
 #ifdef KOKKOS_ENABLE_HIP
-	typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
+	typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
@@ -351,6 +361,43 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #else
         throw RuntimeError("HIP node type is disabled");
 #endif
+      } else if (node == "sycl") {
+#ifdef KOKKOS_ENABLE_SYCL
+	typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode Node;
+
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::Experimental::SYCL().print_configuration(*out, true/*details*/);
+        }
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#  else
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        if (inst == Xpetra::DOUBLE_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+        if (inst == Xpetra::COMPLEX_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SYCL) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
+        if (inst == Xpetra::FLOAT_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+        throw RuntimeError("Found no suitable SYCL instantiation");
+#  endif
+#else
+        throw RuntimeError("SYCL node type is disabled");
+#endif	
       } else {
         throw RuntimeError("Unrecognized node type");
       }

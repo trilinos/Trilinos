@@ -93,7 +93,7 @@ namespace {
                          double &xmax, double &ymax, double &zmax)
   {
     std::vector<int> elem_block_nodes(node_count);
-    for (auto &node : connectivity) {
+    for (const auto &node : connectivity) {
       elem_block_nodes[node - 1] = 1;
     }
 
@@ -958,7 +958,7 @@ namespace Ioss {
         if (int_byte_size_api() == 8) {
           std::vector<int64_t> conn;
           eb->get_field_data("connectivity_raw", conn);
-          for (auto &node : conn) {
+          for (const auto &node : conn) {
             assert(node > 0 && node - 1 < nodeCount);
             node_used[node - 1] = blk_position + 1;
           }
@@ -966,7 +966,7 @@ namespace Ioss {
         else {
           std::vector<int> conn;
           eb->get_field_data("connectivity_raw", conn);
-          for (auto &node : conn) {
+          for (const auto &node : conn) {
             assert(node > 0 && node - 1 < nodeCount);
             node_used[node - 1] = blk_position + 1;
           }
@@ -1313,7 +1313,7 @@ namespace {
                  current_state, state_time);
 
       double total = 0.0;
-      for (auto &p_time : all_times) {
+      for (const auto &p_time : all_times) {
         total += p_time;
       }
 
@@ -1359,7 +1359,7 @@ namespace {
         fmt::print(strm, "{} [{:.5f}]\t", symbol, diff.count());
 
         int64_t total = 0;
-        for (auto &p_size : all_sizes) {
+        for (const auto &p_size : all_sizes) {
           total += p_size;
         }
         // Now append each processors size onto the stream...
@@ -1369,7 +1369,7 @@ namespace {
                      total / all_sizes.size());
         }
         else {
-          for (auto &p_size : all_sizes) {
+          for (const auto &p_size : all_sizes) {
             fmt::print(strm, "{:8d}:", p_size);
           }
         }

@@ -64,9 +64,6 @@
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_MergedBlockedMatrixFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -96,7 +93,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BlockedDirectSolver();
+    BlockedDirectSolver(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~BlockedDirectSolver() { }

@@ -44,7 +44,7 @@ bool detectAndFixMechanisms(const stk::balance::BalanceSettings& graphSettings, 
   std::vector<int> componentsToMove;
   if(num_dsd > 1)
   {
-    ThrowRequireWithSierraHelpMsg(num_dsd == list_ptr.size()-1);
+    STK_ThrowRequireWithSierraHelpMsg(num_dsd == list_ptr.size()-1);
     elementsPerComponent = get_elements_per_component(bulk, list_ptr, list);
     componentsToMove = get_components_to_move(bulk, elementsPerComponent);
   }
@@ -120,7 +120,7 @@ std::set<stk::mesh::Entity> getNodesOfComponent(const stk::mesh::BulkData& bulk,
 std::vector<stk::mesh::EntityVector> get_elements_per_component(const stk::mesh::BulkData& bulk, const std::vector<BalanceLocalNumber> &list_ptr, const std::vector<BalanceGlobalNumber>& list)
 {
   size_t num_dsd = list_ptr.size()-1;
-  ThrowRequireWithSierraHelpMsg(num_dsd>1);
+  STK_ThrowRequireWithSierraHelpMsg(num_dsd>1);
 
   std::vector<stk::mesh::EntityVector> elementsPerComponent(num_dsd);
 
@@ -284,7 +284,7 @@ stk::mesh::EntityProcVec get_element_proc_movement(const stk::mesh::BulkData& bu
           {
             std::vector<int> procs;
             bulk.comm_procs(otherElement, procs);
-            ThrowRequireWithSierraHelpMsg(procs.size()>0);
+            STK_ThrowRequireWithSierraHelpMsg(procs.size()>0);
             destProcForComp = procs[0];
             break;
           }

@@ -47,6 +47,8 @@
 #define MUELU_LWGRAPH_DEF_HPP
 
 #include "MueLu_LWGraph_decl.hpp"
+#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 
 namespace MueLu {
 
@@ -77,6 +79,18 @@ namespace MueLu {
       }
     }
   }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > LWGraph<LocalOrdinal, GlobalOrdinal, Node>::GetCrsGraph() const {
+      ArrayRCP<size_t> rowPtrs;
+      rowPtrs.resize(rows_.size());
+      for (size_t i=0; i<Teuchos::as<size_t>(rows_.size()); i++)
+        rowPtrs[i] = rows_[i];
+      auto graph =  Xpetra::CrsGraphFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(GetDomainMap(), GetImportMap(), rowPtrs, Teuchos::arcp_const_cast<LO>(getEntries()));
+      graph->fillComplete();
+      return graph;
+    }
 
 }
 

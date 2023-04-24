@@ -11,7 +11,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -25,8 +25,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -36,8 +35,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -64,7 +63,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -78,8 +77,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -89,8 +87,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -141,7 +139,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -160,8 +158,8 @@ repartition: rebalance P and R = 0
 type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Computing Ac (MueLu::RAPFactory)
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 Reusing coordinates
 matrixmatrix: kernel params -> 
@@ -177,7 +175,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -191,8 +189,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -202,8 +199,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -257,8 +254,8 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]

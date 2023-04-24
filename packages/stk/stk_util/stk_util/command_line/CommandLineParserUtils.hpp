@@ -54,7 +54,7 @@ ValueType get_command_line_option(int argc, char** argv,
     return parser.get_option_value<ValueType>(optionName);
   }
   if (parseResult == CommandLineParser::ParseError) {
-    ThrowErrorMsg("Failed to parse for --"<<optionName);
+    STK_ThrowErrorMsg("Failed to parse for --"<<optionName);
   }
   return defaultValue;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022,  National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023,  National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -175,7 +175,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
   // nonzero element count are in the correct order.
   int64_t last_offset = 0;
   bool    order_ok    = true;
-  for (auto &block : blocks) {
+  for (const auto &block : blocks) {
     if (block.elementCount > 0) {
       if (block.offset_ < last_offset) {
         order_ok = false;

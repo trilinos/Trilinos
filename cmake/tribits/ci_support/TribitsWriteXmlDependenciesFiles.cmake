@@ -178,7 +178,6 @@ function(tribits_write_deps_to_xml_string  packageName libOrTest  requiredOrOpti
 
   set(listType ${libOrTest}_${requiredOrOptional}_DEP_${packagesOrTpls})
   message("")
-  print_var(listType)
 
   tribits_get_legacy_package_deps_sublist(${packageName} ${libOrTest}
     ${requiredOrOptional} ${packagesOrTpls} legacyPackageDepsList)

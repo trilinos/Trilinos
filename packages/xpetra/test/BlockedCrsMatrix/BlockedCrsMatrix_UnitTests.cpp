@@ -1381,7 +1381,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReadWriteBlockedMatrix, M, 
   tname = tname + typeid(LO).name();
   tname = tname + typeid(GO).name();
 #ifdef HAVE_MUELU_KOKKOSCORE
-  std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
+  std::string nn = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
   nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
   tname = tname + nn;
 #endif

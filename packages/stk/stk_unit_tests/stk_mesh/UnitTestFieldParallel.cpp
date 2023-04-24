@@ -76,7 +76,7 @@ T do_operation(Operation Op, T lhs, T rhs)
   case Operation::MAX:
     return std::max(lhs, rhs);
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
     return 0;
   }
 }
@@ -97,7 +97,7 @@ void do_assemble(Operation Op, BulkData & bulk, FieldVector const& field_vector)
     parallel_max(bulk, field_vector);
     break;
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 
@@ -336,7 +336,7 @@ void do_assemble_including_ghosts(Operation Op, BulkData & bulk, FieldVector con
     parallel_max_including_ghosts(bulk, field_vector);
     break;
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 

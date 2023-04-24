@@ -263,7 +263,7 @@ namespace Sacado {
           while (go) {
             if (threadIdx.x == 0)
               go = !desul::Impl::lock_address_hip((void*)dest_val, scope);
-            go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+            go = Kokkos::shfl(go, 0, blockDim.x);
           }
           desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
           return_type return_val = op.apply(*dest, val);
@@ -309,7 +309,7 @@ namespace Sacado {
           while (go) {
             if (threadIdx.x == 0)
               go = !desul::Impl::lock_address_hip((void*)dest_val, scope);
-            go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+            go = Kokkos::shfl(go, 0, blockDim.x);
           }
           desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
           return_type return_val = *dest;

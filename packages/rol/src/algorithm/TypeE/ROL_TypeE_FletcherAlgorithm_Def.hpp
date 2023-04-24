@@ -50,8 +50,8 @@ namespace ROL {
 namespace TypeE {
 
 template<typename Real>
-FletcherAlgorithm<Real>::FletcherAlgorithm( ParameterList &list )
-  : TypeE::Algorithm<Real>::Algorithm(), list_(list), subproblemIter_(0) {
+FletcherAlgorithm<Real>::FletcherAlgorithm( ParameterList &list, const Ptr<Secant<Real>> &secant )
+  : TypeE::Algorithm<Real>::Algorithm(), secant_(secant), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
@@ -133,7 +133,7 @@ void FletcherAlgorithm<Real>::run( Vector<Real>       &x,
 
   while (status_->check(*state_)) {
     // Minimize Fletcher penalty
-    algo = TypeU::AlgorithmFactory<Real>(list_);
+    algo = TypeU::AlgorithmFactory<Real>(list_,secant_);
     algo->run(x,g,fobj,outStream);
     subproblemIter_ = algo->getState()->iter;
 

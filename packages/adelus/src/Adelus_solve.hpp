@@ -99,7 +99,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -403,7 +403,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 

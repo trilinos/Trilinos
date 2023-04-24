@@ -67,28 +67,28 @@
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL)
 #define INSTANTIATE_TPETRA_UQ_PCE_SERIAL(INSTMACRO) \
-  INSTMACRO(Kokkos_Compat_KokkosSerialWrapperNode)
+  INSTMACRO(Tpetra_KokkosCompat_KokkosSerialWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_SERIAL(INSTMACRO)
 #endif
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD)
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO) \
-  INSTMACRO(Kokkos_Compat_KokkosThreadsWrapperNode)
+  INSTMACRO(Tpetra_KokkosCompat_KokkosThreadsWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO)
 #endif
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP)
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO) \
-  INSTMACRO(Kokkos_Compat_KokkosOpenMPWrapperNode)
+  INSTMACRO(Tpetra_KokkosCompat_KokkosOpenMPWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO)
 #endif
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA)
 #define INSTANTIATE_TPETRA_UQ_PCE_CUDA(INSTMACRO) \
-  INSTMACRO(Kokkos_Compat_KokkosCudaWrapperNode)
+  INSTMACRO(Tpetra_KokkosCompat_KokkosCudaWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_CUDA(INSTMACRO)
 #endif

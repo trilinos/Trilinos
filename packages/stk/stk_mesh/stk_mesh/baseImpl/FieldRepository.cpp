@@ -55,7 +55,7 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
                              unsigned                            arg_rank ,
                              const shards::ArrayDimTag * const * arg_tags )
 {
-  ThrowRequireMsg(arg_rank < 8, "Invalid field rank: " << arg_rank);
+  STK_ThrowRequireMsg(arg_rank < 8, "Invalid field rank: " << arg_rank);
 
   std::ostringstream oss;
   oss << "FieldBase<" ;
@@ -89,7 +89,7 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
   if (m_meta.is_using_simple_fields()) {
     const bool has_extra_template_parameters = (arg_field.m_field_rank > 0);
 
-    ThrowErrorMsgIf(not ok_traits || not ok_number_states || has_extra_template_parameters,
+    STK_ThrowErrorMsgIf(not ok_traits || not ok_number_states || has_extra_template_parameters,
                     " verify_field_type FAILED: Existing field = " <<
                     print_field_type(arg_field.data_traits(), arg_field.m_field_rank, arg_field.m_dim_tags) <<
                     "[ name = \"" << arg_field.name() <<
@@ -109,7 +109,7 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
       ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i];
     }
 
-    ThrowErrorMsgIf(not ok_traits || not ok_number_states || not ok_dimension,
+    STK_ThrowErrorMsgIf(not ok_traits || not ok_number_states || not ok_dimension,
                     " verify_field_type FAILED: Existing field = " <<
                     print_field_type(arg_field.data_traits(), arg_field.field_array_rank(), arg_field.dimension_tags()) <<
                     "[ name = \"" << arg_field.name() <<

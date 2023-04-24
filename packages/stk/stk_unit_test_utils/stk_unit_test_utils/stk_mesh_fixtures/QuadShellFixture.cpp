@@ -222,7 +222,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
@@ -457,7 +457,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node

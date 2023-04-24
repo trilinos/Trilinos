@@ -106,7 +106,7 @@ void pack_entity_info(const BulkData& mesh,
   Bucket& bucket = mesh.bucket(entity);
   unsigned ebo   = mesh.bucket_ordinal(entity);
 
-  ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
+  STK_ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
   const EntityRank end_rank = onlyPackDownwardRelations ? mesh.entity_rank(entity) : static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
@@ -118,11 +118,11 @@ void pack_entity_info(const BulkData& mesh,
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
         if (mesh.is_valid(rel_entities[i])) {
-          ThrowAssert(rel_ordinals);
+          STK_ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
           if (should_store_permutations(bucket.entity_rank(),irank)) {
-            ThrowAssert(rel_permutations);
+            STK_ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
           }
         }

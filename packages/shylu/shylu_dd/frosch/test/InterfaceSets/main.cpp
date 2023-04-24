@@ -50,7 +50,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include <Teuchos_StackedTimer.hpp>
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
@@ -65,7 +65,7 @@ using UN    = unsigned;
 using SC    = double;
 using LO    = int;
 using GO    = FROSch::DefaultGlobalOrdinal;
-using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
+using NO    = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;

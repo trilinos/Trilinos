@@ -9,6 +9,7 @@ packages/xSDKTrilinos
 packages/framework/GenConfig
 packages/framework/son-ini-files
 packages/framework/srn-ini-files
+packages/trilinos_linear_solvers
 TriBITS
 TriBITS/TriBITSDoc
 run_trilinos_pr_builds

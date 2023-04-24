@@ -58,7 +58,6 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"

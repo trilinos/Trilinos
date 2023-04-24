@@ -62,7 +62,6 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
-#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
 #include "MueLu_FacadeClassBase.hpp"
@@ -102,8 +101,6 @@
 
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
-#include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"

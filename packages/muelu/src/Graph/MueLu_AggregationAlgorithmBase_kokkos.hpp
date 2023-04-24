@@ -48,12 +48,12 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Types.hpp"
 
@@ -88,7 +88,7 @@ namespace MueLu {
     //! BuildAggregates routine.
     virtual void BuildAggregates(const Teuchos::ParameterList& params,
                                  const LWGraph_kokkos& graph,
-                                 Aggregates_kokkos& aggregates,
+                                 Aggregates& aggregates,
                                  Kokkos::View<unsigned*, device_type>& aggStat,
                                  LO& numNonAggregatedNodes) const = 0;
     //@}

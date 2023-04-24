@@ -159,7 +159,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node          = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class IO {
 
   private:

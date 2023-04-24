@@ -80,15 +80,15 @@ void fill_block_membership(const stk::mesh::BulkData& bulk, stk::mesh::Entity no
 
   for(unsigned i=0; i<numElems; ++i) {
     stk::mesh::Part* block = get_block_part_for_element(bulk, elements[i]);
-    ThrowRequire(block != nullptr);
+    STK_ThrowRequire(block != nullptr);
     stk::util::insert_keep_sorted_and_unique(block, members, stk::mesh::PartLess());
   }
 }
 
 BlockPair get_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2)
 {
-  ThrowRequire(nullptr != block1 && nullptr != block2);
-  ThrowRequire(block1 != block2);
+  STK_ThrowRequire(nullptr != block1 && nullptr != block2);
+  STK_ThrowRequire(block1 != block2);
 
   if(block2->mesh_meta_data_ordinal() > block1->mesh_meta_data_ordinal()) {
     return BlockPair(block1, block2);
@@ -148,7 +148,7 @@ stk::tools::BlockPairVector get_local_reconnect_list(const stk::mesh::BulkData& 
   for(const stk::tools::BlockPair& blockPair : disconnectList) {
     const stk::mesh::Part & firstBlock  = *blockPair.first;
     const stk::mesh::Part & secondBlock = *blockPair.second;
-    ThrowAssert(secondBlock.mesh_meta_data_ordinal() > firstBlock.mesh_meta_data_ordinal());
+    STK_ThrowAssert(secondBlock.mesh_meta_data_ordinal() > firstBlock.mesh_meta_data_ordinal());
 
     stk::mesh::Selector boundaryBetweenBlocks = firstBlock & secondBlock & (meta.locally_owned_part() | meta.globally_shared_part());
 

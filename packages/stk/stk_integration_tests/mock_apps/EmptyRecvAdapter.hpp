@@ -32,16 +32,16 @@ public:
   using ToPointsDistance = double;
   using ToPointsDistanceContainer = std::vector<ToPointsDistance>;
 
-  void update_values() { ThrowErrorMsg("EmptyRecvAdapter shouldn't be called."); }
+  void update_values() { STK_ThrowErrorMsg("EmptyRecvAdapter shouldn't be called."); }
 
   void bounding_boxes(std::vector<BoundingBox> & /* range_vector */) const
   {
-    ThrowErrorMsg("EmptyRecvAdapter shouldn't be called.");
+    STK_ThrowErrorMsg("EmptyRecvAdapter shouldn't be called.");
   }
 
   void get_to_points_coordinates(const EntityProcVec & /* to_entity_keys */, ToPointsContainer & /* to_points */)
   {
-    ThrowErrorMsg("EmptyRecvAdapter shouldn't be called.");
+    STK_ThrowErrorMsg("EmptyRecvAdapter shouldn't be called.");
   }
 };
 

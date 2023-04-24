@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     galeriList.set("my", (GO) 1);
     
     // Creation of the map
-    RCP< ::Xpetra::Map<int, GO, KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
+    RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     galeriList.set("nz", (GO) 2);
     
     // Creation of the map
-    RCP< ::Xpetra::Map<int, GO, KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
+    RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;

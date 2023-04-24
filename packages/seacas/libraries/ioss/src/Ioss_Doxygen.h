@@ -15,6 +15,32 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 - EMAIL: gsjaardema@gmail.com
 - PHONE: (505) 844-2701 (office)
 
+\section db_types Database Types
+
+The IOSS system supports multiple database formats.  The default format is the Sandia-developed Exodus format.  The list below shows all supported
+database input and/or output formats.  Not all of these may be available on all builds; the supported databases on a particular installation can be
+determined by running the `io_info --config` program.
+
+Type             | Input/Output  | Description
+-----------------|---------------|--------------------------
+catalyst_cgns    | Output        | Visualization pipeline, cgns-based
+catalyst_exodus  | Output        | Visualization pipeline, exodus-based
+cgns             | Input/Output  | CFD General Notation System (https://cgns.github.io/)
+exodus           | Input/Output  | Sandia-developed database system for unstructured mesh input/output (https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodus-library)
+exodusII         | Input/Output  | alias for exodus
+exodusii         | Input/Output  | alias for exodus
+genesis          | Input/Output  | alias for exodus
+gen_struc        | Input         | Generate a structured mesh using a token string (IxJxK)
+generated        | Input         | Generate an unstructured hex/shell mesh using a token string
+heartbeat        | Output        | A text based output for global values
+exonull          | Output        | No data written to disk, but uses all of the exodus io database infrastructure/calculations
+null             | Output        | No data written to disk, no calculations done by ioss
+pamgen           | Input         | (https://trilinos.github.io/pamgen.html)
+par_cgns         | Input/Output  | alias for parallel CGNS 
+textmesh         | Input         | Generate an unstructured mesh using a token string
+adios            | Input/Output  | Adaptable Input/Output system, (https://adios2.readthedocs.io/en/latest/)
+faodel           | Input/Output  | (https://github.com/faodel/faodel)
+
 \section properties Properties
 
 ## General Properties

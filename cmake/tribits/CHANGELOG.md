@@ -2,6 +2,61 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2023-02-24:
+
+* **Changed:** Upgraded minimum required CMake version from 3.17 to 3.23.
+  Existing TriBITS projects that have already upgraded to require CMake 3.23+
+  should not notice any major changes due to this change.
+
+## 2023-02-21:
+
+* **Added:** Added support for pre-installed internal packages treated as
+  external packages.  Now, any set of internally defined TriBITS packages for
+  a TriBITS project can be pre-built and pre-installed and the remaining
+  packages in the TriBITS project can be configured to point to those by
+  setting `-D TPL_ENABLE_<Package>=ON`.  This allows great flexibility in how
+  a TriBITS project's packages can be and built, installed, and deployed.
+  This technically implements "Use Case 3: Configure/build pointing to a
+  subset of already installed TriBITS packages in same repo" in [TriBITS
+  #63](https://github.com/TriBITSPub/TriBITS/issues/63).  See the section
+  "Building against pre-installed packages" in the updated build reference
+  documentation for details.
+
+* **Fixed:** Setting `-D<Project>_ENABLE_<TplName>=ON` for an external
+   package/TPL `<TplName>` will not correctly enable and process the TPL.
+
+## 2022-12-07:
+
+* **Changed:** Setting `-D<Project>_ENABLE_<TplName>=ON` now triggers the
+  enable an external package/TPL `<TplName>` similar to the way that
+  `-DTPL_ENABLE_<TplName>` has always done.  This is technically a change in
+  backward compatibility because setting `<Project>_ENABLE_<TplName>=ON` for
+  an external package/TPL used to be ignored.  This change was done as part of
+  a general refactoring to unify the handling of internal and external
+  packages and is a side effect of that refactoring (see [TriBITS
+  #63](https://github.com/TriBITSPub/TriBITS/issues/63)).  (Initially, setting
+  `-D<Project>_ENABLE_<TplName>=ON` resulted in a failed configure because the
+  refactoring was not complete for the handling of external packages/TPL.  But
+  this was fixed in a latter update.)
+
+## 2023-10-25:
+
+* **Added:** New option `<Project>_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`
+  skips the install of the project-level `<Project>Config.cmake` file.  The
+  default value is ``FALSE`` so as to maintain backward compatibility.  (The
+  project can change the default.)
+
+* **Changed:** External packages/TPLs are now processed at the base project
+  scope level.  This allows simple `set()` statements in package module files
+  or config files included by `find_package()` to have project-level scope for
+  the entire TriBITS project.  This is more similar to how a raw CMake project
+  would usually behave that calls `find_package()` in the base
+  `CMakeLists.txt` file.  Before, calls to `find_package()` were wrapped in a
+  CMake `function()` called from the base project directory scope.  So while
+  IMPORTED targets created from a `find_package()` command where visible at
+  the base directory project-level scope, local variables were not.  With this
+  change, now they are.
+
 ## 2023-01-10:
 
 * **Added:** Added back support for deprecated variable

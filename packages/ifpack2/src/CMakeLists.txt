@@ -105,13 +105,13 @@ ENDFUNCTION(IFPACK2_ORDINAL_MACRO_NAME)
 # name (all caps, with no white space and no punctuation other than
 # underscore).
 FUNCTION(IFPACK2_NODE_MACRO_NAME NAME_OUT NAME_IN)
-  STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
+  STRING(REGEX MATCH "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
   STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
   IF(DOES_NOT_MATCH)
-    MESSAGE(FATAL_ERROR "Ifpack2: Node $NAME_IN is not a supported Node type.")
+    MESSAGE(FATAL_ERROR "Ifpack2: Node ${NAME_IN} is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
-    STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
+    STRING(REGEX REPLACE "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
 
     # Special case: Threads.  The macro name unfortunately differs
     # from the execution space name in a way that doesn't fit the
@@ -389,6 +389,24 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
+
+  # ETI for the Kokkos::SYCL device.
+  IF (Tpetra_INST_SYCL)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_SYCL.tmpl
+      "Ifpack2_CLASS_FILE_NAME_SYCL.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_SYCL.tmpl
+      "Ifpack2_CLASS_FILE_NAME_SYCL.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+
 ENDIF()
 
 # Generate .cpp files for LinearSolverFactory registration,

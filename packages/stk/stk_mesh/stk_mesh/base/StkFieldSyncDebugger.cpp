@@ -65,7 +65,7 @@ StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, 
 {
   BulkData & bulk = m_stkField->get_mesh();
   const Bucket * bucket = bulk.get_bucket_repository().get_bucket(m_stkField->entity_rank(), bucketId);
-  ThrowRequire(bucket != nullptr);
+  STK_ThrowRequire(bucket != nullptr);
 
   host_stale_access_entity_check((*bucket)[bucketOrd], fileName, lineNumber);
 }
@@ -86,7 +86,7 @@ StkFieldSyncDebugger::host_stale_access_bucket_check(const unsigned& bucketId, c
 {
   BulkData & bulk = m_stkField->get_mesh();
   const Bucket * bucket = bulk.get_bucket_repository().get_bucket(m_stkField->entity_rank(), bucketId);
-  ThrowRequire(bucket != nullptr);
+  STK_ThrowRequire(bucket != nullptr);
 
   host_stale_access_bucket_check(*bucket, fileName, lineNumber);
 }
@@ -146,7 +146,7 @@ FieldBase &
 StkFieldSyncDebugger::get_last_mod_location_field() const
 {
   if (m_lastModLocationField == nullptr) {
-    ThrowRequire(impl::get_ngp_field(*m_stkField) != nullptr);
+    STK_ThrowRequire(impl::get_ngp_field(*m_stkField) != nullptr);
     BulkData & bulk = m_stkField->get_mesh();
     MetaData & meta = bulk.mesh_meta_data();
     meta.enable_late_fields();

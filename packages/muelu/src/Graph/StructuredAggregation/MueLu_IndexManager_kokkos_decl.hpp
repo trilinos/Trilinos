@@ -49,13 +49,10 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_OrdinalTraits.hpp"
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_IndexManager_kokkos_fwd.hpp"

@@ -1436,7 +1436,7 @@ namespace {
       return false;
     }
 
-    for (auto &var : variable_list) {
+    for (const auto &var : variable_list) {
       if (var.first == variable) {
         if (id == 0 || id == var.second || var.second == 0) {
           return true;

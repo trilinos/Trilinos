@@ -201,7 +201,7 @@ namespace stk {
 
       void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
       {
-          ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
+          STK_ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
           m_sidesetFaceCreationBehavior = behavior;
       }
 
@@ -981,25 +981,25 @@ namespace stk {
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
   }

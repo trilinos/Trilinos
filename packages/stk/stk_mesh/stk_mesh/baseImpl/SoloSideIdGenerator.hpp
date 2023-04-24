@@ -59,7 +59,7 @@ public:
     stk::mesh::EntityId get_solo_side_id()
     {
         stk::mesh::EntityId id = get_solo_side_id_using_formula(pseudoElement, pseudoOrdinal);
-        ThrowRequireMsg(pseudoElement <= max_pseudo_element(), "Exhausted solo side ids. Please report to sierra-help@sandia.gov");
+        STK_ThrowRequireMsg(pseudoElement <= max_pseudo_element(), "Exhausted solo side ids. Please report to sierra-help@sandia.gov");
         incrementPseudoElementAndOrdinal();
         return id;
     }
@@ -69,7 +69,7 @@ public:
 protected:
     stk::mesh::EntityId get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)
     {
-        ThrowRequireMsg(elementId <= m_maxPseudoElement, "Exhausted solo side ids for this processor. elementId= " << elementId << ", m_maxPseudoElement= " 
+        STK_ThrowRequireMsg(elementId <= m_maxPseudoElement, "Exhausted solo side ids for this processor. elementId= " << elementId << ", m_maxPseudoElement= " 
             << m_maxPseudoElement << ". Please report to sierra-help@sandia.gov");
 
         //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
@@ -79,7 +79,7 @@ protected:
 private:
     void calculate_max_pseudo_element(uint64_t maxSideId)
     {
-        ThrowRequire(maxSideId > 10);
+        STK_ThrowRequire(maxSideId > 10);
         m_maxPseudoElement = (maxSideId - 10) / 10;
     }
     void incrementPseudoElementAndOrdinal()

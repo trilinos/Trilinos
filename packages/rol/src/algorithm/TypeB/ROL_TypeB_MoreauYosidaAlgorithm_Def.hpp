@@ -50,8 +50,8 @@ namespace ROL {
 namespace TypeB {
 
 template<typename Real>
-MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list)
-  : TypeB::Algorithm<Real>::Algorithm(),
+MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant)
+  : TypeB::Algorithm<Real>::Algorithm(), secant_(secant),
     tau_(10), print_(false), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
@@ -79,9 +79,9 @@ MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list)
   stepname_ = steplist.sublist("Subproblem").get("Step Type","Trust Region");
 
   // Output settings
-  verbosity_    = list.sublist("General").get("Output Level", 0);
-  writeHeader_  = verbosity_ > 2;
-  print_              = (verbosity_ > 2 ? true : print_);
+  verbosity_   = list.sublist("General").get("Output Level", 0);
+  writeHeader_ = verbosity_ > 2;
+  print_       = (verbosity_ > 2 ? true : print_);
   list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
 }
 
@@ -159,7 +159,7 @@ void MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
-    algo = TypeU::AlgorithmFactory<Real>(list_);
+    algo = TypeU::AlgorithmFactory<Real>(list_,secant_);
     if (hasEcon_) algo->run(x,g,myobj,*proj_->getLinearConstraint(),
                             *proj_->getMultiplier(),*proj_->getResidual(),
                             outStream);

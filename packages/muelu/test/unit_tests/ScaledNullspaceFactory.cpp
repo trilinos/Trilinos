@@ -54,7 +54,6 @@
 
 #include <MueLu_SaPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_ScaledNullspaceFactory.hpp>
 #include <MueLu_NullspaceFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>

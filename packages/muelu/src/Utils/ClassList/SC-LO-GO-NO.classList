@@ -1,7 +1,6 @@
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
-AmalgamationFactory_kokkos
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
@@ -23,12 +22,10 @@ CloneRepartitionInterface
 CoalesceDropFactory
 CoalesceDropFactory_kokkos
 CoarseMapFactory
-CoarseMapFactory_kokkos
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
-CoordinatesTransferFactory_kokkos
 CoupledRBMFactory
 DemoFactory
 DirectSolver
@@ -114,8 +111,8 @@ SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
 TentativePFactory_kokkos
-MatrixFreeTentativeP_kokkos
-MatrixFreeTentativePFactory_kokkos
+MatrixFreeTentativeP
+MatrixFreeTentativePFactory
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
@@ -129,7 +126,6 @@ UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
-Utilities_kokkos
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
 SemiCoarsenPFactory_kokkos

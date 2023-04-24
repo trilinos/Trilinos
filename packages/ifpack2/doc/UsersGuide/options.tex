@@ -376,6 +376,22 @@ The following parameters are used in the Chebyshev method:
     % {bool}
     % {\false}
     % {If true, use the textbook variant; otherwise, use the \ifpack{} variant.}
+\ccc{chebyshev: algorithm}
+    {string}
+    {"first"}
+    {The algorithm for the Chebyshev polynomial. Currently supports
+     the default \ifpack{} variant, otherwise known as the first-kind ("first") Chebyshev polynomials.
+     Chebyshev smoothing via the fourth-kind ("fourth") and optimized fourth-kind ("opt_fourth")
+     are also implemented as in ~\cite{Lottes2022}.
+     Note that these latter two algorithms do not require the ad-hoc minimum eigenvalue estimate
+     as the standard \ifpack{} algorithm ("first").
+     The textbook algorithm ("textbook") as described in ~\cite{Saad2003} is also available.
+     However, the "first", "fourth", and "opt_fourth" kinds are preferred.
+     Currently supported: "first", "fourth", "opt_fourth", and "textbook".
+     Generally, the "fourth" and "opt_fourth" provide better smoothing properties
+     when employing the Chebyshev polynomials as multigrid smoothers, especially at orders
+     greater than or equal to 3.
+    }
 \ccc{chebyshev: compute max residual norm}
     {bool}
     {\false}

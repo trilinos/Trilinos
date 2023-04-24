@@ -51,9 +51,9 @@ class QuadToTriangles
     // enforces consistency conditions between the records
     void enforce_record_consistency(impl::PointRecordForTriangle& r1, PointRecordForTriangle& r2);
 
-    utils::Point compute_xyz_coords(const PointRecord& quadRecord);
+    utils::Point compute_xyz_coords(const PointRecord& quadRecord, bool allowExterior=false);
 
-    utils::Point get_quad_xi_coords(const PointRecord& quadRecord);
+    utils::Point get_quad_xi_coords(const PointRecord& quadRecord, bool allowExterior=false);
 
     PointRecord classify_onto(const PointRecord& record, mesh::MeshEntityPtr el);
 

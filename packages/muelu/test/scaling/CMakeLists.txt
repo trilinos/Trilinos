@@ -39,6 +39,8 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     CATEGORIES BASIC PERFORMANCE
     )
 
+  INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
+
   # Do a simple weak scaling experiment (4x ranks and 4x grid size)
   TRIBITS_ADD_TEST(
     Driver
@@ -421,7 +423,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
       )
 
-    ENDIF()
+    ENDIF() # INST_COMPLEX_INT_INT
 
     TRIBITS_ADD_TEST(
       Driver
@@ -447,11 +449,11 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       COMM mpi # HAVE_MPI required
       )
 
-  ENDIF()
+  ENDIF() # ENABLE_ZOLTAN
 
 
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
         Driver

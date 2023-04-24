@@ -30,7 +30,7 @@ void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   stk::mesh::EntityVector elems;
   for(stk::mesh::EntityId elemID : elemIDs) {
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
-    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    STK_ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
     elems.push_back(elem);
   }
 
@@ -47,7 +47,7 @@ void copy_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   stk::mesh::EntityVector elems;
   for(stk::mesh::EntityId elemID : elemIDs) {
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
-    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    STK_ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
     elems.push_back(elem);
   }
 
@@ -1258,7 +1258,7 @@ protected:
     std::ostringstream oss;
     oss << "output." << get_bulk().parallel_rank();
     std::ofstream ofs = std::ofstream(oss.str(), std::ofstream::out);
-    ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
+    STK_ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
     outputStream = &ofs;
 #endif
 

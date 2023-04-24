@@ -93,7 +93,7 @@ struct OptionT : public Option
       std::istringstream iss(val);
       T tVal;
       iss >> tVal;
-      ThrowRequireMsg(!iss.fail(), "Error in OptionT, failed to store '"<<val<<"'");
+      STK_ThrowRequireMsg(!iss.fail(), "Error in OptionT, failed to store '"<<val<<"'");
       *targetVariable = tVal;
     }
   }

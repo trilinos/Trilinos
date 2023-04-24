@@ -679,10 +679,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_host_type    KCRS;
@@ -832,10 +832,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
@@ -906,6 +906,12 @@ public:
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
 
+#if CUSPARSE_VERSION >= 11201
+    cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+    cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
     size_t bufferSize;
     CHECK_CUSPARSE(cusparseSpMV_bufferSize(cusparseHandle,
                                            transA,
@@ -915,7 +921,7 @@ public:
                                            &beta,
                                            vecY,
                                            CUDA_R_64F,
-                                           CUSPARSE_MV_ALG_DEFAULT,
+                                           alg,
                                            &bufferSize));
 
     void* dBuffer = NULL;
@@ -929,7 +935,7 @@ public:
                                        &beta,
                                        vecY,
                                        CUDA_R_64F,
-                                       CUSPARSE_MV_ALG_DEFAULT,
+                                       alg,
                                        dBuffer);
 
     CHECK_CUDA(cudaFree(dBuffer));
@@ -1154,7 +1160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       do_cusparse = false;
     }
     #else
-    if(! std::is_same<NO, Kokkos::Compat::KokkosCudaWrapperNode>::value) do_cusparse = false;
+    if(! std::is_same<NO, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value) do_cusparse = false;
     #endif
 
     #if ! defined(HAVE_MUELU_MAGMASPARSE)
@@ -1239,7 +1245,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "========================================================" << endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
-    out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
+    out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
 
@@ -1336,10 +1342,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                               ArowptrMKL.data()+1,
                               AcolindMKL.data(),
                               (double*)Avals.data());
-      auto X_lcl = xt.template getLocalView<device_type> ();
-      auto Y_lcl = yt.template getLocalView<device_type> ();
-      mkl_xdouble = (double*)X_lcl.data();
-      mkl_ydouble = (double*)Y_lcl.data();
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -1402,6 +1404,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         case Experiments::MKL:
         {
             TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+            auto X_lcl = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
+            auto Y_lcl = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+            mkl_xdouble = (double*)X_lcl.data();
+            mkl_ydouble = (double*)Y_lcl.data();
             MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;

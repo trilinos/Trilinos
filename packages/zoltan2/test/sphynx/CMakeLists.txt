@@ -1,3 +1,15 @@
+TRIBITS_ADD_EXECUTABLE(
+    Sphynx_Research_Driver
+    SOURCES Sphynx_Research_Driver.cpp
+    COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
+    Largest_Comp_To_Binary
+    SOURCES largestComponent2Binary.cpp
+    COMM serial mpi
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Sphynx
   SOURCES Test_Sphynx.cpp

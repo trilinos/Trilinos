@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -224,15 +224,20 @@ int main(int argc, char **argv)
       printf("Time at step %d is %f.\n", i + 1, time_value);
 
       for (int k = 0; k < num_blob; k++) {
-        EXCHECK(ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values));
-        printf("Values for Blob %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", blb[k].id, i + 1,
-               var_values[0], var_values[1], var_values[2], var_values[3]);
+        if (var_values != NULL) {
+          EXCHECK(
+              ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values));
+          printf("Values for Blob %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", blb[k].id, i + 1,
+                 var_values[0], var_values[1], var_values[2], var_values[3]);
+        }
 
-        for (int var_idx = 0; var_idx < num_vars; var_idx++) {
-          EXCHECK(ex_get_var(exoid, i + 1, EX_BLOB, var_idx + 1, blobs[k].id, blobs[k].num_entry,
-                             vals));
-          for (int j = 0; j < blobs[k].num_entry; j++) {
-            printf("%5.3f\n", vals[j]);
+        if (vals != NULL) {
+          for (int var_idx = 0; var_idx < num_vars; var_idx++) {
+            EXCHECK(ex_get_var(exoid, i + 1, EX_BLOB, var_idx + 1, blobs[k].id, blobs[k].num_entry,
+                               vals));
+            for (int j = 0; j < blobs[k].num_entry; j++) {
+              printf("%5.3f\n", vals[j]);
+            }
           }
         }
       }

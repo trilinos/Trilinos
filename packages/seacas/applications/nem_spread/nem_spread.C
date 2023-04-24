@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -319,16 +319,11 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
 
   fmt::print("Write of parallel exodus complete\n");
 
-  safe_free((void **)&(spreader.Proc_Ids));
   safe_free(reinterpret_cast<void **>(&(PIO_Info.RDsk_List)));
 
   for (int i = 0; i < spreader.Proc_Info[0]; i++) {
-    safe_free((void **)&spreader.globals.GNodes[i]);
     if (spreader.globals.Elem_Type != nullptr) {
       safe_free((void **)&spreader.globals.Elem_Type[i]);
-    }
-    if (spreader.globals.Proc_Global_Node_Id_Map != nullptr) {
-      safe_free((void **)&spreader.globals.Proc_Global_Node_Id_Map[i]);
     }
     safe_free((void **)&spreader.globals.Proc_SS_Ids[i]);
     safe_free((void **)&spreader.globals.Proc_SS_GEMap_List[i]);
@@ -336,9 +331,9 @@ int nem_spread(NemSpread<T, INT> &spreader, const char *salsa_cmd_file, int subc
     safe_free((void **)&spreader.globals.Proc_NS_GNMap_List[i]);
     safe_free((void **)&spreader.globals.Proc_Nodes_Per_Elem[i]);
     safe_free((void **)&spreader.globals.GElem_Blks[i]);
-    safe_free((void **)&spreader.globals.Proc_Global_Elem_Id_Map[i]);
+    spreader.globals.Proc_Global_Elem_Id_Map[i].clear();
+    spreader.globals.Proc_Global_Node_Id_Map[i].clear();
   }
   safe_free((void **)&spreader.globals.Elem_Type);
-  safe_free((void **)&spreader.globals.GNodes);
   return 0;
 }

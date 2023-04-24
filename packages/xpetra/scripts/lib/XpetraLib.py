@@ -79,7 +79,7 @@ def buildTemplateParam( XMLfile ):
         str += type + ' ' + name + defvalStr + ', ' # str == 'class GlobalOrdinal = LocalOrdinal, '
         #print(str)
 
-    templateParamStr = 'template <' + str.rstrip(', ') + '>' # template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+    templateParamStr = 'template <' + str.rstrip(', ') + '>' # template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     #print(templateParamStr)
 
     return templateParamStr

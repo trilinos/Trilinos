@@ -47,11 +47,7 @@
 #define MUELU_REBALANCEACFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"

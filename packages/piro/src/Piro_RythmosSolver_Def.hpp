@@ -75,11 +75,6 @@
 
 #include "Piro_InvertMassMatrixDecorator.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
@@ -344,11 +339,6 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-#ifdef HAVE_PIRO_IFPACK2
-     typedef Thyra::PreconditionerFactoryBase<double> Base;
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 #ifdef HAVE_PIRO_MUELU
      Stratimikos::enableMueLu(linearSolverBuilder);
 #endif

@@ -54,7 +54,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
-#include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_IndexManager_kokkos_decl.hpp>
 

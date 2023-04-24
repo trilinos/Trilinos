@@ -176,7 +176,7 @@ inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData
 
   auto centroidCalculator = [&](stk::mesh::Entity elem, const stk::mesh::Entity* nodes, size_t numNodes)
   {
-      ThrowAssertMsg(numNodes <= maxNumNodes, "numNodes("<<numNodes<<") must be <= maxNumNodes("<<maxNumNodes<<")");
+      STK_ThrowAssertMsg(numNodes <= maxNumNodes, "numNodes("<<numNodes<<") must be <= maxNumNodes("<<maxNumNodes<<")");
 
       for(size_t i = 0; i < numNodes; i++) {
         elemNodeCoords[i] = reinterpret_cast<double*>(stk::mesh::field_data(coords, nodes[i]));

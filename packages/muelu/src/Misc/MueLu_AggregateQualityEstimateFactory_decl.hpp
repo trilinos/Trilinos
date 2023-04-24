@@ -50,20 +50,13 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_AggregateQualityEstimateFactory_fwd.hpp"
 
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
-#include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
@@ -85,7 +78,7 @@ namespace MueLu {
     computing, 34(2), A1079-A1109.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class AggregateQualityEstimateFactory : public SingleLevelFactoryBase {
 #undef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

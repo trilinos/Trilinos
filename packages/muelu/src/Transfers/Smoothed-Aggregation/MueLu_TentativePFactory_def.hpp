@@ -70,12 +70,9 @@
 #include "MueLu_TentativePFactory_decl.hpp"
 
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -222,7 +219,7 @@ namespace MueLu {
       // Get some info about aggregates
       int                         myPID        = coarseCoordsMap->getComm()->getRank();
       LO                          numAggs      = aggregates->GetNumAggregates();
-      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizesArrayRCP();
       const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
       const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 
@@ -311,7 +308,7 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
-    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizesArrayRCP();
 
     // Need to generate the coarse block map
     // NOTE: We assume NSDim == block size here
@@ -870,7 +867,7 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
-    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizesArrayRCP();
 
 
     // Sanity checking

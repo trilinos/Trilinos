@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1254,7 +1254,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (num_times) {
     times = new double[num_times];
     SMART_ASSERT(times != nullptr);
-    err = ex_get_all_times(file_id, times);
+    ex_get_all_times(file_id, times);
     if (time_scale != 1.0 || time_offset != 0.0) {
       for (int i = 0; i < num_times; i++) {
         times[i] = time_scale * times[i] + time_offset;
