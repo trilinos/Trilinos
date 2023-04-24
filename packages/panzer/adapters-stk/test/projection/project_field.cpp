@@ -46,6 +46,7 @@ typedef Kokkos::DynRankView<double,PHX::Device> DynRankView;
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(project_field,value,TYPE)
 
+// TODO BWR Move outside of test
 struct WorksetsAndOrts {
 
   Teuchos::RCP<std::vector<panzer::Workset> > worksets;
@@ -505,9 +506,9 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
     fm->requireField<EvalType>(*ft);
   }
   {
-    std::string suffix("_final"); // otherwise we'd have two fields with same name
+    std::string outName = fname+"_final"; // otherwise we'd have two fields with same name
     RCP<panzer_stk::ProjectField<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,suffix));
+      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,outName));
 
     fm->registerEvaluator<EvalType>(e);
 
@@ -581,6 +582,7 @@ Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::P
   return mesh;
 }
 
+// TODO BWR move outside of test
 WorksetsAndOrts getWorksetsAndOrtsForFields(
   Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
   std::map<std::string,panzer::BasisDescriptor> fmap)
@@ -610,7 +612,8 @@ WorksetsAndOrts getWorksetsAndOrtsForFields(
     // Build basis and fields
     const auto & cell_topology = mesh->getCellTopology(eblocks[0]);
     // Set cell data
-    needs_map[eblocks[0]].cellData = panzer::CellData(1,cell_topology); // numCells will get overwritten
+    // numCells will get overwritten with our particular path thru getWorksets below
+    needs_map[eblocks[0]].cellData = panzer::CellData(1,cell_topology);
 
     for (auto & map : fmap)
     {

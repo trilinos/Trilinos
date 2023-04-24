@@ -48,7 +48,6 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_Interface.hpp"
 
@@ -56,7 +55,9 @@
 
 namespace panzer_stk {
 
-/** \brief Given a field, perform a local L2 projection onto the desired basis
+/** \brief Given a field, perform a local L2 projection onto the desired basis.
+ * 
+ * \note Requires that orientations be given in the \c postRegistrationSetup phase.
 */
 template<typename EvalT, typename Traits> 
 class ProjectField
@@ -65,9 +66,18 @@ class ProjectField
     {
    
 public:
+
+  /**
+   * Constructor for the ProjectField evaluator. 
+   * 
+   * \param[in] inName Name of the source MDField
+   * \param[in] src Basis of the source field
+   * \param[in] dst Target basis
+   * \param[in] outname (Optional) Name for the projected MDField
+   */
   
-  ProjectField(const std::string & name, Teuchos::RCP<panzer::PureBasis> src,
-               Teuchos::RCP<panzer::PureBasis> dst, const std::string & suffix = "");
+  ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
+               Teuchos::RCP<panzer::PureBasis> dst, std::string outname = "");
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& fm);

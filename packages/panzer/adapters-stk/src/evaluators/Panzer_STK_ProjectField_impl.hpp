@@ -52,7 +52,6 @@
 #include "Intrepid2_OrientationTools.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
@@ -62,10 +61,10 @@ namespace panzer_stk {
 
 template<typename EvalT,typename Traits>
 ProjectField<EvalT, Traits>::
-ProjectField(const std::string & name, Teuchos::RCP<panzer::PureBasis> src,
+ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
              Teuchos::RCP<panzer::PureBasis> dst, 
-             const std::string & suffix):
-  field_name_(name), srcBasis_(src), dstBasis_(dst)
+             std::string outName):
+  srcBasis_(src), dstBasis_(dst)
 { 
   using panzer::Cell;
   using panzer::BASIS;
@@ -73,12 +72,13 @@ ProjectField(const std::string & name, Teuchos::RCP<panzer::PureBasis> src,
   Teuchos::RCP<PHX::DataLayout> srcBasis_layout = srcBasis_->functional;
   Teuchos::RCP<PHX::DataLayout> dstBasis_layout = dstBasis_->functional;
 
-  result_ = PHX::MDField<double,Cell,BASIS>(field_name_+suffix,dstBasis_layout);
+  if (outName == "") outName = inName; 
+  result_ = PHX::MDField<double,Cell,BASIS>(outName,dstBasis_layout);
   this->addEvaluatedField(result_);
 
   // This shouldn't get modified but needs to be non const 
   // because of downstream templating in intrepid2
-  source_ = PHX::MDField<double,Cell,BASIS>(field_name_,srcBasis_layout);
+  source_ = PHX::MDField<double,Cell,BASIS>(inName,srcBasis_layout);
   this->addNonConstDependentField(source_);
 
   this->setName("Project Field");
@@ -90,10 +90,10 @@ void ProjectField<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData  d, 
 		      PHX::FieldManager<Traits>& /* fm */)
 {
-  // TODO BWR orientations needs to be the correct size
-  // TODO BWR mauro recommends setting it to all zeros if it is not needed / computed 
-  // TODO BWR not sure if we should do this here or upstream
   orientations_ = d.orientations_;
+  TEUCHOS_ASSERT(orientations_->size()>0);
+  // If your bases really don't require orientations, pass an array of zeroes
+  // with length numCells [MDField is (numCells,numBasis)]
 }
 
 // **********************************************************************
@@ -117,7 +117,6 @@ evaluateFields(typename Traits::EvalData workset)
   Kokkos::deep_copy(orts,orts_host);
 
   // TODO BWR maybe we dont need pure basis upstream?
-  // TODO BWR ok to make this all double here and for MD fields above?
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > dstBasis = dstBasis_->getIntrepid2Basis();
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
 
