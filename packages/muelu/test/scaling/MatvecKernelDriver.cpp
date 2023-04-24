@@ -330,7 +330,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
         
         for (int i=0; i<(int) recv_lengths.size(); i++)  {
           recv_time += PM.pingpong_device_lookup(recv_lengths[i] * sizeof(SC));                  
-          total_recv_length = send_lengths[i]*sizeof(SC);
+          total_recv_length = recv_lengths[i]*sizeof(SC);
         }
  
         avg_size_per_msg = (double)total_send_length/(2.0*send_lengths.size()) +  (double)total_recv_length/(2.0*recv_lengths.size());
