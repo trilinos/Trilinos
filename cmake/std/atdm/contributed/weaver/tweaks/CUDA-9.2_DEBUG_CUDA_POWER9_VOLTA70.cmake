@@ -2,7 +2,7 @@
 ATDM_SET_ENABLE(TeuchosNumerics_DISABLE_STEQR_TEST ON)
 
 # Disable timing out unit test in this debug build (#3336)
-ATDM_SET_ENABLE(KokkosContainers_UnitTest_Serial_MPI_1_DISABLE ON)
+ATDM_SET_ENABLE(Kokkos_ContainersUnitTest_Serial_MPI_1_DISABLE ON)
 
 # Disable some unit tests that run too slow in this DEBUG build (#2827)
 ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS
