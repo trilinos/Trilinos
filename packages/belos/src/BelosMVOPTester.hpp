@@ -24,6 +24,7 @@
 #include "BelosTypes.hpp"
 
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosOutputManager.hpp"
 
@@ -31,7 +32,48 @@
 #include "Teuchos_SetScientific.hpp"
 #include "Teuchos_SerialDenseHelpers.hpp"
 
+// Used in RandomSyncedMpiMatrix
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+
 namespace Belos {
+    //!  \brief Returns the dense matrix A with random values that is the synchronized across all 
+    //!   MPI ranks. Uses existing dimensions of A to determin the size needed.
+    //!   Note: This utility is only used within Belos MultiVectorTraits testing. 
+    template <class ScalarType, class DM>
+    static void RandomSyncedMpiMatrix( DM & A ) {
+      typedef Belos::DenseMatTraits<ScalarType, DM> DMT;
+      Teuchos::RCP<const Teuchos::Comm<int>> comm;
+      //TODO: is there any problem with hard-coding OrdinalType to int in the template param for comm?
+
+#ifdef HAVE_MPI
+      int mpiStarted = 0;
+      MPI_Initialized(&mpiStarted);
+      if (mpiStarted)
+        comm = Teuchos::DefaultComm<int>::getComm();
+      else
+        comm = rcp(new Teuchos::SerialComm<int>);
+#else
+        comm = Teuchos::DefaultComm<int>::getComm();
+#endif
+
+        const int procRank = rank(*comm);
+
+        // Construct a separate serial dense matrix and synchronize it to get around
+        // input matrices that are subviews of a larger matrix.
+        Teuchos::RCP<DM> newMatrix  = DMT::Create( DMT::GetNumRows(A), DMT::GetNumCols(A) );
+        if (procRank == 0)
+          DMT::Randomize(A);
+        else
+          DMT::PutScalar(A);
+
+        broadcast(*comm, 0, DMT::GetNumRows(A)*DMT::GetNumCols(A), DMT::GetRawHostPtr(A));
+
+        // Assign the synchronized matrix to the input.
+        DMT::Assign( A, *newMatrix );
+        //TODO: Do we need to sync host to device here??
+      }
 
   /// \brief Test correctness of a MultiVecTraits specialization and
   ///   multivector implementation.
@@ -937,8 +979,8 @@ namespace Belos {
                            normsD1(p), normsD2(p);
 
       Teuchos::SerialDenseMatrix<int,ScalarType> Alpha(1,1), Beta(1,1);
-      Teuchos::randomSyncedMatrix( Alpha );
-      Teuchos::randomSyncedMatrix( Beta );
+      RandomSyncedMpiMatrix<ScalarType,DM>(Alpha);
+      RandomSyncedMpiMatrix<ScalarType,DM>(Beta);
       ScalarType alpha = Alpha(0,0),
                   beta = Beta(0,0);
 
@@ -1140,7 +1182,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
+      RandomSyncedMpiMatrix<ScalarType,DM>(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1166,7 +1208,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
+      RandomSyncedMpiMatrix<ScalarType,DM>(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1276,7 +1318,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
+      RandomSyncedMpiMatrix<ScalarType,DM>(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1302,7 +1344,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
+      RandomSyncedMpiMatrix<ScalarType,DM>(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
