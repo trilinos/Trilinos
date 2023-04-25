@@ -1865,7 +1865,8 @@ namespace Tpetra {
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
    const size_t constantNumPackets,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -2027,7 +2028,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2048,7 +2049,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
@@ -2072,7 +2073,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2093,7 +2094,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
@@ -2117,7 +2118,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2138,7 +2139,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
@@ -2168,6 +2169,20 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
   }
+
+  // clang-format on
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine
+  (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
+   Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   const CombineMode CM) {
+    unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, CM, execution_space());
+  }
+  // clang-format off
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t

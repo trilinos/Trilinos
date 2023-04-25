@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_BLOCKCRSMATRIX_DECL_HPP
 #define TPETRA_BLOCKCRSMATRIX_DECL_HPP
 
@@ -763,6 +764,13 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
 
   virtual void
   unpackAndCombine
