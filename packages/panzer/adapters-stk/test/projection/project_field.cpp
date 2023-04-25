@@ -132,14 +132,15 @@ class GetCoeffsEvaluator
 
     void postRegistrationSetup(typename Traits::SetupData d, PHX::FieldManager<Traits> & fm);
 
+    enum ElemShape {HEX, TET, QUAD, TRI};
+
   private:
 
     using ScalarT = typename EvalT::ScalarT;
     Teuchos::RCP<panzer::PureBasis> basis;
     PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> coeffs;
     Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orts;
-    DynRankView cellNodes;
-    std::string eShape;
+    ElemShape elemShape;
   
 }; // end of class
 
@@ -147,7 +148,7 @@ template<typename EvalT, typename Traits>
 GetCoeffsEvaluator<EvalT, Traits>::
 GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
                    std::string & eShape /*, Functor ?? */) 
-  : basis(basis), eShape(eShape)
+  : basis(basis)
 {
 
   // set up coeffs
@@ -157,6 +158,19 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
 
   std::string n = "GetCoeffsEvaluator: " + name;
   this->setName(n);
+
+  if (eShape == "Hex") {
+    elemShape = HEX;
+  } else if (eShape == "Tet") {
+    elemShape = TET;
+  } else if (eShape == "Quad") {
+    elemShape = QUAD;
+  } else if (eShape == "Tri") {
+    elemShape = TRI;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+      "ERROR: Element shape not supported!");
+  }
 
 }
 
@@ -179,7 +193,7 @@ evaluateFields(
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // FYI, this all relies on a first-order mesh
-  cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE 
+  auto cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE 
   auto numNodesPerElem = cellNodes.extent(1);
 
   auto numOwnedElems = cellNodes.extent(0);
@@ -219,23 +233,29 @@ evaluateFields(
       physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
     }
 
+    auto eShape = elemShape;
     DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
     {
       DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device::execution_space>(0,numOwnedElems),
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename PHX::exec_space>(0,numOwnedElems),
           KOKKOS_LAMBDA (const int &i) {
         auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
         for(int j=0; j<numPoints; ++j){
           auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
-          if (eShape == "Hex") {
+          switch (eShape) {
+          case HEX:
             Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-          } else if (eShape == "Tet") {
+            break;
+          case TET:
             Intrepid2::Impl::Basis_HGRAD_TET_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-          } else if (eShape == "Quad") {
+            break;
+          case QUAD:
             Intrepid2::Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-          } else if (eShape == "Tri") {
+            break;
+          case TRI:
             Intrepid2::Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+            break;
           }
           for(size_t k=0; k<numNodesPerElem; ++k)
             for(int d=0; d<dim; ++d)
@@ -245,7 +265,7 @@ evaluateFields(
       Kokkos::fence();
     }
 
-    //transform the target function and its derivative to the reference element (inverse of pullback operator)
+    // transform the target function and its derivative to the reference element (inverse of pullback operator)
     DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
     DynRankView jacobian_det("jacobian_det", numOwnedElems, numPoints);
     DynRankView jacobian_inv("jacobian_inv", numOwnedElems, numPoints, dim, dim);
