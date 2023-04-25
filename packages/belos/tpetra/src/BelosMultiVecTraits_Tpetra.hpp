@@ -139,7 +139,7 @@ namespace Belos {
   /// \tparam GO Same as template parameter 3 of Tpetra::MultiVector.
   /// \tparam Node Same as template parameter 4 of Tpetra::MultiVector.
   template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraits<Scalar, ::Tpetra::MultiVector<Scalar,LO,GO,Node> > {
+  class TpetraMVGeneralTraits {
     typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
     /// \brief Create a new MultiVector with \c numVecs columns.
@@ -383,39 +383,6 @@ namespace Belos {
       return mv.isConstantStride ();
     }
 
-    static void
-    MvTimesMatAddMv (Scalar alpha,
-                     const MV& A,
-                     const Teuchos::SerialDenseMatrix<int, Scalar>& B,
-                     Scalar beta,
-                     MV& mv)
-    {
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-      const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
-      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      Teuchos::TimeMonitor timeMon (*timer);
-#endif // HAVE_BELOS_TPETRA_TIMERS
-
-      const size_t B_numRows = static_cast<size_t> (B.numRows ());
-      const size_t B_numCols = static_cast<size_t> (B.numCols ());
-
-      // Check if B is 1-by-1, in which case we can just call update()
-      if (B_numRows == size_t (1) && B_numCols == size_t (1)) {
-        mv.update (alpha*B(0,0), A, beta);
-      }
-      else {
-        MV B_mv = makeStaticLocalMultiVector (A, B_numRows, B_numCols);
-        Tpetra::deep_copy (B_mv, B);
-        mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
-                     alpha, A, B_mv, beta);
-      }
-      Kokkos::fence();  // Belos with Thyra's MvTimesMatAddMv allowed failures
-                        // when fence was not applied after mv.multiply; 
-                        // adding the fence fixed the tests in Thyra.  
-                        // Out of an abundance of caution (and with blessing 
-                        // from @hkthorn), we add the fence here as well.  
-                        // #8821 KDD
-    }
 
     /// \brief <tt>mv := alpha*A + beta*B</tt>
     ///
@@ -442,43 +409,6 @@ namespace Belos {
       mv.scale (alphas);
     }
 
-    static void
-    MvTransMv (const Scalar alpha,
-               const MV& A,
-               const MV& B,
-               Teuchos::SerialDenseMatrix<int,Scalar>& C)
-    {
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-      const std::string timerName ("Belos::MVT::MvTransMv");
-      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      Teuchos::TimeMonitor timeMon (*timer);
-#endif // HAVE_BELOS_TPETRA_TIMERS
-
-      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-      const int numRowsC = C.numRows ();
-      const int numColsC = C.numCols ();
-
-      // If numRowsC == numColsC == 1, then we can call dot().
-      if (numRowsC == 1 && numColsC == 1) {
-        if (alpha == ZERO) {
-          // Short-circuit, as required by BLAS semantics.
-          C(0,0) = alpha;
-          return;
-        }
-        A.dot (B, Teuchos::ArrayView<Scalar> (C.values (), 1));
-        if (alpha != Teuchos::ScalarTraits<Scalar>::one ()) {
-          C(0,0) *= alpha;
-        }
-        return;
-      }
-
-      MV C_mv = makeStaticLocalMultiVector (A, numRowsC, numColsC);
-      // Filling with zero should be unnecessary, in theory, but not
-      // in practice, alas (Issue_3235 test fails).
-      C_mv.putScalar (ZERO);
-      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
-      Tpetra::deep_copy (C, C_mv);
-    }
 
     //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
     static void
@@ -706,12 +636,212 @@ namespace Belos {
       mv.describe (fos, Teuchos::VERB_EXTREME);
     }
 
+  };
+
+  //Specialize multivec traits for Teuchos Serial Dense
+  template<class Scalar, class LO, class GO, class Node >
+  class MultiVecTraits<Scalar, ::Tpetra::MultiVector<Scalar,LO,GO,Node>, Teuchos::SerialDenseMatrix<int,Scalar>> {
+  //template<class Scalar, class LO, class GO, class Node, class DenseMat>
+  //class MultiVecTraits<Scalar, ::Tpetra::MultiVector<Scalar,LO,GO,Node>, DenseMat > {
+    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef TpetraMVGeneralTraits<Scalar,LO,GO,Node> MVGen;
+
+  public:
+    //==============================================================
+    //Two functions here specialized for Teuchos::SerialDense
+    //==============================================================
+    static void
+    MvTimesMatAddMv (Scalar alpha,
+                     const MV& A,
+                     const Teuchos::SerialDenseMatrix<int, Scalar>& B,
+                     Scalar beta,
+                     MV& mv)
+    {
+#ifdef HAVE_BELOS_TPETRA_TIMERS
+      const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      Teuchos::TimeMonitor timeMon (*timer);
+#endif // HAVE_BELOS_TPETRA_TIMERS
+
+      const size_t B_numRows = static_cast<size_t> (B.numRows ());
+      const size_t B_numCols = static_cast<size_t> (B.numCols ());
+
+      // Check if B is 1-by-1, in which case we can just call update()
+      if (B_numRows == size_t (1) && B_numCols == size_t (1)) {
+        mv.update (alpha*B(0,0), A, beta);
+      }
+      else {
+        MV B_mv = makeStaticLocalMultiVector (A, B_numRows, B_numCols);
+        Tpetra::deep_copy (B_mv, B);
+        mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+                     alpha, A, B_mv, beta);
+      }
+      Kokkos::fence();  // Belos with Thyra's MvTimesMatAddMv allowed failures
+                        // when fence was not applied after mv.multiply; 
+                        // adding the fence fixed the tests in Thyra.  
+                        // Out of an abundance of caution (and with blessing 
+                        // from @hkthorn), we add the fence here as well.  
+                        // #8821 KDD
+    }
+
+    static void
+    MvTransMv (const Scalar alpha,
+               const MV& A,
+               const MV& B,
+               Teuchos::SerialDenseMatrix<int,Scalar>& C)
+    {
+#ifdef HAVE_BELOS_TPETRA_TIMERS
+      const std::string timerName ("Belos::MVT::MvTransMv");
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      Teuchos::TimeMonitor timeMon (*timer);
+#endif // HAVE_BELOS_TPETRA_TIMERS
+
+      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+      const int numRowsC = C.numRows ();
+      const int numColsC = C.numCols ();
+
+      // If numRowsC == numColsC == 1, then we can call dot().
+      if (numRowsC == 1 && numColsC == 1) {
+        if (alpha == ZERO) {
+          // Short-circuit, as required by BLAS semantics.
+          C(0,0) = alpha;
+          return;
+        }
+        A.dot (B, Teuchos::ArrayView<Scalar> (C.values (), 1));
+        if (alpha != Teuchos::ScalarTraits<Scalar>::one ()) {
+          C(0,0) *= alpha;
+        }
+        return;
+      }
+
+      MV C_mv = makeStaticLocalMultiVector (A, numRowsC, numColsC);
+      // Filling with zero should be unnecessary, in theory, but not
+      // in practice, alas (Issue_3235 test fails).
+      C_mv.putScalar (ZERO);
+      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
+      Tpetra::deep_copy (C, C_mv);
+    }
+    
+    //==============================================================
+    //Remaining functions can be called from the generic versions:
+    //==============================================================
+
+    /// \brief Create a new MultiVector with \c numVecs columns.
+    static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
+      return MVGen::Clone(X,numVecs);
+    }
+
+    //! Create and return a deep copy of X.
+    static Teuchos::RCP<MV> CloneCopy (const MV& X) {
+      return MVGen::CloneCopy(X);
+    }
+
+    /// \brief Create and return a deep copy of the given columns of mv.
+    static Teuchos::RCP<MV>
+    CloneCopy (const MV& mv, const std::vector<int>& index) {
+      return MVGen::CloneCopy(mv,index);
+    }
+
+    /// \brief Create and return a deep copy of the given columns of mv.
+    static Teuchos::RCP<MV>
+    CloneCopy (const MV& mv, const Teuchos::Range1D& index) {
+      return MVGen::CloneCopy(mv,index);
+    }
+
+    static Teuchos::RCP<MV>
+    CloneViewNonConst (MV& mv, const std::vector<int>& index) {
+      return MVGen::CloneViewNonConst(mv, index);
+    }
+
+    static Teuchos::RCP<MV>
+    CloneViewNonConst (MV& mv, const Teuchos::Range1D& index) {
+      return MVGen::CloneViewNonConst(mv, index);
+    }
+
+    static Teuchos::RCP<const MV>
+    CloneView (const MV& mv, const std::vector<int>& index) {
+      return MVGen::CloneView(mv,index);
+    }
+
+    static Teuchos::RCP<const MV>
+    CloneView (const MV& mv, const Teuchos::Range1D& index) {
+      return MVGen::CloneView(mv,index);
+    }
+
+    static ptrdiff_t GetGlobalLength (const MV& mv) {
+      return MVGen::GetGlobalLength(mv);
+    }
+
+    static int GetNumberVecs (const MV& mv) {
+      return MVGen::GetNumberVecs(mv);
+    }
+
+    static bool HasConstantStride (const MV& mv) {
+      return MVGen::HasConstantStride(mv);
+    }
+
+    /// \brief <tt>mv := alpha*A + beta*B</tt>
+    static void MvAddMv (Scalar alpha, const MV& A,
+             Scalar beta, const MV& B, MV& mv) {
+      MVGen::MvAddMv(alpha,A,beta,B,mv);
+    }
+
+    static void MvScale (MV& mv, Scalar alpha) {
+      MVGen::MvScale(mv,alpha);
+    }
+
+    static void MvScale (MV& mv, const std::vector<Scalar>& alphas) {
+      MVGen::MvScale(mv,alphas);
+    }
+
+    //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
+    static void
+    MvDot (const MV& A, const MV& B, std::vector<Scalar> &dots) {
+      MVGen::MvDot(A,B,dots);
+    }
+
+    //! For all columns j of mv, set <tt>normvec[j] = norm(mv[j])</tt>.
+    static void
+    MvNorm (const MV& mv,
+            std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& normvec,
+            NormType type=TwoNorm) {
+      MVGen::MvNorm(mv, normvec, type);
+    }
+
+    static void
+    SetBlock (const MV& A, const std::vector<int>& index, MV& mv) {
+      MVGen::SetBlock(A,index,mv);
+    }
+
+    static void
+    SetBlock (const MV& A, const Teuchos::Range1D& index, MV& mv) {
+      MVGen::SetBlock(A,index,mv);
+    }
+
+    static void Assign (const MV& A, MV& mv) {
+      MVGen::Assign(A,mv);
+    }
+
+    static void MvRandom (MV& mv) {
+      MVGen::MvRandom(mv);
+    }
+
+    static void
+    MvInit (MV& mv, const Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero ()) {
+      MVGen::MvInit(mv,alpha);
+    }
+
+    static void MvPrint (const MV& mv, std::ostream& os) {
+      MVGen::MvPrint(mv,os);
+    }
+
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
     typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
-  };
+
+  };//end Teuchos serial dense specialized. 
 
 } // namespace Belos
 
