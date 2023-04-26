@@ -86,14 +86,13 @@ void run_test_gmres() {
   ViewVectorType Wj("Wj", n);  // For checking residuals at end.
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
                    n);  // right-hand side vec
+  // Make rhs ones so that results are repeatable:
+  Kokkos::deep_copy(B, 1.0);
 
   gmres_handle->set_verbose(verbose);
 
   // Test CGS2
   {
-    // Make rhs ones so that results are repeatable:
-    Kokkos::deep_copy(B, 1.0);
-
     gmres(&kh, A, B, X);
 
     // Double check residuals at end of solve:
@@ -137,12 +136,12 @@ void run_test_gmres() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    auto myPrec = new KokkosSparse::Experimental::MatrixPrec<sp_matrix_type>(A);
+    KokkosSparse::Experimental::MatrixPrec<sp_matrix_type> myPrec(A);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
 
-    gmres(&kh, A, B, X, myPrec);
+    gmres(&kh, A, B, X, &myPrec);
 
     // Double check residuals at end of solve:
     float_t nrmB = KokkosBlas::nrm2(B);
@@ -154,8 +153,6 @@ void run_test_gmres() {
 
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
-
-    delete myPrec;
   }
 }
 

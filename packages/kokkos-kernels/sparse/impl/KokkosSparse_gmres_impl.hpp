@@ -92,6 +92,7 @@ struct GmresWrap {
       std::cout << "  ortho:      "
                 << ((ortho == GmresHandle::Ortho::CGS2) ? "CGS2" : "MGS")
                 << std::endl;
+      std::cout << "  precond:    " << (precond ? "ON" : "OFF") << std::endl;
     }
 
     // Make tmp work views
