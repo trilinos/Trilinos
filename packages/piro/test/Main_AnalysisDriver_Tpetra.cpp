@@ -142,7 +142,6 @@ int main(int argc, char *argv[]) {
         RCP<Thyra::ModelEvaluator<double>> model, adjointModel(Teuchos::null);
 
         int num_parameters = piroParams->sublist("Analysis").sublist("ROL").get<int>("Number Of Parameters", 1);
-        int g_index = piroParams->sublist("Analysis").sublist("ROL").get<int>("Response Vector Index", 0);  
         std::vector<int> p_indices(num_parameters);
 
         for(int i=0; i<num_parameters; ++i) {

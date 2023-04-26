@@ -773,15 +773,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
             const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv =
                 dxdp_deriv.getMultiVector();
 
-            const Thyra::ModelEvaluatorBase::DerivativeSupport dxdp_support =
-                outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l);
-            const bool dxdp_linOpSupport =
-                dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-            const bool dxdp_mvJacSupport =
-                dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-            const bool dxdp_mvGradSupport =
-                dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
-
             RCP<const Thyra::LinearOpBase<Scalar> > minus_dxdp_op;
             RCP<Thyra::MultiVectorBase<Scalar> > minus_dxdp_mv;
             if (Teuchos::nonnull(dfdp_mv)) {

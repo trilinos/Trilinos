@@ -222,7 +222,7 @@ public:
     Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dfdp_block_op = 
       Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(dfdp_dv.getLinearOp());    
     if (thyra_prodvec_v != Teuchos::null && dfdp_block_op != Teuchos::null) {
-      for(std::size_t i=0; i<thyra_prodvec_v->productSpace()->numBlocks(); ++i) {
+      for(int i=0; i<thyra_prodvec_v->productSpace()->numBlocks(); ++i) {
         auto dfdp_op = dfdp_block_op->getBlock(0, i);
         if (dfdp_op != Teuchos::null) {
           auto temp_jv_ptr = Teuchos::rcp_dynamic_cast<ROL::ThyraVector<Real>>(thyra_jv.clone());
@@ -550,7 +550,7 @@ public:
     Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dfdp_block_op = 
       Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(dfdp_dv.getLinearOp());    
     if (thyra_prodvec_ajv != Teuchos::null && dfdp_block_op != Teuchos::null) {
-      for(std::size_t i=0; i<thyra_prodvec_ajv->productSpace()->numBlocks(); ++i) {
+      for(int i=0; i<thyra_prodvec_ajv->productSpace()->numBlocks(); ++i) {
         auto dfdp_op = dfdp_block_op->getBlock(0, i);
         if (dfdp_op != Teuchos::null) {
           dfdp_op->apply(Thyra::TRANS,*thyra_v.getVector(), thyra_prodvec_ajv->getNonconstVectorBlock(i).ptr(),1.0, 0.0);
