@@ -2612,6 +2612,7 @@ public:
         // The following parallel_for needs const access to the local values of src.
         // (the local graph is also accessed on host, but this does not use WDVs).
         getValuesHost();
+        Details::disableWDVTracking();
         Kokkos::parallel_for
           (policy,
            [=](const typename policy_type::member_type &member) {
@@ -2659,6 +2660,7 @@ public:
               }
             }
           }); // for each LID (of a row) to send
+        Details::enableWDVTracking();
       }
     } // if totalNumEntries > 0
 
@@ -2883,6 +2885,7 @@ public:
 
       //The following parallel_for modifies values on host while unpacking.
       getValuesHostNonConst();
+      Details::disableWDVTracking();
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
          [=] (const typename policy_type::member_type& member) {
@@ -2999,6 +3002,7 @@ public:
             return;
           }
         }); // for each import LID i
+      Details::enableWDVTracking();
     }
 
     if (errorDuringUnpack () != 0) {
