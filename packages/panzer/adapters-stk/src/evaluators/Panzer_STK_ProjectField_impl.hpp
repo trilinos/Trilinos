@@ -43,8 +43,6 @@
 #ifndef PANZER_STK_PROJECT_FIELD_IMPL_HPP
 #define PANZER_STK_PROJECT_FIELD_IMPL_HPP
 
-// TODO BWR check this file and decl for unnecessary includes
-
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
@@ -69,6 +67,8 @@ ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
   using panzer::Cell;
   using panzer::BASIS;
 
+  // TODO can't get static assert to work and not sure how to do the instantiations then
+
   Teuchos::RCP<PHX::DataLayout> srcBasis_layout = srcBasis_->functional;
   Teuchos::RCP<PHX::DataLayout> dstBasis_layout = dstBasis_->functional;
 
@@ -82,6 +82,7 @@ ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
   this->addNonConstDependentField(source_);
 
   this->setName("Project Field");
+
 }
 
 // **********************************************************************
@@ -91,9 +92,6 @@ postRegistrationSetup(typename Traits::SetupData  d,
 		      PHX::FieldManager<Traits>& /* fm */)
 {
   orientations_ = d.orientations_;
-  TEUCHOS_ASSERT(orientations_->size()>0);
-  // If your bases really don't require orientations, pass an array of zeroes
-  // with length numCells [MDField is (numCells,numBasis)]
 }
 
 // **********************************************************************
@@ -110,10 +108,21 @@ evaluateFields(typename Traits::EvalData workset)
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // First, need to copy orientations to device
-  auto orts = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",orientations_->size());
+  auto numCells = source_.extent(0);
+  auto orts = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",numCells);
   auto orts_host = Kokkos::create_mirror_view(orts);
-  for (size_t i=0; i < orts_host.extent(0); ++i)
-    orts_host(i) = orientations_->at(i);
+
+  if (orientations_ == Teuchos::null) {
+    // If your bases don't require orientations, pass the default (0,0) orientation
+    for (size_t i=0; i < orts_host.extent(0); ++i)
+      orts_host(i) = Intrepid2::Orientation();
+  } else if (orientations_->size() == numCells) {
+    for (size_t i=0; i < orts_host.extent(0); ++i)
+      orts_host(i) = orientations_->at(i);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ERROR: Orientations set, but incorrectly!");
+  }
+  
   Kokkos::deep_copy(orts,orts_host);
 
   // TODO BWR maybe we dont need pure basis upstream?

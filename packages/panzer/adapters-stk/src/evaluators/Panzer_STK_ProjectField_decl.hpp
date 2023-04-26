@@ -86,8 +86,6 @@ public:
 
 private:
 
-  typedef typename EvalT::ScalarT ScalarT;
-
   const std::string field_name_;
   Teuchos::RCP<const panzer::PureBasis> srcBasis_;
   Teuchos::RCP<const panzer::PureBasis> dstBasis_;
@@ -95,6 +93,7 @@ private:
 
   PHX::MDField<double,panzer::Cell,panzer::BASIS> result_;
   PHX::MDField<double,panzer::Cell,panzer::BASIS> source_;
+
 };
 
 }

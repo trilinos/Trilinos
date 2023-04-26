@@ -193,7 +193,7 @@ evaluateFields(
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // FYI, this all relies on a first-order mesh
-  auto cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE 
+  auto cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE WHEN DEPRECATED
   auto numNodesPerElem = cellNodes.extent(1);
 
   auto numOwnedElems = cellNodes.extent(0);

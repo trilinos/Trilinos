@@ -142,7 +142,6 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
       }
       panzer::WorksetNeeds tmpNeeds(needs);
       tmpNeeds.cellData = panzer::CellData(worksetSize,needs.cellData.getCellTopology());
-      // TODO BWR should we pass tmpNeeds?
       return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), tmpNeeds);
     }
   }
