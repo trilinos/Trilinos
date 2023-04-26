@@ -51,6 +51,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector_fwd.hpp>
@@ -78,17 +79,29 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // test with simple example matrix and segregate first 4 rows from rest
-    //     x x x x                 x x x x
-    //     x x x x                 x x x x
-    //     x x x x x x             x x x x
-    //     x x x x x x       ==>   x x x x
-    //         x x x x x x                 x x x
-    //         x x x x x x                 x x x
-    //               x x x                 x x x
+    //     x x x x                x x x x
+    //     x x x x                x x x x
+    //     x x x x x x            x x x x
+    //     x x x x x x      ==>   x x x x
+    //         x x x x x                 x x x
+    //         x x x x x                 x x x
+    //             x x x                 x x x
     {
-      // Don't test for complex - matrix reader won't work
-      if (TST::isComplex) {success=true; return;}
-      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/segregate.mm", lib, comm);
+      RCP<Map> rowMap = MapFactory::Build(lib, 7, 0, comm);
+      RCP<CrsGraph> graph = CrsGraphFactory::Build(rowMap, 6);
+
+      graph->insertGlobalIndices(0, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3));
+      graph->insertGlobalIndices(1, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3));
+      graph->insertGlobalIndices(2, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3, 4, 5));
+      graph->insertGlobalIndices(3, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3, 4, 5));
+      graph->insertGlobalIndices(4, Teuchos::tuple<GlobalOrdinal>(2, 3, 4, 5, 6));
+      graph->insertGlobalIndices(5, Teuchos::tuple<GlobalOrdinal>(2, 3, 4, 5, 6));
+      graph->insertGlobalIndices(6, Teuchos::tuple<GlobalOrdinal>(4, 5, 6));
+      graph->fillComplete();
+
+      RCP<Matrix> A = MatrixFactory::Build(graph.getConst());
+      A->setAllToScalar(1.0);
+      A->fillComplete();
 
       TEST_EQUALITY(A.is_null(), false);
       TEST_EQUALITY(A->getGlobalNumEntries(), 33);
