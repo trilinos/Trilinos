@@ -100,7 +100,7 @@ namespace MueLuTests {
       graph->fillComplete();
 
       RCP<Matrix> A = MatrixFactory::Build(graph.getConst());
-      A->setAllToScalar(1.0);
+      A->setAllToScalar(TST::one());
       A->fillComplete();
 
       TEST_EQUALITY(A.is_null(), false);

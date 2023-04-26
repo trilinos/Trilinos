@@ -37,7 +37,6 @@
 //
 // Questions? Contact
 //                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
