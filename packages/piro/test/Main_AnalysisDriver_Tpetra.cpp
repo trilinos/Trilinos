@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
             p_exact[1] = 4;
           }
           if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
-            p_exact[0] = 6;
-            p_exact[1] = 4;
+            p_exact[0] = 4;
+            p_exact[1] = 6;
           }
           double tol = 1e-5;
 

@@ -180,8 +180,8 @@
       <ParameterList name="ROL">
         <Parameter name="Number Of Parameters" type="int" value="2" />
         <Parameter name="Response Vector Index" type="int" value="0" />
-        <Parameter name="Parameter Vector Index 0" type="int" value="0" />
-        <Parameter name="Parameter Vector Index 1" type="int" value="1" />
+        <Parameter name="Parameter Vector Index 0" type="int" value="1" />
+        <Parameter name="Parameter Vector Index 1" type="int" value="0" />
 
         <Parameter name="Seed For Thyra Randomize" type="int" value="42" />
 
