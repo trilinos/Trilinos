@@ -51,13 +51,13 @@
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 
+#ifdef HAVE_PIRO_ROL
 #include "ROL_Types.hpp"
+#endif
 
 #ifdef HAVE_PIRO_TEKO
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_PreconditionerFactory.hpp"
-#ifdef HAVE_PIRO_ROL
-#endif
 #endif
 
 namespace Piro {
@@ -94,10 +94,12 @@ public:
     Teuchos::RCP<Thyra::PreconditionerBase<Real> > create_W_prec() const;
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Real> > get_W_factory() const;
 
+#ifdef HAVE_PIRO_ROL
     void block_diagonal_hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
                     const ROL::Vector<Real> &u,
                     const ROL::Vector<Real> &z,
                     const int g_idx) const;
+#endif
 
     /** \brief . */
     Teuchos::RCP<Thyra::LinearOpBase<Real> > create_DfDp_op(int l) const;
@@ -486,7 +488,7 @@ ProductModelEvaluator<Real>::evalModelImpl(
             Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DfDp(0).getLinearOp());
         if (!Teuchos::is_null(dfdp_op))
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
-            internal_outArgs.set_DfDp( p_indices_[j], Thyra::ModelEvaluatorBase::Derivative(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dfdp_op->getNonconstBlock(0, j))));
+            internal_outArgs.set_DfDp( p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dfdp_op->getNonconstBlock(0, j))));
         }
     }
 
@@ -512,7 +514,7 @@ ProductModelEvaluator<Real>::evalModelImpl(
                             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                 "ProductModelEvaluator<Real>::evalModelImpl(): DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
                         }
-                        internal_outArgs.set_DgDp(i, p_indices_[j], Thyra::ModelEvaluatorBase::Derivative(dgdp_j_mv, dgdp_orient));
+                        internal_outArgs.set_DgDp(i, p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(dgdp_j_mv, dgdp_orient));
                     }
                 }
             }
@@ -895,6 +897,7 @@ ProductModelEvaluator<Real>::toInternalOutArgs(const Thyra::ModelEvaluatorBase::
     }
 }
 
+#ifdef HAVE_PIRO_ROL
 template <typename Real>
 void
 ProductModelEvaluator<Real>::block_diagonal_hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
@@ -938,7 +941,8 @@ ProductModelEvaluator<Real>::block_diagonal_hessian_22(const Teuchos::RCP<Thyra:
     H->endBlockFill();
 
     thyra_model_->evalModel(inArgs, outArgs);
-  }
+}
+#endif
 
 } // namespace Piro
 

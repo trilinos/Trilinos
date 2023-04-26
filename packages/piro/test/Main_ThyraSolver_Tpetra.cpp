@@ -55,6 +55,8 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Tpetra_Core.hpp"
 
+#include "Piro_ProductModelEval.hpp"
+
 #ifdef HAVE_PIRO_MUELU
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
