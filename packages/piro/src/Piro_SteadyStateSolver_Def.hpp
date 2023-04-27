@@ -86,8 +86,6 @@
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
-#include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_DefaultProductVector.hpp"
 #endif
 
 template <typename Scalar>
@@ -396,26 +394,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
   if(computeAdjointSensitivities) {
     double tol = 1e-8;
 
-    Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const>> p_spaces(num_p_);
-    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar>>> p_vecs(num_p_);
-    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar>>> g_vecs(num_p_);
-    std::vector<int> p_indices(num_p_);
-    for (auto i = 0; i < num_p_; ++i) {
-      p_indices[i] = i;
-      p_spaces[i] = this->getModel().get_p_space(i);
-      p_vecs[i] = Thyra::createMember(p_spaces[i]);
-      g_vecs[i] = Thyra::createMember(p_spaces[i]);
-    }
+    RCP<Thyra::VectorSpaceBase<Scalar> const> p_space = this->getModel().get_p_space(0);
+    RCP<Thyra::VectorBase<Scalar>> thyra_p = Thyra::createMember(p_space);
 
-    RCP<Thyra::DefaultProductVectorSpace<Scalar> const> p_space = Thyra::productVectorSpace<Scalar>(p_spaces);
-    RCP<Thyra::DefaultProductVector<Scalar>> p_prod = Thyra::defaultProductVector<Scalar>(p_space, p_vecs());
+    RCP<const Thyra::VectorBase<Scalar> > p_init = modelInArgs.get_p(0) != Teuchos::null ? modelInArgs.get_p(0) : this->getModel().getNominalValues().get_p(0);
+    Thyra::copy(*p_init, thyra_p.ptr());
 
-    for (auto i = 0; i < num_p_; ++i) {
-      RCP<const Thyra::VectorBase<Scalar> > p_init = modelInArgs.get_p(i) != Teuchos::null ? modelInArgs.get_p(i) : this->getModel().getNominalValues().get_p(i);
-      Thyra::copy(*p_init, p_prod->getNonconstVectorBlock(i).ptr());
-    }
-
-    ROL::ThyraVector<Scalar> rol_p(p_prod);
+    ROL::ThyraVector<Scalar> rol_p(thyra_p);
 
     Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const> x_space = this->getModel().get_x_space();
     Teuchos::RCP<Thyra::VectorBase<Scalar>> x = Thyra::createMember(x_space);
@@ -425,7 +410,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     Teuchos::RCP<Thyra::VectorBase<Scalar>> lambda_vec = Thyra::createMember(x_space);
     ROL::ThyraVector<Scalar> rol_lambda(lambda_vec);
 
-    RCP<Thyra::DefaultProductVector<Scalar> > current_g = Thyra::defaultProductVector<Scalar>(p_space, g_vecs());
+    RCP<Thyra::VectorBase<Scalar> > current_g = Thyra::createMember(p_space);
     ROL::ThyraVector<Scalar> rol_current_g(current_g);
 
     ROL::Ptr<ROL::Vector<Scalar> > rol_p_ptr = ROL::makePtrFromRef(rol_p);
@@ -433,12 +418,12 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     ROL::Ptr<ROL::Vector<Scalar> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
 
 
-    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, appParams, Teuchos::VERB_NONE);
     auto  stateStore = ROL::makePtr<ROL::VectorController<Scalar>>();
       
     for (int i=0; i<num_g_; ++i) {      
 
-      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, i, p_indices, appParams, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, i, appParams, Teuchos::VERB_NONE);
 
       ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
@@ -460,13 +445,12 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       RCP<Thyra::VectorBase<Scalar> > g_out = outArgs.get_g(i);
       Thyra::set_ele(0,tmp,g_out.ptr());
 
-      for (int j=0; j<num_p_; ++j) {
-        if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none() &&
-            !outArgs.get_DgDp(i,j).isEmpty()) {
 
-          RCP<Thyra::MultiVectorBase<Scalar> > dgdp_out = outArgs.get_DgDp(i,j).getMultiVector();
-          Thyra::assign(dgdp_out->col(0).ptr(), *current_g->getNonconstVectorBlock(j));
-        }
+      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, 0).none() &&
+          !outArgs.get_DgDp(i,0).isEmpty()) {
+
+        RCP<Thyra::MultiVectorBase<Scalar> > dgdp_out = outArgs.get_DgDp(i,0).getMultiVector();
+        Thyra::assign(dgdp_out->col(0).ptr(), *current_g);
       }
     }
     return;
@@ -501,8 +485,18 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
         Thyra::ModelEvaluatorBase::Derivative<Scalar> dfdp_deriv;
         if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
           dfdp_deriv = Thyra::create_DfDp_mv(*model_, l, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        } else if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)) {
+          dfdp_deriv = Thyra::create_DfDp_mv(*model_, l, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
         } else if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
           dfdp_deriv = model_->create_DfDp_op(l);
+          RCP<Thyra::LinearOpBase<Scalar> > dfdp_op =
+              dfdp_deriv.getLinearOp();
+          if (Teuchos::is_null(dfdp_op)) {
+            TEUCHOS_TEST_FOR_EXCEPTION(
+                true, std::logic_error,
+                std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
+                "For df/dp, getLinearOp is null. " << std::endl);
+          }
         }
         modelOutArgs.set_DfDp(l, dfdp_deriv);
       }
@@ -591,12 +585,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
         // to get the right layout in most situations.
 
         if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-          auto dfdp_op = this->getModel().create_DfDp_op(i);
+          Thyra::ModelEvaluatorBase::Derivative<Scalar> dfdp_deriv = this->getModel().create_DfDp_op(i);
+          RCP<Thyra::LinearOpBase<Scalar> > dfdp_op = dfdp_deriv.getLinearOp();
           TEUCHOS_TEST_FOR_EXCEPTION(
               dfdp_op == Teuchos::null, std::logic_error,
               std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
               "Needed df/dp operator (" << i << ") is null!" << std::endl);
-          modelOutArgs.set_DfDp(i,dfdp_op);
+          modelOutArgs.set_DfDp(i,dfdp_deriv);
         } else {
           /*
           TEUCHOS_TEST_FOR_EXCEPTION(
@@ -683,51 +678,49 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
               std::endl);
 
         // dg/dp
-        for (int i=0; i<num_p_; i++) {
-          if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i).none()) {
-            Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp = outArgs.get_DgDp(j,i);
-            if (dgdp.getLinearOp() != Teuchos::null) {
-              auto p_space = this->getModel().get_p_space(i);
-              int num_params = p_space->dim();
-              auto p_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(p_space);
-              bool p_dist = !p_space_plus->isLocallyReplicated();//p_space->DistributedGlobal();
-              Thyra::ModelEvaluatorBase::DerivativeSupport ds_dgdp = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
-              if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-                auto dgdp_op =
-                    this->getModel().create_DgDp_op(j,i);
-                TEUCHOS_TEST_FOR_EXCEPTION(
-                    dgdp_op == Teuchos::null, std::logic_error,
-                    std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
-                    "Needed dg/dp operator (" << j << "," << i << ") is null!" <<
-                    std::endl);
-                modelOutArgs.set_DgDp(j,i,dgdp_op);
-              }
-              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
-                auto tmp_dgdp = createMembers(g_space, num_params);
-                Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-                dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-                modelOutArgs.set_DgDp(j,i,dmv_dgdp);
-              }
-              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
-                auto tmp_dgdp = createMembers(p_space, num_responses);
-                Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-                dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
-                modelOutArgs.set_DgDp(j,i,dmv_dgdp);
-              }
-              else
-                TEUCHOS_TEST_FOR_EXCEPTION(
-                    true, std::logic_error,
-                    std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
-                    "For dg/dp(" << j << "," << i <<
-                    ") with operator sensitivities, "<<
-                    "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
-                    "DERIV_MV_JACOBIAN_FORM with p not distributed, or "
-                    "DERIV_MV_GRADIENT_FORM with g not distributed." <<
-                    std::endl);
+        if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,0).none()) {
+          Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp = outArgs.get_DgDp(j,0);
+          if (dgdp.getLinearOp() != Teuchos::null) {
+            auto p_space = this->getModel().get_p_space(0);
+            int num_params = p_space->dim();
+            auto p_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(p_space);
+            bool p_dist = !p_space_plus->isLocallyReplicated();//p_space->DistributedGlobal();
+            Thyra::ModelEvaluatorBase::DerivativeSupport ds_dgdp = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,0);
+            if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+              auto dgdp_op =
+                  this->getModel().create_DgDp_op(j,0);
+              TEUCHOS_TEST_FOR_EXCEPTION(
+                  dgdp_op == Teuchos::null, std::logic_error,
+                  std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
+                  "Needed dg/dp operator (" << j << "," << 0 << ") is null!" <<
+                  std::endl);
+              modelOutArgs.set_DgDp(j,0,dgdp_op);
+            }
+            else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
+              auto tmp_dgdp = createMembers(g_space, num_params);
+              Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+              dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+              modelOutArgs.set_DgDp(j,0,dmv_dgdp);
+            }
+            else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
+              auto tmp_dgdp = createMembers(p_space, num_responses);
+              Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+              dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+              modelOutArgs.set_DgDp(j,0,dmv_dgdp);
             }
             else
-              modelOutArgs.set_DgDp(j,i,outArgs.get_DgDp(j,i));
+              TEUCHOS_TEST_FOR_EXCEPTION(
+                  true, std::logic_error,
+                  std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
+                  "For dg/dp(" << j << "," << 0 <<
+                  ") with operator sensitivities, "<<
+                  "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+                  "DERIV_MV_JACOBIAN_FORM with p not distributed, or "
+                  "DERIV_MV_GRADIENT_FORM with g not distributed." <<
+                  std::endl);
           }
+          else
+            modelOutArgs.set_DgDp(j,0,outArgs.get_DgDp(j,0));
         }
       }
     }
@@ -738,7 +731,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities::calc g, df/dp, dg/dp, dg/dx")));
     model_->evalModel(modelInArgs, modelOutArgs);
   }
-
 
   if(computeForwardSensitivities) {
 
@@ -751,6 +743,12 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
           const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
               modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
           if (!dfdp_support.none()) {
+            const bool dfdp_linOpSupport =
+                dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+            const bool dfdp_mvJacSupport =
+                dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+            const bool dfdp_mvGradSupport =
+                dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
             const Thyra::ModelEvaluatorBase::Derivative<Scalar> dfdp_deriv =
                 modelOutArgs.get_DfDp(l);
             const RCP<Thyra::MultiVectorBase<Scalar> > dfdp_mv =
@@ -760,6 +758,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
             if (Teuchos::is_null(dfdp_op)) {
               dfdp_op = dfdp_mv;
             }
+
+            if (Teuchos::is_null(dfdp_mv) && Teuchos::is_null(dfdp_op))
+              TEUCHOS_TEST_FOR_EXCEPTION(
+                  true, std::logic_error,
+                  std::endl << "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
+                  "For df/dp, both getMultiVector and getLinearOp are null. " << dfdp_linOpSupport << " " << dfdp_mvJacSupport << " " << dfdp_mvGradSupport <<
+                  std::endl);
 
             const Thyra::ModelEvaluatorBase::Derivative<Scalar> dxdp_deriv =
                 outArgs.get_DgDp(num_g_, l);
@@ -881,7 +886,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                             dgdp_mv.ptr(),
                             Teuchos::ScalarTraits<Scalar>::one(),
                             Teuchos::ScalarTraits<Scalar>::one());
-                      } else {
+                      } else if (Teuchos::nonnull(minus_dxdp_mv)) {
                         Thyra::apply(
                             *minus_dxdp_mv,
                             Thyra::TRANS,
@@ -889,6 +894,11 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                             dgdp_mv.ptr(),
                             -Teuchos::ScalarTraits<Scalar>::one(),
                             Teuchos::ScalarTraits<Scalar>::one());
+                      } else {
+                        TEUCHOS_TEST_FOR_EXCEPTION(
+                            true,
+                            std::invalid_argument,
+                            "Both dxdp_mv and minus_dxdp_mv are null.\n");
                       }
                     } else {
                       if (Teuchos::nonnull(dxdp_mv)) {
@@ -899,7 +909,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                             dgdp_mv.ptr(),
                             Teuchos::ScalarTraits<Scalar>::one(),
                             Teuchos::ScalarTraits<Scalar>::one());
-                      } else {
+                      } else if (Teuchos::nonnull(minus_dxdp_mv)) {
                         Thyra::apply(
                             *dgdx_op,
                             Thyra::NOTRANS,
@@ -907,6 +917,11 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                             dgdp_mv.ptr(),
                             -Teuchos::ScalarTraits<Scalar>::one(),
                             Teuchos::ScalarTraits<Scalar>::one());
+                      } else {
+                        TEUCHOS_TEST_FOR_EXCEPTION(
+                            true,
+                            std::invalid_argument,
+                            "Both dxdp_mv and minus_dxdp_mv are null.\n");
                       }
                     }
                   }
@@ -1058,21 +1073,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                       "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
                       "The code related to df/dp operator and dg/dp with DERIV_MV_JACOBIAN_FORM layout has been commented out because never tested.  " <<
                       std::endl);
-                    /*
-                    TEUCHOS_TEST_FOR_EXCEPTION(
-                        !dgdp_range->isLocallyReplicated(),
-                        std::logic_error,
-                        std::endl <<
-                        "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
-                        "Can\'t handle special case:  " <<
-                        " df/dp operator, " <<
-                        " transposed, distributed dg/dp. " << std::endl);
-                    Thyra::DetachedMultiVectorView<Scalar> dgdp_out_view(dgdp_out);
-                    Thyra::DetachedMultiVectorView<Scalar> tmp_view(tmp);
-                    for (int jj=0; jj<dgdp_out_view.numSubCols(); jj++)
-                      for (int ii=0; ii<dgdp_out_view.subDim(); ii++)
-                        dgdp_out_view(ii,jj) += tmp_view(jj,ii);
-                        */
                   }
                 }
                 else {
@@ -1083,90 +1083,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                     "Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities():  " <<
                     "The code related to df/dp multivector has been commented out because never tested.  " <<
                     std::endl);
-
-                  /*
-                  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> arg1, arg2;
-                  Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-                      modelOutArgs.get_DgDp(j,i).getMultiVectorOrientation();
-                  Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dfdp_orient =
-                      modelOutArgs.get_DfDp(i).getMultiVectorOrientation();
-                  Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdx_orient =
-                      modelOutArgs.get_DgDx(j).getMultiVectorOrientation();
-
-
-                  Thyra::DetachedMultiVectorView<Scalar> dgdp_out_view(dgdp_out);
-                  int sub_num_g = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
-                      dgdp_out_view.subDim() : dgdp_out_view.numSubCols();
-                  int sub_num_p = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
-                      dgdp_out_view.numSubCols() : dgdp_out_view.subDim();
-                  if(dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM){
-                    //dgdp (np columns of g_space vectors)
-
-                    if (dgdx_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
-                      Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
-                      if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                        for (int ip=0; ip<sub_num_p; ip++)
-                          for (int ig=0; ig<sub_num_g; ig++) {
-                            for (int ix=0; ix<xbar_view.numSubCols(); ix++)
-                              dgdp_out_view(ip,ig) += xbar_view(ix,ig)*dfdp_view(ip,ix);
-                          }
-                      }
-                      else {
-                        for (int ip=0; ip<sub_num_p; ip++)
-                          for (int ig=0; ig<sub_num_g; ig++)
-                            for (int ix=0; ix<xbar_view.numSubCols(); ix++)
-                              dgdp_out_view(ip,ig) += xbar_view(ix,ig)*dfdp_view(ix,ip);
-                      }
-                    }
-                    else if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      for (int ip=0; ip<sub_num_p; ip++)
-                        for (int ig=0; ig<sub_num_g; ig++)
-                          dgdp_out_view(ip,ig) += Thyra::scalarProd(*xbar->col(ig),*dfdp->col(ip));
-                    }
-                    else {
-                      Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
-                      Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
-                      for (int ip=0; ip<dgdp_out_view.numSubCols(); ip++)
-                        for (int ig=0; ig<dgdp_out_view.subDim(); ig++)
-                          for (int ix=0; ix<xbar_view.subDim(); ix++)
-                            dgdp_out_view(ip,ig) += xbar_view(ig,ix)*dfdp_view(ix,ip);
-                    }
-                  }
-                  else {
-                    //dgdp (ng columns of p_space vectors)
-                    if (dgdx_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
-                      Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
-                      if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                        for (int ip=0; ip<sub_num_p; ip++)
-                          for (int ig=0; i<sub_num_g; ig++) {
-                            for (int ix=0; ix<xbar_view.numSubCols(); ix++)
-                              dgdp_out_view(ig,ip) += xbar_view(ix,ig)*dfdp_view(ip,ix);
-                          }
-                      }
-                      else {
-                        for (int ip=0; ip<sub_num_p; ip++)
-                          for (int ig=0; ig<sub_num_g; ig++)
-                            for (int ix=0; ix<xbar_view.numSubCols(); ix++)
-                              dgdp_out_view(ig,ip) += xbar_view(ix,ig)*dfdp_view(ix,ip);
-                      }
-                    }
-                    else if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      for (int ip=0; ip<sub_num_p; ip++)
-                        for (int ig=0; ig<sub_num_g; ig++)
-                          dgdp_out_view(ig,ip) += Thyra::scalarProd(*xbar->col(ig),*dfdp->col(ip));
-                    }
-                    else {
-                      Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
-                      Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
-                      for (int ip=0; ip<dgdp_out_view.subDim(); ip++)
-                        for (int ig=0; ig<dgdp_out_view.numSubCols(); ig++)
-                          for (int ix=0; ix<xbar_view.subDim(); ix++)
-                            dgdp_out_view(ig,ip) += xbar_view(ig,ix)*dfdp_view(ix,ip);
-                    }
-                  }
-                  */
                 }
               }
             }
@@ -1203,30 +1119,15 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
 
   double tol = 1e-8;
 
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const>> p_spaces(num_p_);
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar>>> p_vecs(num_p_);
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar>>> direction_p_vecs(num_p_);
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar>>> hv_vecs(num_p_);
-  std::vector<int> p_indices(num_p_);
-  for (auto i = 0; i < num_p_; ++i) {
-    p_indices[i] = i;
-    p_spaces[i] = this->getModel().get_p_space(i);
-    p_vecs[i] = Thyra::createMember(p_spaces[i]);
-    direction_p_vecs[i] = Thyra::createMember(p_spaces[i]);
-    hv_vecs[i] = Thyra::createMember(p_spaces[i]);
-  }
+  RCP<Thyra::VectorSpaceBase<Scalar> const> p_space = this->getModel().get_p_space(0);
+  RCP<Thyra::VectorBase<Scalar>> thyra_p = Thyra::createMember(p_space);
+  RCP<Thyra::VectorBase<Scalar>> thyra_direction_p = Thyra::createMember(p_space);
 
-  RCP<Thyra::DefaultProductVectorSpace<Scalar> const> p_space = Thyra::productVectorSpace<Scalar>(p_spaces);
-  RCP<Thyra::DefaultProductVector<Scalar>> p_prod = Thyra::defaultProductVector<Scalar>(p_space, p_vecs());
-  RCP<Thyra::DefaultProductVector<Scalar>> direction_p_prod = Thyra::defaultProductVector<Scalar>(p_space, direction_p_vecs());
+  RCP<const Thyra::VectorBase<Scalar> > p_init = modelInArgs.get_p(0) != Teuchos::null ? modelInArgs.get_p(0) : this->getModel().getNominalValues().get_p(0);
+  Thyra::copy(*p_init, thyra_p.ptr());
 
-  for (auto i = 0; i < num_p_; ++i) {
-    RCP<const Thyra::VectorBase<Scalar> > p_init = modelInArgs.get_p(i) != Teuchos::null ? modelInArgs.get_p(i) : this->getModel().getNominalValues().get_p(i);
-    Thyra::copy(*p_init, p_prod->getNonconstVectorBlock(i).ptr());
-  }
-
-  ROL::ThyraVector<Scalar> rol_p(p_prod);
-  ROL::ThyraVector<Scalar> rol_direction_p(direction_p_prod);
+  ROL::ThyraVector<Scalar> rol_p(thyra_p);
+  ROL::ThyraVector<Scalar> rol_direction_p(thyra_direction_p);
 
   Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const> x_space = this->getModel().get_x_space();
   Teuchos::RCP<Thyra::VectorBase<Scalar>> x = Thyra::createMember(x_space);
@@ -1236,7 +1137,7 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   Teuchos::RCP<Thyra::VectorBase<Scalar>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<Scalar> rol_lambda(lambda_vec);
 
-  RCP<Thyra::DefaultProductVector<Scalar> > current_hv = Thyra::defaultProductVector<Scalar>(p_space, hv_vecs());
+  RCP<Thyra::VectorBase<Scalar>> current_hv = Thyra::createMember(p_space);
   ROL::ThyraVector<Scalar> rol_current_hv(current_hv);
 
   ROL::Ptr<ROL::Vector<Scalar> > rol_p_ptr = ROL::makePtrFromRef(rol_p);
@@ -1249,11 +1150,11 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   }
 
 
-  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, appParams, Teuchos::VERB_NONE);
   auto stateStore = ROL::makePtr<ROL::VectorController<Scalar>>(); 
   
   for (int g_index=0; g_index<num_g_; ++g_index) {
-    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, appParams, Teuchos::VERB_NONE);
     
     ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
     ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);    
@@ -1269,23 +1170,20 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
     }
 
     for (auto j = 0; j < n_directions; ++j) {
-      for (int p_index=0; p_index<num_p_; ++p_index) {
-        if (Teuchos::nonnull(modelInArgs.get_p_direction(p_index))) {
-          const int current_n_directions = modelInArgs.get_p_direction(p_index)->domain()->dim();
-          if (j < current_n_directions) {
-            RCP<const Thyra::VectorBase<Scalar> > current_p_direction = modelInArgs.get_p_direction(p_index)->col(j);
-            Thyra::copy(*current_p_direction, direction_p_prod->getNonconstVectorBlock(p_index).ptr());
-          }
+      if (Teuchos::nonnull(modelInArgs.get_p_direction(0))) {
+        const int current_n_directions = modelInArgs.get_p_direction(0)->domain()->dim();
+        if (j < current_n_directions) {
+          RCP<const Thyra::VectorBase<Scalar> > current_p_direction = modelInArgs.get_p_direction(0)->col(j);
+          Thyra::copy(*current_p_direction, thyra_direction_p.ptr());
         }
       }
 
       reduced_obj.hessVec(rol_current_hv, rol_direction_p, rol_p, tol);
 
-      for (int p_index=0; p_index<num_p_; ++p_index) {
-        if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index, p_index, p_index)) {
-          RCP<Thyra::MultiVectorBase<Scalar> > reduced_hv_out = outArgs.get_hess_vec_prod_g_pp(g_index, p_index, p_index);
-          Thyra::assign(reduced_hv_out->col(j).ptr(), *current_hv->getNonconstVectorBlock(p_index));
-        }
+      
+      if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index, 0, 0)) {
+        RCP<Thyra::MultiVectorBase<Scalar> > reduced_hv_out = outArgs.get_hess_vec_prod_g_pp(g_index, 0, 0);
+        Thyra::assign(reduced_hv_out->col(j).ptr(), *current_hv);
       }
     }
   }
