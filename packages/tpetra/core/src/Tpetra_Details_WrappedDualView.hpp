@@ -119,6 +119,21 @@ sync_device(DualViewType dualView) { }
 
 }
 
+/// \brief Whether WrappedDualView reference count checking is enabled. Initially true.
+/// Since the DualView sync functions are not thread-safe, tracking should be disabled
+/// during host-parallel regions where WrappedDualView is used.
+
+extern bool wdvTrackingEnabled;
+
+/// \brief Disable WrappedDualView reference-count tracking and syncing.
+/// Call this before entering a host-parallel region that uses WrappedDualView.
+/// For each WrappedDualView used in the parallel region, its view must be accessed
+/// (e.g. getHostView...) before disabling the tracking, so that it may be synced and marked modified correctly.
+void disableWDVTracking();
+
+//! Enable WrappedDualView reference-count tracking and syncing. Call this after exiting a host-parallel region that uses WrappedDualView.
+void enableWDVTracking();
+
 /// \brief A wrapper around Kokkos::DualView to safely manage data
 ///        that might be replicated between host and device.
 template <typename DualViewType>
@@ -596,7 +611,7 @@ private:
   ///        check use counts and take care of sync/modify for the underlying DualView.
   ///
   /// The logic is this:
-  /// 1. If in a host-parallel region, then never take the sync path.
+  /// 1. If WrappedDualView tracking is disabled, then never take the sync path.
   /// 2. For non-GPU architectures where the host/device pointers are aliased
   ///    we don't need the "sync path."
   /// 3. For GPUs, we always need the "sync path" in two cases: first, if we're using a memory space
@@ -611,7 +626,7 @@ private:
   /// "sync path"
   bool needsSyncPath() const {
 
-    if(Kokkos::DefaultHostExecutionSpace().in_parallel())
+    if(!wdvTrackingEnabled)
       return false;
 
 #ifdef KOKKOS_ENABLE_CUDA

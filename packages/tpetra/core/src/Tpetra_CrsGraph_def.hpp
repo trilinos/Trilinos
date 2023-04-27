@@ -4474,6 +4474,7 @@ namespace Tpetra {
         size_t totalNumDups = 0;
         //Sync and mark-modified the local indices before disabling WDV tracking
         lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
+        Details::disableWDVTracking();
         Kokkos::parallel_reduce(range,
           [this, sorted, merged] (const LO lclRow, size_t& numDups)
           {
@@ -4481,6 +4482,7 @@ namespace Tpetra {
             numDups += this->sortAndMergeRowIndices(rowInfo, sorted, merged);
           },
           totalNumDups);
+        Details::enableWDVTracking();
         std::ostringstream os;
         os << *prefix << "totalNumDups=" << totalNumDups << endl;
         std::cerr << os.str();
@@ -4488,12 +4490,14 @@ namespace Tpetra {
       else {
         //Sync and mark-modified the local indices before disabling WDV tracking
         lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
+        Details::disableWDVTracking();
         Kokkos::parallel_for(range,
           [this, sorted, merged] (const LO lclRow)
           {
             const RowInfo rowInfo = this->getRowInfo(lclRow);
             this->sortAndMergeRowIndices(rowInfo, sorted, merged);
           });
+        Details::enableWDVTracking();
       }
       this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row
@@ -5885,6 +5889,7 @@ namespace Tpetra {
     else if(isGloballyIndexed())
       gblInds_wdv.getHostView(Access::ReadOnly);
 
+    Details::disableWDVTracking();
     Kokkos::parallel_scan
       ("Tpetra::CrsGraph::packFillActiveNew: Pack exports",
        inputRange, [=, &prefix]
@@ -5962,6 +5967,7 @@ namespace Tpetra {
          // has no entries in this row (or indeed, in any row on this
          // process) to pack.
       });
+    Details::enableWDVTracking();
 
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     //   (errCount != 0, std::logic_error, "Packing encountered "
