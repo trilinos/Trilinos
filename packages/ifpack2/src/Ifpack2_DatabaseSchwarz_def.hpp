@@ -340,13 +340,13 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
     auto X_view = X.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto Y_view = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-    Teuchos::LAPACK<int, double> lapack;
+    Teuchos::LAPACK<int, typename row_matrix_type::scalar_type> lapack;
     int INFO = 0;
     for(unsigned int ipatch=0; ipatch<NumPatches_; ipatch++) {
       int idatabase = DatabaseIndices_[ipatch];
 
       // 2a. Split X into Xk on each local patch
-      Teuchos::Array<double> x_patch(PatchSize_);
+      Teuchos::Array<typename row_matrix_type::scalar_type> x_patch(PatchSize_);
       for(unsigned int i=0; i<x_patch.size(); ++i) {
         x_patch[i] = X_view(PatchIndices_[ipatch][i],0);
       }
@@ -365,7 +365,7 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
 
       // INFO < 0 is a bug.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        INFO < 0, std::logic_error, "Ifpack2::DenseContainer::factor: "
+        INFO < 0, std::logic_error, "Ifpack2::DatabaseSchwarz::compute: "
         "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
         "incorrectly.  INFO = " << INFO << " < 0.  "
         "Please report this bug to the Ifpack2 developers.");
@@ -373,7 +373,7 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
       // either with the choice of rows the rows we extracted, or with the
       // input matrix itself.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        INFO > 0, std::runtime_error, "Ifpack2::DenseContainer::factor: "
+        INFO > 0, std::runtime_error, "Ifpack2::DatabaseSchwarz::compute: "
         "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
         "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
         "(one-based index i) is exactly zero.  This probably means that the input "
@@ -515,29 +515,35 @@ void DatabaseSchwarz<MatrixType>::compute()
       bool found_match = false;
       if(!SkipDatabase_) {
         for(size_t idatabase=0; idatabase<DatabaseMatrices_.size(); ++idatabase) {
-          double abserror=0;
 
+          // sum errors
+          typename Teuchos::ScalarTraits<typename row_matrix_type::scalar_type>::magnitudeType abserror = 0.0;
           for(local_ordinal_type irow=0; irow<PatchSize_; irow++) {
             for(local_ordinal_type icol=0; icol<PatchSize_; ++icol) {
               DenseMatRCP database_candidate = DatabaseMatrices_[idatabase];
-              abserror += std::abs((*patch_matrix)(irow,icol)-(*database_candidate)(irow,icol));
+              abserror += Teuchos::ScalarTraits<typename row_matrix_type::scalar_type>::magnitude((*patch_matrix)(irow,icol)-(*database_candidate)(irow,icol));
             }
           }
-          if(abserror < PatchTolerance_) {
+
+          // check if this error is acceptable; if so, mark the match and break
+          if(abserror < Teuchos::as<typename Teuchos::ScalarTraits<typename row_matrix_type::scalar_type>::magnitudeType>(PatchTolerance_)) {
             DatabaseIndices_[ipatch] = idatabase;
             found_match = true;
             break;
           }
         }
       }
+
+      // if no match was found, append patch_matrix to the database
       if(!found_match) {
-        // add the matrix Ak to the database
         DatabaseMatrices_.push_back(patch_matrix);
         DatabaseIndices_[ipatch] = DatabaseMatrices_.size()-1;
-        if(DatabaseMatrices_[DatabaseMatrices_.size()-1].is_null())
-          std::cerr << "The database matrix is null!" << std::endl;
+        TEUCHOS_TEST_FOR_EXCEPTION(DatabaseMatrices_[DatabaseMatrices_.size()-1].is_null(), std::logic_error,
+          "Ifpack2::DatabaseSchwarz::compute: A matrix was added to the database, but appears to be null!"
+          "Please report this bug to the Ifpack2 developers.");
       }
     }
+
     // compute proc-local overlap weights
     for(unsigned int i=0; i<index_count.size(); ++i) {
       Weights_[i] = 1./index_count[i];
@@ -551,7 +557,7 @@ void DatabaseSchwarz<MatrixType>::compute()
     }
 
     // Phase 3: factor the patches using LAPACK (GETRF for factorization)
-    Teuchos::LAPACK<int, double> lapack;
+    Teuchos::LAPACK<int, typename row_matrix_type::scalar_type> lapack;
     int INFO = 0;
     ipiv_.resize(DatabaseSize_*PatchSize_);
     std::fill(ipiv_.begin (), ipiv_.end (), 0);
@@ -566,7 +572,7 @@ void DatabaseSchwarz<MatrixType>::compute()
 
       // INFO < 0 is a bug.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        INFO < 0, std::logic_error, "Ifpack2::DenseContainer::factor: "
+        INFO < 0, std::logic_error, "Ifpack2::DatabaseSchwarz::compute: "
         "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
         "incorrectly.  INFO = " << INFO << " < 0.  "
         "Please report this bug to the Ifpack2 developers.");
@@ -577,7 +583,7 @@ void DatabaseSchwarz<MatrixType>::compute()
         std::cout << "SINGULAR LOCAL MATRIX, COUNT=" << database_counts[idatabase] << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
-        INFO > 0, std::runtime_error, "Ifpack2::DenseContainer::factor: "
+        INFO > 0, std::runtime_error, "Ifpack2::DatabaseSchwarz::compute: "
         "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
         "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
         "(one-based index i) is exactly zero.  This probably means that the input "

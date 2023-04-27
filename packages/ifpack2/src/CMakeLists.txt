@@ -228,8 +228,8 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Chebyshev
     Container
     BandedContainer
-    DenseContainer
     DatabaseSchwarz
+    DenseContainer
     Diagonal
     DiagonalFilter
     DropFilter
