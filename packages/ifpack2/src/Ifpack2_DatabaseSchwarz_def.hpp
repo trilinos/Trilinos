@@ -347,8 +347,10 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
 
       // 2a. Split X into Xk on each local patch
       Teuchos::Array<typename row_matrix_type::scalar_type> x_patch(PatchSize_);
-      for(unsigned int i=0; i<x_patch.size(); ++i) {
-        x_patch[i] = X_view(PatchIndices_[ipatch][i],0);
+      for(unsigned int c=0; c<X_view.extent(1); ++c) {
+        for(unsigned int i=0; i<x_patch.size(); ++i) {
+          x_patch[i] = X_view(PatchIndices_[ipatch][i],c);
+        }
       }
 
       // 2b. Solve each using Lapack::GETRS
@@ -380,8 +382,10 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
         "patch is singular.");
 
       // 2c. Add alpha*weights*Xk into Y for each Xk
-      for(unsigned int i=0; i<x_patch.size(); ++i) {
-        Y_view(PatchIndices_[ipatch][i],0) += alpha*Weights_[PatchIndices_[ipatch][i]]*x_patch[i];
+      for(unsigned int c=0; c<Y_view.extent(1); ++c) {
+        for(unsigned int i=0; i<x_patch.size(); ++i) {
+          Y_view(PatchIndices_[ipatch][i],c) += alpha*Weights_[PatchIndices_[ipatch][i]]*x_patch[i];
+        }
       }
     }
   }
@@ -546,6 +550,10 @@ void DatabaseSchwarz<MatrixType>::compute()
 
     // compute proc-local overlap weights
     for(unsigned int i=0; i<index_count.size(); ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(index_count[i] == 0.0, std::logic_error,
+        "Ifpack2::DatabaseSchwarz::compute: DOF " << i << " has no corresponding patch! "
+        "All DOFs must be able to locate in a patch to use this method! "
+        "Have you considered adjusting the patch size? Currently it is " << PatchSize_ << ".");
       Weights_[i] = 1./index_count[i];
     }
     DatabaseSize_ = DatabaseMatrices_.size();

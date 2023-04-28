@@ -117,7 +117,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2DatabaseSchwarz, Test0, Scalar, LocalOr
 
   out << "Filling in ParameterList for DatabaseSchwarz" << endl;
 
-  params.set ("database schwarz: patch size", static_cast<typename Ifpack2::DatabaseSchwarz<row_matrix_type>::local_ordinal_type>(9));
+  // GH: The test matrix has nnzPerRow = [2 3 3 3 2] (probably a 1D Laplacian),
+  // so we set a small patch size of 3, which results in 2 patches that compress down to a database size of 1
+  params.set ("database schwarz: patch size", static_cast<typename Ifpack2::DatabaseSchwarz<row_matrix_type>::local_ordinal_type>(3));
   params.set ("database schwarz: patch tolerance", 1e-6);
   params.set ("database schwarz: skip database", false);
   params.set ("database schwarz: print database summary", true);
@@ -159,7 +161,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2DatabaseSchwarz, Test0, Scalar, LocalOr
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
   Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
 
-  //TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*STS::eps ());
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*STS::eps ());
 }
 
 
