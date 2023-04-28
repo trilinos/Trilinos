@@ -186,9 +186,7 @@ namespace MueLu {
     std::ostringstream out;
     if (SmootherPrototype::IsSetup()) {
       if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef MUELU_HAVE_TPETRA
         out << tSolver_->description();
-#endif
       }
     } else {
       out << "BELOS {type = " << type_ << "}";
@@ -207,21 +205,17 @@ namespace MueLu {
     }
 
     if (verbLevel & External) {
-#ifdef MUELU_HAVE_TPETRA
       if (tSolver_ != Teuchos::null) {
         Teuchos::OSTab tab2(out);
         out << *tSolver_ << std::endl;
       }
-#endif
     }
 
     if (verbLevel & Debug) {
       if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef MUELU_HAVE_TPETRA
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
              << "-" << std::endl
              << "RCP<solver_>: " << tSolver_ << std::endl;
-#endif
       }
     }
   }

@@ -2095,7 +2095,6 @@ namespace MueLu {
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
       } else {
-#ifdef MUELU_HAVE_TPETRA
         if (D0_T_R11_colMapsMatch_) {
           // Column maps of D0_T and R11 match, and we're running Tpetra
           {
@@ -2110,9 +2109,7 @@ namespace MueLu {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*P11res_),Teuchos::NO_TRANS);
           }
-        } else
-#endif
-        {
+        } else {
           {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
