@@ -78,10 +78,6 @@
 #include <EpetraExt_RowMatrixOut.h>
 #endif
 
-#ifdef MueLu_UNDEFINE_Tpetra
-#undef HAVE_MUELU_TPETRA
-#endif
-
 #include <TpetraExt_MatrixMatrix.hpp>
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>

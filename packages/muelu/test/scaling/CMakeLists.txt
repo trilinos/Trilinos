@@ -148,13 +148,6 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
-  # The option TARGET_DEFINES calls cmake's target_compile_definitions under the hood.
-  # This defines the preprocessor macro MueLu_UNDEFINE_Tpetra solely for
-  # the target "ImportPerformanceEpetra".  This effectively allows compilation of the test with only
-  # Epetra defined.
-  # Here is the equivalent cmake call:
-  #   target_compile_definitions(MueLu_ImportPerformanceEpetra PUBLIC ${PACKAGE_NAME}_UNDEFINE_Tpetra=1)
-
   TRIBITS_ADD_EXECUTABLE(
     ImportPerformanceEpetra
     SOURCES ImportPerformance
