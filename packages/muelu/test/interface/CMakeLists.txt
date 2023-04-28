@@ -4,7 +4,6 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
 #
@@ -41,12 +40,7 @@ TRIBITS_ADD_EXECUTABLE(
 #
 
 # Run the ParameterListInterpreter test with a single thread to avoid non-deterministic behavior
-IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
-  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-num-threads=1")
-ELSE()
-  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD "")
-ENDIF()
-
+SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-num-threads=1")
 
 
 # Test that demangling is enabled, otherwise the test would fail even is they are logically correct.
@@ -121,7 +115,7 @@ IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "
 
   ENDIF()
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
     string(CONCAT TEST_ARGS "--linAlgebra=Tpetra" "${${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD}")
 
