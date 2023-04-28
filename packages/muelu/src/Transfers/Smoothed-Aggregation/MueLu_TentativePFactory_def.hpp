@@ -62,10 +62,7 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_IO.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraBlockCrsMatrix.hpp"
-//#include "Tpetra_BlockCrsMatrix.hpp"
-#endif
 
 #include "MueLu_TentativePFactory_decl.hpp"
 
@@ -283,8 +280,6 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPuncoupledBlockCrs(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                           RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
-#ifdef HAVE_MUELU_TPETRA
-
     /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
@@ -473,9 +468,6 @@ namespace MueLu {
     } //for (GO agg = 0; agg < numAggs; agg++)
 
     Ptentative = P_wrap;
-#else
-    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
-#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

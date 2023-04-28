@@ -482,7 +482,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       if (node == "") {
         typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
@@ -602,9 +601,6 @@ int main(int argc, char* argv[]) {
       } else {
         throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
       }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

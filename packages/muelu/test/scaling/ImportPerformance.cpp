@@ -82,9 +82,7 @@
 #undef HAVE_MUELU_TPETRA
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
-#endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
@@ -361,7 +359,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
   Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrixStruct<SC,LO,GO,NO>  crs_matrix_struct_type;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO>        crs_matrix_type;
     typedef Tpetra::Import<LO,GO,NO>              import_type;
@@ -388,8 +385,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     auto tm2 = TimeMonitor::getNewTimer("NaiveTransfer: BuildImport");
     import_type NaiveImport(Pview.importMatrix->getColMap(),Pu->getDomainMap());
     Au->getComm()->barrier();
-
-#endif // defined(HAVE_MUELU_TPETRA)
   }
   else if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA)

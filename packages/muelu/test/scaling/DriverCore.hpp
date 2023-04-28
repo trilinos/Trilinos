@@ -66,7 +66,6 @@
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #include <Xpetra_TpetraOperator.hpp>
 #include <MueLu_TpetraOperator.hpp>
@@ -82,7 +81,6 @@ namespace Impl {
   extern void register_GmresSingleReduce (const bool verbose);
 } // namespace Impl
 } // namespace BelosTpetra
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
@@ -185,7 +183,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
    for (int i = 0; i <= numRebuilds; i++) {
      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
      if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX)
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac      = Utilities::Op2NonConstTpetraCrs(A);
        RCP<Tpetra::Operator<SC,LO,GO,NO> > At       = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList);
@@ -297,21 +295,20 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
   }
 
   // Get the raw matrices for matvec testing
-#if defined(HAVE_MUELU_TPETRA)
-      Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Atpetra;
-      Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Xtpetra,Btpetra;
-      if(lib==Xpetra::UseTpetra) {
-        Atpetra = Utilities::Op2NonConstTpetraCrs(A);
-        Xtpetra = rcp(& Xpetra::toTpetra(*X),false);
-        Btpetra = rcp(& Xpetra::toTpetra(*B),false);
-      }
-#endif
+  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Atpetra;
+  Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Xtpetra,Btpetra;
+  if(lib==Xpetra::UseTpetra) {
+    Atpetra = Utilities::Op2NonConstTpetraCrs(A);
+    Xtpetra = rcp(& Xpetra::toTpetra(*X),false);
+    Btpetra = rcp(& Xpetra::toTpetra(*B),false);
+  }
+
 #if defined(HAVE_MUELU_EPETRA)
-      Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
-      Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
-      if(lib==Xpetra::UseEpetra) {
-        Matvec_Wrapper<SC,LO,GO,NO>::UnwrapEpetra(A,X,B,Aepetra,Xepetra,Bepetra);
-      }
+  Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
+  Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
+  if(lib==Xpetra::UseEpetra) {
+    Matvec_Wrapper<SC,LO,GO,NO>::UnwrapEpetra(A,X,B,Aepetra,Xepetra,Bepetra);
+  }
 #endif
 
   for(int solveno = 0; solveno<=numResolves; solveno++) {
@@ -324,9 +321,9 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
     } else if (solveType == "matvec") {
       // Just do matvecs
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 6 - Matvec")));
-#if defined(HAVE_MUELU_TPETRA)
-      if(lib==Xpetra::UseTpetra) Atpetra->apply(*Btpetra,*Xtpetra);
-#endif
+      if(lib==Xpetra::UseTpetra)
+        Atpetra->apply(*Btpetra,*Xtpetra);
+
 #if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT) && !defined(HAVE_MUELU_INST_FLOAT_INT_INT)
       if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
 #endif
@@ -341,7 +338,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       if(profileSolve) cudaProfilerStart();
 #endif
       if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX)
         // Do a fixed-point iteraiton without convergence checks
         RCP<MultiVector> R = MultiVectorFactory::Build(X->getMap(), X->getNumVectors());
         for(int i=0; i<maxIts; i++) {
@@ -372,7 +369,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       Teuchos::RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
       Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
       if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX)
         belosPrec = rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
       }
@@ -399,7 +396,6 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       int numIts;
       Belos::ReturnType ret = Belos::Unconverged;
 
-#if defined(HAVE_MUELU_TPETRA)
       constexpr bool verbose = false;
       BelosTpetra::Impl::register_Cg (verbose);
       BelosTpetra::Impl::register_CgPipeline (verbose);
@@ -418,7 +414,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
 
         Teuchos::RCP<tOP> belosPrecTpetra;
         if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX)
           RCP<Xpetra::TpetraOperator<SC,LO,GO,NO> > xto = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<SC,LO,GO,NO> >(Prec);
           belosPrecTpetra = xto->getOperator();
 #endif
@@ -446,7 +442,6 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         numIts = solver->getNumIters();
 
       } catch (std::invalid_argument&)
-#endif
       {
 
         // Construct a Belos LinearProblem object

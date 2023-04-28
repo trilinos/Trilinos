@@ -52,10 +52,8 @@
 
 #ifdef HAVE_GALERI_XPETRA
 
-#ifdef HAVE_MUELU_TPETRA
 #include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
-#endif
 
 namespace Galeri {
   namespace Xpetra {

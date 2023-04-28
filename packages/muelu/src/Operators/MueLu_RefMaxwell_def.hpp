@@ -890,7 +890,6 @@ namespace MueLu {
         rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD0);
       }
 
-#ifdef HAVE_MUELU_TPETRA
       if ((!D0_T_Matrix_.is_null()) &&
           (!R11_.is_null()) &&
           (!rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
@@ -899,7 +898,6 @@ namespace MueLu {
           (R11_->getColMap()->lib() == Xpetra::UseTpetra))
         D0_T_R11_colMapsMatch_ = D0_T_Matrix_->getColMap()->isSameAs(*R11_->getColMap());
       else
-#endif
         D0_T_R11_colMapsMatch_ = false;
       if (D0_T_R11_colMapsMatch_)
         GetOStream(Runtime0) << "RefMaxwell::compute(): D0_T and R11 have matching colMaps" << std::endl;

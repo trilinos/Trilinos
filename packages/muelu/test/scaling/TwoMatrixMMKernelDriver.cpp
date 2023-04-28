@@ -63,7 +63,7 @@
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_OPENMP)
 #include "Xpetra_TpetraVector.hpp"
 #include "TpetraExt_MatrixMatrix_def.hpp"
 #endif
@@ -137,186 +137,178 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
 
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
-#ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef typename crs_matrix_type::local_matrix_device_type KCRS;
-    typedef typename KCRS::StaticCrsGraphType                  graph_t;
-    typedef typename graph_t::row_map_type::non_const_type     lno_view_t;
-    typedef typename graph_t::row_map_type::const_type         c_lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type     lno_nnz_view_t;
-    typedef typename graph_t::entries_type::const_type         c_lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type         scalar_view_t;
-    typedef Tpetra::Map<LO,GO,NO>                                     map_type;
-    typedef typename map_type::local_map_type                         local_map_type;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef typename crs_matrix_type::local_matrix_device_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType                  graph_t;
+  typedef typename graph_t::row_map_type::non_const_type     lno_view_t;
+  typedef typename graph_t::row_map_type::const_type         c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type     lno_nnz_view_t;
+  typedef typename graph_t::entries_type::const_type         c_lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type         scalar_view_t;
+  typedef Tpetra::Map<LO,GO,NO>                                     map_type;
+  typedef typename map_type::local_map_type                         local_map_type;
 
 
-    typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
+  typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
 
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
-    RCP<const crs_matrix_type> B1u = Utilities::Op2TpetraCrs(rcp(&B1,false));
-    RCP<const crs_matrix_type> B2u = Utilities::Op2TpetraCrs(rcp(&B2,false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
-    RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
+  RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
+  RCP<const crs_matrix_type> B1u = Utilities::Op2TpetraCrs(rcp(&B1,false));
+  RCP<const crs_matrix_type> B2u = Utilities::Op2TpetraCrs(rcp(&B2,false));
+  RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+  RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS & Amat = Au->getLocalMatrixDevice();
-    const KCRS & B1mat = B1u->getLocalMatrixDevice();
-    const KCRS & B2mat = B2u->getLocalMatrixDevice();
+  const KCRS & Amat = Au->getLocalMatrixDevice();
+  const KCRS & B1mat = B1u->getLocalMatrixDevice();
+  const KCRS & B2mat = B2u->getLocalMatrixDevice();
 
-    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
+  if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
-    c_lno_view_t Arowptr = Amat.graph.row_map, B1rowptr = B1mat.graph.row_map, B2rowptr = B2mat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
-    c_lno_nnz_view_t Acolind = Amat.graph.entries, B1colind = B1mat.graph.entries, B2colind = B2mat.graph.entries;
-    lno_nnz_view_t Ccolind;
-    const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
-    scalar_view_t Cvals;
-    RCP<const Tpetra::Map<LO,GO,Node> > Ccolmap_t = Xpetra::toTpetra(Ccolmap);
-    local_map_type Bcolmap_local = B1u->getColMap()->getLocalMap();
-    local_map_type Icolmap_local = B2u->getColMap()->getLocalMap();
-    local_map_type Ccolmap_local = Ccolmap_t->getLocalMap();
+  c_lno_view_t Arowptr = Amat.graph.row_map, B1rowptr = B1mat.graph.row_map, B2rowptr = B2mat.graph.row_map;
+  lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
+  c_lno_nnz_view_t Acolind = Amat.graph.entries, B1colind = B1mat.graph.entries, B2colind = B2mat.graph.entries;
+  lno_nnz_view_t Ccolind;
+  const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
+  scalar_view_t Cvals;
+  RCP<const Tpetra::Map<LO,GO,Node> > Ccolmap_t = Xpetra::toTpetra(Ccolmap);
+  local_map_type Bcolmap_local = B1u->getColMap()->getLocalMap();
+  local_map_type Icolmap_local = B2u->getColMap()->getLocalMap();
+  local_map_type Ccolmap_local = Ccolmap_t->getLocalMap();
 
-    sparse_matrix_t AMKL;
-    sparse_matrix_t B1MKL;
-    sparse_matrix_t B2MKL;
-    sparse_matrix_t CMKL;
-    sparse_matrix_t Temp1MKL,Temp2MKL;
+  sparse_matrix_t AMKL;
+  sparse_matrix_t B1MKL;
+  sparse_matrix_t B2MKL;
+  sparse_matrix_t CMKL;
+  sparse_matrix_t Temp1MKL,Temp2MKL;
 
-    sparse_status_t result;
-    // **********************************
-    // Copy in the matrix data for MKL
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL "+algorithm_name+": Matrix CopyIn")));
+  sparse_status_t result;
+  // **********************************
+  // Copy in the matrix data for MKL
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL "+algorithm_name+": Matrix CopyIn")));
 
-    mkl_int_type ArowptrMKL("Arowptr",Arowptr.extent(0));
-    mkl_int_type AcolindMKL("Acolind",Acolind.extent(0));
-    mkl_int_type B1colindMKL("B1colind",B1colind.extent(0));
-    mkl_int_type B2colindMKL("B2colind",B2colind.extent(0));
+  mkl_int_type ArowptrMKL("Arowptr",Arowptr.extent(0));
+  mkl_int_type AcolindMKL("Acolind",Acolind.extent(0));
+  mkl_int_type B1colindMKL("B1colind",B1colind.extent(0));
+  mkl_int_type B2colindMKL("B2colind",B2colind.extent(0));
 
-    // Generate new rowptrs that have all the rows for both B and I (as MKL requires)
-    size_t Nb = B1rowptr.extent(0)-1, Ni=B2rowptr.extent(0)-1;
-    mkl_int_type B1rowptrMKL("B1rowptr",Nb+Ni+1);
-    mkl_int_type B2rowptrMKL("B2rowptr",Nb+Ni+1);
-    Kokkos::parallel_for(Nb+1,KOKKOS_LAMBDA(const size_t i) {
-        B1rowptrMKL[i] = B1rowptr[i];
-        if(i!= Nb) B2rowptrMKL[i] = 0;
-      });
-    Kokkos::parallel_for(Ni+1,KOKKOS_LAMBDA(const size_t i) {
-        if(i!=0) B1rowptrMKL[Nb+i] = B1rowptr[Nb-1];
-        B2rowptrMKL[Nb+i] = B2rowptr[i];
-      });
-
-    // Reindex the column indices into C's column map
-    Kokkos::parallel_for(B1colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        B1colindMKL[i] = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(B1colind(i)));
+  // Generate new rowptrs that have all the rows for both B and I (as MKL requires)
+  size_t Nb = B1rowptr.extent(0)-1, Ni=B2rowptr.extent(0)-1;
+  mkl_int_type B1rowptrMKL("B1rowptr",Nb+Ni+1);
+  mkl_int_type B2rowptrMKL("B2rowptr",Nb+Ni+1);
+  Kokkos::parallel_for(Nb+1,KOKKOS_LAMBDA(const size_t i) {
+      B1rowptrMKL[i] = B1rowptr[i];
+      if(i!= Nb) B2rowptrMKL[i] = 0;
+    });
+  Kokkos::parallel_for(Ni+1,KOKKOS_LAMBDA(const size_t i) {
+      if(i!=0) B1rowptrMKL[Nb+i] = B1rowptr[Nb-1];
+      B2rowptrMKL[Nb+i] = B2rowptr[i];
     });
 
-    Kokkos::parallel_for(B2colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        B2colindMKL[i] = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(B2colind(i)));
-    });
+  // Reindex the column indices into C's column map
+  Kokkos::parallel_for(B1colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
+      B1colindMKL[i] = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(B1colind(i)));
+  });
+
+  Kokkos::parallel_for(B2colind.extent(0),KOKKOS_LAMBDA(const size_t i) {
+      B2colindMKL[i] = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(B2colind(i)));
+  });
 
 
-    // Copy in A
-    copy_view(Arowptr,ArowptrMKL);
-    copy_view(Acolind,AcolindMKL);
+  // Copy in A
+  copy_view(Arowptr,ArowptrMKL);
+  copy_view(Acolind,AcolindMKL);
 
-    if(std::is_same<Scalar,double>::value) {
-      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getLocalNumRows(), Au->getLocalNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
-      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
-    }
-    else
-      throw std::runtime_error("MKL Type Mismatch");
-    tm = Teuchos::null;
-    Au->getComm()->barrier();
-
-    tm = Teuchos::null;
-    Au->getComm()->barrier();
-
-    if(algorithm_name == "MULT_ADD" ) {
-      // **********************************
-      // Multiply #1 (A*B1)
-      {
-      TimeMonitor tm1(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1"));
-      result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp1MKL);
-      typename KCRS::execution_space().fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 1 failed: "+mkl_error(result));
-      }
-
-      // **********************************
-      // Multiply #2 (A*B2)
-      {
-      TimeMonitor tm2(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2"));
-      result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp2MKL);
-      typename KCRS::execution_space().fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 2 failed: "+mkl_error(result));
-      }
-
-      // **********************************
-      // Add (A*B1) + (A*B2)
-      {
-      TimeMonitor tm3(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Add"));
-      result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,Temp1MKL,1.0,Temp2MKL,&CMKL);
-      typename KCRS::execution_space().fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
-      }
-    }
-    else if(algorithm_name == "ADD_MULT" ) {
-      // **********************************
-      // Add B1 + B2
-      {
-      TimeMonitor tm4(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add"));
-      result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,B1MKL,1.0,B2MKL,&Temp1MKL);
-      typename KCRS::execution_space().fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
-      }
-
-      // **********************************
-      // Multiply A*(B1+B2)
-      {
-      TimeMonitor tm5(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Multiply"));
-      result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, Temp1MKL, &CMKL);
-      typename KCRS::execution_space().fence();
-      if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed: "+mkl_error(result));
-      }
-    }
-    else
-      throw std::runtime_error("Invalid MKL algorithm");
-
-    // **********************************
-    // Copy out the data for MKL
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL "+algorithm_name+": Copy Out")));
-    sparse_index_base_t c_indexing;
-    MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
-    double * values;
-    mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);
-    size_t cnnz = rows_end[c_rows-1];
-    Kokkos::resize(Ccolind,cnnz);
-    Kokkos::resize(Cvals,cnnz);
-    if(c_rows != A.getLocalNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
-    copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
-    copy_view_n(cnnz,columns,Ccolind);
-    copy_view_n(cnnz,values,Cvals);
-
-    Cnc->replaceColMap(Ccolmap_t);
-    Cnc->setAllValues(Crowptr,
-                      Ccolind,
-                      Cvals);
-
-    mkl_sparse_destroy(AMKL);
-    mkl_sparse_destroy(B1MKL);
-    mkl_sparse_destroy(B2MKL);
-    mkl_sparse_destroy(CMKL);
-    mkl_sparse_destroy(Temp1MKL);
-    if(algorithm_name == "MULT_ADD" ) mkl_sparse_destroy(Temp2MKL);
-
-#else
-    std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
-#endif
-
-
+  if(std::is_same<Scalar,double>::value) {
+    mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getLocalNumRows(), Au->getLocalNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
+    mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
+    mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
+  }
+  else
+    throw std::runtime_error("MKL Type Mismatch");
+  tm = Teuchos::null;
+  Au->getComm()->barrier();
 
   tm = Teuchos::null;
   Au->getComm()->barrier();
 
+  if(algorithm_name == "MULT_ADD" ) {
+    // **********************************
+    // Multiply #1 (A*B1)
+    {
+    TimeMonitor tm1(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1"));
+    result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp1MKL);
+    typename KCRS::execution_space().fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 1 failed: "+mkl_error(result));
+    }
+
+    // **********************************
+    // Multiply #2 (A*B2)
+    {
+    TimeMonitor tm2(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2"));
+    result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp2MKL);
+    typename KCRS::execution_space().fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 2 failed: "+mkl_error(result));
+    }
+
+    // **********************************
+    // Add (A*B1) + (A*B2)
+    {
+    TimeMonitor tm3(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Add"));
+    result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,Temp1MKL,1.0,Temp2MKL,&CMKL);
+    typename KCRS::execution_space().fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
+    }
+  }
+  else if(algorithm_name == "ADD_MULT" ) {
+    // **********************************
+    // Add B1 + B2
+    {
+    TimeMonitor tm4(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add"));
+    result = mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,B1MKL,1.0,B2MKL,&Temp1MKL);
+    typename KCRS::execution_space().fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
+    }
+
+    // **********************************
+    // Multiply A*(B1+B2)
+    {
+    TimeMonitor tm5(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Multiply"));
+    result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, Temp1MKL, &CMKL);
+    typename KCRS::execution_space().fence();
+    if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply failed: "+mkl_error(result));
+    }
+  }
+  else
+    throw std::runtime_error("Invalid MKL algorithm");
+
+  // **********************************
+  // Copy out the data for MKL
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL "+algorithm_name+": Copy Out")));
+  sparse_index_base_t c_indexing;
+  MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
+  double * values;
+  mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);
+  size_t cnnz = rows_end[c_rows-1];
+  Kokkos::resize(Ccolind,cnnz);
+  Kokkos::resize(Cvals,cnnz);
+  if(c_rows != A.getLocalNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+  copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
+  copy_view_n(cnnz,columns,Ccolind);
+  copy_view_n(cnnz,values,Cvals);
+
+  Cnc->replaceColMap(Ccolmap_t);
+  Cnc->setAllValues(Crowptr,
+                    Ccolind,
+                    Cvals);
+
+  mkl_sparse_destroy(AMKL);
+  mkl_sparse_destroy(B1MKL);
+  mkl_sparse_destroy(B2MKL);
+  mkl_sparse_destroy(CMKL);
+  mkl_sparse_destroy(Temp1MKL);
+  if(algorithm_name == "MULT_ADD" ) mkl_sparse_destroy(Temp2MKL);
+
+  tm = Teuchos::null;
+  Au->getComm()->barrier();
 }
 
 #endif
@@ -326,12 +318,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_Import_Util2.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_decl.hpp"
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-#endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MM2_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B1,   Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B2, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C,Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&Ccolmap, std::string algorithm_name, int team_work_size) {
@@ -346,7 +336,7 @@ void MM2_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A
   std::string name = algorithm_name;
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_OPENMP)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>           import_type;
     typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
@@ -565,7 +555,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
         << "========================================================" << endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_OPENMP)
     out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif

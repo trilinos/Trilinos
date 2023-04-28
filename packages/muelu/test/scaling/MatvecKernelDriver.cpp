@@ -66,13 +66,11 @@
 #include "MueLu_PerfModels.hpp"
 #include <MatrixLoad.hpp>
 
-#if defined(HAVE_MUELU_TPETRA)
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraImport.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
-#endif
 #include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
@@ -315,7 +313,6 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       double halo_time = 0.0;
       size_t total_send_length=0, total_recv_length=0;
       double avg_size_per_msg = 0.0;
-#if defined(HAVE_MUELU_TPETRA)
       RCP<const Xpetra::TpetraImport<LO,GO,NO> > t_importer = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraImport<LO,GO,NO> >(importer);
       if(!t_importer.is_null()) {
         RCP<const Tpetra::Import<LO,GO,NO> > tt_i  = t_importer->getTpetra_Import();
@@ -335,9 +332,7 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
  
         avg_size_per_msg = (double)total_send_length/(2.0*send_lengths.size()) +  (double)total_recv_length/(2.0*recv_lengths.size());
         halo_time = PM.halopong_device_lookup(avg_size_per_msg);
-     }
-#endif
-
+      }
 
       if(verbose && rank == 0) {
          std::cout<<"****** Remote Time Model Results ******"<<std::endl;
@@ -440,7 +435,6 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 }
   
 
-#if defined(HAVE_MUELU_TPETRA)
 //==============================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
@@ -504,13 +498,11 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
   }
 }
 
-#endif
-
 
 // =========================================================================
 // PETSC Testing
 // =========================================================================
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
 
 /*#define PETSC_CHK_ERR(x)  {                   \
   PetscCall(x); \
@@ -607,7 +599,7 @@ private:
 // =========================================================================
 // HYPRE Testing
 // =========================================================================
-#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
 
 #define HYPRE_CHK_ERR(x)  { \
     if(x!=0) throw std::runtime_error("ERROR: HYPRE returned non-zero exit code"); \
@@ -710,7 +702,7 @@ private:
 // =========================================================================
 // MAGMASparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MAGMASPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MAGMASPARSE)
 #include <magma_v2.h>
 #include <magmasparse.h>
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -845,7 +837,7 @@ private:
 // =========================================================================
 // CuSparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_CUSPARSE)
 
 #define CHECK_CUDA(func)                                                       \
 {                                                                              \
@@ -1021,7 +1013,7 @@ private:
 // =========================================================================
 // MKL Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MKL) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MKL)
 #include "mkl.h"
 
 
@@ -1061,7 +1053,6 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y);
@@ -1078,7 +1069,6 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
   Kokkos::fence();
 }
-#endif
 
 
 // =========================================================================
@@ -1093,7 +1083,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscInitialize(0,NULL,NULL,NULL);
 #endif
 
@@ -1295,7 +1285,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << " MPI Ranks:    " << numProc <<endl
         << "========================================================" << endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_OPENMP)
     out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
@@ -1317,8 +1307,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
     y_baseline->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
 
-
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
     RCP<const crs_matrix_type> At;
@@ -1398,7 +1386,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       throw std::runtime_error("MKL Type Mismatch");
 
   #endif // end MKL
-#endif
 
 
     //    globalTimeMonitor = Teuchos::null;
@@ -1418,14 +1405,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::random_device rd;
     std::mt19937 random_source (rd());
 
-    #ifdef HAVE_MUELU_TPETRA
     // compute the baseline
     vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
     if (report_error_norms) MV_Tpetra(*At,xt,yt_baseline);
     const bool error_check_y = true;
-    #else
-    const bool error_check_y = false;
-    #endif
     std::vector<typename Teuchos::ScalarTraits< Scalar >::magnitudeType> dummy;
     dummy.resize(1);
     Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > y_norms (dummy.data(), 1);
@@ -1464,7 +1447,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           break;
         #endif
 
-        #ifdef HAVE_MUELU_TPETRA
         // KK Algorithms
         case Experiments::KK:
         {
@@ -1479,7 +1461,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
            MV_Tpetra(*At,xt,yt);
         }
           break;
-        #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
         // CUSPARSE
@@ -1603,7 +1584,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscFinalize();
 #endif
 

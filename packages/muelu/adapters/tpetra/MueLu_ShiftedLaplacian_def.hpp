@@ -558,5 +558,5 @@ ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 
-#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#endif //if defined(HAVE_MUELU_IFPACK2)
 #endif // MUELU_SHIFTEDLAPLACIAN_DEF_HPP
