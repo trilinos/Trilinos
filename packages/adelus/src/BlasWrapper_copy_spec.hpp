@@ -671,6 +671,46 @@ BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutLef
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight,  Kokkos::HIPSpace, false)
 BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::HIPSpace, false)
 
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_DCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_SCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_ZCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutLeft,   Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutRight,  Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutLeft,   Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutRight,  Kokkos::HIPManagedSpace, false)
+BLASWRAPPER_CCOPY_TPL_SPEC_DECL_ROCBLAS( Kokkos::LayoutStride, Kokkos::LayoutStride, Kokkos::HIPManagedSpace, false)
+
 }//namespace Impl
 }//namespace BlasWrapper
 

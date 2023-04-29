@@ -403,6 +403,34 @@ const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &)
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
       void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
 
+      typedef typename Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+      typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct) const override { return getHostLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const override { return getDeviceLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_host_um getHostLocalView (Access::OverwriteAllStruct) const override { return getHostLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const override { return getDeviceLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_host_um getHostLocalView (Access::ReadWriteStruct) const override {
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+        // access Epetra vector data
+        Scalar* data = NULL;
+        vec_->ExtractView(&data);
+        int localLength = vec_->MyLength();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength, 1);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+        return ret;
+      }
+
+      typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override { return getHostLocalView(Access::ReadWrite); }
+
 
       //@}
 

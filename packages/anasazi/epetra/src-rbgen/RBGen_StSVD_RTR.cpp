@@ -436,7 +436,7 @@ namespace RBGen {
       try {
         retract(*U_,*V_,*newU,*newV);
       }
-      catch (std::runtime_error oops) {
+      catch (std::runtime_error&) {
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
             "RBGen::StSVD::computeBasis(): Retraction of eta failed.");
       }

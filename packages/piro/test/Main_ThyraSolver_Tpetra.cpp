@@ -55,6 +55,8 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Tpetra_Core.hpp"
 
+#include "Piro_ProductModelEval.hpp"
+
 #ifdef HAVE_PIRO_MUELU
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
@@ -120,12 +122,16 @@ int main(int argc, char *argv[]) {
                 rcp(new Teuchos::ParameterList("Piro Parameters"));
             Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
-            const RCP<Thyra::ModelEvaluator<double>> model = rcp(new MockModelEval_A_Tpetra(appComm));
+            std::vector<int> p_indices{0};
+            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm));
+            const RCP<Thyra::ModelEvaluator<double>> model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
             bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
             bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
             RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
-            if(explicitAdjointME)
-              adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
+            if(explicitAdjointME) {
+              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+            }
 
             // Use these two objects to construct a Piro solved application
             RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double>> piro;

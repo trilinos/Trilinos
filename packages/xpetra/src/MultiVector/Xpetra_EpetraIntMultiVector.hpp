@@ -121,7 +121,6 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented,
                                  "Xpetra::EpetraIntMultiVectorT::setSeed(): Functionnality not available in Epetra"); }
 
-
     //@}
 
     //! @name Data Copy and View get methods
@@ -410,6 +409,36 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
       void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntMultiVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::setSeed(): Functionnality not available in Epetra"); }
 
+      typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+      typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct) const override { return getHostLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const override { return getDeviceLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_host_um getHostLocalView (Access::OverwriteAllStruct) const override {  return getHostLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const override {  return getDeviceLocalView(Access::ReadWrite); }
+
+      typename dual_view_type::t_host_um getHostLocalView (Access::ReadWriteStruct) const override {
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+        // access Epetra multivector data
+        Scalar* data = NULL;
+        int myLDA;
+        vec_->ExtractView(&data, &myLDA);
+        int localLength = vec_->MyLength();
+        int numVectors  = getNumVectors();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength, numVectors);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+
+        return ret;
+      }
+
+      typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override { return getHostLocalView(Access::ReadWrite); }
 
       //@}
 
@@ -773,34 +802,33 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
         "Xpetra::EpetraIntMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
-      //! Destructor.
-      ~EpetraIntMultiVectorT() {  };
+    //! Destructor.
+    ~EpetraIntMultiVectorT() {  };
 
-      //@}
+    //@}
 
-      //! @name Post-construction modification routines
-      //@{
+    //! @name Post-construction modification routines
+    //@{
 
-      //! Initialize all values in a multi-vector with specified value.
-      void putScalar(const int &value) {
-        int ierr = 0;
-        ierr = vec_->PutScalar(value);
-        TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, Xpetra::Exceptions::RuntimeError, "Epetra_IntMultiVector::PutScalar returns a non zero error.");
-      }
+    //! Initialize all values in a multi-vector with specified value.
+    void putScalar(const int &value) {
+      int ierr = 0;
+      ierr = vec_->PutScalar(value);
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, Xpetra::Exceptions::RuntimeError, "Epetra_IntMultiVector::PutScalar returns a non zero error.");
+    }
 
-      //! Set multi-vector values to random numbers.
-      void randomize(bool /* bUseXpetraImplementation */ = true) { XPETRA_MONITOR("EpetraIntMultiVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::randomize(): Functionnality not available in Epetra"); }
+    //! Set multi-vector values to random numbers.
+    void randomize(bool /* bUseXpetraImplementation */ = true) { XPETRA_MONITOR("EpetraIntMultiVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::randomize(): Functionnality not available in Epetra"); }
 
-      //! Set multi-vector values to random numbers.
-      void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntMultiVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::randomize(): Functionnality not available in Epetra"); }
-
-
-      //! Set seed for Random function.
-      /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-      void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntMultiVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::setSeed(): Functionnality not available in Epetra"); }
+    //! Set multi-vector values to random numbers.
+    void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntMultiVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::randomize(): Functionnality not available in Epetra"); }
 
 
-      //@}
+    //! Set seed for Random function.
+    /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
+    void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntMultiVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntMultiVectorT::setSeed(): Functionnality not available in Epetra"); }
+
+    //@}
 
       //! @name Data Copy and View get methods
       //@{

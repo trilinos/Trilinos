@@ -68,6 +68,7 @@
 #endif
 #ifdef HAVE_STRATIMIKOS_IFPACK2
 #  include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#  include "Tpetra_CrsMatrix.hpp"
 #endif
 #ifdef HAVE_STRATIMIKOS_ML
 #  include "Thyra_MLPreconditionerFactory.hpp"
