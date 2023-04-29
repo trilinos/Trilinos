@@ -86,7 +86,6 @@ namespace Amesos2
   };
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-
   
   template <>
   struct FunctionMap<MUMPS,MUMPST::CMUMPS_COMPLEX>
@@ -121,7 +120,6 @@ namespace Amesos2
       MUMPST::zmumps_c(mumps_par);
     }
   };
-  
 
 #endif //complex
 } //end namespace Amesos2
