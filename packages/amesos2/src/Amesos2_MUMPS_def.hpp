@@ -153,6 +153,8 @@ namespace Amesos2
   MUMPS<Matrix,Vector>::~MUMPS( )
   {
     /* Clean up the struc*/
+    typedef FunctionMap<MUMPS,scalar_type> function_map;
+
     if(MUMPS_STRUCT == true)
       {
         free(mumps_par.a);
@@ -443,7 +445,7 @@ namespace Amesos2
       MUMPS_STRUCT = true;
       mumps_par.n =  this->globalNumCols_;
       mumps_par.nz = this->globalNumNonZeros_;
-      mumps_par.a = (magnitude_type*)malloc(mumps_par.nz * sizeof(magnitude_type));
+      mumps_par.a = (mumps_type*)malloc(mumps_par.nz * sizeof(mumps_type));
       mumps_par.irn = (MUMPS_INT*)malloc(mumps_par.nz *sizeof(MUMPS_INT));
       mumps_par.jcn = (MUMPS_INT*)malloc(mumps_par.nz * sizeof(MUMPS_INT));
     }
