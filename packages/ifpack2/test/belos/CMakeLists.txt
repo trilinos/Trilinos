@@ -42,6 +42,7 @@ ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   DEST_FILES
+  test_database_schwarz.xml
   test_ILUT_calore1_mm.xml 
   test_Jacobi_calore1_mm.xml 
   test_Jacobi_calore1_mm_constGraph.xml 
@@ -229,6 +230,15 @@ TRIBITS_ADD_TEST(
   tif_belos
   NAME Jacobi_belos
   ARGS "--xml_file=test_Jacobi_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME DatabaseSchwarz_belos
+  ARGS "--xml_file=test_database_schwarz.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
