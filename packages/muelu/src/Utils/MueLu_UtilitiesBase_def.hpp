@@ -951,7 +951,6 @@ namespace MueLu {
 
 
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Am = helpers::Op2TpetraBlockCrs(A);
       auto b_graph      = Am.getCrsGraph().getLocalGraphDevice();
       auto b_rowptr     = Am.getCrsGraph().getLocalRowPtrsDevice();
@@ -988,9 +987,6 @@ namespace MueLu {
                            });
 
       return boundaryNodes;
-#else
-      throw Exceptions::RuntimeError("BlockCrs requires Tpetra");
-#endif
     }
     else {
       auto localMatrix = A.getLocalMatrixDevice();

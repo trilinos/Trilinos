@@ -51,7 +51,7 @@
 #define MUEMEX_ERROR -1
 
 //Do not compile MueMex if any of these aren't available
-#if !defined HAVE_MUELU_EPETRA || !defined HAVE_MUELU_TPETRA || !defined HAVE_MUELU_MATLAB
+#if !defined HAVE_MUELU_EPETRA || !defined HAVE_MUELU_MATLAB
 #error "MueMex requires Epetra, Tpetra and MATLAB."
 #endif
 

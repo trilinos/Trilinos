@@ -8,27 +8,18 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 # B) Set up package-specific options
 #
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
-ENDIF()
-
 ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
-IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
-ENDIF()
 
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
-  ASSERT_DEFINED(Tpetra_INST_DOUBLE)
-  ASSERT_DEFINED(Tpetra_INST_INT_INT)
-  ASSERT_DEFINED(Tpetra_INST_INT_LONG)
-  ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
-  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
-  ASSERT_DEFINED(Tpetra_INST_FLOAT)
-  ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
-ENDIF()
+ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+ASSERT_DEFINED(Tpetra_INST_INT_INT)
+ASSERT_DEFINED(Tpetra_INST_INT_LONG)
+ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Tpetra_INST_FLOAT)
+ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 
 # You can only get Avatar one way
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
@@ -43,11 +34,6 @@ ENDIF()
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION is true.
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
-IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION  OFF)
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF)
-  MESSAGE(STATUS "Disabling MueLu explicit template instantation (ETI) because Tpetra is disabled.")
-ENDIF()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
@@ -91,7 +77,7 @@ ENDIF()
 
 # If you want MueLu Epetra, you need Xpetra Tpetra
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
-IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (NOT Xpetra_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
 
@@ -99,21 +85,14 @@ ENDIF()
 # HAVE_MUELU_EPETRA was first set automatically
 GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
-# Disable Ifpack2 if Tpetra is off
-IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  SET(${PACKAGE_NAME}_ENABLE_Ifpack2 OFF)
-  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
-ENDIF ()
-
-
 # Print a warning when we might be lacking a coarse solver.
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
   MESSAGE(WARNING "MueLu's Epetra backend is enabled, but Amesos is disabled. This means only iterative coarse solves are available when using Epetra.")
 ENDIF ()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
-  MESSAGE(WARNING "MueLu's Tpetra backend is enabled, but Amesos2 is disabled. This means only iterative coarse solves are available when using Tpetra.")
+IF (NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
+  MESSAGE(WARNING "MueLu's Amesos2 backend is disabled. This means only iterative coarse solves are available when using Tpetra.")
 ENDIF ()
 
 
@@ -150,22 +129,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # are all enabled.
 
 SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT YES)
-IF (DEFINED ${PACKAGE_NAME}_ENABLE_Tpetra)
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
-      SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-    ENDIF ()
-    IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-      IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
-        SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-      ENDIF ()
-    ENDIF ()
-    IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
-      IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-        MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
-        SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-      ENDIF ()
-    ENDIF ()
+IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
+  SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
+ENDIF ()
+IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+  IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+    SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
+  ENDIF ()
+ENDIF ()
+IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+  IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+    MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
+    SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
   ENDIF ()
 ENDIF ()
 
@@ -357,14 +332,12 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       MESSAGE(STATUS "MueLu: Default GO: int")
   ENDIF()
 
-  # If Tpetra is enabled, determine which Nodes are used
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_HIP     ${Tpetra_INST_HIP})
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SYCL    ${Tpetra_INST_SYCL})
-  ENDIF()
+  # Determine which Tpetra Nodes are used
+  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
+  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
+  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
+  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_HIP     ${Tpetra_INST_HIP})
+  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SYCL    ${Tpetra_INST_SYCL})
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # If Epetra is active, always activate SerialNode
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
@@ -404,22 +377,17 @@ ENDIF()
 
 # mfh 18 Aug 2015: Revise whether complex is enabled, based on
 # Tpetra's settings.  These are independent of whether ETI is enabled!
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
-IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
-  IF(NOT Tpetra_INST_COMPLEX_DOUBLE)
-    SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
-  ENDIF()
+ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+IF(NOT Tpetra_INST_COMPLEX_DOUBLE)
+  SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
 # The HAVE_MUELU_TPETRA_INST_INT_INT flag is enabled if Tpetra is enabled
 # with TPETRA_INST_INT_INT. This flag is used to control whether we need
 # special stub implementations for the MueLu::Tpetra stack with GO=int.
 # taw 9 Oct 2015: This is independent from ETI on/off
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  ASSERT_DEFINED(Tpetra_INST_INT_INT)
-  SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
-ENDIF()
+ASSERT_DEFINED(Tpetra_INST_INT_INT)
+SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
 GLOBAL_SET (HAVE_MUELU_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
 
 # ML's MMM
@@ -454,12 +422,12 @@ if(TPL_ENABLE_MATLAB)
     MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
   ENDIF()
 
-  if (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  IF (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
   ENDIF()
 
-  IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\".")
   ENDIF()
 ENDIF()
 

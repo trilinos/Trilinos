@@ -59,10 +59,8 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 
-#if defined(HAVE_MUELU_TPETRA)
 #include <TpetraCore_config.h>
 #include <Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp>
-#endif
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Controls.hpp>
@@ -127,9 +125,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     bool stacktrace = true;     clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     bool timedeepcopy = false;   clp.setOption("timedeepcopy", "notimedeepcopy", &timedeepcopy, "instrument Kokkos::deep_copy() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_DEEP_COPY=ON");
-#endif
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
@@ -140,10 +136,8 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
 
-#ifdef HAVE_MUELU_TPETRA
     if(timedeepcopy)
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
-#endif
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
     if (stacktrace)
@@ -158,24 +152,18 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       //      We might need a feature that allows to run Epetra/Tpetra only
       //      We still need to make sure that the test compiles (i.e., we
       //      need some preprocessor flags/macros RUN_WITH_EPETRA and RUN_WITH_TPETRA
-#  ifdef HAVE_MUELU_TPETRA
-#    if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
       // Both Epetra and Tpetra (with double, int, int) enabled
       return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#    else
-      *out << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
-#    endif // end Tpetra instantiated on double, int, int
 #  else
-      // only Epetra enabled. No Tpetra instantiation possible
-      return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
-#  endif // HAVE_MUELU_TPETRA
+      *out << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
+#  endif // end Tpetra instantiated on double, int, int
 #else
       throw RuntimeError("Epetra is not available");
 #endif
     }
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
 # ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
       auto inst = xpetraParameters.GetInstantiation();
 # endif
@@ -401,9 +389,6 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       } else {
         throw RuntimeError("Unrecognized node type");
       }
-#else
-      throw RuntimeError("Tpetra is not available");
-#endif
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

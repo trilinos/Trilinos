@@ -65,10 +65,8 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "MueLu_TpetraOperator.hpp"
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_EpetraOperator.hpp"
@@ -97,7 +95,7 @@ namespace MueLuTests {
     std::string xmlFileName = "test.xml";
 
     if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
       typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
       typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
@@ -141,7 +139,7 @@ namespace MueLuTests {
 
 #else
       std::cout << "Skip PetraOperator::CreatePreconditioner: Tpetra is not available (with GO=int enabled)" << std::endl;
-#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#endif // #if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -230,7 +228,7 @@ namespace MueLuTests {
     mylist.set("xml parameter file","test.xml");
 
     if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
@@ -285,7 +283,7 @@ namespace MueLuTests {
 
 #else
       std::cout << "Skip PetraOperator::CreatePreconditioner_XMLOnList: Tpetra is not available (with GO=int enabled)" << std::endl;
-#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#endif // #if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -369,7 +367,7 @@ namespace MueLuTests {
       if (k == 1) xmlFileName = "testPDE1.xml";
 
       if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
         typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
         int numPDEs=3;
@@ -424,7 +422,7 @@ namespace MueLuTests {
             Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
         std::cout << "Skip PetraOperator::CreatePreconditioner_PDESystem: Tpetra is not available (with GO=int enabled)" << std::endl;
-#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#endif // #if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
       } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -512,7 +510,7 @@ namespace MueLuTests {
     std::string xmlFileName = "testReuse.xml";
 
     if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
@@ -548,7 +546,7 @@ namespace MueLuTests {
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
       std::cout << "Skip PetraOperator::ReusePreconditioner: Tpetra is not available (with GO=int enabled)" << std::endl;
-#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#endif // #if defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -624,7 +622,6 @@ namespace MueLuTests {
     params.set("coarse: max size", Teuchos::as<int>(500));
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
@@ -663,9 +660,6 @@ namespace MueLuTests {
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-#else
-      std::cout << "Skip PetraOperator::ReusePreconditioner: Tpetra is not available" << std::endl;
-#endif
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix

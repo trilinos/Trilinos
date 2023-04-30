@@ -181,12 +181,10 @@ namespace MueLu {
 
     std::string                         type_;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::MultiVector<SC, LO, GO, NO> tMV;
     typedef Tpetra::Operator<SC, LO, GO, NO>    tOP;
     RCP<Belos::LinearProblem<Scalar, tMV, tOP> > tBelosProblem_;
     RCP<Belos::SolverManager<Scalar, tMV, tOP> > tSolver_;
-#endif
 
     //! matrix, used in apply if solving residual equation
     RCP<Matrix> A_;

@@ -99,7 +99,6 @@ namespace Galeri {
 #include "MueLu_NoFactory.hpp"
 
 // Conditional Tpetra stuff
-#ifdef HAVE_MUELU_TPETRA
 #include "TpetraCore_config.h"
 #include "Xpetra_TpetraCrsGraph.hpp"
 #include "Xpetra_TpetraRowMatrix.hpp"
@@ -107,7 +106,6 @@ namespace Galeri {
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_BlockCrsMatrix.hpp"
-#endif
 
 #include <MueLu_TestHelpers_Common.hpp>
 
@@ -855,7 +853,6 @@ namespace MueLuTests {
          // This only works for Tpetra
          if (lib!=Xpetra::UseTpetra) return Op;
 
-#if defined(HAVE_MUELU_TPETRA)
          // Thanks for the code, Travis!
 
          // Make the graph
@@ -903,7 +900,6 @@ namespace MueLuTests {
 
          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
          Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
-#endif
          return Op;
       } // BuildBlockMatrix()
 
