@@ -43,16 +43,12 @@
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
 
-// disable clang warnings
-#if defined (__clang__) && !defined (__INTEL_COMPILER)
-#pragma clang system_header
-#endif
-
 #include <type_traits>
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Time.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "KokkosSparse_par_ilut.hpp"
 
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
@@ -140,6 +136,7 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   LevelOfFill_ (1.0),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
+  par_ilut_options_{1, 0., -1, -1, 0.75, false, false},
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
@@ -148,8 +145,7 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false),
-  useKokkosKernelsParILUT_(false),
-  par_ilut_options_{1, 0., -1, -1, 0.75, false, false}
+  useKokkosKernelsParILUT_(false)
   
 {
   allocateSolvers();
@@ -257,13 +253,13 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     this->useKokkosKernelsParILUT_ = false;
   }
 
-  int par_ilut_max_iter;
-  magnitude_type par_ilut_residual_norm_delta_stop;
-  int par_ilut_team_size;
-  int par_ilut_vector_size;
-  float par_ilut_fill_in_limit;
-  bool par_ilut_verbose;
-  bool par_ilut_deterministic;
+  int par_ilut_max_iter=20;
+  magnitude_type par_ilut_residual_norm_delta_stop=1e-2;
+  int par_ilut_team_size=0;
+  int par_ilut_vector_size=0;
+  float par_ilut_fill_in_limit=0.;
+  bool par_ilut_verbose=false;
+  bool par_ilut_deterministic=true;
   if (this->useKokkosKernelsParILUT_) {
     par_ilut_max_iter = par_ilut_options_.max_iter;
     par_ilut_residual_norm_delta_stop = par_ilut_options_.residual_norm_delta_stop;
@@ -504,6 +500,7 @@ void ILUT<MatrixType>::initialize ()
 {
   using Teuchos::RCP;
   using Teuchos::Array;
+  using Teuchos::rcp_const_cast;
   Teuchos::Time timer ("ILUT::initialize");
   double startTime = timer.wallTime();
   {
@@ -569,13 +566,19 @@ void ILUT<MatrixType>::initialize ()
       typedef typename crs_graph_type::local_graph_device_type local_graph_device_type;
       typedef typename local_graph_device_type::array_layout   array_layout;
       typedef typename local_graph_device_type::device_type    device_type;
+      typedef typename local_graph_device_type::size_type      usize_type;
 
-      typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+      //KokkosKernels requires unsigned
+      //typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+      typedef typename Kokkos::View<usize_type*, array_layout, device_type> lno_row_view_t;
       const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
       lno_row_view_t     L_rowmap("L_row_map", NumMyRows + 1);
       lno_row_view_t     U_rowmap("U_row_map", NumMyRows + 1);
 
-      par_ilut_symbolic(KernelHandle_, A_local_crs_device.graph.row_map, A_local_crs_device.values, L_rowmap, U_rowmap);
+      KokkosSparse::Experimental::par_ilut_symbolic(KernelHandle_.getRawPtr(),
+                                                    A_local_crs_device.graph.row_map, A_local_crs_device.graph.entries,
+                                                    L_rowmap,
+                                                    U_rowmap);
     }
 
     IsInitialized_ = true;
@@ -603,6 +606,7 @@ void ILUT<MatrixType>::compute ()
   using Teuchos::rcp;
   using Teuchos::reduceAll;
   using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
 
   // Don't count initialization in the compute() time.
   if (! isInitialized ()) {
@@ -999,8 +1003,7 @@ void ILUT<MatrixType>::compute ()
       auto U_values  = lclU.values;
       KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(),
                                                    A_local_rowmap_, A_local_entries_, A_local_values_,
-                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values,
-                                                   par_ilut_options_.deterministic);
+                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values);
     }
 
   } //if (!this->useKokkosKernelsParILUT_)
