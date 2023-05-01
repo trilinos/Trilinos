@@ -138,7 +138,7 @@ class SPTRSVHandle {
     cusparseSpSVDescr_t spsvDescr;
     void *pBuffer{nullptr};
 
-    cuSparseHandleType(bool transpose_, bool is_lower) {
+    cuSparseHandleType(bool transpose_, bool /*is_lower*/) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
 
       KOKKOS_CUSPARSE_SAFE_CALL(

@@ -34,7 +34,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 template <class crs_matrix_type, class MDF_handle>
-void mdf_symbolic(crs_matrix_type& A, MDF_handle& handle) {
+void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
   using size_type    = typename crs_matrix_type::size_type;
   using ordinal_type = typename crs_matrix_type::ordinal_type;
 
@@ -63,7 +63,7 @@ void mdf_symbolic(crs_matrix_type& A, MDF_handle& handle) {
 }  // mdf_symbolic
 
 template <class crs_matrix_type, class MDF_handle>
-void mdf_numeric(crs_matrix_type& A, MDF_handle& handle) {
+void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
       entries_type::non_const_type;
   using values_type  = typename crs_matrix_type::values_type::non_const_type;
