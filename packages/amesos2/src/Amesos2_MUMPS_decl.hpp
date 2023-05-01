@@ -112,8 +112,6 @@ public:
   typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType>  host_ordinal_type_view;
   typedef Kokkos::View<mumps_type*, HostExecSpaceType>          host_value_type_view;
 
-  typedef FunctionMap<Amesos2::MUMPS,mumps_type>               function_map;
-
   MUMPS(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
