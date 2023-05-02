@@ -92,12 +92,11 @@ namespace Belos {
     // Arbitrary tolerance in case
     // norms are not computed deterministically (which is possible
     // even with MPI only, and more likely with threads).
-    const MagType tol = Teuchos::as<MagType> (100) * STS::eps ();
+    //TODO used?? const MagType tol = Teuchos::as<MagType> (100) * STS::eps ();
 
     /* Dense Traits Contract:
-
-         Clone(MV,int)
-         CloneCopy(MV)
+        
+        //Example: 
          CloneCopy(MV,vector<int>)
            USER: will request positive number of vectors
              MV: will return a multivector with exactly the number of
@@ -107,9 +106,9 @@ namespace Belos {
 
     *********************************************************************/
 
-    const ScalarType one      = STS::one();
+    //TODO const ScalarType one      = STS::one();
     const ScalarType zero     = STS::zero();
-    const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
+    //TODO const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
 
     /*********** Basic Functions: *****************************************
        Verify:
@@ -161,7 +160,6 @@ namespace Belos {
       }
 
       //Try to sync to host and vice-versa
-      DMT::SyncHostToDevice(*dm1);
       DMT::SyncDeviceToHost(*dm1);
       
       //Call create with non-default third arg.
@@ -186,6 +184,7 @@ namespace Belos {
       
       //get stride
       int stride = DMT::GetStride(*dm2);
+      std::cout << "Stride is: " << stride << std::endl;
 
       //randomize and add
       DMT::Randomize(*dm2);
@@ -305,6 +304,8 @@ namespace Belos {
       }
 
       ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
+      DMT::RawPtrDataModified(*dm2);
+      ScalarType const * testPtr2 = DMT::GetConstRawHostPtr(*dm2);
       //TODO: Test handing this to lapack function? 
       //TODO: Should something err if view is modified on device and 
       //try to access on host without sync? 
@@ -312,462 +313,9 @@ namespace Belos {
       //Compute Frobenius norm. //TODO: Do Frob norm of a matrix we know the answer for and check it. 
       DMT::NormFrobenius(*dm2);
 
-
       return true;
     } //end test scope
-
-#if 0
-    /*********** GetNumberVecs() *****************************************
-       Verify:
-       1) This number should be strictly positive
-    *********************************************************************/
-    if ( MVT::GetNumberVecs(*A) <= 0 ) {
-      om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << endl
-        << "Returned <= 0." << endl;
-      return false;
-    }
-
-
-    /*********** GetGlobalLength() ***************************************
-       Verify:
-       1) This number should be strictly positive
-    *********************************************************************/
-    if ( MVT::GetGlobalLength(*A) <= 0 ) {
-      om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraitsExt::GetGlobalLength()" << endl
-        << "Returned <= 0." << endl;
-      return false;
-    }
-
-
-    /*********** Clone() and MvNorm() ************************************
-       Verify:
-       1) Clone() allows us to specify the number of vectors
-       2) Clone() returns a multivector of the same dimension
-       3) Vector norms shouldn't be negative
-       4) MvNorm result std::vector should not be resized
-    *********************************************************************/
-    {
-      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
-      std::vector<MagType> norms(2*numvecs);
-      bool ResizeWarning = false;
-      if ( MVT::GetNumberVecs(*B) != numvecs ) {
-        om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::Clone()." << endl
-          << "Did not allocate requested number of vectors." << endl;
-        return false;
-      }
-      if ( MVT::GetGlobalLength(*B) != MVT::GetGlobalLength(*A) ) {
-        om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::Clone()." << endl
-          << "Did not allocate requested number of vectors." << endl;
-        return false;
-      }
-      MVT::MvNorm(*B, norms);
-      if ( norms.size() != 2*numvecs && ResizeWarning==false ) {
-        om->stream(Warnings)
-          << "*** WARNING *** MultiVecTraits::MvNorm()." << endl
-          << "Method resized the output vector." << endl;
-        ResizeWarning = true;
-      }
-      for (int i=0; i<numvecs; i++) {
-        if ( norms[i] < zero_mag ) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::Clone()." << endl
-            << "Vector had negative norm." << endl;
-          return false;
-        }
-      }
-    }
-
-
-
-
-    /*********** MvTransMv() *********************************************
-      Performs C = alpha * A^H * B, where
-        alpha is type ScalarType
-        A,B are type MV with p and q vectors, respectively
-        C is a SerialDenseMatrix<int,ScalarType> ALREADY sized to p by q
-
-        Verify:
-        1) C is not resized by the routine
-        3) Check that zero*(A^H B) == zero
-        3) Check inner product inequality:
-                                        [ |a1|*|b1|    ...    |ap|*|b1| ]
-           [a1 ... ap]^H [b1 ... bq] <= [    ...    |ai|*|bj|    ...    ]
-                                        [ |ap|*|b1|    ...    |ap|*|bq| ]
-        4) Zero B and check that C is zero
-        5) Zero A and check that C is zero
-
-        Note: Should we really require that C is correctly sized already?
-        Epetra does (and crashes if it isn't.)
-    *********************************************************************/
-    {
-      const int p = 7;
-      const int q = 9;
-      Teuchos::RCP<MV> B, C;
-      std::vector<MagType> normsB(p), normsC(q);
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
-
-      B = MVT::Clone(*A,p);
-      C = MVT::Clone(*A,q);
-
-      // randomize the multivectors
-      MVT::MvRandom(*B);
-      MVT::MvNorm(*B,normsB);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*C,normsC);
-
-      // perform SDM  = zero() * B^H * C
-      MVT::MvTransMv( zero, *B, *C, SDM );
-
-      // check the sizes: not allowed to have shrunk
-      if ( SDM.numRows() != p || SDM.numCols() != q ) {
-        om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-          << "Routine resized SerialDenseMatrix." << endl;
-        return false;
-      }
-
-      // check that zero**A^H*B == zero
-      if ( SDM.normOne() != zero ) {
-        om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-          << "Scalar argument processed incorrectly." << endl;
-        return false;
-      }
-
-      // perform SDM  = one * B^H * C
-      MVT::MvTransMv( one, *B, *C, SDM );
-
-      // check the norms: a^H b = |a| |b| cos(theta) <= |a| |b|
-      // with equality only when a and b are colinear
-      for (int i=0; i<p; i++) {
-        for (int j=0; j<q; j++) {
-          if (   STS::magnitude(SDM(i,j))
-               > STS::magnitude(normsB[i]*normsC[j]) ) {
-            om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-              << "Triangle inequality did not hold: "
-              << STS::magnitude(SDM(i,j))
-              << " > "
-              << STS::magnitude(normsB[i]*normsC[j])
-              << endl;
-            return false;
-          }
-        }
-      }
-      MVT::MvInit(*C);
-      MVT::MvRandom(*B);
-      MVT::MvTransMv( one, *B, *C, SDM );
-      for (int i=0; i<p; i++) {
-        for (int j=0; j<q; j++) {
-          if ( SDM(i,j) != zero ) {
-            om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-              << "Inner products not zero for C==0." << endl;
-            return false;
-          }
-        }
-      }
-      MVT::MvInit(*B);
-      MVT::MvRandom(*C);
-      MVT::MvTransMv( one, *B, *C, SDM );
-      for (int i=0; i<p; i++) {
-        for (int j=0; j<q; j++) {
-          if ( SDM(i,j) != zero ) {
-            om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-              << "Inner products not zero for B==0." << endl;
-            return false;
-          }
-        }
-      }
-    }
-
-
-
-    /*********** MvTimesMatAddMv() 7 by 5 ********************************
-       C = alpha*B*SDM + beta*C
-       1) Use alpha==0, SDM!=0, beta==1 and check that C is unchanged
-       2) Use alpha==0, SDM!=0, beta==0 and check that C is set to zero
-       3) Use alpha==1, SDM==I, beta==0 and check that C is set to B
-       4) Use alpha==1, SDM==0, beta==1 and check that C is unchanged
-       5) Test with non-square matrices
-       6) Always check that input arguments are not modified
-    *********************************************************************/
-    {
-      const int p = 7, q = 5;
-      Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
-      std::vector<MagType> normsC1(q), normsC2(q),
-                           normsB1(p), normsB2(p);
-
-      B = MVT::Clone(*A,p);
-      C = MVT::Clone(*A,q);
-
-      // Test 1: alpha==0, SDM!=0, beta==1 and check that C is unchanged
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if (STS::magnitude (normsC1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 1 failed." << endl;
-          return false;
-        }
-      }
-
-      // Test 2: alpha==0, SDM!=0, beta==0 and check that C is set to zero
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if ( normsC2[i] != zero ) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 2 failed: "
-            << normsC2[i]
-            << " != "
-            << zero
-            << endl;
-          return false;
-        }
-      }
-
-      // Test 3: alpha==1, SDM==|I|, beta==0 and check that C is set to B
-      //                        |0|
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      for (int i=0; i<q; i++) {
-        SDM(i,i) = one;
-      }
-      MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if (STS::magnitude (normsB1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 3 failed: "
-            << normsB1[i]
-            << " != "
-            << normsC2[i]
-            << endl;
-          return false;
-        }
-      }
-
-      // Test 4: alpha==1, SDM==0, beta==1 and check that C is unchanged
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if (STS::magnitude (normsC1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 4 failed." << endl;
-          return false;
-        }
-      }
-    }
-
-    /*********** MvTimesMatAddMv() 5 by 7 ********************************
-       C = alpha*B*SDM + beta*C
-       1) Use alpha==0, SDM!=0, beta==1 and check that C is unchanged
-       2) Use alpha==0, SDM!=0, beta==0 and check that C is set to zero
-       3) Use alpha==1, SDM==I, beta==0 and check that C is set to B
-       4) Use alpha==1, SDM==0, beta==1 and check that C is unchanged
-       5) Test with non-square matrices
-       6) Always check that input arguments are not modified
-    *********************************************************************/
-    {
-      const int p = 5, q = 7;
-      Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
-      std::vector<MagType> normsC1(q), normsC2(q),
-                           normsB1(p), normsB2(p);
-
-      B = MVT::Clone(*A,p);
-      C = MVT::Clone(*A,q);
-
-      // Test 5: alpha==0, SDM!=0, beta==1 and check that C is unchanged
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if (STS::magnitude (normsC1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 5 failed." << endl;
-          return false;
-        }
-      }
-
-      // Test 6: alpha==0, SDM!=0, beta==0 and check that C is set to zero
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if ( normsC2[i] != zero ) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 6 failed: "
-            << normsC2[i]
-            << " != "
-            << zero
-            << endl;
-          return false;
-        }
-      }
-
-      // Test 7: alpha==1, SDM==[I 0], beta==0 and check that C is set to B
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      for (int i=0; i<p; i++) {
-        SDM(i,i) = one;
-      }
-      MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 7 failed." << endl;
-          return false;
-        }
-      }
-      for (int i=p; i<q; i++) {
-        if ( normsC2[i] != zero ) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 7 failed." << endl;
-          return false;
-        }
-      }
-
-      // Test 8: alpha==1, SDM==0, beta==1 and check that C is unchanged
-      MVT::MvRandom(*B);
-      MVT::MvRandom(*C);
-      MVT::MvNorm(*B,normsB1);
-      MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
-      MVT::MvNorm(*B,normsB2);
-      MVT::MvNorm(*C,normsC2);
-      for (int i=0; i<p; i++) {
-        if (STS::magnitude (normsB1[i] - normsB2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Input vectors were modified." << endl;
-          return false;
-        }
-      }
-      for (int i=0; i<q; i++) {
-        if (STS::magnitude (normsC1[i] - normsC2[i]) > tol) {
-          om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-            << "Arithmetic test 8 failed." << endl;
-          return false;
-        }
-      }
-    }
-
-    return true;
-
-#endif
-  }
-
+  } //end test function
 } //namespace Belos
 
 #endif
