@@ -222,6 +222,9 @@ namespace Belos {
     //@{
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
+     *  \note User is responsible for calling any necessary 
+     *  host-device or device-host syncs within this function.
+     *  Belos will NOT call any syncs before calling MvTimesMatAddMv. 
      */
     static void MvTimesMatAddMv( const ScalarType alpha, const MV& A,
                                  const DM& B,
@@ -244,6 +247,8 @@ namespace Belos {
     { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
+     *  \note Belos solver algorithms are responsible for calling any needed device-to-host syncs after MvTransMv.
+     *  Please do not include extra syncs in the function implementation. 
     */
     static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, DM& B)
     { UndefinedMultiVecTraits<ScalarType, MV, DM>::notDefined(); }
