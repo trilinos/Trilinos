@@ -30,7 +30,7 @@ public:
   : my_edge_nodes(edgeNodes),
     my_edge_node_positions(edgeNodePositions)
   {
-    ThrowAssert(edgeNodePositions.size() == nodes_isovar.size());
+    STK_ThrowAssert(edgeNodePositions.size() == nodes_isovar.size());
     find_crossings(oneLSPerPhase, nodes_isovar);
   }
 

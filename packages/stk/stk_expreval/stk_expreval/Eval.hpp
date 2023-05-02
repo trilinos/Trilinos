@@ -125,6 +125,10 @@ public:
 
   Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max());
 
+  Eval &unbindVariable(const std::string &name);
+
+  Eval &deactivateVariable(const std::string &name);
+
   Variable &getVariable(const std::string &name);
 
   void syntaxCheck(const std::string &expr);

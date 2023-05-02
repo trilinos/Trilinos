@@ -286,7 +286,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   {
     // If we need a temporary bucket, it only needs to hold one entity and
     // the corresponding field data.
-    tmp_bucket = m_repository->allocate_bucket(m_rank, partition_key, 1 /* capacity */);
+    tmp_bucket = m_repository->allocate_bucket(m_rank, partition_key, 1, 1);
     vacancy_bucket = tmp_bucket;
     vacancy_ordinal = 0;
   }
@@ -357,12 +357,12 @@ void Partition::sort(const EntitySorterBase& sorter)
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
-  if (no_buckets())
-  {
+  if (no_buckets()) {
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->get_bucket_capacity());
+                                                   m_repository->get_initial_bucket_capacity(),
+                                                   m_repository->get_maximum_bucket_capacity());
     bucket->m_partition = this;
     m_buckets.push_back(bucket);
 
@@ -371,14 +371,19 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
 
   Bucket *bucket = *(end() - 1);  // Last bucket of the partition.
 
-  if (bucket->size() == bucket->capacity())
-  {
-    std::vector<unsigned> partition_key = get_legacy_partition_id();
-    partition_key[ partition_key[0] ] = m_buckets.size();
-    bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                           m_repository->get_bucket_capacity());
-    bucket->m_partition = this;
-    m_buckets.push_back(bucket);
+  if (bucket->size() == bucket->capacity()) {
+    if (bucket->size() == m_repository->get_maximum_bucket_capacity()) {
+      std::vector<unsigned> partition_key = get_legacy_partition_id();
+      partition_key[ partition_key[0] ] = m_buckets.size();
+      bucket = m_repository->allocate_bucket(m_rank, partition_key,
+                                             m_repository->get_initial_bucket_capacity(),
+                                             m_repository->get_maximum_bucket_capacity());
+      bucket->m_partition = this;
+      m_buckets.push_back(bucket);
+    }
+    else {
+      bucket->grow_capacity();
+    }
   }
 
   return bucket;

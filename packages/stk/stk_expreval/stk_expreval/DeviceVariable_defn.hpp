@@ -94,7 +94,7 @@ double &
 DeviceVariable::getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const
 {
   STK_NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
-  STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound array variable.");
+  STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Invalid array variable.");
 
   if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
     STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
@@ -122,11 +122,11 @@ DeviceVariable::getValue() const
 
   switch (m_type) {
   case Variable::DOUBLE: {
-    STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound double variable.");
+    STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Double variable does not have a valid value.");
     return *m_doublePtr;
   }
   case Variable::INTEGER: {
-    STK_NGP_ThrowRequireMsg(m_intPtr != nullptr, "Unbound integer variable.");
+    STK_NGP_ThrowRequireMsg(m_intPtr != nullptr, "Integer variable does not have a valid value.");
     return *m_intPtr;
   }
   }

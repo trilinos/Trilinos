@@ -642,7 +642,7 @@ TEST( UnitTestPartition, Partition_testGetOrCreateOV)
       bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   ASSERT_TRUE(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
-  size_t bucketCapacity = bucket_repository.default_bucket_capacity;
+  size_t bucketCapacity = stk::mesh::get_default_bucket_capacity();
   size_t expectedNumBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
   EXPECT_EQ(expectedNumBucketsPerPartition, partitionA->num_buckets());
 
@@ -697,7 +697,7 @@ TEST( UnitTestPartition, Partition_testMoveToBetter)
     stk::mesh::Bucket &bkt = **partition.begin();
 
     size_t bkt_sz = bkt.size();
-    const size_t default_bucket_capacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
+    const size_t default_bucket_capacity = stk::mesh::get_default_bucket_capacity();
     EXPECT_EQ(bkt_sz, default_bucket_capacity);
     for (size_t j = 0; j < bkt_sz; ++j)
     {

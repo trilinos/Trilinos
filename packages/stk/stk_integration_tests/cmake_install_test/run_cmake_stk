@@ -53,19 +53,17 @@ fi
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI=ON \
--DTrilinos_ENABLE_Tpetra:BOOL=ON \
--DTpetraCore_ENABLE_TESTS:BOOL=OFF \
--DTpetra_ENABLE_DEPRECATED_CODE:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTrilinos_ENABLE_Pamgen:BOOL=ON \
+-DTrilinos_ENABLE_Krino:BOOL=OFF \
 -DTrilinos_ENABLE_Percept:BOOL=ON \
 -DTrilinos_ENABLE_Panzer:BOOL=${not_cuda} \
 -DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=${not_cuda} \
@@ -77,15 +75,17 @@ cmake \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
--DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=ON \
 -DCMAKE_CXX_STANDARD:STRING=17 \
--DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
+-DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh:BOOL=OFF \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DTPL_ENABLE_CDT:BOOL=OFF \
+-DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \

@@ -84,6 +84,7 @@ public:
     const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
 
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
+  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const override;
 
   virtual bool snapped_elements_may_have_new_intersections() const override { return false; }
 

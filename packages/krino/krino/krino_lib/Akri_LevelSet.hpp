@@ -91,6 +91,7 @@ public:
   void compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const;
   void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 ) const;
 
+  double CDFEM_gradient_magnitude_error();
   double gradient_magnitude_error();
   void compute_continuous_gradient() const;
 
@@ -202,6 +203,7 @@ public:
   void redistance();
   void redistance(const stk::mesh::Selector & selector);
   void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
+  void interface_conforming_redistance();
 
   std::pair<double,double> get_conserved_negative_volume_and_time() const;
   void set_conserved_negative_volume_and_time(const double vol, const double time);
@@ -231,8 +233,11 @@ public:
 
 private:
   LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
+  void sync_all_fields_to_host();
+  void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector);
+  void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
+  void build_interface_conforming_facets(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideBlockSelector);
 
-private:
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
   const Surface_Identifier my_identifier;

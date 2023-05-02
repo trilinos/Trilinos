@@ -33,8 +33,6 @@
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_topology/topology.hpp>
 
-#include <stk_mesh/base/MemoryUsage.hpp>
-
 #include <adapt/RefinerUtil.hpp>
 
 #include <adapt/UniformRefiner.hpp>

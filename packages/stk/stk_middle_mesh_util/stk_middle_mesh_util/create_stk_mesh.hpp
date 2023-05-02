@@ -6,11 +6,8 @@
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/Selector.hpp"
-#include "stk_topology/topology.hpp"
 
 #include "field.hpp"
 #include "mesh.hpp"
@@ -49,6 +46,13 @@ class StkMeshCreator
       load_mesh(fname);
     }
 
+    explicit StkMeshCreator(std::shared_ptr<::stk::mesh::BulkData> bulkDataPtr)
+      : m_bulkDataPtr(bulkDataPtr)
+      , m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
+    {
+      declare_stk_vert_field();
+    }
+
     MeshPart create_mesh_from_part(const std::string& name);
 
     // copies the coordinates from the Mesh to the STK mesh
@@ -68,6 +72,12 @@ class StkMeshCreator
     void create_faces_from_sideset(std::shared_ptr<mesh::Mesh> mesh, MeshFieldPtr stkEls);
 
     void create_faces_from_shells(std::shared_ptr<mesh::Mesh> mesh, MeshFieldPtr stkEls);
+
+    void setup_vert_sharing(std::shared_ptr<mesh::Mesh> mesh);
+
+    void create_edges(std::shared_ptr<mesh::Mesh> mesh, stk::mesh::EntityRank rank);
+
+    void setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFieldPtr stkEls);
 
     std::shared_ptr<::stk::mesh::BulkData> m_bulkDataPtr;
     std::shared_ptr<::stk::mesh::MetaData> m_metaDataPtr;

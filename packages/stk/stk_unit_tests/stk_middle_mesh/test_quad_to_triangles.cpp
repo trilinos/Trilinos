@@ -1,6 +1,6 @@
-#include "intersection_common.hpp"
-#include "mesh.hpp"
-#include "predicates/quad_to_triangles.hpp"
+#include "stk_middle_mesh/predicates/intersection_common.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/predicates/quad_to_triangles.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {
@@ -673,8 +673,6 @@ TEST(QuadToTriangles, classify_onto)
     quadToTriangles.set_triangles(el1);  
     expect_near(quadToTriangles.compute_xyz_coords(record2), {0.25, 0, 0}, 1e-13);
   }
-
-  std::cout << "\nproblem case" << std::endl;
 
   // edge 1
   {

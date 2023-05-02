@@ -1,10 +1,8 @@
 #ifndef MESH_QUALITY_IMPROVER_H
 #define MESH_QUALITY_IMPROVER_H
 
-#include "mesh_layers.hpp"
 #include "optimization_step.hpp"
-
-// #include ".hpp"
+#include "active_vert_container.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -21,6 +19,31 @@ struct RunOpts
                        // even if max_delta_x is satisfied
                        // (the itermax criteria is always applied)
 };
+
+namespace {
+
+class IsVertValidPredicate
+{
+  public:
+    explicit IsVertValidPredicate(std::shared_ptr<Mesh> mesh,
+                                  std::shared_ptr<opt::impl::OptimizationStep> quality) :
+      m_mesh(mesh),
+      m_quality(quality)
+    {}
+
+    bool operator()(MeshEntityPtr v)
+    {
+      assert(v->get_type() == MeshEntityType::Vertex);
+      opt::impl::ActiveVertData active(m_mesh, v);
+      return !(m_quality->has_invalid(active));
+    }
+
+  private:
+    std::shared_ptr<Mesh> m_mesh;
+    std::shared_ptr<opt::impl::OptimizationStep> m_quality;
+};
+
+}
 
 class MeshQualityImprover
 {
@@ -45,14 +68,14 @@ class MeshQualityImprover
     template <typename Tfunc>
     MeshQualityImprover(std::shared_ptr<Mesh> mesh, Tfunc filter, const int nlayers,
                         std::shared_ptr<opt::impl::OptimizationStep> qualityOpt, const double tol = 1e-6,
-                        const int itermax = 10)
+                        const int itermax = 10, bool verboseOutput = false)
       : m_mesh(mesh)
       , m_quality(qualityOpt)
+      , m_activeVertContainer(mesh, filter, IsVertValidPredicate(mesh, qualityOpt), nlayers)
       , m_distTol(tol)
       , m_itermax(itermax)
+      , m_verboseOutput(verboseOutput)
     {
-      get_active_verts(mesh, filter, nlayers);
-      std::cout << "number of active verts = " << m_activeVerts.size() << std::endl;
     }
 
     void run();
@@ -61,53 +84,12 @@ class MeshQualityImprover
     // virtual element attached to them
     int count_invalid_points();
 
+    bool verbose_output() const
+    {
+      return m_verboseOutput;
+    }
+
   private:
-    template <typename Tfunc>
-    void get_active_verts(std::shared_ptr<Mesh> mesh, Tfunc filter, const int nlayers)
-    {
-      std::vector<MeshEntityPtr> roots, verts;
-      get_roots(mesh, filter, roots);
-
-      MeshLayers layers;
-      if (nlayers == -1)
-        layers.get_all_layers(mesh, filter, roots, verts);
-      else
-        layers.get_layers(mesh, filter, roots, nlayers, verts);
-
-      for (auto& v : verts)
-        if (v && filter(v))
-          m_activeVerts.emplace_back(v);
-    }
-
-    template <typename Tfunc>
-    void get_roots(std::shared_ptr<Mesh> mesh, Tfunc filter, std::vector<MeshEntityPtr>& roots)
-    {
-      roots.clear();
-      for (auto v : mesh->get_vertices())
-      {
-        if (v)
-        {
-          if (!filter(v))
-          { // use the excluded verts as the roots
-            roots.push_back(v);
-          } else
-          {
-            opt::impl::ActiveVertData active(v);
-            if (m_quality->has_invalid(active))
-              roots.push_back(v);
-          }
-        }
-      }
-
-      // if no excluded verts, pick an arbitrary vertex
-      if (roots.size() == 0)
-        for (auto v : mesh->get_vertices())
-          if (v)
-          {
-            roots.push_back(mesh->get_vertices()[0]);
-            break;
-          }
-    }
 
     void run_single(std::shared_ptr<opt::impl::OptimizationStep> step, std::vector<opt::impl::ActiveVertData*>& verts,
                     const RunOpts& opts);
@@ -120,9 +102,10 @@ class MeshQualityImprover
 
     std::shared_ptr<Mesh> m_mesh;
     std::shared_ptr<opt::impl::OptimizationStep> m_quality;
-    std::vector<opt::impl::ActiveVertData> m_activeVerts;
+    ActiveVertContainer m_activeVertContainer;
     double m_distTol = 1e-6; // TODO: needs to be relataive to the size of the element
     int m_itermax    = 10;
+    bool m_verboseOutput = false;
 };
 
 } // namespace impl

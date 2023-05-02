@@ -69,7 +69,7 @@ static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
 
     for (size_t n = 0; n < length; ++n)
     {
-      ThrowAssert(&(dist[n]) != NULL);
+      STK_ThrowAssert(&(dist[n]) != NULL);
 
       const Vector3d xvec(coord+n*spatial_dimension, spatial_dimension);
       dist[n] = facet_list.point_unsigned_distance(xvec, narrowBandSize, farFieldValue);

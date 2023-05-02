@@ -156,17 +156,17 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         {
           const std::string surface_name = comp_dist_surf.as<std::string>();
 
-          ThrowErrorMsgIf( !ls.aux_meta().has_part(surface_name),
+          STK_ThrowErrorMsgIf( !ls.aux_meta().has_part(surface_name),
               "Could not locate a surface named " << surface_name);
 
           stk::mesh::Part & io_part = ls.aux_meta().get_part(surface_name);
-          ThrowErrorMsgIf( ls.meta().side_rank() != io_part.primary_entity_rank(),
+          STK_ThrowErrorMsgIf( ls.meta().side_rank() != io_part.primary_entity_rank(),
             "Part " << surface_name << " is not a side-rank part.");
 
           ls.get_compute_surface_distance_parts().push_back(&io_part);
           compute_distance_surfaces.push_back(surface_name);
         }
-        ThrowErrorMsgIf( ls.get_compute_surface_distance_parts().empty(),
+        STK_ThrowErrorMsgIf( ls.get_compute_surface_distance_parts().empty(),
           "Please specify surfaces for compute surface distance.");
       }
 

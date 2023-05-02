@@ -24,7 +24,7 @@ SearchTree<ENTITY>::SearchTree( std::vector<BoundingBoxEntity> & entities )
   {
     my_nodes.resize(2*entities.size() - 1);
     const size_t tree_size = build( entities.begin(), entities.end() );
-    ThrowRequire(tree_size == my_nodes.size());
+    STK_ThrowRequire(tree_size == my_nodes.size());
   }
 }
 
@@ -42,7 +42,7 @@ SearchTree<ENTITY>::SearchTree( const std::vector<EntityType> & entities, const 
     }
     my_nodes.resize(2*entities.size() - 1);
     const size_t tree_size = build( bbox_entities.begin(), bbox_entities.end() );
-    ThrowRequire(tree_size == my_nodes.size());
+    STK_ThrowRequire(tree_size == my_nodes.size());
   }
 }
 
@@ -194,7 +194,7 @@ SearchTree<ENTITY>::build( typename std::vector<BoundingBoxEntity>::iterator ent
   }
   else
   {
-    ThrowAssert(1 == entity_size);
+    STK_ThrowAssert(1 == entity_size);
     my_nodes[index].set_leaf_entity(entity_begin->second);
     return index + 1;
   }

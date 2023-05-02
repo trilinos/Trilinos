@@ -662,8 +662,9 @@ TYPED_TEST(CopyTransferFixture, copy1T0)
   std::vector<int> element_ownerB = {0};
   const int expected_target_processor = 0;
   this->build_fixture(element_ownerA, element_ownerB, TwoElemMeshInfo());
+  stk::ParallelMachine comm = this->pm;
   this->run_test(TwoElemKeyToTargetTest(expected_target_processor), [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
-      const int p_rank = stk::parallel_machine_rank( this->pm );
+      const int p_rank = stk::parallel_machine_rank( comm );
       if (p_rank == 0) {
         EXPECT_EQ( 8u, remote_keys.size() );
       } else {
@@ -704,9 +705,10 @@ TYPED_TEST(CopyTransferFixture, copy1T0_MPMD)
   std::vector<int> element_ownerB_subcomm_rank = {0};
   const int expected_target_processor = 0;
   this->build_fixture(element_ownerA_subcomm_rank, element_ownerB_subcomm_rank, TwoElemMeshInfo());
+  stk::ParallelMachine comm = this->pm;
   this->run_test(TwoElemKeyToTargetTest(expected_target_processor),
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
-      const int p_rank = stk::parallel_machine_rank( this->pm );
+      const int p_rank = stk::parallel_machine_rank(comm);
       if (p_rank == 0) {
         EXPECT_EQ( 8u, remote_keys.size() );
       } else {
@@ -789,13 +791,14 @@ TYPED_TEST(CopyTransferFixture, copy01T10)
   std::vector<int> element_ownerA = {0, 1};
   std::vector<int> element_ownerB = {1, 0};
   this->build_fixture(element_ownerA, element_ownerB, FourElemMeshInfo());
+  stk::ParallelMachine comm = this->pm;
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-    auto gold = get_01T10_key_to_target_processor_gold(this->pm);
+    auto gold = get_01T10_key_to_target_processor_gold(comm);
     EXPECT_EQ(gold, key_to_target_processor);
       },
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
-        auto gold_remote_keys = get_01T10_remote_key_gold(this->pm);
+        auto gold_remote_keys = get_01T10_remote_key_gold(comm);
         EXPECT_EQ(remote_keys, gold_remote_keys);
       });
 
@@ -834,13 +837,14 @@ TYPED_TEST(CopyTransferFixture, copy01T32_MPMD)
   std::vector<int> element_ownerB_subcomm_rank = {1, 0};
 
   this->build_fixture(element_ownerA_subcomm_rank , element_ownerB_subcomm_rank, FourElemMeshInfo());
-
+  stk::ParallelMachine comm = this->pm;
+  stk::ParallelMachine commSub = this->pmSub;
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
         if (color == 1) return;
 
         //Map wrt subcommunicators is same as non mpmd 01T10 case above
-        auto gold = get_01T10_key_to_target_processor_gold(this->pmSub);
+        auto gold = get_01T10_key_to_target_processor_gold(commSub);
 
         //adjust from subcommunicator to global
         for (auto && elem : gold)
@@ -851,9 +855,9 @@ TYPED_TEST(CopyTransferFixture, copy01T32_MPMD)
       },
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
         if (color == 0) return;
-        auto gold_remote_keys = get_01T10_remote_key_gold(this->pmSub);
+        auto gold_remote_keys = get_01T10_remote_key_gold(commSub);
         //Add nodes that were on the same proc in the non mpmd case
-        if (stk::parallel_machine_rank(this->pm) == 2)
+        if (stk::parallel_machine_rank(comm) == 2)
         {
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,2).m_value);
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,5).m_value);

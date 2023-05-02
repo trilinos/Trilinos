@@ -42,18 +42,19 @@
 namespace stk {
 namespace mesh {
 
-using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
-using EntityKeyViewType         = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
-using EntityViewType            = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, stk::ngp::MemSpace>;
-using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
-using PermutationViewType       = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
-using HostMeshIndexType         = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using DeviceCommMapIndices        = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
+using EntityKeyViewType           = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
+using EntityViewType              = Kokkos::View<Entity*, stk::ngp::MemSpace>;
+using BucketConnectivityType      = Kokkos::View<Entity*, stk::ngp::MemSpace>;
+using UnsignedViewType            = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
+using BoolViewType                = Kokkos::View<bool*, stk::ngp::MemSpace>;
+using OrdinalViewType             = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
+using PartOrdinalViewType         = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
+using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
+using FastSharedCommMapViewType   = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
+using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
+using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
 
 template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;

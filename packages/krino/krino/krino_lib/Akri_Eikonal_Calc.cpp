@@ -60,7 +60,7 @@ double calculate_gradient_magnitude(const int npe,
   }
   else
   {
-    ThrowAssert(4 == npe);
+    STK_ThrowAssert(4 == npe);
 
     const std::array<Vector3d,4> x{get_coordinates(elem_nodes[0]), get_coordinates(elem_nodes[1]), get_coordinates(elem_nodes[2]), get_coordinates(elem_nodes[3])};
     const std::array<double,4> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2]), *field_data<double>(dRef, elem_nodes[3])};
@@ -85,7 +85,7 @@ double calculate_gradient_magnitude(const int npe,
   }
   else
   {
-    ThrowAssert(4 == npe);
+    STK_ThrowAssert(4 == npe);
 
     const std::array<Vector3d,4> x{Vector3d(field_data<double>(xRef, elem_nodes[0])), Vector3d(field_data<double>(xRef, elem_nodes[1])), Vector3d(field_data<double>(xRef, elem_nodes[2])), Vector3d(field_data<double>(xRef, elem_nodes[3]))};
     const std::array<double,4> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2]), *field_data<double>(dRef, elem_nodes[3])};
@@ -130,10 +130,10 @@ static double eikonal_solve_triangle_2d_or_3d(const std::array<Vector3d,3> & x, 
   }
   else // (3 == dim)
   {
-    ThrowAssert(3 == dim);
+    STK_ThrowAssert(3 == dim);
     detJ = Cross(x10,x20).length();
   }
-  ThrowAssert(detJ > 0.0);
+  STK_ThrowAssert(detJ > 0.0);
 
   const double a = sqr10;
   const double b = -2.0 * d10 * Dot(x10,x20);
@@ -208,7 +208,7 @@ double eikonal_solve_tetrahedron(const std::array<Vector3d,4> & x, const std::ar
   const Vector3d x30_x_x10 = Cross(x30,x10);
 
   const double detJ = Dot(x30,x10_x_x20);
-  ThrowAssert(detJ > 0);
+  STK_ThrowAssert(detJ > 0);
 
   const Vector3d contrib12 = d10*x20_x_x30 + d20*x30_x_x10;
 

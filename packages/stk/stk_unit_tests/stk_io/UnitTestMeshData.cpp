@@ -370,9 +370,10 @@ class StkIoFixture_legacy : public stk::unit_test_util::MeshFixture
 protected:
     void setup_mesh(const std::string & meshSpec,
                     stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
+                    unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                    unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity()) override
     {
-        setup_empty_mesh(auraOption, bucketCapacity);
+        setup_empty_mesh(auraOption, initialBucketCapacity, maximumBucketCapacity);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }
@@ -767,9 +768,10 @@ class StkIoFixture : public stk::unit_test_util::MeshFixture
 protected:
     void setup_mesh(const std::string & meshSpec,
                     stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
+                    unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                    unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity()) override
     {
-        setup_empty_mesh(auraOption, bucketCapacity);
+        setup_empty_mesh(auraOption, initialBucketCapacity, maximumBucketCapacity);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }

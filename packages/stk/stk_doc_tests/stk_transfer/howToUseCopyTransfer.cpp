@@ -90,7 +90,7 @@ void change_mesh_decomposition(stk::mesh::BulkData& mesh)
 }
 
 //BEGIN
-TEST(StkMeshHowTo, useCopyTransfer)
+TEST(StkTransferHowTo, useCopyTransfer)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) > 2) { GTEST_SKIP(); }

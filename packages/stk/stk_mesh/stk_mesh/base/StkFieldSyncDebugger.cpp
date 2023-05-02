@@ -64,7 +64,7 @@ StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, 
                                                      const char * fileName, int lineNumber)
 {
   BulkData & bulk = m_stkField->get_mesh();
-  const Bucket * bucket = bulk.get_bucket_repository().get_bucket(m_stkField->entity_rank(), bucketId);
+  const Bucket * bucket = bulk.m_bucket_repository.get_bucket(m_stkField->entity_rank(), bucketId);
   STK_ThrowRequire(bucket != nullptr);
 
   host_stale_access_entity_check((*bucket)[bucketOrd], fileName, lineNumber);
@@ -85,7 +85,7 @@ void
 StkFieldSyncDebugger::host_stale_access_bucket_check(const unsigned& bucketId, const char* fileName, int lineNumber)
 {
   BulkData & bulk = m_stkField->get_mesh();
-  const Bucket * bucket = bulk.get_bucket_repository().get_bucket(m_stkField->entity_rank(), bucketId);
+  const Bucket * bucket = bulk.m_bucket_repository.get_bucket(m_stkField->entity_rank(), bucketId);
   STK_ThrowRequire(bucket != nullptr);
 
   host_stale_access_bucket_check(*bucket, fileName, lineNumber);

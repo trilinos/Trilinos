@@ -37,14 +37,14 @@ public:
   FieldRef(const stk::mesh::FieldBase * in_field)
   : my_field(in_field)
   { 
-    ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
+    STK_ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
   }
   FieldRef(const stk::mesh::FieldBase * in_field, const stk::mesh::FieldState in_state)
   : my_field(in_field)
   { 
-    ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
+    STK_ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
     my_field = in_field->field_state(in_state);
-    ThrowAssertMsg(NULL != my_field, "Invalid state.");
+    STK_ThrowAssertMsg(NULL != my_field, "Invalid state.");
   }
   FieldRef(const stk::mesh::FieldBase & in_fieldref)
   {
@@ -52,7 +52,7 @@ public:
   }
   FieldRef(const FieldRef in_fieldref, const stk::mesh::FieldState in_state)
   { 
-    ThrowAssertMsg(NULL != in_fieldref.my_field, "Cannot set FieldRef with NULL field.");
+    STK_ThrowAssertMsg(NULL != in_fieldref.my_field, "Cannot set FieldRef with NULL field.");
     my_field = in_fieldref.my_field->field_state(in_state);
   }
 
@@ -64,7 +64,7 @@ public:
   // assignment operators
   FieldRef& operator=( const stk::mesh::FieldBase * in_field )
   { 
-    ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
+    STK_ThrowAssertMsg(NULL != in_field, "Cannot set FieldRef with NULL field.");
     my_field = in_field;
     return *this;
   }
@@ -76,7 +76,7 @@ public:
 
   bool valid() const { return NULL != my_field; }
   bool valid_restriction_size() const { return NULL != my_field && 0 != my_field->restrictions().size(); }
-  void assert_valid() const { ThrowAssertMsg(NULL != my_field, "Attempt to access field of uninitialized FieldRef."); }
+  void assert_valid() const { STK_ThrowAssertMsg(NULL != my_field, "Attempt to access field of uninitialized FieldRef."); }
 
   // stk access
   const stk::mesh::FieldBase & field() const { assert_valid(); return *my_field; }
@@ -115,7 +115,7 @@ public:
   // Only safe if field has same length on all entities
   unsigned length() const
   {
-    ThrowAssert(valid());
+    STK_ThrowAssert(valid());
     return my_field->max_size();
   }
 

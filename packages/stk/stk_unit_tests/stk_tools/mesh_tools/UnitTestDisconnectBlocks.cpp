@@ -999,7 +999,6 @@ void test_reconnect_block_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector
 
   EXPECT_EQ(expectedGlobalInitialCommonNodes, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::disconnect_block_pairs(bulk, disconnectBlockPairs, info);
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "test.g");
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::reconnect_block_pairs(bulk, reconnectBlockPairs, info);

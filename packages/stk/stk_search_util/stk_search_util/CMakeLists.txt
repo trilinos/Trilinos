@@ -62,7 +62,7 @@ FILE(GLOB SOURCES *.cpp)
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_search_util_base
+  stk_search_util
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

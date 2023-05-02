@@ -2,6 +2,7 @@
 #define KRINO_KRINO_UNIT_TESTS_AKRI_UNIT_REFINEMENTFIXTURE_HPP_
 
 #include <Akri_StkMeshFixture.hpp>
+#include <random>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -45,6 +46,7 @@ public:
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mBuilder;
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mComm;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::write_mesh;
 
   void mark_elements_for_refinement(const std::vector<stk::mesh::Entity> & elements)
   {
@@ -122,23 +124,6 @@ public:
       std::cout << "After " << iRefine+1 << " levels of percept refinement, there are " << get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK) << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
     }
   }
-  void write_mesh(const std::string &fileName)
-  {
-    stk::io::StkMeshIoBroker stkIo;
-    stkIo.set_bulk_data(mMesh);
-
-    Ioss::PropertyManager properties;
-    properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
-    properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-
-    size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS, properties);
-    stkIo.set_active_selector(this->get_aux_meta().active_part());
-    stkIo.set_subset_selector(outputFileIndex, this->get_aux_meta().active_part());
-    stkIo.write_output_mesh(outputFileIndex);
-    stkIo.begin_output_step(outputFileIndex, 0.);
-    stkIo.write_defined_output_fields(outputFileIndex);
-    stkIo.end_output_step(outputFileIndex);
-  }
 
   void refine_marked_elements(const bool usePercept=false, const std::string fileName = "")
   {
@@ -186,6 +171,71 @@ public:
       }
     }
   }
+
+  void randomly_select_children(std::mt19937 & rand_gen,
+      const double select_fraction,
+      std::vector<stk::mesh::Entity> & elems_out)
+  {
+    elems_out.clear();
+
+    std::uniform_real_distribution<> rand_dist(0., 1.);
+    const auto & meta = mMesh.mesh_meta_data();
+    const stk::mesh::Selector selector = meta.locally_owned_part() & myRefinement.child_part();
+    for (auto && bucket : mMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
+    {
+      for (size_t iElem = 0; iElem < bucket->size(); ++iElem)
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if (rand_val < select_fraction)
+        {
+          elems_out.push_back((*bucket)[iElem]);
+        }
+      }
+    }
+  }
+
+  void randomly_mark_elements(std::mt19937 &rand_gen)
+  {
+    clear_refinement_marker();
+
+    std::uniform_real_distribution<> rand_dist(0., 1.);
+    const double refine_prob = 0.1;
+    const double unrefine_prob = 0.95;
+    const auto & meta = mMesh.mesh_meta_data();
+    const stk::mesh::Selector owned_leaf = meta.locally_owned_part() & !myRefinement.parent_part();
+    const stk::mesh::Selector owned_parent = meta.locally_owned_part() & myRefinement.parent_part();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, owned_leaf ) )
+    {
+      int * elemMarker = field_data<int>(myElementMarkerField, *bucket);
+      for ( size_t iElem=0; iElem<bucket->size(); ++iElem )
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if(rand_val < refine_prob)
+        {
+          elemMarker[iElem] = Refinement::REFINE;
+        }
+      }
+    }
+
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, owned_parent ) )
+    {
+      int * elemMarker = field_data<int>(myElementMarkerField, *bucket);
+      for ( size_t iElem=0; iElem<bucket->size(); ++iElem )
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if(rand_val < unrefine_prob)
+        {
+          elemMarker[iElem] = Refinement::COARSEN;
+          for(auto && child : myRefinement.get_children((*bucket)[iElem]))
+          {
+            *field_data<int>(myElementMarkerField, child) = Refinement::COARSEN;
+          }
+        }
+      }
+    }
+  }
+
+
 
   std::vector<stk::mesh::Entity> get_elements_with_given_ids(const std::vector<stk::mesh::EntityId> & idsOfElems)
   {

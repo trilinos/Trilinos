@@ -46,6 +46,11 @@ public:
   void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
   bool do_nearby_refinement_before_interface_refinement() const { return myFlagDoNearbyRefinementBeforeInterfaceRefinement; }
 
+  static bool is_valid_interval(const std::array<double,2> & refinementInterval) { return refinementInterval[0] <= refinementInterval[1]; }
+  void set_refinement_interval(const std::array<double,2> & refinementInterval) { myRefinementInterval = refinementInterval; }
+  bool has_refinement_interval() const { return is_valid_interval(myRefinementInterval); }
+  const std::array<double,2> get_refinement_interval() const { return myRefinementInterval; }
+
   void set_use_percept(bool usePercept) { myFlagUsePercept = usePercept; }
   bool get_use_percept() const { return myFlagUsePercept; }
 
@@ -65,6 +70,7 @@ private:
   int my_interface_maximum_refinement_level{0};
   int my_post_adapt_uniform_refinement_levels{0};
   uint64_t my_nonconformal_adapt_target_element_count{0};
+  std::array<double,2> myRefinementInterval{1.,-1.}; // bad initial interval
   FieldRef myNonInterfaceConformingRefinementNodeMarkerField;
   std::string my_nonconformal_adapt_indicator_name;
   RefinementInterface * myNonInterfaceConformingRefinement{nullptr};

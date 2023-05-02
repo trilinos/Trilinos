@@ -75,6 +75,21 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     }
     refinementSupport.activate_nonconformal_adaptivity(levelsetRefinementLevels);
 
+    std::vector<double> refinementIntervalData;
+    if (region_node.get_if_present("level_set_refinement_interval", refinementIntervalData))
+    {
+      if (refinementIntervalData.size() != 2)
+      {
+        stk::RuntimeDoomedAdHoc() << "level_set_refinement_interval must be a vector of length 2 (lo,hi).\n";
+      }
+      const std::array<double,2> refinementInterval{refinementIntervalData[0], refinementIntervalData[1]};
+      if (!refinementSupport.is_valid_interval(refinementInterval))
+      {
+        stk::RuntimeDoomedAdHoc() << "level_set_refinement_interval must be a vector of length 2 (lo,hi) with lo <= hi.\n";
+      }
+      refinementSupport.set_refinement_interval(refinementInterval);
+    }
+
     const stk::diag::Timer & regionTimer = region->getRegionTimer();
     Phase_Support::associate_FEModel_and_metadata(fem_model_name, meta);
     Surface_Manager::associate_FEModel_and_metadata(fem_model_name, meta);

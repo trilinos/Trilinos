@@ -74,14 +74,18 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, stk::mesh::BulkData::AUTO_AURA)
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            stk::mesh::BulkData::AUTO_AURA)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-            : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option)
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            auto_aura_option)
     {
     }
 
@@ -90,12 +94,17 @@ public:
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool _add_fmwk_data,
                    stk::mesh::FieldDataManager *field_data_manager,
-                   unsigned bucket_capacity) :
-                     stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option
+                   unsigned initial_bucket_capacity = stk::mesh::get_default_initial_bucket_capacity(),
+                   unsigned maximum_bucket_capacity = stk::mesh::get_default_maximum_bucket_capacity())
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            auto_aura_option,
 #ifdef SIERRA_MIGRATION
-, _add_fmwk_data
+                            _add_fmwk_data,
 #endif
-  , field_data_manager, bucket_capacity)
+                            field_data_manager,
+                            initial_bucket_capacity,
+                            maximum_bucket_capacity)
     {
     }
 
@@ -345,7 +354,7 @@ public:
 
     stk::mesh::impl::BucketRepository& my_get_bucket_repository()
     {
-        return get_bucket_repository();
+        return m_bucket_repository;
     }
 };
 

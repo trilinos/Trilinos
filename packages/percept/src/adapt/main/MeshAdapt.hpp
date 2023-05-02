@@ -39,8 +39,6 @@
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 
-#include <stk_mesh/base/MemoryUsage.hpp>
-
 #include <adapt/RefinerUtil.hpp>
 
 #include <adapt/main/RunAdaptRun.hpp>

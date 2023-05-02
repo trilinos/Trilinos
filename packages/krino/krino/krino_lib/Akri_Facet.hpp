@@ -58,7 +58,7 @@ public:
 
   virtual void apply_transformation(const Transformation & transformation) = 0;
 
-  const BoundingBox & bounding_box() const { ThrowAssert (my_bounding_box.valid()); return my_bounding_box; }
+  const BoundingBox & bounding_box() const { STK_ThrowAssert(my_bounding_box.valid()); return my_bounding_box; }
   static const BoundingBox & get_bounding_box(const Facet * facet) { return facet->bounding_box(); }
 
 protected:
