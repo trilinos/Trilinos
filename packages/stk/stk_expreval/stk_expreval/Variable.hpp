@@ -115,34 +115,32 @@ public:
   }
 
   Variable &operator=(const double & value) {
-    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      std::stringstream error;
-      error << "In analytic expression evaluator, invalid use of equal on multi-component array variable '"<<m_name<<"'.  ";
-      throw std::runtime_error(error.str());
-    }
+    STK_ThrowRequireMsg(m_size == 1 || m_size == std::numeric_limits<int>::max(),
+                        "Invalid use of equal on the multi-component variable " + m_name);
 
     if (m_type == INTEGER) {
-      *m_intPtr = static_cast<int>(value);
+       m_intPtr = &m_intValue;
+      m_intValue = static_cast<int>(value);
     }
     else if (m_type == DOUBLE) {
-      *m_doublePtr = value;
+      m_doublePtr = &m_doubleValue;
+      m_doubleValue = value;
     }
 
     return *this;
   }
 
   Variable &operator=(const int & value) {
-    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      std::stringstream error;
-      error << "In analytic expression evaluator, invalid use of equal on multi-component variable '"<<m_name<<"'.  ";
-      throw std::runtime_error(error.str());
-    }
+    STK_ThrowRequireMsg(m_size == 1 || m_size == std::numeric_limits<int>::max(),
+                        "Invalid use of equal on the multi-component variable " + m_name);
 
     if (m_type == INTEGER) {
-      *m_intPtr = value;
+      m_intPtr = &m_intValue;
+      m_intValue = value;
     }
     else if (m_type == DOUBLE) {
-      *m_doublePtr = static_cast<double>(value);
+      m_doublePtr = &m_doubleValue;
+      m_doubleValue = static_cast<double>(value);
     }
 
     return *this;
@@ -159,41 +157,26 @@ public:
   bool isDependent() const { return m_use == DEPENDENT; }
 
   inline double & getArrayValue(int index, ArrayOffset offsetType) const {
-    if (m_type != DOUBLE) {
-      std::stringstream error;
-      error << "In analytic expression evaluator, only double arrays allowed for variable '"<<m_name<<"'.  ";
-      throw std::runtime_error(error.str());
-    }
 
-    if (m_doublePtr == nullptr) {
-      std::stringstream error;
-      error << "In analytic expression evaluator, unbound variable '"<<m_name<<"'.  ";
-      throw std::runtime_error(error.str());
-    }
+    STK_ThrowRequireMsg(m_type == DOUBLE, "Only double arrays allowed for variable " + m_name);
+
+    STK_ThrowRequireMsg(m_doublePtr != nullptr, "Variable " + m_name + " does not have a valid value."); 
 
     if (offsetType == ZERO_BASED_INDEX) {
-      if (index < 0 || (index+1) > m_size) {
-        std::stringstream error;
-        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
-        throw std::runtime_error(error.str());
-      }
+      STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
+      STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
       return m_doublePtr[index];
     }
     else if (offsetType == ONE_BASED_INDEX) {
-      if (index < 1 || (index) > m_size) {
-        std::stringstream error;
-        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 1 to '"<<m_size<<"'.  ";
-        throw std::runtime_error(error.str());
-      }
+      STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
+      STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
       return m_doublePtr[index-1];
     }
     else {
-      std::stringstream error;
-      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-      error << "Invalid internal state of expression evaluator";
-      throw std::runtime_error(error.str());
+      STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
+      return m_doublePtr[0];
     }
   }
 
@@ -212,16 +195,32 @@ public:
   }
 
   inline Variable & unbind() {
+    m_size = 1;
     switch (m_type) {
     case DOUBLE: {
       m_doublePtr = &m_doubleValue;
-      m_size = 1;
       m_doubleValue = 0.0;
       break;
     }
     case INTEGER: {
       m_intPtr = &m_intValue;
-      m_size = 1;
+      m_intValue = 0;
+      break;
+    }
+    }
+    return *this;
+  }
+
+  inline Variable & deactivate() {
+    m_size = 1;
+    switch (m_type) {
+    case DOUBLE: {
+      m_doublePtr = nullptr;
+      m_doubleValue = 0.0;
+      break;
+    }
+    case INTEGER: {
+      m_intPtr = nullptr;
       m_intValue = 0;
       break;
     }
@@ -235,12 +234,12 @@ public:
   int getLength() const { return m_size; }
 
   inline double getValue() const {
-    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      std::stringstream error;
-      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-      error << "Invalid direct access of array variable, must access by index";
-      throw std::runtime_error(error.str());
-    }
+    STK_ThrowRequireMsg(m_size == 1 || m_size == std::numeric_limits<int>::max(),
+     "Invalid direct access of array variable " + m_name + ", must access by index");
+
+    STK_ThrowRequireMsg(((m_type == DOUBLE) && (m_doublePtr != nullptr)) || 
+                        ((m_type == INTEGER) && (m_intPtr != nullptr)), 
+                        "Variable " + m_name + " does not have a valid value."); 
 
     switch (m_type) {
     case DOUBLE:
@@ -249,10 +248,8 @@ public:
       return *m_intPtr;
     }
 
-    std::stringstream error;
-    error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-    error << "Invalid variable type";
-    throw std::runtime_error(error.str());
+    STK_ThrowErrorMsg("Invalid variable type for variable " + m_name);
+    return *m_doublePtr;
   }
 
   KOKKOS_FUNCTION

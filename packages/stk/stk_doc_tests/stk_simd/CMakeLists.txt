@@ -16,7 +16,6 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
    stk_simd_doc_test
-   NAME STKSimd_DocTest
    ARGS ""
    COMM serial mpi
    PASS_REGULAR_EXPRESSION "PASS"

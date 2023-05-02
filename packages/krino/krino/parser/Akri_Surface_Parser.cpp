@@ -273,7 +273,7 @@ MeshSurface *
 parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & meta)
 {
   std::string surface_name;
-  ThrowRequire(ic_node.get_if_present("mesh", surface_name));
+  STK_ThrowRequire(ic_node.get_if_present("mesh", surface_name));
   const AuxMetaData & auxMeta = AuxMetaData::get(meta);
 
   double sign = 1.0;
@@ -285,11 +285,11 @@ parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & met
     }
   }
 
-  ThrowErrorMsgIf(!auxMeta.has_part(surface_name), "Could not locate a surface named " << surface_name);
+  STK_ThrowErrorMsgIf(!auxMeta.has_part(surface_name), "Could not locate a surface named " << surface_name);
   const stk::mesh::Part & io_part = auxMeta.get_part(surface_name);
 
   const stk::mesh::Field<double>* coords = reinterpret_cast<const stk::mesh::Field<double>*>(&auxMeta.get_current_coordinates().field());
-  ThrowRequire(nullptr != coords);
+  STK_ThrowRequire(nullptr != coords);
 
   const stk::mesh::Selector surface_selector = stk::mesh::Selector(io_part);
   return new MeshSurface(meta, *coords, surface_selector, sign);

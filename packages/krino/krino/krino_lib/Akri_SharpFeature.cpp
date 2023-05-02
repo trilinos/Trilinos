@@ -222,7 +222,7 @@ bool SharpFeatureInfo::angle_is_sharp_between_any_two_sides_2D(const stk::mesh::
     for (auto && side : sidesOfEdge)
     {
       StkMeshEntities sideNodes{mesh.begin_nodes(side), mesh.end_nodes(side)};
-      ThrowAssertMsg(sideNodes[0] == node || sideNodes[1] == node, "Did not find side node for segment.");
+      STK_ThrowAssertMsg(sideNodes[0] == node || sideNodes[1] == node, "Did not find side node for segment.");
       const stk::mesh::Entity sideNode = (sideNodes[1] == node) ? sideNodes[0] : sideNodes[1];
       const Vector3d coordsOfSideNode(field_data<double>(coordsField, sideNode),2);
       sideVec.push_back((coordsOfSideNode - nodeCoords).unit_vector());

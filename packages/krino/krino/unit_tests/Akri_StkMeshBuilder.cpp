@@ -8,6 +8,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include "../../../stk/stk_io/stk_io/StkMeshIoBroker.hpp"
 
 namespace krino
 {
@@ -32,10 +33,12 @@ void StkMeshBuilder<TOPO>::declare_coordinates()
 template<stk::topology::topology_t TOPO>
 void StkMeshBuilder<TOPO>::create_block_parts(const std::vector<unsigned> &elementBlockIDs)
 {
+  STK_ThrowRequireMsg(mBlockParts.empty(), "create_block_parts should only be called once.");
   for (unsigned blockId : elementBlockIDs)
   {
     const std::string blockName = "block_"+std::to_string(blockId);
     stk::mesh::Part &part = mMesh.mesh_meta_data().declare_part_with_topology(blockName, TOPO);
+    mBlockParts.push_back(&part);
     mMesh.mesh_meta_data().set_part_id(part, blockId);
     stk::io::put_io_part_attribute(part);
   }
@@ -58,6 +61,16 @@ void StkMeshBuilder<TOPO>::create_sideset_parts(const std::vector<unsigned> &sid
     }
 }
 
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_sideset_parts(const std::vector<SideIdAndNodeOfSides> &sideIdsAndNodesOfSides)
+{
+  std::vector<unsigned> sidesetIds;
+  for (auto && sideIdAndNodesOfSides : sideIdsAndNodesOfSides)
+    sidesetIds.push_back(sideIdAndNodesOfSides.first);
+  stk::util::sort_and_unique(sidesetIds);
+  create_sideset_parts(sidesetIds);
+}
+
 std::vector<stk::mesh::PartVector> convert_vector_of_vector_of_sideset_ids_to_parts(const stk::mesh::MetaData & meta, const std::vector<std::vector<unsigned>>& vectorOfVectorsOfSidesetIds)
 {
     std::vector<stk::mesh::PartVector> addParts {vectorOfVectorsOfSidesetIds.size()};
@@ -73,10 +86,46 @@ std::vector<stk::mesh::PartVector> convert_vector_of_vector_of_sideset_ids_to_pa
 template<stk::topology::topology_t TOPO>
 void StkMeshBuilder<TOPO>::add_sides_to_sidesets(const std::vector<stk::mesh::Entity> &sides, const std::vector<std::vector<unsigned>> &sidesetIdsPerSide)
 {
-    ThrowRequireWithSierraHelpMsg(sides.size() == sidesetIdsPerSide.size());
+    STK_ThrowRequireWithSierraHelpMsg(sides.size() == sidesetIdsPerSide.size());
     const std::vector<stk::mesh::PartVector> addParts = convert_vector_of_vector_of_sideset_ids_to_parts(mMesh.mesh_meta_data(), sidesetIdsPerSide);
     const std::vector<stk::mesh::PartVector> remParts(sidesetIdsPerSide.size(), stk::mesh::PartVector{});
     mMesh.batch_change_entity_parts(sides, addParts, remParts);
+}
+
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::add_sides_to_sidesets(const std::vector<SideIdAndNodeOfSides> &sideIdsAndNodesOfSides)
+{
+    std::map<stk::mesh::Entity, std::set<unsigned>> ownedSidesToIds;
+    for (auto && sideIdAndNodesOfSides : sideIdsAndNodesOfSides)
+    {
+      const unsigned sideId = sideIdAndNodesOfSides.first;
+      for (auto && nodeIndicesOfSide : sideIdAndNodesOfSides.second)
+      {
+        std::vector<stk::mesh::Entity> validNodesOfSide;
+        for (auto && nodeIndex : nodeIndicesOfSide)
+        {
+          stk::mesh::Entity node = get_assigned_node_for_index(nodeIndex);
+          if (mMesh.is_valid(node))
+            validNodesOfSide.push_back(node);
+        }
+        if (validNodesOfSide.size() == NPS)
+        {
+          stk::mesh::Entity side = get_side_with_nodes(validNodesOfSide);
+          if (mMesh.is_valid(side) && mMesh.bucket(side).owned())
+            ownedSidesToIds[side].insert(sideId);
+        }
+      }
+    }
+
+    std::vector<stk::mesh::Entity> sides;
+    std::vector<std::vector<unsigned>> sidesetIdsPerSide;
+    for (auto && entry : ownedSidesToIds)
+    {
+      sides.push_back(entry.first);
+      std::vector<unsigned> sideIds(entry.second.begin(), entry.second.end());
+      sidesetIdsPerSide.push_back(sideIds);
+    }
+    add_sides_to_sidesets(sides, sidesetIdsPerSide);
 }
 
 template<stk::topology::topology_t TOPO>
@@ -85,7 +134,7 @@ stk::mesh::Entity StkMeshBuilder<TOPO>::get_side_with_nodes(const std::vector<st
   std::vector<stk::mesh::Entity> sidesWithNodes;
 
   stk::mesh::get_entities_through_relations(mMesh, nodesOfSide, mMesh.mesh_meta_data().side_rank(), sidesWithNodes);
-  ThrowRequireMsg(sidesWithNodes.size() == 1, "Expected to find one side with nodes, but found " << sidesWithNodes.size());
+  STK_ThrowRequireMsg(sidesWithNodes.size() == 1, "Expected to find one side with nodes, but found " << sidesWithNodes.size());
   return sidesWithNodes[0];
 }
 
@@ -133,7 +182,7 @@ stk::mesh::Part * get_block_part(const stk::mesh::MetaData &meta, const unsigned
             break;
         }
     }
-    ThrowRequireMsg(blockPart!=nullptr, "Can't find a block with id " << blockId);
+    STK_ThrowRequireMsg(blockPart!=nullptr, "Can't find a block with id " << blockId);
     return blockPart;
 }
 
@@ -144,10 +193,23 @@ std::vector<stk::mesh::EntityId> StkMeshBuilder<TOPO>::get_ids_of_elements_with_
   elemIds.reserve(elemIndices.size());
   for (auto && elemIndex : elemIndices)
   {
-    ThrowRequire(elemIndex < mAssignedGlobalElementIdsforAllElements.size());
+    STK_ThrowRequire(elemIndex < mAssignedGlobalElementIdsforAllElements.size());
     elemIds.push_back(mAssignedGlobalElementIdsforAllElements[elemIndex]);
   }
   return elemIds;
+}
+
+template<stk::topology::topology_t TOPO>
+std::vector<stk::mesh::EntityId> StkMeshBuilder<TOPO>::get_ids_of_nodes_with_given_indices(const std::vector<unsigned> & nodeIndices) const
+{
+  std::vector<stk::mesh::EntityId> nodeIds;
+  nodeIds.reserve(nodeIndices.size());
+  for (auto && nodeIndex : nodeIndices)
+  {
+    STK_ThrowRequire(nodeIndex < mAssignedGlobalNodeIdsforAllNodes.size());
+    nodeIds.push_back(mAssignedGlobalNodeIdsforAllNodes[nodeIndex]);
+  }
+  return nodeIds;
 }
 
 template<stk::topology::topology_t TOPO>
@@ -235,7 +297,7 @@ StkMeshBuilder<TOPO>::create_parallel_elements(const std::vector<std::array<unsi
     {
         if (elementProcOwners[iElem] == proc)
         {
-            ThrowRequireWithSierraHelpMsg((size_t)NPE == elementConn[iElem].size());
+            STK_ThrowRequireWithSierraHelpMsg((size_t)NPE == elementConn[iElem].size());
 
             std::vector<stk::mesh::Entity> oneElementConnWithLocalIds(NPE);
             for(unsigned i = 0; i < NPE; i++)
@@ -283,7 +345,7 @@ void StkMeshBuilder<TOPO>::build_mesh(const std::vector<stk::math::Vec<double,DI
     const std::vector<std::vector<std::array<unsigned, NPE>>> &elementConnPerProc,
     const unsigned blockId)
 {
-    ThrowRequireWithSierraHelpMsg(elementConnPerProc.size() == (size_t)stk::parallel_machine_size(mComm));
+    STK_ThrowRequireWithSierraHelpMsg(elementConnPerProc.size() == (size_t)stk::parallel_machine_size(mComm));
     std::vector<std::array<unsigned, NPE>> elementConn;
     std::vector<unsigned> elementBlockIDs;
     std::vector<int> elementProcOwners;
@@ -327,8 +389,8 @@ void StkMeshBuilder<TOPO>::build_mesh_nodes_and_elements(
     if (elementProcOwners.empty()) // Put all elements on proc 0 if called with empty specifiedElementProcOwners
       elementProcOwners.assign(numGlobalElems, 0);
 
-    ThrowRequireWithSierraHelpMsg(elementBlockIDs.size() == numGlobalElems);
-    ThrowRequireWithSierraHelpMsg(elementProcOwners.size() == numGlobalElems);
+    STK_ThrowRequireWithSierraHelpMsg(elementBlockIDs.size() == numGlobalElems);
+    STK_ThrowRequireWithSierraHelpMsg(elementProcOwners.size() == numGlobalElems);
 
     mAssignedGlobalNodeIdsforAllNodes.resize(nodeLocs.size());
     for (unsigned iNode=0; iNode<mAssignedGlobalNodeIdsforAllNodes.size(); ++iNode)
@@ -367,6 +429,25 @@ void StkMeshBuilder<TOPO>::build_mesh_with_all_needed_block_ids
 )
 {
     build_mesh_nodes_and_elements(nodeLocs, elementConn, elementBlockIDs, specifiedElementProcOwners);
+}
+
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::write_mesh(const std::string & fileName)
+{
+  stk::io::StkMeshIoBroker stkIo;
+  stkIo.set_bulk_data(mMesh);
+
+  Ioss::PropertyManager properties;
+  properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+  properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+
+  size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS, properties);
+  stkIo.set_active_selector(get_aux_meta().active_part());
+  stkIo.set_subset_selector(outputFileIndex, get_aux_meta().active_part());
+  stkIo.write_output_mesh(outputFileIndex);
+  stkIo.begin_output_step(outputFileIndex, 0.);
+  stkIo.write_defined_output_fields(outputFileIndex);
+  stkIo.end_output_step(outputFileIndex);
 }
 
 // Explicit template instantiation

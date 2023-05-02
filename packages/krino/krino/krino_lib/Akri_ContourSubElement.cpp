@@ -301,7 +301,7 @@ double ContourSubElement::compute_area_of_interface() const
 
 double ContourSubElement::compute_relative_signed_volume(const int signOfDomain) const
 {
-  ThrowAssert(signOfDomain == -1 || signOfDomain == 1);
+  STK_ThrowAssert(signOfDomain == -1 || signOfDomain == 1);
   if ( !my_subelements.empty() )
   {
     double signedVolume = 0.;
@@ -444,7 +444,7 @@ ContourSubElement::gather_intg_pts( const int intg_pt_sign,
 	}
       else // volume points
 	{
-	  ThrowAssert(-1 == intg_pt_sign || 1 == intg_pt_sign);
+	  STK_ThrowAssert(-1 == intg_pt_sign || 1 == intg_pt_sign);
 
 	  const auto & masterElement = get_master_element();
 
@@ -642,7 +642,7 @@ ContourSubElement::find_quadratic_crossing( double d0,
   if ( std::fabs(d1) < epsilon ) return 1.0;
   if ( std::fabs(d2) < epsilon ) return 0.5;
 
-  ThrowAssert(d0*d1 < 0.0 && (d0*d2 < 0.0 || d1*d2 < 0.0)); // Insist on one and only one crossing
+  STK_ThrowAssert(d0*d1 < 0.0 && (d0*d2 < 0.0 || d1*d2 < 0.0)); // Insist on one and only one crossing
 
   const double a = 2.0*(d0 - 2.0*d2 + d1);
   const double b = -3.0*d0 - d1 + 4.0*d2;
@@ -654,12 +654,12 @@ ContourSubElement::find_quadratic_crossing( double d0,
 
   if (q*sign_a > 0.0 && q*sign_a < a*sign_a)
     {
-      ThrowAssert(!(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1))); // Insist on only one crossing
+      STK_ThrowAssert(!(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1))); // Insist on only one crossing
       return (q/a);
     }
   else
     {
-      ThrowAssert(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1));
+      STK_ThrowAssert(c*(( q < 0.0 ) ? -1 : 1) > 0.0 && c*(( q < 0.0 ) ? -1 : 1) < q*(( q < 0.0 ) ? -1 : 1));
       return (c/q);
     }
 }
@@ -846,7 +846,7 @@ ContourSubElement_Tri_3::ContourSubElement_Tri_3(
     {
       // attempt conformal decomposition
       int success = conformal_decomposition();
-      ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
+      STK_ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
     }
 }
 
@@ -1097,7 +1097,7 @@ int
 ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
 			       int side ) const
 {
-  ThrowAssert( get_side_ids()[side] == -2 );
+  STK_ThrowAssert( get_side_ids()[side] == -2 );
 
   // just one linear facet per side
   const int num_facets = 1;
@@ -1121,7 +1121,7 @@ ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
 double
 ContourSubElement_Tri_3::side_area( int side ) const
 {
-  ThrowAssert( get_side_ids()[side] == -2 );
+  STK_ThrowAssert( get_side_ids()[side] == -2 );
 
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
@@ -1198,10 +1198,10 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
     {
       const unsigned * const lnn = get_edge_node_ordinals(Top, edge);
 
-      ThrowAssert(Top.edge_topology(edge).num_nodes() == 3);
+      STK_ThrowAssert(Top.edge_topology(edge).num_nodes() == 3);
 
       const double edge_straight_length = (lphyscoords[lnn[0]] - lphyscoords[lnn[1]]).length();
-      ThrowRequire(edge_straight_length > 0.0);
+      STK_ThrowRequire(edge_straight_length > 0.0);
       edge_lengths[edge] = edge_straight_length;
 
       const double edge_curve_error = (lphyscoords[lnn[2]] - 0.5*(lphyscoords[lnn[0]] + lphyscoords[lnn[1]])).length();
@@ -1222,7 +1222,7 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
   for (auto edge : bad_edges)
   {
     const double edge_length = edge_lengths[edge];
-    ThrowRequire(edge_length > 0.0);
+    STK_ThrowRequire(edge_length > 0.0);
 
     // we need an absolute mechanism for selecting the edge to bisect so that all elements that share
     // common edges will make the same decisions
@@ -1237,7 +1237,7 @@ ContourSubElement_Adaptive_Tri_3::non_conformal_decomposition()
       // note that it is safe to assume that longest_bad_edge is already assigned if edge_length == max_length
       const Vector3d longest_edge_midside_coords = lphyscoords[get_edge_node_ordinals(Top, longest_bad_edge)[2]];
 
-      ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
+      STK_ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
                    utility::is_not_equal(edge_midside_coords[1],longest_edge_midside_coords[1])));
 
       if (utility::is_more(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
@@ -1700,7 +1700,7 @@ ContourSubElement_Tet_4::ContourSubElement_Tet_4(
     {
       // attempt conformal decomposition
       int success = conformal_decomposition();
-      ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
+      STK_ThrowErrorMsgIf(!success, " Conformal decomposition failed.\n");
     }
 }
 
@@ -2089,7 +2089,7 @@ int
 ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
 			       int side ) const
 {
-  ThrowAssert( mySideIds[side] == -2 );
+  STK_ThrowAssert( mySideIds[side] == -2 );
 
   // just one linear facet per linear triangle
   const int num_facets = 1;
@@ -2113,7 +2113,7 @@ ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
 double
 ContourSubElement_Tet_4::side_area( int side ) const
 {
-  ThrowAssert( mySideIds[side] == -2 );
+  STK_ThrowAssert( mySideIds[side] == -2 );
 
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
@@ -2216,10 +2216,10 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
     {
       const unsigned * const lnn = get_edge_node_ordinals(Top, edge);
 
-      ThrowAssert(Top.edge_topology(edge).num_nodes() == 3);
+      STK_ThrowAssert(Top.edge_topology(edge).num_nodes() == 3);
 
       const double edge_straight_length = (lphyscoords[lnn[0]] - lphyscoords[lnn[1]]).length();
-      ThrowRequire(edge_straight_length > 0.0);
+      STK_ThrowRequire(edge_straight_length > 0.0);
       edge_lengths[edge] = edge_straight_length;
 
       const double edge_curve_error = (lphyscoords[lnn[2]] - 0.5*(lphyscoords[lnn[0]] + lphyscoords[lnn[1]])).length();
@@ -2240,7 +2240,7 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
   for (auto edge : bad_edges)
   {
     const double edge_length = edge_lengths[edge];
-    ThrowRequire(edge_length > 0.0);
+    STK_ThrowRequire(edge_length > 0.0);
 
     // we need an absolute mechanism for selecting the edge to bisect so that all elements that share
     // common edges will make the same decisions
@@ -2255,7 +2255,7 @@ ContourSubElement_Adaptive_Tet_4::non_conformal_decomposition()
       // note that it is safe to assume that longest_bad_edge is already assigned if edge_length == max_length
       const Vector3d longest_edge_midside_coords = lphyscoords[get_edge_node_ordinals(Top, longest_bad_edge)[2]];
 
-      ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
+      STK_ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
                    utility::is_not_equal(edge_midside_coords[1],longest_edge_midside_coords[1]) ||
                    utility::is_not_equal(edge_midside_coords[2],longest_edge_midside_coords[2])));
 

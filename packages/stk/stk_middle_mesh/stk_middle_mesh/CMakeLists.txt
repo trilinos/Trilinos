@@ -60,7 +60,13 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES} ${PRED_SOURCES}
   )
 
+IF(CDT_INCLUDE_DIRS)
+SET(CDT_INC_DIR "${CDT_INCLUDE_DIRS}")
+ELSE()
+message(STATUS "CDT_INCLUDE_DIRS not set, trying get_target_property...")
 get_target_property(CDT_INC_DIR CDT::CDT INTERFACE_INCLUDE_DIRECTORIES)
+ENDIF()
+
 target_include_directories(stk_middle_mesh PUBLIC ${CDT_INC_DIR})
 
 INSTALL(FILES ${HEADERS} DESTINATION

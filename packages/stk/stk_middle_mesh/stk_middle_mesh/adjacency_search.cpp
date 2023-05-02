@@ -163,7 +163,7 @@ void AdjacencySearch::get_contained_vertices(mesh::MeshEntityPtr el1, mesh::Mesh
 
   que.push(v);
   verts.insert(v);
-
+  //TODO: the same exterior vert can be processed more than once.  This is slightly inefficient
   while (que.size() > 0)
   {
     auto vI = que.front();
@@ -178,7 +178,7 @@ void AdjacencySearch::get_contained_vertices(mesh::MeshEntityPtr el1, mesh::Mesh
       {
         que.push(vJ);
         verts.insert(vJ);
-      }
+      }     
     }
   }
 
@@ -210,6 +210,8 @@ void AdjacencySearch::get_elements_from_vertices(mesh::MeshEntityPtr el1, const 
     std::cout << "number of contained verts = " << verts.size() << std::endl;
 
   // search for edges that pass through el1 but don't have any vertices inside
+  //TODO: this checks every edge, including those between 2 interior points, which cant possible
+  //      intersect an edge of el1
   std::queue<mesh::MeshEntityPtr> que;
   for (auto& el : elsUnique)
     for (int i = 0; i < el->count_down(); ++i)
@@ -221,16 +223,21 @@ void AdjacencySearch::get_elements_from_vertices(mesh::MeshEntityPtr el1, const 
     que.pop();
 
     for (int i = 0; i < edge->count_up(); ++i)
-      if (elsUnique.count(edge->get_up(i)) == 0 && m_preds.any_edge_intersect(el1, edge))
+    {
+      if (elsUnique.count(edge->get_up(i)) == 0)
       {
-        if (m_output)
-          std::cout << "found edge with intersection: " << edge << std::endl;
-        auto el = edge->get_up(i);
-        elsUnique.insert(el);
-        for (int j = 0; j < el->count_down(); ++j)
-          if (el->get_down(j) != edge)
-            que.push(el->get_down(j));
+        if (m_preds.any_edge_intersect(el1, edge))
+        {
+          if (m_output)
+            std::cout << "found edge with intersection: " << edge << std::endl;
+          auto el = edge->get_up(i);
+          elsUnique.insert(el);
+          for (int j = 0; j < el->count_down(); ++j)
+            if (el->get_down(j) != edge)
+              que.push(el->get_down(j));
+        }
       }
+    }
   }
 
   if (m_output)

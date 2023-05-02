@@ -42,7 +42,7 @@ static double find_crossing_position(const Surface & surface, const Segment3d & 
   const double phi1 = surface.point_signed_distance(edge.GetNode(1));
   const int maxIters = 100;
   const auto result = find_root(build_edge_distance_function(surface, edge), 0., 1., phi0, phi1, maxIters, edgeTol);
-  ThrowRequire(result.first);
+  STK_ThrowRequire(result.first);
   return result.second;
 }
 
@@ -54,7 +54,7 @@ static int compute_element_sign(const Surface & surface, const std::vector<Vecto
     crossingState = crossingState | ((surface.point_signed_distance(nodeCoords) < 0.) ? 1 : 2);
     if (crossingState == 3) return 0;
   }
-  ThrowAssert(crossingState == 1 || crossingState == 2);
+  STK_ThrowAssert(crossingState == 1 || crossingState == 2);
   return (crossingState == 1) ? -1 : 1;
 }
 
@@ -103,9 +103,9 @@ std::vector<InterfaceID> SurfaceElementCutter::get_sorted_cutting_interfaces() c
 
 const Surface & SurfaceElementCutter::get_surface(const InterfaceID interface) const
 {
-  ThrowAssert(interface.is_single_ls());
+  STK_ThrowAssert(interface.is_single_ls());
   const int lsIndex = interface.first_ls();
-  ThrowAssert(lsIndex < (int)mySurfaces.size());
+  STK_ThrowAssert(lsIndex < (int)mySurfaces.size());
   return *mySurfaces[lsIndex];
 }
 
@@ -295,6 +295,43 @@ std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_possibly_cu
   return possibleCutElements;
 }
 
+static bool element_intersects_interval(const std::vector<const Surface*> surfaces, const std::vector<Vector3d> & elemNodeCoords, const std::array<double,2> & loAndHi, std::vector<double> & elemNodeDistWorkspace)
+{
+  for (auto && surface : surfaces)
+  {
+    fill_point_distances(*surface, elemNodeCoords, elemNodeDistWorkspace);
+    if (InterfaceGeometry::element_with_nodal_distance_intersects_interval(elemNodeDistWorkspace, loAndHi))
+      return true;
+  }
+  return false;
+}
+
+std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const
+{
+  NodeToCapturedDomainsMap nodesToSnappedDomains;
+  prepare_to_process_elements(mesh, nodesToSnappedDomains);
+
+  std::vector<stk::mesh::Entity> elementsThaIntersectInterval;
+  std::vector<Vector3d> elementNodeCoords;
+  std::vector<double> elementNodeDist;
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+
+  const stk::mesh::Selector activeLocallyOwned = myActivePart & (mesh.mesh_meta_data().locally_owned_part());
+
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeLocallyOwned))
+  {
+    for(const auto & elem : *bucketPtr)
+    {
+      fill_element_node_coordinates(mesh, elem, coordsField, elementNodeCoords);
+      if (element_intersects_interval(mySurfaces, elementNodeCoords, loAndHi, elementNodeDist))
+        elementsThaIntersectInterval.push_back(elem);
+    }
+  }
+
+  return elementsThaIntersectInterval;
+}
+
+
 static bool all_nodes_of_element_will_be_snapped(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
@@ -336,7 +373,7 @@ AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const stk::me
     myPhaseSupport(phaseSupport)
 {
   myEdgeCrossingTol = std::min(1.e-6, 0.1*cdfemSupport.get_snapper().get_edge_tolerance());
-  ThrowRequireMsg(myEdgeCrossingTol > 0., "Invalid minimum edge crossing tolerance " << myEdgeCrossingTol);
+  STK_ThrowRequireMsg(myEdgeCrossingTol > 0., "Invalid minimum edge crossing tolerance " << myEdgeCrossingTol);
 }
 
 AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const std::vector<Surface_Identifier> & surfaceIdentifiers,
@@ -364,7 +401,7 @@ void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_unc
   const bool oneLSPerPhase = mySurfaceIdentifiers.size() > 1 && myPhaseSupport.has_one_levelset_per_phase();
   if (!oneLSPerPhase && mySurfaceIdentifiers.size() > 1)
     return; //FIXME: Fix for more than one ls per interface
-  ThrowAssert(mySurfaces.size() == 1);
+  STK_ThrowAssert(mySurfaces.size() == 1);
   const Surface & surface = *mySurfaces[0];
 
   for (auto && snapInfo : snapInfos)
@@ -418,7 +455,7 @@ std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_c
 PhaseTag AnalyticSurfaceInterfaceGeometry::get_starting_phase(const ElementCutter * cutter) const
 {
   const SurfaceElementCutter * surfaceCutter = dynamic_cast<const SurfaceElementCutter *>(cutter);
-  ThrowRequire(surfaceCutter);
+  STK_ThrowRequire(surfaceCutter);
 
   const auto & elementSigns = surfaceCutter->get_element_signs();
 

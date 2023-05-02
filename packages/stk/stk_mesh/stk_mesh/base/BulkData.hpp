@@ -34,7 +34,6 @@
 
 #ifndef stk_mesh_BulkData_hpp
 #define stk_mesh_BulkData_hpp
-
 //----------------------------------------------------------------------
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint16_t
@@ -171,25 +170,6 @@ public:
   enum GhostingId { SHARED = 0, AURA = 1 };
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2022
-  /** \brief  Construct mesh bulk data manager conformal to the given
-   *          \ref stk::mesh::MetaData "meta data manager" and will
-   *          distribute bulk data over the given parallel machine.
-   *
-   *  - The maximum number of entities per bucket may be supplied.
-   *  - The bulk data is in the synchronized or "locked" state.
-   */
-  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
-            , ParallelMachine parallel
-            , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
-#ifdef SIERRA_MIGRATION
-            , bool add_fmwk_data = false
-#endif
-            , FieldDataManager *field_dataManager = nullptr
-            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
-            );
-#endif
 
   virtual ~BulkData();
 
@@ -595,8 +575,9 @@ public:
   // Check if entity has a specific relation to an entity of subcell_rank
   inline bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id );
 
-  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
-  inline const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const { return m_all_sharing_procs[rank]; }
+  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
+
+  const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const;
 
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
@@ -662,6 +643,7 @@ public:
   bool in_send_ghost( Entity entity) const;
   bool in_send_ghost( EntityKey key , int proc ) const;
   bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
+  bool in_send_ghost( const Ghosting & ghosting, Entity entity, int proc) const;
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
   bool in_ghost( const Ghosting & ghost , Entity entity , int proc ) const;
@@ -805,15 +787,16 @@ public:
       return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0);
   }
 
-  // Print all mesh info, consider using:
-  // std::ostringstream oss;
-  // oss << "output." << parallel_rank();
-  // std::ofstream out(oss.str(), std::ios_base::app);
-  // dump_all_mesh_info(out);
-  // out.close();
+#ifndef STK_HIDE_DEPRECATED_CODE
+  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_mesh_info() from DumpMeshInfo.hpp instead")
   void dump_all_mesh_info(std::ostream& out) const;
+
+  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_per_proc() from DumpMeshInfo.hpp instead")
   void dump_mesh_per_proc(const std::string& fileNamePrefix) const;
+
+  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_bucket_info() from DumpMeshInfo.hpp instead")
   void dump_mesh_bucket_info(std::ostream& out, Bucket* bucket) const;
+#endif
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
@@ -822,7 +805,7 @@ public:
   //  Get entities of the specified rank that satisfy the input selector.
   //  Note entities are returned in bucket order, though no particular order should be relied on
   //
-void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
+  void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
   bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
@@ -886,6 +869,9 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   bool supports_large_ids() const {return m_supportsLargeIds; }
   void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
 
+  unsigned get_initial_bucket_capacity() const { return m_bucket_repository.get_initial_bucket_capacity(); }
+  unsigned get_maximum_bucket_capacity() const { return m_bucket_repository.get_maximum_bucket_capacity(); }
+
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
            ParallelMachine parallel,
@@ -894,7 +880,8 @@ protected: //functions
            bool add_fmwk_data = false,
 #endif
            FieldDataManager *field_dataManager = nullptr,
-           unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity,
+           unsigned initialBucketCapacity = get_default_initial_bucket_capacity(),
+           unsigned maximumBucketCapacity = get_default_maximum_bucket_capacity(),
            std::shared_ptr<impl::AuraGhosting> auraGhosting = std::shared_ptr<impl::AuraGhosting>(),
            bool createUpwardConnectivity = true);
 
@@ -1194,7 +1181,7 @@ protected: //functions
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps() const;
-  void internal_update_all_sharing_procs();
+  void internal_update_all_sharing_procs() const;
 
   void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GhostingId ghostingId, int sharingProc);
   void update_sharing_after_change_entity_owner(); // Mod Mark
@@ -1264,8 +1251,6 @@ protected: //functions
                                                                       int closureCountAdjustment); // Mod Mark
 
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal );
-
-  stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 
   virtual void notify_finished_mod_end();
 
@@ -1379,7 +1364,7 @@ private:
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
   void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
-  void add_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
+  void add_entity_callback(EntityRank rank, unsigned bucketId, unsigned bucketCapacity, unsigned indexInBucket);
 
   void initialize_arrays();
 
@@ -1530,13 +1515,17 @@ protected: //data
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
-  impl::EntityKeyMapping* m_entityKeyMapping;
+  std::unique_ptr<impl::EntityKeyMapping> m_entityKeyMapping;
   EntityCommListInfoVector m_entity_comm_list;
   std::vector<int> m_entitycomm;
   std::vector<int> m_owner;
   std::vector<std::pair<EntityKey,EntityCommInfo>> m_removedGhosts;
   CommListUpdater m_comm_list_updater;
   std::vector<EntityKey> m_entity_keys; //indexed by Entity
+  //  ContiguousFieldDataManager m_default_field_data_manager;
+  DefaultFieldDataManager m_default_field_data_manager;
+  FieldDataManager *m_field_data_manager;
+  impl::BucketRepository m_bucket_repository;
 
 #ifdef SIERRA_MIGRATION
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
@@ -1566,17 +1555,14 @@ protected: //data
 private: // data
   mutable VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   mutable unsigned m_volatile_fast_shared_comm_map_sync_count;
-  std::vector<std::vector<int> > m_all_sharing_procs;
+  mutable std::vector<std::vector<int> > m_all_sharing_procs;
+  mutable unsigned m_all_sharing_procs_sync_count;
   PartVector m_ghost_parts;
   int m_num_fields;
   bool m_keep_fields_updated;
   std::vector<unsigned> m_local_ids; //indexed by Entity
 
-  //  ContiguousFieldDataManager m_default_field_data_manager;
-  DefaultFieldDataManager m_default_field_data_manager;
-  FieldDataManager *m_field_data_manager;
   mutable std::vector<SelectorBucketMap> m_selector_to_buckets_maps;
-  impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
   std::string m_lastModificationDescription;
   stk::EmptyModificationSummary m_modSummary;
@@ -1980,16 +1966,7 @@ BulkData::in_receive_ghost( const Ghosting & ghost , Entity entity ) const
 inline bool
 BulkData::in_send_ghost( EntityKey key) const
 {
-    const int owner_rank = parallel_owner_rank(get_entity(key));
-    for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec )
-    {
-      if ( ec->ghost_id != 0 &&
-           ec->proc     != owner_rank)
-      {
-        return true;
-      }
-    }
-    return false;
+  return in_send_ghost(get_entity(key));
 }
 
 inline bool
@@ -2350,8 +2327,6 @@ BulkData::is_valid_connectivity(Entity entity, EntityRank rank) const
   return true;
 }
 
-
-void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
 
 namespace impl {
 inline NgpMeshBase * get_ngp_mesh(const BulkData & bulk) {

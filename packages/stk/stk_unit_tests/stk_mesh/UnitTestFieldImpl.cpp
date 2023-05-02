@@ -105,8 +105,6 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   //------------------------------
 
-  typedef stk::mesh::Field<double> VectorField;
-
   FieldBase * const f2 = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("F2"), 1/* # states */ );
 
   //------------------------------

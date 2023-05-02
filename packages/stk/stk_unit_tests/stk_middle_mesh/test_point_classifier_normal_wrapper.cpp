@@ -365,7 +365,7 @@ TEST_F(PointClassifierNormalWrapperTester, QuadReverse)
   auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
 
   predicates::impl::PointClassifierNormalWrapper c(mesh);
-  utils::Point pt, normal(0, 0, 1);
+  utils::Point pt;
   predicates::impl::PointRecord r;
 
   // verts

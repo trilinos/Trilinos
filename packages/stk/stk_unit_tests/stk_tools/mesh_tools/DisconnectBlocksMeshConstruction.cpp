@@ -2181,7 +2181,6 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(8u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6}));
   EXPECT_EQ(12u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6};
@@ -2235,7 +2234,6 @@ stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9}));
   EXPECT_EQ(16u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9};

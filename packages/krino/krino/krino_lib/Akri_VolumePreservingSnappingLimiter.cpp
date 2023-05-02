@@ -19,7 +19,7 @@ static void replace_coordinates_of_node_with_new_location(const StkMeshEntities 
       return;
     }
   }
-  ThrowRequireMsg(false, "Did not find the expected node in replace_coordinates_of_node_with_new_location");
+  STK_ThrowRequireMsg(false, "Did not find the expected node in replace_coordinates_of_node_with_new_location");
 }
 
 static double compute_relative_volume_change(const stk::mesh::BulkData & mesh,

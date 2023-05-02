@@ -118,7 +118,7 @@ TEST(PatchObjective, computeDeriv)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
   auto metric = std::make_shared<RegularizedDistortionMetric>();
   PatchDistortionObjective obj(metric);
@@ -149,7 +149,7 @@ TEST(PatchObjective, computeHessian)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
   auto metric = std::make_shared<RegularizedDistortionMetric>();
   PatchDistortionObjective obj(metric);
@@ -180,7 +180,7 @@ TEST(PatchObjective, Parameterization)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
   auto metric = std::make_shared<RegularizedDistortionMetric>();
   // auto f = [](MeshEntityPtr) { return true; };

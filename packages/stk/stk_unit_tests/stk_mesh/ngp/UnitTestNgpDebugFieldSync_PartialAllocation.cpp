@@ -1623,7 +1623,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 2}});

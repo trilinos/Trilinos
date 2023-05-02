@@ -56,7 +56,10 @@ public:
   MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
   MeshBuilder& set_add_fmwk_data(bool addFmwkData);
   MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
+
   MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
+  MeshBuilder& set_initial_bucket_capacity(unsigned initialCapacity);
+  MeshBuilder& set_maximum_bucket_capacity(unsigned maximumCapacity);
 
   MeshBuilder& set_upward_connectivity(bool onOrOff);
 
@@ -73,7 +76,8 @@ private:
   BulkData::AutomaticAuraOption m_auraOption;
   bool m_addFmwkData;
   FieldDataManager* m_fieldDataManager;
-  unsigned m_bucketCapacity;
+  unsigned m_initialBucketCapacity;
+  unsigned m_maximumBucketCapacity;
   unsigned m_spatialDimension;
   std::vector<std::string> m_entityRankNames;
   bool m_upwardConnectivity;

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "intersection_common.hpp"
-#include "predicates/triangle_coord_utils.hpp"
+#include "stk_middle_mesh/predicates/intersection_common.hpp"
+#include "stk_middle_mesh/predicates/triangle_coord_utils.hpp"
 
 namespace stk {
 namespace middle_mesh {

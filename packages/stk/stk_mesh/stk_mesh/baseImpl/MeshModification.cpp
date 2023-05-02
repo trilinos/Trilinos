@@ -116,15 +116,6 @@ bool MeshModification::modification_end(modification_optimization opt)
       m_bulkData.m_modSummary.write_summary(synchronized_count());
       m_bulkData.check_mesh_consistency();
   }
-  else
-  {
-      m_bulkData.m_modSummary.write_summary(synchronized_count());
-      if(!m_bulkData.add_fmwk_data())
-      {
-          std::vector<Entity> shared_modified;
-          m_bulkData.internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(shared_modified);
-      }
-  }
 
   m_bulkData.internal_finish_modification_end(opt);
 

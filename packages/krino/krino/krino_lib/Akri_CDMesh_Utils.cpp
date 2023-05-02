@@ -127,7 +127,7 @@ bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface
 
 bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport)
 {
-  ThrowAssert(phase.empty());
+  STK_ThrowAssert(phase.empty());
   bool has_conformal_ioparts = false;
 
   for (auto && part : parts)

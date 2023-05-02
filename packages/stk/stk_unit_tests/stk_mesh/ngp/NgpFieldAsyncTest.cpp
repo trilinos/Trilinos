@@ -78,7 +78,7 @@ public:
       m_defaultLaunchBlockingEnvVarValue(0)
   {
     set_launch_blocking_env_var();
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity, m_bucketCapacity);
   }
 
   ~NgpAsyncDeepCopyFixture()

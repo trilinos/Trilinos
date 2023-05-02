@@ -215,7 +215,7 @@ PerceptRefinement &
 PerceptRefinement::get(const stk::mesh::MetaData & meta)
 {
   PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
   return *refinement;
 }
 
@@ -230,7 +230,7 @@ PerceptRefinement &
 PerceptRefinement::create(stk::mesh::MetaData & meta)
 {
   PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  ThrowRequireMsg(nullptr == refinement, "PerceptRefinement::create should be called only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == refinement, "PerceptRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     refinement = new PerceptRefinement(meta);
@@ -311,7 +311,7 @@ stk::mesh::Entity PerceptRefinement::get_parent(const stk::mesh::Entity entity) 
 std::pair<stk::mesh::EntityId,int> PerceptRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
 {
   stk::mesh::Entity parent = get_parent(child);
-  ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
+  STK_ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
   return {myMeta.mesh_bulk_data().identifier(parent), myMeta.mesh_bulk_data().parallel_owner_rank(parent)};
 }
 
@@ -319,7 +319,7 @@ static stk::mesh::Part & get_percept_refinement_inactive_part(const stk::mesh::M
 {
   const std::string inactive_part_name = "refine_inactive_elements_part_"+std::to_string((int)rank);
   stk::mesh::Part* inactive_part = meta.get_part(inactive_part_name);
-  ThrowRequireMsg(nullptr != inactive_part, "Inactive (parent) part not found: " << inactive_part_name);
+  STK_ThrowRequireMsg(nullptr != inactive_part, "Inactive (parent) part not found: " << inactive_part_name);
   return *inactive_part;
 }
 
@@ -327,7 +327,7 @@ static stk::mesh::Part & get_percept_refinement_active_part(const stk::mesh::Met
 {
   const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
   stk::mesh::Part* active_part = meta.get_part(active_part_name);
-  ThrowRequireMsg(nullptr != active_part, "Active (child) part not found: " << active_part_name);
+  STK_ThrowRequireMsg(nullptr != active_part, "Active (child) part not found: " << active_part_name);
   return *active_part;
 }
 
@@ -424,7 +424,7 @@ int PerceptRefinement::fully_refined_level(const stk::mesh::Entity elem) const
 
 FieldRef PerceptRefinement::get_marker_field() const
 {
-  ThrowRequireMsg(myElementMarkerField.valid(), "PerceptRefinement created without setting the hadapt function, which is needed in get_marker_field().  Is this a unit test?");
+  STK_ThrowRequireMsg(myElementMarkerField.valid(), "PerceptRefinement created without setting the hadapt function, which is needed in get_marker_field().  Is this a unit test?");
   return myElementMarkerField;
 }
 
@@ -446,13 +446,13 @@ void PerceptRefinement::set_uniform_refinement_function(const std::function<void
 
 void PerceptRefinement::do_refinement(const int debugLevel)
 {
-  ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_adaptive_refinement_function, which is needed in do_adaptive_refinement().");
+  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_adaptive_refinement_function, which is needed in do_adaptive_refinement().");
   myAdaptiveRefinement(myElementMarkerField.name(), debugLevel);
 }
 
 void PerceptRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
 {
-  ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_uniform_refinement_function, which is needed in do_uniform_refinement().");
+  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_uniform_refinement_function, which is needed in do_uniform_refinement().");
   myUniformRefinement(numUniformRefinementLevels);
 }
 
@@ -460,7 +460,7 @@ KrinoRefinement &
 KrinoRefinement::get(const stk::mesh::MetaData & meta)
 {
   KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
-  ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
   return *refinement;
 }
 
@@ -468,7 +468,7 @@ KrinoRefinement &
 KrinoRefinement::create(stk::mesh::MetaData & meta)
 {
   KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
-  ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     AuxMetaData & auxMeta = AuxMetaData::get(meta);
@@ -650,7 +650,7 @@ bool KrinoRefinement::is_transition(const stk::mesh::Entity elem) const
 TransitionElementEdgeMarker & KrinoRefinement::get_marker() const
 {
   setup_marker();
-  ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
+  STK_ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
   return *myMarker;
 }
 

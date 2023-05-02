@@ -66,7 +66,7 @@ find_crossing_position_and_sign(const InterfaceID key, const std::vector<double>
 
   const int node0_sign = LevelSet::sign(key_isovar[0]);
   const int node1_sign = LevelSet::sign(key_isovar[num_nodes-1]);
-  ThrowRequire(node0_sign == node1_sign);
+  STK_ThrowRequire(node0_sign == node1_sign);
   return std::make_pair(-1., node0_sign);
 }
 
@@ -191,7 +191,7 @@ SegmentLowerEnvelope::adjust_piecewise_linear_positions(Segment_Vector & segment
       InterfaceID iface(cur.ls_index(), next.ls_index());
 
       const double crossing_pos = (find_crossing_position_and_sign(iface, pos, phi)).first;
-      ThrowRequire(crossing_pos >= 0.);
+      STK_ThrowRequire(crossing_pos >= 0.);
       cur = LS_Segment(cur.left_endpoint(), crossing_pos, cur.ls_index());
       next = LS_Segment(crossing_pos, next.right_endpoint(), next.ls_index());
     }
@@ -210,7 +210,7 @@ SegmentLowerEnvelope::adjust_piecewise_linear_positions(Segment_Vector & segment
           InterfaceID iface(prev.ls_index(), next.ls_index());
 
           const double crossing_pos = (find_crossing_position_and_sign(iface, pos, phi)).first;
-          ThrowRequire(crossing_pos >= 0.);
+          STK_ThrowRequire(crossing_pos >= 0.);
           prev = LS_Segment(prev.left_endpoint(), cur.right_endpoint(), prev.ls_index());
           cur = LS_Segment(cur.right_endpoint(), crossing_pos, prev.ls_index());
           next = LS_Segment(crossing_pos, next.right_endpoint(), next.ls_index());
@@ -260,12 +260,12 @@ SegmentLowerEnvelope::add_segment(Segment_Vector & segments,
     InterfaceID key(min0, min1);
     const double ls0 = (phi0[key.first_ls()]-phi0[key.second_ls()]); // ls >= 0 for phi2 >= phi1
     const double ls1 = (phi1[key.first_ls()]-phi1[key.second_ls()]);
-    ThrowRequire(ls0*ls1 <= 0.);
+    STK_ThrowRequire(ls0*ls1 <= 0.);
     const double cut = ls0 / (ls0 - ls1);
 
     {
       const double x_cut = (1.-cut)*x0 + cut*x1;
-      ThrowAssert(phi0.size() == phi1.size());
+      STK_ThrowAssert(phi0.size() == phi1.size());
       std::vector<double> phiAtCut(phi0.size());
       for (unsigned i=0; i<phiAtCut.size(); ++i)
         phiAtCut[i] = (1.-cut)*(phi0[i]) + cut*(phi1[i]);

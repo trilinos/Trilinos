@@ -35,12 +35,14 @@
 #ifndef STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 #define STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 
-#include "Kokkos_Core.hpp"
-#include "stk_util/stk_kokkos_macros.h"  // for STK_INLINE_FUNCTION
+#include <sstream>    // for ostringstream
+#include <stdexcept>  // for logic_error, runtime_error
+#include <string>     // for operator+, allocator, string, char_traits
+#include <type_traits>
 
-#include <sstream>                       // for ostringstream
-#include <stdexcept>                     // for logic_error, runtime_error
-#include <string>                        // for operator+, allocator, string, char_traits
+#include "Kokkos_Core.hpp"
+#include "stk_util/diag/String.hpp"
+#include "stk_util/stk_kokkos_macros.h"  // for STK_INLINE_FUNCTION
 
 namespace stk {
 
@@ -227,17 +229,12 @@ std::ostream & output_stacktrace(std::ostream & os);
 
 #define DEPRECATED_PREFIX(FUNCTION_NAME) "DEPRECATED_" #FUNCTION_NAME
 
-// Enable this deprecated warning once all throws are properly replaced in Sierra
-#ifdef STK_DEPRECATE_ALL_OLD_MACROS
 #define WARN_DEPRECATED(FUNCTION_NAME)                                                         \
 {                                                                                              \
   struct [[deprecated("Please switch to STK_" #FUNCTION_NAME " instead of " #FUNCTION_NAME)]]  \
   DEPRECATED_##FUNCTION_NAME {};                                                               \
   DEPRECATED_##FUNCTION_NAME ();                                                               \
 }
-#else
-#define WARN_DEPRECATED(FUNCTION_NAME)
-#endif
 
 // The do-while is necessary to prevent usage of this macro from changing
 // program semantics (e.g. dangling-else problem). The obvious implementation:
@@ -263,19 +260,55 @@ std::ostream & output_stacktrace(std::ostream & os);
     }                                                                        \
   } while (false)
 
-#define STK_ThrowGenericCond(expr, message, handler)                         \
-  do {                                                                       \
-    if ( !(expr) ) {                                                         \
-      std::ostringstream stk_util_internal_throw_require_oss;                \
-      stk_util_internal_throw_require_oss << message;                        \
-      std::ostringstream stk_util_internal_throw_require_loc_oss;            \
-      stk_util_internal_throw_require_loc_oss <<                             \
-        stk::source_relative_path(STK_STR_TRACE) << "\n";                    \
-      stk::output_stacktrace(stk_util_internal_throw_require_loc_oss);       \
-      stk::handler( #expr,                                                   \
-                    stk_util_internal_throw_require_loc_oss.str(),           \
-                    stk_util_internal_throw_require_oss );                   \
-    }                                                                        \
+namespace stk::impl
+{
+template <typename T>
+class is_string_literal
+{
+  using literal_t = const char (&)[sizeof(T)];
+
+ public:
+  static constexpr bool value = std::is_same_v<T, literal_t>;
+};
+
+template <typename T, typename... Args>
+struct is_same_as_any {
+  static constexpr bool value = false;
+};
+template <typename T, typename First, typename... Args>
+struct is_same_as_any<T, First, Args...> {
+  static constexpr bool value = std::is_same_v<T, First> || is_same_as_any<T, Args...>::value;
+};
+
+template <typename T>
+class is_valid_throw_condition
+{
+  using raw_t = std::decay_t<T>;
+
+ public:
+  static constexpr bool value =
+      !is_same_as_any<raw_t, sierra::String, std::string, const char*, char*>::value && !is_string_literal<T>::value;
+};
+template <typename T>
+inline auto eval_test_condition(const T& val)
+{
+  static_assert(stk::impl::is_valid_throw_condition<T>::value,
+      "Cannot use string type as the condition in STK_ThrowRequire*. "
+      "Use (ptr != nullptr) instead.");
+  return !val;
+}
+}  // namespace stk::impl
+
+#define STK_ThrowGenericCond(expr, message, handler)                                                           \
+  do {                                                                                                         \
+    if (stk::impl::eval_test_condition(expr)) {                                                                \
+      std::ostringstream stk_util_internal_throw_require_oss;                                                  \
+      stk_util_internal_throw_require_oss << message;                                                          \
+      std::ostringstream stk_util_internal_throw_require_loc_oss;                                              \
+      stk_util_internal_throw_require_loc_oss << stk::source_relative_path(STK_STR_TRACE) << "\n";             \
+      stk::output_stacktrace(stk_util_internal_throw_require_loc_oss);                                         \
+      stk::handler(#expr, stk_util_internal_throw_require_loc_oss.str(), stk_util_internal_throw_require_oss); \
+    }                                                                                                          \
   } while (false)
 
 inline void ThrowMsgHost(bool expr, const char * exprString, const char * message, const std::string & location)
@@ -407,9 +440,9 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
                                             STK_ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
 #define STK_ThrowRequireWithSierraHelpMsg(expr) STK_ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
 #define ThrowRequireMsg(expr,message) WARN_DEPRECATED(ThrowRequireMsg) STK_ThrowGenericCond(expr, message, handle_assert)
-#define STK_ThrowRequireMsg(expr,message) STK_ThrowGenericCond(expr, message, handle_assert)
+#define STK_ThrowRequireMsg(expr, message) STK_ThrowGenericCond(expr, message, handle_assert)
 #define ThrowRequire(expr) WARN_DEPRECATED(ThrowRequire) STK_ThrowRequireMsg(expr, "")
-#define STK_ThrowRequire(expr)         STK_ThrowRequireMsg(expr, "")
+#define STK_ThrowRequire(expr) STK_ThrowRequireMsg(expr, "")
 
 #ifndef __HIP_DEVICE_COMPILE__
 
@@ -438,7 +471,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #define STK_ThrowInvalidArgIf(expr)                                                STK_ThrowInvalidArgMsgIf(expr, "")
 
 #else
-//FIXME: unsupported indirect call to function on HIP-Clang
+// FIXME: unsupported indirect call to function on HIP-Clang
 #define ThrowAssert(expr) WARN_DEPRECATED(ThrowAssert)
 #define STK_ThrowAssert(expr)
 #define ThrowAssertMsg(expr,message) WARN_DEPRECATED(ThrowAssertMsg)

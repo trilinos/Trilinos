@@ -30,9 +30,10 @@ protected:
     AuxMetaData & get_aux_meta() { return mBuilder.get_aux_meta(); }
     const AuxMetaData & get_aux_meta() const { return mBuilder.get_aux_meta(); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mBuilder.get_assigned_node_global_ids(); }
-    stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mMesh.get_entity(stk::topology::NODE_RANK, get_assigned_node_global_ids()[nodeIndex]); }
+    stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mBuilder.get_assigned_node_for_index(nodeIndex); }
     const std::vector<stk::mesh::EntityId> & get_assigned_element_global_ids() const { return mBuilder.get_assigned_element_global_ids(); }
     std::vector<stk::mesh::EntityId> get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const { return mBuilder.get_ids_of_elements_with_given_indices(elemIndices); }
+    std::vector<stk::mesh::EntityId> get_ids_of_nodes_with_given_indices(const std::vector<unsigned> & nodeIndices) const { return mBuilder.get_ids_of_nodes_with_given_indices(nodeIndices); }
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mBuilder.get_owned_elements(); }
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const { return mBuilder.get_node_coordinates(node); }
 
@@ -55,8 +56,12 @@ protected:
                     const std::vector<int> &specifiedElementProcOwners = {})
     {
       mMesh.mesh_meta_data().use_simple_fields();
-      mBuilder.create_block_parts(elementBlockIDs);
       mBuilder.build_mesh(nodeLocs, elementConn, elementBlockIDs, specifiedElementProcOwners);
+    }
+
+    void write_mesh(const std::string &fileName)
+    {
+      mBuilder.write_mesh(fileName);
     }
 };
 

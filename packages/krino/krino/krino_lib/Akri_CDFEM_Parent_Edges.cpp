@@ -129,7 +129,7 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
     std::vector<const CDFEM_Parent_Edge *> & faceParentEdges,
     std::vector<bool> & areParentEdgesOrientedSameAsFaceEdges)
 {
-  ThrowAssert(elementTopology == stk::topology::TETRAHEDRON_4);
+  STK_ThrowAssert(elementTopology == stk::topology::TETRAHEDRON_4);
   constexpr std::array<std::array<int,3>,4> faceEdges = {{ {{0,4,3}}, {{1,5,4}}, {{3,5,2}}, {{2,1,0}} }};
   constexpr std::array<std::array<bool,3>,4> isFaceEdgeOrientedSameAsElementEdge = {{ {{true,true,false}}, {{true,true,false}}, {{true,false,true}}, {{false,false,false}} }};
 
@@ -158,7 +158,7 @@ static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity node_or_elem,
     const LS_Field & lsField )
 {
-  ThrowAssert(is_cdfem_use_case(phaseSupport));
+  STK_ThrowAssert(is_cdfem_use_case(phaseSupport));
 
   for(auto && part_ptr : mesh.bucket(node_or_elem).supersets())
   {
@@ -298,7 +298,7 @@ static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
         if (nullptr != death_spec && isovar.entity_rank() == stk::topology::ELEMENT_RANK)
         {
           // currently requires aura to work correctly in parallel
-          ThrowAssertMsg(mesh.is_automatic_aura_on(), "Capability requires aura.");
+          STK_ThrowAssertMsg(mesh.is_automatic_aura_on(), "Capability requires aura.");
           bool have_pos_elem = false;
           bool have_neg_elem = false;
           const unsigned num_node_elems = mesh.num_elements(edge_nodes[n]);
@@ -320,7 +320,7 @@ static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
         else
         {
           const double * isoptr = field_data<double>(isovar, edge_nodes[n]);
-          ThrowRequireMsg(nullptr != isoptr, "Isovar " << isovar.name() << " missing on node " << debug_entity(mesh, edge_nodes[n]));
+          STK_ThrowRequireMsg(nullptr != isoptr, "Isovar " << isovar.name() << " missing on node " << debug_entity(mesh, edge_nodes[n]));
           nodes_isovar[n][ls_index] = *isoptr - lsFields[ls_index].isoval;
         }
       }

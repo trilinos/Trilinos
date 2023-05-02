@@ -35,7 +35,7 @@ void Surface_Manager::associate_FEModel_and_metadata(const std::string & FEModel
 {
   Surface_Manager * existingManagerOnMeta = const_cast<Surface_Manager *>(meta.get_attribute<Surface_Manager>());
   Surface_Manager * mgr = &get_or_create(FEModelName);
-  ThrowRequireMsg(nullptr == existingManagerOnMeta || existingManagerOnMeta == mgr,
+  STK_ThrowRequireMsg(nullptr == existingManagerOnMeta || existingManagerOnMeta == mgr,
     "krino::Surface_Manager already set on stk::mesh::MetaData and it doesn't match the one associated with the FEModel " << FEModelName);
   meta.declare_attribute_no_delete<Surface_Manager>(mgr);
 }
@@ -44,7 +44,7 @@ Surface_Manager &
 Surface_Manager::get(const stk::mesh::MetaData & meta)
 {
   Surface_Manager * mgr = const_cast<Surface_Manager *>(meta.get_attribute<Surface_Manager>());
-  ThrowRequireMsg(nullptr != mgr, "No Surface_Manager found for MetaData.");
+  STK_ThrowRequireMsg(nullptr != mgr, "No Surface_Manager found for MetaData.");
   return *mgr;
 }
 

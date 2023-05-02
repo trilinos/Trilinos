@@ -52,11 +52,6 @@ class SplitCommsImpl
 
   PairwiseRanks get_pairwise_root_ranks(int otherColor) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE  // remove November 2022
-STK_DEPRECATED
-  bool is_coupling_version_deprecated() const;
-#endif
-
   bool is_initialized() const;
 
   void free_comms();
@@ -114,11 +109,6 @@ class SplitComms
     int get_local_color() const { return m_impl->get_local_color(); }
 
     PairwiseRanks get_pairwise_root_ranks(int otherColor) const { return m_impl->get_pairwise_root_ranks(otherColor); }
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
-    STK_DEPRECATED
-    bool is_coupling_version_deprecated() const { return m_impl->is_coupling_version_deprecated(); }
-#endif
 
     bool is_initialized() const { return m_impl->is_initialized(); }
 

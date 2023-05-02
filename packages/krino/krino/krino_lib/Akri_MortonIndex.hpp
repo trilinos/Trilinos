@@ -18,8 +18,8 @@ constexpr int MAX_VALID_MORTON3D_INDEX = 0x1fffff;
 
 uint64_t morton3d_encode_index(const int i)
 {
-  ThrowAssertMsg(i >= 0, "Index must be >= 0 to encode: " << i);
-  ThrowAssertMsg(i <= MAX_VALID_MORTON3D_INDEX, "Index must be <= " << MAX_VALID_MORTON3D_INDEX << " to encode: " << i);
+  STK_ThrowAssertMsg(i >= 0, "Index must be >= 0 to encode: " << i);
+  STK_ThrowAssertMsg(i <= MAX_VALID_MORTON3D_INDEX, "Index must be <= " << MAX_VALID_MORTON3D_INDEX << " to encode: " << i);
   uint64_t m = i & 0x1fffff;
   m = (m | m << 32) & 0x001f00000000ffff;
   m = (m | m << 16) & 0x001f0000ff0000ff;

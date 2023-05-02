@@ -38,7 +38,7 @@ struct LS_Field
 {
   LS_Field(const std::string & name_, const Surface_Identifier & identifier_, const FieldRef isovar_, const double isoval_, const LevelSet * const ptr_, const CDFEM_Inequality_Spec * const deathPtr_ = nullptr)
     : name(name_), identifier(identifier_), isovar(isovar_), isoval(isoval_), ptr(ptr_), deathPtr(deathPtr_) {
-    ThrowRequireMsg(isovar_.valid(), "Invalid field " + isovar_.name() + " used in CDFEM initialization");
+    STK_ThrowRequireMsg(isovar_.valid(), "Invalid field " + isovar_.name() + " used in CDFEM initialization");
   }
 
   // Constructor just for unit tests
@@ -73,7 +73,10 @@ public:
 
   void get_blocks_touching_surface(const std::string & surface_name, std::vector<std::string> & block_names);
 
+  std::vector<unsigned> get_negative_levelset_block_ordinals(const Surface_Identifier levelSetIdentifier) const;
   std::vector<unsigned> get_negative_levelset_interface_ordinals(const Surface_Identifier levelSetIdentifier) const;
+  stk::mesh::Selector get_negative_levelset_interface_selector(const Surface_Identifier levelSetIdentifier) const;
+  stk::mesh::Selector get_negative_levelset_block_selector(const Surface_Identifier levelSetIdentifier) const;
 
   void check_phase_parts() const;
 
@@ -128,10 +131,10 @@ private:
   Phase_Support();
   Phase_Support(stk::mesh::MetaData & meta);
 
-  const stk::mesh::MetaData & meta() const { ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
-  stk::mesh::MetaData & meta() { ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
-  const AuxMetaData & aux_meta() const { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
-  AuxMetaData & aux_meta() { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
+  const stk::mesh::MetaData & meta() const { STK_ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
+  stk::mesh::MetaData & meta() { STK_ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
+  const AuxMetaData & aux_meta() const { STK_ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
+  AuxMetaData & aux_meta() { STK_ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
 
   void update_touching_parts_for_phase_part(const stk::mesh::Part & origPart, const stk::mesh::Part & phasePart, const PhaseTag & phase);
   const PhasePartTag * find_conformal_phase_part(const stk::mesh::Part & conformal_part) const;
@@ -204,8 +207,8 @@ public:
   const PhaseTag & get_deactivated_phase() const { return my_deactivated_phase; }
   const PhaseTag & get_active_phase() const { return my_active_phase; }
   void create_levelset(stk::mesh::MetaData & meta, stk::diag::Timer & parent_timer);
-  const LevelSet & get_levelset() const { ThrowRequire(my_ls != NULL); return *my_ls; }
-  LevelSet & get_levelset() { ThrowRequire(my_ls != NULL); return *my_ls; }
+  const LevelSet & get_levelset() const { STK_ThrowRequire(my_ls != NULL); return *my_ls; }
+  LevelSet & get_levelset() { STK_ThrowRequire(my_ls != NULL); return *my_ls; }
 
   // for unit testing
   void set_phases(const PhaseTag & active_phase, const PhaseTag & inactive_phase)
@@ -241,7 +244,7 @@ public:
   const CDFEM_Inequality_Spec * get_death_spec_for_ls(const LevelSet * ls) const;
 
   // For irreversible phase changes we decompose at the start of the time step, for death at the end.
-  bool decompose_at_start_of_time_step() { ThrowAssert(has_irreversible_phase_change == !has_death); return has_irreversible_phase_change; }
+  bool decompose_at_start_of_time_step() { STK_ThrowAssert(has_irreversible_phase_change == !has_death); return has_irreversible_phase_change; }
 
 private:
   CDFEM_Irreversible_Phase_Support() : has_death(false), has_irreversible_phase_change(false) {}

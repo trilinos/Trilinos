@@ -28,14 +28,14 @@ std::unique_ptr<Simulation> Simulation::the_simulation;
 
 Simulation & Simulation::build(const std::string & in_name)
 {
-  ThrowRequireMsg(!the_simulation, "Simulation already set.");
+  STK_ThrowRequireMsg(!the_simulation, "Simulation already set.");
   the_simulation = std::make_unique<Simulation>(in_name);
   return *the_simulation;
 }
 
 Simulation & Simulation::get()
 {
-  ThrowRequireMsg(the_simulation, "Simulation should already be set.");
+  STK_ThrowRequireMsg(the_simulation, "Simulation should already be set.");
   return *the_simulation;
 }
 

@@ -71,9 +71,11 @@ function setup_trilinos_with_krino()
     
     if [ -d Trilinos/packages/krino ] ; then
       execute rm -rf Trilinos/packages/krino;
+      execute rm -rf Trilinos/packages/stk;
     fi
     if [ ! -L Trilinos/packages/krino ] ; then
       execute ln -s ${sierra_proj}/krino Trilinos/packages
+      execute ln -s ${sierra_proj}/stk Trilinos/packages
     fi   
 }
 
@@ -87,19 +89,19 @@ function build_trilinos_with_krino()
     cd_to_new_dir ${productName}_build
 
     export TRILINOS_INSTALL_DIR=../${productName}_install
-    execute $sierra_proj/krino/cmake_install_test/run_cmake_krino_pull_request
+    execute $sierra_proj/krino/cmake_install_test/run_cmake_krino
     make_and_install $productName    
 }
-
 
 function setup_environment()
 {
     execute source /etc/profile.d/modules.sh
-    execute source ${output_dir}/trilinos/Trilinos/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
+    execute module purge
+    
+    execute source $sierra_proj/krino/cmake_install_test/load_gcc_modules
 
-    # fixup for python 2
-    execute module unload sems-python/3.5.2
-    execute module load sems-python/2.7.9 
+    execute module list
+    execute env
 }
 
 function runTests()
@@ -126,7 +128,3 @@ setup_environment
 build_trilinos_with_krino
 build_yaml
 build_trilinos_with_krino
-
-#runTests morph/morph_build "Morph"
-#runTests morph_and_sgm/morph_and_sgm_build "Morph and SGM"
-#runTests morphWithExe/morphWithExe_build "MorphWithExe"

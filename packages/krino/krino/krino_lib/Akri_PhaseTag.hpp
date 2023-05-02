@@ -101,7 +101,7 @@ public:
   void set_from_data(const std::vector<int> & phase_data)
   {
     clear();
-    ThrowAssert(phase_data.size() % 2 == 0);
+    STK_ThrowAssert(phase_data.size() % 2 == 0);
     const unsigned num_phases = phase_data.size() / 2;
     for (unsigned phase_index=0; phase_index<num_phases; ++phase_index)
     {
@@ -133,23 +133,23 @@ public:
     : my_conformal_part_ordinal(conformal_part_ordinal),
       my_nonconformal_part_ordinal(nonconformal_part_ordinal),
       my_original_part_ordinal(original_part_ordinal),
-      my_touching_vol_phase(vol_phase)  { ThrowRequire(!vol_phase.empty()); }
+      my_touching_vol_phase(vol_phase)  { STK_ThrowRequire(!vol_phase.empty()); }
   // For interface phase parts defined as intersection of touching_vol_phase and opposite_vol_phase
   PhasePartTag(const unsigned & conformal_part_ordinal, const unsigned & nonconformal_part_ordinal, const unsigned & original_part_ordinal, const PhaseTag & touching_vol_phase, const PhaseTag & opposite_vol_phase)
     : my_conformal_part_ordinal(conformal_part_ordinal),
       my_nonconformal_part_ordinal(nonconformal_part_ordinal),
       my_original_part_ordinal(original_part_ordinal),
       my_touching_vol_phase(touching_vol_phase),
-      my_opposite_vol_phase(opposite_vol_phase) { ThrowRequire(!touching_vol_phase.empty() && !opposite_vol_phase.empty()); }
+      my_opposite_vol_phase(opposite_vol_phase) { STK_ThrowRequire(!touching_vol_phase.empty() && !opposite_vol_phase.empty()); }
   ~PhasePartTag() {}
 public:
   unsigned get_conformal_part_ordinal() const { return my_conformal_part_ordinal; }
   unsigned get_nonconformal_part_ordinal() const { return my_nonconformal_part_ordinal; }
   unsigned get_original_part_ordinal() const { return my_original_part_ordinal; }
   bool is_interface() const { return !my_opposite_vol_phase.empty(); }
-  const PhaseTag & get_phase() const { ThrowRequire(!is_interface()); return my_touching_vol_phase; }
-  const PhaseTag & get_touching_phase() const { ThrowRequire(is_interface()); return my_touching_vol_phase; }
-  const PhaseTag & get_opposite_phase() const { ThrowRequire(is_interface()); return my_opposite_vol_phase; }
+  const PhaseTag & get_phase() const { STK_ThrowRequire(!is_interface()); return my_touching_vol_phase; }
+  const PhaseTag & get_touching_phase() const { STK_ThrowRequire(is_interface()); return my_touching_vol_phase; }
+  const PhaseTag & get_opposite_phase() const { STK_ThrowRequire(is_interface()); return my_opposite_vol_phase; }
   bool operator<(PhasePartTag rhs) const
   {
     // There must be a 1-1 mapping between conformal parts and PhasePartTags

@@ -72,11 +72,11 @@ bool AdjacencyPredicates::do_edges_intersect(mesh::MeshEntityPtr edge1, mesh::Me
 
   auto result = compute_edge_intersection(edge1Pt1, edge1Pt2, edge2Pt1, edge2Pt2, pt1Normal, pt2Normal, 1e-12, 0.25);
 
-  bool firstIntersectionInRange = result.intersection1_found() && in_range(result.get_alpha1(), 0, 1, 1e-12) &&
-                                  in_range(result.get_beta1(), 0, 1, 1e-12);
+  bool firstIntersectionInRange = result.intersection1_found() && in_range(result.get_alpha1(), 0, 1, m_edgeTol) &&
+                                  in_range(result.get_beta1(), 0, 1, m_edgeTol);
 
-  bool secondIntersectionInRange = result.intersection2_found() && in_range(result.get_alpha2(), 0, 1, 1e-12) &&
-                                   in_range(result.get_beta2(), 0, 1, 1e-12);
+  bool secondIntersectionInRange = result.intersection2_found() && in_range(result.get_alpha2(), 0, 1, m_edgeTol) &&
+                                   in_range(result.get_beta2(), 0, 1, m_edgeTol);
 
   return firstIntersectionInRange || secondIntersectionInRange;
 }

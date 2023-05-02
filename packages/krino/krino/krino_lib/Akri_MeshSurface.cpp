@@ -138,7 +138,7 @@ void FACSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
   my_reader.read("reading points", [this, &points](){read_points(points);});
 
   int num_facets = 0;
-  my_reader.read("reading number of facets", [&input, &num_facets](){input >> num_facets; ThrowRequire(num_facets > 0);});
+  my_reader.read("reading number of facets", [&input, &num_facets](){input >> num_facets; STK_ThrowRequire(num_facets > 0);});
 
   int batch_size = 0;
   int num_batches = 0;
@@ -159,14 +159,14 @@ void FACSurface::read_points(std::vector<Vector3d> & points)
   std::ifstream & input = my_reader.input();
   int num_points;
   input >> num_points;
-  ThrowRequire(num_points > 0);
+  STK_ThrowRequire(num_points > 0);
   points.reserve(num_points);
   for ( int i = 0; i < num_points; i++ )
   {
     int id;
     double X, Y, Z;
     input >> id;
-    ThrowRequire(id >= 0 && id < num_points);
+    STK_ThrowRequire(id >= 0 && id < num_points);
     input >> X >> Y >> Z;
     points.emplace_back(X*my_scale[0], Y*my_scale[1], Z*my_scale[2]);
   }
@@ -181,12 +181,12 @@ void FACSurface::read_facets(const int batch_size, const int num_facets, const s
     int id;
     int p1, p2, p3;
     input >> id;
-    ThrowRequire(id >= 0 && id < num_facets);
+    STK_ThrowRequire(id >= 0 && id < num_facets);
     input >> p1 >> p2 >> p3;
 
-    ThrowRequire(p1 >= 0 && p1 < num_points);
-    ThrowRequire(p2 >= 0 && p2 < num_points);
-    ThrowRequire(p3 >= 0 && p3 < num_points);
+    STK_ThrowRequire(p1 >= 0 && p1 < num_points);
+    STK_ThrowRequire(p2 >= 0 && p2 < num_points);
+    STK_ThrowRequire(p3 >= 0 && p3 < num_points);
 
     if (my_dist_sign == -1)
     {
@@ -277,11 +277,11 @@ void PLYSurface::read_header(int & num_points, int & num_facets)
   // Read in the file identifier
   std::string symbol;
   input >> symbol;
-  ThrowRequire(symbol.compare("ply") == 0);
+  STK_ThrowRequire(symbol.compare("ply") == 0);
 
   while (symbol.compare("end_header") != 0)
   {
-    ThrowErrorMsgIf(input.eof(), "Problem reading PLY file, reached end of file.");
+    STK_ThrowErrorMsgIf(input.eof(), "Problem reading PLY file, reached end of file.");
     input >> symbol;
     if (symbol.compare("element") == 0)
     {
@@ -326,11 +326,11 @@ void PLYSurface::read_facets(const int batch_size, const std::vector<Vector3d> &
     std::getline(input,line);
     std::stringstream linestream(line);
     linestream >> num_facet_nodes;
-    ThrowRequireMsg(num_facet_nodes == 3, "Failed to read face connectivity correctly.");
+    STK_ThrowRequireMsg(num_facet_nodes == 3, "Failed to read face connectivity correctly.");
     linestream >> p1 >> p2 >> p3;
-    ThrowRequire(p1 < num_points);
-    ThrowRequire(p2 < num_points);
-    ThrowRequire(p3 < num_points);
+    STK_ThrowRequire(p1 < num_points);
+    STK_ThrowRequire(p2 < num_points);
+    STK_ThrowRequire(p3 < num_points);
 
     if (my_dist_sign == -1)
     {
@@ -397,21 +397,21 @@ static std::unique_ptr<Facet> read_ascii_facet(std::ifstream & input, const Vect
 
   // Read in the facet normal
   input >> symbol;
-  ThrowRequire(symbol.compare("normal")  == 0);
+  STK_ThrowRequire(symbol.compare("normal")  == 0);
   input >> nx >> ny >> nz;
   const Vector3d normal(std::atof(nx.c_str()), std::atof(ny.c_str()), std::atof(nz.c_str()));
 
   // Read in the "outer loop" line
   input >> symbol;
-  ThrowRequire(symbol.compare("outer") == 0);
+  STK_ThrowRequire(symbol.compare("outer") == 0);
   input >> symbol;
-  ThrowRequire(symbol.compare("loop") == 0);
+  STK_ThrowRequire(symbol.compare("loop") == 0);
 
   // Read in the vertices
   std::array<Vector3d,3> pts;
   for (int i=0; i<3; i++) {
     input >> symbol;
-    ThrowRequire(symbol.compare("vertex") == 0);
+    STK_ThrowRequire(symbol.compare("vertex") == 0);
     input >> X >> Y >> Z;
 
     pts[i] = Vector3d(X*scale[0], Y*scale[1], Z*scale[2]);
@@ -419,9 +419,9 @@ static std::unique_ptr<Facet> read_ascii_facet(std::ifstream & input, const Vect
 
   // Read in the "endloop" and "endfacet" lines
   input >> symbol;
-  ThrowRequire(symbol.compare("endloop") == 0);
+  STK_ThrowRequire(symbol.compare("endloop") == 0);
   input >> symbol;
-  ThrowRequire(symbol.compare("endfacet") == 0);
+  STK_ThrowRequire(symbol.compare("endfacet") == 0);
 
   std::unique_ptr<Facet> facet;
   if (is_finite_normal(normal))
@@ -566,7 +566,7 @@ STLSurface::read_header()
     // Read in strings until you get to facet
     while (symbol.compare("facet") != 0)
     {
-      ThrowErrorMsgIf(input.eof(), "Problem reading STL file, no facets found.");
+      STK_ThrowErrorMsgIf(input.eof(), "Problem reading STL file, no facets found.");
       input >> symbol;
     }
     krinolog << "Reading ASCII STL file." << stk::diag::dendl;
@@ -577,17 +577,17 @@ STLSurface::read_header()
     input.clear();
     input.seekg(0);
     input.read(header_info, 80);
-    ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read binary file header.");
+    STK_ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read binary file header.");
   }
 }
 
 unsigned STLSurface::read_num_binary_facets()
 {
-  ThrowAssert(!my_is_ascii);
+  STK_ThrowAssert(!my_is_ascii);
   std::ifstream & input = my_reader.input();
   unsigned numFacets = 0;
   input.read((char *) &numFacets, sizeof(numFacets));
-  ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read number of facets.");
+  STK_ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read number of facets.");
   krinolog << "Reading binary STL file with " << numFacets << " facets." << stk::diag::dendl;
   return numFacets;
 }
@@ -695,7 +695,7 @@ EXOSurface::get_bounding_box()
     int num_dim   = io->get_property("spatial_dimension").get_int();
     int num_nodes = io->get_property("node_count").get_int();
 
-    ThrowAssert( 3 == num_dim );
+    STK_ThrowAssert( 3 == num_dim );
 
     /* generate coordinates */
     xyz.resize(num_nodes*num_dim);
@@ -745,7 +745,7 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << ", num elems = " << num_elem
         << ", num elem blks = " << num_elem_blk << std::endl;
 
-    ThrowAssert( 3 == num_dim );
+    STK_ThrowAssert( 3 == num_dim );
 
     /* generate coordinates */
     xyz.resize(num_nodes*num_dim);
@@ -777,7 +777,7 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << " with name " << eb_name << "..." << std::endl;
 
       int nodes_per_elem_in_blk = eb->get_property("topology_node_count").get_int();
-      ThrowAssert( nodes_per_elem_in_blk == nodes_per_elem );
+      STK_ThrowAssert( nodes_per_elem_in_blk == nodes_per_elem );
 
       conn.resize(num_elem_in_blk*nodes_per_elem_in_blk);
 
@@ -905,7 +905,7 @@ MeshSurface::build_local_facets(const BoundingBox & proc_bbox)
 void
 MeshSurface::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1)
 {
-  ThrowAssert(2 == my_mesh_meta.spatial_dimension());
+  STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
   Vector3d pt[2];
   
   if (my_sign == -1)
@@ -934,7 +934,7 @@ MeshSurface::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side
 void
 MeshSurface::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2)
 {
-  ThrowAssert(3 == my_mesh_meta.spatial_dimension());
+  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   Vector3d pt[3];
   
   if (my_sign == -1)
@@ -957,7 +957,7 @@ MeshSurface::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side
 void
 MeshSurface::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
 {
-  ThrowAssert(3 == my_mesh_meta.spatial_dimension());
+  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   Vector3d pt[5];
 
   if (my_sign == -1)
@@ -1001,7 +1001,7 @@ MeshSurface::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side,
 void
 MeshSurface::add_facet2d(Vector3d & p0, Vector3d & p1)
 {
-  ThrowAssert(2 == my_mesh_meta.spatial_dimension());
+  STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
 
   std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( p0, p1 );
   add( std::move(facet) );
@@ -1010,7 +1010,7 @@ MeshSurface::add_facet2d(Vector3d & p0, Vector3d & p1)
 void
 MeshSurface::add_facet3d(Vector3d & p0, Vector3d & p1, Vector3d & p2)
 {
-  ThrowAssert(3 == my_mesh_meta.spatial_dimension());
+  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
 
   std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( p0, p1, p2 );
   add( std::move(facet) );
