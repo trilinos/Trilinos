@@ -45,13 +45,16 @@
 
 /*! \file BelosKokkosDenseAdapter.hpp
   \brief Full specialization of Belos::DenseMatTraits for Kokkos::DualView
-  with arbitrary scalarType, executionSpace, etc. All views are expected to
-  have 2 dimensions. 
+  with arbitrary scalarType. All views are expected to
+  have 2 dimensions. We hard-code LayoutLeft because LAPACK expects
+  column-major matrices. 
 */
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#include "Kokkos_Random.hpp"
+#include "Kokkos_ArithTraits.hpp"
 //Kokkos BLAS files:
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
@@ -59,70 +62,102 @@
 namespace Belos {
 
   //! Full specialization of Belos::DenseMatTraits for Kokkos::DualView.
+  //
+  //TODO: It seems like all of Tpetra Details returning views 
+  // (e.g. getStatic2dDualView) return a LayoutLeft view.  Should we 
+  // hard-code that parameter he
   template<class Scalar>
-class DenseMatTraits<Scalar, typename Kokkos::DualView<Scalar**>>{
-public:
+  class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
+
+  public:
+  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     
     //@{ \name Creation methods
 
-    /*! \brief Creates a new empty \c Kokkos::DualView<Scalar**> with no dimension.
+    /*! \brief Creates a new empty \c Kokkos::DualView<IST**,Kokkos::LayoutLeft> with no dimension.
 
-    \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<Scalar**>.
+    \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     */
-    static Teuchos::RCP<Kokkos::DualView<Scalar**>> Create() { 
-      return Teuchos::rcp(new Kokkos::DualView<Scalar**>("BelosDenseView"));
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> Create() { 
+      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView"));
     }     
 
-    /*! \brief Creates a new empty \c Kokkos::DualView<Scalar**> containing 
+    /*! \brief Creates a new empty \c Kokkos::DualView<IST**,Kokkos::LayoutLeft> containing 
      *     and \c numRows rows and \c numCols columns.
      *         Will be initialized to zeros if last parameter is true.
 
-    \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<Scalar**>.
+    \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     */
-    static Teuchos::RCP<Kokkos::DualView<Scalar**>> Create( const int numRows, const int numCols, bool initZero = true) { 
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> Create( const int numRows, const int numCols, bool initZero = true) { 
       if(initZero){
-        return Teuchos::rcp(new Kokkos::DualView<Scalar**>("BelosDenseView",numRows,numCols));
+        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView",numRows,numCols));
       }
       else {
-        //return Teuchos::rcp(new Kokkos::DualView<Scalar**>(Kokkos::WithoutInitializing,"BelosDenseView",numRows,numCols));
-        //return Teuchos::rcp(new Kokkos::DualView<Scalar**>(Kokkos::WithoutInitializing,numRows,numCols));
-        return Teuchos::rcp(new Kokkos::DualView<Scalar**>(Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseView"),numRows,numCols));
+        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>(Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseView"),numRows,numCols));
       }
     }     
-
-    //! \brief Returns a raw pointer to the data on the host.
-    static Scalar* GetRawHostPtr(Kokkos::DualView<Scalar**> & dm ) { 
+    
+    //TODO make const and non-const function for raw pointer. 
+    //! \brief Returns a raw pointer to the (non-const) data on the host.
+    /// \note We assume that return data in in a column-major format
+    /// because this is what is expected by LAPACK.
+    /// \note This raw pointer is intended only for passing data to LAPACK
+    /// functions. Other operations on the raw data may result in undefined behavior!
+    static Scalar* GetRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
     //LAPACK could use the host ptr to modify entries, so mark as modified.
     //TODO: Is there a better way to handle this?
-        dm.modify_host();
-        return dm.h_view.data();
+        //dm.modify_host();
+        return reinterpret_cast<Scalar*>(dm.h_view.data());
+    //TODO: Is there any way that the user could hold on to this pointer...
+    // and everything works fine the first time they pass to LAPACK. 
+    // But then... they call MvTimesMatAddMv which syncs to device. 
+    // But then they keep the same pointer and pass to LAPACK again.
+    // Then they call MvTimesMatAddMv... but since they didn't call this 
+    // function again, we miss the sync... See thread with Heidi on this. 
     }
 
-    //! \brief Returns an RCP to a Kokkos::DualView<Scalar**> which has a subview of the given Kokkos::DualView<Scalar**>.
+    //! \brief Returns a raw pointer to const data on the host.
+    static Scalar const * GetConstRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
+        return reinterpret_cast<Scalar const *>(dm.h_view.data());
+    }
+
+    //! \brief Marks host data modified to avoid device sync errors. 
+    /// \note Belos developers must call this function after EVERY
+    ///   call to LAPACK that modifies dense matrix data accessed via raw pointer. 
+    static void RawPtrDataModified(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) {
+      dm.modify_host();
+    }
+
+    //! \brief Returns an RCP to a Kokkos::DualView<IST**,Kokkos::LayoutLeft> which has a subview of the given Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     //        Row and column indexing is zero-based.
-    static Teuchos::RCP<Kokkos::DualView<Scalar**>> 
-    Subview( Kokkos::DualView<Scalar**> & source, int numRows, int numCols, int startRow=0, int startCol=0){
-      return Teuchos::rcp(new Kokkos::DualView<Scalar**>(source, 
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
+    Subview( Kokkos::DualView<IST**,Kokkos::LayoutLeft> & source, int numRows, int numCols, int startRow=0, int startCol=0){
+      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>(source, 
           Kokkos::pair<int,int>(startRow,startRow+numRows), Kokkos::pair<int,int>(startCol,startCol+numCols))); 
       //Does subview work on dual views? Brian says yes. 
     }     
 
-    static Teuchos::RCP<const Kokkos::DualView<Scalar**>> 
-    SubviewConst( const Kokkos::DualView<Scalar**>& source, int numRows, int numCols, int startRow=0, int startCol=0){
-      return Teuchos::rcp(new Kokkos::DualView<Scalar**>(source, 
+    static Teuchos::RCP<const Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
+    SubviewConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& source, int numRows, int numCols, int startRow=0, int startCol=0){
+      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>(source, 
           Kokkos::pair<int,int>(startRow,startRow+numRows), Kokkos::pair<int,int>(startCol,startCol+numCols))); 
           //TODO: Check const-ness semantics here?
     }     
 
     //! \brief Returns a deep copy of the requested subview.
-    static Teuchos::RCP<Kokkos::DualView<Scalar**>> 
-    SubviewCopy( const Kokkos::DualView<Scalar**>& source, int numRows, int numCols, int startRow=0, int startCol=0){ 
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
+    SubviewCopy( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& source, int numRows, int numCols, int startRow=0, int startCol=0){ 
       //Maaybe we could get away with just a host copy here??
       //Hmmm... but it says we return a dual view. 
       //Maybe it should return a dual view with only host data copied in. Require sync to work on device. 
       //This is related to the functionality of the Assign function. 
-      auto tmpViewRCP = Teuchos::rcp(new Kokkos::DualView<Scalar**>
+      auto tmpViewRCP = Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>
                                   (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseView"),numRows,numCols));
+      // I am keeping this where it copies the whole view on host and device because:
+      // a) I feel like we might be inviting some weird bugs later if we don't.
+      // But TODO Clarify to developer that this function needs to work on both host and device.
+      // b) It's not a host-device copy or vice versa. Its a copy from device to same device and from host to host. 
+      // So shouldn't add much extra overhead. 
       Kokkos::deep_copy(*tmpViewRCP, Kokkos::subview(source, 
           Kokkos::pair<int,int>(startRow,startRow+numRows), Kokkos::pair<int,int>(startCol,startCol+numCols))); 
       return tmpViewRCP;
@@ -132,20 +167,25 @@ public:
     //@{ \name Attribute methods
 
     //! \brief Obtain the number of rows of \c dm.
-    static int GetNumRows( const Kokkos::DualView<Scalar**>& dm ) { 
-      return dm.extent(0); 
+    static int GetNumRows( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm ) { 
+      return dm.extent_int(0); 
     }     
 
     //! \brief Obtain the number of columns of \c dm.
-    static int GetNumCols( const Kokkos::DualView<Scalar**>& dm ) { 
-      return dm.extent(1); 
+    static int GetNumCols( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm ) { 
+      return dm.extent_int(1); 
     }     
 
     //! \brief Obtain the stride between the columns of \c dm.
-    static int GetStride( const Kokkos::DualView<Scalar**>& dm ) { 
+    static int GetStride( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm ) { 
+      // Note: We force LayoutLeft, which is column major, so the stride_0 is always 1.
+      // (This is the distance between two elts in same col, different rows.)
+      // Lapack wants stride_1, the distance from one col to the next col if we stay
+      // in the same row. 
       int strides[2];
       dm.stride(strides);
-      return strides[0]; //TODO check this is the right dimension. 
+      return strides[1]; 
+      //return dm.stride_1();  //This shortcut doesn't work for dualView.
     }
 
     //@}
@@ -158,7 +198,7 @@ public:
      *        the matrix will be maintained. For new entries that did not exist in the previous matrix, values will
      *        contain noise from memory. 
     */
-    static void Reshape( Kokkos::DualView<Scalar**>& dm, const int numRows, const int numCols, bool initZero = false) {
+    static void Reshape( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int numRows, const int numCols, bool initZero = false) {
       if(initZero){
         dm.realloc(numRows,numCols); //changes size of both host and device view.
         Kokkos::deep_copy(dm.h_view, 0.0);
@@ -174,65 +214,83 @@ public:
     //@{ \name Data access methods
 
     //! \brief Access a reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static Scalar & Value( Kokkos::DualView<Scalar**>& dm, const int i, const int j )
+    static IST & Value( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j )
     { 
     //Mark as modified on host, since we don't know if it will be. 
       dm.modify_host();
       return dm.h_view(i,j);
+      // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const Scalar & Value( const Kokkos::DualView<Scalar**>& dm, const int i, const int j ) { 
+    static const IST & Value( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
       return dm.h_view(i,j);
       //TODO check const semantics here?
     }
 
-    static void SyncHostToDevice(Kokkos::DualView<Scalar**> &)
-    { }
+    //TODO: Check formatting of ALL doxygen comments!
+    //
+    //! \brief If an accelorator is in use, sync it to device on this call.
+    //  
+    //  \note The only Belos function that results in a need to sync to 
+    //  host is MvTransMv. You MUST call SyncDeviceToHost before calling
+    //  any other DenseMatTraits functions after a call to MvTransMv. 
+    //  All DenseMatTraits functions assume the necessary data is on host
+    //  and perform computations only on the host. 
+    //
+    static void SyncDeviceToHost(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
+      if(dm.need_sync_host()){
+        dm.sync_host();
+      }    
+    }
 
-    static void SyncDeviceToHost(Kokkos::DualView<Scalar**> &)
-    { }
     //@}
     //@{ \name Operator methods
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
-    static void Add( Kokkos::DualView<Scalar**>& thisDM, const Kokkos::DualView<Scalar**>& sourceDM) {
+    static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
       KokkosBlas::axpy(1.0,sourceDM.h_view, thisDM.h_view); //axpy(alpha,x,y), y = y + alpha*x
       thisDM.modify_host();
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
-    static void PutScalar( Kokkos::DualView<Scalar**>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
+    static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
       Kokkos::deep_copy( dm.h_view, value);
       dm.modify_host();
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
-    static void Scale( Kokkos::DualView<Scalar**>& dm, Scalar value) { 
+    static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
       KokkosBlas::scal( dm.h_view, value, dm.h_view);
       dm.modify_host();
     }
 
     //!  \brief Fill the Kokkos::DualView with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
-    static void Randomize( Kokkos::DualView<Scalar**>& dm)
-    { }
-
-    //TODO really need random synced. 
+    static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
+      int rand_seed = std::rand();
+      Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
+      Kokkos::fill_random(dm.h_view, pool, -1,1);
+      dm.modify_host();
+    }
 
     //!  \brief Copies entries of source to dest (deep copy). 
-    static void Assign( Kokkos::DualView<Scalar**>& dest, const Kokkos::DualView<Scalar**>& source) { 
-      //Kokkos::deep_copy(dest,source); //Brian Kelley says this works on dual views.
+    static void Assign( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dest, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& source) { 
+      Kokkos::deep_copy(dest,source); //Brian Kelley says this works on dual views.
       //TODO: But do we really want to do this? What if we only need the host pieces copied right now?
-      Kokkos::deep_copy(dest.h_view,source.h_view); 
-      dest.modify_host();
+      //Kokkos::deep_copy(dest.h_view,source.h_view); 
+      //dest.modify_host();
+      // Note: going with first solution. See discussion on SubViewCopy. 
     }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius( Kokkos::DualView<Scalar**>& dm) { 
-      using KAT = Kokkos::ArithTraits<Scalar>;
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
+      using KAT = Kokkos::ArithTraits<IST>;
       using mag_t = typename KAT::mag_type;
       mag_t frobNorm;
+      //TODO: This is going to break in CUDA, isn't it? b/c accessed h_view on device.
+      // Do we even want any of this to happen on device? These should be small matrices. 
+      // And then we would have to make sure the matrix is synced to device.... 
       Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
           KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
           {
@@ -241,10 +299,25 @@ public:
           }, frobNorm);
       return Kokkos::sqrt(frobNorm);
     }
-    //TODO: where should we be syncing?? Like above when we need the values of dm? 
+
+    //!  \brief Returns the one-norm of the dense matrix.
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormOne( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {  
+      using KAT = Kokkos::ArithTraits<IST>;
+      IST sum = 0, max_sum = 0; 
+      for(int j = 0; j < dm.extent_int(1); j++){ //cols
+        for(int i = 0; i < dm.extent_int(0); i++){  //rows
+          sum += KAT::abs(dm.h_view(i,j));
+        }
+        if(KAT::abs(sum) > KAT::abs(max_sum)){
+          max_sum = sum;
+        }
+        sum = 0;
+      }
+      return KAT::abs(max_sum); //TODO: Check this impl is correct
+    }
     //@}
   };
   
 } // namespace Belos
 
-#endif // end file BELOS_TEUCHOS_DENSE_MAT_TRAITS_HPP
+#endif // end file BELOS_KOKKOS_DENSE_MAT_TRAITS_HPP
