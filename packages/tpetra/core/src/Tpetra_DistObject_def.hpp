@@ -1772,15 +1772,6 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
 // clang-format off
 
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        & /* importLIDs */,
-    Kokkos::DualView<packet_type *, buffer_device_type> /* imports */,
-    Kokkos::DualView<size_t *, buffer_device_type> /* numPacketsPerLID */,
-    const size_t /* constantNumPackets */,
-    const CombineMode /* combineMode */) {}
-
-template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::print(
     std::ostream &os) const {
   using std::endl;
