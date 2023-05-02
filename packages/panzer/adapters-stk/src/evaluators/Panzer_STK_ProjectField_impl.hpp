@@ -67,18 +67,18 @@ ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
   using panzer::Cell;
   using panzer::BASIS;
 
-  // TODO can't get static assert to work and not sure how to do the instantiations then
+  static_assert(std::is_same<EvalT,panzer::Traits::Residual>::value);
 
   Teuchos::RCP<PHX::DataLayout> srcBasis_layout = srcBasis_->functional;
   Teuchos::RCP<PHX::DataLayout> dstBasis_layout = dstBasis_->functional;
 
   if (outName == "") outName = inName; 
-  result_ = PHX::MDField<double,Cell,BASIS>(outName,dstBasis_layout);
+  result_ = PHX::MDField<ScalarT,Cell,BASIS>(outName,dstBasis_layout);
   this->addEvaluatedField(result_);
 
   // This shouldn't get modified but needs to be non const 
   // because of downstream templating in intrepid2
-  source_ = PHX::MDField<double,Cell,BASIS>(inName,srcBasis_layout);
+  source_ = PHX::MDField<ScalarT,Cell,BASIS>(inName,srcBasis_layout);
   this->addNonConstDependentField(source_);
 
   this->setName("Project Field");
@@ -125,7 +125,7 @@ evaluateFields(typename Traits::EvalData workset)
   
   Kokkos::deep_copy(orts,orts_host);
 
-  // TODO BWR maybe we dont need pure basis upstream?
+  // TODO BWR Revisit this... maybe we don't need pure basis upstream?
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > dstBasis = dstBasis_->getIntrepid2Basis();
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
 

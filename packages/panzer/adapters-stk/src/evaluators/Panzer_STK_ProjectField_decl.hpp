@@ -86,6 +86,8 @@ public:
 
 private:
 
+  using ScalarT = typename EvalT::ScalarT;
+
   const std::string field_name_;
   Teuchos::RCP<const panzer::PureBasis> srcBasis_;
   Teuchos::RCP<const panzer::PureBasis> dstBasis_;

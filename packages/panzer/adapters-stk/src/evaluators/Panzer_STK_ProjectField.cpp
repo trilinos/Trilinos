@@ -46,4 +46,5 @@
 #include "Panzer_STK_ProjectField_decl.hpp"
 #include "Panzer_STK_ProjectField_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk::ProjectField)
+// Only supports residual type for now
+PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_TWO_T(panzer_stk::ProjectField)
