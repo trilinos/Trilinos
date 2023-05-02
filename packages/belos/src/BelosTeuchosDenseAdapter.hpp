@@ -82,9 +82,18 @@ namespace Belos {
       return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(numrows,numcols,initZero));
     }     
 
-    //! \brief Returns a raw pointer to the data on the host.
+    //! \brief Returns a raw pointer to the (non-const) data on the host.
     static ScalarType* GetRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
     { return dm.values(); }     
+
+    //! \brief Returns a raw pointer to const data on the host.
+    static ScalarType const * GetConstRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )  
+    { return const_cast<ScalarType const *>(dm.values()); }     
+
+    //! \brief Marks host data modified to avoid device sync errors. 
+    /// \note Belos developers must call this function after EVERY
+    ///   call to LAPACK!!!
+    static void RawPtrDataModified(Teuchos::SerialDenseMatrix<int,ScalarType> & dm ) { }
 
     //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
@@ -158,8 +167,6 @@ namespace Belos {
       return dm(i,j);
     }
 
-    static void SyncHostToDevice(Teuchos::SerialDenseMatrix<int,ScalarType> &){ }
-
     static void SyncDeviceToHost(Teuchos::SerialDenseMatrix<int,ScalarType> &){ }
     //@}
 
@@ -195,6 +202,11 @@ namespace Belos {
     //!  \brief Returns the Frobenius norm of the dense matrix.
     static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormFrobenius(Teuchos::SerialDenseMatrix<int,ScalarType>& dm) { 
       return dm.normFrobenius(); 
+    }
+
+    //!  \brief Returns the one-norm of the dense matrix.
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormOne( Teuchos::SerialDenseMatrix<int,ScalarType>& dm) { 
+      return dm.normOne();
     }
     //@}
   };
