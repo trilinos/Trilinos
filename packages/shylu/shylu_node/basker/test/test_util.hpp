@@ -143,7 +143,7 @@ Entry norm2(Int n, Entry x[])
   double sum = 0;
   for(Int i = 0; i < n; i++)
   {
-    sum = x[i]*x[i];
+    sum += x[i]*x[i];
   }
   sum = std::sqrt(sum);
   return sum;

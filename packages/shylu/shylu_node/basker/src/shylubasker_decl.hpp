@@ -299,6 +299,11 @@ namespace BaskerNS
     int permute(INT_1DARRAY, INT_1DARRAY, Int);
 
     BASKER_INLINE
+    int permute_array_with_workspace(Entry * vec,
+                                     INT_1DARRAY & p,
+                                     Int n);
+
+    BASKER_INLINE
     int permute_with_workspace(INT_1DARRAY & vec,
                                INT_1DARRAY & p,
                                Int n,
@@ -317,6 +322,9 @@ namespace BaskerNS
 
     BASKER_INLINE
     int permute_inv_with_workspace(ENTRY_1DARRAY&, INT_1DARRAY&, Int);
+
+    BASKER_INLINE
+    int permute_inv_array_with_workspace(Entry*, INT_1DARRAY&, Int);
 
     BASKER_INLINE
     int permute_inv_and_init_for_solve

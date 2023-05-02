@@ -2073,7 +2073,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Solve Called\n");
+      printf("Basker Solve Called (%s)\n",(transpose ? " transpose" : "non-transpose"));
     }
 
     if(factor_flag != BASKER_TRUE)
@@ -2114,7 +2114,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker MultiSolve Called\n");
+      printf("Basker MultiSolve Called with %d RHSs (%s)\n",(int)_nrhs,(transpose ? "transpose" : "non-transpose"));
     }
 
     if(factor_flag != BASKER_TRUE)

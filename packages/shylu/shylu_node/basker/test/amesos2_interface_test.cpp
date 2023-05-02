@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
   const bool nontranspose = true;
   const bool transpose = true;
   const bool copytranspose = false;
-  const bool ones_setup = false;
+  const bool ones_setup = true;
 
   if(argc < 2)
   {
@@ -41,9 +41,9 @@ int main(int argc, char* argv[])
   std::cout << "Matrix read" << std::endl;
   double rmatrix = myTime();
   readMatrix<Int,Entry>(mname, m, n, nnz, 
-			&col_ptr, &row_idx, &val);
+                        &col_ptr, &row_idx, &val);
   std::cout << "Read Matrix, Time: " 
-	    << totalTime(rmatrix,myTime()) << std::endl;
+            << totalTime(rmatrix,myTime()) << std::endl;
   
   //RHS
   Int vn, vm;
@@ -117,11 +117,11 @@ int main(int argc, char* argv[])
     double stime = myTime();
     mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
     std::cout << "Done with Symbolic, Time: " 
-	      << totalTime(stime, myTime()) << std::endl;
+              << totalTime(stime, myTime()) << std::endl;
     double ftime = myTime();
     mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
     std::cout << "Done with Factor, Time: "
-	      << totalTime(ftime, myTime()) << std::endl;
+              << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
     
@@ -129,19 +129,29 @@ int main(int argc, char* argv[])
     std::cout << "\n\n** Begin Solve **\n" << std::endl;
     mybasker.Solve(y,x);
     std::cout << "Done with Solve, Time: "
-	      << totalTime(ttime, myTime()) << std::endl;
+              << totalTime(ttime, myTime()) << std::endl;
 
+    Entry *e;
+    e = new Entry[vm]();
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
     {
       xhat[i] = y[i] - xhat[i];
+      if(argc != 4) {
+        if (ones_setup) e[i] = x[i] - (Entry)1.0;
+        else            e[i] = x[i] - (Entry)i;
+      }
     }
 
-    std::cout << "||X||: " << norm2<Int,Entry>(n,x)
-	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
-        << "   Matrix: " << mname
-	      << std::endl;
-
+    std::cout << "||Y||: " << norm2<Int,Entry>(n,y)
+              << " ||X||: " << norm2<Int,Entry>(n,x)
+              << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat);
+    if (argc != 4) {
+      std::cout << " ||X-Xexact||: " << norm2<Int,Entry>(m,e);
+    }
+    std::cout << "   Matrix: " << mname << "(" << m << "x" << n << ")"
+              << std::endl;
+    delete [] e;
     }
 
 
@@ -167,18 +177,29 @@ int main(int argc, char* argv[])
     // transpose
     mybasker.Solve(yt,x,true);
     std::cout << "Done with Transpose Solve, Time: "
-	      << totalTime(ttime, myTime()) << std::endl;
+              << totalTime(ttime, myTime()) << std::endl;
 
+    Entry *e;
+    e = new Entry[vm]();
     multiply_tr<Int,Entry>(m,n,col_ptr,row_idx,val,x,xhat);
     for(Int i = 0; i < m; i++)
     {
       xhat[i] = yt[i] - xhat[i];
+      if(argc != 4) {
+        if (ones_setup) e[i] = x[i] - (Entry)1.0;
+        else            e[i] = x[i] - (Entry)i;
+      }
     }
 
-    std::cout << "||X||: " << norm2<Int,Entry>(n,x)
-	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
-        << "   Matrix: " << mname
-	      << std::endl;
+    std::cout << "||Y||: " << norm2<Int,Entry>(n,yt)
+              << " ||X||: " << norm2<Int,Entry>(n,x)
+              << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat);
+    if (argc != 4) {
+      std::cout << " ||X-Xexact||: " << norm2<Int,Entry>(m,e);
+    }
+    std::cout << "   Matrix: " << mname << "(" << m << "x" << n << ")"
+              << std::endl;
+    delete [] e;
 
     }
     mybasker.Finalize();
@@ -188,6 +209,7 @@ int main(int argc, char* argv[])
     BaskerNS::Basker<Int, Entry, Exe_Space> mybaskertr;
     mybaskertr.Options.transpose          = BASKER_TRUE; // CHANGE HERE TO TEST WITH TRANSPOSE via COPY
     //---Options
+#if 0
     mybaskertr.Options.same_pattern       = BASKER_FALSE;
     mybaskertr.Options.verbose            = BASKER_FALSE;
     mybaskertr.Options.verbose_matrix_out = BASKER_FALSE;
@@ -213,17 +235,18 @@ int main(int argc, char* argv[])
 // Change: tested 09/14/2022
     mybaskertr.Options.amd_dom              = BASKER_FALSE;
     mybaskertr.Options.static_delayed_pivot = BASKER_FALSE;
-   
+#endif   
+
     mybaskertr.SetThreads(nthreads);
     std::cout << "Setting Threads:" << nthreads << std::endl;
     double stime = myTime();
     mybaskertr.Symbolic(m,n,nnz,col_ptr,row_idx,val);
     std::cout << "Done with Symbolic, Time: " 
-	      << totalTime(stime, myTime()) << std::endl;
+              << totalTime(stime, myTime()) << std::endl;
     double ftime = myTime();
     mybaskertr.Factor(m,n,nnz,col_ptr,row_idx,val);
     std::cout << "Done with Factor, Time: "
-	      << totalTime(ftime, myTime()) << std::endl;
+              << totalTime(ftime, myTime()) << std::endl;
     //mybaskertr.DEBUG_PRINT();
     double ttime = myTime();
 
@@ -252,7 +275,7 @@ int main(int argc, char* argv[])
     // transpose
     mybaskertr.Solve(yt,x);
     std::cout << "Done with Transpose Copy Solve, Time: "
-	      << totalTime(ttime, myTime()) << std::endl;
+              << totalTime(ttime, myTime()) << std::endl;
 
     multiply_tr<Int,Entry>(m,n,col_ptr,row_idx,val,x,xhat);
     for(Int i = 0; i < m; i++)
@@ -261,14 +284,17 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
-	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
-        << "   Matrix: " << mname
-	      << std::endl;
+              << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
+              << "   Matrix: " << mname << "(n=" << n << ")"
+              << std::endl;
 
     delete [] yt;
     mybaskertr.Finalize();
     }
   }
+  delete [] y;
+  delete [] x;
+  delete [] xhat;
   
   Kokkos::finalize();
 

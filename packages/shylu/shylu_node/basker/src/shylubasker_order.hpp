@@ -661,10 +661,27 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
             order_match_array(i) = i;
           }
           #endif
+          if (Options.verbose)
+          {
+            printf(" == matching result ==\n" );
+            printf("p=[\n");
+            for(Int i = 0; i < A.nrow; i++) printf( "%d\n",order_match_array(i));
+            printf("];\n");
+          }
           FREE_INT_1DARRAY(WORK);
         }
         // apply matching to the rows of A
         permute_row(A, order_match_array);
+        if (Options.verbose) 
+        {
+          printf("A=[\n");
+          for(Int j = 0; j < A.ncol; j++) {
+            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+              printf("%d %d %.16e\n",A.row_idx(k),j,A.val(k));
+            }
+          }
+          printf("];\n");
+        }
       }
       else
       {
@@ -1434,7 +1451,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //Permute
     for(Int i = 0; i < n; i++) {
       xcon(i)  = y[p(i)];
-      ycon(i)     = (Entry) 0.0;
+      ycon(i)  = (Entry) 0.0;
     }
     return 0;
   }
@@ -1585,6 +1602,29 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_array_with_workspace
+  (
+   Entry* vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; i++)
+    {
+      perm_comp_fworkspace_array(i) = vec[p(i)];
+    }
+    //Copy back
+    for(Int i = 0; i < n; i++)
+    {
+      vec[i] = perm_comp_fworkspace_array(i);
+    }
+    return BASKER_SUCCESS;
+  }
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute_with_workspace
   (
    ENTRY_1DARRAY & vec,
@@ -1605,6 +1645,29 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     return BASKER_SUCCESS;
   }
 
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::permute_inv_array_with_workspace
+  (
+   Entry* vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; ++i)
+    {
+      perm_comp_fworkspace_array(p(i)) = vec[i];
+    }
+    //Copy back
+    for(Int i = 0; i < n; ++i)
+    {
+      vec[i] = perm_comp_fworkspace_array(i);
+    }
+
+    return BASKER_SUCCESS;
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

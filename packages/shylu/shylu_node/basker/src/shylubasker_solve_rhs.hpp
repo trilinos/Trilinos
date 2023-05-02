@@ -310,7 +310,8 @@ namespace BaskerNS
       //-----Update
       //if(b > btf_tabs_offset)
       {
-        //x = BTF_C*y;
+        //x = BTF_C*y; 
+        //  x(b) gets updated, though not needed (y(b) contains the solution)
         spmv_BTF(b+btf_tabs_offset, BTF_C, x, y);
       }
 
@@ -321,10 +322,6 @@ namespace BaskerNS
       printf("Inner Vector x print\n");
       printVec(x, gn);
       #endif
-
-      //BASKER_MATRIX &UC = UBTF[b];
-      //U\x -> y
-      //upper_tri_solve(UC,x,y);
     }
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( " t1 = [\n" );
