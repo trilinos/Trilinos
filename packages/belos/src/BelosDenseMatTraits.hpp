@@ -90,7 +90,9 @@ namespace Belos {
 
     \return Reference-counted pointer to a new dense matrix of type \c DM.
     */
+    //TODO: Remove RCP from dense traits interface. 
     static Teuchos::RCP<DM> Create()
+    //static DM Create()
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new empty \c DM containing \c numvecs columns.
@@ -112,17 +114,24 @@ View(const pointer_type &ptr, const IntType&... indices)
         Requires: sizeof(IntType...)==rank_dynamic() or sizeof(IntType...)==rank(). In the latter case, the extents corresponding to compile-time dimensions must match the View type’s compile-time extents.
         Requires: array_layout::is_regular == true.
 */
-//TODO: What conditions should we have on this function? When does it work and not work?
-// Do we need details about the stride and/or layout? 
-// What corresponds to the Teuchos Copy or View parameter with Teuchos::SerialDenseMatrix? 
-    static Teuchos::RCP<DM> ViewFromPtr( ScalarType* &ptr, const int numrows, const int numcols)
-    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
-    //! \brief Returns a raw pointer to the data on the host.
-    // ....Expectations for data layout??
-    //TODO: Will we need this permanently? Yes, for LAPACK....
+    //! \brief Returns a raw pointer to the (non-const) data on the host.
+    /// \note We assume that return data in in a column-major format
+    /// because this is what is expected by LAPACK.
+    /// \note This raw pointer is intended only for passing data to LAPACK
+    /// functions. Other operations on the raw data may result in undefined behavior!
     static ScalarType* GetRawHostPtr(const DM & dm )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
+    //! \brief Returns a raw pointer to const data on the host.
+    static ScalarType const * GetConstRawHostPtr(const DM & dm )  
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
+
+    //! \brief Marks host data modified to avoid device sync errors. 
+    /// \note Belos developers must call this function after EVERY
+    ///   call to LAPACK that modifies dense matrix data accessed via raw pointer. 
+    static void RawPtrDataModified(DM & dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
@@ -181,27 +190,25 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     //! \brief Access a reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static ScalarType & Value( DM& dm, const int i, const int j )
-    { 
-      UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
-      ScalarType * ptrz = new ScalarType;
-      return ptrz;
-      //return Teuchos::ScalarTraits<ScalarType>::zero();
-    }
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static const ScalarType & Value( const DM& dm, const int i, const int j ) 
-    { 
-      UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); 
-      ScalarType * ptrz = new ScalarType;
-      return ptrz;
-      //return Teuchos::ScalarTraits<ScalarType>::zero();
-    }
-
-    static void SyncHostToDevice(DM & dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
-
+    
+    //TODO: Check formatting of ALL doxygen comments!
+    //
+    //! \brief If an accelorator is in use, sync it to device on this call.
+    //  
+    //  \note The only Belos function that results in a need to sync to 
+    //  host is MvTransMv. You MUST call SyncDeviceToHost before calling
+    //  any other DenseMatTraits functions after a call to MvTransMv. 
+    //  All DenseMatTraits functions assume the necessary data is on host
+    //  and perform computations only on the host. 
+    //
     static void SyncDeviceToHost(DM & dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //@}
     //@{ \name Operator methods
     
@@ -229,9 +236,13 @@ View(const pointer_type &ptr, const IntType&... indices)
     //!  \brief Returns the Frobenius norm of the dense matrix.
     static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormFrobenius( DM& dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Returns the one-norm of the dense matrix.
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormOne( DM& dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
     //@}
   };
-  
+
 } // namespace Belos
 // This is included for backwards compatibility
 // for all codes using the default template parameter
