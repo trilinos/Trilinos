@@ -224,11 +224,11 @@ pad_crs_arrays(
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_end_h, row_ptr_end);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_end_h, row_ptr_end);
     auto row_ptr_beg_h = create_mirror_view(
       hostSpace, row_ptr_beg, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_beg_h, row_ptr_beg);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_beg_h, row_ptr_beg);
 
     // lbv 03/15/23: The execution space deep_copy does an asynchronous
     // copy so we really want to fence that space before touching the
