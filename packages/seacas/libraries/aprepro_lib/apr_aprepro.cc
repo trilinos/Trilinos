@@ -491,9 +491,11 @@ namespace SEAMS {
       std::string value = get_value(option, optional_value);
       ret_value         = value == optional_value ? 1 : 0;
 
-      auto do_info = open_file(value, "w");
-      if (do_info != nullptr) {
-        set_error_streams(nullptr, nullptr, do_info);
+      if (!value.empty()) {
+        auto do_info = open_file(value, "w");
+        if (do_info != nullptr) {
+          set_error_streams(nullptr, nullptr, do_info);
+        }
       }
     }
     else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
