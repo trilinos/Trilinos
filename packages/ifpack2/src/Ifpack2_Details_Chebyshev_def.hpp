@@ -1343,7 +1343,7 @@ fourthKindApplyImpl (const op_type& A,
     betas = optimalWeightsImpl<ScalarType>(numIters);
   }
 
-  const ST invEig = 1.0 / (lambdaMax * boostFactor_);
+  const ST invEig = MT(1) / (lambdaMax * boostFactor_);
 
   // Fetch cached temporary (multi)vector.
   Teuchos::RCP<MV> Z_ptr = makeTempMultiVector (B);
@@ -1364,7 +1364,7 @@ fourthKindApplyImpl (const op_type& A,
     }
     // Z := (4/3 * invEig)*D_inv*(B-A*X4)
     // X4 := X4 + Z
-    ck_->compute (Z, 4.0/3.0 * invEig, const_cast<V&> (D_inv),
+    ck_->compute (Z, MT(4.0/3.0) * invEig, const_cast<V&> (D_inv),
                    const_cast<MV&> (B), X4, STS::zero());
 
     // X := X + beta[0] * Z
@@ -1372,7 +1372,7 @@ fourthKindApplyImpl (const op_type& A,
   }
   else {
     // Z := (4/3 * invEig)*D_inv*B and X := 0 + Z.
-    firstIterationWithZeroStartingSolution (Z, 4.0/3.0 * invEig, D_inv, B, X4);
+    firstIterationWithZeroStartingSolution (Z, MT(4.0/3.0) * invEig, D_inv, B, X4);
 
     // X := 0 + beta * Z
     X.update (betas[0], Z, STS::zero());
@@ -1385,7 +1385,7 @@ fourthKindApplyImpl (const op_type& A,
 
   for (int i = 1; i < numIters; ++i) {
     const ST zScale = (2.0 * i - 1.0) / (2.0 * i + 3.0);
-    const ST rScale = (8.0 * i + 4.0) / (2.0 * i + 3.0) * invEig;
+    const ST rScale = MT((8.0 * i + 4.0) / (2.0 * i + 3.0)) * invEig;
     
     // Z := rScale*D_inv*(B - A*X4) + zScale*Z.
     // X4 := X4 + Z
