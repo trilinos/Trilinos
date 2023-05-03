@@ -57,6 +57,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Utilities.hpp>
@@ -145,8 +146,6 @@ namespace MueLuTests {
     smootherParamList.set("relaxation: damping factor", (SC) 1.0);
     RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
     RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-    //Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
     RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
     FactoryManager M;
@@ -171,6 +170,10 @@ namespace MueLuTests {
     TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother"), true);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother"), true);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother"), false);
+
+    // GH: we need to compute global constants in order to check getGlobalNumEntries
+    Teuchos::rcp_const_cast<CrsGraph>(P1->getCrsGraph())->computeGlobalConstants();
+    Teuchos::rcp_const_cast<CrsGraph>(P2->getCrsGraph())->computeGlobalConstants();
 
     // test some basic multgrid data
     TEST_EQUALITY(P1->getGlobalNumEntries(), R1->getGlobalNumEntries());
