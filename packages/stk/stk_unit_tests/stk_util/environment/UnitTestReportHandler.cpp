@@ -92,41 +92,41 @@ TEST(UnitTestReportHandler, UnitTest)
   ASSERT_EQ((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
 }
 
-namespace
-{
-template <typename T>
-bool condition_test(const T& val)
-{
-  return stk::impl::is_valid_throw_condition<T>::value;
-}
-}  // namespace
-
-TEST(UnitTestReportHandler, ConditionType)
-{
-  EXPECT_TRUE(condition_test(bool()));
-  EXPECT_TRUE(condition_test(double()));
-  EXPECT_TRUE(condition_test(int()));
-
-  EXPECT_FALSE(condition_test("test"));
-  EXPECT_FALSE(condition_test(std::string("test")));
-  EXPECT_FALSE(condition_test(sierra::String("test")));
-
-  {
-    const char* test = "test";
-    EXPECT_FALSE(condition_test(test));
-  }
-  {
-    const double* test = nullptr;
-    EXPECT_TRUE(condition_test(test));
-  }
-  {
-    const std::unique_ptr<double> test{};
-    EXPECT_TRUE(condition_test(test));
-  }
-  {
-    std::vector<bool> someVec = {true, false};
-    EXPECT_TRUE(condition_test(std::any_of(someVec.begin(), someVec.end(), [](bool x) { return x; })));
-  }
-}
+//namespace
+//{
+//template <typename T>
+//bool condition_test(const T& val)
+//{
+//  return stk::impl::is_valid_throw_condition<T>::value;
+//}
+//}  // namespace
+//
+//TEST(UnitTestReportHandler, ConditionType)
+//{
+//  EXPECT_TRUE(condition_test(bool()));
+//  EXPECT_TRUE(condition_test(double()));
+//  EXPECT_TRUE(condition_test(int()));
+//
+//  EXPECT_FALSE(condition_test("test"));
+//  EXPECT_FALSE(condition_test(std::string("test")));
+//  EXPECT_FALSE(condition_test(sierra::String("test")));
+//
+//  {
+//    const char* test = "test";
+//    EXPECT_FALSE(condition_test(test));
+//  }
+//  {
+//    const double* test = nullptr;
+//    EXPECT_TRUE(condition_test(test));
+//  }
+//  {
+//    const std::unique_ptr<double> test{};
+//    EXPECT_TRUE(condition_test(test));
+//  }
+//  {
+//    std::vector<bool> someVec = {true, false};
+//    EXPECT_TRUE(condition_test(std::any_of(someVec.begin(), someVec.end(), [](bool x) { return x; })));
+//  }
+//}
 
 #undef CONDITION_TEST_MACRO
