@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022,  National Technology & Engineering Solutions
+// Copyright(C) 1999-2023,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -202,9 +202,11 @@ namespace SEAMS {
 
     // The info stream. To only print out info messages if the -M option was
     // specified, use info(...) instead.
+    bool          closeInfo{false};
     std::ostream *infoStream{&std::cout};
 
-    void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info);
+    void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info,
+                           bool close_error, bool close_warning, bool close_info);
 
     void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
@@ -231,6 +233,8 @@ namespace SEAMS {
     // For error handling
     std::ostream *errorStream{&std::cerr};
     std::ostream *warningStream{&std::cerr};
+    bool          closeError{false};
+    bool          closeWarning{false};
 
     // For substitution history.
     std::vector<history_data> history{};

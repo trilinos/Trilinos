@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.11 (2022/10/18)";
+  const char *version_string = "6.12 (2023/05/03)";
 
   void output_copyright();
 
@@ -102,6 +102,9 @@ namespace SEAMS {
     // May need to delete this if set via --info=filename command.
     // May need a flag to determine this...
     infoStream->flush();
+    if (closeInfo) {
+      delete infoStream;
+    }
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -293,16 +296,20 @@ namespace SEAMS {
   }
 
   void Aprepro::set_error_streams(std::ostream *c_error, std::ostream *c_warning,
-                                  std::ostream *c_info)
+                                  std::ostream *c_info, bool close_error, bool close_warning,
+                                  bool close_info)
   {
     if (c_error != nullptr) {
       errorStream = c_error;
+      closeError  = close_error;
     }
     if (c_warning != nullptr) {
       warningStream = c_warning;
+      closeWarning  = close_warning;
     }
     if (c_info != nullptr) {
       infoStream = c_info;
+      closeInfo  = close_info;
     }
   }
 
@@ -494,7 +501,7 @@ namespace SEAMS {
       if (!value.empty()) {
         auto do_info = open_file(value, "w");
         if (do_info != nullptr) {
-          set_error_streams(nullptr, nullptr, do_info);
+          set_error_streams(nullptr, nullptr, do_info, false, false, true);
         }
       }
     }
