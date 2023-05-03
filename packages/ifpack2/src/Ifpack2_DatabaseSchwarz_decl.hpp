@@ -388,7 +388,7 @@ private:
   std::vector<int> DatabaseIndices_;
 
   /// Patch weights
-  std::vector<double> Weights_;
+  std::vector<magnitude_type> Weights_;
 
   /// Pivots used for LAPACK
   mutable Teuchos::Array<int> ipiv_;
