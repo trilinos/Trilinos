@@ -1664,7 +1664,7 @@ namespace Belos {
     return xc;
   }
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType> >
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<Teuchos::ParameterList> getICGSDefaultParameters ()
   {
     using Teuchos::ParameterList;
@@ -1687,7 +1687,7 @@ namespace Belos {
     return params;
   }
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType> >
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<Teuchos::ParameterList> getICGSFastParameters ()
   {
     using Teuchos::ParameterList;
