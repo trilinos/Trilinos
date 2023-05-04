@@ -210,7 +210,7 @@ public:
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
   //! Set a debug status test that will be checked at the same time as the top-level status test.
-  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest ) override;
+  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override;
 
   //@}
 
@@ -279,12 +279,12 @@ private:
   Teuchos::RCP<std::ostream> outputStream_;
 
   // Status test.
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugStatusTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
-  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
-  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > convTest_;
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
   // Orthogonalization manager.
   Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
@@ -748,12 +748,12 @@ void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Te
 template<class ScalarType, class MV, class OP, class DM>
 bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
 
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
-  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP>  StatusTestImpResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestGenResNorm_t;
+  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP,DM>  StatusTestImpResNorm_t;
 
   // Basic test checks maximum iterations and native residual.
-  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // Perform sanity checking for flexible Gmres here.
   // NOTE:  If the user requests that the solver manager use flexible GMRES, but there is no right preconditioner, don't use flexible GMRES.
@@ -829,7 +829,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+  StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
@@ -846,7 +846,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
 
 template<class ScalarType, class MV, class OP, class DM>
 void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setDebugStatusTest(
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest
   )
 {
   debugStatusTest_ = debugStatusTest;
