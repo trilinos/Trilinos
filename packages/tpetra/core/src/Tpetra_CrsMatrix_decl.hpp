@@ -52,6 +52,7 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
+#include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -424,7 +425,8 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Details::Spaces::User
   {
   // clang-format on
 private:
