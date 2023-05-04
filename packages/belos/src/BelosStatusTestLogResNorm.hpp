@@ -31,8 +31,8 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestLogResNorm: public StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestLogResNorm: public StatusTest<ScalarType,MV,OP,DM> {
 
 public:
   //! The type of the magnitude (absolute value) of a ScalarType.
@@ -63,7 +63,7 @@ private:
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP> *iSolver );
+  StatusType checkStatus(Iteration<ScalarType,MV,OP,DM> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType getStatus() const {return(Undefined);}
@@ -136,8 +136,8 @@ private:
 
 };
 
-  template <class ScalarType, class MV, class OP> 
-  StatusTestLogResNorm<ScalarType,MV,OP>::StatusTestLogResNorm(int maxIters)
+  template <class ScalarType, class MV, class OP, class DM> 
+  StatusTestLogResNorm<ScalarType,MV,OP,DM>::StatusTestLogResNorm(int maxIters)
   {
     if (maxIters < 1)
       maxIters_ = 1;
@@ -149,8 +149,8 @@ private:
     nIters_ = 0;
   }
   
-  template <class ScalarType, class MV, class OP>
-  StatusType StatusTestLogResNorm<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP> *iSolver )
+  template <class ScalarType, class MV, class OP, class DM>
+  StatusType StatusTestLogResNorm<ScalarType,MV,OP,DM>::checkStatus(Iteration<ScalarType,MV,OP,DM> *iSolver )
   {
     // Check that this solve is a single-vector, single-block.
     const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem ();
@@ -176,16 +176,16 @@ private:
     return Undefined;
   }
   
-  template <class ScalarType, class MV, class OP>
-  void StatusTestLogResNorm<ScalarType,MV,OP>::reset()
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestLogResNorm<ScalarType,MV,OP,DM>::reset()
   {
     nIters_ = 0;
     logResNorm_.clear();
     logResNorm_.reserve( maxIters_ );
   }    
     
-  template <class ScalarType, class MV, class OP>
-  void StatusTestLogResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestLogResNorm<ScalarType,MV,OP,DM>::print(std::ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
@@ -193,8 +193,8 @@ private:
     os << "Logging Absolute Residual 2-Norm" << std::endl;
   }
  
-  template <class ScalarType, class MV, class OP>
-  void StatusTestLogResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestLogResNorm<ScalarType,MV,OP,DM>::printStatus(std::ostream& os, StatusType type) const 
   {
     os << std::left << std::setw(13) << std::setfill('.');
     os << "**";
