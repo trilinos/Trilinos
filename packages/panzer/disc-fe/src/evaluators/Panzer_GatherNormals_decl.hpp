@@ -99,6 +99,10 @@ private:
 
   Kokkos::View<Intrepid2::Orientation*> orientations_;
   Kokkos::View<unsigned int*> keys_;
+  
+  // Temporaries
+  Kokkos::DynRankView<ScalarT,PHX::Device> refEdges_;
+  Kokkos::DynRankView<ScalarT,PHX::Device> phyEdges_;
 };
 
 }
