@@ -64,7 +64,7 @@
 namespace Belos {
 
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
 

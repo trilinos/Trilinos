@@ -82,7 +82,7 @@
 namespace Belos {
 
 template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
-class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
+class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
   public:
 
