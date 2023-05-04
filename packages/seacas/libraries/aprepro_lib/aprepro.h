@@ -205,6 +205,7 @@ namespace SEAMS {
     bool          closeInfo{false};
     std::ostream *infoStream{&std::cout};
 
+    void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info);
     void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info,
                            bool close_error, bool close_warning, bool close_info);
 

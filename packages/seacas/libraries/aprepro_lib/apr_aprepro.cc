@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.12 (2023/05/03)";
+  const std::string version_string{"6.12 (2023/05/03)"};
 
   void output_copyright();
 
@@ -311,6 +311,12 @@ namespace SEAMS {
       infoStream = c_info;
       closeInfo  = close_info;
     }
+  }
+
+  void Aprepro::set_error_streams(std::ostream *c_error, std::ostream *c_warning,
+                                  std::ostream *c_info)
+  {
+    set_error_streams(c_error, c_warning, c_info, false, false, false);
   }
 
   /* Two methods for opening files:
