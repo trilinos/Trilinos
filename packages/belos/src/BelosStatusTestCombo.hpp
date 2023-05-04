@@ -55,14 +55,14 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestCombo: public StatusTest<ScalarType,MV,OP,DM> {
 	
  public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef std::vector< Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > st_vector;
+  typedef std::vector< Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > st_vector;
   typedef typename st_vector::iterator iterator;
   typedef typename st_vector::const_iterator const_iterator;
 
@@ -89,17 +89,17 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
   //! Single test constructor.
   StatusTestCombo(ComboType t, 
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1);
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test1);
 
   //! Dual test constructor.
   StatusTestCombo(ComboType t, 
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1, 
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test2);
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test1, 
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test2);
 
   /// \brief Add another test to this combination.
   ///
   /// Only add the test if doing so would not in infinite recursion.
-  StatusTestCombo<ScalarType,MV,OP>& addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& add_test);
+  StatusTestCombo<ScalarType,MV,OP,DM>& addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& add_test);
 
   //! Destructor
   virtual ~StatusTestCombo() {};
@@ -113,7 +113,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   /// Return one of the following values: Passed (the convergence
   /// criteria are met), Failed (they are not met) or Undefined (we
   /// can't tell).
-  StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver );
+  StatusType checkStatus( Iteration<ScalarType,MV,OP,DM>* iSolver );
 
   /// \brief Return the result of the most recent checkStatus call.
   ///
@@ -156,17 +156,17 @@ protected:
   //! @name Internal methods.
   //@{ 
   //! Use this for checkStatus when this is an OR type combo. Updates status.
-  void orOp( Iteration<ScalarType,MV,OP>* iSolver );
+  void orOp( Iteration<ScalarType,MV,OP,DM>* iSolver );
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
-  void andOp( Iteration<ScalarType,MV,OP>* iSolver );
+  void andOp( Iteration<ScalarType,MV,OP,DM>* iSolver );
 
   //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
-  void seqOp( Iteration<ScalarType,MV,OP>* iSolver );
+  void seqOp( Iteration<ScalarType,MV,OP,DM>* iSolver );
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool isSafe( const Teuchos:: RCP<StatusTest<ScalarType,MV,OP> >& test1);
+  bool isSafe( const Teuchos:: RCP<StatusTest<ScalarType,MV,OP,DM> >& test1);
   //@}
 
  private:
@@ -185,26 +185,26 @@ protected:
 
 };
 
-template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t)
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestCombo<ScalarType,MV,OP,DM>::StatusTestCombo(ComboType t)
 {
   type_ = t;
   status_ = Undefined;
 }
 
-template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, 
-						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1)
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestCombo<ScalarType,MV,OP,DM>::StatusTestCombo(ComboType t, 
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test1)
 {
   type_ = t;
   tests_.push_back(test1);
   status_ = Undefined;
 }
 
-template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, 
-						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1, 
-						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test2)
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestCombo<ScalarType,MV,OP,DM>::StatusTestCombo(ComboType t, 
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test1, 
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test2)
 {
   type_ = t;
   tests_.push_back(test1);
@@ -212,8 +212,8 @@ StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t,
   status_ = Undefined;
 }
 
-template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& add_test)
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestCombo<ScalarType,MV,OP,DM>& StatusTestCombo<ScalarType,MV,OP,DM>::addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& add_test)
 {
   if (isSafe(add_test))
     tests_.push_back(add_test);
@@ -230,8 +230,8 @@ StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusT
   return *this;
 }
 
-template <class ScalarType, class MV, class OP>
-bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1)
+template <class ScalarType, class MV, class OP, class DM>
+bool StatusTestCombo<ScalarType,MV,OP,DM>::isSafe( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& test1)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (test1.get() == this)
@@ -241,7 +241,7 @@ bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RCP<StatusTest<Sc
   // in the list because that can also lead to infinite recursions.
   for (iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusTestCombo<ScalarType,MV,OP>* ptr = dynamic_cast<StatusTestCombo<ScalarType,MV,OP> *>(i->get());
+    StatusTestCombo<ScalarType,MV,OP,DM>* ptr = dynamic_cast<StatusTestCombo<ScalarType,MV,OP,DM> *>(i->get());
     if (ptr != NULL)
       if (!ptr->isSafe(test1))
         return false;
@@ -249,8 +249,8 @@ bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RCP<StatusTest<Sc
   return true;
 }
 
-template <class ScalarType, class MV, class OP>
-StatusType StatusTestCombo<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
+template <class ScalarType, class MV, class OP, class DM>
+StatusType StatusTestCombo<ScalarType,MV,OP,DM>::checkStatus( Iteration<ScalarType,MV,OP,DM>* iSolver )
 {
   status_ = Failed;
 
@@ -264,8 +264,8 @@ StatusType StatusTestCombo<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,
   return status_;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::reset( )
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestCombo<ScalarType,MV,OP,DM>::reset( )
 {
   // Resets all status tests in my list.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
@@ -278,8 +278,8 @@ void StatusTestCombo<ScalarType,MV,OP>::reset( )
   return;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::orOp( Iteration<ScalarType,MV,OP>* iSolver )
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestCombo<ScalarType,MV,OP,DM>::orOp( Iteration<ScalarType,MV,OP,DM>* iSolver )
 {
   status_ = Failed;
 
@@ -294,8 +294,8 @@ void StatusTestCombo<ScalarType,MV,OP>::orOp( Iteration<ScalarType,MV,OP>* iSolv
     }
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::andOp( Iteration<ScalarType,MV,OP>* iSolver )
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestCombo<ScalarType,MV,OP,DM>::andOp( Iteration<ScalarType,MV,OP,DM>* iSolver )
 {
   bool isFailed = false;
   
@@ -324,8 +324,8 @@ void StatusTestCombo<ScalarType,MV,OP>::andOp( Iteration<ScalarType,MV,OP>* iSol
   return;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSolver ) 
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestCombo<ScalarType,MV,OP,DM>::seqOp( Iteration<ScalarType,MV,OP,DM>* iSolver ) 
 {
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
@@ -347,8 +347,8 @@ void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSol
   return;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::print(std::ostream& os, int indent) const {
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestCombo<ScalarType,MV,OP,DM>::print(std::ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
   this->printStatus(os, status_);

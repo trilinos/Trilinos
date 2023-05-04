@@ -36,8 +36,8 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM>
+class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
  public:
   // Convenience typedefs
@@ -142,7 +142,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
     \return StatusType: Passed, Failed, or Undefined.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP>* /* iSolver */) { return Undefined; }
+  StatusType checkStatus(Iteration<ScalarType,MV,OP,DM>* /* iSolver */) { return Undefined; }
 
   //! Return the result of the most recent CheckStatus call.
   StatusType getStatus() const {return Undefined;}
@@ -214,7 +214,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
    * After this function is called <tt>getScaledNormValue()</tt> can be called
    * to get the scaling std::vector.
    */
-  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP>* iSolver) {
+  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     return Undefined;
   }
   //@}
@@ -232,17 +232,18 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
 // specialization for Thyra
 template <class ScalarType>
-class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType> >
-   : public StatusTestResNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType> > {
+class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> >
+   : public StatusTestResNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> > {
 
  public:
   // Convenience typedefs
   typedef Thyra::MultiVectorBase<ScalarType> MV;
   typedef Thyra::LinearOpBase<ScalarType>    OP;
+  typedef Teuchos::SerialDenseMatrix<int,ScalarType> DM;
 
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-  typedef MultiVecTraits<ScalarType,MV>  MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM>  MVT;
   typedef OperatorTraits<ScalarType,MV,OP>  OT;
 
   //! @name Constructors/destructors.
@@ -364,7 +365,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
 
     \return StatusType: Passed, Failed, or Undefined.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP>* iSolver) {
+  StatusType checkStatus(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
     // Compute scaling term (done once for each block that's being solved)
@@ -594,7 +595,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
    * After this function is called <tt>getScaledNormValue()</tt> can be called
    * to get the scaling std::vector.
    */
-  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP>* iSolver) {
+  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     int i;
     MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
