@@ -165,6 +165,9 @@ public:
   virtual void getEdgesView(const offset_t *&offsets,
                             const gno_t *&adjIds) const = 0;
 
+  virtual void getEdgesKokkosView(Kokkos::View<const offset_t *, typename node_t::device_type> &offsets,
+                                  Kokkos::View<const gno_t *, typename node_t::device_type> &adjIds) const = 0;
+
   /*! \brief Returns the number (0 or greater) of weights per vertex
    */
   virtual int getNumWeightsPerVertex() const { return 0; }

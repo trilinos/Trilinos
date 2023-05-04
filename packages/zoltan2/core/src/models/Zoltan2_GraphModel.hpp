@@ -183,16 +183,63 @@ public:
     return nLocalVertices_;
   }
 
+  size_t getVertexListKokkos(
+    Kokkos::View<const gno_t *, typename node_t::device_type> &Ids,
+    Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
+  {
+    const auto type = ia_->adapterType();
+    if (localGraph_ || type == MeshAdapterType)
+    {
+      // We cannot use ia_->getIDsKokkosView because the model changed the values of Ids in
+      // sharedConstructor method then they are not the same than Ids coming from the adapters.
+      typedef Kokkos::View<gno_t *, typename node_t::device_type> vtxIds_t;
+      vtxIds_t non_const_vtxIds = vtxIds_t("vtxIds", getLocalNumVertices());
+      typename vtxIds_t::HostMirror host_vtxIds = Kokkos::create_mirror_view(non_const_vtxIds);
+      for(size_t i = 0; i < getLocalNumVertices(); ++i) {
+        host_vtxIds(i) = vGids_[i];
+      }
+      Kokkos::deep_copy(non_const_vtxIds, host_vtxIds);
+      Ids = non_const_vtxIds;
+
+    }
+    else
+    {
+      ia_->getIDsKokkosView(Ids);
+    }
+    if(nWeightsPerVertex_ > 0) {
+      ia_->getWeightsKokkosView(wgts);
+    }
+    return getLocalNumVertices();
+  }
+
   /*! \brief Sets pointers to this process' vertex coordinates, if available.
       Order of coordinate info matches that of Ids in getVertexList().
 
       \param xyz If vertex coordinate data is available, \c xyz
          will on return point to a StridedData object of coordinates.
   */
+
   size_t getVertexCoords(ArrayView<input_t> &xyz) const
   {
     xyz = vCoords_.view(0, vCoordDim_);
     return nLocalVertices_;
+  }
+
+  size_t getVertexCoordsKokkos(Kokkos::View<scalar_t **,
+                                Kokkos::LayoutLeft, typename node_t::device_type> &xyz) const
+  {
+    const auto type = ia_->adapterType();
+    if (type == MeshAdapterType)
+    {
+      auto adapterWithCoords = dynamic_cast<const AdapterWithCoords<user_t>*>(&(*ia_));
+      adapterWithCoords->getCoordinatesKokkosView(xyz);
+    }
+    else if (type == MatrixAdapterType or type == GraphAdapterType)
+    {
+      auto wrapper = dynamic_cast<const AdapterWithCoordsWrapper<user_t, userCoord_t>*>(&(*ia_));
+      wrapper->getCoordinateInput()->getCoordinatesKokkosView(xyz);
+    }
+    return getLocalNumObjects();
   }
 
   /*! \brief Sets pointers to this process' edge (neighbor) global Ids,
@@ -220,6 +267,49 @@ public:
     return nLocalEdges_;
   }
 
+  size_t getEdgeListKokkos(Kokkos::View<const gno_t *, typename node_t::device_type> &edgeIds,
+    Kokkos::View<const offset_t *, typename node_t::device_type> &offsets,
+    Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
+  {
+    const auto type = ia_->adapterType();
+    if (type == GraphAdapterType)
+    {
+      auto graphAdapter = dynamic_cast<const GraphAdapter<user_t,userCoord_t>*>(&(*ia_));
+      graphAdapter->getEdgesKokkosView(offsets, edgeIds);
+    }
+    else {
+      // Edges exist only in GraphAdapter and no in MatrixAdapter. In a such case, we can only
+      // deep copy values coming from getEdgeList method
+
+      // edgesId
+      typedef Kokkos::View<gno_t *, typename node_t::device_type> edgeIds_t;
+      edgeIds_t non_const_edgeIds = edgeIds_t("edgeIds", getLocalNumEdges());
+      typename edgeIds_t::HostMirror host_edgeIds = Kokkos::create_mirror_view(non_const_edgeIds);
+      for(size_t i = 0; i < getLocalNumEdges(); ++i) {
+        host_edgeIds(i) = eGids_[i];
+      }
+      Kokkos::deep_copy(non_const_edgeIds, host_edgeIds);
+      edgeIds = non_const_edgeIds;
+
+      // offsets
+      typedef Kokkos::View<offset_t *, typename node_t::device_type> offsets_t;
+      offsets_t non_const_offsets = offsets_t("offsets", getLocalNumVertices() + 1);
+      typename offsets_t::HostMirror host_offsets = Kokkos::create_mirror_view(non_const_offsets);
+      for(size_t i = 0; i < getLocalNumVertices() + 1; ++i) {
+        host_offsets(i) = eOffsets_[i];
+      }
+      Kokkos::deep_copy(non_const_offsets, host_offsets);
+      offsets = non_const_offsets;
+    }
+
+    if(nWeightsPerEdge_ > 0) {
+      ia_->getWeightsKokkosView(wgts);
+    }
+
+    return getLocalNumEdges();
+  }
+
+
   /*! \brief Return the vtxDist array 
    *  Array of size comm->getSize() + 1
    *  Array[n+1] - Array[n] is number of vertices on rank n
@@ -232,6 +322,25 @@ public:
                                "when consecutiveIdsRequired");
     }
   }
+
+  inline void getVertexDistKokkos(Kokkos::View<size_t *, typename node_t::device_type> &vtxdist) const
+  {
+    if (vtxDist_.size() == 0) {
+      throw std::runtime_error("getVertexDist is available only "
+                               "when consecutiveIdsRequired");
+    }
+    else
+    {
+      typedef Kokkos::View<size_t *, typename node_t::device_type> vtxdist_t;
+      vtxdist_t non_const_vtxdist = vtxdist_t("vtxdist", getLocalNumObjects());
+      typename vtxdist_t::HostMirror host_vtxdist = Kokkos::create_mirror_view(non_const_vtxdist);
+      for(size_t i = 0; i < comm_->getSize() + 1; ++i) {
+        host_vtxdist(i) = vtxDist_[i];
+      }
+      Kokkos::deep_copy(non_const_vtxdist, host_vtxdist);
+      vtxdist = non_const_vtxdist;
+    }
+ }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -250,6 +359,7 @@ private:
 
   void print(); // For debugging
 
+  RCP<const BaseAdapter<user_t>> ia_;
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
@@ -323,6 +433,7 @@ GraphModel<Adapter>::GraphModel(
         eWeights_(),
         vtxDist_()
 {
+    this->ia_ = ia;
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
 
@@ -359,10 +470,12 @@ GraphModel<Adapter>::GraphModel(
 
   // Save the pointers from the input adapter
   nLocalEdges_ = offsets[nLocalVertices_];
+
   vGids_ = arcp_const_cast<gno_t>(
                 arcp<const gno_t>(vtxIds, 0, nLocalVertices_, false));
   eGids_ = arcp_const_cast<gno_t>(nborIds);
   eOffsets_ = arcp_const_cast<offset_t>(offsets);
+
 
   // Edge weights
   nWeightsPerEdge_ = 0;   // no edge weights from a matrix yet.
@@ -406,6 +519,7 @@ GraphModel<Adapter>::GraphModel(
         eWeights_(),
         vtxDist_()
 {
+    this->ia_ = ia;
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
 
@@ -431,6 +545,7 @@ GraphModel<Adapter>::GraphModel(
   nLocalEdges_ = offsets[nLocalVertices_];
   vGids_ = arcp_const_cast<gno_t>(
                 arcp<const gno_t>(vtxIds, 0, nLocalVertices_, false));
+
   eGids_ = arcp_const_cast<gno_t>(
                 arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
   eOffsets_ = arcp_const_cast<offset_t>(
@@ -490,6 +605,7 @@ GraphModel<Adapter>::GraphModel(
         eWeights_(),
         vtxDist_()
 {
+  this->ia_ = ia;
   env_->timerStart(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
 
   // Model creation flags
@@ -663,6 +779,7 @@ void GraphModel<Adapter>::shared_constructor(
       }
       eOffsets_[i+1] = ecnt;
     }
+
     nLocalEdges_ = eOffsets_[nLocalVertices_];
     if (nWeightsPerEdge_) {
       for (int w = 0; w < nWeightsPerEdge_; w++) {

@@ -195,10 +195,31 @@ public:
     return nLocalVertices_;
   }
 
+  size_t getVertexListKokkos(
+    Kokkos::View<const gno_t *, typename node_t::device_type> &Ids,
+    Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
+  {
+      ia_->getIDsKokkosView(Ids);
+
+      wgts = Kokkos::View<scalar_t **, typename node_t::device_type>(
+        "wgts", nLocalVertices_, nWeightsPerVertex_);
+      typename Kokkos::View<scalar_t **, typename node_t::device_type>::HostMirror
+        host_wgt = Kokkos::create_mirror_view(wgts);
+      for(int j = 0; j < nWeightsPerVertex_; ++j) {
+        auto ptr_wgts = vWeights_[j];
+        size_t i = 0;
+        for (size_t n=0; n < nLocalVertices_; n++){
+          host_wgt(i++,j) = ptr_wgts[n];
+        }
+      }
+      Kokkos::deep_copy(wgts, host_wgt);
+
+    return getLocalNumVertices();
+  }
+
   // Implied Vertex LNOs from getVertexList are used as indices to offsets
   // array.
   // Vertex GNOs are returned as neighbors in edgeIds.
-
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const offset_t> &offsets,
     ArrayView<input_t> &wgts) const
@@ -208,6 +229,33 @@ public:
     wgts = eWeights_.view(0, nWeightsPerEdge_);
     return nLocalEdges_;
   }
+
+  size_t getEdgeListKokkos(Kokkos::View<const gno_t *, typename node_t::device_type> &edgeIds,
+    Kokkos::View<const offset_t *, typename node_t::device_type> &offsets,
+    Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
+  {
+    // edgesId
+    typedef Kokkos::View<gno_t *, typename node_t::device_type> edgeIds_t;
+    edgeIds_t non_const_edgeIds = edgeIds_t("edgeIds", getLocalNumEdges());
+    typename edgeIds_t::HostMirror host_edgeIds = Kokkos::create_mirror_view(non_const_edgeIds);
+    for(size_t i = 0; i < getLocalNumEdges(); ++i) {
+        host_edgeIds(i) = eGids_[i];
+    }
+    Kokkos::deep_copy(non_const_edgeIds, host_edgeIds);
+    edgeIds = non_const_edgeIds;
+
+    // offsets
+    typedef Kokkos::View<offset_t *, typename node_t::device_type> offsets_t;
+    offsets_t non_const_offsets = offsets_t("offsets", getLocalNumVertices() + 1);
+    typename offsets_t::HostMirror host_offsets = Kokkos::create_mirror_view(non_const_offsets);
+    for(size_t i = 0; i < getLocalNumVertices() + 1; ++i) {
+        host_offsets(i) = eOffsets_[i];
+    }
+    Kokkos::deep_copy(non_const_offsets, host_offsets);
+    offsets = non_const_offsets;
+      return getLocalNumEdges();
+  }
+
 
   /*! \brief Return the vtxDist array
    *  Array of size comm->getSize() + 1
@@ -221,6 +269,19 @@ public:
                                "when consecutiveIdsRequired");
     }
   }
+
+  inline void getVertexDistKokkos(Kokkos::View<size_t *, typename node_t::device_type> &vtxdist) const
+  {
+
+      typedef Kokkos::View<size_t *, typename node_t::device_type> vtxdist_t;
+      vtxdist_t non_const_vtxdist = vtxdist_t("vtxdist", vtxDist_.size());
+      typename vtxdist_t::HostMirror host_vtxdist = Kokkos::create_mirror_view(non_const_vtxdist);
+      for(size_t i = 0; i < vtxDist_.size(); ++i) {
+          host_vtxdist(i) = vtxDist_[i];
+      }
+      Kokkos::deep_copy(non_const_vtxdist, host_vtxdist);
+      vtxdist = non_const_vtxdist;
+ }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -255,6 +316,7 @@ private:
   int destRank_, startRank_, endRank_;
 
 
+  RCP<const GraphAdapter<user_t, userCoord_t>> ia_;
   size_t nLocalVertices_;                // # local vertices in built graph
   size_t nGlobalVertices_;               // # global vertices in built graph
   ArrayRCP<gno_t> vGids_;                  // vertices of graph built in model;
@@ -294,7 +356,7 @@ private:
 // GraphModel from GraphAdapter
 template <typename Adapter>
 CommGraphModel<Adapter>::CommGraphModel(
-  const RCP<const GraphAdapter<user_t,userCoord_t> > &bia,
+  const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   const modelFlag_t &/* modelflags */):
@@ -313,19 +375,20 @@ CommGraphModel<Adapter>::CommGraphModel(
         eWeights_(),
         vtxDist_()
 {
+  this->ia_ = ia;
   int commSize = comm_->getSize();
 
   // Get XpetraCrsGraphAdapter from GraphAdapter
-  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> ia;
+  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> xpetraIa;
   try{
     RCP<GraphAdapter<user_t, userCoord_t>> tmp =
-       rcp_const_cast<GraphAdapter<user_t, userCoord_t>>(bia);
-    ia = rcp_dynamic_cast<XpetraCrsGraphAdapter<user_t, userCoord_t>>(tmp);
+       rcp_const_cast<GraphAdapter<user_t, userCoord_t>>(ia);
+    xpetraIa = rcp_dynamic_cast<XpetraCrsGraphAdapter<user_t, userCoord_t>>(tmp);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Get the graph from the input adapter
-  auto inGraph = ia->getXpetraGraph();
+  auto inGraph = xpetraIa->getXpetraGraph();
 
   // Get the importer of the graph
   auto imp = inGraph->getImporter();
@@ -541,15 +604,12 @@ void CommGraphModel<Adapter>::migrateGraph()
     }
     eWeights_ = arcp<input_t>(eweightInfo, 0, nWeightsPerEdge_, true);
 
-
     // Finalize the migration
     vGids_ = arcp(new gno_t[myVertexShare], 0, myVertexShare, true);
     for(int i = startRank_; i < endRank_; i++)
       vGids_[i-startRank_] = i;
 
     nLocalVertices_ = myVertexShare;
-
-
   }
   else {
 

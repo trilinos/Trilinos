@@ -277,6 +277,38 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  virtual void getAdjsKokkosView(MeshEntityType sourcetarget,
+                              MeshEntityType through,
+                              Kokkos::View<const offset_t *, typename node_t::device_type> &offsets,
+                              Kokkos::View<const gno_t *, typename node_t::device_type> &adjacencyIds) const
+  {
+      auto numberOfOffsets = getLocalNumIDs() + 1;
+      auto numberOfAdjIds = getLocalNumAdjs(sourcetarget, through);
+      Kokkos::View<offset_t *, typename node_t::device_type>
+        kokkos_offsets("offsets", numberOfOffsets);
+      auto host_kokkos_offsets = Kokkos::create_mirror_view(kokkos_offsets);
+
+      Kokkos::View<gno_t *, typename node_t::device_type>
+        kokkos_adjids("adjids", numberOfAdjIds);
+      auto host_kokkos_adjids = Kokkos::create_mirror_view(kokkos_adjids);
+
+
+      const offset_t * offs;
+      const gno_t * gnos;
+      getAdjsView(sourcetarget, through, offs, gnos);
+      for(size_t n = 0; n < numberOfOffsets; ++n) {
+          host_kokkos_offsets(n) = offs[n];
+      }
+      Kokkos::deep_copy(kokkos_offsets, host_kokkos_offsets);
+      offsets = kokkos_offsets;
+
+      for(size_t n = 0; n < numberOfAdjIds; ++n) {
+        host_kokkos_adjids(n) = gnos[n];
+      }
+      Kokkos::deep_copy(kokkos_adjids, host_kokkos_adjids);
+      adjacencyIds = kokkos_adjids;
+  }
+
 
   /*! \brief Returns whether a second adjacency combination is available.
    *   If combination is not available in the MeshAdapter, Zoltan2 will
@@ -315,6 +347,38 @@ public:
     offsets = NULL;
     adjacencyIds = NULL;
     Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void get2ndAdjsKokkosView(MeshEntityType sourcetarget,
+                              MeshEntityType through,
+                              Kokkos::View<const offset_t *, typename node_t::device_type> &offsets,
+                              Kokkos::View<const gno_t *, typename node_t::device_type> &adjacencyIds) const
+  {
+      auto numberOfOffsets = getLocalNumIDs() + 1;
+      auto numberOfAdjIds = getLocalNumAdjs(sourcetarget, through);
+      Kokkos::View<offset_t *, typename node_t::device_type>
+        kokkos_offsets("offsets", numberOfOffsets);
+      auto host_kokkos_offsets = Kokkos::create_mirror_view(kokkos_offsets);
+
+      Kokkos::View<gno_t *, typename node_t::device_type>
+        kokkos_adjids("adjids", numberOfAdjIds);
+      auto host_kokkos_adjids = Kokkos::create_mirror_view(kokkos_adjids);
+
+
+      const offset_t * offs;
+      const gno_t * gnos;
+      get2ndAdjsView(sourcetarget, through, offs, gnos);
+      for(size_t n = 0; n < numberOfOffsets; ++n) {
+          host_kokkos_offsets(n) = offs[n];
+      }
+      Kokkos::deep_copy(kokkos_offsets, host_kokkos_offsets);
+      offsets = kokkos_offsets;
+
+      for(size_t n = 0; n < numberOfAdjIds; ++n) {
+        host_kokkos_adjids(n) = gnos[n];
+      }
+      Kokkos::deep_copy(kokkos_adjids, host_kokkos_adjids);
+      adjacencyIds = kokkos_adjids;
   }
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
@@ -458,6 +522,10 @@ public:
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 
+  void getEdgeIDsView(const gno_t *&Ids) const {
+    getIDsViewOf(getAdjacencyEntityType(), Ids);
+  }
+
   void getIDsKokkosView(Kokkos::View<const gno_t *,
     typename node_t::device_type> &ids) const override
   {
@@ -474,7 +542,23 @@ public:
     ids = kokkos_ids;
   }
 
-  int getNumWeightsPerID() const override {
+  void getEdgeIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &eIds) const
+  {
+    Kokkos::View<gno_t *, typename node_t::device_type>
+      kokkos_ids("egids", getLocalNumOf(getAdjacencyEntityType()));
+    auto host_kokkos_ids = Kokkos::create_mirror_view(kokkos_ids);
+
+    const gno_t * gnos;
+    getEdgeIDsView(gnos);
+    for(size_t n = 0; n < getLocalNumOf(getAdjacencyEntityType()); ++n) {
+      host_kokkos_ids(n) = gnos[n];
+    }
+    Kokkos::deep_copy(kokkos_ids, host_kokkos_ids);
+    eIds = kokkos_ids;
+  }
+
+  int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
 

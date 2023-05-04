@@ -202,7 +202,7 @@ public:
   // TODO:  Need to add option for columns or nonzeros?
   size_t getLocalNumVertices() const { return graph_->getLocalNumRows(); }
 
-  void getVertexIDsView(const gno_t *&ids) const 
+  void getVertexIDsView(const gno_t *&ids) const
   {
     ids = NULL;
     if (getLocalNumVertices())
@@ -215,6 +215,35 @@ public:
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
+  }
+
+
+  void getEdgesKokkosView(Kokkos::View<const offset_t *, typename node_t::device_type> &offsets, Kokkos::View<const gno_t *, typename node_t::device_type> &adjIds) const
+  {
+      Kokkos::View<offset_t *, typename node_t::device_type>
+        kokkos_offsets("offsets", getLocalNumVertices() + 1);
+      auto host_kokkos_offsets = Kokkos::create_mirror_view(kokkos_offsets);
+
+      Kokkos::View<gno_t *, typename node_t::device_type>
+        kokkos_adjids("adjids", getLocalNumEdges());
+      auto host_kokkos_adjids = Kokkos::create_mirror_view(kokkos_adjids);
+
+
+      const offset_t * offs;
+      const gno_t * gnos;
+      getEdgesView(offs, gnos);
+      for(size_t n = 0; n < getLocalNumVertices() + 1; ++n) {
+          host_kokkos_offsets(n) = offs[n];
+      }
+      Kokkos::deep_copy(kokkos_offsets, host_kokkos_offsets);
+      offsets = kokkos_offsets;
+
+      for(size_t n = 0; n < getLocalNumEdges(); ++n) {
+        host_kokkos_adjids(n) = gnos[n];
+      }
+      Kokkos::deep_copy(kokkos_adjids, host_kokkos_adjids);
+      adjIds = kokkos_adjids;
+
   }
 
   int getNumWeightsPerVertex() const { return nWeightsPerVertex_;}
@@ -253,6 +282,7 @@ public:
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
   }
+
 
 
   template <typename Adapter>
