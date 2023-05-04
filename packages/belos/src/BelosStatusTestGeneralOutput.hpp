@@ -36,8 +36,8 @@ namespace Belos {
     The frequency and occasion of the printing can be dictated according to some parameters passed to 
     StatusTestGeneralOutput::StatusTestGeneralOutput().
   */
-template <class ScalarType, class MV, class OP>
-class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP,DM> {
 
  public:
   //! @name Constructors/destructors
@@ -58,7 +58,7 @@ class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
    *
    */
   StatusTestGeneralOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
-			  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
+			  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test,
 			  int mod = 1,
 			  int printStates = Passed)
     : printer_(printer), 
@@ -92,7 +92,7 @@ class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
     
     \return ::StatusType indicating whether the underlying test passed or failed.
   */
-  StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver ) {
+  StatusType checkStatus( Iteration<ScalarType,MV,OP,DM>* solver ) {
     TEUCHOS_TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestGeneralOutput::checkStatus(): child pointer is null.");
     state_ = test_->checkStatus(solver);
 
@@ -132,13 +132,13 @@ class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
    *
    *  \note This also resets the test status to ::Undefined.
    */
-  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test) {
     test_ = test;
     state_ = Undefined;
   }
 
   //! \brief Get child test.
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const {
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > getChild() const {
     return test_;
   }
 
@@ -207,7 +207,7 @@ class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
   private:
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test_;
     std::string solverDesc_;
     std::string precondDesc_;
     StatusType state_;

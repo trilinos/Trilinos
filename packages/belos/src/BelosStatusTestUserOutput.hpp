@@ -34,13 +34,13 @@ namespace Belos {
     \brief A special StatusTest for printing other status tests in a simple format.
 
   */
-template <class ScalarType, class MV, class OP>
-class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM>
+class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP,DM> {
 
-  typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
-  typedef Belos::StatusTestMaxIters<ScalarType,MV,OP>  StatusTestMaxIters_t;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
+  typedef Belos::StatusTestMaxIters<ScalarType,MV,OP,DM>  StatusTestMaxIters_t;
 
  public:
   //! @name Constructors/destructors
@@ -62,8 +62,8 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
    *
    */
   StatusTestUserOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-      Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
-      Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > > taggedTests,
+      Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test,
+      Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > > taggedTests,
       int mod = 1,
       int printStates = Passed)
     : printer_(printer),
@@ -107,7 +107,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
     \return ::StatusType indicating whether the underlying test passed or failed.
   */
-  StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver )
+  StatusType checkStatus( Iteration<ScalarType,MV,OP,DM>* solver )
   {
     TEUCHOS_TEST_FOR_EXCEPTION(iterTest_ == Teuchos::null,StatusTestError,"StatusTestUserOutput::checkStatus():  iteration test pointer is null.");
     TEUCHOS_TEST_FOR_EXCEPTION(resTestVec_.size() == 0,StatusTestError,"StatusTestUserOutput::checkStatus():  residual test pointer is null.");
@@ -162,12 +162,12 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
    *
    *  \note This also resets the test status to ::Undefined.
    */
-  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test) {
 
     // First check to see if this test is a combination test
     Teuchos::RCP<StatusTestCombo_t> comboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
     TEUCHOS_TEST_FOR_EXCEPTION(comboTest == Teuchos::null,StatusTestError,"StatusTestUserOutput::setChild: The parameter \"test\" must be a Belos::StatusTestCombo.");
-    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = comboTest->getStatusTests();
+    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > tmpVec = comboTest->getStatusTests();
 
     // Get the number of tests.
     int numTests = tmpVec.size();
@@ -205,7 +205,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
       // Add only status tests which are not in the user-specified list of tagged status tests
       // More specifically: we want to add the implicit residual test
-      typename std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > >::iterator it;
+      typename std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > >::iterator it;
       for (size_t j=0; j<tmpVec.size(); ++j) {
         tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
 
@@ -235,7 +235,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
   }
 
   //! \brief Get child test.
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const {
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > getChild() const {
     return test_;
   }
 
@@ -353,16 +353,16 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
 
     // Overall status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test_;
 
     // tagged tests
-    Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > > taggedTests_;
+    Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > > taggedTests_;
 
     // Iteration test (as passed in).
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > iterTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > iterTest_;
 
     //! Vector of residual status tests
-    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > resTestVec_;
+    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > resTestVec_;
 
     //! Name tags for status tests
     std::vector<std::string> resTestNamesVec_;

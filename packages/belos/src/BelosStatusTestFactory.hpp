@@ -22,14 +22,14 @@ namespace Belos {
   ///
   /// This factory takes a Teuchos::ParameterList and generates an entire set (a tree)
   /// of status tests for use in Belos.
-  template<class Scalar, class MV, class OP>
+  template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
   class StatusTestFactory {
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-    typedef StatusTest<Scalar,MV,OP> base_test;
+    typedef StatusTest<Scalar,MV,OP,DM> base_test;
 
-    typedef StatusTestMaxIters<Scalar,MV,OP> max_iter_test;
-    typedef StatusTestCombo<Scalar,MV,OP> combo_test;
+    typedef StatusTestMaxIters<Scalar,MV,OP,DM> max_iter_test;
+    typedef StatusTestCombo<Scalar,MV,OP,DM> combo_test;
 
     //! Constructor
     StatusTestFactory() {
@@ -74,7 +74,7 @@ namespace Belos {
       return status_test;
     }
 
-    static typename StatusTestCombo<Scalar,MV,OP>::ComboType stringToComboType ( const std::string& comboString ) {
+    static typename StatusTestCombo<Scalar,MV,OP,DM>::ComboType stringToComboType ( const std::string& comboString ) {
       typedef typename combo_test::ComboType comboType;
       comboType userCombo;
       if     (comboString == "AND") userCombo = combo_test::AND;
@@ -120,7 +120,7 @@ namespace Belos {
     }
 
     Teuchos::RCP<base_test> buildResidualNormTest(Teuchos::ParameterList& p) const {
-      typedef StatusTestGenResNorm<Scalar,MV,OP> res_norm_test;
+      typedef StatusTestGenResNorm<Scalar,MV,OP,DM> res_norm_test;
       typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = p.get("Convergence Tolerance", 1.0e-8);
       int quorum = p.get<int>("Deflation Quorum", -1);
       bool showMaxResNormOnly = p.get<bool>("Show Maximum Residual Norm Only",false);
@@ -147,7 +147,7 @@ namespace Belos {
     }
 
     Teuchos::RCP<base_test> buildPartialResidualNormTest(Teuchos::ParameterList& p) const {
-      typedef StatusTestGenResSubNorm<Scalar,MV,OP> res_partialnorm_test;
+      typedef StatusTestGenResSubNorm<Scalar,MV,OP,DM> res_partialnorm_test;
       typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = p.get("Convergence Tolerance", 1.0e-8);
       int quorum = p.get<int>("Deflation Quorum", -1);
       int subIdx = p.get<int>("Block index",-1);
