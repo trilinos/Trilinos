@@ -32,7 +32,7 @@ class LinearProblem;
 template <class ScalarType>
 class OutputManager;
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
 template <class ScalarType, class MV, class OP, class DM>
