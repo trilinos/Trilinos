@@ -88,9 +88,6 @@ if(WIN32)
 endif()
 
 #TestInterOp has a dependency on containers
-IF(KOKKOS_HAS_TRILINOS)
-  LIST(REMOVE_ITEM COMPILE_ONLY_SOURCES TestInterOp.cpp)
-ENDIF()
 KOKKOS_ADD_EXECUTABLE(
   TestCompileOnly
   SOURCES
@@ -1025,7 +1022,6 @@ KOKKOS_ADD_ADVANCED_TEST( UnitTest_PushFinalizeHook_terminate
       PASS_REGULAR_EXPRESSION "kokkosp_init_library::kokkosp_parse_args:4:KokkosCore_ProfilingAllCalls:-c:test:delimit::.*::kokkosp_allocate_data:${MEMSPACE_REGEX}:source:${ADDRESS_REGEX}:40::kokkosp_begin_parallel_for:Kokkos::View::initialization [[]source] via memset:[0-9]+:0::kokkosp_end_parallel_for:0::kokkosp_allocate_data:${MEMSPACE_REGEX}:destination:${ADDRESS_REGEX}:40::kokkosp_begin_parallel_for:Kokkos::View::initialization [[]destination] via memset:[0-9]+:0::kokkosp_end_parallel_for:0::kokkosp_begin_deep_copy:${MEMSPACE_REGEX}:destination:${ADDRESS_REGEX}:${MEMSPACE_REGEX}:source:${ADDRESS_REGEX}:40::.*kokkosp_end_deep_copy::kokkosp_begin_parallel_for:parallel_for:${SIZE_REGEX}:0::kokkosp_end_parallel_for:0::kokkosp_begin_parallel_reduce:parallel_reduce:${SIZE_REGEX}:1${SKIP_SCRATCH_INITIALIZATION_REGEX}::kokkosp_end_parallel_reduce:1::kokkosp_begin_parallel_scan:parallel_scan:${SIZE_REGEX}:2::kokkosp_end_parallel_scan:2::kokkosp_push_profile_region:push_region::kokkosp_pop_profile_region::kokkosp_create_profile_section:created_section:3::kokkosp_start_profile_section:3::kokkosp_stop_profile_section:3::kokkosp_destroy_profile_section:3::kokkosp_profile_event:profiling_event::kokkosp_declare_metadata:dogs:good::kokkosp_deallocate_data:${MEMSPACE_REGEX}:destination:${ADDRESS_REGEX}:40::kokkosp_deallocate_data:${MEMSPACE_REGEX}:source:${ADDRESS_REGEX}:40::kokkosp_finalize_library::"
     )
   endif() #KOKKOS_ENABLE_LIBDL
-if(NOT KOKKOS_HAS_TRILINOS)
 KOKKOS_ADD_TEST_EXECUTABLE(
   StackTraceTestExec
   SOURCES
@@ -1044,7 +1040,6 @@ KOKKOS_ADD_TEST( NAME UnitTest_StackTraceTest
                  EXE  StackTraceTestExec
                  FAIL_REGULAR_EXPRESSION "FAILED"
                )
-endif()
 
 if(Kokkos_ENABLE_DEPRECATED_CODE_3)
   foreach(INITTESTS_NUM RANGE 1 18)
@@ -1124,7 +1119,6 @@ KOKKOS_ADD_EXECUTABLE_AND_TEST(
 )
 
 # This test is not properly set up to run within Trilinos
-if (NOT KOKKOS_HAS_TRILINOS)
   add_executable(KokkosCore_UnitTest_DeviceAndThreads UnitTest_DeviceAndThreads.cpp)
   target_link_libraries(KokkosCore_UnitTest_DeviceAndThreads Kokkos::kokkoscore)
   find_package(Python3 COMPONENTS Interpreter)
@@ -1144,8 +1138,7 @@ if (NOT KOKKOS_HAS_TRILINOS)
       )
     endif()
   endif()
-endif()
 
-if (KOKKOS_ENABLE_HEADER_SELF_CONTAINMENT_TESTS AND NOT KOKKOS_HAS_TRILINOS AND NOT WIN32)
+if (KOKKOS_ENABLE_HEADER_SELF_CONTAINMENT_TESTS AND NOT WIN32)
   add_subdirectory(headers_self_contained)
 endif()

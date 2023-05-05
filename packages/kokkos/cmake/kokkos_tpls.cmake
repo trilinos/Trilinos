@@ -21,14 +21,6 @@ FUNCTION(KOKKOS_TPL_OPTION PKG DEFAULT)
   KOKKOS_OPTION(${PKG}_DIR "" PATH "Location of ${PKG} library")
   SET(KOKKOS_ENABLE_${PKG} ${KOKKOS_ENABLE_${PKG}} PARENT_SCOPE)
   SET(KOKKOS_${PKG}_DIR  ${KOKKOS_${PKG}_DIR} PARENT_SCOPE)
-
-  IF (KOKKOS_HAS_TRILINOS
-    AND KOKKOS_ENABLE_${PKG}
-    AND NOT PARSED_TRIBITS)
-    #this TPL was enabled, but it is not valid to use inside of TriBITS
-    MESSAGE(FATAL_ERROR "Enabled TPL ${PKG} inside TriBITS build, "
-           "but this can only be enabled in a standalone build")
-  ENDIF()
 ENDFUNCTION()
 
 KOKKOS_TPL_OPTION(HWLOC   Off)
@@ -39,8 +31,7 @@ IF(KOKKOS_ENABLE_MEMKIND)
 ENDIF()
 KOKKOS_TPL_OPTION(CUDA    ${Kokkos_ENABLE_CUDA} TRIBITS CUDA)
 KOKKOS_TPL_OPTION(LIBRT   Off)
-IF(KOKKOS_ENABLE_HIP AND NOT KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC AND NOT
-    KOKKOS_HAS_TRILINOS)
+IF(KOKKOS_ENABLE_HIP AND NOT KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC)
   SET(ROCM_DEFAULT ON)
 ELSE()
   SET(ROCM_DEFAULT OFF)
@@ -102,11 +93,7 @@ IF (Kokkos_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   # FIXME_TRILINOS Trilinos doesn't allow for Kokkos to use find_dependency
   # so we just append the flags here instead of linking with the OpenMP target.
-  IF(KOKKOS_HAS_TRILINOS)
-    COMPILER_SPECIFIC_FLAGS(DEFAULT ${OpenMP_CXX_FLAGS})
-  ELSE()
-    KOKKOS_EXPORT_CMAKE_TPL(OpenMP REQUIRED)
-  ENDIF()
+  KOKKOS_EXPORT_CMAKE_TPL(OpenMP REQUIRED)
 ENDIF()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)

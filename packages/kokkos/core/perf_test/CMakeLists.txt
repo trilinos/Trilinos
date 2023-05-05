@@ -107,10 +107,6 @@ IF(NOT Kokkos_ENABLE_BENCHMARKS)
   RETURN()
 ENDIF()
 
-IF (KOKKOS_HAS_TRILINOS)
-  message(FATAL_ERROR "Benchmarks are not supported when building as part of Trilinos")
-ENDIF()
-
 find_package(benchmark QUIET)
 IF(benchmark_FOUND)
   MESSAGE(STATUS "Using google benchmark found in ${benchmark_DIR}")
