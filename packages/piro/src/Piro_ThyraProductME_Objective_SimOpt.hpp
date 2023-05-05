@@ -246,7 +246,7 @@ public:
         }
 
         if ( !model_PME.is_null()) {
-          Teko::BlockedLinearOp dgdp_op =
+          Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op =
               Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(model_PME->create_DgDp_op(g_index_, 0, prodvec_dgdp));
           Thyra::ModelEvaluatorBase::Derivative<Real> dgdp_der(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dgdp_op));
           outArgs.set_DgDp(g_index_, 0, dgdp_der);
