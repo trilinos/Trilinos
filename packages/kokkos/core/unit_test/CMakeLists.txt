@@ -1125,7 +1125,7 @@ KOKKOS_ADD_EXECUTABLE_AND_TEST(
 
 # This test is not properly set up to run within Trilinos
 if (NOT KOKKOS_HAS_TRILINOS)
-  add_executable(Kokkos_CoreUnitTest_DeviceAndThreads CoreUnitTest_DeviceAndThreads.cpp)
+  add_executable(Kokkos_CoreUnitTest_DeviceAndThreads UnitTest_DeviceAndThreads.cpp)
   target_link_libraries(Kokkos_CoreUnitTest_DeviceAndThreads Kokkos::kokkoscore)
   find_package(Python3 COMPONENTS Interpreter)
   if(Python3_Interpreter_FOUND AND Python3_VERSION VERSION_GREATER_EQUAL 3.7)
