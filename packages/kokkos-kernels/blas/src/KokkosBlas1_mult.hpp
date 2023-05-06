@@ -23,6 +23,20 @@
 
 namespace KokkosBlas {
 
+/// \brief Element wise multiplication of two vectors:
+///        Y[i] = gamma * Y[i] + alpha * A[i] * X[i]
+///
+/// \tparam YMV Type of the first vector Y; a 1-D or 2-D Kokkos::View.
+/// \tparam AV  Type of the second vector A; a 1-D Kokkos::View.
+/// \tparam XMV Type of the third vector X; a 1-D or 2-D Kokkos::View.
+///
+/// \param gamma [in] The scalar to apply to Y.
+/// \param Y [in/out] The Y vector.
+/// \param alpha [in] The scalar to apply to A.
+/// \param A [in]     The vector to apply to X.
+/// \param X [in]     The X vector.
+///
+/// \return Y = gamma * Y + alpha * A * X.
 template <class YMV, class AV, class XMV>
 void mult(typename YMV::const_value_type& gamma, const YMV& Y,
           typename AV::const_value_type& alpha, const AV& A, const XMV& X) {

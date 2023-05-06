@@ -76,10 +76,10 @@ public:
   BoundingBoxMesh(stk::topology element_topology, const std::vector<std::string>& rank_names = std::vector<std::string>());
   void set_domain(const BoundingBoxType & mesh_bbox, const double mesh_size, const int pad_cells = 0);
   void populate_mesh(stk::ParallelMachine pm = MPI_COMM_WORLD, const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
-  stk::mesh::MetaData & meta_data() { ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
-  stk::mesh::BulkData & bulk_data() { ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
-  const stk::mesh::MetaData & meta_data() const { ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
-  const stk::mesh::BulkData & bulk_data() const { ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
+  stk::mesh::MetaData & meta_data() { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
+  stk::mesh::BulkData & bulk_data() { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
+  const stk::mesh::MetaData & meta_data() const { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
+  const stk::mesh::BulkData & bulk_data() const { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
 
   void create_domain_sides();
   const CartesianCoordinateMapping & get_coord_mapping() const { return *my_coord_mapping; }

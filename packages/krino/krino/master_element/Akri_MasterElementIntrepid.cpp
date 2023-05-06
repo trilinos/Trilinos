@@ -280,7 +280,7 @@ MasterElementIntrepid::gradient_operator(
         double* det_J,           // (nelem,nint)
         double* error) const
 {
-  ThrowRequireMsg(m_numElemDims == m_numCoordDims, "MasterElementHybrid::gradient_operator does not support lower rank elements in higher dimensions (e.g. BAR,QUAD,TRI in 3D).");
+  STK_ThrowRequireMsg(m_numElemDims == m_numCoordDims, "MasterElementHybrid::gradient_operator does not support lower rank elements in higher dimensions (e.g. BAR,QUAD,TRI in 3D).");
   MasterElementCalc::gradient_operator(m_numElemDims, nint, npe_g, deriv_g, npe_f, deriv_f, nelem, coords, gradop, det_J, error);
 }
 

@@ -78,7 +78,6 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
   #include <MueLu_UseShortNames.hpp>
-#ifdef HAVE_MUELU_TPETRA
   using SparseMatrixType = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -246,11 +245,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
-
-#else
-  std::cout << "Tpetra not enabled. Skip test." << std::endl;
-  return EXIT_SUCCESS;
-#endif
 }
 
 //- -- --------------------------------------------------------

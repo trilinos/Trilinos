@@ -24,6 +24,12 @@
 namespace KokkosSparse {
 namespace Experimental {
 
+/**
+ * Handle for par_ilut. Contains useful types, par_ilut configuration settings,
+ * symbolic settings and scalar output info.
+ *
+ * For more info, see KokkosSparse_par_ilut.hpp doxygen
+ */
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class PAR_ILUTHandle {
@@ -66,41 +72,57 @@ class PAR_ILUTHandle {
                    typename nnz_row_view_t::memory_traits>;
 
  private:
-  size_type nrows;
-  size_type nnzL;
-  size_type nnzU;
-  size_type max_iter;
-  nnz_scalar_t residual_norm_delta_stop;
+  // User inputs
+  size_type max_iter;  /// Hard cap on the number of par_ilut iterations
+  float_t residual_norm_delta_stop;  /// When the change in residual from
+                                     /// iteration to iteration drops below
+                                     /// this, the algorithm will stop (even if
+                                     /// max_iters has not been hit)
+  float_t fill_in_limit;             /// The threshold for the ILU factorization
+  bool async_update;  /// Whether compute LU factors should do asychronous
+                      /// updates. When ON, the algorithm will usually converge
+                      /// faster but it makes the algorithm non-deterministic.
+  bool verbose;       /// Print information while executing par_ilut
 
-  bool symbolic_complete;
+  // Stored by parent KokkosKernelsHandle
+  int team_size;    /// Kokkos team size. Set by the parent handle. -1 implies
+                    /// AUTO
+  int vector_size;  /// Kokkos vector size. Set by the parent handle.
 
-  int team_size;
-  int vector_size;
+  // Stored by symbolic phase
+  size_type
+      nrows;       /// Number of rows in the CSRs given to the symbolic par_ilut
+  size_type nnzL;  /// Number of non-zero entries in the L part of A in the CSRs
+                   /// given to the symbolic par_ilut
+  size_type nnzU;  /// Number of non-zero entries in the U part of A in the CSRs
+                   /// given to the symbolic par_ilut
+  bool symbolic_complete;  /// Whether symbolic par_ilut has been called
 
-  float_t fill_in_limit;
+  // Outputs
+  int num_iters;  /// The number of iterations par_ilut took to finish
+  nnz_scalar_t end_rel_res;  /// The A - LU residual norm at the time the
+                             /// algorithm finished
 
  public:
-  PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
-                 const size_type nnzU_ = 0, const size_type max_iter_ = 1)
-      : nrows(nrows_),
-        nnzL(nnzL_),
-        nnzU(nnzU_),
-        max_iter(max_iter_),
-        residual_norm_delta_stop(0.),
-        symbolic_complete(false),
+  // See KokkosKernelsHandle::create_par_ilut_handle for default user input
+  // values
+  PAR_ILUTHandle(const size_type max_iter_,
+                 const float_t residual_norm_delta_stop_,
+                 const float_t fill_in_limit_, const bool async_update_,
+                 const bool verbose_)
+      : max_iter(max_iter_),
+        residual_norm_delta_stop(residual_norm_delta_stop_),
+        fill_in_limit(fill_in_limit_),
+        async_update(async_update_),
+        verbose(verbose_),
         team_size(-1),
         vector_size(-1),
-        fill_in_limit(0.75) {}
-
-  void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_) {
-    set_nrows(nrows_);
-    set_nnzL(nnzL_);
-    set_nnzU(nnzU_);
-    set_residual_norm_delta_stop(0.);
-    reset_symbolic_complete();
-    set_fill_in_limit(0.75);
-  }
+        nrows(0),
+        nnzL(0),
+        nnzU(0),
+        symbolic_complete(false),
+        num_iters(-1),
+        end_rel_res(-1) {}
 
   KOKKOS_INLINE_FUNCTION
   ~PAR_ILUTHandle() {}
@@ -137,11 +159,10 @@ class PAR_ILUTHandle {
   void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; }
   int get_max_iter() const { return this->max_iter; }
 
-  void set_residual_norm_delta_stop(
-      const nnz_scalar_t residual_norm_delta_stop_) {
+  void set_residual_norm_delta_stop(const float_t residual_norm_delta_stop_) {
     this->residual_norm_delta_stop = residual_norm_delta_stop_;
   }
-  nnz_scalar_t get_residual_norm_delta_stop() const {
+  float_t get_residual_norm_delta_stop() const {
     return this->residual_norm_delta_stop;
   }
 
@@ -150,12 +171,31 @@ class PAR_ILUTHandle {
   }
   float_t get_fill_in_limit() const { return this->fill_in_limit; }
 
+  bool get_verbose() const { return verbose; }
+
+  void set_verbose(const bool verbose_) { this->verbose = verbose_; }
+
+  bool get_async_update() const { return async_update; }
+
+  void set_async_update(const bool async_update_) {
+    this->async_update = async_update_;
+  }
+
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {
       return TeamPolicy(nrows, Kokkos::AUTO);
     } else {
       return TeamPolicy(nrows, team_size);
     }
+  }
+
+  int get_num_iters() const { return num_iters; }
+
+  nnz_scalar_t get_end_rel_res() const { return end_rel_res; }
+
+  void set_stats(int num_iters_, nnz_scalar_t end_rel_res_) {
+    num_iters   = num_iters_;
+    end_rel_res = end_rel_res_;
   }
 };
 

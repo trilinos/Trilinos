@@ -3,7 +3,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../test/unit_tests
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
 # This test requires Tpetra and Amesos2, so it's only included if Tpetra is enabled
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_ADD_EXECUTABLE(

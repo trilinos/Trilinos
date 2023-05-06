@@ -81,7 +81,7 @@ namespace MueLu {
     // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
     triedEpetra_ = triedTpetra_ = false;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
     try {
       sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
       if (sTpetra_.is_null())
@@ -131,7 +131,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())

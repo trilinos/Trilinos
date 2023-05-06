@@ -25,8 +25,8 @@ void fill_edge_nodes(
 
   if (mesh.is_valid(child))
   {
-    ThrowRequire(child != node0);
-    ThrowRequire(child != node1);
+    STK_ThrowRequire(child != node0);
+    STK_ThrowRequire(child != node1);
     fill_edge_nodes(mesh, node0,child, parentToChildMapper, edgeNodes);
     fill_edge_nodes(mesh, child,node1, parentToChildMapper, edgeNodes);
   }
@@ -67,8 +67,8 @@ static void fill_edge_nodes_and_positions(
 
   if (mesh.is_valid(child))
   {
-    ThrowRequire(child != node0);
-    ThrowRequire(child != node1);
+    STK_ThrowRequire(child != node0);
+    STK_ThrowRequire(child != node1);
     const double child_rel_pos = compute_child_position(mesh, child, node0, node1);
     const double child_abs_pos = pos0 * (1.-child_rel_pos) + pos1 * child_rel_pos;
     fill_edge_nodes_and_positions(mesh,pos0,node0,child_abs_pos,child, parent_child_mapper, edgeNodes, edgeNodePositions);
@@ -136,7 +136,7 @@ void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh, const Fie
   {
     const auto & field_selector = stk::mesh::selectField(parent_ids_field);
 
-    ThrowRequire(!mesh.in_modifiable_state());
+    STK_ThrowRequire(!mesh.in_modifiable_state());
 
     const auto & buckets = mesh.get_buckets(stk::topology::NODE_RANK, field_selector);
     for(auto && b_ptr : buckets)

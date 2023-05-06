@@ -44,6 +44,10 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
   using size_type       = typename IlutHandle::size_type;
   using Ilut            = IlutWrap<IlutHandle>;
 
+  const size_type a_nrows = A_row_map_d.extent(0);
+  const size_type nrows   = a_nrows > 0 ? (a_nrows - 1) : 0;
+  thandle.set_nrows(nrows);
+
   const auto policy = thandle.get_default_team_policy();
 
   // Sizing for the initial L/U approximation
@@ -83,8 +87,10 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
   const size_type nnzsL = Ilut::prefix_sum(L_row_map_d);
   const size_type nnzsU = Ilut::prefix_sum(U_row_map_d);
 
+  // Set symbolic info on handle
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);
+  thandle.set_symbolic_complete();
 
 }  // end ilut_symbolic
 

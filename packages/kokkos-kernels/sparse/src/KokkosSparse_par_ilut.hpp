@@ -20,9 +20,13 @@
 /// This file provides KokkosSparse::par_ilut.  This function performs a
 /// local (no MPI) sparse ILU(t) on matrices stored in
 /// compressed row sparse ("Crs") format. It is expected that symbolic
-/// is called before numeric. The numeric function offers a deterministic
-/// flag that will force the function to have deterministic results. This
-/// is useful for testing but incurs a big performance penalty.
+/// is called before numeric. The handle offers an async_update
+/// flag that controls whether asynchronous updates are allowed while computing
+/// L U factors. This is useful for testing as it allows for repeatable
+/// (deterministic) results but may cause the algorithm to take longer (more
+/// iterations) to converge. The par_ilut algorithm will repeat (iterate) until
+/// max_iters is hit or the improvement in the residual from iter to iter drops
+/// below a certain threshold.
 ///
 /// This algorithm is described in the paper:
 /// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
@@ -114,6 +118,13 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
       "par_ilut_symbolic: KernelHandle and Views have different execution "
       "spaces.");
 
+  if (A_rowmap.extent(0) != 0) {
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == L_rowmap.extent(0),
+                   "L row map size does not match A row map");
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == U_rowmap.extent(0),
+                   "U row map size does not match A row map");
+  }
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
@@ -173,8 +184,7 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
                       AEntriesType& A_entries, AValuesType& A_values,
                       LRowMapType& L_rowmap, LEntriesType& L_entries,
                       LValuesType& L_values, URowMapType& U_rowmap,
-                      UEntriesType& U_entries, UValuesType& U_values,
-                      bool deterministic) {
+                      UEntriesType& U_entries, UValuesType& U_values) {
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
@@ -348,6 +358,11 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(L_rowmap, L_entries),
+                 "L is not sorted");
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(U_rowmap, U_entries),
+                 "U is not sorted");
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
@@ -432,11 +447,16 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
   KokkosSparse::Impl::PAR_ILUT_NUMERIC<
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
       LRowMap_Internal, LEntries_Internal, LValues_Internal, URowMap_Internal,
-      UEntries_Internal,
-      UValues_Internal>::par_ilut_numeric(&tmp_handle, A_rowmap_i, A_entries_i,
-                                          A_values_i, L_rowmap_i, L_entries_i,
-                                          L_values_i, U_rowmap_i, U_entries_i,
-                                          U_values_i, deterministic);
+      UEntries_Internal, UValues_Internal>::par_ilut_numeric(&tmp_handle,
+                                                             A_rowmap_i,
+                                                             A_entries_i,
+                                                             A_values_i,
+                                                             L_rowmap_i,
+                                                             L_entries_i,
+                                                             L_values_i,
+                                                             U_rowmap_i,
+                                                             U_entries_i,
+                                                             U_values_i);
 
   // These may have been resized
   L_entries = L_entries_i;

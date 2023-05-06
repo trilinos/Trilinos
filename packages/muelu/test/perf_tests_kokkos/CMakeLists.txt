@@ -1,8 +1,3 @@
-# Ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Tpetra
-  )
-
 #
 # Executable
 #
@@ -14,36 +9,31 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 
-  IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
-      (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
+IF ((${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
+    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
 
-    TRIBITS_ADD_EXECUTABLE(
-      Redirection
-      SOURCES Redirection.cpp
-      COMM serial mpi
-      )
-
-  ENDIF()
-
-
-
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-
-    TRIBITS_ADD_EXECUTABLE(
-      KokkosKernels
-      SOURCES KokkosKernels.cpp
-      COMM serial mpi
-      )
+  TRIBITS_ADD_EXECUTABLE(
+    Redirection
+    SOURCES Redirection.cpp
+    COMM serial mpi
+    )
 
 ENDIF()
+
+
+
+TRIBITS_ADD_EXECUTABLE(
+  KokkosKernels
+  SOURCES KokkosKernels.cpp
+  COMM serial mpi
+  )
 
 #
 # Tests
 #
 
 
-
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
     TRIBITS_ADD_TEST(
       Redirection

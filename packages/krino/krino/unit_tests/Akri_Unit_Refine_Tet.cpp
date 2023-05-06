@@ -6,6 +6,7 @@
  */
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Unit_RefinementFixture.hpp>
+#include <random>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <Akri_OutputUtils.hpp>
 
@@ -304,6 +305,80 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, DISABLED_BECAUSE_SLOW_percept_mar
   const bool usePercept = true;
   const int indexOfCentralElement = 0;
   test_refinement_of_transition_element_leads_to_refinement_of_parent(usePercept, indexOfCentralElement);
+}
+
+TEST_F(UMRRegularTetRefinement, fuzzTest)
+{
+  const std::vector<int> testActiveProcs{1,2,4,8};
+  const int parallelSize = stk::parallel_machine_size(mComm);
+  if (std::find(testActiveProcs.begin(), testActiveProcs.end(), parallelSize) == testActiveProcs.end())
+    return;
+
+  const bool doWriteMesh = false;
+
+  if (doWriteMesh)
+    write_mesh("test.e");
+
+  const int fuzz_iterations = 10000;
+  std::mt19937 rand_gen;
+
+  int count = 0;
+  for (size_t i=0; i < fuzz_iterations; ++i)
+  {
+    randomly_mark_elements(rand_gen);
+
+    if (doWriteMesh)
+      refine_marked_elements(false, create_file_name("test", ++count));
+    else
+      refine_marked_elements(false);
+  }
+}
+
+TEST_F(UMRRegularTetRefinement, fuzzTestWithCustomGhosting)
+{
+  const std::vector<int> testActiveProcs{1, 2, 4, 8};
+  const int parallelSize = stk::parallel_machine_size(mComm);
+  if (std::find(testActiveProcs.begin(), testActiveProcs.end(), parallelSize) ==
+      testActiveProcs.end())
+    return;
+
+  const bool doWriteMesh = false;
+
+  if (doWriteMesh) write_mesh("test.e");
+
+  const int fuzz_iterations = 10000;
+  std::mt19937 rand_gen;
+
+  mMesh.modification_begin();
+  auto & ghosting = mMesh.create_ghosting("test_ghosting");
+  mMesh.modification_end();
+
+  int count = 0;
+  std::vector<stk::mesh::Entity> elems_to_ghost;
+  std::vector<stk::mesh::EntityProc> ghost_elems_and_procs;
+  std::uniform_int_distribution<> rank_dist(0, parallelSize - 1);
+  for (size_t i = 0; i < fuzz_iterations; ++i)
+  {
+    mMesh.modification_begin();
+    mMesh.destroy_ghosting(ghosting);
+    mMesh.modification_end();
+
+    randomly_select_children(rand_gen, 0.3, elems_to_ghost);
+    ghost_elems_and_procs.clear();
+    for (auto && elem : elems_to_ghost)
+    {
+      const int dest_proc = rank_dist(rand_gen);
+      ghost_elems_and_procs.emplace_back(elem, dest_proc);
+    }
+    mMesh.batch_add_to_ghosting(ghosting, ghost_elems_and_procs);
+
+    randomly_mark_elements(rand_gen);
+
+    if (doWriteMesh)
+      refine_marked_elements(false, create_file_name("test", ++count));
+    else
+      refine_marked_elements(false);
+  }
 }
 
 TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)

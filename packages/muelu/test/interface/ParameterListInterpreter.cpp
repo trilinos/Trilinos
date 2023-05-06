@@ -55,7 +55,7 @@
 
 #include <MueLu.hpp>
 
-#if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h> // needed for check whether KLU2 is available
 #endif
 

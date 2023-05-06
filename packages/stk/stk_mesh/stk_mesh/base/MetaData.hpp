@@ -548,7 +548,10 @@ public:
 
   stk::topology get_topology(const Part & part) const;
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_meta_info() from DumpMeshInfo.hpp instead")
   void dump_all_meta_info(std::ostream& out = std::cout) const;
+#endif
 
   void set_mesh_on_fields(BulkData* bulk);
 

@@ -1576,7 +1576,7 @@ namespace MueLu {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && (defined(HAVE_MUELU_ZOLTAN) || defined(HAVE_MUELU_ZOLTAN2)) // skip to the end, print warning, and turn off repartitioning if we don't have MPI and Zoltan/Zoltan2
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, enableInPlace);
       // Short summary of the issue: RebalanceTransferFactory shares ownership
       // of "P" with SaPFactory, and therefore, changes the stored version.
@@ -1623,24 +1623,25 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-#ifndef HAVE_MUELU_ZOLTAN
+# ifndef HAVE_MUELU_ZOLTAN
       bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
-#else
-# ifndef HAVE_MUELU_ZOLTAN2
+# else
+#  ifndef HAVE_MUELU_ZOLTAN2
       bool switched = false;
-# endif
-#endif
-#ifndef HAVE_MUELU_ZOLTAN2
+#  endif // HAVE_MUELU_ZOLTAN2
+# endif // HAVE_MUELU_ZOLTAN
+
+# ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
         this->GetOStream(Warnings0) << "Zoltan2 interface is not available, trying to switch to Zoltan" << std::endl;
         partName = "zoltan";
       }
-#endif
+# endif // HAVE_MUELU_ZOLTAN2
 
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
@@ -1662,26 +1663,22 @@ namespace MueLu {
       // Partitioner
       RCP<Factory> partitioner;
       if (levelID == nodeRepartitionLevel) {
-#ifdef HAVE_MPI
         //        partitioner = rcp(new NodePartitionInterface());
         partitioner = rcp(new MueLu::NodePartitionInterface<SC,LO,GO,NO>());
         ParameterList partParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node id"               ,int,repartheurParams);
         partitioner->SetParameterList(partParams);
         partitioner->SetFactory("Node Comm",         manager.GetFactory("Node Comm"));
-#else
-        throw Exceptions::RuntimeError("MPI is not available");
-#endif
       }
       else if (partName == "zoltan") {
-#ifdef HAVE_MUELU_ZOLTAN
+# ifdef HAVE_MUELU_ZOLTAN
         partitioner = rcp(new ZoltanInterface());
-        // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-#else
+        // NOTE: ZoltanInterface ("zoltan") does not support external parameters through ParameterList
+# else
         throw Exceptions::RuntimeError("Zoltan interface is not available");
-#endif
+# endif // HAVE_MUELU_ZOLTAN
       } else if (partName == "zoltan2") {
-#ifdef HAVE_MUELU_ZOLTAN2
+# ifdef HAVE_MUELU_ZOLTAN2
         partitioner = rcp(new Zoltan2Interface());
         ParameterList partParams;
         RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
@@ -1689,9 +1686,9 @@ namespace MueLu {
         partitioner->SetParameterList(partParams);
         partitioner->SetFactory("repartition: heuristic target rows per process",
                                 manager.GetFactory("repartition: heuristic target rows per process"));
-#else
+# else
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
-#endif
+# endif // HAVE_MUELU_ZOLTAN2
       }
 
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
@@ -1792,8 +1789,12 @@ namespace MueLu {
       }
 #else
       paramList.set("repartition: enable",false);
+# ifndef HAVE_MPI
       this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
-#endif
+# else
+      this->GetOStream(Warnings0) << "Zoltan/Zoltan2 are unavailable for repartitioning\n";
+# endif // HAVE_MPI
+#endif // defined(HAVE_MPI) && (defined(HAVE_MUELU_ZOLTAN) || defined(HAVE_MUELU_ZOLTAN2))
     }
   }
 

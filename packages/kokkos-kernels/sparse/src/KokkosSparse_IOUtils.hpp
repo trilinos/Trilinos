@@ -117,16 +117,42 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     OrdinalType row_size_variance, OrdinalType bandwidth, ScalarType *&values,
     SizeType *&rowPtr, OrdinalType *&colInd,
     ScalarType diagDominance = 10 * Kokkos::ArithTraits<ScalarType>::one()) {
-  rowPtr = new SizeType[nrows + 1];
-
+  rowPtr                       = new SizeType[nrows + 1];
   OrdinalType elements_per_row = nnz / nrows;
+  // Set a hard limit to the actual entries in any one row, so that the
+  // loop to find a column not already taken will terminate quickly.
+  OrdinalType max_elements_per_row = 0.7 * bandwidth;
+  OrdinalType requested_max_elements_per_row =
+      elements_per_row + 0.5 * row_size_variance;
+  if (requested_max_elements_per_row > max_elements_per_row) {
+    std::cerr
+        << "kk_diagonally_dominant_sparseMatrix_generate: given the bandwidth ("
+        << bandwidth << "),\n";
+    std::cerr << "  can insert a maximum of " << max_elements_per_row
+              << " entries per row (0.7*bandwidth).\n";
+    std::cerr << "  But given the requested average entries per row of "
+              << elements_per_row << " and variance of " << row_size_variance
+              << ",\n";
+    std::cerr << "  there should be up to " << requested_max_elements_per_row
+              << " entries per row.\n";
+    std::cerr << "  Increase the bandwidth, or decrease nnz and/or "
+                 "row_size_variance.\n";
+    throw std::invalid_argument(
+        "kk_diagonally_dominant_sparseMatrix_generate: requested too many "
+        "entries per row for the given bandwidth.");
+  }
   srand(13721);
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
-    int varianz = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
-    if (varianz < 1) varianz = 1;
-    if (varianz > 0.75 * ncols) varianz = 0.75 * ncols;
-    rowPtr[row + 1] = rowPtr[row] + elements_per_row + varianz;
+    // variance is how many more (or less) entries this row has compared to the
+    // mean (elements_per_row).
+    OrdinalType variance = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
+    OrdinalType entries_in_row = elements_per_row + variance;
+    // Always have at least one entry (for the diagonal)
+    if (entries_in_row < 1) entries_in_row = 1;
+    if (entries_in_row > max_elements_per_row)
+      entries_in_row = max_elements_per_row;
+    rowPtr[row + 1] = rowPtr[row] + entries_in_row;
     if (rowPtr[row + 1] <= rowPtr[row])   // This makes sure that there is
       rowPtr[row + 1] = rowPtr[row] + 1;  // at least one nonzero in the row
   }
@@ -141,6 +167,9 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     for (SizeType k = rowPtr[row]; k < rowPtr[row + 1] - 1; k++) {
       while (true) {
         OrdinalType pos = (1.0 * rand() / RAND_MAX - 0.5) * bandwidth + row;
+        // When bandwidth would extend past the columns of the matrix, wrap
+        // the entry around to the other side. This means the final matrix can
+        // actually have structural bandwidth close to ncols.
         while (pos < 0) pos += ncols;
         while (pos >= ncols) pos -= ncols;
 

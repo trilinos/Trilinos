@@ -20,8 +20,8 @@ EntityIdPool::EntityIdPool(stk::mesh::MetaData & meta_data)
 stk::mesh::EntityId
 EntityIdPool::get_EntityId(stk::mesh::EntityRank rank)
 {
-  ThrowAssert(static_cast<unsigned>(rank) < my_entity_id_pool.size());
-  ThrowRequireMsg(!my_entity_id_pool[rank].empty(), "EntityIdPool is empty for " << rank << ".");
+  STK_ThrowAssert(static_cast<unsigned>(rank) < my_entity_id_pool.size());
+  STK_ThrowRequireMsg(!my_entity_id_pool[rank].empty(), "EntityIdPool is empty for " << rank << ".");
 
   stk::mesh::EntityId entity_id = my_entity_id_pool[rank].back();
   my_entity_id_pool[rank].pop_back();
@@ -32,7 +32,7 @@ void
 EntityIdPool::reserve(stk::mesh::EntityRank rank, size_t count, bool assert_32bit_ids, bool make_64bit_ids)
 {
   my_meta_data.mesh_bulk_data().generate_new_ids( rank, count, my_entity_id_pool[rank] );
-  ThrowAssert(!make_64bit_ids || !assert_32bit_ids);
+  STK_ThrowAssert(!make_64bit_ids || !assert_32bit_ids);
   if (make_64bit_ids)
   {
     push_ids_to_64_bit(my_entity_id_pool[rank]);
@@ -47,7 +47,7 @@ void
 EntityIdPool::generate_new_ids(stk::mesh::BulkData & mesh, stk::mesh::EntityRank rank, size_t count, std::vector<stk::mesh::EntityId> & ids, bool assert_32bit_ids, bool make_64bit_ids)
 {
   mesh.generate_new_ids( rank, count, ids );
-  ThrowAssert(!make_64bit_ids || !assert_32bit_ids);
+  STK_ThrowAssert(!make_64bit_ids || !assert_32bit_ids);
   if (make_64bit_ids)
   {
     push_ids_to_64_bit(ids);
@@ -67,7 +67,7 @@ EntityIdPool::push_ids_to_64_bit(std::vector<stk::mesh::EntityId> & ids)
   {
     for (auto && id : ids)
     {
-      ThrowRequireMsg(id <= max_32_bit_id, "Mixture of ids above and below 32 bit limit not allowed in push_ids_to_64_bit.");
+      STK_ThrowRequireMsg(id <= max_32_bit_id, "Mixture of ids above and below 32 bit limit not allowed in push_ids_to_64_bit.");
       id += max_32_bit_id;
     }
   }
@@ -86,7 +86,7 @@ EntityIdPool::check_ids_are_32_bit(stk::mesh::EntityRank rank, std::vector<stk::
       break;
     }
   }
-  ThrowRequireMsg(!have_bad_id, "Exhausted valid 32 bit ids for rank " << rank << "!");
+  STK_ThrowRequireMsg(!have_bad_id, "Exhausted valid 32 bit ids for rank " << rank << "!");
 }
 
 } // namespace krino

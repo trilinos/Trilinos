@@ -4,6 +4,7 @@
 #include "nonconformal4.hpp"
 #include "util/meshes.hpp"
 #include "util/nonconformal_interface_helpers.hpp"
+#include "application_interface.hpp"
 #include "gtest/gtest.h"
 #include <cmath>
 
@@ -40,28 +41,25 @@ TEST(Interface, EigthSphereNew)
     // print_vert_edges("mesh1_initial", mesh1);
     // print_vert_edges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
-    bsnapper->snap();
-    std::cout << "after boundary snapper, number of invalid verts = "
-              << bsnapper->get_mesh2_quality_improver()->count_invalid_points() << std::endl;
-
-    print_vert_edges("mesh1_snapped", mesh1);
-    print_vert_edges("mesh2_snapped", mesh2);
-
-    if (bsnapper->get_mesh2_quality_improver()->count_invalid_points() > 0)
-    {
-      std::cout << "skipping" << std::endl;
-      continue;
-    }
-
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    MiddleGridOpts opts;
+    opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   BoundarySnapAndQualityImprovementOpts(),
+                                                   opts);
 
-    auto meshIn                     = maker.create();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
+
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
     test_util::test_area_per_element(mesh1, mesh1InverseClassification);
   }
 }
@@ -102,14 +100,28 @@ TEST(Interface, RefiningNew)
     EXPECT_FLOAT_EQ(elemOps.compute_area(mesh1), elemOps.compute_area(mesh2));
 
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    BoundarySnapAndQualityImprovementOpts snapOpts;
+    snapOpts.type = BoundarySnapAndQualityImprovementType::None;
 
-    auto meshIn                     = maker.create();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
-    test_util::test_area_per_element(mesh1, mesh1InverseClassification);
+    MiddleGridOpts middleMeshOpts;
+    middleMeshOpts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    middleMeshOpts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   snapOpts,
+                                                   middleMeshOpts);
+
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
+
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
+    test_util::test_area_per_element(mesh1, mesh1InverseClassification);    
   }
 }
 
@@ -134,31 +146,25 @@ TEST(Interface, AnnulusRotationNew)
     // std::cout << "\ncreating mesh2" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, 0.5, 1.5, i * dtheta);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
-    bsnapper->snap();
-
-    // print_vert_edges("mesh1_snapped", mesh1);
-    // print_vert_edges("mesh2_snapped", mesh2);
-
-    if (bsnapper->get_mesh2_quality_improver()->count_invalid_points() > 0)
-    {
-      std::cout << "skipping" << std::endl;
-      continue;
-    }
-    // EXPECT_EQ(fixer2->count_invalid_points(), 0);
-
-    print_vert_edges("mesh1_fixed", mesh1);
-    print_vert_edges("mesh2_fixed", mesh2);
-
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    MiddleGridOpts opts;
+    opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   BoundarySnapAndQualityImprovementOpts(),
+                                                   opts);
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
 
-    auto meshIn                     = maker.create();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
-    test_util::test_area_per_element(mesh1, mesh1InverseClassification);
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
+    test_util::test_area_per_element(mesh1, mesh1InverseClassification);    
   }
 }
 
@@ -211,36 +217,26 @@ TEST(Interface, EllipsoidNew)
     // print_vert_edges("mesh1_initial", mesh1);
     // print_vert_edges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
-    bsnapper->snap();
-    std::cout << "after boundary snapper, number of invalid verts = "
-              << bsnapper->get_mesh2_quality_improver()->count_invalid_points() << std::endl;
-
-    if (bsnapper->get_mesh2_quality_improver()->count_invalid_points() > 0)
-    {
-      std::cout << "skipping" << std::endl;
-      continue;
-    }
-    // EXPECT_EQ(bsnapper->get_mesh2_quality_improver()->count_invalid_points(), 0);
-
-    // print_vert_edges("mesh1_snapped", mesh1);
-    // print_vert_edges("mesh2_snapped", mesh2);
-
-    // if (bsnapper->get_mesh2_quality_improver()->count_invalid_points() > 0)
-    //{
-    //   std::cout << "skipping" << std::endl;
-    //   continue;
-    // }
-
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    MiddleGridOpts opts;
+    opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   BoundarySnapAndQualityImprovementOpts(),
+                                                   opts);
 
-    auto meshIn                     = maker.create();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
-    test_util::test_area_per_element(mesh1, mesh1InverseClassification);
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
+
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
+    test_util::test_area_per_element(mesh1, mesh1InverseClassification);    
   }
 }
 
@@ -263,7 +259,7 @@ TEST(Interface, EllipsoidFromCADNew)
 
   for (int i = 1; i < nmeshes; ++i)
   {
-    double tStart = MPI_Wtime();
+    //ssssssdouble tStart = MPI_Wtime();
     std::cout << "mesh " << i << " / " << nmeshes << std::endl;
     StkMeshCreator creator1(meshPath + fnames[0]);
     std::shared_ptr<mesh::Mesh> mesh1 = creator1.create_mesh_from_part("block_1").mesh;
@@ -276,40 +272,26 @@ TEST(Interface, EllipsoidFromCADNew)
     // print_vert_edges("mesh1_initial", mesh1);
     // print_vert_edges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
-    bsnapper->snap();
-    std::cout << "after boundary snapper, number of invalid verts = "
-              << bsnapper->get_mesh2_quality_improver()->count_invalid_points() << std::endl;
-    EXPECT_EQ(bsnapper->get_mesh2_quality_improver()->count_invalid_points(), 0);
-
-    double tEndSnap = MPI_Wtime();
-
-    // print_vert_edges("mesh1_snapped", mesh1);
-    // print_vert_edges("mesh2_snapped", mesh2);
-
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    MiddleGridOpts opts;
+    opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   BoundarySnapAndQualityImprovementOpts(),
+                                                   opts);
 
-    // nonconformal4::impl::Nonconformal4 maker(mesh1, mesh2,
-    //                                    PointClassifierNormalWrapperTolerances(1e-12),
-    //                                    middle_mesh::impl::EdgeTracerTolerances(1e-12),
-    //                                    {nonconformal4::impl::GeometryImprovers::RestoreMesh2Verts,
-    //                                     nonconformal4::impl::GeometryImprovers::EdgeVertexCubicBSplinePatch25Pts});
-    auto meshIn                     = maker.create();
-    double tEndConstruction         = MPI_Wtime();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
-    test_util::test_area_per_element(mesh1, mesh1InverseClassification);
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
 
-    // TODO: TESTING
-    ExodusWriter writer(meshIn);
-    writer.write("middle_grid_out.g");
-    std::cout << "mesh " << i << ", mesh1, mesh2, mesh_in numel = " << count_valid(mesh1->get_elements()) << ", "
-              << count_valid(mesh2->get_elements()) << ", " << count_valid(meshIn->get_elements()) << std::endl;
-    std::cout << "mesh snap time = " << tEndSnap - tStart
-              << ", middle grid construction time = " << tEndConstruction - tEndSnap << std::endl;
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
+    test_util::test_area_per_element(mesh1, mesh1InverseClassification);         
   }
 }
 
@@ -330,33 +312,26 @@ TEST(Interface, AnnulusRefiningNew)
     // std::cout << "\ncreating mesh2" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(5 + i, 5 + i, 0.5, 1.5, 0);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
-    bsnapper->snap();
-
-    if (bsnapper->get_mesh2_quality_improver()->count_invalid_points() > 0)
-    {
-      std::cout << "skipping" << std::endl;
-      continue;
-    }
-
-    // EXPECT_EQ(fixer2->count_invalid_points(), 0);
-    mesh::impl::ElementOperations2D elemOps;
-    for (auto& el : mesh2->get_elements())
-      if (el)
-        assert(elemOps.compute_area(el) > 0);
-
-    // print_vert_edges("mesh1_fixed", mesh1);
-    // print_vert_edges("mesh2_fixed", mesh2);
-
     double eps = 1e-12;
-    NormalProjectionOpts opts;
-    opts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    opts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
-    Nonconformal4 maker(mesh1, mesh2, opts);
+    MiddleGridOpts opts;
+    opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
+                                                   MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
+                                                   VolumeSnapOpts(),
+                                                   BoundarySnapAndQualityImprovementOpts(),
+                                                   opts);
 
-    auto meshIn                     = maker.create();
-    auto mesh1InverseClassification = maker.compute_mesh1_inverse_classification();
-    test_util::test_area_per_element(mesh1, mesh1InverseClassification);
+    interface->create_middle_grid();
+    auto middleMesh1 = interface->get_middle_grid_for_mesh1();
+    auto middleMesh2 = interface->get_middle_grid_for_mesh2();
+    auto mesh1Class                 = interface->get_mesh1_classification();
+    auto mesh2Class                 = interface->get_mesh2_classification();    
+    auto mesh1InverseClassification = interface->compute_mesh1_inverse_classification();
+
+    test_util::test_every_element_classified(middleMesh1, mesh1Class);
+    test_util::test_every_element_classified(middleMesh2, mesh2Class);    
+    test_util::test_area_per_element(mesh1, mesh1InverseClassification);    
   }
 }
 } // namespace middle_mesh

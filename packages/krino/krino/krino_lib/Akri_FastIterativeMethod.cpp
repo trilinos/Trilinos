@@ -37,7 +37,7 @@ void check_supported_element_topologies(const stk::mesh::BulkData & mesh, const 
   {
     krinolog << globalError.second << stk::diag::dendl;
   }
-  ThrowRequireMsg(!globalError.first, "Unsupported element topology in Fast Marching or Fast Iterative Method.");
+  STK_ThrowRequireMsg(!globalError.first, "Unsupported element topology in Fast Marching or Fast Iterative Method.");
 }
 
 FastIterativeMethod::FastIterativeMethod(const stk::mesh::BulkData & mesh,
@@ -207,7 +207,7 @@ double FastIterativeMethod::element_signed_distance_for_node(ParallelErrorMessag
   {
     return update_tetrahedron(elemNodes, nodeOfElement, elementSpeed);
   }
-  ThrowRequireMsg(false, "Unexpected number of nodes per element: " << npe_dist);
+  STK_ThrowRequireMsg(false, "Unexpected number of nodes per element: " << npe_dist);
   return 0.0;
 }
 
@@ -245,15 +245,15 @@ bool
 FastIterativeMethod::have_crossing(const stk::mesh::Entity & elem) const
 {
   const unsigned npe = mesh().bucket(elem).topology().num_nodes();
-  ThrowAssert(npe > 0);
+  STK_ThrowAssert(npe > 0);
 
   const stk::mesh::Entity * elem_nodes = mesh().begin(elem, stk::topology::NODE_RANK);
   const double * dist0 = field_data<double>(myDistance, elem_nodes[0]);
-  ThrowAssert(nullptr != dist0);
+  STK_ThrowAssert(nullptr != dist0);
   for (unsigned n=1; n<npe; ++n)
   {
     const double * dist = field_data<double>(myDistance, elem_nodes[n]);
-    ThrowAssert(nullptr != dist);
+    STK_ThrowAssert(nullptr != dist);
     if (LevelSet::sign_change(*dist0, *dist))
     {
       return true;
@@ -336,7 +336,7 @@ void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
       commSparse.recv_buffer(procId).unpack(nodeId);
 
       stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
-      ThrowRequire(mesh.is_valid(node));
+      STK_ThrowRequire(mesh.is_valid(node));
 
       workingSet.insert(node);
     }
@@ -399,7 +399,7 @@ void unpack_shared_node_distances(const stk::mesh::BulkData & mesh,
 
       stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
       const auto nodeIter = nodes.find(node);
-      ThrowAssert(nodeIter != nodes.end());
+      STK_ThrowAssert(nodeIter != nodes.end());
 
       double & nodeDistance = distances[std::distance(nodes.begin(), nodeIter)];
       const int sign = LevelSet::sign(nodeDistance);
@@ -458,7 +458,7 @@ std::set<stk::mesh::Entity> FastIterativeMethod::initialize(ParallelErrorMessage
 {
   stk::mesh::Selector fieldNotGhost = field_not_ghost_selector();
 
-  ThrowRequireMsg(myDistance.number_of_states() > 1, "Fast iterative method requires multiple states.");
+  STK_ThrowRequireMsg(myDistance.number_of_states() > 1, "Fast iterative method requires multiple states.");
 
   FieldRef oldDistance = myDistance.field_state(stk::mesh::StateOld);
   stk::mesh::field_copy(myDistance, oldDistance);

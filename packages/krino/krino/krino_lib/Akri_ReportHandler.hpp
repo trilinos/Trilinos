@@ -12,10 +12,10 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 
-#define ParallelThrowRequire(parallel,expr)            ThrowRequire(stk::is_true_on_all_procs(parallel,expr))
-#define ParallelThrowRequireMsg(parallel,expr,message) ThrowRequireMsg(stk::is_true_on_all_procs(parallel,expr),message)
-#define ParallelThrowAssert(parallel,expr)             ThrowAssert(stk::is_true_on_all_procs(parallel,expr))
-#define ParallelThrowAssertMsg(parallel,expr,message)  ThrowAssertMsg(stk::is_true_on_all_procs(parallel,expr),message)
+#define ParallelThrowRequire(parallel,expr)            STK_ThrowRequire(stk::is_true_on_all_procs(parallel,expr))
+#define ParallelThrowRequireMsg(parallel,expr,message) STK_ThrowRequireMsg(stk::is_true_on_all_procs(parallel,expr),message)
+#define ParallelThrowAssert(parallel,expr)             STK_ThrowAssert(stk::is_true_on_all_procs(parallel,expr))
+#define ParallelThrowAssertMsg(parallel,expr,message)  STK_ThrowAssertMsg(stk::is_true_on_all_procs(parallel,expr),message)
 
 
 #endif /* KRINO_INCLUDE_AKRI_REPORTHANDLER_H_ */

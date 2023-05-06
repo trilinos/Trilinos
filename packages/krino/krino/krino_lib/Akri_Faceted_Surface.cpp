@@ -29,7 +29,7 @@ Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::
   if ( num_procs == 1 ) return;
 
   const int me = stk::EnvData::parallel_rank();
-  ThrowRequire(me != 0 || batch_size <= my_local_facets.size());
+  STK_ThrowRequire(me != 0 || batch_size <= my_local_facets.size());
 
   stk::CommSparse comm_sparse(stk::EnvData::parallel_comm());
 
@@ -118,7 +118,7 @@ Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::
     std::unique_ptr<Facet> facet = Facet::unpack_from_buffer( b );
     my_local_facets.emplace_back( std::move(facet) );
   }
-  ThrowAssert( 0 == b.remaining() );
+  STK_ThrowAssert( 0 == b.remaining() );
 }
 
 void
@@ -290,7 +290,7 @@ Faceted_Surface::gather_nonlocal_facets(const BoundingBox & point_bbox, const do
         std::unique_ptr<Facet> facet = Facet::unpack_from_buffer( b );
         my_nonlocal_facets.emplace_back( std::move(facet) );
       }
-      ThrowAssert( 0 == b.remaining() );
+      STK_ThrowAssert( 0 == b.remaining() );
     }
   }
 
@@ -317,7 +317,7 @@ Faceted_Surface::gather_nonlocal_facets(const BoundingBox & point_bbox, const do
 double
 Faceted_Surface::point_distance(const Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const
 { /* %TRACE% */  /* %TRACE% */
-  ThrowAssertMsg(my_facet_tree, "ERROR: Empty facet tree");
+  STK_ThrowAssertMsg(my_facet_tree, "ERROR: Empty facet tree");
 
   // get all facets we need to check
   FacetVec facets;
@@ -325,7 +325,7 @@ Faceted_Surface::point_distance(const Vector3d &x, const double narrow_band_size
 
   if (facets.empty())
   {
-    ThrowRequire( 0.0 != narrow_band_size || my_facet_tree->empty() );
+    STK_ThrowRequire( 0.0 != narrow_band_size || my_facet_tree->empty() );
     return far_field_value;
   }
 
@@ -380,7 +380,7 @@ Faceted_Surface::compute_point_to_facets_distance_by_average_normal(const Vector
     facet_queries.emplace_back(*facet, x);
   }
 
-  ThrowRequireMsg(!facet_queries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
+  STK_ThrowRequireMsg(!facet_queries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
 
   unsigned nearest = 0;
   for ( unsigned index=0; index<facet_queries.size(); ++index )
@@ -470,7 +470,7 @@ Faceted_Surface::compute_pseudo_normal(const unsigned dim, const std::vector<Fac
       }
     }
   }
-  ThrowRequireMsg(close_count>0,"Issue with tolerance in compute_pseudo_normal.  No facet found within tolerance of closest point.");
+  STK_ThrowRequireMsg(close_count>0,"Issue with tolerance in compute_pseudo_normal.  No facet found within tolerance of closest point.");
 
   return (3 == dim && close_count > 2) ? pseudo_normal : average_normal;
 }

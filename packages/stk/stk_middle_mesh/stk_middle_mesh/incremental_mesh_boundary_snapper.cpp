@@ -13,10 +13,14 @@ void IncrementalMeshBoundarySnapper::snap()
   record_final_position_and_restore_initial_position(m_mesh1, m_mesh1Data);
   record_final_position_and_restore_initial_position(m_mesh2, m_mesh2Data);
 
-  std::cout << "applying displacement to mesh1" << std::endl;
+  if (m_improver1->verbose_output()) {
+    std::cout << "applying displacement to mesh1" << std::endl;
+  }
   apply_displacement(m_mesh1, m_mesh1Data, m_improver1, "mesh2");
 
-  std::cout << "\napplying displacement to mesh2" << std::endl;
+  if (m_improver1->verbose_output()) {
+    std::cout << "\napplying displacement to mesh2" << std::endl;
+  }
   apply_displacement(m_mesh2, m_mesh2Data, m_improver2, "mesh2");
 }
 
@@ -46,7 +50,9 @@ void IncrementalMeshBoundarySnapper::apply_displacement(MeshPtr mesh, FieldPtr f
   auto& data = *field;
   for (int step = 0; step < m_nsteps; ++step)
   {
-    std::cout << "\nApplying mesh snap step " << step << " / " << m_nsteps << std::endl;
+    if (improver->verbose_output()) {
+      std::cout << "\nApplying mesh snap step " << step << " / " << m_nsteps << std::endl;
+    }
     for (auto& vert : mesh->get_vertices())
       if (vert)
       {
@@ -55,10 +61,14 @@ void IncrementalMeshBoundarySnapper::apply_displacement(MeshPtr mesh, FieldPtr f
         vert->set_point_orig(0, pt + displacement);
       }
 
-    // std::cout << "before smoothing, number of invalid points = " << improver->countInvalidPoints() << std::endl;
+    //if (improver->verbose_output()) {
+    //  std::cout << "before smoothing, number of invalid points = " << improver->countInvalidPoints() << std::endl;
+    //}
 
     improver->run();
-    // std::cout << "after smoothing, number of invalid points = " << improver->countInvalidPoints() << std::endl;
+    //if (improver->verbose_output()) {
+    //  std::cout << "after smoothing, number of invalid points = " << improver->countInvalidPoints() << std::endl;
+    //}
   }
 }
 

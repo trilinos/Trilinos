@@ -26,6 +26,13 @@ mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const int numRefinements);
 
 void
+mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
+      const InterfaceGeometry & interfaceGeometry,
+      const RefinementSupport & refinementSupport,
+      const int numRefinements);
+
+void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,

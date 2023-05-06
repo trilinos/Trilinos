@@ -255,7 +255,7 @@ TEST_F(NgpHowTo, loopOverElemNodes_bucketCapacity)
     return;
   }
   const unsigned bucketCapacity = 8;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";

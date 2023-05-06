@@ -36,6 +36,7 @@ ElementMeshData ElementMeshExtractor::extract_element_mesh(mesh::MeshEntityPtr e
   {
     mesh::MeshEntityPtr vertIn = mesh1ElsToVertsIn(el1, 0, i);
     auto newVert               = elementMeshData.elementMeshIn->create_vertex(vertIn->get_point_orig(0));
+
     elementMeshVertsInClassOnMesh1(newVert, 0, 0) =
         convert_classification_to_element(el1, vertsInClassOnMesh1(vertIn, 0, 0));
     elementMeshVertsToMeshInVerts(newVert, 0, 0) = vertIn;

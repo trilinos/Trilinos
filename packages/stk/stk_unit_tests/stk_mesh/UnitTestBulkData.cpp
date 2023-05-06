@@ -1001,7 +1001,7 @@ TEST(BulkData, testChangeOwner_box)
 
   //------------------------------
   {
-    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
+    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA);
     fixture.fem_meta().commit();
     stk::unit_test_util::BulkDataTester & bulk = fixture.bulk_data();
     int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1018,7 +1018,7 @@ TEST(BulkData, testChangeOwner_box)
 
   if(1 < p_size)
   {
-    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
+    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA);
     fixture.fem_meta().commit();
     stk::unit_test_util::BulkDataTester & bulk = fixture.bulk_data();
     int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1032,7 +1032,7 @@ TEST(BulkData, testChangeOwner_box)
   //------------------------------
   if(1 < p_size)
   {
-    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
+    BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA);
     fixture.fem_meta().commit();
     stk::unit_test_util::BulkDataTester & bulk = fixture.bulk_data();
     int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1047,7 +1047,7 @@ TEST(BulkData, testChangeOwner_box)
   // Introduce ghosts:
   if(1 < p_size)
   {
-    BoxFixture fixture(pm, stk::mesh::BulkData::NO_AUTO_AURA, 100);
+    BoxFixture fixture(pm, stk::mesh::BulkData::NO_AUTO_AURA);
     stk::unit_test_util::BulkDataTester & bulk = fixture.bulk_data();
     MetaData & box_meta = fixture.fem_meta();
     box_meta.commit();

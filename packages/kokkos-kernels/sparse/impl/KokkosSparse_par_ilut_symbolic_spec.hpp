@@ -108,7 +108,6 @@ struct PAR_ILUT_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
 
     Experimental::ilut_symbolic(*par_ilut_handle, A_row_map, A_entries,
                                 L_row_map, U_row_map);
-    par_ilut_handle->set_symbolic_complete();
   }
 };
 #endif

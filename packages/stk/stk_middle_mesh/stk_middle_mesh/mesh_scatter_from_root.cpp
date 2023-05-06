@@ -50,12 +50,14 @@ VariableSizeFieldPtr<RemoteSharedEntity> MeshScatterFromRoot::get_entity_destina
 
 void MeshScatterFromRoot::verify_only_one_root_debug_only(MPI_Comm unionComm, bool amIRoot)
 {
+#ifndef NDEBUG
   int numLocalRoots  = amIRoot ? 1 : 0;
   int numGlobalRoots = 0;
   MPI_Allreduce(&numLocalRoots, &numGlobalRoots, 1, MPI_INT, MPI_SUM, unionComm);
 
   if (numGlobalRoots > 1)
     throw std::runtime_error("more than one process has the input mesh.  This is not supported");
+#endif
 }
 
 template <typename T>

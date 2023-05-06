@@ -90,9 +90,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
-#endif
 #endif
 
 
@@ -101,7 +99,6 @@
 #endif
 
 // MueLu and Xpetra Tpetra stack
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
@@ -109,7 +106,6 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-#endif
 
 // Xpetra Epetra stack
 #ifdef HAVE_MUELU_EPETRA
@@ -118,7 +114,7 @@
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
 #endif
@@ -184,9 +180,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string unstructured          = "{}";                clp.setOption("unstructured",          &unstructured,          "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
   std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
   std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
-#ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
-#endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");

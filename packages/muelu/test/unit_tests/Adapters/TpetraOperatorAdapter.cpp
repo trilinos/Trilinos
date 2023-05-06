@@ -74,7 +74,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
     typedef MueLu::TpetraOperator<SC,LO,GO,NO> muelu_tpetra_operator_type;
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
@@ -162,7 +162,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     using Utils = MueLu::Utilities<SC, LO, GO, NO>;
     using TpetraOperatorType =  MueLu::TpetraOperator<SC, LO, GO, NO>;
     using MagnitudeType = typename Teuchos::ScalarTraits<SC>::magnitudeType;

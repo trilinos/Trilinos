@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,39 +30,37 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include <stk_util/util/FieldDataAllocator.hpp>
-#include <sys/mman.h>  // for mmap, munmap, MAP_ANON, MAP_FAILED, MAP_PRIVATE, PROT_READ, PROT_W...
+#ifndef STK_DEVICEMESH_HOST_DATA_HPP
+#define STK_DEVICEMESH_HOST_DATA_HPP
 
-namespace stk {
-namespace impl {
+#include <Kokkos_Core.hpp>
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
-int get_mmap_flags()
+namespace stk
 {
-  return MAP_PRIVATE | MAP_ANON;
-}
-
-int get_mmap_protection()
+namespace mesh
 {
-  return PROT_READ | PROT_WRITE;
-}
-
-void* page_aligned_allocate_impl(size_t num_bytes)
+namespace impl
 {
-  void * ptr = mmap(nullptr, num_bytes, get_mmap_protection(), get_mmap_flags(), -1 /*file descriptor*/, 0 /*offset*/);
 
-  if (ptr == MAP_FAILED) {
-    throw std::bad_alloc();
-  }
+struct DeviceMeshHostData {
 
-  return ptr;
-}
+  EntityKeyViewType::HostMirror hostEntityKeys;
+  BucketEntityOffsetsViewType::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
+  UnsignedViewType::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  EntityViewType::HostMirror hostSparseConnectivity[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  OrdinalViewType::HostMirror hostSparseConnectivityOrdinals[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  PermutationViewType::HostMirror hostSparsePermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
+  UnsignedViewType::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+  FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
+};
 
-void page_aligned_deallocate_impl(void * ptr, size_t num_bytes)
-{
-  munmap(ptr,num_bytes);
-}
+}  // namespace impl
+}  // namespace mesh
+}  // namespace stk
 
-}
-}
+#endif

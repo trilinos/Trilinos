@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
     TogglePFactory_driver
     NAME "Driver_TogglePFactory_tent_tent_Tpetra"

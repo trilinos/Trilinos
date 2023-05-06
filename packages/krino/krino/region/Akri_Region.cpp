@@ -160,7 +160,7 @@ void Region::commit()
   if (AuxMetaData::get(get_stk_mesh_meta_data()).get_assert_32bit_flag())
   {
     const bool has_64bit_ids_in_use = stk::is_true_on_any_proc(my_bulk->parallel(), locally_has_64bit_ids_in_use_for_nodes_or_elements(*my_bulk));
-    ThrowErrorMsgIf(has_64bit_ids_in_use, "Option use_32_bit ids is active, but input file uses 64 bit ids.");
+    STK_ThrowErrorMsgIf(has_64bit_ids_in_use, "Option use_32_bit ids is active, but input file uses 64 bit ids.");
   }
   else
   {
@@ -246,6 +246,30 @@ static void refine_interface_elements(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
+static void refine_elements_that_intersect_interval(RefinementInterface & refinement,
+    const RefinementSupport & refinementSupport,
+    stk::mesh::BulkData & mesh)
+{
+  const int numRefinementSteps = 2*refinementSupport.get_interface_maximum_refinement_level(); // Make sure refinement completes so that elements touching interval are fully refined
+  std::function<void(int)> mark_elements_that_intersect_interval =
+      [&mesh, &refinementSupport, numRefinementSteps]
+       (int num_refinements)
+      {
+        LevelSet::initialize(mesh.mesh_meta_data());
+        if (num_refinements < numRefinementSteps)
+        {
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          krino::mark_elements_that_intersect_interval(mesh,
+              refinementSupport.get_non_interface_conforming_refinement(),
+              *interfaceGeometry,
+              refinementSupport,
+              num_refinements);
+        }
+      };
+
+  perform_multilevel_adaptivity(refinement, mesh, mark_elements_that_intersect_interval, refinementSupport.get_do_not_refine_or_unrefine_selector());
+}
+
 static void refine_based_on_indicator_field(RefinementInterface & refinement,
     const krino::RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
@@ -282,6 +306,10 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
   if (targetCount > 0)
   {
     refine_based_on_indicator_field(refinement, refinementSupport, mesh, targetCount, numRefinementLevels);
+  }
+  else if (refinementSupport.has_refinement_interval())
+  {
+    refine_elements_that_intersect_interval(refinement, refinementSupport, mesh);
   }
   else
   {
@@ -342,7 +370,7 @@ void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM
     else
     {
       krinolog << "Performing " << num_levels << " levels of post-cdfem mesh refinement..." << std::endl;
-      ThrowRequireMsg(!refinementSupport.get_use_percept(), "Percept cannot be used with post-cdfem refinement.");
+      STK_ThrowRequireMsg(!refinementSupport.get_use_percept(), "Percept cannot be used with post-cdfem refinement.");
 
       // Doing adaptive refinement with a uniform marker is better than doing uniform refinement here because of how
       // the transition elements are handled.
@@ -470,15 +498,15 @@ void Region::execute()
 }
 
 unsigned Region::spatial_dimension() const { return my_meta->spatial_dimension(); }
-const stk::mesh::BulkData& Region::get_stk_mesh_bulk_data() const { ThrowRequire(my_bulk); return *my_bulk; }
-stk::mesh::BulkData& Region::get_stk_mesh_bulk_data() { ThrowRequire(my_bulk); return *my_bulk; }
-const stk::mesh::MetaData& Region::get_stk_mesh_meta_data() const { ThrowRequire(my_meta); return *my_meta; }
-stk::mesh::MetaData& Region::get_stk_mesh_meta_data() { ThrowRequire(my_meta); return *my_meta; }
+const stk::mesh::BulkData& Region::get_stk_mesh_bulk_data() const { STK_ThrowRequire(my_bulk); return *my_bulk; }
+stk::mesh::BulkData& Region::get_stk_mesh_bulk_data() { STK_ThrowRequire(my_bulk); return *my_bulk; }
+const stk::mesh::MetaData& Region::get_stk_mesh_meta_data() const { STK_ThrowRequire(my_meta); return *my_meta; }
+stk::mesh::MetaData& Region::get_stk_mesh_meta_data() { STK_ThrowRequire(my_meta); return *my_meta; }
 double Region::time_step() const { return my_simulation.get_time_step(); }
 
 stk::io::StkMeshIoBroker & Region::stk_IO()
 {
-  ThrowRequire(myIOBroker);
+  STK_ThrowRequire(myIOBroker);
   return *myIOBroker;
 }
 
@@ -588,10 +616,10 @@ Region::associate_input_mesh(const std::string & model_name, bool assert_32bit_i
   stk::diag::TimeBlock mesh_input_timeblock(my_timerMeshInput);
 
   MeshInputOptions * db_options = MeshInputOptions::get(model_name);
-  ThrowRequireMsg(db_options != nullptr, "No finite element model found with name " << model_name);
+  STK_ThrowRequireMsg(db_options != nullptr, "No finite element model found with name " << model_name);
   my_input_model_name = model_name;
 
-  ThrowRequire(db_options->is_valid());
+  STK_ThrowRequire(db_options->is_valid());
   if (db_options->use_generated_mesh())
   {
     stk::topology generated_mesh_element_type = db_options->get_generated_mesh_element_type();
@@ -641,7 +669,7 @@ void
 Region::set_generated_mesh_domain()
 {
   MeshInputOptions * db_options = MeshInputOptions::get(my_input_model_name);
-  ThrowRequire(db_options != nullptr);
+  STK_ThrowRequire(db_options != nullptr);
   my_generated_mesh->set_mesh_structure_type(db_options->get_generated_mesh_structure_type());
   const double mesh_size = db_options->get_generated_mesh_size();
   if (db_options->get_generated_mesh_domain_type() == MeshInputOptions::GENERATED_MESH_FOR_SPECIFIED_DOMAIN)
@@ -650,18 +678,18 @@ Region::set_generated_mesh_domain()
     const std::vector<double> & domain = db_options->get_generated_mesh_domain();
     if (db_options->get_generated_mesh_spatial_dimension() == 2)
     {
-      ThrowRequire(domain.size() == 4);
+      STK_ThrowRequire(domain.size() == 4);
       const Vector3d min(domain[0], domain[1], 0.);
       const Vector3d max(domain[2], domain[3], 0.);
-      ThrowRequireMsg(max[0]>min[0] && max[1]>min[1], "Invalid domain specified.");
+      STK_ThrowRequireMsg(max[0]>min[0] && max[1]>min[1], "Invalid domain specified.");
       bbox = BoundingBoxMesh::BoundingBoxType(min, max);
     }
     else
     {
-      ThrowRequire(domain.size() == 6);
+      STK_ThrowRequire(domain.size() == 6);
       const Vector3d min(domain[0], domain[1], domain[2]);
       const Vector3d max(domain[3], domain[4], domain[5]);
-      ThrowRequireMsg(max[0]>min[0] && max[1]>min[1] && max[2]>min[2], "Invalid domain specified.");
+      STK_ThrowRequireMsg(max[0]>min[0] && max[1]>min[1] && max[2]>min[2], "Invalid domain specified.");
       bbox = BoundingBoxMesh::BoundingBoxType(min, max);
     }
     my_generated_mesh->set_domain(bbox, mesh_size);

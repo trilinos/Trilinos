@@ -171,7 +171,7 @@ void PatchObjective::compute_parameterization(const utils::Point& pt, utils::imp
     auto ptsOrig = m_data->get_element_verts_orig(i);
     for (int j = 0; j < 3; ++j)
     {
-      triPts(i, j) = m_proj.project_forward(pts[j]->get_point_orig(0));
+      triPts(i, j) = m_proj.project_forward(pts[j]);
       ptsOrig[j]   = m_proj.project_forward(ptsOrig[j]);
     }
     triPts(i, m_data->get_current_vert_idx(i)) = pt;

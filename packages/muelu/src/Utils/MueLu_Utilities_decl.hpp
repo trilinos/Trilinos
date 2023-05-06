@@ -54,10 +54,8 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraBlockCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraOperator.hpp>
-#endif
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Map_fwd.hpp>
@@ -89,7 +87,6 @@ class Epetra_Vector;
 #include "EpetraExt_Transpose_RowMatrix.h"
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
@@ -100,7 +97,6 @@ class Epetra_Vector;
 #include <Tpetra_FEMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
-#endif
 
 #include <MueLu_UtilitiesBase.hpp>
 
@@ -122,7 +118,6 @@ namespace MueLu {
   EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V);
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
   template<typename SC,typename LO,typename GO,typename NO>
   RCP<Xpetra::Matrix<SC, LO, GO, NO> >
   TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >& Atpetra);
@@ -141,7 +136,6 @@ namespace MueLu {
 
   template<typename SC,typename LO,typename GO,typename NO>
   void leftRghtDofScalingWithinNode(const Xpetra::Matrix<SC,LO,GO,NO> & Atpetra, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<SC> & rowScaling, Teuchos::ArrayRCP<SC> & colScaling);
-#endif
 
   /*!
     @class Utilities
@@ -180,7 +174,6 @@ namespace MueLu {
     // @}
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec);
     static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec);
@@ -208,7 +201,6 @@ namespace MueLu {
 
 
     static const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >        Map2TpetraMap(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& map);
-#endif
 
     static void MyOldScaleMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<const Scalar>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true);
@@ -333,7 +325,6 @@ namespace MueLu {
     }
     // @}
 
-#ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2TpetraMV(RCP<MultiVector> const vec)   {
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
@@ -600,7 +591,6 @@ namespace MueLu {
       return tmp_TMap->getTpetra_Map();
 #endif
     };
-#endif
 
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const Scalar>& scalingVector, bool doInverse = true,
@@ -632,7 +622,6 @@ namespace MueLu {
     // TODO This is the <double,int,int> specialization
     static void MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector,
                                         bool doFillComplete, bool doOptimizeStorage) {
-#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
@@ -709,9 +698,6 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
       }
 #endif
-#else
-      throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-#endif
     }
 
     static void MyOldScaleMatrix_Epetra (Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool /* doFillComplete */, bool /* doOptimizeStorage */) {
@@ -747,7 +733,6 @@ namespace MueLu {
     static RCP<Matrix> Transpose(Matrix& Op, bool /* optimizeTranspose */ = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
         case Xpetra::UseTpetra: {
-#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
             throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
@@ -813,9 +798,6 @@ namespace MueLu {
               throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs or BlockCrs matrix");
             }
 #endif
-#else
-            throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled!");
-#endif
           }
         case Xpetra::UseEpetra:
           {
@@ -862,7 +844,6 @@ namespace MueLu {
       if(paramList.isParameter ("Coordinates") == false)
         return coordinates;
 
-  #if defined(HAVE_MUELU_TPETRA)
   #if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
       (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))
 
@@ -899,7 +880,6 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
       }
   #endif // Tpetra instantiated on GO=int and EpetraNode
-  #endif // endif HAVE_TPETRA
 
   #if defined(HAVE_MUELU_EPETRA)
       RCP<Epetra_MultiVector> doubleEpCoords;
@@ -999,7 +979,6 @@ namespace MueLu {
   }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
   /*! \fn TpetraCrs_To_XpetraMatrix
     @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
     TODO move this function to an Xpetra utility file
@@ -1165,8 +1144,6 @@ namespace MueLu {
     return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vmv));
   }
 
-#endif
-
   //! Little helper function to convert non-string types to strings
   template<class T>
   std::string toString(const T& what) {
@@ -1193,7 +1170,6 @@ namespace MueLu {
   EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V);
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
   /*! \fn TpetraCrs_To_XpetraMatrix
     @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
     TODO move this function to an Xpetra utility file
@@ -1209,7 +1185,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra);
-#endif
 
   // Generates a communicator whose only members are other ranks of the baseComm on my node
   Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor);

@@ -14,7 +14,7 @@ namespace krino{
 void
 Surface::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
 {
-  ThrowErrorMsgIf(NULL != my_transformation,
+  STK_ThrowErrorMsgIf(NULL != my_transformation,
       "This surface with type (" << type()
       << ") has motion specified, but the prepare_to_compute() method has not been implemented yet to support motion.");
 }

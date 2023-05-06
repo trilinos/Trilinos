@@ -65,11 +65,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // Do explicit instantiation of MueLu::Details::LinearSolverFactory, for
 // Tpetra objects, for all combinations of Tpetra template parameters
 // for which Tpetra does explicit template instantiation (ETI).
-//
-// TODO amk: does MueLu have a required dependency on Tpetra?
-#ifdef HAVE_MUELU_TPETRA
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( MUELU_DETAILS_LINEARSOLVERFACTORY_INSTANT )
-#endif // HAVE_MUELU_TPETRA
 
 // TODO amk: do we also have to do this for Xpetra?
 

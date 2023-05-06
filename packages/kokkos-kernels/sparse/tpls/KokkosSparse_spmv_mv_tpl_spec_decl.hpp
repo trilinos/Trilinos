@@ -151,7 +151,8 @@ void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
   cusparseOperation_t opB =
       xIsLL ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;
 
-#if CUDA_VERSION < 12000
+// CUSPARSE_MM_ALG_DEFAULT was deprecated as early as 11.1 (maybe earlier)
+#if CUSPARSE_VERSION < 11010
   const cusparseSpMMAlg_t alg = CUSPARSE_MM_ALG_DEFAULT;
 #else
   const cusparseSpMMAlg_t alg = CUSPARSE_SPMM_ALG_DEFAULT;

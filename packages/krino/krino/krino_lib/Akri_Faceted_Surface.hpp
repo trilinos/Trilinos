@@ -42,7 +42,7 @@ public:
   
 public:
   void prepare_to_compute(const BoundingBox & point_bbox, const double truncation_length)
-    { ThrowAssert(nullptr == my_transformation); prepare_to_compute(0.0, point_bbox, truncation_length); }
+    { STK_ThrowAssert(nullptr == my_transformation); prepare_to_compute(0.0, point_bbox, truncation_length); }
   double point_unsigned_distance(const Vector3d &x, const double narrow_band_size, const double far_field_value) const
   {
     return point_distance(x, narrow_band_size, far_field_value, false);

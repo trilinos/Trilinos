@@ -69,7 +69,7 @@ Composite_Surface::truncated_point_signed_distance(const Vector3d &x, const doub
 
   if (my_composition_method == MINIMUM_SIGNED_DISTANCE)
   {
-    ThrowRequireMsg(far_field_value >= narrow_band, "Composite surfaces have a specific requirement for far_field_value due to min/max operations.");
+    STK_ThrowRequireMsg(far_field_value >= narrow_band, "Composite surfaces have a specific requirement for far_field_value due to min/max operations.");
     double dist = (narrow_band == 0.) ? std::numeric_limits<double>::max() : far_field_value;
     for ( auto&& surface : my_subsurfaces )
     {
@@ -79,8 +79,8 @@ Composite_Surface::truncated_point_signed_distance(const Vector3d &x, const doub
   }
   else
   {
-    ThrowRequire(my_composition_method == MAXIMUM_SIGNED_DISTANCE);
-    ThrowRequireMsg(far_field_value <= -narrow_band, "Composite surfaces have a specific requirement for far_field_value due to min/max operations.");
+    STK_ThrowRequire(my_composition_method == MAXIMUM_SIGNED_DISTANCE);
+    STK_ThrowRequireMsg(far_field_value <= -narrow_band, "Composite surfaces have a specific requirement for far_field_value due to min/max operations.");
     double dist = (narrow_band == 0.) ? -std::numeric_limits<double>::max() : far_field_value;
     for ( auto&& surface : my_subsurfaces )
     {

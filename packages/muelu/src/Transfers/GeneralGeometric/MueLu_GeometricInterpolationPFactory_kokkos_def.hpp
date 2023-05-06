@@ -53,9 +53,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
 
 
 // Including this one last ensure that the short names of the above headers are defined properly
@@ -243,7 +241,6 @@ namespace MueLu {
     *out << "Call prolongator constructor" << std::endl;
     using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       LO NSDim = A->GetStorageBlockSize();
 
       // Build the exploded Map
@@ -300,11 +297,6 @@ namespace MueLu {
       else {
         P->CreateView("stridedMaps", P->getRangeMap(),   PointMap);
       }
-
-#else
-      throw std::runtime_error("GeometricInteroplationFactory::BuildConstantP(): BlockCrs requires Tpetra");
-#endif
-
     }
     else {
       // Create the prolongator matrix and its associated objects

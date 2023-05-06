@@ -30,7 +30,7 @@ RefinementSupport &
 RefinementSupport::get(const stk::mesh::MetaData & meta)
 {
   RefinementSupport * support = const_cast<RefinementSupport *>(meta.get_attribute<RefinementSupport>());
-  ThrowRequireMsg(nullptr != support, "Could not find RefinementSupport attribute on MetaData.");
+  STK_ThrowRequireMsg(nullptr != support, "Could not find RefinementSupport attribute on MetaData.");
   return *support;
 }
 
@@ -61,9 +61,9 @@ stk::mesh::Selector RefinementSupport::get_do_not_refine_or_unrefine_selector() 
 void
 RefinementSupport::activate_interface_refinement(int minimumLevel, int maximumLevel)
 {
-  ThrowRequireMsg(my_interface_minimum_refinement_level == 0 && my_interface_maximum_refinement_level == 0,
+  STK_ThrowRequireMsg(my_interface_minimum_refinement_level == 0 && my_interface_maximum_refinement_level == 0,
       "Interface refinement levels should only be specified once.");
-  ThrowRequireMsg(maximumLevel >= minimumLevel || maximumLevel == 0,
+  STK_ThrowRequireMsg(maximumLevel >= minimumLevel || maximumLevel == 0,
       "Maximum interface refinement level must be greater than or equal to the minimum interface refinement level or left unspecified.");
   if (maximumLevel == 0) maximumLevel = minimumLevel;
 

@@ -56,7 +56,7 @@
 #include "MueLu.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_IFPACK2)
 
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_AmalgamationFactory_fwd.hpp>

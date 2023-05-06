@@ -52,9 +52,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
-#ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
 
 // Including this one last ensure that the short names of the above headers are defined properly
 #include "MueLu_GeometricInterpolationPFactory_decl.hpp"
@@ -274,7 +272,6 @@ namespace MueLu {
 
     using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       SC one  = Teuchos::ScalarTraits<SC>::one();
       SC zero = Teuchos::ScalarTraits<SC>::zero();
       LO NSDim = A->GetStorageBlockSize();
@@ -324,11 +321,6 @@ namespace MueLu {
       else {
         P->CreateView("stridedMaps", P->getRangeMap(),   PointMap);
       }
-
-#else
-      throw std::runtime_error("GeometricInteroplationFactory::Build(): BlockCrs requires Tpetra");
-#endif
-
     }
     else {
       // Create the prolongator matrix and its associated objects

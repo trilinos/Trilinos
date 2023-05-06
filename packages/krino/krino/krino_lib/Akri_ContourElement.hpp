@@ -81,6 +81,12 @@ public:
 		       sierra::ArrayContainer<double,NINT> & intg_weights,
 		       sierra::ArrayContainer<double,NINT> & determinants ) const;
 
+  static int std_intg_pts( const MasterElement & evalMasterElem,
+      const MasterElement & coordMasterElem,
+      const sierra::Array<double,DIM,NPE_COORD> & coords,
+      sierra::Array<const double,DIM,NINT> & intg_pt_locations,
+      sierra::Array<const double,NINT> & intg_weights,
+      sierra::ArrayContainer<double,NINT> & det_J);
   int std_intg_pts( sierra::Array<const double,DIM,NINT> & intg_pt_locations,
 		    sierra::Array<const double,NINT> & intg_weights,
 		    sierra::ArrayContainer<double,NINT> & determinants,
@@ -95,6 +101,16 @@ public:
   int std_intg_pts( sierra::ArrayContainer<double,DIM,NINT> & intg_pt_locations,
                     sierra::ArrayContainer<double,NINT> & intg_weights,
                     sierra::ArrayContainer<double,NINT> & determinants ) const { return std_intg_pts(intg_pt_locations, intg_weights, determinants, my_coords_master_elem); }
+
+  int std_side_intg_pts( const int iside,
+      sierra::Array<const double,DIM,NINT> & intg_pt_locations,
+      sierra::Array<const double,NINT> & intg_weights,
+      sierra::ArrayContainer<double,NINT> & det_J,
+      const MasterElement & me ) const;
+  int std_side_intg_pts( const int iside,
+      sierra::Array<const double,DIM,NINT> & intg_pt_locations,
+      sierra::Array<const double,NINT> & intg_weights,
+      sierra::ArrayContainer<double,NINT> & det_J) const  { return std_side_intg_pts(iside, intg_pt_locations, intg_weights, det_J, my_coords_master_elem); }
 
   int spatial_dim() const { return my_spatial_dim; }
   double length_scale() const { return my_length_scale; }

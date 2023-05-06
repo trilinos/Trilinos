@@ -571,6 +571,16 @@ bool Behavior::overlapCommunicationAndComputation ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
+size_t Behavior::spacesIdWarnLimit ()
+{
+  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMT";
+  constexpr size_t defaultValue(16);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
 
 bool Behavior::timeKokkosDeepCopy() 
 {

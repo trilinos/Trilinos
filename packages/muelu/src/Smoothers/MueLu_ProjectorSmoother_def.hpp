@@ -104,7 +104,7 @@ namespace MueLu {
     }
     this->GetOStream(Runtime0) << "Coarse level orth indices: " << selectedIndices << std::endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     // Orthonormalize
     RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > B_ = Utilities::MV2TpetraMV(B);

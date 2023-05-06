@@ -49,7 +49,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA)
 #error "Muemex requires MATLAB, Epetra and Tpetra."
 #else
 

@@ -151,14 +151,14 @@ void PartAndFieldCollections::build(const stk::mesh::BulkData & mesh)
 int PartAndFieldCollections::get_part_collection_id(const PartCollection & partCollection) const
 {
   const auto iter = std::lower_bound(myPartCollections.begin(), myPartCollections.end(), partCollection);
-  ThrowAssertMsg(iter != myPartCollections.end() && *iter == partCollection, "Failed to find collection of parts.");
+  STK_ThrowAssertMsg(iter != myPartCollections.end() && *iter == partCollection, "Failed to find collection of parts.");
   return std::distance(myPartCollections.begin(), iter);
 }
 
 int PartAndFieldCollections::get_field_collection_id(const FieldCollection & fieldCollection) const
 {
   const auto iter = std::lower_bound(myFieldCollections.begin(), myFieldCollections.end(), fieldCollection);
-  ThrowAssertMsg(iter != myFieldCollections.end() && *iter == fieldCollection, "Failed to find collection of parts.");
+  STK_ThrowAssertMsg(iter != myFieldCollections.end() && *iter == fieldCollection, "Failed to find collection of parts.");
   return std::distance(myFieldCollections.begin(), iter);
 }
 
@@ -219,7 +219,7 @@ std::vector<unsigned> PartAndFieldCollections::determine_fields(const stk::mesh:
 
 Vector3d ProlongationPointData::get_previous_coordinates() const
 {
-  ThrowAssertMsg(theCoordsField.valid(), "Static member coordinates field is not yet set.");
+  STK_ThrowAssertMsg(theCoordsField.valid(), "Static member coordinates field is not yet set.");
 
   Vector3d coords(get_field_data(theCoordsField), theSpatialDim);
   if (theSnapDisplacementsField.valid())
@@ -235,14 +235,14 @@ Vector3d ProlongationPointData::get_previous_coordinates() const
 
 Vector3d ProlongationPointData::get_post_snap_coordinates() const
 {
-  ThrowAssertMsg(theCoordsField.valid(), "Static member coordinates field is not yet set.");
+  STK_ThrowAssertMsg(theCoordsField.valid(), "Static member coordinates field is not yet set.");
   Vector3d coords(get_field_data(theCoordsField), theSpatialDim);
   return coords;
 }
 
 void ProlongationPointData::set_coords_fields(const int spatialDim, FieldRef coordsField, FieldRef snapDisplacementsField)
 {
-  ThrowRequireMsg(coordsField.valid(), "Invalid coordinates field in ProlongationPointData::set_coords_fields()");
+  STK_ThrowRequireMsg(coordsField.valid(), "Invalid coordinates field in ProlongationPointData::set_coords_fields()");
   theSpatialDim = spatialDim;
   theCoordsField = coordsField;
   theSnapDisplacementsField = snapDisplacementsField;
@@ -261,7 +261,7 @@ ProlongationElementData::ProlongationElementData(const CDMesh & cdmesh, const st
 
 void ProlongationElementData::fill_integration_weights(std::vector<double> & childIntgWeights) const
 {
-  ThrowAssert(have_prolongation_data_stored_for_all_nodes());
+  STK_ThrowAssert(have_prolongation_data_stored_for_all_nodes());
   const unsigned dim = myMasterElem.topology_dimension();
   std::vector<double> flatCoords(myElemNodesData.size()*dim);
   for (size_t n=0; n<myElemNodesData.size(); ++n)
@@ -317,7 +317,7 @@ ProlongationElementData::evaluate_prolongation_field(const CDFEM_Support & cdfem
 
   for ( int n = 0; n < fieldNPE; n++ )
   {
-    ThrowRequire(nullptr != node_data[n]);
+    STK_ThrowRequire(nullptr != node_data[n]);
     for (unsigned i=0; i<field_length; ++i) result[i] += shapefcn[n]*node_data[n][i];
   }
 }
@@ -346,7 +346,7 @@ ProlongationParentElementData::ProlongationParentElementData(const CDMesh & cdme
 : ProlongationElementData(cdmesh, element),
   mySubelementsData(subelementsData)
 {
-  ThrowAssertMsg(have_prolongation_data_stored_for_all_nodes_of_subelements(), "Missing prolongation data for one or more nodes of subelement of parent element " << debug_entity_1line(cdmesh.stk_bulk(), element));
+  STK_ThrowAssertMsg(have_prolongation_data_stored_for_all_nodes_of_subelements(), "Missing prolongation data for one or more nodes of subelement of parent element " << debug_entity_1line(cdmesh.stk_bulk(), element));
 
   if (doStoreElementFields)
     homogenize_subelement_fields(cdmesh, subelementsData);
@@ -383,7 +383,7 @@ void ProlongationParentElementData::homogenize_subelement_fields(const CDMesh & 
     const std::vector<const ProlongationElementData *> & subelementsData)
 {
   const std::vector<std::vector<double>> childIntgWts = calculate_children_integration_weights(subelementsData);
-  ThrowAssert(!subelementsData.empty() && subelementsData.size() == childIntgWts.size());
+  STK_ThrowAssert(!subelementsData.empty() && subelementsData.size() == childIntgWts.size());
 
   const unsigned num_intg_pts = childIntgWts[0].size();
 
@@ -419,7 +419,7 @@ void ProlongationParentElementData::homogenize_subelement_fields(const CDMesh & 
           }
 
           const std::vector<double> & child_intg_wts = childIntgWts[n];
-          ThrowAssertMsg(child_intg_wts.size() == num_intg_pts, "Children have different integration rules.");
+          STK_ThrowAssertMsg(child_intg_wts.size() == num_intg_pts, "Children have different integration rules.");
 
           for (unsigned j=0; j<num_intg_pts; ++j)
           {
@@ -448,7 +448,7 @@ void ProlongationParentElementData::homogenize_subelement_fields(const CDMesh & 
 
           const std::vector<double> & child_intg_wts = childIntgWts[n];
           // We could relax this assertion if we had another way to distinguish gauss point fields from vector fields
-          ThrowAssertMsg(child_intg_wts.size() == num_intg_pts, "Children have different integration rules.");
+          STK_ThrowAssertMsg(child_intg_wts.size() == num_intg_pts, "Children have different integration rules.");
 
           double child_vol = 0.;
           for (unsigned j=0; j<num_intg_pts; ++j)
@@ -486,7 +486,7 @@ Vector3d
 ProlongationElementData::compute_parametric_coords_at_point(const Vector3d & pointCoords) const
 {
   stk::topology baseTopo = myMasterElem.get_topology().base();
-  ThrowAssertMsg(have_prolongation_data_stored_for_all_nodes(), "Missing prolongation data at node for prolongation at point " << pointCoords);
+  STK_ThrowAssertMsg(have_prolongation_data_stored_for_all_nodes(), "Missing prolongation data at node for prolongation at point " << pointCoords);
 
   std::vector<Vector3d> baseElemNodeCoords;
   baseElemNodeCoords.reserve(baseTopo.num_nodes());
@@ -498,7 +498,7 @@ ProlongationElementData::compute_parametric_coords_at_point(const Vector3d & poi
 
 void ProlongationParentElementData::find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const
 {
-  ThrowRequire(!mySubelementsData.empty());
+  STK_ThrowRequire(!mySubelementsData.empty());
 
   double minSqrDist = std::numeric_limits<double>::max();
   for (auto && subelemData : mySubelementsData)
@@ -526,14 +526,14 @@ ProlongationData::save_field_data(const stk::mesh::BulkData& stk_mesh, const Par
   {
     const FieldRef field = allFields[fieldIndex];
 
-    ThrowRequireMsg( field.entity_rank() == stk_mesh.entity_rank(entity) && field.type_is<double>(),
+    STK_ThrowRequireMsg( field.entity_rank() == stk_mesh.entity_rank(entity) && field.type_is<double>(),
         "Error in prolongation field data storage.  Field " << field.name() << " has rank " << field.entity_rank() << " is double = " << field.type_is<double>() << " on " << stk_mesh.entity_key(entity));
 
     double * val = field_data<double>(field, entity);
-    ThrowRequireMsg( nullptr != val, "Error in prolongation field data storage.  Field " << field.name() << " is missing on " << stk_mesh.entity_key(entity));
+    STK_ThrowRequireMsg( nullptr != val, "Error in prolongation field data storage.  Field " << field.name() << " is missing on " << stk_mesh.entity_key(entity));
 
     const unsigned field_length = field.length();
-    ThrowRequireMsg( static_cast<size_t>((*myFieldStorageIndices)[fieldIndex]) == myFieldData.size(), "Error in prolongation field data storage");
+    STK_ThrowRequireMsg( static_cast<size_t>((*myFieldStorageIndices)[fieldIndex]) == myFieldData.size(), "Error in prolongation field data storage");
     for (unsigned i=0; i<field_length; ++i)
     {
       myFieldData.push_back(val[i]);
@@ -774,7 +774,7 @@ ProlongationFacet::ProlongationFacet(const CDMesh & mesh, stk::mesh::Entity side
 {
   const stk::mesh::BulkData & stk_mesh = my_mesh.stk_bulk();
 
-  ThrowAssert(stk_mesh.num_elements(side) > 0);
+  STK_ThrowAssert(stk_mesh.num_elements(side) > 0);
   stk::mesh::Entity elem0 = stk_mesh.begin_elements(side)[0];
   const PhaseTag elem0_phase = mesh.determine_entity_phase(elem0);
 
@@ -792,18 +792,18 @@ ProlongationFacet::ProlongationFacet(const CDMesh & mesh, stk::mesh::Entity side
       krinolog << stk::diag::dendl;
       krinolog << "Failed to find node " << stk_mesh.identifier(side_node) << " while stashing facet " << debug_entity(mesh.stk_bulk(), side);
     }
-    ThrowRequire(NULL != prolong_node);
+    STK_ThrowRequire(NULL != prolong_node);
     my_prolong_nodes[side_node_index] = prolong_node;
   }
 
-  ThrowAssert((int)my_prolong_nodes.size() == my_mesh.spatial_dim());
+  STK_ThrowAssert((int)my_prolong_nodes.size() == my_mesh.spatial_dim());
   if (2 == my_prolong_nodes.size())
   {
     my_facet = std::make_unique<Facet2d>( my_prolong_nodes[0]->get_previous_coordinates(), my_prolong_nodes[1]->get_previous_coordinates());
   }
   else
   {
-    ThrowAssert(3 == my_prolong_nodes.size());
+    STK_ThrowAssert(3 == my_prolong_nodes.size());
     my_facet = std::make_unique<Facet3d>( my_prolong_nodes[0]->get_previous_coordinates(), my_prolong_nodes[1]->get_previous_coordinates(), my_prolong_nodes[2]->get_previous_coordinates());
   }
 }
@@ -812,21 +812,21 @@ ProlongationFacet::ProlongationFacet(const CDMesh & mesh, const std::vector<cons
 : my_mesh (mesh),
   my_prolong_nodes(prolong_nodes)
 {
-  ThrowAssert((int)my_prolong_nodes.size() == my_mesh.spatial_dim());
+  STK_ThrowAssert((int)my_prolong_nodes.size() == my_mesh.spatial_dim());
   if (2 == my_prolong_nodes.size())
   {
     my_facet = std::make_unique<Facet2d>( my_prolong_nodes[0]->get_previous_coordinates(), my_prolong_nodes[1]->get_previous_coordinates());
   }
   else
   {
-    ThrowAssert(3 == my_prolong_nodes.size());
+    STK_ThrowAssert(3 == my_prolong_nodes.size());
     my_facet = std::make_unique<Facet3d>( my_prolong_nodes[0]->get_previous_coordinates(), my_prolong_nodes[1]->get_previous_coordinates(), my_prolong_nodes[2]->get_previous_coordinates());
   }
 }
 
 std::unique_ptr<ProlongationFacetPointData> ProlongationFacet::get_prolongation_point_data(const FacetDistanceQuery & dist_query) const
 {
-  ThrowAssert(&dist_query.facet() == my_facet.get());
+  STK_ThrowAssert(&dist_query.facet() == my_facet.get());
   return std::make_unique<ProlongationFacetPointData>(my_mesh, dist_query, my_prolong_nodes);
 }
 
@@ -929,7 +929,7 @@ ProlongationFacet::unpack_from_buffer(const CDMesh & mesh, stk::CommBuffer & b )
     stk::mesh::EntityId node_id;
     b.unpack(node_id);
     prolong_node = mesh.fetch_prolong_node(node_id);
-    ThrowRequireMsg(prolong_node, "Communication error, missing prolongation node " << node_id << " on processor " << mesh.stk_bulk().parallel_rank());
+    STK_ThrowRequireMsg(prolong_node, "Communication error, missing prolongation node " << node_id << " on processor " << mesh.stk_bulk().parallel_rank());
   }
 
   ProlongationFacet * facet = new ProlongationFacet(mesh, prolong_nodes);

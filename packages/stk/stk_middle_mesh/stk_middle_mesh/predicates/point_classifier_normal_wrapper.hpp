@@ -1,12 +1,12 @@
 #ifndef POINT_CLASSIFIER_NORMAL_WRAPPER
 #define POINT_CLASSIFIER_NORMAL_WRAPPER
 
-#include "field.hpp"
-#include "mesh.hpp"
-#include "mesh_entity.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
 #include "point_classifier_normal_interpolation.hpp"
-#include "stk_middle_mesh/predicates/intersection_common.hpp"
-#include "stk_middle_mesh/predicates/quad_to_triangles.hpp"
+#include "intersection_common.hpp"
+#include "quad_to_triangles.hpp"
 #include "triangle_coord_utils.hpp"
 
 namespace stk {
