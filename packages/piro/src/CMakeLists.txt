@@ -114,23 +114,6 @@ IF(PIRO_HAVE_EPETRA_STACK)
     )
 ENDIF()
 ENDIF()
-# Optional Rythmos Dependency
-IF (Piro_ENABLE_Rythmos)
-  APPEND_SET(HEADERS
-    Piro_RythmosSolver.hpp
-    Piro_RythmosStepperFactory.hpp
-    Piro_RythmosStepControlFactory.hpp
-    Piro_RythmosSolver_Def.hpp
-    Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
-    Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp
-    )
-IF(PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS
-    Piro_Epetra_RythmosSolver.hpp
-  )
-  APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
-ENDIF()
-ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
@@ -143,10 +126,6 @@ IF (Piro_ENABLE_Tempus)
     Piro_TempusStepControlFactory.hpp
     Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
     Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
-ENDIF()
-
-IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
-  APPEND_SET(HEADERS Piro_RythmosNOX_RowSumUpdater.hpp)
 ENDIF()
 
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX

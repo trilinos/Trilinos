@@ -230,32 +230,6 @@ IF (PIRO_HAVE_EPETRA_STACK)
 
   ENDIF(Piro_ENABLE_NOX)
 
-  IF (Piro_ENABLE_Rythmos)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      RythmosSolver_UnitTests
-      SOURCES
-      Piro_RythmosSolver_UnitTests.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      Piro_Test_ThyraSupport.hpp
-      MockModelEval_A.hpp
-      MockModelEval_A.cpp
-      NUM_MPI_PROCS 1-4
-      STANDARD_PASS_OUTPUT
-    )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Epetra_RythmosSolver_UnitTests
-      SOURCES
-      Piro_Epetra_RythmosSolver_UnitTests.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      Piro_Test_EpetraSupport.hpp
-      MockModelEval_A.hpp
-      MockModelEval_A.cpp
-      NUM_MPI_PROCS 1-4
-      STANDARD_PASS_OUTPUT
-    )
-  ENDIF (Piro_ENABLE_Rythmos)
-
   IF (Piro_ENABLE_Tempus)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       TempusSolver_UnitTests
@@ -304,15 +278,10 @@ IF (PIRO_HAVE_EPETRA_STACK)
                  input_Solve_NOX_3.xml                 
 		         input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
-                 input_Solve_Rythmos_1.xml
-                 input_Solve_Rythmos_1new.xml
-                 input_Solve_Rythmos_2.xml
-                 input_Solve_RythmosSolver_2.xml
                  input_Solve_VV.xml
                  input_Solve_TR.xml
                  input_Solve_NB.xml
                  input_Analysis_Dakota.xml dak.in
-                 input_Solve_RythmosMatrixFree_Fails.xml
 	             input_SGSolve.xml
 	             input_problem1.xml
 	             input_problem2.xml

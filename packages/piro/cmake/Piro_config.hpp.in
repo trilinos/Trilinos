@@ -21,9 +21,6 @@
 #cmakedefine HAVE_PIRO_NOX
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_NOX
-#cmakedefine HAVE_PIRO_RYTHMOS
-/* DEPRECATED */
-#cmakedefine Piro_ENABLE_Rythmos
 #cmakedefine HAVE_PIRO_TEMPUS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Tempus
