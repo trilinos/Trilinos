@@ -1489,7 +1489,8 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
-   size_t& constantNumPackets)
+   size_t& constantNumPackets,
+   const execution_space &space)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1643,7 +1644,8 @@ namespace Tpetra {
                                     src_dev,
                                     exportLIDs.view_device (),
                                     0,
-                                    debugCheckIndices);
+                                    debugCheckIndices,
+                                    space);
         }
       }
       else {
@@ -1667,7 +1669,8 @@ namespace Tpetra {
                                     src_dev,
                                     exportLIDs.view_device (),
                                     sourceMV.whichVectors_[0],
-                                    debugCheckIndices);
+                                    debugCheckIndices,
+                                    space);
         }
       }
     }
@@ -1693,7 +1696,8 @@ namespace Tpetra {
                                    src_dev,
                                    exportLIDs.view_device (),
                                    numCols,
-                                   debugCheckIndices);
+                                   debugCheckIndices,
+                                   space);
         }
       }
       else {
@@ -1730,7 +1734,7 @@ namespace Tpetra {
              exportLIDs.view_device (),
              getKokkosViewDeepCopy<DES> (whichVecs),
              numCols,
-             debugCheckIndices);
+             debugCheckIndices, space);
         }
       }
     }
@@ -1743,6 +1747,19 @@ namespace Tpetra {
 
   }
 
+// clang-format on
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepare
+  (const SrcDistObject& sourceObj,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+   Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID,
+   size_t& constantNumPackets) {
+     packAndPrepare(sourceObj, exportLIDs, exports, numExportPacketsPerLID, constantNumPackets, execution_space());    
+   }
+// clang-format off
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NO>
