@@ -140,7 +140,7 @@ Piro::PerformAnalysis(
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Solve, ROL\n" << endl;
+           << "       Valid analysis types are: Solve and ROL\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -755,7 +755,7 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: Solve, ROL.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve or ROL.");
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
   validPL->sublist("ROL",       false, "");
