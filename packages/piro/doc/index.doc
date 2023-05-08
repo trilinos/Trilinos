@@ -78,10 +78,6 @@ As a ResponseOnlyModelEvaluator, any %Piro solver will
 satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
-<li>Dakota via %TriKota: The entire Dakota framework
-(developed at Sandia independently from Trilinos) is available
-through the adapters and build system of the %TriKota package.
-</ul>
 
 %Piro provides convenient \link Piro_analysis_driver_grp driver routines\endlink
 that perform the analysis of a ResponseOnlyModelEvaluator (including %Piro solved models)
@@ -125,8 +121,7 @@ and not just two.
 
 %Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey, Kim Liegeois,
 Roger Pawlowski, Mauro Perego, Eric Phipps and Irina Tezaur. Much of the code is adapted from
-tests and examples for NOX, LOCA, Stokhos
-and TriKota, and was developed and matured in the Albany
+tests and examples for NOX, LOCA, Stokhos, and was developed and matured in the Albany
 application code before being library-ized into %Piro.
 
 */

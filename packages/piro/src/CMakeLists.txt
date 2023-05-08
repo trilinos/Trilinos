@@ -162,11 +162,6 @@ ENDIF()
 #
 # B.2) Analysis Tools
 #
-
-IF (Piro_ENABLE_TriKota)
-  ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
-ENDIF()
-
 APPEND_SET(HEADERS
   Piro_PerformSolve.hpp
   Piro_PerformSolve_Def.hpp
@@ -182,11 +177,6 @@ ENDIF()
 
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
-
-IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp)
-  APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
-ENDIF()
 
 #
 # C) Define the targets for package's library(s)
