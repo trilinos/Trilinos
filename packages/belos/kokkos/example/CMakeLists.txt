@@ -9,6 +9,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Kokkos_KKGMRESEx
+  SOURCES ex_real_A.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Kokkos_BlockCGEx
   SOURCES BlockCGKokkosExFile.cpp
   ARGS "--verbose"
