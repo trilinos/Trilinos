@@ -71,7 +71,6 @@
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory.hpp"
-#include "user_app_RythmosObserverFactory.hpp"
 #ifdef PANZER_HAVE_TEMPUS
 #include "user_app_TempusObserverFactory.hpp"
 #endif
@@ -225,13 +224,6 @@ int main(int argc, char *argv[])
               break;
            }
         }
-
-	// Rythmos
-        Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof;
-	{
-          rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate));
-	  // me_factory.setRythmosObserverFactory(rof);
-	}
 	
 	// NOX
 	Teuchos::RCP<user_app::NOXObserverFactory> nof;
@@ -252,9 +244,9 @@ int main(int argc, char *argv[])
           tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
 	}
 
-        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,Teuchos::null,nof.ptr(),rof.ptr(),tof.ptr());
+        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),tof.ptr());
 #else
-        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),rof.ptr());
+        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,nof.ptr());
 #endif
       } 
 
