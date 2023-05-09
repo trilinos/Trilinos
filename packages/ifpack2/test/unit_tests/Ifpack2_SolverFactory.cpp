@@ -211,7 +211,7 @@ namespace {
     // particular, it's important to test AdditiveSchwarz.
     const int numSolvers = 5;
     const char* solverNames[5] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
-                                  "ILUT", "RILUK"};
+                                  "ILUT", "RILUK", "MDF"};
     int numSolversTested = 0;
     for (int k = 0; k < numSolvers; ++k) {
       const std::string solverName (solverNames[k]);

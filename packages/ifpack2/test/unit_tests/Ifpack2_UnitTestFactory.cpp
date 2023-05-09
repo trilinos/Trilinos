@@ -133,6 +133,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, G
 
   check_precond_basics(prec_riluk, out, success);
 
+  RCP<prec_type> prec_mdf = factory.create<row_matrix_type> ("MDF", crsmatrix);
+  TEST_EQUALITY(prec_mdf != Teuchos::null, true);
+
+  check_precond_basics(prec_mdf, out, success);
+
   RCP<prec_type> prec_relax = factory.create<row_matrix_type> ("RELAXATION", crsmatrix);
   TEST_EQUALITY(prec_relax != Teuchos::null, true);
 
