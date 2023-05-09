@@ -215,41 +215,27 @@ int main(int argc, char *argv[])
 
       // Add in the application specific observer factories
       {
-        // see if field coordinates are required, if so reset the workset container
-        // and set the coordinates to be associated with a field in the mesh
-        bool useCoordinateUpdate = false;
-        for(std::size_t p=0;p<physicsBlocks.size();p++) {
-           if(physicsBlocks[p]->getCoordinateDOFs().size()>0) {
-              useCoordinateUpdate = true;
-              break;
-           }
+	      // NOX
+        Teuchos::RCP<user_app::NOXObserverFactory> nof;
+        {
+                nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
+          
+          Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
+            Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
+          
+          nof->setParameterList(observers_to_build);
         }
-	
-	// NOX
-	Teuchos::RCP<user_app::NOXObserverFactory> nof;
-	{
-          nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
-	  
-	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
-	    Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
-	  
-	  nof->setParameterList(observers_to_build);
-	  // me_factory.setNOXObserverFactory(nof);
-	}
 
-        // solver = me_factory.getResponseOnlyModelEvaluator();
 #ifdef PANZER_HAVE_TEMPUS
         Teuchos::RCP<const panzer_stk::TempusObserverFactory> tof;
-	{
+	      {
           tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-	}
-
+	      }
         solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),tof.ptr());
 #else
         solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,nof.ptr());
 #endif
       } 
-
     }
     
     // setup outputs to mesh on the stkIOResponseLibrary
