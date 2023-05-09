@@ -196,38 +196,38 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     size_type col;
     execution_space space;
 
-private:
-  DstView dst;
-  SrcView src;
-  IdxView idx;
-  size_type col;
+  public:
+    PackArraySingleColumnWithBoundsCheck (const DstView& dst_,
+                                          const SrcView& src_,
+                                          const IdxView& idx_,
+                                          const size_type col_) :
+      dst (dst_), src (src_), idx (idx_), col (col_) {}
 
-public:
-  PackArraySingleColumnWithBoundsCheck(const DstView &dst_, const SrcView &src_,
-                                       const IdxView &idx_,
-                                       const size_type col_)
-      : dst(dst_), src(src_), idx(idx_), col(col_) {}
+    KOKKOS_INLINE_FUNCTION void
+    operator() (const size_type k, value_type& lclErrCount) const {
+      using index_type = typename IdxView::non_const_value_type;
 
-  KOKKOS_INLINE_FUNCTION void operator()(const size_type k,
-                                         value_type &lclErrCount) const {
-    using index_type = typename IdxView::non_const_value_type;
-
-    const index_type lclRow = idx(k);
-    if (lclRow < static_cast<index_type>(0) ||
-        lclRow >= static_cast<index_type>(src.extent(0))) {
-      ++lclErrCount;
-    } else {
-      dst(k) = src(lclRow, col);
+      const index_type lclRow = idx(k);
+      if (lclRow < static_cast<index_type> (0) ||
+          lclRow >= static_cast<index_type> (src.extent (0))) {
+        ++lclErrCount;
+      }
+      else {
+        dst(k) = src(lclRow, col);
+      }
     }
-  }
 
-  KOKKOS_INLINE_FUNCTION
-  void init(value_type &initialErrorCount) const { initialErrorCount = 0; }
+    KOKKOS_INLINE_FUNCTION
+    void init (value_type& initialErrorCount) const {
+      initialErrorCount = 0;
+    }
 
-  KOKKOS_INLINE_FUNCTION void join(value_type &dstErrorCount,
-                                   const value_type &srcErrorCount) const {
-    dstErrorCount += srcErrorCount;
-  }
+    KOKKOS_INLINE_FUNCTION void
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
+    {
+      dstErrorCount += srcErrorCount;
+    }
 
   static void pack(const DstView &dst, const SrcView &src, const IdxView &idx,
                    const size_type col, const execution_space &space) {
