@@ -84,11 +84,12 @@ template<class IntegerType,
          const bool isSigned = std::numeric_limits<IntegerType>::is_signed>
 struct OutOfBounds {
   static KOKKOS_INLINE_FUNCTION bool
-  test(const IntegerType x, const IntegerType exclusiveUpperBound);
+  test (const IntegerType x,
+        const IntegerType exclusiveUpperBound);
 };
 
 // Partial specialization for the case where IntegerType IS signed.
-template <class IntegerType> 
+template<class IntegerType>
 struct OutOfBounds<IntegerType, true> {
   static KOKKOS_INLINE_FUNCTION bool
   test (const IntegerType x,
@@ -111,35 +112,39 @@ struct OutOfBounds<IntegerType, false> {
 
 /// \brief Is x out of bounds?  That is, is x less than zero, or
 ///   greater than or equal to the given exclusive upper bound?
-template <class IntegerType>
-KOKKOS_INLINE_FUNCTION bool outOfBounds(const IntegerType x,
-                                        const IntegerType exclusiveUpperBound) {
-  return OutOfBounds<IntegerType>::test(x, exclusiveUpperBound);
+template<class IntegerType>
+KOKKOS_INLINE_FUNCTION bool
+outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
+{
+  return OutOfBounds<IntegerType>::test (x, exclusiveUpperBound);
 }
 
 } // namespace Impl
 
-// Functors for implementing packAndPrepare and unpackAndCombine
-// through parallel_for
+  // Functors for implementing packAndPrepare and unpackAndCombine
+  // through parallel_for
 
-template <typename DstView, typename SrcView, typename IdxView,
-          typename Enabled = void>
-struct PackArraySingleColumn {
-  typedef typename DstView::execution_space execution_space;
-  typedef typename execution_space::size_type size_type;
+  template <typename DstView, typename SrcView, typename IdxView,
+            typename Enabled = void>
+  struct PackArraySingleColumn {
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
-  DstView dst;
-  SrcView src;
-  IdxView idx;
-  size_t col;
+    DstView dst;
+    SrcView src;
+    IdxView idx;
+    size_t col;
 
-  PackArraySingleColumn(const DstView &dst_, const SrcView &src_,
-                        const IdxView &idx_, const size_t col_)
-      : dst(dst_), src(src_), idx(idx_), col(col_) {}
+    PackArraySingleColumn (const DstView& dst_,
+                           const SrcView& src_,
+                           const IdxView& idx_,
+                           const size_t col_) :
+      dst(dst_), src(src_), idx(idx_), col(col_) {}
 
-  KOKKOS_INLINE_FUNCTION void operator()(const size_type k) const {
-    dst(k) = src(idx(k), col);
-  }
+    KOKKOS_INLINE_FUNCTION void
+    operator() (const size_type k) const {
+      dst(k) = src(idx(k), col);
+    }
 
     static void
     pack (const DstView& dst,
