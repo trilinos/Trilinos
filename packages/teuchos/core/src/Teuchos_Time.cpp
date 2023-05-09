@@ -78,7 +78,7 @@ inline void seconds_initialize() {
 #include <unistd.h>
 #endif
 
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 namespace Kokkos {
 namespace Profiling {
 extern void pushRegion (const std::string&);
@@ -125,7 +125,7 @@ void Time::start(bool reset_in)
     }
 #endif
     startTime_ = wallTime();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::pushRegion (name_);
 #endif
   }
@@ -148,7 +148,7 @@ double Time::stop()
         numCallsMassifSnapshots_++;
       }
 #endif
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       ::Kokkos::Profiling::popRegion ();
 #endif
     }

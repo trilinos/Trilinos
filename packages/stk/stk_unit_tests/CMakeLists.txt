@@ -4,7 +4,7 @@ IF(Trilinos_ENABLE_STKUtil)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_util)
 ENDIF()
 
-IF(Trilinos_ENABLE_KokkosCore)
+IF(Trilinos_ENABLE_Kokkos)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_math)
 ENDIF()
 

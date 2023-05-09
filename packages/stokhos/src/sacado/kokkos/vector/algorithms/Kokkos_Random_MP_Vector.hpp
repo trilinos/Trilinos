@@ -43,7 +43,7 @@
 #define KOKKOS_RANDOM_MP_VECTOR_HPP
 
 #include "Stokhos_ConfigDefs.h"
-#if defined(HAVE_STOKHOS_KOKKOSALGORITHMS)
+#if defined(HAVE_STOKHOS_KOKKOS)
 
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
