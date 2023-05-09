@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -7710,7 +7710,7 @@ class ExodusModel(object):
         else:
             self.info_records.append('Discarded title from the '
                                      'following file:')
-            self.info_records.append(filename)
+            self.info_records.append(filename[:80])
             self.info_records.append(exodus_file.title())
         # run a check on the model to ensure arrays are correct sizes
         self._verify()

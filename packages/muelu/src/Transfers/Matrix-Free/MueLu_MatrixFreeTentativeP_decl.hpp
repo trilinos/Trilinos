@@ -52,11 +52,13 @@
 
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
+#include <Teuchos_BLAS_types.hpp>
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "Xpetra_Operator.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_MultiVector_fwd.hpp"
+#include "Xpetra_Operator_fwd.hpp"
 
 namespace MueLu {
 
@@ -89,7 +91,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates_kokkos> aggregates)
+    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates> aggregates)
     : fine_map_(fine_map),
       coarse_map_(coarse_map),
       aggregates_(aggregates)
@@ -116,7 +118,7 @@ namespace MueLu {
     }
 
     // get the aggregates
-    Teuchos::RCP<const Aggregates_kokkos> getAggregates() const {
+    Teuchos::RCP<const Aggregates> getAggregates() const {
       return aggregates_;
     }
 
@@ -129,7 +131,7 @@ namespace MueLu {
     const Teuchos::RCP<const Map> coarse_map_;
 
     // the aggregates required for the grid transfer
-    const Teuchos::RCP<const Aggregates_kokkos> aggregates_;
+    const Teuchos::RCP<const Aggregates> aggregates_;
   };
 
 } //namespace MueLu

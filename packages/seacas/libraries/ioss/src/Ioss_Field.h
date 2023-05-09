@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -122,10 +122,21 @@ namespace Ioss {
     std::string get_component_name(int component_index, InOut in_out, char suffix = 1) const;
     int         get_component_count(InOut in_out) const;
 
-    void set_suffix_separator(char suffix_separator) { suffixSeparator_ = suffix_separator; }
-    char get_suffix_separator() const { return suffixSeparator_; }
-    void set_suffices_uppercase(bool true_false) { sufficesUppercase_ = true_false; }
+    Field &set_suffix_separator(char suffix_separator)
+    {
+      suffixSeparator_ = suffix_separator;
+      return *this;
+    }
+    char   get_suffix_separator() const { return suffixSeparator_; }
+    Field &set_suffices_uppercase(bool true_false)
+    {
+      sufficesUppercase_ = true_false;
+      return *this;
+    }
     bool get_suffices_uppercase() const { return sufficesUppercase_; }
+
+    Field &set_zero_copy_enabled(bool true_false = true);
+    bool   zero_copy_enabled() const { return zeroCopyable_; }
 
     /** \brief Get the basic data type of the data held in the field.
      *
@@ -147,8 +158,17 @@ namespace Ioss {
      */
     RoleType get_role() const { return role_; }
 
-    size_t get_index() const { return index_; }
-    void   set_index(size_t index) const { index_ = index; }
+    size_t       get_index() const { return index_; }
+    const Field &set_index(size_t index) const
+    {
+      index_ = index;
+      return *this;
+    }
+    Field &set_index(size_t index)
+    {
+      index_ = index;
+      return *this;
+    }
 
     void reset_count(size_t new_count);  // new number of items in field
     void reset_type(BasicType new_type); // new type of items in field.
@@ -162,7 +182,7 @@ namespace Ioss {
     // throws exception if the types don't match.
     void check_type(BasicType the_type) const;
 
-    bool               is_type(BasicType the_type) const { return the_type == type_; }
+    bool is_type(BasicType the_type) const { return the_type == type_; }
 
     std::string        type_string() const;
     static std::string type_string(BasicType type);
@@ -175,7 +195,7 @@ namespace Ioss {
     bool has_transform() const { return !transforms_.empty(); }
 
   private:
-    std::string name_;
+    std::string name_{};
 
     size_t rawCount_{};   // Count of items in field before transformation
     size_t transCount_{}; // Count of items in field after transformed
@@ -186,12 +206,13 @@ namespace Ioss {
     BasicType type_{INVALID};
     RoleType  role_{INTERNAL};
 
-    const VariableType *rawStorage_{};   // Storage type of raw field
-    const VariableType *transStorage_{}; // Storage type after transformation
+    const VariableType *rawStorage_{nullptr};   // Storage type of raw field
+    const VariableType *transStorage_{nullptr}; // Storage type after transformation
 
-    std::vector<Transform *> transforms_;
+    std::vector<Transform *> transforms_{};
     char                     suffixSeparator_{1}; // Value = 1 means unset; use database default.
     bool sufficesUppercase_{false}; // True if the suffices are uppercase on database...
+    bool zeroCopyable_{false};      // True if the field is zero-copyable.
 
     bool equal_(const Ioss::Field &rhs, bool quiet) const;
   };

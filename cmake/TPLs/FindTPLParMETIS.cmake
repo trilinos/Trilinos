@@ -58,35 +58,3 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( ParMETIS
   REQUIRED_HEADERS "parmetis.h;metis.h"
   REQUIRED_LIBS_NAMES "parmetis;metis"
   )
-
-# Zoltan2 has a dependency on ParMETIS 4.0.3
-
-include(CheckCSourceCompiles)
-FUNCTION(CHECK_PARMETIS_HAS_VERSION_4_0_3  VARNAME)
-  SET(SOURCE
-  "
-  #include <stdio.h>
-  #include <parmetis.h>
-  int main()
-  {
-    #if PARMETIS_MAJOR_VERSION > 4
-      return 0;
-    #elif PARMETIS_MAJOR_VERSION == 4 && PARMETIS_MINOR_VERSION > 0
-      return 0;
-    #elif PARMETIS_MAJOR_VERSION == 4 && PARMETIS_MINOR_VERSION == 0 && PARMETIS_SUBMINOR_VERSION >= 3
-      return 0;
-    #else
-      parmetis_version_failure
-    #endif
-  }
-
-  "
-  )
-  SET(CMAKE_REQUIRED_LIBRARIES ParMETIS::all_libs)
-  CHECK_C_SOURCE_COMPILES("${SOURCE}" ${VARNAME})
-ENDFUNCTION()
-
-# We can't compile ParMETIS without MPI
-IF(TPL_ENABLE_MPI AND TPL_ENABLE_ParMETIS)
-  CHECK_PARMETIS_HAS_VERSION_4_0_3(HAVE_PARMETIS_VERSION_4_0_3)
-ENDIF()

@@ -727,6 +727,7 @@ int get_vertices(MeshEntityPtr e, MeshEntityPtr* verts)
       verts[1] = down[1];
 
       ndown = get_downward(e->get_down(1), 0, down);
+        
       apply_orientation(e->get_down_orientation(1), down, ndown);
       verts[2] = down[1];
 
@@ -1272,10 +1273,21 @@ std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm)
 {
   Mesh* m = new Mesh(comm);
   std::shared_ptr<Mesh> mp(m);
-  auto f = create_field<impl::GeoClassification>(mp, FieldShape(1, 1, 1), 1);
+  auto f = create_field<impl::GeoClassification>(mp, FieldShape(1, 1, 1), 1, impl::GeoClassification(), true);
   mp->set_geo_classification(f);
   // auto mesh = std::make_shared<Mesh>();
   return mp;
+}
+
+int count_entities_of_type(std::shared_ptr<mesh::Mesh> mesh, MeshEntityType type)
+{
+  int count = 0;
+  int dim = get_type_dimension(type);
+  for (auto& entity : mesh->get_mesh_entities(dim))
+    if (entity && entity->get_type() == type)
+      count++;
+
+  return count;
 }
 
 } // namespace mesh

@@ -42,9 +42,6 @@ TEST(MeshAgglomerator, All)
       partitionEdges.insert(edge);
   }
 
-  for (auto& edge : partitionEdges)
-    std::cout << "partition edge = " << edge << std::endl;
-
   auto funcE = [partitionEdges](MeshEntityPtr edge) { return partitionEdges.count(edge) > 0; };
 
   MeshAgglomerator agg(mesh1, funcE);

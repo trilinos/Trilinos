@@ -469,13 +469,17 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: degree", numIters);
   params.set ("chebyshev: max eigenvalue", lambdaMax);
 
-  // Create the operators: Ifpack2, textbook Chebyshev, and custom CG.
+  // Create the operators: Ifpack2, 4th-kind Chebyshev, textbook Chebyshev, and custom CG.
   prec_type ifpack2Cheby (A);
   Ifpack2::Details::Chebyshev<ST, MV> myCheby (A);
+
+  prec_type ifpack2FourthCheby (A);
+  Ifpack2::Details::Chebyshev<ST, MV> myFourthKindCheby (A);
+
   CG<ST, MV, crs_matrix_type> cg (A);
 
   // Residual 2-norms for comparison.
-  MT maxResNormIfpack2, maxResNormTextbook, maxResNormCg;
+  MT maxResNormIfpack2, maxResNormFourthKind, maxResNormTextbook, maxResNormCg;
 
   ////////////////////////////////////////////////////////////////////
   // Test 1: set lambdaMax exactly, use default values of eigRatio and
@@ -492,9 +496,21 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
 
+  // Run Ifpack2's 4th-kind Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.initialize ();
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -511,6 +527,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin and eigRatio:" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
@@ -520,7 +537,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   ////////////////////////////////////////////////////////////////////
 
   // Reset parameters.
-  params.set ("chebyshev: textbook algorithm", false);
+  params.set ("chebyshev: algorithm", "first");
   params.set ("chebyshev: min eigenvalue", lambdaMin);
   params.set ("chebyshev: ratio eigenvalue", eigRatio);
 
@@ -534,9 +551,20 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
 
+  // Run 4th-kind Chebyshev
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -553,11 +581,12 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", lambdaMin = " << lambdaMin << ", eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: textbook algorithm", false);
+  params.set ("chebyshev: algorithm", "first");
   // ParameterList is NOT a delta.  That is, if we remove these
   // parameters from the list, setParameters() will use default
   // values, rather than letting the current settings remain.
@@ -585,10 +614,22 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   A->apply (x, r, Teuchos::NO_TRANS, -one, one);
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  
+  // Run Ifpack2's 4th-kind Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.initialize ();
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -605,11 +646,12 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: textbook algorithm", false);
+  params.set ("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 4: set lambdaMax exactly, and set eigRatio = 30 (Ifpack's
@@ -631,9 +673,21 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
 
+  // Run Ifpack2's 4th-kind Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.initialize ();
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -650,11 +704,12 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters to their original values.
-  params.set ("chebyshev: textbook algorithm", false);
+  params.set ("chebyshev: algorithm", "first");
   params.remove ("chebyshev: ratio eigenvalue", false);
   eigRatio = lambdaMax / lambdaMin;
 
@@ -677,9 +732,21 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
 
+  // Run Ifpack2's 4th-kind Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.initialize ();
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -696,6 +763,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
     "with numEigIters = " << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
@@ -704,7 +772,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.print (os2);
 
   // Reset parameters.
-  params.set ("chebyshev: textbook algorithm", false);
+  params.set ("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 6: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
@@ -728,9 +796,21 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
 
+  // Run Ifpack2's 4th-kind Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  params.set ("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters (params);
+  ifpack2FourthCheby.initialize ();
+  ifpack2FourthCheby.compute ();
+  ifpack2FourthCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: textbook algorithm", true);
+  params.set ("chebyshev: algorithm", "textbook");
   myCheby.setParameters (params);
   myCheby.compute ();
   (void) myCheby.apply (b, x);
@@ -747,18 +827,19 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
     "with numEigIters = " << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
+      << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // For this case, if there are enough eigenanalysis iterations,
-  // Ifpack2 should do quite a bit better than the textbook version of
+  // Ifpack2 (with standard and 4th-kind polynomials) should do quite a bit better than the textbook version of
   // the algorithm.  We'll be generous and say that it does "no worse"
   // than the textbook version.  We give "wiggle room" of four digits
   // for defining "no worse than."
   if (numEigIters >= 15) {
     const MT tol = Teuchos::as<MT> (1.0e-4);
     // Avoid division by zero when computing relative accuracy.
-    const MT relDiff = maxResNormTextbook == zero ?
+    MT relDiff = maxResNormTextbook == zero ?
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) :
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -768,6 +849,17 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
       "does quite a bit worse than the textbook version of the algorithm.  The "
       "former has a max relative residual norm of " << maxResNormIfpack2 << ", "
+      "and the latter of " << maxResNormTextbook << ".");
+    relDiff = maxResNormTextbook == zero ?
+      STS::magnitude (maxResNormFourthKind - maxResNormTextbook) :
+      STS::magnitude (maxResNormFourthKind - maxResNormTextbook) / maxResNormTextbook;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      maxResNormFourthKind > maxResNormTextbook && relDiff > tol,
+      std::runtime_error,
+      "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
+      << lambdaMax << " and default lambdaMin and eigRatio, 4th-kind Ifpack2::Chebyshev "
+      "does quite a bit worse than the textbook version of the algorithm.  The "
+      "former has a max relative residual norm of " << maxResNormFourthKind << ", "
       "and the latter of " << maxResNormTextbook << ".");
   }
 

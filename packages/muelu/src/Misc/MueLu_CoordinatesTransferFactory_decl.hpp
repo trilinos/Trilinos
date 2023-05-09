@@ -52,7 +52,7 @@
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {

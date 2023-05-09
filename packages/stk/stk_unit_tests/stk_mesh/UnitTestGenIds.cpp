@@ -273,7 +273,7 @@ void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64
     {
       for (size_t j=0;j<uniqueIds.size();j++)
       {
-        ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
+        STK_ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
         EXPECT_FALSE(std::binary_search(myIds.begin(), myIds.end(), uniqueIds[j]));
         EXPECT_EQ(true, sendIdToCheck(i, uniqueIds[j], mpiInfo.getMpiComm()));
       }
@@ -294,7 +294,7 @@ void checkUniqueIds(stk::mesh::BulkData &stkMeshBulkData, const std::vector<uint
     {
       for (size_t j=0;j<uniqueIds.size();j++)
       {
-        ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
+        STK_ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
 
         stk::mesh::Entity entity = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, uniqueIds[j]);
         EXPECT_FALSE(stkMeshBulkData.is_valid(entity));
@@ -574,7 +574,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
         if ( procIndex == mpiInfo.getProcId() )
         {
           getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
-          ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+          STK_ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
           terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
         }
         else
@@ -648,7 +648,7 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
         if ( procIndex == mpiInfo.getProcId() )
         {
           getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, stkMeshBulkData, maxId, mpiInfo);
-          ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+          STK_ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
           terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
         }
         else

@@ -327,7 +327,7 @@ namespace Adelus {
   #if defined(KOKKOS_ENABLE_CUDA)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
   #elif defined(KOKKOS_ENABLE_HIP)
-    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
   #endif
   #endif
 
@@ -375,6 +375,13 @@ namespace Adelus {
   
         ptr1_idx++;
       }
+
+  //Workaround for GPU-aware MPI issue on HIP: fence here to make sure "zcopy_wr_global_index"
+  //                                           completes before MPI_Allreduce
+  #if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
+      Kokkos::fence();
+  #endif
+
   #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   #ifdef GET_TIMING
       t1 = MPI_Wtime();
@@ -390,7 +397,7 @@ namespace Adelus {
                          subview(h_rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
   #else //GPU-aware MPI
       MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
-  
+
       Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
                          subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
   #endif  

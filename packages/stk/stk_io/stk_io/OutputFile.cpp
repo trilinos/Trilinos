@@ -142,7 +142,7 @@ void OutputFile::setup_output_params(OutputParams &params) const
 
 void OutputFile::set_input_region(const Ioss::Region *input_region)
 {
-    ThrowErrorMsgIf (m_region.get() == input_region,
+    STK_ThrowErrorMsgIf(m_region.get() == input_region,
                      "Attempting to set the input region to the output region");
 
     m_inputRegion = input_region;
@@ -187,7 +187,7 @@ void internal_fill_output_entities_for_sideblock(stk::io::OutputParams& params, 
 {
     std::vector<INT> elem_side_ids;
     Ioss::SideBlock *block = dynamic_cast<Ioss::SideBlock*>(ge);
-    ThrowRequireMsg(nullptr != block, "Input GroupingEntity is not a sideblock");
+    STK_ThrowRequireMsg(nullptr != block, "Input GroupingEntity is not a sideblock");
     const Ioss::ElementTopology *parent_topology = block->parent_element_topology();
     fill_data_for_side_block(params, *ge, part, parent_topology, elem_side_ids, sides);
 }
@@ -205,7 +205,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
     }
 
     Ioss::GroupingEntity *ge = m_region->get_entity(name);
-    ThrowErrorMsgIf (ge == nullptr,
+    STK_ThrowErrorMsgIf(ge == nullptr,
                      "Could not find grouping entity with name: " + name);
 
     Ioss::EntityType type = ge->type();
@@ -218,7 +218,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
         part_type = m_outputParams->has_skin_mesh_selector() ? meta.side_rank() : stk::topology::ELEMENT_RANK;
     } else if(type == Ioss::SIDESET) {
         part = meta.get_part(name);
-        ThrowRequireMsg(nullptr != part, "Could not find a sideset with name: " + name);
+        STK_ThrowRequireMsg(nullptr != part, "Could not find a sideset with name: " + name);
         part_type = part->primary_entity_rank();
 
         Ioss::SideBlock *sb = m_region->get_sideblock(name);
@@ -228,7 +228,7 @@ std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::
         }
     } else if(type == Ioss::SIDEBLOCK) {
         part = meta.get_part(name);
-        ThrowRequireMsg(nullptr != part, "Could not find a sideblock with name: " + name);
+        STK_ThrowRequireMsg(nullptr != part, "Could not find a sideblock with name: " + name);
         part_type = part->primary_entity_rank();
     }
 
@@ -256,9 +256,9 @@ void OutputFile::add_attribute_field(stk::mesh::FieldBase &field, const OutputVa
 {
     const std::string &alternate_name = var.name();
 
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "Attempting to add attribute fields after fields have already been written to the database.");
-    ThrowErrorMsgIf (alternate_name.empty(),
+    STK_ThrowErrorMsgIf(alternate_name.empty(),
                      "Attempting to add attribute field " << field.name() << " with no name.");
 
     stk::io::FieldAndName *existingEntry = nullptr;
@@ -295,9 +295,9 @@ void OutputFile::add_field(stk::mesh::FieldBase &field, const OutputVariablePara
 {
     const std::string &alternate_name = var.name();
 
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "Attempting to add fields after fields have already been written to the database.");
-    ThrowErrorMsgIf (alternate_name.empty(),
+    STK_ThrowErrorMsgIf(alternate_name.empty(),
                      "Attempting to output results field " << field.name() << " with no name.");
 
     bool fieldAlreadyExists=false;
@@ -347,9 +347,9 @@ void OutputFile::add_field(stk::mesh::FieldBase &field, const OutputVariablePara
 
 void OutputFile::add_user_data(const std::vector<std::string>& partNames, const std::string &alternate_name, stk::io::DataLocation loc)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "Attempting to add fields after fields have already been written to the database.");
-    ThrowErrorMsgIf (alternate_name.empty(),
+    STK_ThrowErrorMsgIf(alternate_name.empty(),
                      "Attempting to output results field with no name.");
 
     bool fieldAlreadyExists=false;
@@ -370,7 +370,7 @@ void OutputFile::add_user_data(const std::vector<std::string>& partNames, const 
 
 void OutputFile::add_global_ref(const std::string &name, const stk::util::Parameter &param)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
@@ -385,7 +385,7 @@ bool OutputFile::has_global(const std::string &globalVarName) const
 
 void OutputFile::add_global(const std::string &name, const stk::util::Parameter &param)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
@@ -395,7 +395,7 @@ void OutputFile::add_global(const std::string &name, const stk::util::Parameter 
 
 void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
@@ -404,7 +404,7 @@ void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::Basic
 
 void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
@@ -413,7 +413,7 @@ void OutputFile::add_global(const std::string &globalVarName, int component_coun
 
 void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
 {
-    ThrowErrorMsgIf (m_fieldsDefined,
+    STK_ThrowErrorMsgIf(m_fieldsDefined,
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
@@ -450,7 +450,7 @@ void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMac
                                          Ioss::PropertyManager &property_manager, char const* type,
                                          bool openFileImmediately)
 {
-    ThrowErrorMsgIf (filename.empty(),
+    STK_ThrowErrorMsgIf(filename.empty(),
                      "No filename was specified for the output file creation.");
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(type, filename,
                                                     Ioss::WRITE_RESULTS,
@@ -579,7 +579,7 @@ void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
 int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data,
                                              const std::vector<std::vector<int>> &attributeOrdering)
 {
-    ThrowErrorMsgIf(m_anyGlobalVariablesDefined,
+    STK_ThrowErrorMsgIf(m_anyGlobalVariablesDefined,
                     "The output database " << m_region->name() << " has defined global variables, "
                     "but is calling the process_output_request() function which does not output global "
                     "variables.  Call begin_output_step() instead.");
@@ -595,7 +595,7 @@ int OutputFile::process_output_request(double time, const stk::mesh::BulkData& b
 int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::FieldState *state)
 {
     Ioss::Region *region = m_region.get();
-    ThrowErrorMsgIf (region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
+    STK_ThrowErrorMsgIf(region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
     OutputParams params(*region, bulk_data);
     setup_output_params(params);
@@ -669,7 +669,7 @@ int OutputFile::write_defined_output_fields_for_selected_subset(const stk::mesh:
                                                                       const stk::mesh::FieldState *state)
 {
     Ioss::Region *region = m_region.get();
-    ThrowErrorMsgIf (region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
+    STK_ThrowErrorMsgIf(region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
     OutputParams params(*region, bulk_data);
     setup_output_params(params);
@@ -698,7 +698,7 @@ void OutputFile::end_output_step()
 
 void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
                     " the subset_selector cannot be changed after the mesh has already been written.");
     m_subsetSelector = my_selector;
@@ -706,7 +706,7 @@ void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_select
 
 void OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
                     " the shared_selector cannot be changed after the mesh has already been written.");
     m_sharedSelector = my_selector;
@@ -714,11 +714,11 @@ void OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_select
 
 void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
                     " the output_selector cannot be changed after the mesh has already been written.");
 
-    ThrowErrorMsgIf(!(rank >= stk::topology::NODE_RANK && rank <= stk::topology::ELEM_RANK),
+    STK_ThrowErrorMsgIf(!(rank >= stk::topology::NODE_RANK && rank <= stk::topology::ELEM_RANK),
                     "ERROR: On region named " << m_region->name() <<
                     " the output_selector must be NODE, EDGE, FACE or ELEM.");
 
@@ -727,7 +727,7 @@ void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<st
 
 void OutputFile::set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
                     " the subset_selector cannot be changed after the mesh has already been written.");
     m_skinMeshSelector = my_selector;
@@ -740,7 +740,7 @@ bool OutputFile::use_nodeset_for_block_nodes_fields() const
 
 void OutputFile::use_nodeset_for_block_nodes_fields(bool flag)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_nodeset_for_block_nodes_fields setting cannot be changed after "
                     "the mesh has already been written.");
     m_useNodesetForBlockNodesFields = flag;
@@ -753,7 +753,7 @@ bool OutputFile::use_nodeset_for_sideset_nodes_fields() const
 
 void OutputFile::use_nodeset_for_sideset_nodes_fields(bool flag)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_nodeset_for_sideset_nodes_fields setting cannot be changed after "
                     "the mesh has already been written.");
     m_useNodesetForSidesetNodesFields = flag;
@@ -766,7 +766,7 @@ bool OutputFile::check_field_existence_when_creating_nodesets() const
 
 void OutputFile::check_field_existence_when_creating_nodesets(bool flag)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The check_field_existence_when_creating_nodesets setting cannot be changed after "
                     "the mesh has already been written.");
     m_checkFieldExistenceWhenCreatingNodesets = flag;
@@ -779,7 +779,7 @@ bool OutputFile::use_part_id_for_output() const
 
 void OutputFile::use_part_id_for_output(bool flag)
 {
-    ThrowErrorMsgIf(m_meshDefined,
+    STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_part_id_for_output setting cannot be changed after "
                     "the mesh has already been written.");
     m_usePartIdForOutput = flag;

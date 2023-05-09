@@ -83,7 +83,7 @@ public:
               {
                   const stk::mesh::Bucket & connectedBucket = m_bulk.bucket(otherElement);
       
-                  ThrowAssertMsg(connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes() == sideNodes.size(),
+                  STK_ThrowAssertMsg(connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes() == sideNodes.size(),
                                 "Error, number of nodes on sides of adjacent elements do not agree:  " <<
                                  sideNodes.size() << " != " << connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes());
   

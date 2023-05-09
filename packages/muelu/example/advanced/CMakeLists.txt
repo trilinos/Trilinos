@@ -3,7 +3,7 @@
 # this example, though!  We should figure out how to test it in a
 # sensible way without needing ThrustGPUNode.
 #
-#IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND
+#IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
 #   TpetraClassic_ENABLE_ThrustGPUNode AND TpetraClassic_ENABLE_TPINode)
 #  ADD_SUBDIRECTORY(clone)
 #ENDIF()

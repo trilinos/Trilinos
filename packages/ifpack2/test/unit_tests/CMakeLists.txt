@@ -83,6 +83,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    DatabaseSchwarz
+    SOURCES Ifpack2_UnitTestDatabaseSchwarz.cpp Ifpack2_UnitTestMain.cpp
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 		RBILUK
 		SOURCES
 		Ifpack2_UnitTestRBILUK.cpp

@@ -64,11 +64,13 @@ int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   typedef double Scalar;
+  //typedef std::complex<double> Scalar;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
 
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
+  typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar>> reader_type;
 
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -88,17 +90,23 @@ int main(int argc, char *argv[]) {
   bool printTiming   = false;
   bool equil         = false;
   bool tinyPivot     = true;
+  bool multiSolves   = false;
   bool solveIR       = false;
+  int  mc64_job      = 1;
   int  numIRs        = 5;
   bool verboseIR     = true;
   bool verbose       = true;
   std::string solverName("SuperLUDist");
+  std::string rowPerm("NOROWPERM");
   std::string filename("arc130.mtx");
   std::string rhsFilename("");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("equil","noEquil",&equil,"Use Equil.");
+  cmdp.setOption("rowperm",&rowPerm,"RowPerm.");
+  cmdp.setOption("job",&mc64_job,"Option for MC64.");
   cmdp.setOption("tinyPivot","noTinyPivot",&tinyPivot,"Replace tiny pivot.");
+  cmdp.setOption("multiSolves","noMultiSolves",&multiSolves,"Do numerical factor and solve twice.");
   cmdp.setOption("solveIR","noSolveIR",&solveIR,"Solve with IR.");
   cmdp.setOption("solver",&solverName,"Solver name");
   cmdp.setOption("filename",&filename,"Filename for Matrix-Market test matrix.");
@@ -132,7 +140,6 @@ int main(int argc, char *argv[]) {
   // Create B
   RCP<MV> B = rcp(new MV(rngmap,numVectors));
   if (rhsFilename != "") {
-    typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar>> reader_type;
     B = reader_type::readDenseFile (rhsFilename, comm, rngmap, false, false);
   } else {
     A->apply (*Xhat, *B);
@@ -146,6 +153,8 @@ int main(int argc, char *argv[]) {
   if (solverName == "SuperLUDist") {
     auto superlu_params = Teuchos::sublist(Teuchos::rcpFromRef(amesos2_params), "SuperLU_DIST");
     superlu_params->set("Equil", equil);
+    superlu_params->set("RowPerm", rowPerm);
+    superlu_params->set("LargeDiag_MC64-Options", mc64_job);
     superlu_params->set("ReplaceTinyPivot", tinyPivot);
   }
   if (solveIR) {
@@ -155,6 +164,9 @@ int main(int argc, char *argv[]) {
   }
   solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
   solver->symbolicFactorization().numericFactorization().solve();
+  if (multiSolves) {
+    solver->numericFactorization().solve();
+  }
 
   if (verbose) {
     using mag_type = MV::mag_type;

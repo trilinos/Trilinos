@@ -54,7 +54,7 @@ public:
   explicit DeviceVariableMap(const ParsedEval<RESULT_BUFFER_SIZE> & parsedEval)
     : m_arrayOffsetType(parsedEval.m_arrayOffsetType)
   {
-    NGP_ThrowRequireMsg(parsedEval.get_num_variables() <= MAX_BOUND_VARIABLES,
+    STK_NGP_ThrowRequireMsg(parsedEval.get_num_variables() <= MAX_BOUND_VARIABLES,
                         "stk::expreval::DeviceVariableMap is not large enough to hold all variables");
 
     KOKKOS_IF_ON_DEVICE((

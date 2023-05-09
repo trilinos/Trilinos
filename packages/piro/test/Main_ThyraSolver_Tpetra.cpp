@@ -55,9 +55,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Tpetra_Core.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#endif
+#include "Piro_ProductModelEval.hpp"
 
 #ifdef HAVE_PIRO_MUELU
 #include "Stratimikos_MueLuHelpers.hpp"
@@ -124,12 +122,16 @@ int main(int argc, char *argv[]) {
                 rcp(new Teuchos::ParameterList("Piro Parameters"));
             Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
-            const RCP<Thyra::ModelEvaluator<double>> model = rcp(new MockModelEval_A_Tpetra(appComm));
+            std::vector<int> p_indices{0};
+            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm));
+            const RCP<Thyra::ModelEvaluator<double>> model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
             bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
             bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
             RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
-            if(explicitAdjointME)
-              adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
+            if(explicitAdjointME) {
+              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+            }
 
             // Use these two objects to construct a Piro solved application
             RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double>> piro;
@@ -137,12 +139,6 @@ int main(int argc, char *argv[]) {
                 const RCP<Teuchos::ParameterList> stratParams = Piro::extractStratimikosParams(piroParams);
 
                 Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-#ifdef HAVE_PIRO_IFPACK2
-                typedef Thyra::PreconditionerFactoryBase<double> Base;
-                typedef Thyra::Ifpack2PreconditionerFactory<Tpetra_CrsMatrix> Impl;
-                linearSolverBuilder.setPreconditioningStrategyFactory(
-                    Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
                 linearSolverBuilder.setParameterList(stratParams);
 
                 RCP<Thyra::LinearOpWithSolveFactoryBase<double>> lowsFactory =

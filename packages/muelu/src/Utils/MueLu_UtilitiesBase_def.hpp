@@ -250,6 +250,8 @@ namespace MueLu {
     using local_matrix_type = typename Matrix::local_matrix_type;
     // using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using value_type        = typename local_matrix_type::value_type;
+    using values_type       = typename local_matrix_type::values_type;
+    using scalar_type       = typename values_type::non_const_value_type;
     using ordinal_type      = typename local_matrix_type::ordinal_type;
     using execution_space   = typename local_matrix_type::execution_space;
     // using memory_space      = typename local_matrix_type::memory_space;
@@ -270,6 +272,8 @@ namespace MueLu {
 
     ordinal_type numRows = localMatrix.graph.numRows();
 
+    scalar_type valReplacement_dev = valReplacement;
+
     // Note: 2019-11-21, LBV
     // This could be implemented with a TeamPolicy over the rows
     // and a TeamVectorRange over the entries in a row if performance
@@ -286,7 +290,7 @@ namespace MueLu {
                                  if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
                                    diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
                                  } else {
-                                   diagVals(rowIdx, 0) = valReplacement;
+                                   diagVals(rowIdx, 0) = valReplacement_dev;
                                  }
                                  break;
                                }
@@ -305,7 +309,7 @@ namespace MueLu {
                              if(KAT::magnitude(diagVals(rowIdx, 0)) > KAT::magnitude(tol))
                                diagVals(rowIdx, 0) = KAT::one() / diagVals(rowIdx, 0);
                              else
-                               diagVals(rowIdx, 0) = valReplacement;
+                               diagVals(rowIdx, 0) = valReplacement_dev;
 
                            });
 
@@ -947,7 +951,6 @@ namespace MueLu {
 
 
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Am = helpers::Op2TpetraBlockCrs(A);
       auto b_graph      = Am.getCrsGraph().getLocalGraphDevice();
       auto b_rowptr     = Am.getCrsGraph().getLocalRowPtrsDevice();
@@ -984,9 +987,6 @@ namespace MueLu {
                            });
 
       return boundaryNodes;
-#else
-      throw Exceptions::RuntimeError("BlockCrs requires Tpetra");
-#endif
     }
     else {
       auto localMatrix = A.getLocalMatrixDevice();

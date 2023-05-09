@@ -52,10 +52,9 @@
 
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
   /*!
@@ -112,19 +111,19 @@ namespace MueLu {
 
     void BuildAggregates(const Teuchos::ParameterList& params,
                          const LWGraph_kokkos& graph,
-                         Aggregates_kokkos& aggregates,
+                         Aggregates& aggregates,
                          Kokkos::View<unsigned*, device_type>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesRandom(const Teuchos::ParameterList& params,
                                const LWGraph_kokkos& graph,
-                               Aggregates_kokkos& aggregates,
+                               Aggregates& aggregates,
                                Kokkos::View<unsigned*, device_type>& aggStat,
                                LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesDeterministic(const Teuchos::ParameterList& params,
                                       const LWGraph_kokkos& graph,
-                                      Aggregates_kokkos& aggregates,
+                                      Aggregates& aggregates,
                                       Kokkos::View<unsigned*, device_type>& aggStat,
                                       LO& numNonAggregatedNodes) const;
     //@}

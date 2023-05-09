@@ -127,7 +127,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &sendLists,
     MPI_Comm_size(mpiCommunicator, &num_procs);
     int my_proc;
     MPI_Comm_rank(mpiCommunicator, &my_proc);
-    ThrowRequire((unsigned int) num_procs == sendLists.size() && (unsigned int) num_procs == recvLists.size());
+    STK_ThrowRequire((unsigned int) num_procs == sendLists.size() && (unsigned int) num_procs == recvLists.size());
     int class_size = sizeof(T);
     //
     //  Determine number of items each other processor will send to the current processor

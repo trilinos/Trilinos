@@ -1099,20 +1099,20 @@ void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr)
   struct ex__obj_stats *tmp_ptr            = *obj_ptr;
   struct ex__obj_stats *last_head_list_ptr = *obj_ptr; /* save last head pointer */
 
-  while (tmp_ptr) /* Walk linked list of file ids/vals */
+  while (tmp_ptr)                                      /* Walk linked list of file ids/vals */
   {
-    if (exoid == tmp_ptr->exoid) /* linear search for exodus file id */
+    if (exoid == tmp_ptr->exoid)                       /* linear search for exodus file id */
     {
-      if (tmp_ptr == *obj_ptr) {     /* Are we at the head of the list? */
-        *obj_ptr = (*obj_ptr)->next; /*   yes, reset ptr to head of list */
+      if (tmp_ptr == *obj_ptr) {                       /* Are we at the head of the list? */
+        *obj_ptr = (*obj_ptr)->next;                   /*   yes, reset ptr to head of list */
       }
-      else { /*   no, remove this record from chain*/
+      else {                                           /*   no, remove this record from chain*/
         last_head_list_ptr->next = tmp_ptr->next;
       }
       free(tmp_ptr->id_vals); /* free up memory */
       free(tmp_ptr->stat_vals);
       free(tmp_ptr);
-      break; /* Quit if found */
+      break;                            /* Quit if found */
     }
     last_head_list_ptr = tmp_ptr;       /* save last head pointer */
     tmp_ptr            = tmp_ptr->next; /* Loop back if not */
@@ -1199,12 +1199,12 @@ struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type)
 int ex__inc_file_item(int                    exoid,    /* file id */
                       struct ex__list_item **list_ptr) /* ptr to ptr to list_item */
 {
-  struct ex__list_item *tlist_ptr = *list_ptr; /* use temp list ptr to walk linked list */
-  while (tlist_ptr) {                          /* Walk linked list of file ids/vals */
-    if (exoid == tlist_ptr->exo_id) {          /* linear search for exodus file id */
-      break;                                   /* Quit if found */
+  struct ex__list_item *tlist_ptr = *list_ptr;         /* use temp list ptr to walk linked list */
+  while (tlist_ptr) {                                  /* Walk linked list of file ids/vals */
+    if (exoid == tlist_ptr->exo_id) {                  /* linear search for exodus file id */
+      break;                                           /* Quit if found */
     }
-    tlist_ptr = tlist_ptr->next; /* Loop back if not */
+    tlist_ptr = tlist_ptr->next;                       /* Loop back if not */
   }
 
   if (!tlist_ptr) { /* ptr NULL? */
@@ -1257,7 +1257,7 @@ int ex__get_file_item(int                    exoid,    /* file id */
     if (exoid == tlist_ptr->exo_id) {          /* linear search for exodus file id */
       break;                                   /* Quit if found */
     }
-    tlist_ptr = tlist_ptr->next; /* Loop back if not */
+    tlist_ptr = tlist_ptr->next;               /* Loop back if not */
   }
 
   if (!tlist_ptr) { /* ptr NULL? */
@@ -1304,11 +1304,11 @@ void ex__rm_file_item(int                    exoid,    /* file id */
       if (tlist_ptr == *list_ptr) {    /* Are we at the head of the list? */
         *list_ptr = (*list_ptr)->next; /*   yes, reset ptr to head of list */
       }
-      else { /*   no, remove this record from chain*/
+      else {                           /*   no, remove this record from chain*/
         last_head_list_ptr->next = tlist_ptr->next;
       }
-      free(tlist_ptr); /* free up memory */
-      break;           /* Quit if found */
+      free(tlist_ptr);                    /* free up memory */
+      break;                              /* Quit if found */
     }
     last_head_list_ptr = tlist_ptr;       /* save last head pointer */
     tlist_ptr          = tlist_ptr->next; /* Loop back if not */
@@ -2268,11 +2268,11 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
 #else
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
 #endif
-  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-  ex_err_fn(exoid, __func__, errmsg, status);
-  return (EX_FATAL);
-}
-return EX_NOERR;
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    return (EX_FATAL);
+  }
+  return EX_NOERR;
 }
 
 /*!
@@ -2288,4 +2288,93 @@ char *ex_copy_string(char *dest, char const *source, size_t elements)
   }
   *d = '\0';
   return d;
+}
+
+/*
+ * Code from:
+ * https://stackoverflow.com/questions/11034002/how-to-get-absolute-path-of-file-or-directory-that-does-not-exist
+ *
+ * Return the input path in a canonical form. This is achieved by
+ * expanding all symbolic links, resolving references to "." and "..",
+ * and removing duplicate "/" characters.
+ *
+ * If the file exists, its path is canonicalized and returned. If the file,
+ * or parts of the containing directory, do not exist, path components are
+ * removed from the end until an existing path is found. The remainder of the
+ * path is then appended to the canonical form of the existing path,
+ * and returned. Consequently, the returned path may not exist. The portion
+ * of the path which exists, however, is represented in canonical form.
+ *
+ * If successful, this function returns a C-string, which needs to be freed by
+ * the caller using free().
+ *
+ * ARGUMENTS:
+ *   file_path
+ *   File path, whose canonical form to return.
+ *
+ * RETURNS:
+ *   On success, returns the canonical path to the file, which needs to be freed
+ *   by the caller.
+ *
+ *   On failure, returns NULL.
+ */
+char *ex__canonicalize_filename(char const *file_path)
+{
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+  return _fullpath(NULL, file_path, _MAX_PATH);
+#else
+  char        *canonical_file_path = NULL;
+  unsigned int file_path_len       = strlen(file_path);
+
+  if (file_path_len > 0) {
+    canonical_file_path = realpath(file_path, NULL);
+    if (canonical_file_path == NULL && errno == ENOENT) {
+      // The file was not found. Back up to a segment which exists,
+      // and append the remainder of the path to it.
+      char *file_path_copy = NULL;
+      if (file_path[0] == '/' || (strncmp(file_path, "./", 2) == 0) ||
+          (strncmp(file_path, "../", 3) == 0)) {
+        // Absolute path, or path starts with "./" or "../"
+        file_path_copy = strdup(file_path);
+      }
+      else {
+        // Relative path
+        file_path_copy = (char *)malloc(strlen(file_path) + 3);
+        strcpy(file_path_copy, "./");
+        strcat(file_path_copy, file_path);
+      }
+
+      // Remove path components from the end, until an existing path is found
+      for (int char_idx = strlen(file_path_copy) - 1; char_idx >= 0 && canonical_file_path == NULL;
+           --char_idx) {
+        if (file_path_copy[char_idx] == '/') {
+          // Remove the slash character
+          file_path_copy[char_idx] = '\0';
+
+          canonical_file_path = realpath(file_path_copy, NULL);
+          if (canonical_file_path != NULL) {
+            // An existing path was found. Append the remainder of the path
+            // to a canonical form of the existing path.
+            char *combined_file_path = (char *)malloc(strlen(canonical_file_path) +
+                                                      strlen(file_path_copy + char_idx + 1) + 2);
+            strcpy(combined_file_path, canonical_file_path);
+            strcat(combined_file_path, "/");
+            strcat(combined_file_path, file_path_copy + char_idx + 1);
+            free(canonical_file_path);
+            canonical_file_path = combined_file_path;
+          }
+          else {
+            // The path segment does not exist. Replace the slash character
+            // and keep trying by removing the previous path component.
+            file_path_copy[char_idx] = '/';
+          }
+        }
+      }
+
+      free(file_path_copy);
+    }
+  }
+  return canonical_file_path;
+#endif
 }

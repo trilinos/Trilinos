@@ -43,6 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
+#include "MueLu_PerfModels_decl.hpp"
+
 #include <cstdio>
 #include <cmath>
 #include <numeric>
@@ -51,7 +53,14 @@
 #include <iomanip>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Kokkos_ArithTraits.hpp>
-#include "MueLu_PerfModels_decl.hpp"
+#include <Xpetra_Import.hpp>
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#include <Xpetra_TpetraImport.hpp>
+#include <Tpetra_Import.hpp>
+#include <Tpetra_Distributor.hpp>
+#include <mpi.h>
+#endif
+
 
 
 #ifdef HAVE_MPI
@@ -198,7 +207,6 @@ namespace MueLu {
       if(nproc < 2) return;
       
 #ifdef HAVE_MPI
-      using range_policy = Kokkos::RangePolicy<exec_space>;
       const int buff_size = (int) pow(2,MAX_SIZE);
       
       sizes.resize(MAX_SIZE+1);
@@ -239,12 +247,102 @@ namespace MueLu {
     }
 
 
+    template <class exec_space, class memory_space, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void halopong_basic(int KERNEL_REPEATS, int MAX_SIZE,const RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > & import, std::vector<int> & sizes, std::vector<double> & times) {
+      int nproc = import->getSourceMap()->getComm()->getSize();      
+      if(nproc < 2) return;     
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+      // NOTE: We need to get the distributer here, which means we need Tpetra, since Xpetra does 
+      // not have a distributor interface
+      using x_import_type = Xpetra::TpetraImport<LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<const x_import_type> Ximport = Teuchos::rcp_dynamic_cast<const x_import_type>(import);
+      RCP<const Teuchos::MpiComm<int> > mcomm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(import->getSourceMap()->getComm());
+      MPI_Comm communicator = *mcomm->getRawMpiComm();
+
+      if(Ximport.is_null() || mcomm.is_null()) return;
+      auto Timport = Ximport->getTpetra_Import();
+      auto distor = Timport->getDistributor();
+
+      // Distributor innards
+      Teuchos::ArrayView<const int> procsFrom = distor.getProcsFrom();
+      Teuchos::ArrayView<const int> procsTo   = distor.getProcsTo();      
+      int num_recvs = (int)distor.getNumReceives();
+      int num_sends = (int)distor.getNumSends();
+            
+
+      const int buff_size_per_msg = (int) pow(2,MAX_SIZE);      
+      sizes.resize(MAX_SIZE+1);
+      times.resize(MAX_SIZE+1);
+      
+      // Allocate memory for the buffers (and fill send)
+      Kokkos::View<char*,memory_space> f_recv_buf("forward_recv",buff_size_per_msg*num_recvs), f_send_buf("forward_send",buff_size_per_msg*num_sends);
+      Kokkos::View<char*,memory_space> r_recv_buf("reverse_recv",buff_size_per_msg*num_sends), r_send_buf("reverse_send",buff_size_per_msg*num_recvs);
+      Kokkos::deep_copy(f_send_buf,1);
+      Kokkos::deep_copy(r_send_buf,1);
+      
+      std::vector<MPI_Request> requests(num_sends+num_recvs);
+      std::vector<MPI_Status>  status(num_sends+num_recvs);
+
+
+      for(int i = 0; i < MAX_SIZE + 1 ;i ++) {
+        int msg_size = (int) pow(2,i);
+
+        MPI_Barrier(communicator);
+        
+        double t0 = MPI_Wtime();      
+        for(int j = 0; j < KERNEL_REPEATS; j++) {
+          int ct=0;
+          // Recv/Send the forward messsages
+          for(int r=0; r<num_recvs;r++) {
+            const int tag = 1000+j;
+            MPI_Irecv(&f_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
+            ct++;
+          }
+          for(int s=0; s<num_sends;s++) {
+            const int tag = 1000+j;
+            MPI_Isend(&f_send_buf[msg_size*s],msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
+            ct++;
+          }
+          // Wait for the forward messsages
+          MPI_Waitall(ct,requests.data(),status.data());
+
+          ct=0;
+          // Recv/Send the reverse messsages
+          for(int r=0; r<num_sends;r++) {
+            const int tag = 2000+j;
+            MPI_Irecv(&r_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
+            ct++;
+          }
+          for(int s=0; s<num_recvs;s++) {
+            const int tag = 2000+j;
+            MPI_Isend(&r_send_buf[msg_size*s],msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
+            ct++;
+          }
+          // Wait for the reverse messsages
+          MPI_Waitall(ct,requests.data(),status.data());
+        }
+
+        double time_per_call = (MPI_Wtime() - t0) / (2.0 * KERNEL_REPEATS);
+        sizes[i] = msg_size;
+        times[i] = time_per_call;
+      }
+
+  
+
+#endif
+
+    }
+
 
   }// end namespace PerfDetails
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PerfModels():launch_and_wait_latency_(-1.0){}
+
+  /****************************************************************************************/
+  /****************************************************************************************/
+  /****************************************************************************************/
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -375,7 +473,9 @@ namespace MueLu {
   }
 
 
- 
+  /****************************************************************************************/
+  /****************************************************************************************/
+  /****************************************************************************************/
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -432,6 +532,70 @@ namespace MueLu {
     out.copyfmt(old_format);
   }
 
+
+
+  /****************************************************************************************/
+  /****************************************************************************************/
+  /****************************************************************************************/
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::halopong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE,  const RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > & import) {
+
+    PerfDetails::halopong_basic<Kokkos::HostSpace::execution_space,Kokkos::HostSpace::memory_space>(KERNEL_REPEATS,LOG_MAX_SIZE,import,halopong_sizes_,halopong_host_times_);
+
+    PerfDetails::halopong_basic<typename Node::execution_space,typename Node::memory_space>(KERNEL_REPEATS,LOG_MAX_SIZE,import,halopong_sizes_,halopong_device_times_);
+
+ }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::halopong_host_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(halopong_sizes_,halopong_host_times_,SIZE_IN_BYTES);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::halopong_device_lookup(int SIZE_IN_BYTES) {
+    return PerfDetails::table_lookup(halopong_sizes_,halopong_device_times_,SIZE_IN_BYTES);
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_halopong_table(std::ostream & out) {
+    if(halopong_sizes_.size() == 0) return;
+
+    using namespace std;
+    std::ios old_format(NULL);
+    old_format.copyfmt(out);
+
+    out << setw(20) << "Message Size" << setw(1) << " "
+        << setw(20) << "Host (us)" << setw(1) << " "
+        << setw(20) << "Device (us)" << std::endl;
+
+    out << setw(20) << "------------" << setw(1) << " "
+        << setw(20) << "---------" << setw(1) << " "
+        << setw(20) << "-----------" << std::endl;
+    
+
+    for(int i=0; i<(int)halopong_sizes_.size(); i++) {
+      int size = halopong_sizes_[i];
+      double h_time = halopong_host_times_[i];
+      double d_time = halopong_device_times_[i];
+
+
+      out << setw(20) << size << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (h_time*1e6) << setw(1) << " "
+          << setw(20) << fixed << setprecision(4) << (d_time*1e6) << setw(1) << std::endl;
+    }
+
+    out.copyfmt(old_format);
+  }
+
+  /****************************************************************************************/
+  /****************************************************************************************/
+  /****************************************************************************************/
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::launch_latency_make_table(int KERNEL_REPEATS) {
@@ -454,6 +618,7 @@ namespace MueLu {
     
     launch_and_wait_latency_ = total_test_time / KERNEL_REPEATS;
   }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double

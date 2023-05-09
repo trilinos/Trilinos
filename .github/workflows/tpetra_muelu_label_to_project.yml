@@ -28,4 +28,4 @@ jobs:
       if: contains(github.event.label.name, 'Tpetra') || contains(github.event.issue.title, 'Tpetra')
       with:
         project: 'https://github.com/trilinos/Trilinos/projects/2'
-        column_name: 'Backlog'
+        column_name: 'Needs Triage'

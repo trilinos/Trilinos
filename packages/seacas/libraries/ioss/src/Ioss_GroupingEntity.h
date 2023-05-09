@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -207,6 +207,12 @@ namespace Ioss {
 
     int64_t put_field_data(const std::string &field_name, void *data, size_t data_size) const;
 
+    // Zero-copy API.  *IF* a field is zero-copyable, then this function will set the `data`
+    // pointer to point to a chunk of memory of size `data_size` bytes containing the field
+    // data for the specified field.  If the field is not zero-copyable, then the  `data`
+    // pointer will point to `nullptr` and `data_size` will be 0.
+    int64_t get_field_data(const std::string &field_name, void **data, size_t *data_size) const;
+
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
     // Resizes 'data' to size needed to hold all values.
@@ -289,6 +295,9 @@ namespace Ioss {
                                             size_t data_size = 0) const = 0;
     virtual int64_t internal_put_field_data(const Field &field, void *data,
                                             size_t data_size = 0) const = 0;
+
+    virtual int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                               size_t *data_size) const;
 
     int64_t entityCount = 0;
 

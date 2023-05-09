@@ -63,33 +63,40 @@ PointRecord PointClassifierNormalWrapper::classify_reverse(mesh::MeshEntityPtr d
   }
 }
 
-utils::Point PointClassifierNormalWrapper::compute_xyz_coords(const PointRecord& record)
+utils::Point PointClassifierNormalWrapper::compute_xyz_coords(const PointRecord& record, bool allowExterior)
 {
-  assert(record.type != PointClassification::Exterior);
+  if (!allowExterior)
+  {
+    assert(record.type != PointClassification::Exterior);
+  }
 
   if (record.el->get_type() == mesh::MeshEntityType::Triangle)
   {
-    return m_triangleCoordUtils.compute_xyz_coords(record.m_r1);
+    return m_triangleCoordUtils.compute_xyz_coords(record.m_r1, allowExterior);
   } else if (record.el->get_type() == mesh::MeshEntityType::Quad)
   {
     m_quadToTriangles.set_triangles(record.el);
-    return m_quadToTriangles.compute_xyz_coords(record);
+    return m_quadToTriangles.compute_xyz_coords(record, allowExterior);
     //const PointRecordForTriangle& r = record.m_r1.type != PointClassification::Exterior ? record.m_r1 : record.m_r2;
     //return m_triangleCoordUtils.compute_xyz_coords(r);
   } else
     throw std::runtime_error("element must be triangle or quad");
 }
 
-utils::Point PointClassifierNormalWrapper::compute_xi_coords(const PointRecord& record)
+utils::Point PointClassifierNormalWrapper::compute_xi_coords(const PointRecord& record, bool allowExterior)
 {
-  assert(record.type != PointClassification::Exterior);
+  if (!allowExterior)
+  {
+    assert(record.type != PointClassification::Exterior);
+  }
+
   if (record.el->get_type() == mesh::MeshEntityType::Triangle)
   {
-    return m_triangleCoordUtils.compute_xi_coords(record.m_r1);
+    return m_triangleCoordUtils.compute_xi_coords(record.m_r1, allowExterior);
   } else if (record.el->get_type() == mesh::MeshEntityType::Quad)
   {
     m_quadToTriangles.set_triangles(record.el);
-    return m_quadToTriangles.get_quad_xi_coords(record);
+    return m_quadToTriangles.get_quad_xi_coords(record, allowExterior);
   } else
     throw std::runtime_error("element must be triangle or quad");
 }

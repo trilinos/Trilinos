@@ -109,7 +109,7 @@ namespace unit_test_util
     ids.reserve(numPairs);
 
     for(unsigned i = 0; i < numPairs; i++) {
-      ThrowRequireMsg(names[i] != names[i + 1],
+      STK_ThrowRequireMsg(names[i] != names[i + 1],
                       "interp parts {" << names[i] << "," << names[i + 1] << "} must be unique");
       unsigned id = assign(std::vector<std::string>{ names[i], names[i + 1] });
       ids.push_back(id);
@@ -206,21 +206,21 @@ namespace unit_test_util
   const std::string& AssemblyManager::get_assembly_name(unsigned id)
   {
     const auto iter = m_parts.find(id);
-    ThrowRequireMsg(iter != m_parts.end(), "Could not find assembly with id: " << id);
+    STK_ThrowRequireMsg(iter != m_parts.end(), "Could not find assembly with id: " << id);
     return iter->second;
   }
 
   const AssemblyDescription& AssemblyManager::get_assembly(unsigned id) const
   {
     const auto iter = m_assemblies.find(id);
-    ThrowRequireMsg(iter != m_assemblies.end(), "Could not find assembly with id: " << id);
+    STK_ThrowRequireMsg(iter != m_assemblies.end(), "Could not find assembly with id: " << id);
     return iter->second;
   }
 
   AssemblyDescription& AssemblyManager::get_assembly(unsigned id)
   {
     auto iter = m_assemblies.find(id);
-    ThrowRequireMsg(iter != m_assemblies.end(), "Could not find assembly with id: " << id);
+    STK_ThrowRequireMsg(iter != m_assemblies.end(), "Could not find assembly with id: " << id);
     return iter->second;
   }
 

@@ -87,6 +87,7 @@ macro(tribits_adjust_package_enables)
   tribits_sweep_backward_enable_upstream_packages()
   tribits_set_cache_vars_for_current_enabled_packages()
   tribits_do_final_parent_packages_enables_for_subpackage_enables()
+  tribits_adjust_internal_external_packages()
   tribits_setup_enabled_lists_and_pkg_idxs()
   tribits_setup_direct_packages_dependencies_lists_and_lib_required_enable_vars()
   tribits_print_direct_packages_dependencies_lists()
@@ -224,7 +225,7 @@ endmacro()
 # NOTE: Above, we are sweeping over *all* of the not-disabled packages listed
 # in ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES, including those package that
 # might have <Package>_PACKAGE_BUILD_STATUS=EXTERNAL.  That makes sense
-# because these are TriBITS (or TriBITS compatible) packages so we should
+# because these are TriBITS (or TriBITS-compliant) packages so we should
 # assume that all of their downstream packages, whether internal or external,
 # should be enabled as well.  If we find this is not the desirable behavior,
 # then we can change this later.
@@ -276,8 +277,7 @@ endmacro()
 
 # @MACRO: tribits_sweep_backward_enable_upstream_packages()
 #
-# Sweep backwards and enable required and (optionally) optional upstream
-# packages.
+# Sweep backwards and enable required (and optional) upstream packages.
 #
 # This sets the final value for:
 #
@@ -348,6 +348,30 @@ macro(tribits_do_final_parent_packages_enables_for_subpackage_enables)
   # other enable/disable logic to ensure no downstream dependencies will be
   # enabled based on this.
 
+endmacro()
+
+
+# @MACRO: tribits_adjust_internal_external_packages()
+#
+# Macro to adjust the set of internal and external packages by changing
+# `<Package>_PACKAGE_BUILD_STATUS`.
+#
+# This macro sweeps backwards over the dependency graph setting.
+#
+# NOTE: This is called **after** all of the logic that determines what
+# packages are enabled or disabled.  This is because we don't want to change
+# the enable/disable logic when one or more initially internal packages are
+# made external.  We are going to just assume that if an initially internal
+# package that is declared external should be disabled, then the user will
+# need to make that decision explicitly.
+#
+macro(tribits_adjust_internal_external_packages)
+  tribits_create_reverse_list(${PROJECT_NAME}_DEFINED_PACKAGES
+    ${PROJECT_NAME}_REVERSE_DEFINED_PACKAGES)
+  message("\nAdjust the set of internal and external packages:\n")
+  foreach(packageName  IN LISTS  ${PROJECT_NAME}_REVERSE_DEFINED_PACKAGES)
+    tribits_set_package_and_related_upstream_packages_to_external(${packageName})
+  endforeach()
 endmacro()
 
 
@@ -663,7 +687,9 @@ endmacro()
 #
 macro(tribits_enable_upstream_packages  packageName)
 
-  if (${PROJECT_NAME}_ENABLE_${packageName})
+  tribits_get_package_enable_status(${packageName}  packageEnable  packageEnableVar)
+
+  if (packageEnable)
 
     foreach(depPkg  IN LISTS  ${packageName}_LIB_DEFINED_DEPENDENCIES)
       tribits_private_enable_dep_package(${packageName}  ${depPkg}  LIB)
@@ -769,13 +795,15 @@ endmacro()
 macro(tribits_enable_parent_package_for_subpackage_enables  toplevelPackageName)
   foreach(tap2_subPkgName  IN LISTS  ${toplevelPackageName}_SUBPACKAGES)
     set(subpkgFullName ${toplevelPackageName}${tap2_subPkgName})
-    if (${PROJECT_NAME}_ENABLE_${subpkgFullName}
-        AND (NOT ${PROJECT_NAME}_ENABLE_${toplevelPackageName})
-      )
+    tribits_get_package_enable_status(${toplevelPackageName}
+      toplevelPackageEnable  toplevelPackageEnableVarName)
+    tribits_get_package_enable_status(${subpkgFullName}
+      subpkgEnable  subpkgEnableVarName)
+    if (subpkgEnable AND (NOT toplevelPackageEnable))
       message("-- "
-        "Setting ${PROJECT_NAME}_ENABLE_${toplevelPackageName}=ON"
-        " because ${PROJECT_NAME}_ENABLE_${subpkgFullName}=ON")
-      set(${PROJECT_NAME}_ENABLE_${toplevelPackageName} ON)
+        "Setting ${toplevelPackageEnableVarName}=ON because"
+	" ${subpkgEnableVarName}=${subpkgEnable}")
+      set(${toplevelPackageEnableVarName} ON)
       tribits_set_parent_package_subpackage_enable_for_enabled_subpackages(
         ${toplevelPackageName})
       tribits_set_parent_package_test_example_enable_for_enabled_subpackages(
@@ -792,6 +820,51 @@ macro(tribits_enable_parent_package_for_subpackage_enables  toplevelPackageName)
     endif()
   endforeach()
 endmacro()
+
+
+# Macro that sets $``{packageName}_PACKAGE_BUILD_STATUS=EXTERNAL and direct
+# upstream dependent packages ``${depPkg}_PACKAGE_BUILD_STATUS=EXTERNAL`` if
+# required.
+#
+# * Set an INTERNAL package as EXTERNAL if ``TPL_ENABLE_${packageName}`` is
+#  ``TRUE``
+#
+# * Set a top-level package to EXTERNAL if any of its subpackages are EXTERNAL
+#   (or ``TPL_ENABLE_${subpkgFullName}`` is TRUE).
+#
+# This macro must be called in a backward/reverse sweep over the dependency
+# graph to work correctly.  It sets upstream packages as EXTERNAL if the given
+# downstream package ``<packageName>`` is EXTERNAL.  There is also special
+# logic for handling a package that has subpackages.  That is, if any
+# subpackage of ``<packageName>`` is determined is EXTERNAL, then the parent
+# package is set to EXTERNAL and all of the other subpackages in parent
+# package ``<packageName>`` are set as EXTERNAL as well.  (We don't allow a
+# subset of subpackages in a parent package to be EXTERNAL and the other
+# subpackages to be INTERNAL.  That would be way too complicated to implement
+# and be way too confusing for implementors and users.)
+#
+macro(tribits_set_package_and_related_upstream_packages_to_external  packageName)
+
+  tribits_set_parent_package_external_if_subpackage_external(${packageName}
+    subpackageTriggeredParentPackageExternal)
+
+  tribits_set_package_to_external_if_requested_by_user(${packageName})
+
+  tribits_set_upstream_dep_packages_as_external(${packageName}
+    ${subpackageTriggeredParentPackageExternal})
+
+  tribits_set_package_as_processed_by_downstream_tribits_external_package(${packageName})
+
+endmacro()
+# NOTE: In the above macro, if ${packageName} is made EXTERNAL because it one
+# of its subpackages is considered EXTERNAL, then the loop over all of the
+# package's upstream dependencies listed in
+# ${packageName}_LIB_DEFINED_DEPENDENCIES results in all of the other
+# subpackages in that package to also be treated as external.  (I.e., there is
+# no need for a special loop over subpackages for the parent package.  And the
+# only direct dependencies for a parent package should be its subpackages.  If
+# that is not the case, then, technically, this would be setting more packages
+# as EXTERNAL than need to be.)
 
 
 # Macro that sets up the flat list of direct package dependencies and enabled
@@ -1049,9 +1122,11 @@ macro(tribits_private_enable_dep_package  packageName  depPkgName  libOrTest)
   tribits_get_package_enable_status(${depPkgName}  depPkgEnable  depPkgEnableVar)
   if (depPkgEnable)
     #message("The package is already enabled so there is nothing to enable!")
-  elseif (${depPkgEnableVar}  STREQUAL  "")
+  elseif ("${depPkgEnable}"  STREQUAL  "")
     set(tpedp_enableDepPkg "")
-    if (${packageName}_${libOrTest}_DEP_REQUIRED_${depPkgName})
+    if (${packageName}_${libOrTest}_DEP_REQUIRED_${depPkgName}
+        AND (NOT "${${packageName}_SOURCE_DIR}" STREQUAL "")
+      )
       message("-- " "Setting ${depPkgEnableVar}=ON"
         " because ${packageName} has a required dependence on ${depPkgName}")
       set(tpedp_enableDepPkg  ON)
@@ -1164,6 +1239,125 @@ macro(tribits_private_add_optional_package_enable  packageName  optionalDepPkgNa
 endmacro()
 
 
+# Set the parent package as EXTERNAL if any of its subpackages are being
+# treated as EXTERNAL and return bool if that is the case.
+#
+# On output, ``<parentPackageName>_PACKAGE_BUILD_STATUS`` will have been set
+# to ``EXTERNAL`` if the returned var
+# ``subpackageTriggeredParentPackageExternalOut`` is ``TRUE``.
+#
+macro(tribits_set_parent_package_external_if_subpackage_external  parentPackageName
+    subpackageTriggeredParentPackageExternalOut
+  )
+
+  set(subpackageTriggeredParentPackageExternal FALSE)
+
+  if (NOT ${parentPackageName}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+    foreach (tap2_subPkgName  IN LISTS  ${parentPackageName}_SUBPACKAGES)
+      set(subpkgFullName ${parentPackageName}${tap2_subPkgName})
+      tribits_package_is_external(${subpkgFullName} subpkgIsExternal)
+      if (subpkgIsExternal)
+	set(becauseMsgStr "subpackage ${subpkgFullName} being treated as EXTERNAL")
+        if (TPL_ENABLE_${subpkgFullName})
+          string(APPEND becauseMsgStr
+	    " (TPL_ENABLE_${subpkgFullName}=${TPL_ENABLE_${subpkgFullName}})")
+        endif()
+        tribits_set_internal_package_to_external(${parentPackageName} "${becauseMsgStr}")
+        set(subpackageTriggeredParentPackageExternal TRUE)
+        break()
+      endif()
+    endforeach()
+  endif()
+
+  set(${subpackageTriggeredParentPackageExternalOut}
+    ${subpackageTriggeredParentPackageExternal})
+
+endmacro()
+
+
+# Macro that sets ``<packageName>_PACKAGE_BUILD_STATUS`` to ``EXTERNAL`` if
+# requested by the user (e.g. by setting ``TPL_ENABLE_<packageName>``).
+#
+macro(tribits_set_package_to_external_if_requested_by_user  packageName)
+  if (NOT ${packageName}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+    if (TPL_ENABLE_${packageName})
+      tribits_set_internal_package_to_external(${packageName}
+        "TPL_ENABLE_${packageName}=${TPL_ENABLE_${packageName}}")
+    endif()
+  endif()
+endmacro()
+
+
+# Macro that sets all of the direct upstream dependent packages as EXTERNAL if
+# they should be.
+#
+# NOTE: We only bother setting upstream dependencies as EXTERNAL if the
+# package ``<packageName>`` is enabled or if it is a parent package (enabled
+# or not) where at least one of its subpackages is enabled and is being
+# treated as EXTERNAL.  (In the latter case, any subpackages that are not
+# enabled will still be set as EXTERNAL.)
+#
+macro(tribits_set_upstream_dep_packages_as_external  packageName
+    subpackageTriggeredParentPackageExternal
+  )
+
+  tribits_get_package_enable_status(${packageName} packageEnable "")
+
+  if (${packageName}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+    foreach(depPkg  IN LISTS  ${packageName}_LIB_DEFINED_DEPENDENCIES)
+      if ((NOT ${depPkg}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL") AND
+          (subpackageTriggeredParentPackageExternal OR packageEnable)
+        )
+        tribits_set_internal_package_to_external(${depPkg}
+          "downstream package ${packageName} being treated as EXTERNAL")
+      endif()
+    endforeach()
+  endif()
+
+endmacro()
+
+
+# Mark a package as being processed by a downstream TriBITS-compliant external
+# package
+#
+macro(tribits_set_package_as_processed_by_downstream_tribits_external_package  packageName)
+
+  set_default(${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE FALSE)
+
+  tribits_get_package_enable_status(${packageName} packageEnable "")
+
+  if (${packageName}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+
+    foreach(fwdDepPkg  IN LISTS  ${packageName}_FORWARD_LIB_DEFINED_DEPENDENCIES)
+
+      if((${fwdDepPkg}_IS_TRIBITS_COMPLIANT
+            OR ${fwdDepPkg}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE)
+          AND (${fwdDepPkg}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+        )
+        tribits_get_package_enable_status(${fwdDepPkg} fwdDepPkgEnable "")
+        if (${fwdDepPkg}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE)
+          set(directOrIndirectStr "indirectly")
+          set(downstreamPkgStr "")
+        else()
+          set(directOrIndirectStr "directly")
+          set(downstreamPkgStr " ${fwdDepPkg}")
+        endif()
+        if (packageEnable AND (NOT ${packageName}_IS_TRIBITS_COMPLIANT))
+          message("-- "
+            "NOTE: ${packageName} is ${directOrIndirectStr} downstream from a"
+            " TriBITS-compliant external package${downstreamPkgStr}")
+        endif()
+        set(${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE TRUE)
+        break()
+      endif()
+
+    endforeach()
+
+  endif()
+
+endmacro()
+
+
 # Macro that sets ``<ParentPackage>_ENABLE_<SubPackage>=ON`` if not already
 # enabled for all enabled subpackages of a parent package.
 #
@@ -1202,6 +1396,54 @@ macro(tribits_set_parent_package_test_example_enable_for_enabled_subpackages
     endif()
   endforeach()
 endmacro()
+
+
+# Macro that sets an internal package to EXTERNAL and print so and why (if the
+# package is actually enabled)
+#
+# Usage::
+#
+#   tribits_set_internal_package_to_external(<depPkgName> "<becauseMsg1>"
+#     "<becauseMsg2>" ...)
+#
+# This always sets ``<depPkgName>_PACKAGE_BUILD_STATUS=EXTERNAL`` but only
+# prints the message if ``<depPkgName>`` is enabled.
+#
+macro(tribits_set_internal_package_to_external  depPkgName)
+  if (NOT ${depPkgName}_INTERNAL_PACKAGE_ALREADY_SET_EXTERNAL)
+    tribits_get_package_enable_status(${depPkgName} depPkgEnable "")
+    if (depPkgEnable)
+      message("-- "
+         "Treating internal package ${depPkgName} as EXTERNAL because"
+         " " ${ARGN})
+    endif()
+    set(${depPkgName}_PACKAGE_BUILD_STATUS  EXTERNAL)
+    set(${depPkgName}_FINDMOD  TRIBITS_PKG)
+    set(${depPkgName}_INTERNAL_PACKAGE_ALREADY_SET_EXTERNAL TRUE)
+  endif()
+endmacro()
+
+
+macro(tribits_set_as_processed_by_downstream_tribits_external_package   packageName
+    depPkgName
+  )
+
+endmacro()
+
+
+# Function to return if <packageName> is to be treated as an EXTERNAL package
+# in processing of the package
+#
+function(tribits_package_is_external  packageName  packageIsExternalOut)
+  if (TPL_ENABLE_${packageName})
+    set(packageIsExternal TRUE)
+  elseif (${packageName}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+    set(packageIsExternal TRUE)
+  else()
+    set(packageIsExternal FALSE)
+  endif()
+  set(${packageIsExternalOut} ${packageIsExternal} PARENT_SCOPE)
+endfunction()
 
 
 # LocalWords: tribits TriBITS foreach endmacro endfunction

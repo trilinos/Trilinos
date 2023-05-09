@@ -445,24 +445,24 @@ inline void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField) {
 //
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   return f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
-  ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
+  STK_ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
   return f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   return field_bytes_per_entity(f, bulk.bucket(e));
 }
 
 inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   return(b.entity_rank() == f.entity_rank());
 }
 
@@ -475,8 +475,8 @@ inline bool is_matching_rank(const FieldBase& f, EntityRank rank) {
 }
 
 inline unsigned field_scalars_per_entity(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   const unsigned bytes_per_scalar = f.data_traits().size_of;
   return f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity/bytes_per_scalar;
 }
@@ -489,14 +489,14 @@ inline unsigned field_scalars_per_entity(const FieldBase& f, unsigned bucket_id)
 inline unsigned field_scalars_per_entity(const FieldBase& f, Entity e) {
   const unsigned bytes_per_scalar = f.data_traits().size_of;
   BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   return field_bytes_per_entity(f, bulk.bucket(e))/bytes_per_scalar;
 }
 
 
 inline unsigned field_extent0_per_entity(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
 }
 
@@ -506,14 +506,14 @@ inline unsigned field_extent0_per_entity(const FieldBase& f, unsigned bucket_id)
 
 inline unsigned field_extent0_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
 }
 
 
 inline unsigned field_extent1_per_entity(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   const unsigned numBytesPerScalar = f.data_traits().size_of;
   const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
   const unsigned firstDimension = f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
@@ -529,7 +529,7 @@ inline unsigned field_extent1_per_entity(const FieldBase& f, unsigned bucket_id)
 
 inline unsigned field_extent1_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   const unsigned numBytesPerScalar = f.data_traits().size_of;
   const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
   const unsigned firstDimension = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
@@ -538,8 +538,8 @@ inline unsigned field_extent1_per_entity(const FieldBase& f, Entity e) {
 
 
 inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   if (dimension == 0) {
     return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
   }
@@ -573,7 +573,7 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
 
 inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, Entity e) {
   BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   if (dimension == 0) {
     return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
   }
@@ -591,9 +591,9 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
 
 
 inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(&b.mesh() == &f.get_mesh());
+  STK_ThrowAssert(&b.mesh() == &f.get_mesh());
   //return true if field and bucket have the same rank and the field is associated with the bucket
-  ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
+  STK_ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
   return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity);
 }
 
@@ -672,10 +672,10 @@ typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
+  STK_ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
                  "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytesPerEntity= "
                  << f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity);
-  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
+  STK_ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
 
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
 
@@ -712,8 +712,8 @@ typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&f.get_mesh() == &b.mesh());
 
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), b[bucket_ord], fileName, lineNumber);
 
@@ -728,8 +728,8 @@ typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const Bucket& b,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&b.mesh() == &f.get_mesh());
+  STK_ThrowAssert(f.entity_rank() == b.entity_rank());
+  STK_ThrowAssert(&b.mesh() == &f.get_mesh());
 
   debug_stale_access_bucket_check<StkDebugger>(static_cast<const FieldBase&>(f), b, fileName, lineNumber);
 
@@ -744,10 +744,10 @@ field_data(const FieldType & f, Entity e,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   const MeshIndex& mi = f.get_mesh().mesh_index(e);
-  ThrowAssertMsg(f.entity_rank() == mi.bucket->entity_rank(),
+  STK_ThrowAssertMsg(f.entity_rank() == mi.bucket->entity_rank(),
                  "field_data called with " << f.entity_rank() << " field (" << f.name() << ") and different-rank entity "
                  << f.get_mesh().entity_key(e) << ". The rank of the field and entity must match.");
-  ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
+  STK_ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
 
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), e, fileName, lineNumber);
 

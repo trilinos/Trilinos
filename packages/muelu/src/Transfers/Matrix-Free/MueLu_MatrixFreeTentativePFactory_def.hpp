@@ -50,12 +50,8 @@
 
 #include "MueLu_MatrixFreeTentativePFactory_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
-#include "MueLu_MasterList.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
-#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MatrixFreeTentativeP.hpp"
 
@@ -108,10 +104,10 @@ namespace MueLu {
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto aggregates    = Get< RCP<Aggregates_kokkos> >       (fineLevel, "Aggregates");
-    auto amalgInfo     = Get< RCP<AmalgamationInfo_kokkos> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >             (fineLevel, nspName);
-    auto coarseMap     = Get< RCP<const Map> >               (fineLevel, "CoarseMap");
+    auto aggregates    = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
+    auto amalgInfo     = Get< RCP<AmalgamationInfo> >  (fineLevel, "UnAmalgamationInfo");
+    auto fineNullspace = Get< RCP<MultiVector> >       (fineLevel, nspName);
+    auto coarseMap     = Get< RCP<const Map> >         (fineLevel, "CoarseMap");
     Teuchos::RCP<const Map> fineMap = fineNullspace->getMap();
 
     // Matrix-free should never run with aggregates that cross processors

@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_CRSMATRIX_DECL_HPP
 #define TPETRA_CRSMATRIX_DECL_HPP
 
@@ -425,6 +426,14 @@ namespace Tpetra {
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
   {
+  // clang-format on
+private:
+  using dist_object_type =
+      DistObject<char, LocalOrdinal, GlobalOrdinal,
+                 Node>; ///< Type of the DistObject specialization from which
+                        ///< this class inherits.
+  // clang-format off
+
   public:
     //! @name Typedefs
     //@{
@@ -3037,6 +3046,13 @@ public:
      const size_t constantNumPackets,
      const CombineMode CM) override;
 
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
+
     /// \brief Pack this object's data for an Import or Export.
     ///
     /// \warning To be called only by the packAndPrepare method of
@@ -3706,9 +3722,6 @@ public:
                             const ELocalGlobal lg,
                             const ELocalGlobal I);
 
-    //! Type of the DistObject specialization from which this class inherits.
-    typedef DistObject<char, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
-
   protected:
     // useful typedefs
     typedef Teuchos::OrdinalTraits<LocalOrdinal> OTL;
@@ -4141,10 +4154,18 @@ protected:
                        Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitude( Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::zero() ))
   {
     auto localMatrix = matrix.getLocalMatrixDevice();
+    size_t nnzBefore = localMatrix.nnz();
     localMatrix = KokkosSparse::removeCrsMatrixZeros(localMatrix,threshold);
-    matrix.resumeFill();
-    matrix.setAllValues(localMatrix);
-    matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
+    size_t localNNZRemoved = nnzBefore - localMatrix.nnz();
+    //Skip the expertStaticFillComplete if no entries were removed on any process.
+    //The fill complete can perform MPI collectives, so it can only be skipped on all processes or none.
+    size_t globalNNZRemoved = 0;
+    Teuchos::reduceAll<int, size_t> (*(matrix.getComm()), Teuchos::REDUCE_SUM, 1, &localNNZRemoved, &globalNNZRemoved);
+    if(globalNNZRemoved != size_t(0)) {
+      matrix.resumeFill();
+      matrix.setAllValues(localMatrix);
+      matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
+    }
   }
 
 } // namespace Tpetra

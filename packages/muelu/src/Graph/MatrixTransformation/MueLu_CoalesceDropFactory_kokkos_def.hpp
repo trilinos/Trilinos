@@ -53,7 +53,7 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -523,7 +523,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
     LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
-    auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
+    auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
 

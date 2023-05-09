@@ -31,7 +31,7 @@
 namespace Iotm {
   void error_handler(const std::ostringstream &message) { throw std::logic_error((message).str()); }
 
-  TextMesh::TextMesh(int proc_count, int my_proc) : m_myProcessor(my_proc)
+  TextMesh::TextMesh(int, int my_proc) : m_myProcessor(my_proc)
   {
     m_errorHandler = [](const std::ostringstream &errmsg) { error_handler(errmsg); };
     initialize();

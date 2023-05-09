@@ -85,7 +85,7 @@ namespace MueLu {
     // We want TrilinosSmoother to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Ifpack and Ifpack2 smoother prototypes. The construction really depends on configuration options.
     triedEpetra_ = triedTpetra_ = triedBelos_ = triedStratimikos_ = false;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
     try {
       sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
       if (sTpetra_.is_null())
@@ -135,7 +135,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())

@@ -77,6 +77,18 @@ public:
 
   //@}
 
+  //! \name Utility functions
+  //@{
+
+  /** \brief Create Tpetra locally replicated vector space.
+   *
+   * This vector space forms the domain space of a Thyra::TpetraMultiVector.
+   */
+  RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
+  createLocallyReplicatedVectorSpace(int size) const;
+
+  //@}
+
   /** @name Public overridden from VectorSpaceBase */
   //@{
   /** \brief Returns true if all the elements in <tt>rng</tt> are in this

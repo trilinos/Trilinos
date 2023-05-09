@@ -116,13 +116,22 @@ void QuadToTriangles::enforce_record_consistency(PointRecordForTriangle& r1, Poi
   }
 }
 
-utils::Point QuadToTriangles::compute_xyz_coords(const PointRecord& quadRecord)
+utils::Point QuadToTriangles::compute_xyz_coords(const PointRecord& quadRecord, bool allowExterior)
 {
-  const PointRecordForTriangle& r = quadRecord.m_r1.type != PointClassification::Exterior ? quadRecord.m_r1 : quadRecord.m_r2;
-  return m_triangleUtils.compute_xyz_coords(r);
+  const PointRecordForTriangle* r;
+  if (quadRecord.m_r1.type != PointClassification::Exterior || quadRecord.m_r2.type != PointClassification::Exterior)
+    r = quadRecord.m_r1.type != PointClassification::Exterior ? &(quadRecord.m_r1) : &(quadRecord.m_r2);
+  else
+  {
+    double deviation1 = m_triangleUtils.compute_exterior_deviation(quadRecord.m_r1);
+    double deviation2 = m_triangleUtils.compute_exterior_deviation(quadRecord.m_r2);
+    r = deviation1 < deviation2 ? &(quadRecord.m_r1) : &(quadRecord.m_r2);
+  }
+
+  return m_triangleUtils.compute_xyz_coords(*r, allowExterior);
 }
 
-utils::Point QuadToTriangles::get_quad_xi_coords(const PointRecord& quadRecord)
+utils::Point QuadToTriangles::get_quad_xi_coords(const PointRecord& quadRecord, bool allowExterior)
 {
   if (quadRecord.type == PointClassification::Vert)
   {
@@ -158,11 +167,12 @@ utils::Point QuadToTriangles::get_quad_xi_coords(const PointRecord& quadRecord)
       return {0, r1.m_ptXi.y};
     } else
       throw std::runtime_error("unrecognized quadRecord edge id");
-  } else if (quadRecord.type == PointClassification::Interior)
+  } else if (quadRecord.type == PointClassification::Interior || (quadRecord.type == PointClassification::Exterior && allowExterior))
   {
     const PointRecordForTriangle& r1 = quadRecord.m_r1;
     //const PointRecordForTriangle& r2 = quadRecord.m_r2;
-    assert(r1.type == PointClassification::Interior || (r1.type == PointClassification::Edge && r1.id == INTERIOR_EDGE));
+    assert(r1.type == PointClassification::Interior || r1.type == PointClassification::Exterior || 
+           (r1.type == PointClassification::Edge && r1.id == INTERIOR_EDGE));
 
     // use linear interpolation to compute quad xi coordinates
     // The algebra simplifies to the result below

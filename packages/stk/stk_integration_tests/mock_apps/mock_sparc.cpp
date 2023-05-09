@@ -58,9 +58,15 @@ public:
 
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+
     int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+
     const std::string defaultFileName = "generated:1x1x4|sideset:x";
     std::string meshFileName = stk::get_command_line_option(argc, argv, "mesh", defaultFileName);
+
+    const std::string defaultPartName = "surface_1";
+    std::string partName = stk::get_command_line_option(argc, argv, "part-name", defaultPartName);    
+
     m_wrongTransferOrder = stk::get_command_line_option(argc, argv, "wrong-transfer-order", false);
 
     stk::util::impl::set_error_on_reset(false);
@@ -101,7 +107,7 @@ public:
     }
 
     std::vector<std::string> fieldNames = {"sparc-traction1", "heat-transfer-coefficient1","heat-transfer-coefficient2"};
-    mock_utils::read_mesh(splitComm, meshFileName, fieldNames, m_mesh);
+    mock_utils::read_mesh(splitComm, meshFileName, partName, fieldNames, m_mesh);
 
     // TODO: put timeSyncMode in a command-line arg like mock-aria
     m_timeSyncMode = stk::coupling::Send; // This is usually Send, but could be Receive for SPARC-SPARC MPMD coupling
@@ -162,11 +168,11 @@ public:
     stk::coupling::check_sync_mode_consistency(m_myInfo, m_otherInfo);
 
     {
-      ThrowRequireMsg(stk::coupling::check_consistency<double>(m_myInfo, m_otherInfo, stk::coupling::InitialTime, m_timeSyncMode),
+      STK_ThrowRequireMsg(stk::coupling::check_consistency<double>(m_myInfo, m_otherInfo, stk::coupling::InitialTime, m_timeSyncMode),
           m_appName << ": initial time is inconsistent with " << m_otherInfo.get_value<std::string>(stk::coupling::AppName));
-      ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::TimeStep), 
+      STK_ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::TimeStep), 
           m_appName << ": other app ("<< m_otherInfo.get_value<std::string>(stk::coupling::AppName)<<") doesn't have time step");
-      ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::FinalTime), 
+      STK_ThrowRequireMsg(m_timeSyncMode == stk::coupling::Send || m_otherInfo.has_value<double>(stk::coupling::FinalTime), 
           m_appName << ": other app ("<< m_otherInfo.get_value<std::string>(stk::coupling::AppName)<<") doesn't have final time");
     }
   }
@@ -174,11 +180,11 @@ public:
   void check_field_sizes(std::vector<std::pair<std::string,int>> sendFields,
                          std::vector<std::pair<std::string,int>> recvFields)
   {
-    ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
+    STK_ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
        <<sendFields.size()<<") doesn't match number of recv-fields ("<<recvFields.size()
        <<")");
     for (unsigned i=0; i<sendFields.size(); ++i) {
-      ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
+      STK_ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
         "Send-field size ("<<sendFields[i].first<<","<<sendFields[i].second<<") "
         <<"doesn't match Recv-field size ("<<recvFields[i].first<<","<<recvFields[i].second<<")");
     }

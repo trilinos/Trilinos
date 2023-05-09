@@ -65,7 +65,7 @@ nrm2w(const XVector& x, const XVector& w) {
 
 /// \brief R(i,j) = nrm2w(X(i,j))
 ///
-/// Replace each entry in R with the nrm2wolute value (magnitude) of the
+/// Replace each entry in R with the nrm2w, absolute value (magnitude), of the
 /// corresponding entry in X.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.

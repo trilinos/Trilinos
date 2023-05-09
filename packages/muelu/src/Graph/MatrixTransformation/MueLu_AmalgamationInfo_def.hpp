@@ -58,21 +58,42 @@
 
 #include "MueLu_AmalgamationInfo_decl.hpp"
 #include "MueLu_Exceptions.hpp"
+
 #include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregates(const Aggregates& aggregates,
-        Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
-    const int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    const LO size = procWinner.size();
-    const GO numAggregates = aggregates.GetNumAggregates();
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  UnamalgamateAggregates(const Aggregates& aggregates,
+                         Teuchos::ArrayRCP<LocalOrdinal>& aggStart,
+                         Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
 
-    Array<LO> sizes(numAggregates);
+    UnamalgamateAggregates(aggregates.GetMap(),
+                           aggregates.GetProcWinner(),
+                           aggregates.GetVertex2AggId(),
+                           aggregates.GetNumAggregates(),
+                           aggStart,
+                           aggToRowMap);
+
+  } //UnamalgamateAggregates
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  UnamalgamateAggregates(const Teuchos::RCP<const Map> &nodeMap,
+                         const RCP<LOVector> &procWinnerVec,
+                         const RCP<LOMultiVector> &vertex2AggIdVec,
+                         const GO numAggregates,
+                         Teuchos::ArrayRCP<LocalOrdinal>& aggStart,
+                         Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
+
+    int myPid = nodeMap->getComm()->getRank();
+    Teuchos::ArrayView<const GO> nodeGlobalElts = nodeMap->getLocalElementList();
+    Teuchos::ArrayRCP<LO> procWinner   = procWinnerVec->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggIdVec->getDataNonConst(0);
+    const LO size = procWinner.size();
+
+    std::vector<LO> sizes(numAggregates);
     if (stridedblocksize_ == 1) {
       for (LO lnode = 0; lnode < size; ++lnode) {
         LO myAgg = vertex2AggId[lnode];
@@ -131,15 +152,32 @@ namespace MueLu {
   } //UnamalgamateAggregates
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
-                      Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  UnamalgamateAggregatesLO(const Aggregates& aggregates,
+                           Teuchos::ArrayRCP<LO>& aggStart,
+                           Teuchos::ArrayRCP<LO>& aggToRowMap) const {
+    UnamalgamateAggregatesLO(aggregates.GetMap(),
+                             aggregates.GetProcWinner(),
+                             aggregates.GetVertex2AggId(),
+                             aggregates.GetNumAggregates(),
+                             aggStart,
+                             aggToRowMap);
+  }
 
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  UnamalgamateAggregatesLO(const Teuchos::RCP<const Map> &nodeMap,
+                           const RCP<LOVector> &procWinnerVec,
+                           const RCP<LOMultiVector> &vertex2AggIdVec,
+                           const GO numAggregates,
+                           Teuchos::ArrayRCP<LO>& aggStart,
+                           Teuchos::ArrayRCP<LO>& aggToRowMap) const {
 
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    const GO numAggregates             = aggregates.GetNumAggregates();
+    int myPid = nodeMap->getComm()->getRank();
+    Teuchos::ArrayView<const GO> nodeGlobalElts = nodeMap->getLocalElementList();
+
+    Teuchos::ArrayRCP<LO> procWinner   = procWinnerVec  ->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggIdVec->getDataNonConst(0);
 
 
     // FIXME: Do we need to compute size here? Or can we use existing?
@@ -228,8 +266,14 @@ namespace MueLu {
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
-    Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
+  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
+    return ComputeUnamalgamatedImportDofMap(aggregates.GetMap());
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeUnamalgamatedImportDofMap(const Teuchos::RCP<const Map> &nodeMap) const {
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
     Teuchos::ArrayView<const GO> gEltList = nodeMap->getLocalElementList();
@@ -250,14 +294,17 @@ namespace MueLu {
     }
 
     Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
-    Teuchos::RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(), aggregates.GetMap()->getIndexBase(), aggregates.GetMap()->getComm());
+    Teuchos::RCP<Map> importDofMap = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(), nodeMap->getIndexBase(), nodeMap->getComm());
     return importDofMap;
   }
 
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
+  GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
+    // here, the assumption is, that the node map has the same indexBase as the dof map
+    //                            this is the node map index base                    this is the dof map index base
     GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
     return gDofIndex;
   }

@@ -66,13 +66,11 @@
 #include "MueLu_PerfModels.hpp"
 #include <MatrixLoad.hpp>
 
-#if defined(HAVE_MUELU_TPETRA)
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraImport.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
-#endif
 #include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
@@ -161,8 +159,21 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   // Generate Lookup Tables  
   int v_log_max = ceil(log(nnz) / log(2))+1;
   PM.stream_vector_make_table(nrepeat,v_log_max);
+
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
+
+
+  if(A->hasCrsGraph()) {
+    auto importer = A->getCrsGraph()->getImporter();
+    size_t recv_size = importer->getRemoteLIDs().size() * sizeof(SC);
+    size_t send_size = importer->getExportLIDs().size() * sizeof(SC);
+    int local_log_max = ceil(log(std::max(send_size,recv_size)) / log(2))+1;
+    int global_log_max=local_log_max;
+    Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_MAX,1,&local_log_max,&global_log_max);
+    PM.halopong_make_table(nrepeat,global_log_max, importer);   
+  }
+
   if(verbose && rank == 0) {
     std::cout<<"********************************************************"<<std::endl;
     std::cout<<"Performance model results on "<<nproc<<" ranks"<<std::endl;
@@ -174,6 +185,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
     PM.print_latency_corrected_stream_vector_table(std::cout);
     std::cout<<"****** Pingpong Table ******"<<std::endl;
     PM.print_pingpong_table(std::cout);
+    std::cout<<"****** Halopong Table ******"<<std::endl;
+    PM.print_halopong_table(std::cout);
   }
 
   // For convenience
@@ -208,34 +221,21 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       avg_time = PM.latency_corrected_stream_vector_lookup(size_in_bytes);
     else
       avg_time = PM.stream_vector_lookup(size_in_bytes);
-    double avg_distributed = avg_time;      
 
-    if(nproc > 1) {
-      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_time, &avg_distributed);
-      avg_distributed /= nproc;
-    }
     
     // The lookup divides by transactions-per-element already
     double memory_traffic = (double)SPMV_object_size[i] *(double)SPMV_num_objects[i];
-    gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_distributed,1,memory_traffic);
+    gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_time,1,memory_traffic);
     
     if(verbose && rank == 0) {
 
-      std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_distributed*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
+      std::cout<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_time*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
     }
   }
   
   // Get the latency info
-  double avg_latency;
-  if(nproc > 1) {
-    double avg_latency_local = PM.launch_latency_lookup();    
-    double avg_latency_distributed = avg_latency_local;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &avg_latency_local, &avg_latency_distributed);
-    avg_latency  = avg_latency_distributed / nproc;
-  }
-  else {
-    avg_latency = PM.launch_latency_lookup();
-  }
+  double avg_latency = PM.launch_latency_lookup();    
+
 
 
   /***************************************************************************/
@@ -269,7 +269,8 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
   // *** Calculate Remote part of the SPMV ***
   double time_pack_unpack_outofplace = 0.0;
   double time_pack_unpack_inplace    = 0.0;
-  double time_communicate            = 0.0;
+  double time_communicate_ping       = 0.0;
+  double time_communicate_halo       = 0.0;
   // Note: We'll assume that each of the permutes, remotes and exports is a unified
   // memory transaction, even though that's not strictly speaking correct.
   if(A->hasCrsGraph()) {
@@ -309,7 +310,9 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
       // We now need to get the size of each message for the ping-pong costs.
       double send_time = 0.0;
       double recv_time = 0.0;
-#if defined(HAVE_MUELU_TPETRA)
+      double halo_time = 0.0;
+      size_t total_send_length=0, total_recv_length=0;
+      double avg_size_per_msg = 0.0;
       RCP<const Xpetra::TpetraImport<LO,GO,NO> > t_importer = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraImport<LO,GO,NO> >(importer);
       if(!t_importer.is_null()) {
         RCP<const Tpetra::Import<LO,GO,NO> > tt_i  = t_importer->getTpetra_Import();
@@ -317,30 +320,41 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
         Teuchos::ArrayView<const size_t> recv_lengths = distor.getLengthsFrom();
         Teuchos::ArrayView<const size_t> send_lengths = distor.getLengthsTo();
         
-        for (int i=0; i<(int) send_lengths.size(); i++) 
+        for (int i=0; i<(int) send_lengths.size(); i++) {
           send_time += PM.pingpong_device_lookup(send_lengths[i] * sizeof(SC));
+          total_send_length = send_lengths[i]*sizeof(SC);
+        }
         
-        for (int i=0; i<(int) recv_lengths.size(); i++) 
+        for (int i=0; i<(int) recv_lengths.size(); i++)  {
           recv_time += PM.pingpong_device_lookup(recv_lengths[i] * sizeof(SC));                  
+          total_recv_length = recv_lengths[i]*sizeof(SC);
+        }
+ 
+        avg_size_per_msg = (double)total_send_length/(2.0*send_lengths.size()) +  (double)total_recv_length/(2.0*recv_lengths.size());
+        halo_time = PM.halopong_device_lookup(avg_size_per_msg);
       }
-#endif
 
-
-      if(verbose && rank == 0)
-        std::cout << "Remote: same     = "<<same_time*1e6<<" us.\n"
-                  << "Remote: permutes = "<<permute_time*1e6<<" us.\n"
-                  << "Remote: exports  = "<<export_time*1e6<<" us.\n"
-                  << "Remote: remotes  = "<<remote_time*1e6<<" us.\n"
-                  << "Remote: sends    = "<<send_time*1e6<<" us.\n"
-                  << "Remote: recvs    = "<<recv_time*1e6<<" us."<<std::endl;
+      if(verbose && rank == 0) {
+         std::cout<<"****** Remote Time Model Results ******"<<std::endl;
+        std::cout << "Remote: same      = "<<same_time*1e6<<" us.\n"
+                  << "Remote: permutes  = "<<permute_time*1e6<<" us.\n"
+                  << "Remote: exports   = "<<export_time*1e6<<" us.\n"
+                  << "Remote: remotes   = "<<remote_time*1e6<<" us.\n"
+                  << "Remote: sends len = "<<total_send_length<<" time = "<<send_time*1e6<<" us.\n"
+                  << "Remote: recvs len = "<<total_recv_length<<" time  = "<<recv_time*1e6<<" us.\n"
+                  << "Remote: halo avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<halo_time*1e6<<" us.\n"<<std::endl;
+      }
 
       // NOTE: For now we'll do comm time as the larger of send/recv.  Not sure this is
       // really the optimal thing to do, but we'll start here.
-      time_communicate = std::max(send_time,recv_time);
+      time_communicate_ping = std::max(send_time,recv_time);
+      time_communicate_halo = halo_time;
     }
   }
-  double minimum_time_in_place     = time_communicate + time_pack_unpack_inplace;
-  double minimum_time_out_of_place = time_communicate + time_pack_unpack_outofplace;
+  double minimum_time_in_place_ping     = time_communicate_ping + time_pack_unpack_inplace;
+  double minimum_time_out_of_place_ping = time_communicate_ping + time_pack_unpack_outofplace;
+  double minimum_time_in_place_halo     = time_communicate_halo + time_pack_unpack_inplace;
+  double minimum_time_out_of_place_halo = time_communicate_halo + time_pack_unpack_outofplace;
 
 
   /***************************************************************************/
@@ -350,8 +364,37 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
               << "Minimum time model (all)       : " << minimum_local_all_time << std::endl
               << "Pack/unpack in-place           : " << time_pack_unpack_inplace << std::endl
               << "Pack/unpack out-of-place       : " << time_pack_unpack_outofplace << std::endl
-              << "Communication time             : " << time_communicate << std::endl;
+              << "Communication time (ping)      : " << time_communicate_ping << std::endl
+              << "Communication time (halo)      : " << time_communicate_halo << std::endl;
   
+
+  // Get global average/max time sums
+  constexpr int NUM_TIMES=10;
+  double avg_times[NUM_TIMES];
+  double max_times[NUM_TIMES];
+  {
+    double comp      = minimum_local_composite_time;
+    double alls      = minimum_local_all_time;
+    double p_inplace = minimum_time_in_place_ping;
+    double p_ooplace = minimum_time_out_of_place_ping;
+    double h_inplace = minimum_time_in_place_halo;
+    double h_ooplace = minimum_time_out_of_place_halo;
+
+    double all_times_local[NUM_TIMES] = {
+                 comp,comp+p_inplace,comp+p_ooplace,comp+h_inplace,comp+h_ooplace,
+                 alls,alls+p_inplace,alls+p_ooplace,alls+h_inplace,alls+h_ooplace};
+
+    if(nproc > 1) {
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, NUM_TIMES, &all_times_local[0], &avg_times[0]);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, NUM_TIMES, &all_times_local[0], &max_times[0]);
+      for(int i=0; i<NUM_TIMES; i++)
+        avg_times[i] /= nproc;
+    }
+    else {
+      for(int i=0; i<NUM_TIMES; i++)
+        avg_times[i] = max_times[i] = all_times_local[i];
+    }
+  }
 
   // Iterate through all of the "MV" timers
   // NOTE: This is a hack since TimeMonitor does not give you a way to
@@ -366,18 +409,21 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(rank == 0) {
     if(!globalTimeMonitor.is_null()) {
-      printf("%-60s %30s %30s %30s %30s %30s %30s\n","Timer","Speedup vs. comp model ","Speedup vs. comp+inplace   ","Speedup vs. comp+ooplace   ","Speedup vs. all model      ","Speedup vs. all+inplace    ","Speedup vs. all+ooplace    ");
-      printf("%-60s %30s %30s %30s %30s %30s %30s\n","-----","-----------------------","---------------------------","---------------------------","---------------------------","---------------------------","---------------------------");
+      const std::string l[NUM_TIMES]={"Comp","Comp+ping+inplace","Comp+ping+ooplace","Comp+halo+inplace","Comp+halo+ooplace",
+                                    "All", "All+ping+inplace", "All+ping+ooplace", "All+halo+inplace", "All+halo+ooplace"};
+      const std::string div={"-------------------"};
+      printf("%-60s %20s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n","Timer",l[0].c_str(),l[1].c_str(),l[2].c_str(),l[3].c_str(),l[4].c_str(),
+             l[5].c_str(),l[6].c_str(),l[7].c_str(),l[8].c_str(),l[9].c_str());
+      printf("%-60s %20s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n","-----",div.c_str(),div.c_str(),div.c_str(),div.c_str(),div.c_str(),
+             div.c_str(),div.c_str(),div.c_str(),div.c_str(),div.c_str());
       for(int i=0; i<(int)timer_names.size(); i++) {
         Teuchos::RCP<Teuchos::Time> t = globalTimeMonitor->lookupCounter(timer_names[i]);
         if(!t.is_null()) {
           double time_per_call = t->totalElapsedTime() / t->numCalls();
-          double p_comp = minimum_local_composite_time / time_per_call;
-          double p_all = minimum_local_all_time / time_per_call;
-          double p_inplace = minimum_time_in_place / time_per_call;
-          double p_ooplace = minimum_time_out_of_place / time_per_call;
+          printf("%-60s %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f %20.2f\n",timer_names[i],
+                 max_times[0]/time_per_call,max_times[1]/time_per_call,max_times[2]/time_per_call,max_times[3]/time_per_call,max_times[4]/time_per_call,
+                 max_times[5]/time_per_call,max_times[6]/time_per_call,max_times[7]/time_per_call,max_times[8]/time_per_call,max_times[9]/time_per_call);
 
-          printf("%-60s %30.2f %30.2f %30.2f %30.2f %30.2f %30.2f\n",timer_names[i],p_comp,p_comp+p_inplace,p_comp+p_ooplace,p_all,p_all+p_inplace,p_all+p_ooplace);
         }
       }
     }
@@ -389,7 +435,6 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 }
   
 
-#if defined(HAVE_MUELU_TPETRA)
 //==============================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
@@ -453,13 +498,11 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
   }
 }
 
-#endif
-
 
 // =========================================================================
 // PETSC Testing
 // =========================================================================
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
 
 /*#define PETSC_CHK_ERR(x)  {                   \
   PetscCall(x); \
@@ -556,7 +599,7 @@ private:
 // =========================================================================
 // HYPRE Testing
 // =========================================================================
-#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
 
 #define HYPRE_CHK_ERR(x)  { \
     if(x!=0) throw std::runtime_error("ERROR: HYPRE returned non-zero exit code"); \
@@ -659,7 +702,7 @@ private:
 // =========================================================================
 // MAGMASparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MAGMASPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MAGMASPARSE)
 #include <magma_v2.h>
 #include <magmasparse.h>
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -794,7 +837,7 @@ private:
 // =========================================================================
 // CuSparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_CUSPARSE)
 
 #define CHECK_CUDA(func)                                                       \
 {                                                                              \
@@ -970,7 +1013,7 @@ private:
 // =========================================================================
 // MKL Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MKL) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MKL)
 #include "mkl.h"
 
 
@@ -1010,7 +1053,6 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y);
@@ -1027,7 +1069,6 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
   Kokkos::fence();
 }
-#endif
 
 
 // =========================================================================
@@ -1042,7 +1083,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscInitialize(0,NULL,NULL,NULL);
 #endif
 
@@ -1244,7 +1285,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << " MPI Ranks:    " << numProc <<endl
         << "========================================================" << endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_OPENMP)
     out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
@@ -1266,8 +1307,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
     y_baseline->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
 
-
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
     RCP<const crs_matrix_type> At;
@@ -1347,7 +1386,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       throw std::runtime_error("MKL Type Mismatch");
 
   #endif // end MKL
-#endif
 
 
     //    globalTimeMonitor = Teuchos::null;
@@ -1367,14 +1405,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::random_device rd;
     std::mt19937 random_source (rd());
 
-    #ifdef HAVE_MUELU_TPETRA
     // compute the baseline
     vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
     if (report_error_norms) MV_Tpetra(*At,xt,yt_baseline);
     const bool error_check_y = true;
-    #else
-    const bool error_check_y = false;
-    #endif
     std::vector<typename Teuchos::ScalarTraits< Scalar >::magnitudeType> dummy;
     dummy.resize(1);
     Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > y_norms (dummy.data(), 1);
@@ -1413,7 +1447,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           break;
         #endif
 
-        #ifdef HAVE_MUELU_TPETRA
         // KK Algorithms
         case Experiments::KK:
         {
@@ -1428,7 +1461,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
            MV_Tpetra(*At,xt,yt);
         }
           break;
-        #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
         // CUSPARSE
@@ -1552,7 +1584,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscFinalize();
 #endif
 

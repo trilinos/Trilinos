@@ -71,7 +71,7 @@ public:
     std::vector<double> tempResultsReceived(to_entity_keys_masked.size());
     size_t fieldSizePerEntity = 1; //hard-coded for mock-apps case of 1 scalar field.
 
-    ThrowRequire(sendAdapter != nullptr);
+    STK_ThrowRequire(sendAdapter != nullptr);
     load_from_mesh_data(tempResults, from_entity_keys_masked, *sendAdapter);
 
     stk::transfer::do_communication(comm_data, tempResults, tempResultsReceived, fieldSizePerEntity);

@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -75,7 +75,6 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -1090,5 +1089,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DEF_HPP

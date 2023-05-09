@@ -9,7 +9,7 @@
   <ParameterList name="Factories">
 
     <ParameterList name="myAmalgamationFact">
-      <Parameter name="factory"                             type="string" value="AmalgamationFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
     </ParameterList>
 
     <ParameterList name="myCoalesceDropFact">

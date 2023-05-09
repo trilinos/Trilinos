@@ -51,10 +51,10 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -64,7 +64,7 @@ namespace MueLu {
   void PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(Teuchos::ParameterList const & params,
                   LWGraph_kokkos const & graph,
-                  Aggregates_kokkos & aggregates,
+                  Aggregates & aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");

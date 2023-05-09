@@ -37,7 +37,7 @@ namespace unit_test_util
 void ConstructedMesh::create_block_elements_and_nodes(stk::mesh::BulkData& bulk, const ConstructedElementBlock& block, const unsigned elemIdOffset)
 {
   stk::mesh::Part* part = bulk.mesh_meta_data().get_part(block.name);
-  ThrowRequire(nullptr != part);
+  STK_ThrowRequire(nullptr != part);
 
   size_t elementIndex = elemIdOffset;
 
@@ -130,7 +130,7 @@ void ConstructedMesh::create_block_elements_and_nodes(stk::mesh::BulkData& bulk,
                                                       const unsigned elemIdOffset)
 {
   stk::mesh::Part* part = bulk.mesh_meta_data().get_part(block.name);
-  ThrowRequire(nullptr != part);
+  STK_ThrowRequire(nullptr != part);
 
   size_t elementIndex = elemIdOffset;
 

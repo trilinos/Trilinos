@@ -56,10 +56,8 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
-#ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
@@ -83,10 +81,8 @@
 #include <MueLu_MasterList.hpp>
 #include <MueLu_XpetraOperator_decl.hpp> // todo fix me
 #include <MueLu_CreateXpetraPreconditioner.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
 #endif

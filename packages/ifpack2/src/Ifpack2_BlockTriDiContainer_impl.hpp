@@ -205,6 +205,8 @@ namespace Ifpack2 {
     template<> struct is_sycl<Kokkos::Experimental::SYCL> { enum : bool { value = true  }; };
 #endif
 
+    template<typename T> struct is_device                  { enum : bool { value = is_cuda<T>::value || is_hip<T>::value || is_sycl<T>::value }; };
+
     
     ///
     /// execution space instance
@@ -675,9 +677,7 @@ namespace Ifpack2 {
           const auto pid_send_value = pids.send[i];
           for (local_ordinal_type j=0,jend=epids.size();j<jend;++j)
             if (epids[j] == pid_send_value) lids_send_host[cnt++] = elids[j];
-#if !defined(__HIP_DEVICE_COMPILE__) && !defined(__CUDA_ARCH__) && !defined(__SYCL_DEVICE_ONLY__)
           TEUCHOS_ASSERT(static_cast<size_t>(cnt) == offset_host.send[i+1]);
-#endif
         }
         Kokkos::deep_copy(lids.send, lids_send_host);
       }
@@ -738,8 +738,7 @@ namespace Ifpack2 {
       }
 
       // ======================================================================
-      // Async version using cuda stream
-      // - cuda only with kokkos develop branch
+      // Async version using execution space instances
       // ======================================================================
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
@@ -867,11 +866,11 @@ namespace Ifpack2 {
         waitall(reqs.send.size(), reqs.send.data());
 #endif // HAVE_IFPACK2_MPI
       }
-#endif //defined(KOKKOS_ENABLE_CUDA)
+#endif //defined(KOKKOS_ENABLE_CUDA|HIP|SYCL)
 
       // ======================================================================
-      // Generic version without using cuda stream
-      // - only difference between cuda and host architecture is on using team
+      // Generic version without using execution space instances
+      // - only difference between device and host architecture is on using team
       //   or range policies.
       // ======================================================================
       template<typename PackTag>
@@ -886,8 +885,7 @@ namespace Ifpack2 {
         const local_ordinal_type mv_blocksize = blocksize_*num_vectors;
         const local_ordinal_type idiff = iend_ - ibeg_;
         const auto abase = buffer_.data() + mv_blocksize*ibeg_;
-        if (is_cuda<execution_space>::value || is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+        if constexpr (is_device<execution_space>::value) {
           using team_policy_type = Kokkos::TeamPolicy<execution_space>;
           local_ordinal_type vector_size(0);
           if      (blocksize_ <=  4) vector_size =  4;
@@ -915,12 +913,7 @@ namespace Ifpack2 {
                       });
                 });
             });
-#endif
         } else {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
-#else
-          {
             const Kokkos::RangePolicy<execution_space> policy(0, idiff*num_vectors);
             Kokkos::parallel_for
               ("AsyncableImport::RangePolicy::copy",
@@ -933,8 +926,6 @@ namespace Ifpack2 {
                 auto to   = std::is_same<PackTag,ToBuffer>::value ? aptr : bptr;
                 memcpy(to, from, sizeof(impl_scalar_type)*blocksize_);
               });
-          }
-#endif
         }
       }
 
@@ -2431,28 +2422,15 @@ namespace Ifpack2 {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::MultiVectorConverter");
 
         scalar_multivector = scalar_multivector_;
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr (is_device<execution_space>::value) {
           const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           Kokkos::parallel_for
             ("MultiVectorConverter::TeamPolicy", policy, *this);
-#endif
-	} else if(is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          const local_ordinal_type vl = vector_length;
-          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          Kokkos::parallel_for
-            ("MultiVectorConverter::TeamPolicy", policy, *this);
-#endif
         } else {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined (__SYCL_DEVICE_ONLY__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
-#else
           const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
           Kokkos::parallel_for
             ("MultiVectorConverter::RangePolicy", policy, *this);
-#endif
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
@@ -3151,6 +3129,17 @@ namespace Ifpack2 {
       return total_team_size/team_size;
     }
 
+    template<typename T>
+    static inline int ComputeResidualVectorRecommendedVectorSize(const int blksize,
+                                                                 const int team_size) {
+      if ( is_cuda<T>::value )
+        return ComputeResidualVectorRecommendedCudaVectorSize(blksize, team_size);
+      if ( is_hip<T>::value )
+        return ComputeResidualVectorRecommendedHIPVectorSize(blksize, team_size);
+      if ( is_sycl<T>::value )
+        return ComputeResidualVectorRecommendedSYCLVectorSize(blksize, team_size);
+      return -1;
+    }
 
     
     template<typename MatrixType>
@@ -3636,40 +3625,17 @@ namespace Ifpack2 {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ComputeResidual::<SeqTag>");
 
         y = y_; b = b_; x = x_;
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr (is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
-#endif
-	} else if(is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
-          const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
-          Kokkos::parallel_for
-            ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedSYCLVectorSize(blocksize, team_size);
-          const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
-          Kokkos::parallel_for
-            ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
-#endif
         } else {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
-#else
           const Kokkos::RangePolicy<execution_space,SeqTag> policy(0, rowptr.extent(0) - 1);
           Kokkos::parallel_for
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
-#endif
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
@@ -3686,39 +3652,20 @@ namespace Ifpack2 {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ComputeResidual::<AsyncTag>");
 
         b = b_; x = x_; x_remote = x_remote_;
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr (is_device<execution_space>::value) {
           y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
                                                      vector_length);
-#endif
-        } else if (is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
-                                                     y_packed_.extent(0),
-                                                     y_packed_.extent(1),
-                                                     y_packed_.extent(2),
-                                                     vector_length);
-#endif
-	} else if (is_sycl<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_SYCL)
-          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
-                                                     y_packed_.extent(0),
-                                                     y_packed_.extent(1),
-                                                     y_packed_.extent(2),
-                                                     vector_length);
-#endif
         } else {
           y_packed = y_packed_;
         }
 
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr(is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
@@ -3742,69 +3689,7 @@ namespace Ifpack2 {
           default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
-        } else if (is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
-          // local_ordinal_type vl_power_of_two = 1;
-          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
-          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
-          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
-            const Kokkos::TeamPolicy<execution_space,AsyncTag<B> >      \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
-               policy, *this); } break
-          switch (blocksize_requested) {
-          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
-          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
-          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
-          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
-          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
-          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
-          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
-          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
-          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
-          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
-          }
-#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
-	} else if (is_sycl<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_SYCL)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedSYCLVectorSize(blocksize, team_size);
-          // local_ordinal_type vl_power_of_two = 1;
-          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
-          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
-          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
-            const Kokkos::TeamPolicy<execution_space,AsyncTag<B> >      \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
-               policy, *this); } break
-          switch (blocksize_requested) {
-          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
-          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
-          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
-          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
-          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
-          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
-          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
-          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
-          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
-          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
-          }
-#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
 	} else {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
-#else
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
             const Kokkos::RangePolicy<execution_space,AsyncTag<B> > policy(0, rowidx2part.extent(0)); \
             Kokkos::parallel_for                                        \
@@ -3823,7 +3708,6 @@ namespace Ifpack2 {
           default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
@@ -3841,39 +3725,20 @@ namespace Ifpack2 {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ComputeResidual::<OverlapTag>");
 
         b = b_; x = x_; x_remote = x_remote_;
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr (is_device<execution_space>::value) {
           y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
                                                      vector_length);
-#endif
-        } else if (is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
-                                                     y_packed_.extent(0),
-                                                     y_packed_.extent(1),
-                                                     y_packed_.extent(2),
-                                                     vector_length);
-#endif
-	} else if (is_sycl<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_SYCL)
-          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
-                                                     y_packed_.extent(0),
-                                                     y_packed_.extent(1),
-                                                     y_packed_.extent(2),
-                                                     vector_length);
-#endif
         } else {
           y_packed = y_packed_;
         }
 
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if constexpr (is_device<execution_space>::value) {
           const local_ordinal_type blocksize = blocksize_requested;
           const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
@@ -3903,81 +3768,7 @@ namespace Ifpack2 {
           default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
-	} else if (is_hip<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_HIP)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
-          // local_ordinal_type vl_power_of_two = 1;
-          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
-          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
-          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
-          if (compute_owned) {                                          \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<0,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
-          } else {                                                      \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<1,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
-          } break
-          switch (blocksize_requested) {
-          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
-          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
-          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
-          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
-          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
-          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
-          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
-          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
-          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
-          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
-          }
-#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
-	} else if (is_sycl<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_SYCL)
-          const local_ordinal_type blocksize = blocksize_requested;
-          const local_ordinal_type team_size = 8;
-          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedSYCLVectorSize(blocksize, team_size);
-          // local_ordinal_type vl_power_of_two = 1;
-          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
-          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
-          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
-          if (compute_owned) {                                          \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<0,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
-          } else {                                                      \
-            const Kokkos::TeamPolicy<execution_space,OverlapTag<1,B> > \
-              policy(rowidx2part.extent(0), team_size, vector_size);    \
-            Kokkos::parallel_for                                        \
-              ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
-          } break
-          switch (blocksize_requested) {
-          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
-          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
-          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
-          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
-          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
-          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
-          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
-          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
-          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
-          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
-          }
-#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif	  
         } else {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
-#else
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
           if (compute_owned) {                                          \
             const Kokkos::RangePolicy<execution_space,OverlapTag<0,B> > \
@@ -4004,7 +3795,6 @@ namespace Ifpack2 {
           default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
-#endif
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }

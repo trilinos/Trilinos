@@ -5,9 +5,6 @@
 #ifdef MUELU_AGGREGATES_SHORT
 using Aggregates [[maybe_unused]] = MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_AGGREGATES_KOKKOS_SHORT
-using Aggregates_kokkos [[maybe_unused]] = MueLu::Aggregates_kokkos<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
 using AggregationPhase1Algorithm [[maybe_unused]] = MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
@@ -40,15 +37,6 @@ using AggregationStructuredAlgorithm_kokkos [[maybe_unused]] = MueLu::Aggregatio
 #endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 using AmalgamationInfo [[maybe_unused]] = MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
-using AmalgamationInfo_kokkos [[maybe_unused]] = MueLu::AmalgamationInfo_kokkos<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_COUPLEDAGGREGATIONCOMMHELPER_SHORT
-using CoupledAggregationCommHelper [[maybe_unused]] = MueLu::CoupledAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
-using CoupledAggregationFactory [[maybe_unused]] = MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_GLOBALLEXICOGRAPHICINDEXMANAGER_SHORT
 using GlobalLexicographicIndexManager [[maybe_unused]] = MueLu::GlobalLexicographicIndexManager<LocalOrdinal,GlobalOrdinal,Node>;
@@ -91,12 +79,6 @@ using LWGraph_kokkos [[maybe_unused]] = MueLu::LWGraph_kokkos<LocalOrdinal,Globa
 #endif
 #ifdef MUELU_LOCALLWGRAPH_KOKKOS_SHORT
 using LocalLWGraph_kokkos [[maybe_unused]] = MueLu::LocalLWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
-using LeftoverAggregationAlgorithm [[maybe_unused]] = MueLu::LeftoverAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_LOCALAGGREGATIONALGORITHM_SHORT
-using LocalAggregationAlgorithm [[maybe_unused]] = MueLu::LocalAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 using LocalLexicographicIndexManager [[maybe_unused]] = MueLu::LocalLexicographicIndexManager<LocalOrdinal,GlobalOrdinal,Node>;

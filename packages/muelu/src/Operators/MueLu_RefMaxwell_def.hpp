@@ -60,8 +60,6 @@
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_ThresholdAFilterFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory.hpp"
@@ -74,7 +72,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Maxwell_Utils.hpp"
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -893,7 +890,6 @@ namespace MueLu {
         rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD0);
       }
 
-#ifdef HAVE_MUELU_TPETRA
       if ((!D0_T_Matrix_.is_null()) &&
           (!R11_.is_null()) &&
           (!rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
@@ -902,7 +898,6 @@ namespace MueLu {
           (R11_->getColMap()->lib() == Xpetra::UseTpetra))
         D0_T_R11_colMapsMatch_ = D0_T_Matrix_->getColMap()->isSameAs(*R11_->getColMap());
       else
-#endif
         D0_T_R11_colMapsMatch_ = false;
       if (D0_T_R11_colMapsMatch_)
         GetOStream(Runtime0) << "RefMaxwell::compute(): D0_T and R11 have matching colMaps" << std::endl;
@@ -1197,7 +1192,7 @@ namespace MueLu {
 
         RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact, SaPFact;
         if (useKokkos_) {
-          amalgFact = rcp(new AmalgamationFactory_kokkos());
+          amalgFact = rcp(new AmalgamationFactory());
           dropFact = rcp(new CoalesceDropFactory_kokkos());
           UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
           coarseMapFact = rcp(new CoarseMapFactory());
@@ -1230,6 +1225,8 @@ namespace MueLu {
         UncoupledAggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(minAggSize));
         int maxAggSize = parameterList_.get("aggregation: max agg size",-1);
         UncoupledAggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(maxAggSize));
+        bool matchMLbehavior = parameterList_.get("aggregation: match ML phase2a",MasterList::getDefault<bool>("aggregation: match ML phase2a"));
+        UncoupledAggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(matchMLbehavior));
 
         coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
@@ -2098,7 +2095,6 @@ namespace MueLu {
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
       } else {
-#ifdef MUELU_HAVE_TPETRA
         if (D0_T_R11_colMapsMatch_) {
           // Column maps of D0_T and R11 match, and we're running Tpetra
           {
@@ -2113,9 +2109,7 @@ namespace MueLu {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*P11res_),Teuchos::NO_TRANS);
           }
-        } else
-#endif
-        {
+        } else {
           {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);

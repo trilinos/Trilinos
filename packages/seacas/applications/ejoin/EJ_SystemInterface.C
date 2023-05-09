@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -212,9 +212,11 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
-    fmt::print(stderr, "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n"
-	       "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#ejoin\n"
-	       "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n");
+    fmt::print(
+        stderr,
+        "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n"
+        "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#ejoin\n"
+        "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -465,17 +467,13 @@ void SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals{stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        ;
-        int k = 0;
+        int  k = 0;
 
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];

@@ -299,6 +299,10 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
   typedef typename KernelHandle::scalar_t scalar_type;
   typedef typename KernelHandle::memory_space memory_space;
 
+  (void)row_map;
+  (void)entries;
+  (void)values;
+
   const bool is_cuda_space =
       std::is_same<memory_space, Kokkos::CudaSpace>::value ||
       std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||

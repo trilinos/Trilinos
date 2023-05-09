@@ -50,8 +50,7 @@
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
 
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_IndexManager_kokkos_fwd.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
@@ -111,7 +110,7 @@ namespace MueLu {
 
     void BuildAggregates(const Teuchos::ParameterList& params,
                          const LWGraph_kokkos& graph,
-                         Aggregates_kokkos& aggregates,
+                         Aggregates& aggregates,
                          Kokkos::View<unsigned*, device_type>& aggStat,
                          LO& numNonAggregatedNodes) const;
 

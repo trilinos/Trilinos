@@ -51,22 +51,18 @@
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase3Algorithm_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_LWGraph_kokkos_fwd.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"

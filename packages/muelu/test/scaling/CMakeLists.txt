@@ -4,7 +4,6 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
 #
@@ -21,7 +20,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
 ENDIF()
 
@@ -38,6 +37,8 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     COMM serial mpi
     CATEGORIES BASIC PERFORMANCE
     )
+
+  INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
 
   # Do a simple weak scaling experiment (4x ranks and 4x grid size)
   TRIBITS_ADD_TEST(
@@ -146,13 +147,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
 ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
-
-  # The option TARGET_DEFINES calls cmake's target_compile_definitions under the hood.
-  # This defines the preprocessor macro MueLu_UNDEFINE_Tpetra solely for
-  # the target "ImportPerformanceEpetra".  This effectively allows compilation of the test with only
-  # Epetra defined.
-  # Here is the equivalent cmake call:
-  #   target_compile_definitions(MueLu_ImportPerformanceEpetra PUBLIC ${PACKAGE_NAME}_UNDEFINE_Tpetra=1)
 
   TRIBITS_ADD_EXECUTABLE(
     ImportPerformanceEpetra
@@ -421,7 +415,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
       )
 
-    ENDIF()
+    ENDIF() # INST_COMPLEX_INT_INT
 
     TRIBITS_ADD_TEST(
       Driver
@@ -447,11 +441,11 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       COMM mpi # HAVE_MPI required
       )
 
-  ENDIF()
+  ENDIF() # ENABLE_ZOLTAN
 
 
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
         Driver
@@ -535,7 +529,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
   TRIBITS_ADD_EXECUTABLE(
     SpMVPerformance
     SOURCES SpMVPerformance.cpp
@@ -592,7 +586,7 @@ ENDIF()
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
 # This particular driver does not require MPI and is focused on evaluations using smaller
 # MatrixMarket matrices.
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
 
   # Reading a matrix saved in real format as complex does not work.
   IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)

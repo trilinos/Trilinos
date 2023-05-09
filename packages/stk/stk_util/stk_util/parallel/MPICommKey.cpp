@@ -39,7 +39,7 @@ MPIKeyManager::MPIKeyManager() : m_destructor([this]() { destructor(); })
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);
-  ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIKeyManager");
+  STK_ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIKeyManager");
 
   MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
 
@@ -76,7 +76,7 @@ MPIKeyManager::CommKey MPIKeyManager::get_key(MPI_Comm comm) const
   int foundFlag;
   MPI_Comm_get_attr(comm, m_mpiAttrKey, &commKey, &foundFlag);
 
-  ThrowRequireMsg(foundFlag, "Key must be assigned before use in const version of get_key()");
+  STK_ThrowRequireMsg(foundFlag, "Key must be assigned before use in const version of get_key()");
 
   return *commKey;
 }
@@ -149,7 +149,7 @@ const MPIKeyManager::CommKey* MPIKeyManager::generate_comm_key()
   auto valFound = get_next_comm_key();
 
   auto p = m_usedCommKeys.insert(valFound);
-  ThrowRequireMsg(p.second, "Error in generateCommKey()");
+  STK_ThrowRequireMsg(p.second, "Error in generateCommKey()");
 
   return &(*p.first);
 }
@@ -159,7 +159,7 @@ void MPIKeyManager::free_comm(MPI_Comm comm)
 {
   const auto& this_ref = *this;
   auto key = this_ref.get_key(comm);
-  ThrowRequireMsg(m_usedCommKeys.count(key) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
+  STK_ThrowRequireMsg(m_usedCommKeys.count(key) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
   for (auto& uidCallbackVecPair : m_callbacks[key]) {
     for (auto& callback : uidCallbackVecPair.second) {
       callback(comm);

@@ -52,7 +52,7 @@
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -107,19 +107,18 @@ namespace MueLuTests {
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetFactory("Graph", dropFact);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetFactory("Graph", dropFact);
 
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
-    coarseMapFact->SetFactory("Aggregates", CoupledAggFact);
+    coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
     RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
-    TentativePFact->SetFactory("Aggregates", CoupledAggFact);
+    TentativePFact->SetFactory("Aggregates", UncoupledAggFact);
     TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
@@ -196,7 +195,7 @@ namespace MueLuTests {
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
 
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -289,7 +288,7 @@ namespace MueLuTests {
 
     fineLevel.Set("A", A);
 
-    auto amalgFact = rcp(new AmalgamationFactory_kokkos());
+    auto amalgFact = rcp(new AmalgamationFactory());
 
     auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -393,7 +392,7 @@ namespace MueLuTests {
     fineLevel.Set("A", A);
 
 
-    auto amalgFact = rcp(new AmalgamationFactory_kokkos());
+    auto amalgFact = rcp(new AmalgamationFactory());
 
     auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -543,11 +542,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
     RCP<Factory>          Rfact = rcp( new TransPFactory() );
@@ -568,7 +566,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", Pfact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", SmooFact);
 
@@ -632,7 +630,7 @@ namespace MueLuTests {
 
   }
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST(TentativePFactory, EpetraVsTpetra)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -686,11 +684,10 @@ namespace MueLuTests {
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
         // define transfer operators
-        RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-        CoupledAggFact->SetMinNodesPerAggregate(3);
-        CoupledAggFact->SetMaxNeighAlreadySelected(0);
-        CoupledAggFact->SetOrdering("natural");
-        CoupledAggFact->SetPhase3AggCreation(0.5);
+        RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+        UncoupledAggFact->SetMinNodesPerAggregate(3);
+        UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+        UncoupledAggFact->SetOrdering("natural");
 
         RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
         RCP<Factory>          Rfact = rcp( new TransPFactory() );
@@ -713,7 +710,7 @@ namespace MueLuTests {
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
         M.SetFactory("Ptent", Pfact);
-        M.SetFactory("Aggregates", CoupledAggFact);
+        M.SetFactory("Aggregates", UncoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
 

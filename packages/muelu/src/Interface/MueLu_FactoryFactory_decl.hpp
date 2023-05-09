@@ -88,7 +88,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CoarseningVisualizationFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_DropNegativeEntriesFactory.hpp"
@@ -160,7 +159,6 @@
 #include "MueLu_NodePartitionInterface.hpp"
 
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
@@ -250,7 +248,6 @@ namespace MueLu {
       if (factoryName == "CoalesceDropFactory")                   return Build2<CoalesceDropFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SmooVecCoalesceDropFactory")            return Build2<SmooVecCoalesceDropFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")                     return Build2<ConstraintFactory>                     (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "CoupledAggregationFactory")             return BuildCoupledAggregationFactory                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory")            return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "DirectSolver")                          return BuildDirectSolver                             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "DropNegativeEntriesFactory")            return Build2<DropNegativeEntriesFactory>            (paramList, factoryMapIn, factoryManagersIn);
@@ -306,7 +303,6 @@ namespace MueLu {
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
@@ -316,6 +312,10 @@ namespace MueLu {
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixFreeTentativePFactory")           return Build2<MatrixFreeTentativePFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
+
+      // Handle removed Kokkos factories
+      if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
 
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -639,25 +639,6 @@ namespace MueLu {
       return factory;
     }
 
-    //! CoupledAggregationFactory
-    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
-
-      if (paramList.isParameter("aggregation: ordering"))
-        factory->SetOrdering(paramList.get<std::string>("aggregation: ordering"));
-
-      if (paramList.isParameter("aggregation: max selected neighbors"))
-        factory->SetMaxNeighAlreadySelected(paramList.get<int>("aggregation: max selected neighbors"));
-
-      if (paramList.isParameter("Phase3AggCreation"))
-        factory->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
-
-      if(paramList.isParameter("aggregation: min agg size"))
-        factory->SetMinNodesPerAggregate(paramList.get<int>("aggregation: min agg size"));
-
-      return factory;
-    }
-
     //! TrilinosSmoother
     // Parameter List Parsing:
     //     <ParameterList name="smootherFact1">
@@ -841,17 +822,17 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& /* paramList */, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
-      //if (paramList.begin() == paramList.end())
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
+      if (paramList.numParams() == 0)
         return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
 
-      /*TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedDirectSolver", Exceptions::RuntimeError, "FactoryFactory::BuildBlockedDirectSolver: Generating factory needs to be a BlockedDirectSolver.");
 
       std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));*/
+      return rcp(new SmootherFactory(rcp(new BlockedDirectSolver(type, params))));
     }
 
     //RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {

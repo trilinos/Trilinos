@@ -55,7 +55,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include <MueLu_Utilities.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_FactoryManager.hpp>
@@ -180,11 +180,10 @@ namespace MueLuTests {
     fineLevel->Set("Nullspace", nullSpace);       // set null space information for finest level
     fineLevel->Set("Coordinates", coordinates);   // set coordinates on finest level
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<TentativePFactory> PFact  = rcp(new TentativePFactory()); //just using plain aggregation
     RCP<Factory>           RFact  = rcp(new TransPFactory());
@@ -201,7 +200,7 @@ namespace MueLuTests {
 
     FactoryManager M;
     M.SetKokkosRefactor(false);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("P", PFact);
     M.SetFactory("Ptent", PFact); // for nullspace
     M.SetFactory("R", RFact);

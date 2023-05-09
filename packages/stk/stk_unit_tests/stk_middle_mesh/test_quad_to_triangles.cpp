@@ -717,6 +717,23 @@ TEST(QuadToTriangles, classify_onto)
 
 }
 
+TEST_F(QuadToTrianglesTester, compute_xyz_coords_exterior)
+{
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, quadToTriangles.el1, utils::Point(0.5, -0.5));
+    PointRecordForTriangle r2(PointClassification::Exterior, -1, quadToTriangles.el2, utils::Point(0.5, -1.5));
+    PointRecord record(PointClassification::Exterior, -1, el, r1, r2);
+    expect_near(quadToTriangles.compute_xyz_coords(record, true), {0.5, -0.5}, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, quadToTriangles.el1, utils::Point(0.5,  1.5));
+    PointRecordForTriangle r2(PointClassification::Exterior, -1, quadToTriangles.el2, utils::Point(0.5, -0.5));
+    PointRecord record(PointClassification::Exterior, -1, el, r1, r2);
+    expect_near(quadToTriangles.compute_xyz_coords(record, true), {0.5, 1.5}, 1e-13);
+  }
+}
+
 
 
 } // namespace impl

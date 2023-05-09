@@ -45,7 +45,7 @@ template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
           typename ConstEntriesType, typename ConstValuesType,
           typename EntriesType, typename ValuesType>
 void spgemm_numeric_cusparse(
-    KernelHandle *handle, lno_t m, lno_t n, lno_t k,
+    KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno_t /*k*/,
     const ConstRowMapType &row_mapA, const ConstEntriesType &entriesA,
     const ConstValuesType &valuesA, const ConstRowMapType &row_mapB,
     const ConstEntriesType &entriesB, const ConstValuesType &valuesB,
@@ -519,7 +519,6 @@ void spgemm_numeric_mkl(
               const_cast<index_type *>(colidxB.data()),
               const_cast<scalar_type *>(valuesB.data()));
   auto mklSpgemmHandle = handle->get_mkl_spgemm_handle();
-  bool computedEntries = false;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
   generalDescr.mode = SPARSE_FILL_MODE_FULL;

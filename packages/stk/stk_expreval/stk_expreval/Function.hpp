@@ -160,7 +160,7 @@ double real_rand()
     return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
   ))
   KOKKOS_IF_ON_DEVICE((
-    NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
+    STK_NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
     return 0.0;
   ))
 }
@@ -175,7 +175,7 @@ double real_srand(double x)
     return 0.0;
   ))
   KOKKOS_IF_ON_DEVICE((
-    NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
+    STK_NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
     return 0.0;
   ))
 }
@@ -188,7 +188,7 @@ double current_time()
     return static_cast<double>(::time(nullptr));
   ))
   KOKKOS_IF_ON_DEVICE((
-    NGP_ThrowErrorMsg("The time function is not supported on GPUs");
+    STK_NGP_ThrowErrorMsg("The time function is not supported on GPUs");
     return 0.0;
   ))
 }
@@ -236,7 +236,7 @@ double random0()
     return double(val) / double(RAND_MAX);
   ))
   KOKKOS_IF_ON_DEVICE((
-    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+    STK_NGP_ThrowErrorMsg("The random function is not supported on GPUs");
     return 0.0;
   ))
 }
@@ -250,7 +250,7 @@ double random1(double seed)
     return random0();
   ))
   KOKKOS_IF_ON_DEVICE((
-    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+    STK_NGP_ThrowErrorMsg("The random function is not supported on GPUs");
     return 0.0;
   ))
 }

@@ -84,7 +84,7 @@ namespace stk {
 
     globalVec.clear();
 
-    ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
+    STK_ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
     int localSize = localVec.size();
 
     //
@@ -104,7 +104,7 @@ namespace stk {
       totalSize += size;
     }
 
-    ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
+    STK_ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
     globalVec.resize(totalSize);
 
     //

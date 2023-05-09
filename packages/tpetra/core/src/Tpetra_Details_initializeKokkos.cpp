@@ -43,6 +43,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
+#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
 #include <cstdlib> // std::atexit
 #include <string>
 #include <vector>
@@ -77,7 +78,10 @@ initializeKokkos ()
     checkOldCudaLaunchBlocking();
 
     std::atexit (finalizeKokkosIfNeeded);
+
   }
+  // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+  Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
 }
 
 } // namespace Details

@@ -55,6 +55,7 @@
         const bool throw_exception = !(COND); \
         if(throw_exception) { \
             Teuchos::TestForException_incrThrowNumber(); \
+            const int throwNumber = throwNumber; \
             std::ostringstream omsg; \
             omsg \
                 << std::setw(FROSCH_OUTPUT_INDENT) << " " << __FILE__ << ":" << __LINE__ << ":\n\n" \
@@ -65,7 +66,7 @@
                 << std::setw(FROSCH_OUTPUT_INDENT) << " " << "[ERROR] " << MSG; \
             const std::string &omsgstr = omsg.str(); \
             TEUCHOS_STORE_STACKTRACE(); \
-            Teuchos::TestForException_break(omsgstr); \
+            Teuchos::TestForException_break(omsgstr, throwNumber); \
             throw std::logic_error(omsgstr); \
         } \
     }

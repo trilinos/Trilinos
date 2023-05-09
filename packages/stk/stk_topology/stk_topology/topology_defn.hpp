@@ -304,7 +304,7 @@ template <typename OrdinalOutputIterator>
 STK_INLINE_FUNCTION
 void topology::permutation_node_ordinals( unsigned ordinal, OrdinalOutputIterator output_ordinals) const
 {
-  NGP_ThrowAssert(m_value != QUAD_6 && m_value != WEDGE_12);
+  STK_NGP_ThrowAssert(m_value != QUAD_6 && m_value != WEDGE_12);
   using functor = topology_detail::permutation_node_ordinals_impl<OrdinalOutputIterator>;
   functor f(ordinal, output_ordinals);
   topology::apply_functor< functor > apply( f );

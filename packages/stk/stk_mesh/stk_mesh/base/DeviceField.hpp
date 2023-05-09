@@ -103,7 +103,7 @@ private:
       synchronizedCount(0),
       fieldSyncDebugger(nullptr)
   {
-    ThrowRequireMsg(isFromGetUpdatedNgpField, "NgpField must be obtained from get_updated_ngp_field()");
+    STK_ThrowRequireMsg(isFromGetUpdatedNgpField, "NgpField must be obtained from get_updated_ngp_field()");
     initialize();
   }
 
@@ -397,7 +397,7 @@ private:
 
  void update_field()
  {
-   ThrowRequireMsg(hostBulk->synchronized_count() >= synchronizedCount,
+   STK_ThrowRequireMsg(hostBulk->synchronized_count() >= synchronizedCount,
        "Invalid sync state detected for NgpField: " << hostField->name());
    if (hostBulk->synchronized_count() == synchronizedCount) {
      return;
@@ -534,7 +534,7 @@ private:
 
   void set_field_buckets_pointer_view(const BucketVector& buckets)
   {
-    ThrowRequireMsg(hostBucketPtrData.extent(0) >= buckets.size(), "hostBucketPtrData is not large enough for the selected buckets");
+    STK_ThrowRequireMsg(hostBucketPtrData.extent(0) >= buckets.size(), "hostBucketPtrData is not large enough for the selected buckets");
     for(unsigned i = 0; i < buckets.size(); i++) {
       T* hostBucketPtr = reinterpret_cast<T*>(field_data<FieldBase, EmptyStkFieldSyncDebugger>(*hostField, *buckets[i]));
       T* deviceBucketPtr = hostBucketPtr;
@@ -542,11 +542,11 @@ private:
 #ifdef KOKKOS_ENABLE_CUDA
       cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
 
-      ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
+      STK_ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
 #elif defined(KOKKOS_ENABLE_HIP) 
       hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
 
-      ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
+      STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
 #endif
 
       hostBucketPtrData(i) = reinterpret_cast<uintptr_t>(deviceBucketPtr);
@@ -562,7 +562,7 @@ private:
       unsigned newBucketId = buckets[i]->bucket_id();
 
       if(!buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal())) {
-        ThrowRequire(deviceData.extent(0) != 0 && deviceSelectedBucketOffset.extent(0) != 0);
+        STK_ThrowRequire(deviceData.extent(0) != 0 && deviceSelectedBucketOffset.extent(0) != 0);
         copy_moved_device_bucket_data<FieldDataDeviceViewType<T>, UnmanagedDevInnerView<T>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
       }
     }

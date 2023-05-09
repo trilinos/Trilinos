@@ -69,7 +69,6 @@
 #include <EpetraExt_BlockMapOut.h>
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
@@ -77,7 +76,6 @@
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraMap.hpp>
@@ -86,8 +84,6 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 //#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_IO.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -210,7 +206,6 @@ namespace MueLu {
   }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec) {
@@ -423,7 +418,6 @@ namespace MueLu {
       throw Exceptions::BadCast("Utilities::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
     return tmp_TMap->getTpetra_Map();
   }
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<const Scalar>& scalingVector, bool doInverse,
@@ -464,7 +458,6 @@ namespace MueLu {
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
-#ifdef HAVE_MUELU_TPETRA
     try {
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
 
@@ -531,9 +524,6 @@ namespace MueLu {
     } catch(...) {
       throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
     }
-#else
-    throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-#endif
   } //MyOldScaleMatrix_Tpetra()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -555,7 +545,6 @@ namespace MueLu {
     }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
       using Helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
       /***************************************************************/
@@ -619,7 +608,6 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
-#endif
 
     // Epetra case
     std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
@@ -667,9 +655,6 @@ namespace MueLu {
     if(paramList.isParameter ("Coordinates") == false)
       return coordinates;
 
-#if defined(HAVE_MUELU_TPETRA)
-    // only Tpetra code
-
     // define Tpetra::MultiVector type with Scalar=float only if
     // * ETI is turned off, since then the compiler will instantiate it automatically OR
     // * Tpetra is instantiated on Scalar=float
@@ -710,7 +695,6 @@ namespace MueLu {
     // Tpetra is not instantiated on scalar=double
     throw Exceptions::RuntimeError("ExtractCoordinatesFromParameterList: The coordinates vector in parameter list is expected to be a Tpetra multivector with SC=double or float.");
 #endif
-#endif // endif HAVE_TPETRA
 
     // check for Xpetra coordinates vector
     if(paramList.isType<decltype(coordinates)>("Coordinates")) {

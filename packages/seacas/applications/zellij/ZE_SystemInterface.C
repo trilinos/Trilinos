@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,10 +37,10 @@ void SystemInterface::enroll_options()
                   "Name of output file to create. Default is `zellij-out.e`", "zellij-out.e",
                   nullptr, true);
 
-  options_.enroll(
-      "rcb", Ioss::GetLongOption::NoValue,
-      "Use recursive coordinate bisection method to decompose the input lattice for parallel output.",
-      nullptr);
+  options_.enroll("rcb", Ioss::GetLongOption::NoValue,
+                  "Use recursive coordinate bisection method to decompose the input lattice for "
+                  "parallel output.",
+                  nullptr);
   options_.enroll(
       "rib", Ioss::GetLongOption::NoValue,
       "Use recursive inertial bisection method to decompose the input lattice for parallel output.",

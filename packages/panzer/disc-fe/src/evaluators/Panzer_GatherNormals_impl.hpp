@@ -59,33 +59,33 @@ panzer::GatherNormals<EvalT, Traits>::
 GatherNormals(
   const Teuchos::ParameterList& p)
 { 
-  dof_name = (p.get< std::string >("DOF Name"));
+  dof_name_ = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
-    basis = p.get< Teuchos::RCP<PureBasis> >("Basis");
+    basis_ = p.get< Teuchos::RCP<PureBasis> >("Basis");
   else
-    basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
+    basis_ = p.get< Teuchos::RCP<const PureBasis> >("Basis");
 
-  pointRule = p.get<Teuchos::RCP<const PointRule> >("Point Rule");
+  pointRule_ = p.get<Teuchos::RCP<const PointRule> >("Point Rule");
 
-  Teuchos::RCP<PHX::DataLayout> basis_layout         = basis->functional;
-  Teuchos::RCP<PHX::DataLayout> vector_layout_vector = basis->functional_grad;
+  Teuchos::RCP<PHX::DataLayout> basis_layout         = basis_->functional;
+  Teuchos::RCP<PHX::DataLayout> vector_layout_vector = basis_->functional_grad;
 
   // some sanity checks
-  TEUCHOS_ASSERT(basis->isVectorBasis());
+  TEUCHOS_ASSERT(basis_->isVectorBasis());
 
   // setup the orientation field
-  std::string orientationFieldName = basis->name() + " Orientation";
+  std::string orientationFieldName = basis_->name() + " Orientation";
   // setup all fields to be evaluated and constructed
-  pointValues = panzer::PointValues2<double> (pointRule->getName()+"_",false);
-  pointValues.setupArrays(pointRule);
+  pointValues_ = panzer::PointValues2<double> (pointRule_->getName()+"_",false);
+  pointValues_.setupArrays(pointRule_);
 
   // the field manager will allocate all of these field
-  constJac_ = pointValues.jac;
+  constJac_ = pointValues_.jac;
   this->addDependentField(constJac_);
 
-  gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",vector_layout_vector);
-  this->addEvaluatedField(gatherFieldNormals);
+  gatherFieldNormals_ = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name_+"_Normals",vector_layout_vector);
+  this->addEvaluatedField(gatherFieldNormals_);
 
   this->setName("Gather Normals");
 }
@@ -96,17 +96,25 @@ void panzer::GatherNormals<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  orientations = d.orientations_;
-  this->utils.setFieldData(pointValues.jac,fm);
-  faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),
-					 "faceNormal",
-					 gatherFieldNormals.extent(0),
-					 gatherFieldNormals.extent(1),
-					 gatherFieldNormals.extent(2));
+  auto orientations = d.orientations_;
+  orientations_ = Kokkos::View<Intrepid2::Orientation*>("orientations_",orientations->size());
+  auto orientations_host = Kokkos::create_mirror_view(orientations_);
+  for (size_t i=0; i < orientations->size(); ++i)
+    orientations_host(i) = (*orientations)[i];
+  Kokkos::deep_copy(orientations_,orientations_host);
 
-  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  this->utils.setFieldData(pointValues_.jac,fm);
+
+  const shards::CellTopology & parentCell = *basis_->getCellTopology();
   int sideDim = parentCell.getDimension()-1;
-  sideParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(sideDim, parentCell.getKey());
+  sideParam_ = Intrepid2::RefSubcellParametrization<PHX::Device>::get(sideDim, parentCell.getKey());
+
+  int numFaces = gatherFieldNormals_.extent(1);
+  keys_ = Kokkos::View<unsigned int*>("parentCell.keys",numFaces);
+  auto keys_host = Kokkos::create_mirror_view(keys_);
+  for (int i=0; i < numFaces; ++i)
+    keys_host(i) = parentCell.getKey(sideDim,i);
+  Kokkos::deep_copy(keys_,keys_host);
 }
 
 // **********************************************************************
@@ -118,33 +126,36 @@ evaluateFields(typename Traits::EvalData workset)
   if(workset.num_cells<=0)
     return;
 
-  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  const shards::CellTopology & parentCell = *basis_->getCellTopology();
   int cellDim = parentCell.getDimension();
   int sideDim = parentCell.getDimension()-1;
-  int numFaces = gatherFieldNormals.extent(1);
+  int numFaces = gatherFieldNormals_.extent(1);
 
   // allocate space that is sized correctly for AD
-  auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", sideDim, cellDim);
-  auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"phy_edges", sideDim, cellDim);
+  auto refEdges = Kokkos::createDynRankView(gatherFieldNormals_.get_static_view(),"ref_edges", sideDim, cellDim);
+  auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals_.get_static_view(),"phy_edges", sideDim, cellDim);
 
-  const WorksetDetails & details = workset;
-  const auto worksetJacobians = pointValues.jac.get_view();
+  const auto worksetJacobians = pointValues_.jac.get_view();
+  const auto cell_local_ids = workset.getLocalCellIDs();
+  auto gatherFieldNormals = gatherFieldNormals_;
+  auto sideParam = sideParam_;
+  auto keys = keys_;
+  auto orientations = orientations_;
 
   // Loop over workset faces and edge points
-  //TODO parallel_for
-  for(index_t c=0;c<workset.num_cells;c++) {
+  Kokkos::parallel_for("panzer::GatherNormals",workset.num_cells,KOKKOS_LAMBDA(const int c){
     int faceOrts[6] = {};
-    orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
+    orientations(cell_local_ids(c)).getFaceOrientation(faceOrts, numFaces);
 
     for(int pt = 0; pt < numFaces; pt++) {
       auto ortEdgeTan_U = Kokkos::subview(refEdges, 0, Kokkos::ALL());
       auto ortEdgeTan_V = Kokkos::subview(refEdges, 1, Kokkos::ALL());
 
       Intrepid2::Impl::OrientationTools::getRefSubcellTangents(refEdges,
-          sideParam,
-          parentCell.getKey(sideDim,pt),
-          pt,
-          faceOrts[pt]);
+                                                               sideParam,
+                                                               keys(pt),
+                                                               pt,
+                                                               faceOrts[pt]);
 
       auto phyEdgeTan_U = Kokkos::subview(phyEdges, 0, Kokkos::ALL());
       auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());
@@ -158,7 +169,7 @@ evaluateFields(typename Traits::EvalData workset)
       gatherFieldNormals(c,pt,1) = (phyEdgeTan_U(2)*phyEdgeTan_V(0) - phyEdgeTan_U(0)*phyEdgeTan_V(2));
       gatherFieldNormals(c,pt,2) = (phyEdgeTan_U(0)*phyEdgeTan_V(1) - phyEdgeTan_U(1)*phyEdgeTan_V(0));
     }
-  }
+  });
 
 }
 

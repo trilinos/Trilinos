@@ -79,9 +79,7 @@
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
@@ -261,8 +259,8 @@ namespace MueLu {
     this->verbosity_ = eVerbLevel;
 
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError,
-        "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError,
+        "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
     // Create MueLu factories
     RCP<Factory> dropFact;
@@ -276,39 +274,22 @@ namespace MueLu {
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
     }
 
+    // Uncoupled aggregation
     RCP<Factory> AggFact = Teuchos::null;
-    if (agg_type == "Uncoupled") {
-      // Uncoupled aggregation
-      RCP<Factory> MyUncoupledAggFact;
-      if(useKokkosRefactor) {
-        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory_kokkos() );
-      }
-      else
-        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory() );
-
-      MyUncoupledAggFact->SetFactory("Graph", dropFact);
-      MyUncoupledAggFact->SetFactory("DofsPerNode", dropFact);
-      MyUncoupledAggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
-      MyUncoupledAggFact->SetParameter("aggregation: ordering",                  Teuchos::ParameterEntry(std::string("natural")));
-      MyUncoupledAggFact->SetParameter("aggregation: max selected neighbors",    Teuchos::ParameterEntry(maxNbrAlreadySelected));
-      MyUncoupledAggFact->SetParameter("aggregation: min agg size",              Teuchos::ParameterEntry(minPerAgg));
-
-      AggFact = MyUncoupledAggFact;
-    } else {
-      // Coupled Aggregation (default)
-      if(useKokkosRefactor) {
-        AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
-      } else {
-        RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-        CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-        CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-        CoupledAggFact2->SetOrdering("natural");
-        CoupledAggFact2->SetPhase3AggCreation(0.5);
-        CoupledAggFact2->SetFactory("Graph", dropFact);
-        CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-        AggFact = CoupledAggFact2;
-      }
+    if(useKokkosRefactor) {
+      AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
     }
+    else
+      AggFact = rcp( new UncoupledAggregationFactory() );
+
+    AggFact->SetFactory("Graph", dropFact);
+    AggFact->SetFactory("DofsPerNode", dropFact);
+    AggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
+    AggFact->SetParameter("aggregation: ordering",                  Teuchos::ParameterEntry(std::string("natural")));
+    AggFact->SetParameter("aggregation: max selected neighbors",    Teuchos::ParameterEntry(maxNbrAlreadySelected));
+    AggFact->SetParameter("aggregation: min agg size",              Teuchos::ParameterEntry(minPerAgg));
+
+
     if (verbosityLevel > 3) {
       std::ostringstream oss;
       oss << "========================= Aggregate option summary  =========================" << std::endl;
@@ -625,7 +606,7 @@ namespace MueLu {
 //     // Default coarse grid smoother
 //     std::string type;
 //     if ("smoother" == "coarse") {
-// #if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
+// #if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
 //       type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
 // #else
 //       type = "symmetric Gauss-Seidel"; // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))

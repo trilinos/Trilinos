@@ -63,6 +63,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CUSPARSE        "cmake/TPLs/"    PT
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
+  ROCBLAS         "cmake/TPLs/"    PT
+  ROCSPARSE       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST
@@ -155,8 +157,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   RTlib           "cmake/TPLs/"    ST
   DLlib           "cmake/TPLs/"    ST
   AmgX            "cmake/TPLs/"    EX
-  CGAL            "cmake/TPLs/"    EX
-  CGALCore        "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    ST
   TASMANIAN       "cmake/TPLs/"    EX
   ArrayFireCPU    "cmake/TPLs/"    EX
@@ -175,6 +175,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Check           "cmake/TPLs/"    EX
   SARMA           "cmake/TPLs/"    EX
   CDT             "cmake/TPLs/"    EX
+  mpi_advance     "cmake/TPLs/"    EX
   )
 
 # NOTES:

@@ -198,7 +198,7 @@ public:
     template <typename ValueType>
     ValueType get_option_value(const std::string &option) const
     {
-        ThrowRequireMsg(is_option_provided(option), "Error, option '"<<option<<"'not provided.");
+        STK_ThrowRequireMsg(is_option_provided(option), "Error, option '"<<option<<"'not provided.");
         return parsedOptions[option].as<ValueType>();
     }
 

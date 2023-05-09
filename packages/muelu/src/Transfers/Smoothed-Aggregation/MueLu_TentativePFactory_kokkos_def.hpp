@@ -51,12 +51,10 @@
 
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 
 #include "MueLu_MasterList.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -442,11 +440,11 @@ namespace MueLu {
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto A             = Get< RCP<Matrix> >                  (fineLevel, "A");
-    auto aggregates    = Get< RCP<Aggregates_kokkos> >       (fineLevel, "Aggregates");
-    auto amalgInfo     = Get< RCP<AmalgamationInfo_kokkos> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >             (fineLevel, nspName);
-    auto coarseMap     = Get< RCP<const Map> >               (fineLevel, "CoarseMap");
+    auto A             = Get< RCP<Matrix> >            (fineLevel, "A");
+    auto aggregates    = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
+    auto amalgInfo     = Get< RCP<AmalgamationInfo> >  (fineLevel, "UnAmalgamationInfo");
+    auto fineNullspace = Get< RCP<MultiVector> >       (fineLevel, nspName);
+    auto coarseMap     = Get< RCP<const Map> >         (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
       fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
@@ -578,8 +576,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
-                  RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
+                  RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
     auto rowMap = A->getRowMap();
@@ -595,7 +593,7 @@ namespace MueLu {
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-    typename Aggregates_kokkos::local_graph_type aggGraph;
+    typename Aggregates::local_graph_type aggGraph;
     {
       SubFactoryMonitor m2(*this, "Get Aggregates graph", coarseLevel);
       aggGraph = aggregates->GetGraph();
@@ -638,7 +636,7 @@ namespace MueLu {
     // Create Kokkos::View (on the device) to store the aggreate dof sizes
     // Later used to get aggregate dof offsets
     // NOTE: This zeros itself on construction
-    typedef typename Aggregates_kokkos::aggregates_sizes_type::non_const_type AggSizeType;
+    typedef typename Aggregates::aggregates_sizes_type::non_const_type AggSizeType;
     AggSizeType aggDofSizes;
 
     if (stridedBlockSize == 1) {
@@ -983,11 +981,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
-    BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
-                  RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+    BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
+                  RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
-#ifdef HAVE_MUELU_TPETRA
   /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
@@ -1017,7 +1014,7 @@ namespace MueLu {
     auto aggSizes          = aggregates->ComputeAggregateSizes();
 
 
-    typename Aggregates_kokkos::local_graph_type aggGraph;
+    typename Aggregates::local_graph_type aggGraph;
     {
       SubFactoryMonitor m2(*this, "Get Aggregates graph", coarseLevel);
       aggGraph = aggregates->GetGraph();
@@ -1073,7 +1070,7 @@ namespace MueLu {
     // Create Kokkos::View (on the device) to store the aggreate dof sizes
     // Later used to get aggregate dof offsets
     // NOTE: This zeros itself on construction
-    typedef typename Aggregates_kokkos::aggregates_sizes_type::non_const_type AggSizeType;
+    typedef typename Aggregates::aggregates_sizes_type::non_const_type AggSizeType;
     AggSizeType aggDofSizes; // This turns into "starts" after the parallel_scan
 
     {
@@ -1280,17 +1277,13 @@ namespace MueLu {
                              coarseNS(offset+j,j) = one;
                          });
 
-  Ptentative = P_wrap;
-
-#else
-    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
-#endif
+    Ptentative = P_wrap;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */,
-                RCP<AmalgamationInfo_kokkos> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
+  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates> /* aggregates */,
+                RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
                 RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */,
                 RCP<MultiVector>& /* coarseNullspace */) const {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");

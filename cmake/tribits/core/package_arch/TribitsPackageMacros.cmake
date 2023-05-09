@@ -38,7 +38,7 @@
 # @HEADER
 
 include(TribitsPackageSetupCompilerFlags)
-include(TribitsWriteClientExportFiles)
+include(TribitsInternalPackageWriteConfigFile)
 include(TribitsGeneralMacros)
 include(TribitsLibIsTestOnly)
 
@@ -414,7 +414,7 @@ endmacro()
 #
 # Usage::
 #
-#   tribits_disable_optional_dependency(upstreamPackageName  reasonStr)
+#   tribits_disable_optional_dependency(<upstreamPackageName>  "<reasonStr>")
 #
 # This macro can be called from a top-level package's
 # ``<packageDir>/CMakeLists.txt`` file to disable an optional dependency that

@@ -119,7 +119,23 @@ sync_device(DualViewType dualView) { }
 
 }
 
+/// \brief Whether WrappedDualView reference count checking is enabled. Initially true.
+/// Since the DualView sync functions are not thread-safe, tracking should be disabled
+/// during host-parallel regions where WrappedDualView is used.
 
+extern bool wdvTrackingEnabled;
+
+/// \brief Disable WrappedDualView reference-count tracking and syncing.
+/// Call this before entering a host-parallel region that uses WrappedDualView.
+/// For each WrappedDualView used in the parallel region, its view must be accessed
+/// (e.g. getHostView...) before disabling the tracking, so that it may be synced and marked modified correctly.
+void disableWDVTracking();
+
+//! Enable WrappedDualView reference-count tracking and syncing. Call this after exiting a host-parallel region that uses WrappedDualView.
+void enableWDVTracking();
+
+/// \brief A wrapper around Kokkos::DualView to safely manage data
+///        that might be replicated between host and device.
 template <typename DualViewType>
 class WrappedDualView {
 public:
@@ -587,27 +603,31 @@ private:
     return Kokkos::subview(view,offset0,offset1);
   }
 
-
   bool memoryIsAliased() const {
     return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
   }
 
+  /// \brief needsSyncPath tells us whether we need the "sync path" where we (potentially) fence,
+  ///        check use counts and take care of sync/modify for the underlying DualView.
+  ///
+  /// The logic is this:
+  /// 1. If WrappedDualView tracking is disabled, then never take the sync path.
+  /// 2. For non-GPU architectures where the host/device pointers are aliased
+  ///    we don't need the "sync path."
+  /// 3. For GPUs, we always need the "sync path" in two cases: first, if we're using a memory space
+  ///    shared between host and device (e.g. CudaUVMSpace), where we need to make sure
+  ///    to fence before reading memory on host. And second, if the host/device pointers are aliased.
+  ///
+  /// Avoiding the "sync path" speeds up calculations on architectures where we can
+  /// avoid it (e.g. SerialNode) by not not touching the modify flags.
+  ///
+  /// Note for the future: Memory spaces that can be addressed on both host and device
+  /// that don't otherwise have an intrinsic fencing mechanism will need to trigger the
+  /// "sync path"
   bool needsSyncPath() const {
-    // needsSyncPath tells us whether we need the "sync path" where we (potentially) fence,
-    // check use counts and take care of sync/modify for the underlying DualView
-    //
-    // The logic is this:
-    // 1) For non-CUDA archtectures where there the host/device pointers are aliased
-    // we don't need the "sync path."
-    // 2) For CUDA, we always need the "sync path" if we're using the CudaUVMSpace (we need to make sure
-    // to fence before reading memory on host) OR if the host/device pointers are aliased.
-    //
-    // Avoiding the "sync path" speeds up calculations on architectures where we can
-    // avoid it (e.g. SerialNode) by not not touching the modify flags.
-    //
-    // Note for the future: Memory spaces that can be addressed on both host and device
-    // that don't otherwise have an intrinsic fencing mechanism will need to trigger the
-    // "sync path"
+
+    if(!wdvTrackingEnabled)
+      return false;
 
 #ifdef KOKKOS_ENABLE_CUDA
     return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
