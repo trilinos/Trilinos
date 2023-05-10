@@ -57,7 +57,8 @@ class RemoteSelectorUpdater : public stk::mesh::ModificationObserver
 public:
     RemoteSelectorUpdater(stk::mesh::BulkData &bulk, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector_,
                           stk::mesh::Selector sel)
-    : bulkData(bulk), remoteActiveSelector(remoteActiveSelector_), selector(sel)
+    : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION)
+    , bulkData(bulk), remoteActiveSelector(remoteActiveSelector_), selector(sel)
     {
     }
 
