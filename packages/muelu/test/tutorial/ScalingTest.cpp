@@ -60,6 +60,7 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
+#include <Xpetra_IO.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -101,23 +102,25 @@
 #include "MueLu_IsorropiaInterface.hpp"
 #endif
 
-//
-typedef double Scalar;
-typedef int    LocalOrdinal;
-//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-//
-// NOTE (mfh 11 Aug 2015) I just added a HAVE_XPETRA_INT_LONG_LONG option.
+// //
+// typedef double Scalar;
+// typedef int    LocalOrdinal;
+// //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+// //
+// // NOTE (mfh 11 Aug 2015) I just added a HAVE_XPETRA_INT_LONG_LONG option.
 
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-typedef long long int GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#endif
-//
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-//
+// #ifdef HAVE_XPETRA_INT_LONG_LONG
+// typedef long long int GlobalOrdinal;
+// #else
+// typedef int GlobalOrdinal;
+// #endif
+// //
+// typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+// //
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
+{
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP; using Teuchos::rcp;
@@ -134,13 +137,6 @@ int main(int argc, char *argv[]) {
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  // out->setOutputToRootOnly(-1);
-  // out->precision(12);
-
-  //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-  //
-  // NOTE (mfh 11 Aug 2015) I just added a HAVE_XPETRA_INT_LONG_LONG option.
-  //
   #ifndef HAVE_XPETRA_INT_LONG_LONG
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
   #endif
@@ -148,8 +144,6 @@ int main(int argc, char *argv[]) {
   //
   // SET TEST PARAMETERS
   //
-  // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
 
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
@@ -159,7 +153,6 @@ int main(int argc, char *argv[]) {
 
   // Custom command line parameters
   // - Debug
-  int optDebug   = 0;                     clp.setOption("debug",          &optDebug,              "pause to attach debugger");
   int optDump    = 0;                     clp.setOption("dump",           &optDump,               "write matrix to file");
   int optTimings = 0;                     clp.setOption("timings",        &optTimings,            "print timings to screen");
 
@@ -183,13 +176,13 @@ int main(int argc, char *argv[]) {
   int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
   int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan RCB, 2=Isorropia+Zoltan PHG");
   LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
   int optRepartition = 0;
-#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
+#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN2
 
   // - Solve
   int    optFixPoint = 1;                 clp.setOption("fixPoint",       &optFixPoint,           "apply multigrid as solver");
@@ -206,15 +199,10 @@ int main(int argc, char *argv[]) {
 
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
 
-  if (optDebug) {
-    Utilities::PauseForDebugger();
-  }
-
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters
   std::transform(optSmooType.begin(), optSmooType.end(), optSmooType.begin(), ::tolower);
-  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   if (comm->getRank() == 0) {
     std::cout << xpetraParameters << matrixParameters;
@@ -262,7 +250,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
   nullspace->putScalar( (SC) 1.0);
  //! [DefineNearNullSpace end]
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+  Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   nullspace->norm1(norms);
   if (comm->getRank() == 0)
@@ -383,7 +371,7 @@ int main(int argc, char *argv[]) {
         //! [ConfigureFactoryManager end] 
 
       } else {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2) && 0
         // Repartitioning
 
         // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
@@ -421,16 +409,16 @@ int main(int argc, char *argv[]) {
           RepartitionFact->SetFactory("Partition", ZoltanFact);
         }
         else if(optRepartition == 2) {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
+# if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
           RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
           isoInterface->SetFactory("A", AFact);
           // we don't need Coordinates here!
           RepartitionFact->SetFactory("Partition", isoInterface);
-#else
+# else
           if (comm->getRank() == 0)
             std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
           return EXIT_FAILURE;
-#endif
+# endif
         }
 
 
@@ -458,7 +446,7 @@ int main(int argc, char *argv[]) {
         M.SetFactory("Importer",    RepartitionFact);
 
 #else
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        //TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       } // optRepartition
 
@@ -679,7 +667,16 @@ int main(int argc, char *argv[]) {
   //
 
   return EXIT_SUCCESS;
+} // main_
+
+//-----------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }
+
 
 // TODO: add warning if:
 // DEBUG_MODE, LONG_LONG or KLU

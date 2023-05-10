@@ -52,7 +52,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
     s6_export.xml
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   TRIBITS_ADD_EXECUTABLE(
     Tutorial_MLParameterList
@@ -75,6 +75,20 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   #   COMM serial mpi
   #   NUM_MPI_PROCS 4
   #   )
+
+  TRIBITS_ADD_EXECUTABLE(
+    Tutorial_ScalingTest
+    SOURCES ScalingTest.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTest
+    NAME "Test_Tutorial_ScalingTest"
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+  )
 
   TRIBITS_ADD_EXECUTABLE(
     Tutorial_laplace2d
@@ -345,19 +359,5 @@ ENDIF()
 #   #  COMM serial mpi
 #   #  NUM_MPI_PROCS 4
 #   #  )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tutorial_ScalingTest
-#     SOURCES ScalingTest.cpp
-#     COMM serial mpi
-#     )
-
-#   TRIBITS_ADD_TEST(
-#     Tutorial_ScalingTest
-#     NAME "Test_Tutorial_ScalingTest"
-#     ARGS ""
-#     COMM serial mpi
-#     NUM_MPI_PROCS 4
-#     )
 
 # ENDIF()
