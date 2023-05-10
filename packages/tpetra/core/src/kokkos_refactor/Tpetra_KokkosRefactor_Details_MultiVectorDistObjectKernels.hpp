@@ -40,6 +40,8 @@
 // ************************************************************************
 // @HEADER
 */
+// clang-format off
+
 
 // mfh 13/14 Sep 2013 The "should use as<size_t>" comments are both
 // incorrect (as() is not a device function) and usually irrelevant
@@ -1591,8 +1593,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename DstIdxView, typename SrcIdxView, typename Op,
             typename Enabled = void>
   struct PermuteArrayMultiColumn {
-    typedef typename DstView::execution_space execution_space;
-    typedef typename execution_space::size_type size_type;
+    using size_type = typename DstView::size_type;
 
     DstView dst;
     SrcView src;
@@ -1620,8 +1621,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       }
     }
 
+    template <typename ExecutionSpace>
     static void
-    permute (const DstView& dst,
+    permute (const ExecutionSpace &space,
+       const DstView& dst,
 	     const SrcView& src,
 	     const DstIdxView& dst_idx,
 	     const SrcIdxView& src_idx,
@@ -1629,15 +1632,30 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
              const Op& op)
     {
       using range_type = 
-            Kokkos::RangePolicy<execution_space, size_type>;
+            Kokkos::RangePolicy<ExecutionSpace, size_type>;
             // permute does not need atomics for Op
       const size_type n = std::min (dst_idx.size (), src_idx.size ());
       Kokkos::parallel_for
 	("Tpetra::MultiVector permute multicol const stride",
-	 range_type (0, n),
+	 range_type (space, 0, n),
 	 PermuteArrayMultiColumn (dst, src, dst_idx, src_idx, numCols, op));
     }
   };
+
+// clang-format on
+// To do:  Add enable_if<> restrictions on DstView::Rank == 1,
+// SrcView::Rank == 2
+template <typename ExecutionSpace, typename DstView, typename SrcView,
+          typename DstIdxView, typename SrcIdxView, typename Op>
+void permute_array_multi_column(const ExecutionSpace &space, const DstView &dst,
+                                const SrcView &src, const DstIdxView &dst_idx,
+                                const SrcIdxView &src_idx, size_t numCols,
+                                const Op &op) {
+  PermuteArrayMultiColumn<DstView, SrcView, DstIdxView, SrcIdxView,
+                          Op>::permute(space, dst, src, dst_idx, src_idx,
+                                       numCols, op);
+}
+// clang-format off
 
   // To do:  Add enable_if<> restrictions on DstView::Rank == 1,
   // SrcView::Rank == 2
@@ -1649,8 +1667,9 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                                   const SrcIdxView& src_idx,
                                   size_t numCols,
                                   const Op& op) {
+    using execution_space = typename DstView::execution_space;
     PermuteArrayMultiColumn<DstView,SrcView,DstIdxView,SrcIdxView,Op>::permute(
-      dst, src, dst_idx, src_idx, numCols, op);
+      execution_space(), dst, src, dst_idx, src_idx, numCols, op);
   }
 
   template <typename DstView, typename SrcView,
@@ -1658,8 +1677,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename DstColView, typename SrcColView, typename Op,
             typename Enabled = void>
   struct PermuteArrayMultiColumnVariableStride {
-    typedef typename DstView::execution_space execution_space;
-    typedef typename execution_space::size_type size_type;
+    using size_type = typename DstView::size_type;
 
     DstView dst;
     SrcView src;
@@ -1692,8 +1710,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       }
     }
 
+    template <typename ExecutionSpace>
     static void
-    permute (const DstView& dst,
+    permute ( const ExecutionSpace &space,
+       const DstView& dst,
 	     const SrcView& src,
 	     const DstIdxView& dst_idx,
 	     const SrcIdxView& src_idx,
@@ -1702,15 +1722,39 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 	     const size_t numCols,
              const Op& op)
     {
-      using range_type = Kokkos::RangePolicy<execution_space, size_type>;      
+
+    static_assert(Kokkos::SpaceAccessibility<
+                    ExecutionSpace, typename DstView::memory_space>::accessible,
+                  "ExecutionSpace must be able to access DstView");
+
+      using range_type = Kokkos::RangePolicy<ExecutionSpace, size_type>;      
       const size_type n = std::min (dst_idx.size (), src_idx.size ());
       Kokkos::parallel_for
 	("Tpetra::MultiVector permute multicol var stride",
-	 range_type (0, n),
+	 range_type (space, 0, n),
 	 PermuteArrayMultiColumnVariableStride (dst, src, dst_idx, src_idx,
 						dst_col, src_col, numCols, op));
     }
   };
+
+// clang-format on
+// To do:  Add enable_if<> restrictions on DstView::Rank == 1,
+// SrcView::Rank == 2
+template <typename ExecutionSpace, typename DstView, typename SrcView,
+          typename DstIdxView, typename SrcIdxView, typename DstColView,
+          typename SrcColView, typename Op>
+void permute_array_multi_column_variable_stride(
+    const ExecutionSpace &space, const DstView &dst, const SrcView &src,
+    const DstIdxView &dst_idx, const SrcIdxView &src_idx,
+    const DstColView &dst_col, const SrcColView &src_col, size_t numCols,
+    const Op &op) {
+  PermuteArrayMultiColumnVariableStride<DstView, SrcView, DstIdxView,
+                                        SrcIdxView, DstColView, SrcColView,
+                                        Op>::permute(space, dst, src, dst_idx,
+                                                     src_idx, dst_col, src_col,
+                                                     numCols, op);
+}
+// clang-format off
 
   // To do:  Add enable_if<> restrictions on DstView::Rank == 1,
   // SrcView::Rank == 2
@@ -1725,9 +1769,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                                                   const SrcColView& src_col,
                                                   size_t numCols, 
                                                   const Op& op) {
+    using execution_space = typename DstView::execution_space;
     PermuteArrayMultiColumnVariableStride<DstView,SrcView,
       DstIdxView,SrcIdxView,DstColView,SrcColView,Op>::permute(
-      dst, src, dst_idx, src_idx, dst_col, src_col, numCols, op);
+      execution_space(), dst, src, dst_idx, src_idx, dst_col, src_col, numCols, op);
   }
 
 } // Details namespace
