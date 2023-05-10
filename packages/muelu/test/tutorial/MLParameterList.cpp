@@ -85,8 +85,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   try {
     // MPI initialization using Teuchos
     RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-    int MyPID = comm->getRank();
-    int NumProc = comm->getSize();
+    //int MyPID = comm->getRank();
+    //int NumProc = comm->getSize();
 
     // Instead of checking each time for rank, create a rank 0 stream
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -100,7 +100,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // const SC one = Teuchos::ScalarTraits<SC>::one();
 
     // Initialize and read parameters from command line
-    Teuchos::CommandLineProcessor clp(false);
     std::string xmlFileName; clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
     int num_iters = 9;       clp.setOption("numIters", &num_iters, "Max number of iterations");
 
