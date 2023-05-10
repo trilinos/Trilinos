@@ -50,15 +50,22 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
 
   // create MPIX communicator
   MPIX_Comm *mpixComm = nullptr;
-  MPIX_Comm_init(&mpixComm, comm);
+  MPIX_Dist_graph_create_adjacent(
+      comm, 0, /*indegree*/
+      nullptr, /*sources*/
+      nullptr, /*sourceweights*/
+      0,       /*outdegree*/
+      nullptr /*destinations*/, nullptr /*destweights*/, MPI_INFO_NULL /*info*/,
+      0 /*reorder*/, &mpixComm);
 
   // reference implementation should be okay
   Fake_Alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE, rbuf,
                    recvcounts.data(), recvdispls.data(), MPI_BYTE, comm);
 
   // MPI advance implementation
-  MPIX_Alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE, rbuf,
-                 recvcounts.data(), recvdispls.data(), MPI_BYTE, mpixComm);
+  MPIX_Neighbor_alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE,
+                          rbuf, recvcounts.data(), recvdispls.data(), MPI_BYTE,
+                          mpixComm);
 
   MPIX_Comm_free(mpixComm);
 
@@ -86,26 +93,58 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
 
   // read my part of the plan
   std::vector<int> sendcounts, recvcounts, senddispls, recvdispls; // alltoallv
+  std::vector<int> nbrsendcounts, nbrrecvcounts, nbrsenddispls, nbrrecvdispls; // neighbor alltoallv
+  std::vector<int> sources, sourceweights, destinations, destweights; // communicator
 
   int sdispl = 0;
+  int nbrsdispl = 0;
   for (int dest = 0; dest < size; ++dest) {
     senddispls.push_back(sdispl);
     int count = plan[rank * size + dest];
     sendcounts.push_back(count);
     sdispl += count;
+
+    if (count > 0) {
+      destinations.push_back(dest);
+      destweights.push_back(count);
+      nbrsendcounts.push_back(count);
+      nbrsenddispls.push_back(nbrsdispl);
+      nbrsdispl += count;
+    }
   }
 
   int rdispl = 0;
+  int nbrrdispl = 0;
   for (int source = 0; source < size; ++source) {
     recvdispls.push_back(rdispl);
     int count = plan[source * size + rank];
     recvcounts.push_back(count);
     rdispl += count;
+
+    if (count > 0) {
+      sources.push_back(source);
+      sourceweights.push_back(count);
+      nbrrecvcounts.push_back(count);
+      nbrrecvdispls.push_back(nbrrdispl);
+      nbrrdispl += count;
+    }
   }
+
+
+  print_vec(rank, "sources", sources);
+  print_vec(rank, "sourceweights", sourceweights);
+  print_vec(rank, "destinations", destinations);
+  print_vec(rank, "destweights", destweights);
 
   // create MPIX communicator
   MPIX_Comm *mpixComm = nullptr;
-  MPIX_Comm_init(&mpixComm, comm);
+  MPIX_Dist_graph_create_adjacent(
+      comm, sources.size(), /*indegree*/
+      sources.data(),       /*sources*/
+      sourceweights.data(), /*sourceweights*/
+      destinations.size(),  /*outdegree*/
+      destinations.data() /*destinations*/, destweights.data() /*destweights*/,
+      MPI_INFO_NULL /*info*/, 0 /*reorder*/, &mpixComm);
 
   // allocate send/recv bufs
   std::vector<char> sbuf(sdispl), exp(rdispl), act(rdispl);
@@ -118,10 +157,14 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
                    exp.data(), recvcounts.data(), recvdispls.data(), MPI_BYTE,
                    comm);
 
+  print_vec(rank, "nbrsendcounts", nbrsendcounts);
+  print_vec(rank, "nbrsenddispls", nbrsenddispls);
+  print_vec(rank, "nbrrecvcounts", nbrrecvcounts);
+  print_vec(rank, "nbrrecvdispls", nbrrecvdispls);
 
-  MPIX_Alltoallv(sbuf.data(), sendcounts.data(), senddispls.data(), MPI_BYTE,
-                 act.data(), recvcounts.data(), recvdispls.data(), MPI_BYTE,
-                 mpixComm);
+  MPIX_Neighbor_alltoallv(sbuf.data(), nbrsendcounts.data(), nbrsenddispls.data(), MPI_BYTE,
+                          act.data(), nbrrecvcounts.data(), nbrrecvdispls.data(), MPI_BYTE,
+                          mpixComm);
 
   MPIX_Comm_free(mpixComm);
 
