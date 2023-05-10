@@ -27,7 +27,7 @@ void reduce_max(std::vector<size_t> &localVector, stk::ParallelMachine comm)
 class TestListener : public stk::mesh::ModificationObserver {
 public:
   TestListener(stk::ParallelMachine communicator)
-    : stk::mesh::ModificationObserver(),
+    : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION),
       comm(communicator),
       buckets_changed(5, 0)
   {}
@@ -64,7 +64,7 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
     stk::io::fill_mesh(generatedMeshSpec, mesh);
 
     std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
-    mesh.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
+    mesh.register_observer(listener);
 
     int procId = stk::parallel_machine_rank(comm);
 
@@ -91,7 +91,8 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
 class TestOrderingObserver : public stk::mesh::ModificationObserver {
 public:
   TestOrderingObserver(int id, std::vector<int> & evaluationOrder)
-    : m_id(id),
+    : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION),
+      m_id(id),
       m_evaluationOrder(evaluationOrder)
   {}
 
@@ -116,9 +117,13 @@ TEST(BulkDataNotifications, test_ordering_different_priorities)
   std::shared_ptr<TestOrderingObserver> observer2 = std::make_shared<TestOrderingObserver>(2, evaluationOrder);
   std::shared_ptr<TestOrderingObserver> observer3 = std::make_shared<TestOrderingObserver>(3, evaluationOrder);
 
-  notifier.register_observer(observer3, stk::mesh::ModificationObserverPriority::APPLICATION);
-  notifier.register_observer(observer1, stk::mesh::ModificationObserverPriority::STK_INTERNAL);
-  notifier.register_observer(observer2, stk::mesh::ModificationObserverPriority::STK_TRANSITION);
+  observer3->set_priority(stk::mesh::ModificationObserverPriority::APPLICATION);
+  observer1->set_priority(stk::mesh::ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY);
+  observer2->set_priority(stk::mesh::ModificationObserverPriority::STK_TRANSITION);
+
+  notifier.register_observer(observer3);
+  notifier.register_observer(observer1);
+  notifier.register_observer(observer2);
 
   notifier.notify_finished_modification_end(MPI_COMM_WORLD);
 
@@ -134,9 +139,13 @@ TEST(BulkDataNotifications, test_ordering_duplicate_priorities)
   std::shared_ptr<TestOrderingObserver> observer2 = std::make_shared<TestOrderingObserver>(2, evaluationOrder);
   std::shared_ptr<TestOrderingObserver> observer3 = std::make_shared<TestOrderingObserver>(3, evaluationOrder);
 
-  notifier.register_observer(observer3, stk::mesh::ModificationObserverPriority::STK_INTERNAL);
-  notifier.register_observer(observer1, stk::mesh::ModificationObserverPriority::STK_INTERNAL);
-  notifier.register_observer(observer2, stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+  observer3->set_priority(stk::mesh::ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY);
+  observer1->set_priority(stk::mesh::ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY);
+  observer2->set_priority(stk::mesh::ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY);
+
+  notifier.register_observer(observer3);
+  notifier.register_observer(observer1);
+  notifier.register_observer(observer2);
 
   notifier.notify_finished_modification_end(MPI_COMM_WORLD);
 

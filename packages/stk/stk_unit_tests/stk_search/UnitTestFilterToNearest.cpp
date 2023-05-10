@@ -63,8 +63,8 @@ class SearchFilterTester : public ::testing::Test {
       : m_owner(owner)
     {
     }
-    typedef int EntityKey;
-    typedef stk::search::IdentProc<EntityKey, unsigned> EntityProc;
+    using EntityKey = int;
+    using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
 
     stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const
     {
@@ -87,11 +87,11 @@ class SearchFilterTester : public ::testing::Test {
       return false;
     }
 
-    const double* coord(int id) const { return nullptr; }
+    const double* coord(const EntityKey k) const { return nullptr; }
 
-    double get_closest_geometric_distance_squared(int id, const double* coords) { return m_owner.geometric_dist.at(id); }
+    double get_closest_geometric_distance_squared(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
 
-    double get_distance_squared_from_centroid(int id, const double* coords) { return m_owner.geometric_dist.at(id); }
+    double get_distance_squared_from_centroid(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
 
     SearchFilterTester& m_owner;
   };

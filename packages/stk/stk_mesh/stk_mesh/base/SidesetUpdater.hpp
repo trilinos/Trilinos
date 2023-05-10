@@ -66,7 +66,8 @@ class SidesetUpdater : public ModificationObserver
 public:
 
   SidesetUpdater(BulkData &bulk, Selector& active_selector)
-    : m_bulkData(bulk)
+    : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY)
+    , m_bulkData(bulk)
     , m_metaData(bulk.mesh_meta_data())
     , m_activeSelector(active_selector)
     , m_isActive(true)

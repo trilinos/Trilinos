@@ -81,8 +81,10 @@ struct BucketSpan {
     length = b.size() * field_meta_data.m_bytesPerEntity/f.data_traits().size_of;
   }
 
-  BucketSpan& operator=(const BucketSpan& B) noexcept
+  BucketSpan& operator=(const BucketSpan& B)
   {
+    STK_ThrowAssertMsg(length == B.length, "The registered field lengths must match to be copied correctly");
+
     for(size_t i = 0; i < length; ++i) {
       ptr[i] = B.ptr[i];
     }
@@ -549,19 +551,19 @@ template<class Scalar>
 inline
 void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
+  BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-    int orig_thread_count = fix_omp_threads();
+  int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        y = x;
-    }
-    unfix_omp_threads(orig_thread_count);
+  for (size_t i = 0; i < buckets.size(); ++i) {
+      Bucket & b = *buckets[i];
+      BucketSpan<Scalar> x(xField, b);
+      BucketSpan<Scalar> y(yField, b);
+      y = x;
+  }
+  unfix_omp_threads(orig_thread_count);
 }
 
 inline
