@@ -50,7 +50,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
 // Xpetra
@@ -128,7 +127,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   //using Galeri::Xpetra::CreateCartesianCoordinates;
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   // USER GUIDE // define communicator
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
