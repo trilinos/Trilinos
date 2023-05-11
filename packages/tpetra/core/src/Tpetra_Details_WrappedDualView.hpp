@@ -631,6 +631,8 @@ private:
 
 #ifdef KOKKOS_ENABLE_CUDA
     return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
+#elif defined(KOKKOS_ENABLE_SYCL)
+    return std::is_same<typename t_dev::memory_space,Kokkos::Experimental::SYCLSharedUSMSpace>::value || !memoryIsAliased();
 #else
     return !memoryIsAliased();
 #endif
