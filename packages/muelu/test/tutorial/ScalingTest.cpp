@@ -81,9 +81,10 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
-#include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 
@@ -100,22 +101,6 @@
 #ifdef HAVE_MUELU_ISORROPIA
 #include "MueLu_IsorropiaInterface.hpp"
 #endif
-
-// //
-// typedef double Scalar;
-// typedef int    LocalOrdinal;
-// //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-// //
-// // NOTE (mfh 11 Aug 2015) I just added a HAVE_XPETRA_INT_LONG_LONG option.
-
-// #ifdef HAVE_XPETRA_INT_LONG_LONG
-// typedef long long int GlobalOrdinal;
-// #else
-// typedef int GlobalOrdinal;
-// #endif
-// //
-// typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-// //
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
@@ -175,7 +160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan RCB, 2=Isorropia+Zoltan PHG");
+  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan2 RCB");
   LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
@@ -342,15 +327,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       RCP<Factory>    RFact = rcp(new TransPFactory());
 
-      RCP<RAPFactory> AFact = rcp(new RAPFactory());
-      AFact->setVerbLevel(Teuchos::VERB_HIGH);
+      RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+      AcFact->setVerbLevel(Teuchos::VERB_HIGH);
       //! [DeclareSomeFactories end]
 
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
-        Teuchos::ParameterList Aclist = *(AFact->GetValidParameterList());
+        Teuchos::ParameterList Aclist = *(AcFact->GetValidParameterList());
         Aclist.set("transpose: use implicit", true);
-        AFact->SetParameterList(Aclist);
+        AcFact->SetParameterList(Aclist);
         if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
       }
 
@@ -365,60 +350,42 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // configure factory manager
         M.SetFactory("P", PFact);
         M.SetFactory("R", RFact);
-        M.SetFactory("A", AFact);
+        M.SetFactory("A", AcFact);
         //! [ConfigureFactoryManager end] 
 
       } else {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2) && 0
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
         // Repartitioning
 
         // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
         // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
         RFact->SetFactory("P", PFact);
         //
-        AFact->SetFactory("P", PFact);
-        AFact->SetFactory("R", RFact);
+        AcFact->SetFactory("P", PFact);
+        AcFact->SetFactory("R", RFact);
 
         // Transfer coordinates
         RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
-        AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
+        //AcFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
-        // Compute partition (creates "Partition" object)
-        if(optRepartition == 1) { // use plain Zoltan Interface
+        // Repartitioning heuristic (decides whether to rebalance based on params)
+        RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory());
+        RepHeuFact->SetFactory("A", AcFact);
+        RepHeuFact->SetParameter("repartition: start level", Teuchos::ParameterEntry(0));
+        RepHeuFact->SetParameter("repartition: min rows per proc", Teuchos::ParameterEntry(optMinRowsPerProc));
+        RepHeuFact->SetParameter("repartition: max imbalance", Teuchos::ParameterEntry(optNnzImbalance));
 
-        } else if (optRepartition == 2) { // use Isorropia + Zoltan interface
-
-        }
+        // Repartitioning (creates repartition vector)
+        RCP<Zoltan2Interface> ZoltanFact = rcp(new Zoltan2Interface());
+        ZoltanFact->SetFactory("A", AcFact);
+        ZoltanFact->SetFactory("number of partitions", RepHeuFact);
+        ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
 
         // Repartitioning (creates "Importer" from "Partition")
         RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-        {
-          Teuchos::ParameterList paramList;
-          paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-          paramList.set("repartition: max imbalance", optNnzImbalance);
-          RepartitionFact->SetParameterList(paramList);
-        }
-        RepartitionFact->SetFactory("A", AFact);
-
-        if(optRepartition == 1) {
-          RCP<Factory> ZoltanFact = rcp(new ZoltanInterface());
-          ZoltanFact->SetFactory("A", AFact);
-          ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
-          RepartitionFact->SetFactory("Partition", ZoltanFact);
-        }
-        else if(optRepartition == 2) {
-# if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
-          RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-          isoInterface->SetFactory("A", AFact);
-          // we don't need Coordinates here!
-          RepartitionFact->SetFactory("Partition", isoInterface);
-# else
-          if (comm->getRank() == 0)
-            std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
-          return EXIT_FAILURE;
-# endif
-        }
-
+        RepartitionFact->SetFactory("A", AcFact);
+        RepartitionFact->SetFactory("number of partitions", RepHeuFact);
+        RepartitionFact->SetFactory("Partition", ZoltanFact);
 
         // Reordering of the transfer operators
         RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
@@ -433,7 +400,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         // Compute Ac from rebalanced P and R
         RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
-        RebalancedAFact->SetFactory("A", AFact);
+        RebalancedAFact->SetFactory("A", AcFact);
 
         // Configure FactoryManager
         M.SetFactory("A", RebalancedAFact);
@@ -444,7 +411,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         M.SetFactory("Importer",    RepartitionFact);
 
 #else
-        //TEUCHOS_TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       } // optRepartition
 
