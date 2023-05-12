@@ -99,6 +99,9 @@ tribits_add_advanced_test(find_package_Trilinos
     MESSAGE "Configure a dummy project that calls find_package(Trilinos)"
     CMND "${CMAKE_COMMAND}"
     ARGS
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
       -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/install
       ${CMAKE_CURRENT_SOURCE_DIR}/find_package_Trilinos
     PASS_REGULAR_EXPRESSION_ALL
@@ -130,6 +133,9 @@ tribits_add_advanced_test(simpleBuildAgainstTrilinos
     MESSAGE "Configure simpleBuildAgainstTrilinos against local Trilinos installation"
     CMND "${CMAKE_COMMAND}"
     ARGS
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
       -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/install
       -DCMAKE_BUILD_TYPE=DEBUG
       ${PROJECT_SOURCE_DIR}/demos/simpleBuildAgainstTrilinos
