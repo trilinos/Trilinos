@@ -56,7 +56,7 @@
 tribits_package(TrilinosInstallTests)
 
 
-tribits_add_advanced_test(doInstall
+tribits_add_advanced_test(removeInstall
   OVERALL_NUM_MPI_PROCS 1
 
   TEST_0
@@ -65,7 +65,82 @@ tribits_add_advanced_test(doInstall
     ARGS "-DDIR_TO_REMOVE=${PROJECT_BINARY_DIR}/install"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/remove_dir_if_exists.cmake"
 
+  ADDED_TEST_NAME_OUT  removeInstall_name
+  )
+  # NOTE: Above works even if Trilinos was configured without setting
+  # -DCMAKE_PREFIX_PATH=<prefix> and tests proper usage of the install()
+  # command.  However, note that it is not a perfect installation test because
+  # the source dir and the build dir will still be sticking around in the
+  # below example build.
+
+if (removeInstall_name)
+  set_tests_properties(${removeInstall_name}
+    PROPERTIES  FIXTURES_SETUP  removeInstall_passed)
+endif()
+
+
+tribits_add_advanced_test(simpleBuildAgainstTrilinos_by_package_build_tree
+  OVERALL_NUM_MPI_PROCS 1
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  EXCLUDE_IF_NOT_TRUE  ${PROJECT_NAME}_ENABLE_Tpetra  TPL_ENABLE_MPI
+
+  TEST_0
+    MESSAGE "Copy simpleBuildAgainstTrilinos so we can modify it"
+    CMND "${CMAKE_COMMAND}"
+    ARGS -E copy_directory
+      ${PROJECT_SOURCE_DIR}/demos/simpleBuildAgainstTrilinos
+      simpleBuildAgainstTrilinos
+
   TEST_1
+    MESSAGE "Copy CMakeLists.by_package.cmake to find by package"
+    CMND "${CMAKE_COMMAND}"
+    ARGS -E copy
+      simpleBuildAgainstTrilinos/CMakeLists.by_package.cmake
+      simpleBuildAgainstTrilinos/CMakeLists.txt
+
+  TEST_2
+    MESSAGE "Configure simpleBuildAgainstTrilinos against built packages"
+    CMND "${CMAKE_COMMAND}"
+    ARGS
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/cmake_packages
+      -DCMAKE_BUILD_TYPE=DEBUG
+      simpleBuildAgainstTrilinos
+    PASS_REGULAR_EXPRESSION_ALL
+      "Found Tpetra.  Here are the details:"
+      "-- Configuring done"
+      "-- Generating done"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+
+  TEST_3
+    MESSAGE "Build simpleBuildAgainstTrilinos"
+    CMND "${CMAKE_COMMAND}"
+    ARGS --build .
+
+  TEST_4
+    MESSAGE "Test simpleBuildAgainstTrilinos"
+    CMND "${CMAKE_CTEST_COMMAND}"
+    ARGS -VV
+    PASS_REGULAR_EXPRESSION_ALL
+      "Test #1: MyAppTest [.]+ +Passed"
+      "100% tests passed, 0 tests failed out of 1"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+
+  ADDED_TEST_NAME_OUT  simpleBuildAgainstTrilinos_by_package_build_tree_name
+  )
+
+if (simpleBuildAgainstTrilinos_by_package_build_tree_name)
+  set_tests_properties(${simpleBuildAgainstTrilinos_by_package_build_tree_name}
+    PROPERTIES  FIXTURES_REQUIRED  removeInstall_passed)
+endif()
+
+
+tribits_add_advanced_test(doInstall
+  OVERALL_NUM_MPI_PROCS 1
+
+  TEST_0
     MESSAGE "Install enabled and built Trilinos packages (NOTE: This test will fail if the project has **any** build errors!)"
     CMND "${CMAKE_COMMAND}"
     ARGS --install ${PROJECT_BINARY_DIR}
@@ -73,7 +148,7 @@ tribits_add_advanced_test(doInstall
     OUTPUT_FILE  doInstall.out
     NO_ECHO_OUTPUT
 
-  TEST_2
+  TEST_1
     MESSAGE "Grep doInstall.out file produced above to see any errors"
     CMND grep ARGS -A 50 "CMake Error" doInstall.out
     PASS_ANY
@@ -87,8 +162,9 @@ tribits_add_advanced_test(doInstall
   # below example build.
 
 if (doInstall_name)
-  set_tests_properties(${doInstall_name}
-    PROPERTIES  FIXTURES_SETUP  doInstall_passed)
+  set_tests_properties(${doInstall_name} PROPERTIES
+    FIXTURES_REQUIRED  removeInstall_passed
+    FIXTURES_SETUP  doInstall_passed )
 endif()
 
 
