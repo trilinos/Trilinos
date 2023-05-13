@@ -2142,7 +2142,7 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
 Note, the ``<findmod>`` field path in the call to
 `tribits_repository_define_tpls()`_ is relative to the TriBITS repository dir
-``<repoDir>`` but a relative path in for the varaible `<tplName>_FINDMOD`_ is
+``<repoDir>`` but a relative path in for the variable `<tplName>_FINDMOD`_ is
 relative to the project dir ``<projectDir>``.  There is a translation of the
 ``<findmod>`` field to the variable ``<tplName>_FINDMOD`` that takes place
 when the `<repoDir>/TPLsList.cmake`_ file is processed to make this so.
@@ -2615,32 +2615,19 @@ packages** as imposed by downstream TriBITS internal packages are:
   CMake macros or functions that downstream CMake packages may need to use the
   upstream package ``<Package>``.
 
-* All of the upstream dependencies (listed in the ``INTERFACE_LINK_LIBRARIES``
-  property recursively) are also `TriBITS-compliant packages`_
+* [Optional] All of the upstream dependencies (listed in the
+  ``INTERFACE_LINK_LIBRARIES`` property recursively) are also
+  `TriBITS-compliant packages`_
 
 The TriBITS system will also set the variable:
 
 * ``<Package>_IS_TRIBITS_COMPLIANT``: Set to ``TRUE``
 
-for all packages that are determined to be TriBITS-compliant packages.
+for all packages that are determined to be TriBITS-compliant packages and
+satisfy the above criteria.
 
 The above are all that is needed by downstream TriBITS packages to build and
 link against their upstream dependencies.
-
-If a TriBITS package provides any CTest tests/examples, then it must also
-satsify the following requirements:
-
-* Test names must be prefixed with the package name ``<Package>_``.
-
-* Tests should only be added if the variable ``<Package>_ENABLE_TESTS`` is
-  true.
-
-* Examples (that run as CTest tests) should only be added if the variable
-  ``<Package>_ENABLE_EXAMPLES`` is true.
-
-* The test ``PROCESSORS`` and other test properties must be set in a way
-  consistent with `tribits_add_test()`_ so as to run in parallel with other
-  tests and not overwhelm the computing resources on the machine.
 
 Additional requirements are placed on TriBITS-compliant packages depending on
 if they are defined as internal CMake packages (i.e. `TriBITS-compliant
@@ -2672,15 +2659,38 @@ The requirements for **TriBITS-compliant internal packages** are:
   directory ``<installDir>/lib/cmake/<Package>/`` allowing the installed
   package to be used by downstream CMake packages/projects.
 
-* All of the upstream dependencies (recursively) are also `TriBITS-compliant
-  packages`_
+* [Optional] All of the upstream dependencies (recursively) are also
+  `TriBITS-compliant packages`_.
+
+If a TriBITS package provides any CTest tests/examples, then it must also
+satisfy the following requirements:
+
+* Test names must be prefixed with the package name ``<Package>_``.
+
+* Tests should only be added if the variable ``<Package>_ENABLE_TESTS`` is
+  true.
+
+* Examples (that run as CTest tests) should only be added if the variable
+  ``<Package>_ENABLE_EXAMPLES`` is true.
+
+* The ``PROCESSORS`` test property and other test properties must be set in a
+  way consistent with `tribits_add_test()`_ so as to run in parallel with
+  other tests and not overwhelm the computing resources on the machine.
+
+* The test ``<fullTestName>`` must not be added if the cache variable
+  ``<fullTestName>_DISABLE`` is set to ``TRUE`` or if the cache variable
+  ``<fullTestName>_SET_DISABLED_AND_MSG`` is set to non-empty (and the message
+  string should be printed to STDOUT).
 
 TriBITS internal packages that are defined using the TriBITS framework using
-the TriBITS-provided macros and functions such as `tribits_add_library()`_ are
-automatically `TriBITS-compliant internal packages`_ and when they are
-installed they automatically provide `TriBITS-compliant external packages`_.
+the TriBITS-provided macros and functions such as `tribits_add_library()`_ and
+have tests defined using the functions `tribits_add_test()`_ and
+`tribits_add_advanced_test()`_ are automatically `TriBITS-compliant internal
+packages`_.  And when these TriBITS-implemented internal packages are
+installed, they automatically provide `TriBITS-compliant external packages`_.
 But it is possible for a CMake package to write its own raw CMake code to
-satisfy these basic requirements for both internal and external packages.
+satisfy these basic requirements for both internal and (installed) external
+packages.
 
 
 .. _TriBITS-Compliant External Package:
@@ -2692,8 +2702,9 @@ For packages that are installed on the system and not built in the current
 CMake project, a streamlined type of `TriBITS External Package/TPL`_ is a
 *TriBITS-compliant external package*.  These special types of external
 package's don't need to provide a `FindTPL<tplName>.cmake`_ find module.
-Instead, they are fully defined by calling ``find_package(<Package>)`` to
-locate and load their ``<Package>Config.cmake`` package config file.
+Instead, they are fully defined by calling ``find_package(<Package>)`` or
+``include(<someBaseDir>/<Package>Config.cmake)`` to load their
+``<Package>Config.cmake`` package config file.
 
 The requirements for **TriBITS-compliant external packages** are:
 
@@ -2708,17 +2719,22 @@ The requirements for **TriBITS-compliant external packages** are:
     ``<Package>_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE``: Points to the file
     ``<Package>Config.cmake`` (i.e. ``${CMAKE_CURRENT_LIST_FILE}``)
 
-  * ``<Package>_DIR`` or
-    ``<Package>_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE_DIR`` Points to the base
-    directory for ``<Package>Config.cmake``
-    (i.e. ``${CMAKE_CURRENT_LIST_DIR}``)
-
-* All of the upstream dependencies (recursively) are also provided as
-  `TriBITS-compliant external packages`_ with
+* [Optional] All of the upstream dependencies (recursively) are also provided
+  as `TriBITS-compliant external packages`_ with
   ``<UpstreamPackage>Config.cmake`` files (see above) and all of the targets
   and variables for a TriBITS-compliant external package are defined when the
   ``<Package>Config.cmake`` file is included (or pulled in with
   ``find_package()`` or ``find_dependency()``).
+
+NOTE: TriBITS-compliant external packages that provide TriBITS-compliant
+external packages for all of their upstream dependencies are said to be *fully
+TriBITS-compliant external packages* while those that don't are said to be
+*non-fully TriBITS-compliant external packages*.  The TriBITS external
+package/TPL system is robust enough to deal with non-fully TriBITS-compliant
+external packages.  Any TriBITS external packages/TPLs upstream from a
+non-fully TriBITS-compliant external package will be found again in the
+current TriBITS project.  (In these cases, it is up to the user to make sure
+that the same upstream packages are found.)
 
 
 Example TriBITS Projects
@@ -5681,7 +5697,7 @@ to modern CMake along with the proper usage of complete
 
 However, to maintain backwards compatibility with the legacy TriBITS TPL
 system (such as when upgrading a existing ``FindTPL<tplName>.cmake`` file), a
-``FindTPL<tplName>.cmake`` file can be extended to use the
+``FindTPL<tplName>.cmake`` file can be extended to use the function
 `tribits_tpl_allow_pre_find_package()`_ in combination with the functions
 ``tribits_extpkg_create_imported_all_libs_target_and_config_file()`` and
 `tribits_tpl_find_include_dirs_and_libraries()`_ as follows::
@@ -5717,7 +5733,7 @@ the TPL.  See the documentation for `tribits_tpl_allow_pre_find_package()`_
 for conditions where ``<tplName>_ALLOW_PREFIND`` is set to ``FALSE`` (and
 therefore ``find_package(<externalPkg>)`` is not called).
 
-Note that in the above ``FindTPL<tplName>.cmake`` file that
+Note in the above ``FindTPL<tplName>.cmake`` file that
 ``find_package(<externalPkg>)`` will be called even on reconfigures.  That is
 critical since ``find_package(<externalPkg>)`` defines IMPORTED targets that
 must be available each time configure is called.  Also, if

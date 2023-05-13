@@ -460,76 +460,89 @@ Processing of external packages/TPLs and TriBITS-compliant external packages
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The processing of external packages/TPLs is influenced by whether the external
-package is a regular TriBITS TPL or is a TriBITS-compliant external
-package.  Here, a **TriBITS-Compliant External Package** has a
-``<Package>Config.cmake`` file that satisfies the following properties:
+package is a regular TriBITS TPL (i.e with a ``FindTPL<tplName>.cmake``
+modules) or is a TriBITS-compliant external package.  Here, a
+**TriBITS-Compliant External Package** has a ``<tplName>Config.cmake`` file
+that satisfies the following properties:
 
-* Has the target ``<Package>::all_libs``.
-* Calls ``find_dependency()`` for all upstream packages it depends on.
-* Every upstream dependent package ``<UpstreamPackage>`` has the target
-  ``<UpstreamPackage>::all_libs``.
+* Has the target ``<tplName>::all_libs`` which is a fully specified modern
+  CMake target.
+* Calls ``find_dependency()`` or the equivalent for all upstream packages that
+  it depends on.
+* Every upstream dependent package ``<UpstreamTpl>`` has the target
+  ``<UpstreamTpl>::all_libs``.  (But a non-fully TriBITS-compliant external
+  package need not define this for all of its upstream dependencies.)
 
-That means that when calling ``find_package()`` for a TriBITS-compliant
+That means that when calling ``find_package()`` for a fully TriBITS-compliant
 external package, there is no need to worry about finding any of its upstream
 dependent external packages.  That means that any external packages/TPLs
-defined a TriBITS project which is upstream from a TriBITS-compliant
-external package will be uniquely defined by calling ``find_package()`` on the
-most downstream TriBITS-compliant external package that depends on it.
-Therefore, defining the external packages and their targets in this set of
-external packages just involves calling ``find_package()`` on the terminal
-TriBITS-compliant external packages (i.e. TriBITS-compliant
-external packages that don't have any downstream dependencies that are
-external packages).  Then the remaining subset of external packages/TPLs that
-don't have a downstream TriBITS-compliant external package dependency
-will be defined as usual.  (ToDo: Put in a more detailed examples explaining
-how this works.)
+defined a TriBITS project which is upstream from a TriBITS-compliant external
+package will be uniquely defined by calling ``find_package()`` on the most
+downstream TriBITS-compliant external package that depends on it.  Therefore,
+defining the external packages and their targets in this set of external
+packages just involves calling ``find_package()`` on the terminal
+TriBITS-compliant external packages (i.e. TriBITS-compliant external packages
+that don't have any downstream dependencies that are external packages).  Then
+the remaining subset of external packages/TPLs that don't have a downstream
+TriBITS-compliant external package dependency will be defined as usual.
+(However, as mentioned above, some of these are not fully TriBITS compliant and
+don't fully define the ``<UpstreamTpl>::all_libs`` for all of their upstream
+dependencies (see below).)
+
+By having all fully TriBITS-compliant external packages, an external
+dependency is never found more than once.
 
 The variables that are set internally to define these different subsets of
 external packages/TPLs are:
 
 * ``<Package>_IS_TRIBITS_COMPLIANT``: Set the ``TRUE`` if the package
-  ``<Package>`` provides the ``<Package>::all_libs`` target for itself and all
-  of its upstream dependent (internal or external) packages (whether this
-  package is treated as an internal or external package).
+  ``<Package>`` provides the ``<Package>::all_libs`` by just calling
+  ``find_package(<Package> CONFIG REQUIRED)``.
 
 * ``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE``: Set to
-  ``TRUE`` if the external package/TPL will be processed by downstream TriBITS
-  complient package.  In this case, we just print that we are skipping the
-  find operation and explain why.
+  ``TRUE`` if the external package/TPL should be (or was after the fact)
+  defined by a downstream TriBITS-compliant external package.
 
 An external package with ``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` **AND**
 ``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=FALSE`` is the
 one for which ``find_package(<Package> CONFIG REQUIRED)`` will be called and
 does not have any downstream packages that are being treated as external
-packages.
+packages.  Also, ``find_package(<Package> CONFIG REQUIRED)`` will be called on
+TriBITS-compliant external packages if ``<Package>::all_libs`` was not defined
+by a downstream non fully TriBITS-compliant external package.
 
-The variable ``<Package>_IS_TRIBITS_COMPLIANT`` is set right when the
-packages are initially defined by reading in the various input files.  That
-is, all initially internal packages that are listed in a
+The variable ``<Package>_IS_TRIBITS_COMPLIANT`` is set right when the packages
+are initially defined by reading in the various input files.  That is, all
+initially internal packages that are listed in a
 `<repoDir>/PackagesList.cmake`_ file will have
-``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` set.  While all external
-packages/TPLs listed in a `<repoDir>/TPLsList.cmake`_ file will have
-``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` set (except for those tagged
-with ``TRIBITS_PKG`` which will have
-``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` set).
+``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` set while all external packages/TPLs
+listed in a `<repoDir>/TPLsList.cmake`_ file will have
+``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` set (except for those tagged with
+``TRIBITS_PKG`` which will have ``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` set).
 
-NOTE: When a TriBITS TPL (i.e. ``<Package>_IS_TRIBITS_COMPLIANT=FALSE``)
-is being processed, we can't assume where its
-``<UpstreamPackage>Config.cmake`` file exists so we must find upstream
-dependencies using ``set(<UpstreamPackage>_DIR ...)`` and
-``find_dependency(<UpstreamPackage> CONFIG REQUIRED)``.
+The processing of external packages/TPLs is done in two loops:
 
-So the first loop over external packages/TPLs will be those external
-packages/TPLs that have ``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` **OR**
-``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=TRUE``.  And we
-only call ``find_package()`` for those TriBITS-compliant external
-packages that have ``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` **AND**
-``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=FALSE``.
+* The first loop over external packages/TPLs will be those external
+  packages/TPLs that have ``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` **OR**
+  ``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=TRUE``.  And we
+  only call ``find_package()`` for those TriBITS-compliant external packages
+  that have ``<Package>_IS_TRIBITS_COMPLIANT=TRUE`` **AND** don't have
+  ``<Package>::all_libs`` already defined.  This is a reverse loop to give an
+  opportunity for downstream TriBITS-compliant external packages to define
+  their upstream external packages/TPLs.  NOTE: If
+  ``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE`` was set to
+  ``TRUE`` before this loop starts, it will be set to ``FALSE`` for
+  non-TriBITS-compliant external packages
+  (i.e. ``<Package>_IS_TRIBITS_COMPLIANT=FALSE``).
 
-The second loop are those external packages/TPLs that don't have a downstream
-TriBITS-compliant external package which are all of those external
-packages for which ``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` **AND**
-``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=FALSE``.
+* The second loop processes remaining external packages/TPLs that where not
+  defined by a downstream TriBITS-compliant external package in the first
+  loop.  These are all TriBITS TPLs for which
+  ``<Package>_IS_TRIBITS_COMPLIANT=FALSE`` **AND**
+  ``<Package>_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=FALSE`` **AND**
+  for which ``<Package>_FINDMOD`` is not empty and is not ``TRIBITS_PKG``.
+
+For more details, see the implementation in `tribits_process_enabled_tpls()`_.
 
 
 Other package-related variables

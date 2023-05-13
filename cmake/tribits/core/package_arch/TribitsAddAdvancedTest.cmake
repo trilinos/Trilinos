@@ -373,7 +373,7 @@ include(PrintVar)
 #     instead.  **WARNING:** If you want to run such tests using valgrind, you
 #     have to use the raw executable as the ``<cmndExec>`` argument and *not*
 #     the script.  For example, if you have a python script
-#     ``my_python_test.py`` with ``/usr/bin/env pyhton`` at the top, you can't
+#     ``my_python_test.py`` with ``/usr/bin/env python`` at the top, you can't
 #     just use::
 #
 #       CMND <path>/my_python_test.py ARGS "<arg0>" "<arg1>" ...

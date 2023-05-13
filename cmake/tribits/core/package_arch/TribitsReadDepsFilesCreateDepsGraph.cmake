@@ -203,7 +203,7 @@ endmacro()
 #   tribits_read_external_package_deps_files_add_to_graph(<tplName>)
 #
 # This reads in the file ``${<tplName>_DEPENDENCIES_FILE}`` and sets the
-# varaible::
+# variable::
 #
 #   <tplName>_LIB_DEFINED_DEPENDENCIES
 #
