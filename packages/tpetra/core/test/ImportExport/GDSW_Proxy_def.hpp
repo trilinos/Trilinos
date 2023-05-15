@@ -2,6 +2,7 @@
 #define GDSW_DEF_HPP
 #include "GDSW_Proxy_decl.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 
 using Teuchos::RCP;
 
@@ -98,6 +99,449 @@ importSquareMatrixFromImporter(RCP<const CrsMatrix> inputMatrix,
                           localRowsSend, localRowsSendBegin, localRowsRecv,
                           localRowsRecvBegin, outputMatrix);
 }
+
+/****************************************************************************************************/
+/****************************************************************************************************/
+/****************************************************************************************************/
+
+template<class OutputOffsetsViewType,
+         class CountsViewType,
+         class InputOffsetsViewType,
+         const InputColIndicesViewType,
+         const InputColMapViewType,
+         class InputLocalRowIndicesViewType,
+         class InputLocalRowPidsViewType,
+         class AllowedColumnsViewType,
+         class AllowedColumnsBeginViewType,
+         const bool debug =
+#ifdef HAVE_TPETRA_DEBUG
+         true
+#else
+         false
+#endif // HAVE_TPETRA_DEBUG
+         >
+class NumPacketsAndOffsetsFunctorRestricted {
+public:
+  typedef typename OutputOffsetsViewType::non_const_value_type output_offset_type;
+  typedef typename CountsViewType::non_const_value_type count_type;
+  typedef typename input_offset_type::data_type input_offset_data_type;
+  typedef typename InputLocalRowIndicesViewType::non_const_value_type local_row_index_type;
+  typedef typename InputLocalRowPidsViewType::non_const_value_type local_row_pid_type;  
+  // output Views drive where execution happens.
+  typedef typename OutputOffsetsViewType::device_type device_type;
+  static_assert (std::is_same<typename CountsViewType::device_type::execution_space,
+                   typename device_type::execution_space>::value,
+                 "OutputOffsetsViewType and CountsViewType must have the same execution space.");
+  static_assert (Kokkos::is_view<OutputOffsetsViewType>::value,
+                 "OutputOffsetsViewType must be a Kokkos::View.");
+  static_assert (std::is_same<typename OutputOffsetsViewType::value_type, output_offset_type>::value,
+                 "OutputOffsetsViewType must be a nonconst Kokkos::View.");
+  static_assert (std::is_integral<output_offset_type>::value,
+                 "The type of each entry of OutputOffsetsViewType must be a built-in integer type.");
+  static_assert (Kokkos::is_view<CountsViewType>::value,
+                 "CountsViewType must be a Kokkos::View.");
+  static_assert (std::is_same<typename CountsViewType::value_type, output_offset_type>::value,
+                 "CountsViewType must be a nonconst Kokkos::View.");
+  static_assert (std::is_integral<count_type>::value,
+                 "The type of each entry of CountsViewType must be a built-in integer type.");
+  static_assert (Kokkos::is_view<InputOffsetsViewType>::value,
+                 "InputOffsetsViewType must be a Kokkos::View.");
+  static_assert (std::is_integral<input_offset_type>::value,
+                 "The type of each entry of InputOffsetsViewType must be a built-in integer type.");
+  static_assert (Kokkos::is_view<InputLocalRowIndicesViewType>::value,
+                 "InputLocalRowIndicesViewType must be a Kokkos::View.");
+  static_assert (std::is_integral<local_row_index_type>::value,
+                 "The type of each entry of InputLocalRowIndicesViewType must be a built-in integer type.");
+
+  NumPacketsAndOffsetsFunctor (const OutputOffsetsViewType& outputOffsets,
+                               const CountsViewType& counts,
+                               const InputOffsetsViewType& rowOffsets,
+                               const InputColIndicesViewType & entries,
+                               const InputColMapViewType & colMap,
+                               const InputLocalRowIndicesViewType& lclRowInds,
+                               const InputLocalRowPidsViewType& lclRowPids,
+                               const AllowedColumnsViewType &allowedColumns,
+                               const AllowedColumnsBeginViewType &allowedColumnsBegin,
+                               const count_type sizeOfLclCount,
+                               const count_type sizeOfGblColInd,
+                               const count_type sizeOfPid,
+                               const count_type sizeOfValue) :
+    outputOffsets_ (outputOffsets),
+    counts_ (counts),
+    rowOffsets_ (rowOffsets),
+    entries_ (entries),
+    colMap_ (colMap),
+    lclRowInds_ (lclRowInds),
+    lclRowPids_ (lclRowPids),
+    allowedColumns_ (allowedColumns),
+    allowedColumnsBegin_ (allowedColumnsBegin),
+    sizeOfLclCount_ (sizeOfLclCount),
+    sizeOfGblColInd_ (sizeOfGblColInd),
+    sizeOfPid_ (sizeOfPid),
+    sizeOfValue_ (sizeOfValue),
+    error_ ("error") // don't forget this, or you'll get segfaults!
+  {
+    if (debug) {
+      const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.extent (0));
+
+      if (numRowsToPack != static_cast<size_t> (counts_.extent (0))) {
+        std::ostringstream os;
+        os << "lclRowInds.extent(0) = " << numRowsToPack
+           << " != counts.extent(0) = " << counts_.extent (0)
+           << ".";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
+      }
+      if (static_cast<size_t> (numRowsToPack + 1) !=
+          static_cast<size_t> (outputOffsets_.extent (0))) {
+        std::ostringstream os;
+        os << "lclRowInds.extent(0) + 1 = " << (numRowsToPack + 1)
+           << " != outputOffsets.extent(0) = " << outputOffsets_.extent (0)
+           << ".";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const local_row_index_type& curInd,
+              output_offset_type& update,
+              const bool final) const
+  {
+    if (debug) {
+      if (curInd < static_cast<local_row_index_type> (0)) {
+        error_ () = 1;
+        return;
+      }
+    }
+
+    if (final) {
+      if (debug) {
+        if (curInd >= static_cast<local_row_index_type> (outputOffsets_.extent (0))) {
+          error_ () = 2;
+          return;
+        }
+      }
+      outputOffsets_(curInd) = update;
+    }
+
+    if (curInd < static_cast<local_row_index_type> (counts_.extent (0))) {
+      const auto lclRow = lclRowInds_(curInd);
+      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.extent (0)) ||
+          static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
+        error_ () = 3;
+        return;
+      }
+      // count_type could differ from the type of each row offset.
+      // For example, row offsets might each be 64 bits, but if their
+      // difference always fits in 32 bits, we may then safely use a
+      // 32-bit count_type.
+      const count_type count;
+
+      // Here we need to check each entry in lclRow to see if it is something
+      // we can send based on the allowedColumns list
+      for(auto j=rowOffsets_[lclRow], j<rowOffsets_[lclRow+1]; j++) {
+        auto l_cid = entries_[j];
+        auto l_gid = columnMap.getGlobalElement(l_cid);
+
+
+
+      }
+      
+
+
+
+        static_cast<count_type> (rowOffsets_(lclRow+1) - rowOffsets_(lclRow));
+
+      // We pack first the number of entries in the row, then that
+      // many global column indices, then that many pids (if any),
+      // then that many values.  However, if the number of entries in
+      // the row is zero, we pack nothing.
+      const count_type numBytes = (count == 0) ?
+        static_cast<count_type> (0) :
+        sizeOfLclCount_ + count * (sizeOfGblColInd_ +
+                                   (lclRowPids_.size() > 0 ? sizeOfPid_ : 0) +
+                                   sizeOfValue_);
+
+      if (final) {
+        counts_(curInd) = numBytes;
+      }
+      update += numBytes;
+    }
+  }
+
+  // mfh 31 May 2017: Don't need init or join.  If you have join, MUST
+  // have join both with and without volatile!  Otherwise intrawarp
+  // joins are really slow on GPUs.
+
+  //! Host function for getting the error.
+  int getError () const {
+    typedef typename device_type::execution_space execution_space;
+    auto error_h = Kokkos::create_mirror_view (error_);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), error_h, error_);
+    return error_h ();
+  }
+
+private:
+  OutputOffsetsViewType outputOffsets_;
+  CountsViewType counts_;
+  typename InputOffsetsViewType::const_type rowOffsets_;
+  typename InputColIndicesViewType::const_type entries_;
+  typename InputColMapViewType::const_type colMap_,  
+  typename InputLocalRowIndicesViewType::const_type lclRowInds_;
+  typename InputLocalRowPidsViewType::const_type lclRowPids_;
+  typename AllowedColumnsViewType::const_type &allowedColumns_;
+  typename AllowedColumnsBeginViewType::const_type &allowedColumnsBegin_,
+
+  count_type sizeOfLclCount_;
+  count_type sizeOfGblColInd_;
+  count_type sizeOfPid_;
+  count_type sizeOfValue_;
+  Kokkos::View<int, device_type> error_;
+};
+
+
+
+template<class OutputOffsetsViewType,
+         class CountsViewType,
+         class InputOffsetsViewType,
+         class InputColIndicesViewType,
+         class InputColMapViewType,
+         class InputLocalRowIndicesViewType,
+         class InputLocalRowPidsViewType,
+         class AllowedColumnsViewType,
+         class AllowedColumnsBeginViewType>
+typename CountsViewType::non_const_value_type
+computeNumPacketsAndOffsetsRestricted (const OutputOffsetsViewType& outputOffsets,
+                                       const CountsViewType& counts,
+                                       const InputOffsetsViewType& rowOffsets,
+                                       const InputColIndicesViewType & entries,
+                                       const InputColMapViewType & colMap,
+                                       const InputLocalRowIndicesViewType& lclRowInds,
+                                       const InputLocalRowPidsViewType& lclRowPids,
+                                       const AllowedColumnsViewType &allowedColumns,
+                                       const AllowedColumnsBeginViewType &allowedColumnsBegin,
+                                       const typename CountsViewType::non_const_value_type sizeOfLclCount,
+                                       const typename CountsViewType::non_const_value_type sizeOfGblColInd,
+                                       const typename CountsViewType::non_const_value_type sizeOfPid,
+                                       const typename CountsViewType::non_const_value_type sizeOfValue)
+{
+  typedef NumPacketsAndOffsetsFunctor<OutputOffsetsViewType,
+    CountsViewType, typename InputOffsetsViewType::const_type,
+    typename InputLocalRowIndicesViewType::const_type,
+    typename InputLocalRowPidsViewType::const_type> functor_type;
+  typedef typename CountsViewType::non_const_value_type count_type;
+  typedef typename OutputOffsetsViewType::size_type size_type;
+  typedef typename OutputOffsetsViewType::execution_space execution_space;
+  typedef typename functor_type::local_row_index_type LO;
+  typedef Kokkos::RangePolicy<execution_space, LO> range_type;
+  const char prefix[] = "computeNumPacketsAndOffsets: ";
+
+  count_type count = 0;
+  const count_type numRowsToPack = lclRowInds.extent (0);
+
+  if (numRowsToPack == 0) {
+    return count;
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (rowOffsets.extent (0) <= static_cast<size_type> (1),
+       std::invalid_argument, prefix << "There is at least one row to pack, "
+       "but the matrix has no rows.  lclRowInds.extent(0) = " <<
+       numRowsToPack << ", but rowOffsets.extent(0) = " <<
+       rowOffsets.extent (0) << " <= 1.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (outputOffsets.extent (0) !=
+       static_cast<size_type> (numRowsToPack + 1), std::invalid_argument,
+       prefix << "Output dimension does not match number of rows to pack.  "
+       << "outputOffsets.extent(0) = " << outputOffsets.extent (0)
+       << " != lclRowInds.extent(0) + 1 = "
+       << static_cast<size_type> (numRowsToPack + 1) << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (counts.extent (0) != numRowsToPack, std::invalid_argument,
+       prefix << "counts.extent(0) = " << counts.extent (0)
+       << " != numRowsToPack = " << numRowsToPack << ".");
+
+    functor_type f (outputOffsets, counts, rowOffsets,
+                    entries,colMap,
+                    lclRowInds, lclRowPids, allowedColumns,
+                    allowedColumnsBegin, sizeOfLclCount,
+                    sizeOfGblColInd, sizeOfPid, sizeOfValue);
+    Kokkos::parallel_scan (range_type (0, numRowsToPack + 1), f);
+
+    // At least in debug mode, this functor checks for errors.
+    const int errCode = f.getError ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (errCode != 0, std::runtime_error, prefix << "parallel_scan error code "
+       << errCode << " != 0.");
+
+    // Get last entry of outputOffsets, which is the sum of the entries
+    // of counts.  Don't assume UVM.
+    using Tpetra::Details::getEntryOnHost;
+    return static_cast<count_type> (getEntryOnHost (outputOffsets,
+                                                    numRowsToPack));
+  }
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node,typename BufferDeviceType>
+void
+packCrsMatrixRestricted (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                         Kokkos::DualView<char*, BufferDeviceType>& exports,
+                         const Kokkos::View<size_t*, BufferDeviceType>& num_packets_per_lid,
+                         const Kokkos::View<const LO*, BufferDeviceType>& export_lids,
+                         const Kokkos::View<const int*, typename NT::device_type>& export_pids,
+                         const Kokkos::View<const GO*, BufferDeviceType> &restricted_col_gids;
+                         const Kokkos::View<const size_t*, BufferDeviceType> &restricted_col_gids_begin,
+                         size_t& constant_num_packets,
+                         const bool pack_pids)
+{
+  using Kokkos::View;
+  typedef BufferDeviceType DT;
+  typedef Kokkos::DualView<char*, BufferDeviceType> exports_view_type;
+  auto local_matrix = sourceMatrix.getLocalMatrixDevice();
+  auto local_col_map = sourceMatrix.getColMap ()->getLocalMap();
+
+
+  // Setting this to zero tells the caller to expect a possibly
+  // different ("nonconstant") number of packets per local index
+  // (i.e., a possibly different number of entries per row).
+  constant_num_packets = 0;
+
+  const size_t num_export_lids =
+    static_cast<size_t> (export_lids.extent (0));
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (num_export_lids !=
+     static_cast<size_t> (num_packets_per_lid.extent (0)),
+     std::invalid_argument, prefix << "num_export_lids.extent(0) = "
+     << num_export_lids << " != num_packets_per_lid.extent(0) = "
+     << num_packets_per_lid.extent (0) << ".");
+  if (num_export_lids != 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (num_packets_per_lid.data () == NULL, std::invalid_argument,
+       prefix << "num_export_lids = "<< num_export_lids << " != 0, but "
+       "num_packets_per_lid.data() = "
+       << num_packets_per_lid.data () << " == NULL.");
+  }
+
+  // Useful information
+  const size_t num_bytes_per_lid = PackTraits<LO>::packValueCount (LO (0));
+  const size_t num_bytes_per_gid = PackTraits<GO>::packValueCount (GO (0));
+  const size_t num_bytes_per_pid = PackTraits<int>::packValueCount (int (0));
+
+  size_t num_bytes_per_value = 0;
+  if (PackTraits<ST>::compileTimeSize) {
+    // Assume ST is default constructible; packValueCount wants an instance.
+    num_bytes_per_value = PackTraits<ST>::packValueCount (ST ());
+  }
+  else {
+    // Since the packed data come from the source matrix, we can use
+    // the source matrix to get the number of bytes per Scalar value
+    // stored in the matrix.  This assumes that all Scalar values in
+    // the source matrix require the same number of bytes.  If the
+    // source matrix has no entries on the calling process, then we
+    // hope that some process does have some idea how big a Scalar
+    // value is.  Of course, if no processes have any entries, then no
+    // values should be packed (though this does assume that in our
+    // packing scheme, rows with zero entries take zero bytes).
+    size_t num_bytes_per_value_l = 0;
+    if (local_matrix.values.extent(0) > 0) {
+      const ST& val = local_matrix.values(0);
+      num_bytes_per_value_l = PackTraits<ST>::packValueCount (val);
+    }
+    using Teuchos::reduceAll;
+    reduceAll<int, size_t> (* (inputMatrix.getComm ()),
+                            Teuchos::REDUCE_MAX,
+                            num_bytes_per_value_l,
+                            Teuchos::outArg (num_bytes_per_value));
+  }
+  if (num_export_lids == 0) {
+    exports = exports_view_type ("exports", 0);
+    return;
+  }
+
+  // Array of offsets into the pack buffer.
+  Kokkos::View<size_t*, DT> offsets ("offsets", num_export_lids + 1);
+  
+  // Compute number of packets per LID (row to send), as well as
+  // corresponding offsets (the prefix sum of the packet counts).
+  const size_t count =
+    computeNumPacketsAndOffsetsRestricted (offsets, num_packets_per_lid,
+                                           local_matrix.graph.row_map, 
+                                           local_matrix.graph.entries,
+                                           local_col_map,
+                                           export_lids,
+                                           export_pids,
+                                           restricted_col_gids,
+                                           restricted_col_gids_begin,
+                                           num_bytes_per_lid, num_bytes_per_gid,
+                                           num_bytes_per_pid, num_bytes_per_value);
+
+  // Resize the output pack buffer if needed.
+  if (count > static_cast<size_t> (exports.extent (0))) {
+    exports = exports_view_type ("exports", count);
+    if (debug) {
+      std::ostringstream os;
+      os << "*** exports resized to " << count << std::endl;
+      std::cerr << os.str ();
+    }
+  }
+  if (debug) {
+    std::ostringstream os;
+    os << "*** count: " << count << ", exports.extent(0): "
+       << exports.extent (0) << std::endl;
+    std::cerr << os.str ();
+  }
+
+  // If exports has nonzero length at this point, then the matrix has
+  // at least one entry to pack.  Thus, if packing process ranks, we
+  // had better have at least one process rank to pack.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (pack_pids && exports.extent (0) != 0 &&
+     export_pids.extent (0) == 0, std::invalid_argument, prefix <<
+     "pack_pids is true, and exports.extent(0) = " <<
+     exports.extent (0)  << " != 0, meaning that we need to pack at least "
+     "one matrix entry, but export_pids.extent(0) = 0.");
+
+  typedef typename std::decay<decltype (local_matrix)>::type
+    local_matrix_device_type;
+  typedef typename std::decay<decltype (local_col_map)>::type
+    local_map_type;
+
+  exports.modify_device ();
+  auto exports_d = exports.view_device ();
+  do_pack<local_matrix_device_type, local_map_type, DT>
+    (local_matrix, local_col_map, exports_d, num_packets_per_lid,
+     export_lids, export_pids, offsets, num_bytes_per_value,
+     pack_pids);
+  // If we got this far, we succeeded.
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraFunctions<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+importSquareMatrixFromImporter4(RCP<const CrsMatrix> inputMatrix, 
+                               RCP<const Import> importer,
+                                RCP<CrsMatrix> & outputMatrix) {  
+  // Approach:  Modify the packing to only pack the rows we need, then use the IAFC comm & unpack path
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+
+
+  // This will need to get Kokkos-ified later, but for now this is fine
+  std::vector<GO> restrictedColGIDs;
+  std::vector<LO> restrictedColGIDsBegin;
+  communicateRowMap(outputRowMap, distributor, targetColGIDs, targetColGIDsBegin);
+
+
+
+
+}
+
+
+/****************************************************************************************************/
+/****************************************************************************************************/
+/****************************************************************************************************/
 
 
 
@@ -373,6 +817,10 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
 
 
 
+/****************************************************************************************************/
+/****************************************************************************************************/
+/****************************************************************************************************/
+
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -429,6 +877,8 @@ importSquareMatrixFromImporter2(RCP<const CrsMatrix> inputMatrix,
                           localRowsSend, lengthsTo, localRowsRecv,
                            lengthsFrom, outputMatrix);
 }
+
+
 
 
 
@@ -669,6 +1119,9 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
 
 
 
+/****************************************************************************************************/
+/****************************************************************************************************/
+/****************************************************************************************************/
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

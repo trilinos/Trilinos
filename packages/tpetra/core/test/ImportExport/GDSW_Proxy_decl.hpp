@@ -50,6 +50,10 @@ public:
                                       Teuchos::RCP<CrsMatrix> & outputMatrix);
 
 
+  void importSquareMatrixFromImporter4(Teuchos::RCP<const CrsMatrix> inputMatrix, 
+                                       Teuchos::RCP<const Import> importer,
+                                       Teuchos::RCP<CrsMatrix> & outputMatrix);
+
 private:
   template<class LOVector>
     void communicateMatrixData(Teuchos::RCP<const CrsMatrix> inputMatrix, 

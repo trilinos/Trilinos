@@ -352,7 +352,7 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
 
 
 
-// return current memory usage in bytes
+// return current memory usage in kilobytes
 size_t get_memory_usage_now()
 {
   size_t memory = 0; 
@@ -387,7 +387,7 @@ size_t get_memory_usage_now()
 
   struct rusage sys_resources;
   getrusage(RUSAGE_SELF, &sys_resources);
-  memory = (unsigned long)sys_resources.ru_maxrss * RU_MAXRSS_UNITS;
+  memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
 #endif  
 
 
