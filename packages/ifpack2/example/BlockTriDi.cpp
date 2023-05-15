@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10),useStackedTimer(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10),useStackedTimer(false),overlapCommAndComp(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -28,9 +28,13 @@ struct CmdLineArgs {
   int numIters;
   double tol;
   int nx;
+  int ny;
+  int nz;
   int lpp;
   bool useStackedTimer;
+  bool overlapCommAndComp;
   std::string problemName;
+  std::string matrixType;
 };
 
 // Read in values of command-line arguments.
@@ -50,10 +54,15 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
   cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
+  cmdp.setOption ("ny", &args.ny, "If using inline meshing, number of nodes in the y direction per proc");
+  cmdp.setOption ("nz", &args.nz, "If using inline meshing, number of nodes in the z direction per proc");
   cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
   cmdp.setOption ("withStackedTimer", "withoutStackedTimer", &args.useStackedTimer,
       "Whether to run with a StackedTimer and print the timer tree at the end (and try to output Watchr report)");
+  cmdp.setOption ("withOverlapCommAndComp", "withoutOverlapCommAndComp", &args.overlapCommAndComp,
+		  "Whether to run with overlapCommAndComp)");
   cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
+  cmdp.setOption("matrixType", &args.matrixType, "matrixType");
   auto result = cmdp.parse (argc, argv);
   return result == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL;
 }
@@ -128,13 +137,11 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  // Thanks for the code, Travis!
-  
   // Make the graph
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = BuildMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixList,comm);
   RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > FGraph = FirstMatrix->getCrsGraph();
   
-  int blocksize = 3;
+  const int blocksize = matrixList.get("blockSize", 3);
   RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(FGraph);
   RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
   
@@ -147,15 +154,21 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   const Scalar three = two+one;
   
   Teuchos::Array<Scalar> basematrix(blocksize*blocksize, zero);
-  basematrix[0] = two;
-  basematrix[2] = three;
-  basematrix[3] = three;
-  basematrix[4] = two;
-  basematrix[7] = three;
-  basematrix[8] = two;
   Teuchos::Array<Scalar> offmatrix(blocksize*blocksize, zero);
-  offmatrix[0]=offmatrix[4]=offmatrix[8]=-1;
-  
+  int entryIdx = 0;
+  for(int rowIdx = 0; rowIdx < blocksize; ++rowIdx) {
+    for(int colIdx = 0; colIdx < blocksize; ++colIdx) {
+      entryIdx = rowIdx*blocksize + colIdx;
+      basematrix[entryIdx] = ((entryIdx % 2) == 0 ? one : two);
+    }
+    basematrix[rowIdx*blocksize + rowIdx] = three;
+
+    offmatrix[rowIdx*blocksize + rowIdx] = -one;
+  }
+
+  // Being a bit worried that just worrying about the block triagonal part of the matrix
+  // is not generally good as we still perform residual calculation with the rest of the
+  // entries...
   Teuchos::Array<LocalOrdinal> lclColInds(1);
   for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
     lclColInds[0] = lclRowInd;
@@ -242,7 +255,6 @@ main (int argc, char* argv[])
      args.mapFilename   = "";
      args.rhsFilename  = "";
      args.lineFilename = "";
-     args.blockSize = 3; 
      inline_matrix = true;
   }
 #endif
@@ -278,23 +290,50 @@ main (int argc, char* argv[])
   if(args.matrixFilename == "") {
     // matrix
     Teuchos::ParameterList plist;
-    plist.set("matrixType","Laplace1D");    
-    plist.set("nx", (GO)args.nx*comm->getSize());
+    if(args.matrixType == "") {
+      plist.set("matrixType","Laplace1D");
+    } else {
+      plist.set("matrixType", args.matrixType);
+      plist.set("nx", (GO)args.nx);
+      plist.set("mx", (GO)1);
+      if(args.ny > -1) {
+	plist.set("ny", (GO)args.ny);
+	plist.set("my", (GO)comm->getSize());
+      }
+      if(args.nz > -1) {
+	plist.set("nz", (GO)args.nz);
+	plist.set("mz", (GO)1);
+      }
+    }
+    if(0 < args.blockSize) {
+      plist.set("blockSize", args.blockSize);
+    }
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
+    std::cout << "p=" << comm->getRank() << " | Ablock, local size: " << Ablock->getLocalNumRows() << std::endl;
 
     //rhs 
     B = rcp(new MV(Ablock->getRangeMap(),1));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
     // line info (lpp lines per proc)
-    int line_length = std::max(1, args.nx  / args.lpp);
+    int line_length = std::max(1, args.nz  / args.lpp);
     line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
+    std::cout << "line_ids.size()=" << line_ids.size()
+	      << ", args.nx*args.ny*args.nz/comm->getSize()=" << args.nx*args.ny*args.nz/comm->getSize() << std::endl;
     for(LO i=0; i<(LO)line_ids.size(); i++)
-      line_ids[i] = i / line_length;     
+      line_ids[i] = i / line_length;
 
-    if(rank0)
-      std::cout<<"Using block_size = "<<args.blockSize<<" # lines per proc= "<<args.lpp<<" and average line length = "<<line_length<<std::endl;
+    if(rank0) {
+      std::cout << "Using matrixType = " << plist.get<std::string>("matrixType")
+		<< " nx = " << plist.get<GO>("nx")
+		<< " ny = " << plist.get<GO>("ny")
+		<< " nz = " << plist.get<GO>("nz")
+		<< std::endl;
+      std::cout<< "Using block_size = " << args.blockSize
+	       << " # lines per proc= " << args.lpp //*args.ny*args.nz
+	       << " and average line length = " << line_length<<std::endl;
+    }
   }
   else
 #endif 
@@ -427,7 +466,7 @@ main (int argc, char* argv[])
 
   {
     Teuchos::TimeMonitor precSetupTimeMon (*precSetupTime);
-    precond = rcp(new BTDC(Ablock,parts));
+    precond = rcp(new BTDC(Ablock,parts,args.overlapCommAndComp));
 
     if(rank0) std::cout<<"Initializing preconditioner..."<<std::endl;
     precond->initialize ();
@@ -441,7 +480,7 @@ main (int argc, char* argv[])
   ap.zeroStartingSolution = true;
   ap.tolerance            = args.tol;
   ap.maxNumSweeps         = args.numIters;
-  ap.checkToleranceEvery  = 1;
+  ap.checkToleranceEvery  = 10;
  
 
   // Solve
