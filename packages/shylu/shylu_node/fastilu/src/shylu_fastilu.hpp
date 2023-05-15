@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov) 
-// 
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -257,36 +257,36 @@ class FastILUPrec
             //Count the elements in each row of Ut
             auto temp = OrdinalArrayHost("temp", nRows + 1);
             auto rowPtrs = OrdinalArrayHost("rowPtrs", nRows);
-            for (Ordinal i = 0; i <= nRows; i++) 
+            for (Ordinal i = 0; i <= nRows; i++)
             {
                 temp[i] = 0;
             }
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
-                for (Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++) 
+                for (Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++)
                 {
                     temp[uColIdx_[k]+1]++;
 
                 }
             }
-            //Perform an add scan to get the row map for 
+            //Perform an add scan to get the row map for
             //the transpose
-            for (Ordinal i = 0; i <= nRows; i++) 
+            for (Ordinal i = 0; i <= nRows; i++)
             {
                 utRowMap_[i] = temp[i];
             }
-            for (Ordinal i = 1; i <= nRows; i++) 
+            for (Ordinal i = 1; i <= nRows; i++)
             {
                 utRowMap_[i] += utRowMap_[i-1];
             }
             //Set the row pointers to their initial places;
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 rowPtrs[i] = utRowMap_[i];
             }
             //Copy the data
             Kokkos::deep_copy(uVal_, uVal);
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++)
                 {
@@ -506,7 +506,7 @@ class FastILUPrec
 
             Ordinal aRowPtr = 0;
             aRowMap_[0] = aRowPtr;
-            for (i = 0; i < nRows; i++) 
+            for (i = 0; i < nRows; i++)
             {
                 #ifdef FASTILU_DEBUG_OUTPUT
                 std::cout << "***row:" << i << std::endl;
@@ -551,7 +551,7 @@ class FastILUPrec
             std::cout << "**Finished initializing A" << std::endl;
             #endif
 
-            //Compute RowMap for L and U. 
+            //Compute RowMap for L and U.
             // > form RowMap for L
             lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
             lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
@@ -559,7 +559,7 @@ class FastILUPrec
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished counting L" << std::endl;
             #endif
-            
+
             // > form RowMap for U and Ut
             uRowMap  = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
             utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
@@ -617,7 +617,7 @@ class FastILUPrec
 
             Ordinal aRowPtr = 0;
             aRowMap_[0] = aRowPtr;
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 for(Ordinal k = pRowMap_(i); k < pRowMap_(i+1); k++)
                 {
@@ -643,7 +643,7 @@ class FastILUPrec
             std::cout << "**Finished initializing A" << std::endl;
             #endif
 
-            //Now allocate memory for L and U. 
+            //Now allocate memory for L and U.
             //
             lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
             lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
@@ -651,7 +651,7 @@ class FastILUPrec
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished counting L" << std::endl;
             #endif
-            
+
             uRowMap = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
             utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
             utRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utRowMap);
@@ -767,7 +767,7 @@ class FastILUPrec
         int countL()
         {
             lRowMap_[0] = 0;
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 Ordinal row_count = 0;
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
@@ -777,7 +777,7 @@ class FastILUPrec
 
                     if (row >= col)
                     {
-                       row_count++; 
+                       row_count++;
                     }
                 }
                 lRowMap_[i+1] = lRowMap_[i] + row_count;
@@ -845,7 +845,7 @@ class FastILUPrec
 #if 1
             a2uMap = OrdinalArray("a2uMap", nnzU);
             auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
@@ -861,7 +861,7 @@ class FastILUPrec
             }
             Kokkos::deep_copy(a2uMap, a2uMap_);
             // shift back pointer
-            for (Ordinal i = nRows; i > 0; i--) 
+            for (Ordinal i = nRows; i > 0; i--)
             {
                 uRowMap_[i] = uRowMap_[i-1];
             }
@@ -979,7 +979,7 @@ class FastILUPrec
             auto diagFact_ = Kokkos::create_mirror_view(diagFact);
             for (int i = 0; i < nRows; i++)
             {
-                for(int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
+                for(int k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
                     aRowIdx_[anext++] = i;
                     if (aColIdx_[k] == i)
@@ -994,7 +994,7 @@ class FastILUPrec
             int col;
             Real sc1, sc2;
 
-            for (int i = 0; i < nRows; i++) 
+            for (int i = 0; i < nRows; i++)
             {
                 for (int k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
@@ -1012,7 +1012,7 @@ class FastILUPrec
         void applyManteuffelShift()
         {
             const Scalar one = STS::one();
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
@@ -1053,8 +1053,8 @@ class FastILUPrec
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
 #if 0
-            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector); 
-#endif 
+            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
+#endif
             BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
@@ -1062,7 +1062,7 @@ class FastILUPrec
             {
                 extent++;
             }
-            for (Ordinal i = 0; i < nTrisol; i++) 
+            for (Ordinal i = 0; i < nTrisol; i++)
             {
                 //Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), jacIter);
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), jacIter);
@@ -1076,16 +1076,16 @@ class FastILUPrec
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
             ExecSpace().fence();
 #if 0
-            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, utRowMap, utColIdx, utVal, x, y, xOld, diagElems); 
+            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
 #endif
             BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
-            Ordinal extent = nRows/blkSz; 
+            Ordinal extent = nRows/blkSz;
             if (nRows%blkSz != 0)
             {
                 extent++;
             }
-            for (Ordinal i = 0; i < nTrisol; i++) 
+            for (Ordinal i = 0; i < nTrisol; i++)
             {
                 //Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), jacIter);
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), jacIter);
@@ -1099,7 +1099,7 @@ class FastILUPrec
         //TODO: Use a Teuchos::ParameterList object
         FastILUPrec(bool skipSortMatrix_, OrdinalArray &aRowMapIn_, OrdinalArray &aColIdxIn_, ScalarArray &aValIn_, Ordinal nRow_,
                     FastILU::SpTRSV sptrsv_algo_, Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_,
-                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_)
+                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_, Ordinal blockCrsSize_ = 1)
         {
             nRows = nRow_;
             sptrsv_algo = sptrsv_algo_;
@@ -1146,7 +1146,7 @@ class FastILUPrec
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(skipSortMatrix_, aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_,
-                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_));
+                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_, blockCrsSize_));
             }
         }
 
@@ -1231,7 +1231,7 @@ class FastILUPrec
             aColIdx (aColIdx_),
             iperm (iperm_)
             {}
-            
+
 
             // ------------------------------------------------
             // functor to load values
@@ -1481,17 +1481,17 @@ class FastILUPrec
             #ifdef SHYLU_DEBUG
             Ordinal nnzU = uRowMap[nRows];
             MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, uRowMap, diagElems);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal); 
+            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal);
 
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), copyFunc4);
 
             //Note that the following is a temporary measure
-            //to ensure that memory resides on the device. 
+            //to ensure that memory resides on the device.
             Ordinal nnzL = lRowMap[nRows];
             Ordinal nnzA = aRowMap[nRows];
             MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace> copyFunc2(aColIdx, aRowIdx, aVal);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal); 
+            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal);
 
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
@@ -1544,17 +1544,17 @@ class FastILUPrec
             #ifdef SHYLU_DEBUG
             Ordinal nnzU = uRowMap[nRows];
             MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, uRowMap, diagElems);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal); 
+            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal);
 
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), copyFunc4);
 
             //Note that the following is a temporary measure
-            //to ensure that memory resides on the device. 
+            //to ensure that memory resides on the device.
             Ordinal nnzL = lRowMap[nRows];
             Ordinal nnzA = aRowMap[nRows];
             MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace> copyFunc2(aColIdx, aRowIdx, aVal);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal); 
+            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal);
 
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
@@ -1620,7 +1620,7 @@ class FastILUPrec
             //Ordinal extent = aRowMap[nRows];
             //ExecSpace().fence();
 
-            for (int i = 0; i < nFact; i++) 
+            for (int i = 0; i < nFact; i++)
             {
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
             }
@@ -1847,7 +1847,7 @@ class FastILUPrec
                         ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroX(xOld);
                         Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), initZeroX);
                         //Kokkos::deep_copy(x2d_old, zero);
-                        for (Ordinal i = 0; i < nTrisol; i++) 
+                        for (Ordinal i = 0; i < nTrisol; i++)
                         {
                             if (i%2 == 0) {
                                 // y = y - L*x_old
@@ -1885,7 +1885,7 @@ class FastILUPrec
                         // xold = zeros
                         Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), initZeroX);
                         //Kokkos::deep_copy(x2d_old, zero);
-                        for (Ordinal i = 0; i < nTrisol; i++) 
+                        for (Ordinal i = 0; i < nTrisol; i++)
                         {
                             if (i%2 == 0) {
                                 // x = y - U*x_old
@@ -1918,7 +1918,7 @@ class FastILUPrec
                     }
                 }
             }
-            //apply D again (we assume that the scaling is 
+            //apply D again (we assume that the scaling is
             //symmetric for now).
             if (useMetis) {
                 applyD_iPerm(xTemp, y);
@@ -2003,12 +2003,12 @@ class FastILUPrec
                     sum += acc_val * acc_val;
                 }
             }
-            
-            for (int i = 0; i < nRows; i++) 
+
+            for (int i = 0; i < nRows; i++)
             {
                 sum_diag += diagElems[i]*diagElems[i];
             }
-            
+
             std::cout << "l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)) << std::endl;
             std::cout << "l2 norm of diag. of U = " << RTS::sqrt(STS::abs(sum_diag)) << std::endl;
         }
@@ -2063,7 +2063,7 @@ class FastILUPrec
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace>;
-        
+
 };
 
 //TODO: find a way to avoid the if condition (only store lower triangular part of A?)
@@ -2083,7 +2083,7 @@ class FastICFunctor
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li), _Ax(Ax), _Lx(Lx), _diag(diag), _omega(omega)
         {}
-        
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
@@ -2108,7 +2108,7 @@ class FastICFunctor
                     Ordinal lptr = _Lp[i];
                     Ordinal ltptr = _Lp[j];
                     Ordinal endpt = j;
-                    if (i >= j) { 
+                    if (i >= j) {
 
                         for ( ; _Li[lptr] < endpt && _Li[ltptr] < endpt; )
                         {
@@ -2122,12 +2122,12 @@ class FastICFunctor
                             {
                                 lptr++;
                             }
-                            else 
+                            else
                             {
                                 ltptr++;
                             }
                         }
-                        if (i > j) 
+                        if (i > j)
                         {
                             val = (val-acc_val) / _diag[j];
                             for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
@@ -2138,7 +2138,7 @@ class FastICFunctor
                         {
                             //_diag[j] =  std::sqrt(val - acc_val);
                             val = STS::sqrt(val - acc_val);
-                            _diag[j] = ((1.0 - _omega) * _diag[j]) + (_omega*val); 
+                            _diag[j] = ((1.0 - _omega) * _diag[j]) + (_omega*val);
                             for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
                             assert(_Li[lptr]==i);
                             _Lx[lptr] = _diag[j];
@@ -2161,7 +2161,7 @@ class MemoryPrimeFunctorNnzCsr
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-        MemoryPrimeFunctorNnzCsr (ordinal_array_type Ai, 
+        MemoryPrimeFunctorNnzCsr (ordinal_array_type Ai,
                 scalar_array_type Ax)
             :
                 _Ai(Ai),  _Ax(Ax)
@@ -2174,7 +2174,7 @@ class MemoryPrimeFunctorNnzCsr
                 _Ax[index];
             }
 
-        ordinal_array_type _Ai; 
+        ordinal_array_type _Ai;
         scalar_array_type _Ax;
 };
 
@@ -2186,7 +2186,7 @@ class MemoryPrimeFunctorNnzCoo
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-        MemoryPrimeFunctorNnzCoo (ordinal_array_type Ai, 
+        MemoryPrimeFunctorNnzCoo (ordinal_array_type Ai,
                 ordinal_array_type Aj,
                 scalar_array_type Ax)
             :
@@ -2200,13 +2200,13 @@ class MemoryPrimeFunctorNnzCoo
                 Ordinal v1, v2;
                 Scalar v3;
                 */
-                
+
                 _Ai[index];
                 _Aj[index];
                 _Ax[index];
             }
 
-        ordinal_array_type _Ai, _Aj; 
+        ordinal_array_type _Ai, _Aj;
         scalar_array_type _Ax;
 };
 
@@ -2218,7 +2218,7 @@ class MemoryPrimeFunctorN
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-        MemoryPrimeFunctorN (ordinal_array_type Ap, 
+        MemoryPrimeFunctorN (ordinal_array_type Ap,
                 ordinal_array_type Lp,
                 ordinal_array_type Up,
                 scalar_array_type diag)
@@ -2236,7 +2236,7 @@ class MemoryPrimeFunctorN
                 Ordinal v1, v2, v3;
                 Scalar v4;
                 */
-                 
+
                 _Ap[index];
                 _Lp[index];
                 _Up[index];
@@ -2277,12 +2277,12 @@ class FastILUFunctor
 
                 Ordinal nz_index;
 
-                if (end > nnz) 
+                if (end > nnz)
                 {
                     end = nnz;
                 }
 
-                for (nz_index = start; nz_index < end && nz_index < nnz; nz_index++)  
+                for (nz_index = start; nz_index < end && nz_index < nnz; nz_index++)
                 {
                     Ordinal i = _Ai[nz_index];
                     Ordinal j = _Aj[nz_index];
@@ -2294,7 +2294,7 @@ class FastILUFunctor
                     Ordinal lptr = _Lp[i];
                     Ordinal uptr = _Up[j];
 
-                    while ( lptr < _Lp[i+1] && uptr < _Up[j+1] ) 
+                    while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
                     {
                         lCol = _Li[lptr];
                         uCol = _Ui[uptr];
@@ -2302,7 +2302,7 @@ class FastILUFunctor
                         if (lCol == uCol)
                         {
                             lAdd = _Lx[lptr] * _Ux[uptr];
-                            acc_val += lAdd; 
+                            acc_val += lAdd;
                         }
                         if (lCol <= uCol)
                         {
@@ -2317,7 +2317,7 @@ class FastILUFunctor
                     acc_val -= lAdd;
 
                     // Place the value into L or U
-                    if (i > j) 
+                    if (i > j)
                     {
                         val = (val-acc_val) / _Ux[_Up[j+1]-1];
                         _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
@@ -2347,7 +2347,7 @@ class BlockJacobiIterFunctorL
         typedef Kokkos::View<Scalar *, ExecSpace> ScalarArray;
 
         BlockJacobiIterFunctorL (Ordinal n, Ordinal bs, OrdinalArray aI, OrdinalArray aJ,
-                ScalarArray aVal, ScalarArray b, ScalarArray xNew, 
+                ScalarArray aVal, ScalarArray b, ScalarArray xNew,
                 ScalarArray xOld, ScalarArray diag)
             :
                 nRow(n), blkSize(bs), aRPtr(aI), aColIdx(aJ), aVal2(aVal), rhs(b), x2(xNew), x1(xOld),
@@ -2364,16 +2364,16 @@ class BlockJacobiIterFunctorL
                 Ordinal col;
                 Ordinal k;
 
-                if (idx2 > nRow) 
+                if (idx2 > nRow)
                 {
                     idx2 = nRow;
                 }
 
-                for (row = idx1; row < idx2; row++) 
+                for (row = idx1; row < idx2; row++)
                 {
                     val = 0.0;
                     val = rhs[row];
-                    for (k = aRPtr[row]; k < aRPtr[row+1]; k++) 
+                    for (k = aRPtr[row]; k < aRPtr[row+1]; k++)
                     {
                         col = aColIdx[k];
                         if (col >= idx1 && col < row)
@@ -2404,7 +2404,7 @@ class BlockJacobiIterFunctorU
         typedef Kokkos::View<Scalar *, ExecSpace> ScalarArray;
 
         BlockJacobiIterFunctorU (Ordinal n, Ordinal bs, OrdinalArray aI, OrdinalArray aJ,
-                ScalarArray aVal, ScalarArray b, ScalarArray xNew, 
+                ScalarArray aVal, ScalarArray b, ScalarArray xNew,
                 ScalarArray xOld, ScalarArray diag)
             :
                 nRow(n), blkSize(bs), aRPtr(aI), aColIdx(aJ), aVal2(aVal), rhs(b), x2(xNew), x1(xOld),
@@ -2421,16 +2421,16 @@ class BlockJacobiIterFunctorU
                 Ordinal col;
                 Ordinal k;
 
-                if (idx2 > nRow) 
+                if (idx2 > nRow)
                 {
                     idx2 = nRow;
                 }
 
-                for (row = idx2 - 1; row >= idx1; row--) 
+                for (row = idx2 - 1; row >= idx1; row--)
                 {
                     val = 0.0;
                     val = rhs[row];
-                    for (k = aRPtr[row]; k < aRPtr[row+1]; k++) 
+                    for (k = aRPtr[row]; k < aRPtr[row+1]; k++)
                     {
                         col = aColIdx[k];
                         if (col < idx2 && col > row)
@@ -2473,7 +2473,7 @@ class JacobiIterFunctor
                 Ordinal k;
 
                 //The equation is x_{k+1} = D^{-1}b + (I - D^{-1}A)x_{k}
-                //The individual updates are x^{k+1}_{i} = b_{i}/d_{i} + x^{k}_{i} - 
+                //The individual updates are x^{k+1}_{i} = b_{i}/d_{i} + x^{k}_{i} -
                 // \sum_{j = 1}^{n} r_{ij} x_{j}^{k}
                 xNew_[xId] = b_[xId]/diag_[xId];
                 xNew_[xId] += xOld_[xId];
@@ -2485,7 +2485,7 @@ class JacobiIterFunctor
                 xNew_[xId] -= rowDot/diag_[xId];
             }
 
-        ordinal_array_type aI_, aJ_; 
+        ordinal_array_type aI_, aJ_;
         scalar_array_type aVal_, b_, xNew_, xOld_, diag_;
 };
 
@@ -2577,7 +2577,7 @@ class JacobiIterFunctorT
                 }
             }
 
-        ordinal_array_type aI_, aJ_; 
+        ordinal_array_type aI_, aJ_;
         scalar_array_type aVal_, b_, xNew_, xOld_, diag_;
         Ordinal n_;
 };
@@ -2626,7 +2626,7 @@ class PermScalFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const NonTranPermScalTag &, const Ordinal xId) const
             {
-               // y = D*P*x 
+               // y = D*P*x
                Ordinal row = perm_(xId);
                y_[xId] = scaleFactors_[xId]*x_[row];
             }
@@ -2634,7 +2634,7 @@ class PermScalFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const TranPermScalTag &, const Ordinal xId) const
             {
-               // y = P'*D*x 
+               // y = P'*D*x
                Ordinal row = perm_(xId);
                y_[xId] = x_[row]*scaleFactors_[row];
             }
@@ -2654,7 +2654,7 @@ class ParInitZeroFunctor
 
         ParInitZeroFunctor(scalar_array_type x)
             :
-                x_(x) 
+                x_(x)
     {
     }
 
@@ -2669,4 +2669,3 @@ class ParInitZeroFunctor
 };
 
 #endif
-

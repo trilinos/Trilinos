@@ -46,6 +46,9 @@
 #define __IFPACK2_FASTILU_BASE_DEF_HPP__ 
 
 #include <Ifpack2_Details_CrsArrays.hpp>
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include <KokkosKernels_Utils.hpp>
 #include <Kokkos_Timer.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -168,6 +171,11 @@ initialize()
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
+
+  if (params_.blockCrs) {
+    mat_ = Tpetra::convertToBlockCrsMatrix(*Ifpack2::Details::getCrsMatrix(this->mat_), params_.blockCrsSize);
+  }
+
   Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
   crsCopyTime_ = copyTimer.seconds();
@@ -420,6 +428,8 @@ Params::getDefaults()
   p.guessFlag = true;
   p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
   p.blockSize = 1;      // # of rows / thread, for SpTRSV
+  p.blockCrs = false;   // whether to use block CRS for fastILU
+  p.blockCrsSize = 3;   // block size for block CRS
   return p;
 }
 
@@ -539,9 +549,25 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else
       TYPE_ERROR("block size for SpTRSV", "int");
   }
+  //"block crs" aka blockCrs
+  if(pL.isParameter("block crs"))
+  {
+    if(pL.isType<bool>("block crs"))
+      blockCrs = pL.get<bool>("block crs");
+    else
+      TYPE_ERROR("block crs", "bool");
+  }
+  //"block crs block size" aka blockCrsSize
+  if(pL.isParameter("block crs block size"))
+  {
+    if(pL.isType<int>("block crs block size"))
+      blockCrsSize = pL.get<int>("block crs block size");
+    else
+      TYPE_ERROR("block crs block size", "int");
+  }
   #undef CHECK_VALUE
   #undef TYPE_ERROR
-} 
+}
 
 #define IFPACK2_DETAILS_FASTILU_BASE_INSTANT(S, L, G, N) \
 template class Ifpack2::Details::FastILU_Base<S, L, G, N>;

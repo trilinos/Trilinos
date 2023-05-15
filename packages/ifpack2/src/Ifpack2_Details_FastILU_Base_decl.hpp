@@ -223,6 +223,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
       bool guessFlag;
       int blockSizeILU;
       int blockSize;
+      bool blockCrs;
+      int blockCrsSize;
       static Params getDefaults();
     };
 
