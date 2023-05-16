@@ -214,10 +214,10 @@ int main(int argc, char **argv) {
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-  test_exec_space_wait<Kokkos::SYCL>(success, *out);
-  test_make_instance<Kokkos::SYCL>(success, *out);
-  test_space_instance<Kokkos::SYCL>(success, *out);
-  test_is_gpu_exec_space<Kokkos::SYCL, true>(success, *out);
+  test_exec_space_wait<Kokkos::Experimental::SYCL>(success, *out);
+  test_make_instance<Kokkos::Experimental::SYCL>(success, *out);
+  test_space_instance<Kokkos::Experimental::SYCL>(success, *out);
+  test_is_gpu_exec_space<Kokkos::Experimental::SYCL, true>(success, *out);
 #endif
 
   if (success) {
