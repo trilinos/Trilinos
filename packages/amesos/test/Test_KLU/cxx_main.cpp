@@ -63,6 +63,9 @@ int main(int argc, char *argv[])
   if (norm > 1e-5)
     exit(EXIT_FAILURE);
 
+  delete Map;
+  delete Matrix;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

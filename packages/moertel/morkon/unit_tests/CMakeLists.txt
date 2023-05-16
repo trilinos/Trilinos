@@ -1,4 +1,4 @@
-# KokkosCore_config.h
+# Kokkos_config.h
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/packages/kokkos/core/src)
 # TpetraKernels_config.h
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/packages/tpetra/kernels/src)

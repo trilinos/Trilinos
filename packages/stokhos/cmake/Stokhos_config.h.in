@@ -87,7 +87,7 @@
 #endif // HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
 
 /* Define if KokkosAlgorithms is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOSALGORITHMS
+#cmakedefine HAVE_STOKHOS_KOKKOS
 
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU

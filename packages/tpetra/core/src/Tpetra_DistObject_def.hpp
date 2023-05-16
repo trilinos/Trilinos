@@ -1058,7 +1058,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      doPackAndPrepare(src, exportLIDs, constantNumPackets);
+      doPackAndPrepare(src, exportLIDs, constantNumPackets, execution_space());
       if (commOnHost) {
         this->exports_.sync_host();
       }
@@ -1552,14 +1552,15 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doPackAndPrepare(const SrcDistObject& src,
                    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                   size_t& constantNumPackets)
+                   size_t& constantNumPackets,
+                   const execution_space &space)
   {
     using Details::ProfilingRegion;
     using std::endl;
     const bool debug = Details::Behavior::debug("DistObject");
 
     ProfilingRegion region_pp
-      ("Tpetra::DistObject::doTransferNew::packAndPrepare");
+      ("Tpetra::DistObject::doPackAndPrepare");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
     // favor of Kokkos profiling.
@@ -1588,7 +1589,7 @@ namespace Tpetra {
       try {
         this->packAndPrepare (src, exportLIDs, this->exports_,
             this->numExportPacketsPerLID_,
-            constantNumPackets);
+            constantNumPackets, space);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1610,7 +1611,7 @@ namespace Tpetra {
     else {
       this->packAndPrepare (src, exportLIDs, this->exports_,
           this->numExportPacketsPerLID_,
-          constantNumPackets);
+          constantNumPackets, space);
     }
   }
 
@@ -1700,6 +1701,57 @@ namespace Tpetra {
 
 // clang-format on
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
+    const SrcDistObject &source,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &exportLIDs,
+    Kokkos::DualView<packet_type *, buffer_device_type> &exports,
+    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
+    size_t &constantNumPackets, const execution_space &space) {
+  /*
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
+
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
+  */
+
+  // wait for any work from prior operations in the provided instance to
+  // complete
+  space.fence(); // TODO: Details::Spaces::exec_space_wait
+
+  // pack and prepare in the default instance.
+  packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
+                 constantNumPackets); // default instance
+
+  // wait for the default instance to complete before returning, so any
+  // following work inserted into the provided instance will be done after this
+  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
+}
+// clang-format off
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>& /* importLIDs */,
+   Kokkos::DualView<
+     packet_type*,
+     buffer_device_type> /* imports */,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type> /* numPacketsPerLID */,
+   const size_t /* constantNumPackets */,
+   const CombineMode /* combineMode */)
+  {}
+
+// clang-format on
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
     const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
         &importLIDs,
@@ -1707,11 +1759,6 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
     Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
     const size_t constantNumPackets, const CombineMode combineMode,
     const execution_space &space) {
-  /*
-  we're here if the derived class doesn't know how to do this in an
-  execution space instance, so just do it in the default instance
-  */
-
   // Wait for any work in the provided space to complete
   space.fence(); // TODO: Details::Spaces::exec_space_wait(execution_space(),
                  // space);
@@ -1723,15 +1770,6 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
                              // execution_space());
 }
 // clang-format off
-
-template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        & /* importLIDs */,
-    Kokkos::DualView<packet_type *, buffer_device_type> /* imports */,
-    Kokkos::DualView<size_t *, buffer_device_type> /* numPacketsPerLID */,
-    const size_t /* constantNumPackets */,
-    const CombineMode /* combineMode */) {}
 
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::print(
@@ -1785,3 +1823,4 @@ void removeEmptyProcessesInPlace(Teuchos::RCP<DistObjectType> &input) {
 } // namespace Tpetra
 
 #endif // TPETRA_DISTOBJECT_DEF_HPP
+// clang-format on

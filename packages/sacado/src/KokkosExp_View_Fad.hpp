@@ -31,7 +31,7 @@
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
@@ -1955,7 +1955,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && \
+#if defined(HAVE_SACADO_KOKKOS) && \
     defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && \
     defined(HAVE_SACADO_VIEW_SPEC) && \
     ! defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -2117,7 +2117,7 @@ broadcast
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #include "KokkosExp_View_Fad_Contiguous.hpp"
 

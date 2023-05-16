@@ -83,28 +83,28 @@ std::string Utils::trimWhiteSpace( const std::string& str )
 std::string Utils::toString(const int& x)
 {
 	char s[100];
-	std::sprintf(s, "%d", x);
+	std::snprintf(s, sizeof(s), "%d", x);
 	return std::string(s);
 }
 
 std::string Utils::toString(const long long& x)
 {
 	char s[100];
-	std::sprintf(s, "%lld", x);
+	std::snprintf(s, sizeof(s), "%lld", x);
 	return std::string(s);
 }
 
 std::string Utils::toString(const unsigned int& x)
 {
 	char s[100];
-	std::sprintf(s, "%d", x);
+	std::snprintf(s, sizeof(s), "%d", x);
 	return std::string(s);
 }
 
 std::string Utils::toString(const double& x)
 {
 	char s[100];
-	std::sprintf(s, "%g", x);
+	std::snprintf(s, sizeof(s), "%g", x);
 	return std::string(s);
 }
 

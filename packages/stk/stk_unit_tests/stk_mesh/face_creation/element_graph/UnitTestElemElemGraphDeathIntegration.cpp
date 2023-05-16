@@ -275,7 +275,12 @@ TEST_F(UpdateElemElemGraphTest, killDeleteUpdateGraphKill)
 class ElemElemGraphUpdaterMock : public stk::mesh::ModificationObserver
 {
 public:
-  ElemElemGraphUpdaterMock() : numAdded(0) {}
+  ElemElemGraphUpdaterMock()
+  : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION),
+    numAdded(0)
+  {
+
+  }
 
   virtual void entity_added(stk::mesh::Entity entity)
   {
@@ -295,7 +300,7 @@ TEST_F(UpdateElemElemGraphTest, NewEntityNotification)
   if(bulk.parallel_size() == 2)
   {
     std::shared_ptr<ElemElemGraphUpdaterMock> observer = std::make_shared<ElemElemGraphUpdaterMock>();
-    bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
+    bulk.register_observer(observer);
 
     MeshRefinementMock meshRefinement(bulk, activePart);
     meshRefinement.create_element_on_proc1();
@@ -312,9 +317,9 @@ TEST_F(UpdateElemElemGraphTest, MultipleObservers)
   if(bulk.parallel_size() == 2)
   {
     std::shared_ptr<ElemElemGraphUpdaterMock> observer1 = std::make_shared<ElemElemGraphUpdaterMock>();
-    bulk.register_observer(observer1, stk::mesh::ModificationObserverPriority::APPLICATION);
+    bulk.register_observer(observer1);
     std::shared_ptr<ElemElemGraphUpdaterMock> observer2 = std::make_shared<ElemElemGraphUpdaterMock>();
-    bulk.register_observer(observer2, stk::mesh::ModificationObserverPriority::APPLICATION);
+    bulk.register_observer(observer2);
 
     MeshRefinementMock meshRefinement(bulk, activePart);
     meshRefinement.create_element_on_proc1();

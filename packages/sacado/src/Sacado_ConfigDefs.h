@@ -76,7 +76,7 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 
 /* Kokkos macros */
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Macros.hpp"
 
 #ifndef SACADO_FUNCTION

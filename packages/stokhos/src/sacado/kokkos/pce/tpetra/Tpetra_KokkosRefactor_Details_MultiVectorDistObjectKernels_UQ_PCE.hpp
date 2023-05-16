@@ -95,9 +95,10 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t col) {
+                     size_t col,
+                     const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArraySingleColumn(dst,src,idx,col) );
     }
   };
@@ -145,9 +146,10 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArrayMultiColumn(dst,src,idx,numCols) );
     }
   };
@@ -199,9 +201,10 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      const ColView& col,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
     }
   };

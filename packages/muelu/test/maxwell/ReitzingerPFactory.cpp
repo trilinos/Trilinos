@@ -729,7 +729,7 @@ int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#ifdef HAVE_MUELU_KOKKOSCORE
+#ifdef HAVE_MUELU_KOKKOS
   Kokkos::initialize(argc , argv);
 #endif
 
@@ -774,7 +774,7 @@ int main(int argc, char* argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#ifdef HAVE_MUELU_KOKKOSCORE
+#ifdef HAVE_MUELU_KOKKOS
   Kokkos::finalize();
 #endif
 

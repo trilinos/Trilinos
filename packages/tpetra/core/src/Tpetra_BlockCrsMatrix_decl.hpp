@@ -754,6 +754,13 @@ protected:
      buffer_device_type>& permuteFromLIDs,
    const CombineMode CM) override;
 
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
+
   virtual void
   packAndPrepare
   (const SrcDistObject& sourceObj,

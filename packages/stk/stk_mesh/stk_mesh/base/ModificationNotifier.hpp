@@ -59,9 +59,8 @@ public:
   ModificationNotifier() = default;
   ~ModificationNotifier() = default;
 
-  void register_observer(std::shared_ptr<ModificationObserver> observer, ModificationObserverPriority priority)
+  void register_observer(std::shared_ptr<ModificationObserver> observer)
   {
-    observer->set_priority(priority);
     observers.push_back(observer);
 
     std::sort(observers.begin(), observers.end(), ModificationObserverCompare());

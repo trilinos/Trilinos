@@ -124,6 +124,7 @@ public:
                                       const bool isWithinGeometricTolerance) = 0;
 
   virtual void get_parametric_coordinates(const EntityKey key, std::vector<double>& paramCoords) const = 0;
+  virtual void clear() = 0;
 
   virtual ~FilterToNearestResult() {}
 };
@@ -150,6 +151,7 @@ public:
     paramCoords = returnVal;
   }
 
+  void clear() override { m_searchFilterInfo.clear(); }
   virtual ~FilterToNearestResultMap() {}
 
 private:
@@ -181,6 +183,7 @@ public:
                               const bool isWithinGeometricTolerance) override
   {
     m_searchFilterInfo.push_back(std::make_pair(key, paramCoords));
+    m_isSorted = false;
   }
 
   void get_parametric_coordinates(const EntityKey key, std::vector<double>& paramCoords) const override
@@ -197,6 +200,7 @@ public:
     paramCoords = (*result).second;
   }
 
+  void clear() override { m_searchFilterInfo.clear(); }
   virtual ~FilterToNearestResultVector() {}
 
 private:

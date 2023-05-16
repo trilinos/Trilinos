@@ -97,7 +97,7 @@ private:
       ordinal(stkField.mesh_meta_data_ordinal()),
       hostBulk(&bulk),
       hostField(&stkField),
-      bucketCapacity(0),
+      bucketCapacity(bulk.get_maximum_bucket_capacity()),
       numBucketsForField(0),
       maxNumScalarsPerEntity(0),
       synchronizedCount(0),
@@ -410,10 +410,6 @@ private:
    const BucketVector& allBuckets = hostBulk->buckets(hostFieldEntityRank);
    numBucketsForField = buckets.size();
    maxNumScalarsPerEntity = hostField->max_size();
-
-   if (!buckets.empty()) {
-     bucketCapacity = buckets[0]->capacity();
-   }
 
    construct_field_buckets_pointer_view(buckets);
    construct_all_fields_buckets_num_components_per_entity_view(allBuckets);
