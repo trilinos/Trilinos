@@ -4,7 +4,7 @@ name: Flag PRs to master by adding the AT WIP keyword
 on:
   pull_request:
     types: [opened]
-    branches: [main]
+    branches: [master]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
