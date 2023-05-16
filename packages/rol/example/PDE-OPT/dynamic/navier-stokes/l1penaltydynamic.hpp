@@ -7,7 +7,6 @@
 #include "../../TOOLS/meshreader.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
-namespace ROL {
 
 template <class Real>
 class L1_Dyn_Objective : public ROL::Objective<Real> {
@@ -16,12 +15,12 @@ private:
   Real theta_, beta_;
 	const size_type  Nt_; 
   const std::vector<ROL::TimeStamp<Real>> ts_;
-	ROL::PartitionedVector<Real> &partition ( Vector<Real>& x ) const {
-    return static_cast<PartitionedVector<Real>&>(x);
+	ROL::PartitionedVector<Real> &partition ( ROL::Vector<Real>& x ) const {
+    return static_cast<ROL::PartitionedVector<Real>&>(x);
   }
 
-  const ROL::PartitionedVector<Real> &partition ( const Vector<Real>& x ) const {
-    return static_cast<const PartitionedVector<Real>&>(x);
+  const ROL::PartitionedVector<Real> &partition ( const ROL::Vector<Real>& x ) const {
+    return static_cast<const ROL::PartitionedVector<Real>&>(x);
   }
 	
 	ROL::Ptr<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
@@ -70,13 +69,13 @@ private:
     return xp;
   }
 
-  struct ProjSymBnd : public Elementwise::BinaryFunction<Real> {
+  struct ProjSymBnd : public ROL::Elementwise::BinaryFunction<Real> {
          Real apply(const Real &xc, const Real &yc) const { return std::min(yc, std::max(-yc, xc)); }
     } psb_;
 
  public:
   L1_Dyn_Objective(ROL::ParameterList                    &parlist,
-                   const std::vector<TimeStamp<Real>>    &timeStamp
+                   const std::vector<ROL::TimeStamp<Real>>    &timeStamp
     ) : Nt_(timeStamp.size()), ts_(timeStamp){
       theta_  = parlist.sublist("Time Discretization").get("Theta",    1.0);
 	    beta_   = parlist.get("L1 Parameter", 1e-2);
@@ -87,7 +86,7 @@ private:
                Real &tol 
 		){
     
-		  const PartitionedVector<Real> &zp = partition(z); 
+		  const ROL::PartitionedVector<Real> &zp = partition(z); 
 		  const Real one(1);
       Real dt(0), val(0);
 
@@ -104,16 +103,16 @@ private:
    } //end value
 
 	// prox
-	void prox(Vector<Real>       &Pz, 
-			      const Vector<Real> &z,  
+	void prox(ROL::Vector<Real>       &Pz, 
+			      const ROL::Vector<Real> &z,  
 						Real                t, 
 						Real               &tol
 		)
 	  {
     
 		//partitioned vectors
-		const PartitionedVector<Real> &zp  = partition(z); 
-		PartitionedVector<Real> &Pzp = partition(Pz); 
+		const ROL::PartitionedVector<Real> &zp  = partition(z); 
+    ROL::PartitionedVector<Real> &Pzp = partition(Pz); 
 
 		//constants
 		const Real one(1), zero(0);
@@ -155,5 +154,5 @@ private:
 
 	}//end prox	 
 };
-}// namespace rol
+
 #endif

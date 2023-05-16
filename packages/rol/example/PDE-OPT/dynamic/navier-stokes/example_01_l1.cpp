@@ -253,8 +253,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);// summing over 
     // create l1 dynamic objective for nobj, pass to TRnonsmooth
-    ROL::Ptr<ROL::L1_Dyn_Objective<RealT>> nobj
-			= ROL::makePtr<ROL::L1_Dyn_Objective<RealT>>(rpl,timeStamp); 
+    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
+			= ROL::makePtr<L1_Dyn_Objective<RealT>>(rpl,timeStamp); 
 		
 		//Algo pointer
 		ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
