@@ -1388,7 +1388,7 @@ namespace Tpetra {
           create_const_view (srcWhichVecs.view_host ());
         if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp;
-          permute_array_multi_column_variable_stride (space, tgt_h, src_h,
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                       permuteToLIDs_h,
                                                       permuteFromLIDs_h,
                                                       tgtWhichVecs_h,
@@ -1397,7 +1397,7 @@ namespace Tpetra {
         }
         else {
           using op_type = KokkosRefactor::Details::InsertOp;
-          permute_array_multi_column_variable_stride (space, tgt_h, src_h,
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                       permuteToLIDs_h,
                                                       permuteFromLIDs_h,
                                                       tgtWhichVecs_h,
@@ -1408,12 +1408,12 @@ namespace Tpetra {
       else {
         if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp;
-          permute_array_multi_column (space, tgt_h, src_h, permuteToLIDs_h,
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
                                       permuteFromLIDs_h, numCols, op_type());
         }
         else {
           using op_type = KokkosRefactor::Details::InsertOp;
-          permute_array_multi_column (space, tgt_h, src_h, permuteToLIDs_h,
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
                                       permuteFromLIDs_h, numCols, op_type());
         }
       }
