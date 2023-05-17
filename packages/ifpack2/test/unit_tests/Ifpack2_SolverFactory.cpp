@@ -209,8 +209,8 @@ namespace {
 
     // FIXME (mfh 26 Jul 2015) Need to test more solvers.  In
     // particular, it's important to test AdditiveSchwarz.
-    const int numSolvers = 5;
-    const char* solverNames[5] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
+    constexpr int numSolvers = 6;
+    const char* solverNames[numSolvers] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
                                   "ILUT", "RILUK", "MDF"};
     int numSolversTested = 0;
     for (int k = 0; k < numSolvers; ++k) {
