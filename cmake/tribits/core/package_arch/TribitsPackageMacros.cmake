@@ -867,7 +867,7 @@ macro(tribits_package_postprocess)
   tribits_package_finalize_dependency_vars()
   tribits_package_postprocess_common()
 
-  if (${PACKAGE_NAME}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
+  if (${PACKAGE_NAME}_SOURCE_DIR STREQUAL ${CMAKE_PROJECT_NAME}_SOURCE_DIR)
     set(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE)
   else()
     set(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE PARENT_SCOPE)
