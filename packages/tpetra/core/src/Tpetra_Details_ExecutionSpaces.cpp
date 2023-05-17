@@ -57,7 +57,7 @@ void lazy_init() {
 /*extern*/ InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-/*extern*/ InstanceLifetimeManager<Kokkos::SYCL> SYCLSpaces;
+/*extern*/ InstanceLifetimeManager<Kokkos::Experimental::SYCL> SYCLSpaces;
 #endif
 
 } // namespace Spaces
