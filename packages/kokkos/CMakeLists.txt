@@ -1,2 +1,4 @@
 include(CMakeListsKokkos.txt)
 tribits_package_postprocess()
+file(GLOB KOKKOS_CMAKE_FILES ${Kokkos_BINARY_DIR}/*.cmake)
+file(COPY ${KOKKOS_CMAKE_FILES} DESTINATION ${Trilinos_BINARY_DIR}/cmake_packages/kokkos/)
