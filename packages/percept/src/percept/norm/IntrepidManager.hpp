@@ -21,7 +21,7 @@
 
 #include <percept/Percept.hpp>
 
-#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
 
 #include <percept/function/StringFunction.hpp>
 #include <percept/function/FieldFunction.hpp>
@@ -51,7 +51,8 @@ xxx error
 #endif
 
 
-using namespace Intrepid;
+using namespace std;
+using namespace Intrepid2;
 
 #define IM_TAG( ADT ) ADT ## _TAG
 
@@ -112,24 +113,27 @@ using namespace Intrepid;
      * |   dof                     |   [DOF]   |  number of DOFs   stored in an MD array                 |
      * |-------------------------------------------------------------------------------------------------|
      *
-     *  Note: Intrepid really doesn't have a concept of "DOF" at a node.  It's either a single variable,
+     *  Note: Intrepid2 really doesn't have a concept of "DOF" at a node.  It's either a single variable,
      *    or a vector- or tensor-valued variable.  So, no DOF-related arrays as used herein can be used
-     *    with Intrepid - you must call Intrepd one DOF at a time.
+     *    with Intrepid2 - you must call Intrepd2 one DOF at a time.
+     * 
+     *  MPerego: this is correct, however using subviews it should be possible to select a particular DOF 
+     *           avoiding deep copying views.
      *
-     * FieldContainer<double> cub_points(numCubPoints, spaceDim);
-     * FieldContainer<double> cub_weights(numCubPoints);
+     * DynRankView<double> cub_points(numCubPoints, spaceDim);
+     * DynRankView<double> cub_weights(numCubPoints);
      * 
-     * FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
+     * DynRankView<double> cell_nodes(numCells, numNodes, spaceDim);
      * 
-     * FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-     * FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-     * FieldContainer<double> jacobian_det(numCells, numCubPoints);
-     * FieldContainer<double> weighted_measure(numCells, numCubPoints);
+     * DynRankView<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
+     * DynRankView<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
+     * DynRankView<double> jacobian_det(numCells, numCubPoints);
+     * DynRankView<double> weighted_measure(numCells, numCubPoints);
      * 
-     * FieldContainer<double> grad_at_cub_points(numFields, numCubPoints, spaceDim);
-     * FieldContainer<double> transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-     * FieldContainer<double> weighted_transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-     * FieldContainer<double> stiffness_matrices(numCells, numFields, numFields);
+     * DynRankView<double> grad_at_cub_points(numFields, numCubPoints, spaceDim);
+     * DynRankView<double> transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+     * DynRankView<double> weighted_transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+     * DynRankView<double> stiffness_matrices(numCells, numFields, numFields);
      * 
      * 
      */
@@ -141,8 +145,8 @@ using namespace Intrepid;
 #if (defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
       // workaround for PGI compiler bug
 
-      typedef Intrepid::Basis<double, MDArray > BasisType;
-      typedef Teuchos::RCP<BasisType>           BasisTypeRCP;
+      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
+      using BasisTypeRCP = Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
 
       static void bootstrap();
 #endif
@@ -172,19 +176,18 @@ using namespace Intrepid;
       };
 
       /// ([P],[D])
-      class CubaturePoints : public shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag>
+      class CubaturePoints : public MDArray
       {
         IntrepidManager& m_im;
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
-        typedef shards::Array<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
+        typedef MDArray BaseType;
 
         CubaturePoints(IM& im) ;
 
         void copyTo(MDArray& mda)
         {
-          mda.resize(m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          mda.setValues(contiguous_data(), size());
+          Kokkos::resize(mda, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(mda, *this);
         }
 #if 1
         //using BaseBaseType::operator();
@@ -199,11 +202,11 @@ using namespace Intrepid;
       };
 
       /// ([P])
-      class CubatureWeights : public shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag>
+      class CubatureWeights : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag> BaseType;
+        typedef MDArray BaseType;
 
         CubatureWeights(IM& im);
 
@@ -224,10 +227,10 @@ using namespace Intrepid;
       };
 
       /// ([C], [V], [D])
-      class CellWorkSet : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag>
+      class CellWorkSet : public MDArray
       {
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag> BaseType;
+        typedef MDArray BaseType;
 
         CellWorkSet(IM& im) ;
         using BaseType::operator();
@@ -235,13 +238,12 @@ using namespace Intrepid;
       };
 
       /// ([C], [P], [D])
-      class PhysicalCoords : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag>
+      class PhysicalCoords : public MDArray
       {
 
         IntrepidManager& m_im;
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
-        typedef shards::Array<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
+        typedef MDArray BaseType;
 
         PhysicalCoords(IM& im);
 
@@ -249,8 +251,8 @@ using namespace Intrepid;
         
         void copyTo(MDArray& mda)
         {
-          mda.resize(m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          mda.setValues(contiguous_data(), size());
+          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(mda, *this);
         }
 #if 1
         //using BaseBaseType::operator();
@@ -267,21 +269,21 @@ using namespace Intrepid;
       };
 
       /// ([C], [P], [D], [D])
-      class Jacobian : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
+      class Jacobian : public MDArray
       {
 
         IntrepidManager& m_im;
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
+        typedef MDArray BaseType;
 
         Jacobian(IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
 
         void copyTo(MDArray& mda)
         {
-          mda.resize(m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          mda.setValues(contiguous_data(), size());
+          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(mda, *this);
         }
 
         double m_dummy;
@@ -291,12 +293,12 @@ using namespace Intrepid;
       };
 
       /// ([C], [P], [D])
-      class FaceNormal : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag >
+      class FaceNormal : public MDArray
       {
         IntrepidManager& m_im;
         void dummy_clang_error() { (void)m_im; }
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag > BaseType;
+        typedef MDArray BaseType;
 
         FaceNormal(IM& im);
         void operator()(Jacobian& jac, int i_face, CellTopology& topo);
@@ -308,11 +310,11 @@ using namespace Intrepid;
       };
 
       /// ([C], [P], [D], [D])
-      class JacobianInverse : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
+      class JacobianInverse : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
+        typedef MDArray BaseType;
 
         JacobianInverse(IM& im);
         void operator()(Jacobian& jac);
@@ -325,11 +327,11 @@ using namespace Intrepid;
       };
 
       /// ([C], [P])
-      class JacobianDet : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class JacobianDet : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef MDArray BaseType;
 
         //Jacobian(shards::shards::Array<Cub_Points_Tag>& xi, shards::Array<NodesPerElem_Tag>& c, Topology& topo) 
         JacobianDet(IM& im);
@@ -346,11 +348,11 @@ using namespace Intrepid;
 
       /// weights multiplied by Jacobian det at cubature points
       /// ([C], [P])
-      class WeightedMeasure : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class WeightedMeasure : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef MDArray BaseType;
 
         WeightedMeasure(IM& im);
 
@@ -372,11 +374,11 @@ using namespace Intrepid;
       };
 
       /// ([C], [P], [DOF])
-      class IntegrandValuesDOF : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag>
+      class IntegrandValuesDOF : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag> BaseType;
+        typedef MDArray BaseType;
 
         IntegrandValuesDOF(IM& im);
 
@@ -400,16 +402,16 @@ using namespace Intrepid;
       };
 
       /// ([C], [P])
-      class IntegrandValues : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class IntegrandValues : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef MDArray BaseType;
 
         IntegrandValues(IM& im);
 
         void copyFrom(MDArray& mda);
-        void copyFrom(IntrepidManager& im, MDArray& mda, int iDof);
+        void copyFrom(IM& im, MDArray& mda, int iDof);
 
         using BaseType::operator();
         double m_dummy;
@@ -429,18 +431,18 @@ using namespace Intrepid;
       };
 
       /// ([C], [DOF])
-      class IntegralDOF : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, DOFs_Tag>
+      class IntegralDOF : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, DOFs_Tag > BaseType;
+        typedef MDArray BaseType;
 
         IntegralDOF(IM& im);
 
         /// wXdOmega: ([C], [P])
         /// iv:       ([C], [P], [DOF])
         /// this:     ([C], [DOF])
-        void operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega, int comp_type);
+        void operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega);
 
         using BaseType::operator();
 
@@ -460,18 +462,18 @@ using namespace Intrepid;
       };
 
       /// ([C])
-      class Integral : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag>
+      class Integral : public MDArray
       {
 
       public:
-        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag > BaseType;
+        typedef MDArray BaseType;
 
         Integral(IM& im);
 
         /// wXdOmega: ([C], [P])
         /// iv:       ([C], [P])
         /// this:     ([C])
-        void operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega, int comp_type);
+        void operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega);
         using BaseType::operator();
 
         double m_dummy;
@@ -489,8 +491,6 @@ using namespace Intrepid;
 
       };
 
-      // FIXME - change to shards array
-      //class FieldValues : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag>
 
       /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell: 
       class FieldValues : public MDArray
@@ -503,7 +503,6 @@ using namespace Intrepid;
         void operator()(const stk::mesh::BulkData & bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, stk::mesh::FieldBase* field, MDArray& output_field_values);
       };
 
-      // FIXME - change to shards array
       /// these are the "transformed_basis_values" at each point in each cell in the work set
       /// ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD
       /// here we assume that [B] is equivalent to [V]
@@ -546,19 +545,19 @@ using namespace Intrepid;
       // BasisFields_Tag m_BasisFields_Tag;
 
       CellTopology *m_topo;
-      Teuchos::RCP<Cubature<double, CubaturePoints, CubatureWeights > > m_cub;
+      Teuchos::RCP<Cubature<Kokkos::HostSpace, double, double > > m_cub;
 
     };
 
-
-    //std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container) ;
-    
-
   }
+
+//MPerego: Is Rank used at all?
+
+template<class entity>
+struct Rank;
 
 template<>
 struct Rank<percept::IntrepidManager::CubaturePoints>{
-
 IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
 IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
 static const int value=shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag>::Rank;

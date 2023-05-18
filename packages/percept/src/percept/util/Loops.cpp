@@ -165,12 +165,12 @@ namespace percept {
             // FIXME for multiple points
             for (unsigned inode = 0; inode < num_nodes_in_bucket; inode++)
               {
-                MDArray pt(inDim);  // FIXME for spatialDim
+                MDArray pt("pt", inDim);  // FIXME for spatialDim
                 for (int iSpace = 0; iSpace < inDim; iSpace++)
                   {
                     pt(iSpace) = coord[iSpace];
                   }
-                MDArray out(stride);
+                MDArray out("out", stride);
 
                 // an optional setting of the codomain from existing values (allows for +=, etc.)
                 // if(set_output) {
