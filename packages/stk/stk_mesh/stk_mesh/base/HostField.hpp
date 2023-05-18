@@ -118,7 +118,7 @@ class HostField : public NgpFieldBase
          const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return data[component];
   }
 
@@ -126,7 +126,7 @@ class HostField : public NgpFieldBase
          const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return data[component];
   }
 
@@ -134,7 +134,7 @@ class HostField : public NgpFieldBase
          const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return data[component];
   }
 
@@ -142,7 +142,7 @@ class HostField : public NgpFieldBase
                 const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return data[component];
   }
 
@@ -150,7 +150,7 @@ class HostField : public NgpFieldBase
                 const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T* data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket->bucket_id(), index.bucketOrd));
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return data[component];
   }
 
@@ -159,7 +159,7 @@ class HostField : public NgpFieldBase
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
     unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, index.bucket_id);
-    ThrowAssert(data);
+    STK_ThrowAssert(data);
     return EntityFieldData<T>(data, numScalars);
   }
 

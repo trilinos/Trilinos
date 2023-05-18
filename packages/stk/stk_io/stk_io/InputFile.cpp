@@ -140,7 +140,7 @@ namespace io {
     m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                       db_usage, communicator,
                                                       properties));
-    ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
                     "ERROR: Could not open database '" << mesh_filename
                     << "' of type '" << mesh_type << "'");
   }
@@ -159,7 +159,7 @@ namespace io {
       m_haveCachedEntityList(false),
       m_multiStateSuffixes(nullptr)
   {
-    ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
                     "ERROR: Invalid Ioss region detected in add_mesh_database");
 
     Ioss::DatabaseUsage db_usage = m_database->usage();
@@ -177,7 +177,7 @@ namespace io {
       throw std::runtime_error( msg.str() );
     }
 
-    ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+    STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
                     "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
                                                                         "Only 'Unstructured' mesh is currently supported.");
 
@@ -189,7 +189,7 @@ namespace io {
       // If the m_region is null, try to create it from
       // the m_input_database. If that is null, throw an error.
       if (Teuchos::is_null(m_region)) {
-        ThrowErrorMsgIf(Teuchos::is_null(m_database),
+        STK_ThrowErrorMsgIf(Teuchos::is_null(m_database),
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
@@ -203,7 +203,7 @@ namespace io {
         m_region = Teuchos::rcp(region);
         m_database.release();
 
-        ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+        STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
 			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
 			"Only 'Unstructured' mesh is currently supported.");
       }
@@ -261,7 +261,7 @@ namespace io {
 
     void InputFile::get_global_variable_names(std::vector<std::string> &names)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
 		       "Attempt to read global variables before restart initialized.");
       m_region->field_describe(Ioss::Field::REDUCTION, &names);
     }
@@ -301,7 +301,7 @@ namespace io {
 
                 if(entity->type() == Ioss::SIDESET) {
                     auto io_side_set = dynamic_cast<Ioss::SideSet*>(entity);
-                    ThrowRequire(io_side_set != nullptr);
+                    STK_ThrowRequire(io_side_set != nullptr);
                     auto fbs = io_side_set->get_side_blocks();
 
                     for(auto& io_fblock : fbs) {
@@ -336,7 +336,7 @@ namespace io {
 
     bool InputFile::read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
                        "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -351,7 +351,7 @@ namespace io {
       // Get struct containing interval of database time(s) containing 'time'
       DBStepTimeInterval sti(region, db_time);
 
-      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+      STK_ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "' has no transient data.");
 
@@ -408,21 +408,21 @@ namespace io {
 						std::vector<stk::io::MeshField> *missingFields,
 						stk::mesh::BulkData &bulk)
     {
-      ThrowErrorMsgIf(step <= 0, 
+      STK_ThrowErrorMsgIf(step <= 0, 
 		      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
 
       int step_count = region->get_property("state_count").get_int();
 
-      ThrowErrorMsgIf(step_count == 0, 
+      STK_ThrowErrorMsgIf(step_count == 0, 
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "' has no transient data.");
 
-      ThrowErrorMsgIf(step > step_count,
+      STK_ThrowErrorMsgIf(step > step_count,
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "'. Step " << step << " was specified, but database only has "
 		      << step_count << " steps.");
@@ -489,7 +489,7 @@ namespace io {
                                                        std::map<stk::mesh::FieldBase *,
                                                        const stk::io::MeshField *> *missing_fields_collector_ptr)
     {
-        ThrowRequireMsg(io_entity != nullptr, "Null IO entity");
+        STK_ThrowRequireMsg(io_entity != nullptr, "Null IO entity");
 
         bool doesFieldExist = false;
 
@@ -638,7 +638,7 @@ namespace io {
                     bool field_is_missing = false;
                     if (f->entity_rank() == rank) {
                         Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-                        ThrowErrorMsgIf( io_entity == nullptr,
+                        STK_ThrowErrorMsgIf( io_entity == nullptr,
                                 "ERROR: For field '" << (*I).field()->name()
                                 << "' Could not find database entity corresponding to the part named '"
                                 << part->name() << "'.");
@@ -792,7 +792,7 @@ namespace io {
       // See details in header file.
       double db_time = map_analysis_to_db_time(time);
 	
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
 		       "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -800,7 +800,7 @@ namespace io {
       // Get struct containing interval of database time(s) containing 'time'
       DBStepTimeInterval sti(region, db_time);
 
-      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+      STK_ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "' has no transient data.");
 
@@ -834,21 +834,21 @@ namespace io {
                                                         std::vector<stk::io::MeshField> *missingFields,
                                                         stk::mesh::BulkData &bulk, bool useEntityListCache)
     {
-      ThrowErrorMsgIf(step <= 0,
+      STK_ThrowErrorMsgIf(step <= 0,
                       "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-      ThrowErrorMsgIf(Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
                       "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
 
       int step_count = region->get_property("state_count").get_int();
 
-      ThrowErrorMsgIf(step_count == 0,
+      STK_ThrowErrorMsgIf(step_count == 0,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "' has no transient data.");
 
-      ThrowErrorMsgIf(step > step_count,
+      STK_ThrowErrorMsgIf(step > step_count,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "'. Step " << step << " was specified, but database only has "
                       << step_count << " steps.");

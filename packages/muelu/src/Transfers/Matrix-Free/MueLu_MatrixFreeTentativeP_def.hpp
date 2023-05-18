@@ -49,15 +49,15 @@
 #include "MueLu_MatrixFreeTentativeP_decl.hpp"
 
 #include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_MasterList.hpp"
-#include "MueLu_PerfUtils.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_Monitor.hpp"
 
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_ScalarTraits.hpp"
+
+#include "Xpetra_Map.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_Operator.hpp"
 
 namespace MueLu {
 

@@ -110,11 +110,13 @@ struct PointRecord
 {
   public:
     explicit PointRecord(PointClassification type_ = PointClassification::Exterior, const int id_ = -1,
-                         mesh::MeshEntityPtr el_ = nullptr, const PointRecordForTriangle& r_ = PointRecordForTriangle())
+                         mesh::MeshEntityPtr el_ = nullptr, const PointRecordForTriangle& r1 = PointRecordForTriangle(),
+                         const PointRecordForTriangle& r2 = PointRecordForTriangle())
       : type(type_)
       , id(id_)
       , el(el_)
-      , m_r1(r_)
+      , m_r1(r1)
+      , m_r2(r2)
     {}
 
     PointClassification type;

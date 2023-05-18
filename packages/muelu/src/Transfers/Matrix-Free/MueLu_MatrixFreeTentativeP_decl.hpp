@@ -52,11 +52,13 @@
 
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
+#include <Teuchos_BLAS_types.hpp>
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "Xpetra_Operator.hpp"
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_MultiVector_fwd.hpp"
+#include "Xpetra_Operator_fwd.hpp"
 
 namespace MueLu {
 

@@ -50,8 +50,7 @@ template <typename EvalT,typename Traits>
 void DarcyAnalyticSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   double time = workset.time;
-  const double pi = Kokkos::Experimental::pi_v<double>;
-  // const double pi = Kokkos::numbers::pi_v<double>;
+  const auto pi = Kokkos::numbers::pi_v<double>;
 
   const auto coords = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
   auto tmp_source = source.get_static_view();

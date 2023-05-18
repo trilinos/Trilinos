@@ -52,7 +52,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 
 namespace MueLu {
 

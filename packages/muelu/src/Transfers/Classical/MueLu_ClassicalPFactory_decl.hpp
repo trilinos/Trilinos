@@ -59,8 +59,6 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_ClassicalPFactory_fwd.hpp"
 #include "MueLu_ClassicalMapFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"

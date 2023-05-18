@@ -724,8 +724,6 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
   tribits_extpkg_write_config_file(${TPL_NAME} "${tplConfigFile}")
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     include("${tplConfigFile}")
-    set(${TPL_NAME}_DIR "${tplConfigFileBaseDir}" CACHE INTERNAL
-       "TriBITS-generated ${TPL_NAME}Config.cmake file used from this dir")
   endif()
   # NOTE: The file <tplName>ConfigVersion.cmake will get created elsewhere as
   # will the install targets for the files <tplName>Config and

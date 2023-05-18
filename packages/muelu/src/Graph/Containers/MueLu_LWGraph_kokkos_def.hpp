@@ -49,6 +49,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <Teuchos_ArrayView.hpp>
+#include <Xpetra_Map.hpp>
 
 #include "MueLu_LWGraph_kokkos_decl.hpp"
 

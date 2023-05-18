@@ -52,7 +52,6 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseHelpers.hpp>
 
-#include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -60,7 +59,8 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
-#include "MueLu_Utilities.hpp"
+#include "MueLu_Exceptions.hpp"
+
 #include "MueLu_Constraint_decl.hpp"
 
 

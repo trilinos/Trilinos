@@ -49,7 +49,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
 namespace MueLuTests {
@@ -82,7 +82,7 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(36);
     fineLevel.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory_kokkos dropFact;
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -156,7 +156,7 @@ namespace MueLuTests {
     mtx->SetFixedBlockSize(1, 0);
     fineLevel.Set("A", mtx);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.5));
@@ -235,7 +235,7 @@ namespace MueLuTests {
     mtx->SetFixedBlockSize(blockSize, 0);
     fineLevel.Set("A", mtx);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -326,7 +326,7 @@ namespace MueLuTests {
     mtx->SetFixedBlockSize(3, 0);
     fineLevel.Set("A", mtx);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0));
@@ -385,7 +385,7 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(36);
     fineLevel.Set("A", A);
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory_kokkos dropFact;
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
@@ -476,7 +476,7 @@ namespace MueLuTests {
     A->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
 
     fineLevel.Set("A", A);
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     fineLevel.Request("Graph", &dropFact);
@@ -583,7 +583,7 @@ namespace MueLuTests {
     mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
 
     fineLevel.Set("A", mtx);
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     fineLevel.Request("Graph", &dropFact);
@@ -690,7 +690,7 @@ namespace MueLuTests {
     mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
 
     fineLevel.Set("A", mtx);
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(0.3));
@@ -766,7 +766,7 @@ namespace MueLuTests {
       fineLevel.Set("A", mtx);
 
       CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
-      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
       dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
       fineLevel.Request("Graph", &dropFact);
@@ -793,7 +793,7 @@ namespace MueLuTests {
     //   fineLevel.Set("A", mtx);
 
     //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
-    //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    //   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
     //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
     //   fineLevel.Request("Graph", &dropFact);
@@ -818,7 +818,7 @@ namespace MueLuTests {
     //   fineLevel.Set("A", mtx);
 
     //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
-    //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    //   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
     //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
     //   fineLevel.Request("Graph", &dropFact);

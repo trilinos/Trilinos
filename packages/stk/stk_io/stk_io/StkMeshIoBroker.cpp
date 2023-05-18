@@ -137,7 +137,7 @@ stk::mesh::FieldVector get_fields_by_name(const stk::mesh::MetaData &meta, const
     for(size_t i=0;i<attrFields.size();++i)
     {
         attrFields[i] = meta.get_field(stk::topology::ELEM_RANK, names[i]);
-        ThrowRequireMsg(attrFields[i] != nullptr, "Can't find field named " << names[i]);
+        STK_ThrowRequireMsg(attrFields[i] != nullptr, "Can't find field named " << names[i]);
     }
     return attrFields;
 }
@@ -241,7 +241,7 @@ size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_
 
 void StkMeshIoBroker::create_sideset_observer()
 {
-    ThrowRequireMsg( !is_bulk_data_null(), "Bulk data not initialized");
+    STK_ThrowRequireMsg( !is_bulk_data_null(), "Bulk data not initialized");
     if (!bulk_data().has_observer_type<stk::mesh::SidesetUpdater>()) {
         stk::mesh::Selector activeSelector = get_active_selector();
         if (activeSelector == stk::mesh::Selector()) {
@@ -260,7 +260,7 @@ void StkMeshIoBroker::create_sideset_observer()
 
 void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( m_bulkData != nullptr,
+    STK_ThrowErrorMsgIf( m_bulkData != nullptr,
                      "Bulk data already initialized" );
     m_bulkData = arg_bulk_data;
 
@@ -278,13 +278,13 @@ void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bul
 
 void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( m_bulkData == nullptr,
+    STK_ThrowErrorMsgIf( m_bulkData == nullptr,
                      "There is  no bulk data to replace." );
-    ThrowErrorMsgIf( m_metaData == nullptr,
+    STK_ThrowErrorMsgIf( m_metaData == nullptr,
                      "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
 
     std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
-    ThrowErrorMsgIf( m_metaData.get() != new_meta_data.get(),
+    STK_ThrowErrorMsgIf( m_metaData.get() != new_meta_data.get(),
                      "Meta data for both new and old bulk data must be the same." );
 
     m_bulkData = arg_bulk_data;
@@ -394,7 +394,7 @@ void StkMeshIoBroker::create_ioss_region()
 
 void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
 {
-    ThrowErrorMsgIf(!is_meta_data_null(),
+    STK_ThrowErrorMsgIf(!is_meta_data_null(),
                     "There meta data associated with this StkMeshIoBroker has already been created. "
                     "It is not permissible to set the rank_name_vector() at this time.");
 
@@ -476,7 +476,7 @@ void StkMeshIoBroker::create_input_mesh()
     }
 
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
     // See if meta data is null, if so, create a new one...
@@ -592,7 +592,7 @@ void StkMeshIoBroker::close_output_mesh(size_t output_file_index) {
 void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
         std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = m_bulkData->get_observer_type<stk::mesh::SidesetUpdater>();
-        ThrowRequireMsg(!updaters.empty(), "ERROR, no stk::mesh::SidesetUpdater found on stk::mesh::BulkData");
+        STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no stk::mesh::SidesetUpdater found on stk::mesh::BulkData");
         updaters[0]->set_output_stream(std::cerr);
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
@@ -802,7 +802,7 @@ void StkMeshIoBroker::populate_field_data()
     bulk_data().allocate_field_data();
 
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
 
     bool ints64bit = db_api_int_size(region) == 8;
@@ -820,11 +820,11 @@ void StkMeshIoBroker::create_bulk_data()
     }
 
     validate_input_file_index(m_activeMeshIndex);
-    ThrowErrorMsgIf (Teuchos::is_null(m_inputFiles[m_activeMeshIndex]->get_input_io_region()),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(m_inputFiles[m_activeMeshIndex]->get_input_io_region()),
                      "There is no Input mesh region associated with this Mesh Data.");
 
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
     if (is_bulk_data_null()) {
@@ -873,27 +873,27 @@ void StkMeshIoBroker::add_input_field(size_t mesh_index, const stk::io::MeshFiel
 
 void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_outputFiles, output_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_outputFiles, output_file_index),
                     "StkMeshIoBroker::validate_output_file_index: invalid output file index of "
                     << output_file_index << ".");
 
-    ThrowErrorMsgIf (Teuchos::is_null(m_outputFiles[output_file_index]->get_output_io_region()),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(m_outputFiles[output_file_index]->get_output_io_region()),
                      "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
 }
 
 void StkMeshIoBroker::validate_heartbeat_file_index(size_t heartbeat_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
                     "StkMeshIoBroker::validate_heartbeat_file_index: invalid heartbeat file index of "
                     << heartbeat_file_index << ".");
 
-    ThrowErrorMsgIf (Teuchos::is_null(m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region()),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region()),
                      "StkMeshIoBroker::validate_heartbeat_file_index: There is no heartbeat mesh region associated with this heartbeat file index: " << heartbeat_file_index << ".");
 }
 
 void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_inputFiles, input_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_inputFiles, input_file_index),
                     "StkMeshIoBroker::validate_input_file_index: invalid input file index of "
                     << input_file_index << ".");
 }

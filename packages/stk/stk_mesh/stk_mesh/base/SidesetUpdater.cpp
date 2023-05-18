@@ -182,7 +182,7 @@ void ReconstructionSidesetUpdater::reconstruct_noninternal_sidesets(const std::v
   {
     std::vector<const Part *> surfacesInMap = m_metaData.get_surfaces_in_surface_to_block_map();
     std::set<const Part*, part_compare_by_ordinal> parents;
-    ThrowRequireMsg(reducedValues.size() == surfacesInMap.size(), "ReducedValues wrong size!");
+    STK_ThrowRequireMsg(reducedValues.size() == surfacesInMap.size(), "ReducedValues wrong size!");
 
     for(unsigned i=0; i<surfacesInMap.size(); ++i) {
       const Part* part = surfacesInMap[i];
@@ -481,7 +481,7 @@ void IncrementalSidesetUpdater::resolve_faces_affected_by_connected_element_part
 
       const stk::mesh::Part& part = m_metaData.get_part(surfaceOrdinal);
 
-      ThrowAssert(part.primary_entity_rank() == m_metaData.side_rank());
+      STK_ThrowAssert(part.primary_entity_rank() == m_metaData.side_rank());
 
       const stk::mesh::Part &parentPart = get_sideset_parent(part);
       bool sidesetExists = m_bulkData.does_sideset_exist(parentPart);

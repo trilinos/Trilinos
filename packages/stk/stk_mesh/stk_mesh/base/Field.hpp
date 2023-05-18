@@ -224,7 +224,7 @@ public:
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
         const char * const name_suffix = name().c_str() + offset;
-        ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
+        STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");
       }

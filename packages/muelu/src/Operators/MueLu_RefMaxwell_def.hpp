@@ -60,8 +60,6 @@
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_ThresholdAFilterFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory.hpp"
@@ -74,7 +72,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Maxwell_Utils.hpp"
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -1197,7 +1194,7 @@ namespace MueLu {
 
         RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact, SaPFact;
         if (useKokkos_) {
-          amalgFact = rcp(new AmalgamationFactory_kokkos());
+          amalgFact = rcp(new AmalgamationFactory());
           dropFact = rcp(new CoalesceDropFactory_kokkos());
           UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
           coarseMapFact = rcp(new CoarseMapFactory());

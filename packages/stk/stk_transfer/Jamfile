@@ -147,6 +147,7 @@ lib stk_transfer_impl
   :
     [ ifdevbuild
       [ glob 
+        $(stk_transfer-root)/stk_transfer/*.cpp 
         $(stk_transfer-root)/stk_transfer/copy_by_id/*.cpp 
       ]
     ]

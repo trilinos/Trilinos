@@ -50,20 +50,13 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_AggregateQualityEstimateFactory_fwd.hpp"
 
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
-#include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"

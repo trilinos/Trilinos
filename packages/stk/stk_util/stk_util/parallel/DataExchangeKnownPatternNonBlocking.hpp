@@ -106,8 +106,8 @@ void DataExchangeKnownPatternNonBlocking::start_nonblocking(std::vector< std::ve
 template <typename T>
 void DataExchangeKnownPatternNonBlocking::start_recvs(std::vector< std::vector<T> > &recvLists)
 {
-  ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
-  ThrowRequireMsg(!m_areRecvsInProgress,
+  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
+  STK_ThrowRequireMsg(!m_areRecvsInProgress,
                   "cannot start new round of communication until the recvs from the previous round are complete");
 
   m_recvRankMap.resize(0);
@@ -131,8 +131,8 @@ void DataExchangeKnownPatternNonBlocking::start_recvs(std::vector< std::vector<T
 template <typename T>
 void DataExchangeKnownPatternNonBlocking::start_sends(std::vector< std::vector<T> > &sendLists)
 {
-  ThrowRequireMsg(sendLists.size() == size_t(stk::parallel_machine_size(m_comm)), "sendLists must have length comm_size()");
-  ThrowRequireMsg(!m_areSendsInProgress, 
+  STK_ThrowRequireMsg(sendLists.size() == size_t(stk::parallel_machine_size(m_comm)), "sendLists must have length comm_size()");
+  STK_ThrowRequireMsg(!m_areSendsInProgress, 
                   "cannot start new round of communication until the sends from the previous round are complete");
   
   m_sendRankMap.resize(0);
@@ -156,8 +156,8 @@ void DataExchangeKnownPatternNonBlocking::start_sends(std::vector< std::vector<T
 template <typename T, typename Tfunc>
 void DataExchangeKnownPatternNonBlocking::complete_receives(std::vector< std::vector<T> >& recvLists, Tfunc func)
 {
-  ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
-  ThrowRequireMsg(m_areRecvsInProgress, "Receives must have been started before they can be completed");
+  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
+  STK_ThrowRequireMsg(m_areRecvsInProgress, "Receives must have been started before they can be completed");
 
   for (size_t i=0; i < m_recvReqs.size(); ++i)
   {

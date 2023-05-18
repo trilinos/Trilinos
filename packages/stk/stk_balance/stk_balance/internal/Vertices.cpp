@@ -55,7 +55,7 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
     fillFieldVertexWeights(balanceSettings, bulkData, selectors, entities);
   }
   else {
-    ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
+    STK_ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
   }
 
   const BlockWeightMultipliers & blockWeightMultipliers = balanceSettings.getVertexWeightBlockMultipliers();
@@ -63,7 +63,7 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
     stk::mesh::PartVector blocksWithWeights;
     for (const auto & blockMultiplier : blockWeightMultipliers) {
       stk::mesh::Part * block = bulkData.mesh_meta_data().get_part(blockMultiplier.first);
-      ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockMultiplier.first + "'");
+      STK_ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockMultiplier.first + "'");
       blocksWithWeights.push_back(block);
     }
 

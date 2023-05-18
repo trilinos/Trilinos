@@ -48,7 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_AmalgamationFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_AmalgamationInfo.hpp"

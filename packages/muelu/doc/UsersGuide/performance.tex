@@ -88,10 +88,6 @@ Some advice for parallel runs include:
     polynomial smoothing, if possible.
 
   \item
-    Use \texttt{uncoupled} aggregation instead of \texttt{coupled}, as the latter
-    requires significantly more communication.
-
-  \item
     Adjust rebalancing parameters (see~\S\ref{sec:options_rebalancing}). Try
     choosing rebalancing parameters so that you end up with one processor on the
     coarsest level for the direct solver (this avoids additional communication).

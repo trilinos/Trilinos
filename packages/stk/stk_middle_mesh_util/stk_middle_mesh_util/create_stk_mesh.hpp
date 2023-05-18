@@ -40,8 +40,8 @@ class StkMeshCreator
     using FieldType    = ::stk::mesh::Field<FieldScalarType>;
     using MeshFieldPtr = MeshPart::MeshFieldPtr;
 
-    explicit StkMeshCreator(const std::string& fname)
-      : m_bulkDataPtr(::stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create())
+    explicit StkMeshCreator(const std::string& fname, MPI_Comm comm=MPI_COMM_WORLD)
+      : m_bulkDataPtr(::stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create())
       , m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
     {
       m_metaDataPtr->use_simple_fields();

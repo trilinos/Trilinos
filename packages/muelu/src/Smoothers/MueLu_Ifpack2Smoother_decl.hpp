@@ -49,12 +49,11 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #ifdef HAVE_XPETRA_TPETRA // needed for clone()
-#include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 #endif
 
 #include "MueLu_ConfigDefs.hpp"
@@ -68,8 +67,6 @@
 #include <Ifpack2_Factory_def.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"

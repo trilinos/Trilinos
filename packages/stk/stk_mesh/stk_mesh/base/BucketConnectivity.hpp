@@ -90,7 +90,7 @@ struct HigherConnectivityRankSensitiveCompare
 template <typename Connectivity>
 inline void check_bucket_ordinal(unsigned bucket_ordinal, Connectivity const* connectivity)
 {
-  ThrowAssertMsg(bucket_ordinal < connectivity->size(),
+  STK_ThrowAssertMsg(bucket_ordinal < connectivity->size(),
                  "bucket_ordinal " << bucket_ordinal << " is out of range, bucket size is " << connectivity->size());
 }
 
@@ -135,8 +135,8 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   void set_num_connectivity(unsigned arg_num_connectivity)
   {
-    ThrowAssertMsg(m_num_connectivity == 0, "Cannot reset num_connectivity");
-    ThrowAssertMsg(arg_num_connectivity != 0, "Cannot set num connectivity to 0 for fixed connectivity");
+    STK_ThrowAssertMsg(m_num_connectivity == 0, "Cannot reset num_connectivity");
+    STK_ThrowAssertMsg(arg_num_connectivity != 0, "Cannot set num connectivity to 0 for fixed connectivity");
 
     m_num_connectivity = arg_num_connectivity;
 
@@ -226,7 +226,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation = INVALID_PERMUTATION)
   {
-    ThrowAssertMsg(ordinal < m_num_connectivity,
+    STK_ThrowAssertMsg(ordinal < m_num_connectivity,
                    "Ordinal " <<  (uint32_t)ordinal << " exceeds topological limit: " << m_num_connectivity);
     impl::check_bucket_ordinal(bucket_ordinal, this);
 #ifndef NDEBUG
@@ -236,7 +236,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     unsigned index = m_num_connectivity*bucket_ordinal + ordinal;
 
     if (m_targets[index] == to) {
-      ThrowAssert(!has_permutation() || m_permutations[index] == permutation);
+      STK_ThrowAssert(!has_permutation() || m_permutations[index] == permutation);
       // Already exists
       return false;
     }
@@ -252,7 +252,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   bool remove_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal)
   {
-    ThrowAssertMsg(ordinal < m_num_connectivity,
+    STK_ThrowAssertMsg(ordinal < m_num_connectivity,
                    "Ordinal " <<  (uint32_t)ordinal << " exceeds topological limit: " << m_num_connectivity);
     impl::check_bucket_ordinal(bucket_ordinal, this);
 
@@ -289,7 +289,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   // Always removes last entity
   void remove_entity()
   {
-    ThrowAssertMsg(size() > 0, "Cannot remove, connectivity is already empty");
+    STK_ThrowAssertMsg(size() > 0, "Cannot remove, connectivity is already empty");
 
     const unsigned new_conn_size = m_targets.size() - m_num_connectivity;
     m_targets.resize(new_conn_size);
@@ -300,7 +300,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
   {
-    ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
+    STK_ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
 
     if (to_ordinal == -1u) { // check if we should just append
       to_ordinal = to.size();
@@ -312,10 +312,10 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   }
 
   void copy_to_fixed(unsigned from_ordinal, SelfType& to)
-  { ThrowAssert(false); }
+  { STK_ThrowAssert(false); }
 
   void copy_to_fixed(unsigned from_ordinal, OtherType& to)
-  { ThrowAssert(false); }
+  { STK_ThrowAssert(false); }
 
   bool has_permutation() const
   {
@@ -583,7 +583,7 @@ public:
       case Higher: return add_helper(bucket_ordinal, to, ordinal, permutation, HigherConnectivityCompare());
       case Adjacent: return add_helper(bucket_ordinal, to, ordinal, permutation, LowerConnectivityCompare()); // same comparing as lower
       default:
-        ThrowAssertMsg(false, "What type of connectivity are you trying to add? " << m_direction);
+        STK_ThrowAssertMsg(false, "What type of connectivity are you trying to add? " << m_direction);
         return false;
       }
     }
@@ -594,7 +594,7 @@ public:
       case Higher: return add_helper(bucket_ordinal, to, ordinal, permutation, m_rank_sensitive_higher_connectivity_cmp);
       case Adjacent: return add_helper(bucket_ordinal, to, ordinal, permutation, m_rank_sensitive_lower_connectivity_cmp);
       default:
-        ThrowAssertMsg(false, "What type of connectivity are you trying to add? " << m_direction);
+        STK_ThrowAssertMsg(false, "What type of connectivity are you trying to add? " << m_direction);
         return false;
       }
     }
@@ -654,7 +654,7 @@ public:
 
   void remove_entity()
   {
-    ThrowAssertMsg(size() > 0, "Cannot remove, connectivity is already empty");
+    STK_ThrowAssertMsg(size() > 0, "Cannot remove, connectivity is already empty");
 
     if (m_active) {
       m_indices.pop_back();
@@ -669,7 +669,7 @@ public:
 
   void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
   {
-    ThrowAssert(m_from_rank == to.m_from_rank);
+    STK_ThrowAssert(m_from_rank == to.m_from_rank);
     impl::check_bucket_ordinal(from_ordinal, this);
 
     if (to_ordinal == -1u) {
@@ -726,9 +726,9 @@ public:
   {
     const unsigned num_conn_to_move = m_active ? m_num_connectivities[from_ordinal] : 0;
 
-    ThrowAssert(OtherType::connectivity_type == FIXED_CONNECTIVITY);
-    ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
-    ThrowAssertMsg(num_conn_to_move <= to.num_connectivity(666 /*any unsigned, doesn't matter*/), "Incompatible");
+    STK_ThrowAssert(OtherType::connectivity_type == FIXED_CONNECTIVITY);
+    STK_ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
+    STK_ThrowAssertMsg(num_conn_to_move <= to.num_connectivity(666 /*any unsigned, doesn't matter*/), "Incompatible");
 
     const unsigned to_offset = to.m_targets.size();
     to.add_entity(); // make room for new entity
@@ -739,7 +739,7 @@ public:
     // Check the ordinals are compatible with fixed connectivity
     ConnectivityOrdinal const* ordinals = m_ordinals.data() + from_offset;
     for (unsigned i = 0; i < num_conn_to_move; ++i) {
-      ThrowAssert(ordinals[i] == i);
+      STK_ThrowAssert(ordinals[i] == i);
     }
 #endif
 
@@ -755,7 +755,7 @@ public:
   }
 
   void copy_to_fixed(unsigned from_ordinal, SelfType& to)
-  { ThrowAssert(false); }
+  { STK_ThrowAssert(false); }
 
   bool has_permutation() const
   { return does_rank_have_valid_permutations(TargetRank) && does_rank_have_valid_permutations(m_from_rank); }
@@ -813,7 +813,7 @@ private:
     unsigned num_conn    = m_num_connectivities[from_ordinal];
     unsigned to_offset   = to.m_indices[to_ordinal];
     unsigned from_offset = m_indices[from_ordinal];
-    ThrowAssert(to.m_num_connectivities[to_ordinal] == num_conn);
+    STK_ThrowAssert(to.m_num_connectivities[to_ordinal] == num_conn);
 
     std::copy(m_targets.begin() + from_offset,
               m_targets.begin() + from_offset + num_conn,
@@ -835,7 +835,7 @@ private:
 
   void activate()
   {
-    ThrowAssert(!m_active);
+    STK_ThrowAssert(!m_active);
 
     m_indices.resize(m_num_inactive, 0);
     m_num_connectivities.resize(m_num_inactive, 0);
@@ -870,7 +870,7 @@ private:
     }
 
     temp.swap(data);
-    ThrowAssert(data.capacity() == capacity); // no growths took place
+    STK_ThrowAssert(data.capacity() == capacity); // no growths took place
     m_last_capacity = capacity;
   }
 

@@ -1,7 +1,6 @@
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
-AmalgamationFactory_kokkos
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy

@@ -116,7 +116,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
                                                          const size_t capacity)
 {
   if (m_field_raw_data.empty()) {
-    ThrowRequireMsg(!fields.empty(),"allocate_bucket_field_data ERROR, field-data-manager was constructed with 0 entity-ranks, and there are no fields. Mesh has not been initialized correctly.");
+    STK_ThrowRequireMsg(!fields.empty(),"allocate_bucket_field_data ERROR, field-data-manager was constructed with 0 entity-ranks, and there are no fields. Mesh has not been initialized correctly.");
 
     for (size_t i=0; i<fields.size(); ++i) {
       if (fields[i] != nullptr) {
@@ -528,7 +528,7 @@ void ContiguousFieldDataManager::deallocate_bucket_field_data(const EntityRank r
             field_data.m_bytesPerEntity = 0;
             field_data.m_firstDimension = 0;
 
-            ThrowRequireMsg(m_num_entities_in_field_for_bucket[field_ordinal][bucket_id] == 0, "Bucket not empty!");
+            STK_ThrowRequireMsg(m_num_entities_in_field_for_bucket[field_ordinal][bucket_id] == 0, "Bucket not empty!");
         }
     }
 }
@@ -570,7 +570,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
             }
 
             (*field_data_allocator).deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
-            ThrowRequire(new_offset == m_num_bytes_used_per_field[field_ordinal]);
+            STK_ThrowRequire(new_offset == m_num_bytes_used_per_field[field_ordinal]);
             m_num_bytes_allocated_per_field[field_ordinal] = newFieldSize;
             m_field_raw_data[field_ordinal] = new_field_data;
             m_num_entities_in_field_for_bucket[field_ordinal].swap(newNumEntitiesPerBucket);
@@ -868,7 +868,7 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
 
                 m_num_bytes_used_per_field[field_ordinal] += extraAllocationNeeded;
                 m_field_raw_data[field_ordinal] = new_field_data;
-                ThrowRequire(dst_bucket_ord == m_num_entities_in_field_for_bucket[field_ordinal][dst_bucket_id]);
+                STK_ThrowRequire(dst_bucket_ord == m_num_entities_in_field_for_bucket[field_ordinal][dst_bucket_id]);
                 m_num_entities_in_field_for_bucket[field_ordinal][dst_bucket_id] += 1;
             }
         }
@@ -878,9 +878,9 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
 void ContiguousFieldDataManager::swap_fields(const int field1, const int field2)
 {
     std::swap(m_field_raw_data[field1], m_field_raw_data[field2]);
-    ThrowRequire(m_num_bytes_allocated_per_field[field1] == m_num_bytes_allocated_per_field[field2]);
-    ThrowRequire(m_num_bytes_used_per_field[field1] == m_num_bytes_used_per_field[field2]);
-    ThrowRequire(m_num_entities_in_field_for_bucket[field1].size() == m_num_entities_in_field_for_bucket[field2].size());
+    STK_ThrowRequire(m_num_bytes_allocated_per_field[field1] == m_num_bytes_allocated_per_field[field2]);
+    STK_ThrowRequire(m_num_bytes_used_per_field[field1] == m_num_bytes_used_per_field[field2]);
+    STK_ThrowRequire(m_num_entities_in_field_for_bucket[field1].size() == m_num_entities_in_field_for_bucket[field2].size());
 }
 
 }

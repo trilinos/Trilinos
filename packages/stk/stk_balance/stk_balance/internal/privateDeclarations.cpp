@@ -192,7 +192,7 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
   unsigned numElements = stkMeshBulkData.num_elements(face);
   const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(face);
 
-  ThrowRequireWithSierraHelpMsg(numElements <= 1);
+  STK_ThrowRequireWithSierraHelpMsg(numElements <= 1);
   if ( element != NULL && stkMeshBulkData.bucket(*element).owned() )
   {
     unsigned numNodes = stkMeshBulkData.num_nodes(face);
@@ -244,7 +244,7 @@ void filterOutConnectedElements(const stk::mesh::BulkData & bulk, SearchElemPair
     int owningProcElement1 = searchResult.first.proc();
     int owningProcElement2 = searchResult.second.proc();
 
-    ThrowRequireWithSierraHelpMsg(owningProcElement1 == bulk.parallel_rank() ||
+    STK_ThrowRequireWithSierraHelpMsg(owningProcElement1 == bulk.parallel_rank() ||
                                   owningProcElement2 == bulk.parallel_rank());
 
     bool anyIntersections = false;
@@ -337,7 +337,7 @@ SideGeometryPtr makeSideGeometry(const SideInfo & sideInfo)
     return SideGeometryPtr(new stk::math::PointGeometry(sideInfo.nodeCoordinates[0]));
   }
   else {
-    ThrowErrorMsg("Unsupported side topology: " << stk::topology(sideInfo.sideTopology).name());
+    STK_ThrowErrorMsg("Unsupported side topology: " << stk::topology(sideInfo.sideTopology).name());
     return SideGeometryPtr();
   }
 }
@@ -381,7 +381,7 @@ std::vector<stk::math::Vector3d> nodeCoordinates(const stk::mesh::EntityVector& 
       nodeCoordinates.emplace_back(nodeFieldData[0], nodeFieldData[1], 0.0);
     }
     else {
-      ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
+      STK_ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
     }
   }
   return nodeCoordinates;
@@ -1354,8 +1354,8 @@ void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
                                           const BalanceSettings & balanceSettings,
                                           stk::mesh::EntityProcVec & decomp)
 {
-  ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
-  ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
+  STK_ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
+  STK_ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
                                 is_graph_based_method(balanceSettings.getDecompMethod()));
 
   internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);

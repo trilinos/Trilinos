@@ -223,6 +223,7 @@ TEST(MeshBoundarySnapper, QuarterAnnulus)
   }
 }
 
+
 TEST(MeshBoundarySnapper, PeriodicAnnulus)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)

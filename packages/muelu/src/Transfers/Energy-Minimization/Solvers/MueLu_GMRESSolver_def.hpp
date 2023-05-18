@@ -52,7 +52,7 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_IO.hpp>
 
-#include "MueLu_GMRESSolver.hpp"
+#include "MueLu_GMRESSolver_decl.hpp"
 
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"

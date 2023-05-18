@@ -286,7 +286,7 @@ public:
       if (argumentCount == 1) {
         return std::fabs(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for abs function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for abs function");
       break;
     }
     case FunctionType::MAX : {
@@ -299,7 +299,7 @@ public:
       else if (argumentCount == 4) {
         return max_4(arguments[0], arguments[1], arguments[2], arguments[3]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for max function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for max function");
       break;
     }
     case FunctionType::MIN : {
@@ -312,245 +312,245 @@ public:
       else if (argumentCount == 4) {
         return min_4(arguments[0], arguments[1], arguments[2], arguments[3]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for min function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for min function");
       break;
     }
     case FunctionType::SIGN : {
       if (argumentCount == 1) {
         return sign(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for sign function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for sign function");
       break;
     }
     case FunctionType::IPART : {
       if (argumentCount == 1) {
         return ipart(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for ipart function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ipart function");
       break;
     }
     case FunctionType::FPART : {
       if (argumentCount == 1) {
         return fpart(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for fpart function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for fpart function");
       break;
     }
     case FunctionType::CEIL : {
       if (argumentCount == 1) {
         return std::ceil(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for ceil function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ceil function");
       break;
     }
     case FunctionType::FLOOR : {
       if (argumentCount == 1) {
         return std::floor(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for floor function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for floor function");
       break;
     }
     case FunctionType::MOD : {
       if (argumentCount == 2) {
         return std::fmod(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for fmod or mod function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for fmod or mod function");
       break;
     }
     case FunctionType::POW : {
       if (argumentCount == 2) {
         return std::pow(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for pow function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for pow function");
       break;
     }
     case FunctionType::SQRT : {
       if (argumentCount == 1) {
         return std::sqrt(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for sqrt function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for sqrt function");
       break;
     }
     case FunctionType::EXP : {
       if (argumentCount == 1) {
         return std::exp(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for exp function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for exp function");
       break;
     }
     case FunctionType::LN : {
       if (argumentCount == 1) {
         return std::log(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for ln or log function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ln or log function");
       break;
     }
     case FunctionType::LOG10 : {
       if (argumentCount == 1) {
         return std::log10(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for log10 function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for log10 function");
       break;
     }
     case FunctionType::DEG : {
       if (argumentCount == 1) {
         return radian_to_degree()*arguments[0];
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for deg function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for deg function");
       break;
     }
     case FunctionType::RAD : {
       if (argumentCount == 1) {
         return degree_to_radian()*arguments[0];
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for rad function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for rad function");
       break;
     }
     case FunctionType::SIN : {
       if (argumentCount == 1) {
         return std::sin(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for sin function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for sin function");
       break;
     }
     case FunctionType::COS : {
       if (argumentCount == 1) {
         return std::cos(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for cos function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for cos function");
       break;
     }
     case FunctionType::TAN : {
       if (argumentCount == 1) {
         return std::tan(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for tan function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for tan function");
       break;
     }
     case FunctionType::ASIN : {
       if (argumentCount == 1) {
         return std::asin(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for asin function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for asin function");
       break;
     }
     case FunctionType::ACOS : {
       if (argumentCount == 1) {
         return std::acos(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for acos function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for acos function");
       break;
     }
     case FunctionType::ATAN : {
       if (argumentCount == 1) {
         return std::atan(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for atan function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for atan function");
       break;
     }
     case FunctionType::ATAN2 : {
       if (argumentCount == 2) {
         return std::atan2(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for atan2 function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for atan2 function");
       break;
     }
     case FunctionType::SINH : {
       if (argumentCount == 1) {
         return std::sinh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for sinh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for sinh function");
       break;
     }
     case FunctionType::COSH : {
       if (argumentCount == 1) {
         return std::cosh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arugments for cosh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arugments for cosh function");
       break;
     }
     case FunctionType::TANH : {
       if (argumentCount == 1) {
         return std::tanh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arugments for tanh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arugments for tanh function");
       break;
     }
     case FunctionType::ASINH : {
       if (argumentCount == 1) {
         return std::asinh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for asinh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for asinh function");
       break;
     }
     case FunctionType::ACOSH : {
       if (argumentCount == 1) {
         return std::acosh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for acosh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for acosh function");
       break;
     }
     case FunctionType::ATANH : {
       if (argumentCount == 1) {
         return std::atanh(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for atanh function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for atanh function");
       break;
     }
     case FunctionType::ERF : {
       if (argumentCount == 1) {
         return std::erf(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for erf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for erf function");
       break;
     }
     case FunctionType::ERFC : {
       if (argumentCount == 1) {
         return std::erfc(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for erfc function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for erfc function");
       break;
     }
     case FunctionType::POLTORECTX : {
       if (argumentCount == 2) {
         return poltorectx(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for poltorectx function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for poltorectx function");
       break;
     }
     case FunctionType::POLTORECTY : {
       if (argumentCount == 2) {
         return poltorecty(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for poltorecty function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for poltorecty function");
       break;
     }
     case FunctionType::RECTTOPOLR : {
       if (argumentCount == 2) {
         return recttopolr(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for recttopolr function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for recttopolr function");
       break;
     }
     case FunctionType::RECTTOPOLA : {
       if (argumentCount == 2) {
         return recttopola(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for recttopola function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for recttopola function");
       break;
     }
     case FunctionType::UNIT_STEP : {
       if (argumentCount == 3) {
         return unit_step3(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for unit_step function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for unit_step function");
       break;
     }
     case FunctionType::CYCLOIDAL_RAMP : {
       if (argumentCount == 3) {
         return cycloidal_ramp(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for cycloidal_ramp function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for cycloidal_ramp function");
       break;
     }
     case FunctionType::COS_RAMP : {
@@ -563,77 +563,77 @@ public:
       else if (argumentCount == 3) {
         return cosine_ramp3(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for cos_ramp or cosine_ramp function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for cos_ramp or cosine_ramp function");
       break;
     }
     case FunctionType::HAVERSINE_PULSE : {
       if (argumentCount == 3) {
         return haversine_pulse(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for haversine_pulse function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for haversine_pulse function");
       break;
     }
     case FunctionType::POINT2D : {
       if (argumentCount == 4) {
         return point_2(arguments[0], arguments[1], arguments[2], arguments[3]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for pulse_2 function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for pulse_2 function");
       break;
     }
     case FunctionType::POINT3D : {
       if (argumentCount == 5) {
         return point_3(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for pulse_3 function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for pulse_3 function");
       break;
     }
     case FunctionType::EXPONENTIAL_PDF : {
       if (argumentCount == 2) {
         return exponential_pdf(arguments[0], arguments[1]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for exponential_pdf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for exponential_pdf function");
       break;
     }
     case FunctionType::LOG_UNIFORM_PDF : {
       if (argumentCount == 3) {
         return log_uniform_pdf(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for log_uniform_pdf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for log_uniform_pdf function");
       break;
     }
     case FunctionType::NORMAL_PDF : {
       if (argumentCount == 3) {
         return normal_pdf(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for normal_pdf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for normal_pdf function");
       break;
     }
     case FunctionType::WEIBULL_PDF : {
       if (argumentCount == 3) {
         return weibull_pdf(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for weibull_pdf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for weibull_pdf function");
       break;
     }
     case FunctionType::GAMMA_PDF : {
       if (argumentCount == 3) {
         return gamma_pdf(arguments[0], arguments[1], arguments[2]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for gamma_pdf function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for gamma_pdf function");
       break;
     }
     case FunctionType::RAND : {
       if (argumentCount == 0) {
         return real_rand();
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for rand function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for rand function");
       break;
     }
     case FunctionType::SRAND : {
       if (argumentCount == 1) {
         return real_srand(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for srand function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for srand function");
       break;
     }
     case FunctionType::RANDOM : {
@@ -643,14 +643,14 @@ public:
       else if (argumentCount == 1) {
         return random1(arguments[0]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for random function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for random function");
       break;
     }
     case FunctionType::TS_RANDOM : {
       if (argumentCount == 4) {
         return time_space_random(arguments[0], arguments[1], arguments[2], arguments[3]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for ts_random function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ts_random function");
       break;
     }
     case FunctionType::TS_NORMAL : {
@@ -658,18 +658,18 @@ public:
         return time_space_normal(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4],
             arguments[5], arguments[6], arguments[7]);
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for ts_normal function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for ts_normal function");
       break;
     }
     case FunctionType::TIME : {
       if (argumentCount == 0) {
         return current_time();
       }
-      NGP_ThrowErrorMsg("Incorrect number of arguments for time function");
+      STK_NGP_ThrowErrorMsg("Incorrect number of arguments for time function");
       break;
     }
     case FunctionType::UNDEFINED : {
-      NGP_ThrowErrorMsg("Undefined function type");
+      STK_NGP_ThrowErrorMsg("Undefined function type");
       break;
     }
     default : {

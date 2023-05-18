@@ -104,8 +104,8 @@ struct CallOptionalPostCoarseSearchFilter<T, decltype((void) T::post_coarse_sear
       const typename T::MeshA * mesha,
       const typename T::MeshB * meshb)
   {
-    ThrowRequire(mesha);
-    ThrowRequire(meshb);
+    STK_ThrowRequire(mesha);
+    STK_ThrowRequire(meshb);
     T::post_coarse_search_filter(BtoA, *mesha, *meshb);
   }
 };
@@ -243,8 +243,5 @@ template <class INTERPOLATE> void localize_entity_key_map(typename INTERPOLATE::
 
 }
 }
-
-
-
 
 #endif /* STK_STK_TRANSFER_STK_TRANSFER_GEOMETRICTRANSFERIMPL_HPP_ */

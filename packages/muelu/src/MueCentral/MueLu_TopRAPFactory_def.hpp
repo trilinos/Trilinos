@@ -11,18 +11,9 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 //#include "MueLu_HierarchyUtils_fwd.hpp"
-#include "MueLu_TopRAPFactory.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_SmootherPrototype_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Hierarchy_fwd.hpp"
-#include "MueLu_HierarchyManager_fwd.hpp"
+#include "MueLu_TopRAPFactory_decl.hpp"
 
 
 namespace MueLu {

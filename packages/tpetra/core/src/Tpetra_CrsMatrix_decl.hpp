@@ -4141,10 +4141,18 @@ protected:
                        Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitude( Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::zero() ))
   {
     auto localMatrix = matrix.getLocalMatrixDevice();
+    size_t nnzBefore = localMatrix.nnz();
     localMatrix = KokkosSparse::removeCrsMatrixZeros(localMatrix,threshold);
-    matrix.resumeFill();
-    matrix.setAllValues(localMatrix);
-    matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
+    size_t localNNZRemoved = nnzBefore - localMatrix.nnz();
+    //Skip the expertStaticFillComplete if no entries were removed on any process.
+    //The fill complete can perform MPI collectives, so it can only be skipped on all processes or none.
+    size_t globalNNZRemoved = 0;
+    Teuchos::reduceAll<int, size_t> (*(matrix.getComm()), Teuchos::REDUCE_SUM, 1, &localNNZRemoved, &globalNNZRemoved);
+    if(globalNNZRemoved != size_t(0)) {
+      matrix.resumeFill();
+      matrix.setAllValues(localMatrix);
+      matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
+    }
   }
 
 } // namespace Tpetra

@@ -47,6 +47,7 @@
 #include <iomanip>
 #include <iostream>
 #include <unistd.h>
+#include <sys/resource.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
@@ -185,6 +186,28 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
 }
 #endif
 
+
+/*********************************************************************/
+// Gets current memory usage in kilobytes
+size_t get_current_memory_usage()
+{
+  size_t memory = 0; 
+  
+  // darwin reports rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+  const size_t RU_MAXRSS_UNITS=1024;
+#else
+  const size_t RU_MAXRSS_UNITS=1;
+#endif
+  
+  struct rusage sys_resources;
+  getrusage(RUSAGE_SELF, &sys_resources);
+  memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
+  
+  /* Success */
+  return memory;
+}
+/*********************************************************************/
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -496,6 +519,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
       comm->barrier();
       tm = Teuchos::null;
+
+
+      size_t mem = get_current_memory_usage();
+      out2<<"Memory use after preconditioner setup (GB): " << (mem/1024.0/1024.0)<<std::endl;
 
       // =========================================================================
       // System solution (Ax = b)

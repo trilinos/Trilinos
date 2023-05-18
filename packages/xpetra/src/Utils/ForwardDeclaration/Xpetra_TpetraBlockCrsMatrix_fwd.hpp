@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
+//             Xpetra: A linear algebra interface package
 //                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,21 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMALGAMATIONINFO_KOKKOS_FWD_HPP
-#define MUELU_AMALGAMATIONINFO_KOKKOS_FWD_HPP
+#ifndef XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
+#define XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
 
-
-
-
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AmalgamationInfo_kokkos;
+namespace Xpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class TpetraBlockCrsMatrix;
 }
 
-#ifndef MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
-#define MUELU_AMALGAMATIONINFO_KOKKOS_SHORT
+#ifndef XPETRA_TPETRABLOCKCRSMATRIX_SHORT
+#define XPETRA_TPETRABLOCKCRSMATRIX_SHORT
 #endif
 
-
-
-#endif // MUELU_AMALGAMATIONINFO_KOKKOS_FWD_HPP
+#endif // XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP

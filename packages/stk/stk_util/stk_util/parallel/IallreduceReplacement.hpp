@@ -43,7 +43,7 @@ class IAllreduceReplacement
 
     void startReduction(Op op, const std::vector<T>& input_data, std::vector<T>& output_data)
     {
-      ThrowRequireMsg(m_state == ReductionState::NotStarted || m_state == ReductionState::Completed,
+      STK_ThrowRequireMsg(m_state == ReductionState::NotStarted || m_state == ReductionState::Completed,
                       "Cannot start a new barrier while the old one is still in progress");
 
       setup(op, input_data, output_data);
@@ -111,7 +111,7 @@ class IAllreduceReplacement
         }
 
         default:
-          ThrowRequireMsg(false, "Reduction not started, cannot progress it");
+          STK_ThrowRequireMsg(false, "Reduction not started, cannot progress it");
       };
 
       return m_state == ReductionState::Completed;
@@ -129,7 +129,7 @@ class IAllreduceReplacement
 
     void setup(Op op, const std::vector<T>& input_data, std::vector<T>& output_data)
     {
-      ThrowRequireMsg(input_data.size() == output_data.size(), "input and output buffers must be same size");
+      STK_ThrowRequireMsg(input_data.size() == output_data.size(), "input and output buffers must be same size");
 
       m_op = op;
       m_output_buffer = &(output_data);

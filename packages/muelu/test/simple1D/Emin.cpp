@@ -72,7 +72,7 @@
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
 
     FactoryManager M;
 
-    M.SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));
+    M.SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));
     M.SetFactory("Ptent",      rcp(new TentativePFactory()));
     M.SetFactory("P",          rcp(new SaPFactory()));
 

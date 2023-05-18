@@ -66,7 +66,6 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

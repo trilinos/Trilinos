@@ -858,7 +858,7 @@ include(PrintVar)
 # ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
 # a valid project can be a simple as::
 #
-#   cmake_minimum_required(VERSION 3.17.0)
+#   cmake_minimum_required(VERSION 3.23.0)
 #   set(PROJECT_NAME TAATDriver)
 #   project(${PROJECT_NAME} NONE)
 #   set(${PROJECT_NAME}_TRACE_ADD_TEST TRUE)

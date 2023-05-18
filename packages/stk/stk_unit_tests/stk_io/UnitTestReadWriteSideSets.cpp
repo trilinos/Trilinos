@@ -529,7 +529,7 @@ void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bul
 {
     stk::mesh::SideSet* deletedSideset = stk::unit_test_util::sideset::get_stk_side_set(bulk, deletedElemIdSides);
     stk::mesh::Part *surface_part = stk::unit_test_util::get_surface_part_with_id(bulk.mesh_meta_data(), inputId);
-    ThrowRequire(nullptr != surface_part);
+    STK_ThrowRequire(nullptr != surface_part);
     stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
     for(const stk::mesh::SideSetEntry &entry : *deletedSideset)
     {
@@ -1212,7 +1212,7 @@ void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bul
 {
     stk::mesh::SideSet* deletedSideset = stk::unit_test_util::sideset::get_stk_side_set(bulk, deletedElemIdSides);
     stk::mesh::Part *surface_part = stk::unit_test_util::get_surface_part_with_id(bulk.mesh_meta_data(), inputId);
-    ThrowRequire(nullptr != surface_part);
+    STK_ThrowRequire(nullptr != surface_part);
     stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
     for(const stk::mesh::SideSetEntry &entry : *deletedSideset)
     {

@@ -156,7 +156,7 @@ public:
 
   /** \brief  Query the i^th entity */
   Entity operator[] ( size_t i ) const {
-    ThrowAssertMsg( i < m_entities.size(), "Index " << i << " is out of bounds");
+    STK_ThrowAssertMsg( i < m_entities.size(), "Index " << i << " is out of bounds");
     return m_entities[i];
   }
 
@@ -564,7 +564,7 @@ struct BucketIdComparator
 {
   bool operator()(Bucket const* lhs, Bucket const* rhs) const
   {
-    ThrowAssertMsg(lhs->entity_rank() == rhs->entity_rank(), "Cannot compare buckets of different rank");
+    STK_ThrowAssertMsg(lhs->entity_rank() == rhs->entity_rank(), "Cannot compare buckets of different rank");
     return lhs->bucket_id() < rhs->bucket_id();
   }
 
@@ -691,7 +691,7 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
 {
   switch(rank) {
   case stk::topology::NODE_RANK:
-    ThrowAssert(m_node_kind != INVALID_CONNECTIVITY_TYPE);
+    STK_ThrowAssert(m_node_kind != INVALID_CONNECTIVITY_TYPE);
     mark_for_modification();
 
     switch(m_node_kind) {
@@ -701,7 +701,7 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
     }
     break;
   case stk::topology::EDGE_RANK:
-    ThrowAssert(m_edge_kind != INVALID_CONNECTIVITY_TYPE);
+    STK_ThrowAssert(m_edge_kind != INVALID_CONNECTIVITY_TYPE);
     switch(m_edge_kind) {
     case FIXED_CONNECTIVITY:   callable(*this, m_fixed_edge_connectivity);   break;
     case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_edge_connectivity); break;
@@ -709,7 +709,7 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
     }
     break;
   case stk::topology::FACE_RANK:
-    ThrowAssert(m_face_kind != INVALID_CONNECTIVITY_TYPE);
+    STK_ThrowAssert(m_face_kind != INVALID_CONNECTIVITY_TYPE);
     switch(m_face_kind) {
     case FIXED_CONNECTIVITY:   callable(*this, m_fixed_face_connectivity); break;
     case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_face_connectivity); break;
@@ -717,7 +717,7 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
     }
     break;
   case stk::topology::ELEMENT_RANK:
-    ThrowAssert(m_element_kind != INVALID_CONNECTIVITY_TYPE);
+    STK_ThrowAssert(m_element_kind != INVALID_CONNECTIVITY_TYPE);
     switch(m_element_kind) {
     case FIXED_CONNECTIVITY:   callable(*this, m_fixed_element_connectivity);   break;
     case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_element_connectivity); break;

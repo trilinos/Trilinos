@@ -74,30 +74,30 @@ test_invarg_handler(const char* expr,
 void force_throw_require_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowRequireMsg(false, "Will always fail, this is for testing");
+    STK_ThrowRequireMsg(false, "Will always fail, this is for testing");
   }
   else {
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 
 void force_throw_error_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowErrorMsgIf(true, "Will always fail, this is for testing");
+    STK_ThrowErrorMsgIf(true, "Will always fail, this is for testing");
   }
   else {
-    ThrowErrorIf(true);
+    STK_ThrowErrorIf(true);
   }
 }
 
 void force_throw_invarg_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowInvalidArgMsgIf(true, "Will always fail, this is for testing");
+    STK_ThrowInvalidArgMsgIf(true, "Will always fail, this is for testing");
   }
   else {
-    ThrowInvalidArgIf(true);
+    STK_ThrowInvalidArgIf(true);
   }
 }
 
@@ -105,22 +105,22 @@ void check_interaction_with_if(bool msg = true)
 {
   if (msg) {
     if (true)
-      ThrowRequireMsg(false, "Will always fail, this is for testing");
+      STK_ThrowRequireMsg(false, "Will always fail, this is for testing");
   }
   else {
     if (true)
-      ThrowRequire(false);
+      STK_ThrowRequire(false);
   }
 }
 
 void force_throw_assert()
 {
-  ThrowAssert(false);
+  STK_ThrowAssert(false);
 }
 
 void test_no_expr_error()
 {
-  ThrowErrorMsg("message");
+  STK_ThrowErrorMsg("message");
 }
 
 } // namespace <empty>
@@ -150,21 +150,21 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   bool expected_execution_path = false;
   if (false)
-    ThrowRequireMsg(false, "test");
+    STK_ThrowRequireMsg(false, "test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
-    ThrowAssertMsg(false, "test");
+    STK_ThrowAssertMsg(false, "test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
-    ThrowErrorMsg("test");
+    STK_ThrowErrorMsg("test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
@@ -172,31 +172,31 @@ TEST(UnitTestingOfThrowMacros, testUnit)
   // These next four statements are to check compilation success
 
   if (false)
-    ThrowRequireMsg(false, "test");
+    STK_ThrowRequireMsg(false, "test");
 
   if (false)
-    ThrowAssertMsg(false, "test");
+    STK_ThrowAssertMsg(false, "test");
 
   if (false)
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
 
   if (false)
-    ThrowAssert(false);
+    STK_ThrowAssert(false);
 
   // Check that do-while still works, again, we are mostly checking compilation
   // success here.
 
-  do ThrowRequireMsg(true, "test");
+  do STK_ThrowRequireMsg(true, "test");
   while (false);
 
-  do ThrowAssertMsg(true, "test");
+  do STK_ThrowAssertMsg(true, "test");
   while (false);
 
   // Check that message with put-tos compiles
 
   int temp = 0;
-  ThrowRequireMsg(true, "test: " << temp << " blah");
-  ThrowAssertMsg(true, "test: " << temp << " blah");
+  STK_ThrowRequireMsg(true, "test: " << temp << " blah");
+  STK_ThrowAssertMsg(true, "test: " << temp << " blah");
 
   // Check that assert behaves as expected (throws in debug, not in opt)
 #ifdef NDEBUG
@@ -213,7 +213,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   stk::ErrorHandler orig = stk::set_assert_handler(test_assert_handler);
 
-  ThrowRequireMsg(false, "test");
+  STK_ThrowRequireMsg(false, "test");
 
   ASSERT_TRUE(test_assert_handler_called);
 
@@ -225,7 +225,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   orig = stk::set_error_handler(test_error_handler);
 
-  ThrowErrorMsgIf(true, "test");
+  STK_ThrowErrorMsgIf(true, "test");
 
   ASSERT_TRUE(test_error_handler_called);
 
@@ -237,7 +237,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   orig = stk::set_invalid_arg_handler(test_invarg_handler);
 
-  ThrowInvalidArgMsgIf(true, "test");
+  STK_ThrowInvalidArgMsgIf(true, "test");
 
   ASSERT_TRUE(test_invarg_handler_called);
 
@@ -250,7 +250,7 @@ void testNGPThrowRequireMsg()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+    STK_NGP_ThrowRequireMsg(test == true, "Error testing whatever");
   });
 }
 
@@ -297,7 +297,7 @@ void testNGPThrowRequire()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowRequire(test == true);
+    STK_NGP_ThrowRequire(test == true);
   });
 }
 
@@ -332,7 +332,7 @@ void testNGPThrowAssertMsg()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowAssertMsg(test == true, "Error testing whatever");
+    STK_NGP_ThrowAssertMsg(test == true, "Error testing whatever");
   });
 }
 
@@ -366,7 +366,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 void testNGPThrowAssertMsg()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
-    NGP_ThrowAssertMsg(false, "Error testing whatever");
+    STK_NGP_ThrowAssertMsg(false, "Error testing whatever");
   });
 }
 
@@ -389,7 +389,7 @@ void testNGPThrowErrorMsgIf()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
-    NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
+    STK_NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
   });
 }
 
@@ -421,7 +421,7 @@ void testNGPThrowErrorIf()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
-    NGP_ThrowErrorIf(test == true);
+    STK_NGP_ThrowErrorIf(test == true);
   });
 }
 
@@ -450,7 +450,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 void testNGPThrowErrorMsg()
 {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
-    NGP_ThrowErrorMsg("Error testing whatever");
+    STK_NGP_ThrowErrorMsg("Error testing whatever");
   });
 }
 

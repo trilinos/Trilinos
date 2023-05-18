@@ -114,7 +114,7 @@ public:
     stk::mesh::PartVector elemBlockParts;
     stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
     const unsigned numBlocks = elemBlockParts.size();
-    ThrowRequire(numBlocksToSync <= numBlocks);
+    STK_ThrowRequire(numBlocksToSync <= numBlocks);
 
     for(unsigned i = 0; i < numBlocksToSync; i++) {
       parts.push_back(elemBlockParts[i]);
@@ -232,7 +232,7 @@ public:
   {
     get_bulk().modification_begin();
     const stk::mesh::Part* part = get_part();
-    ThrowRequireMsg(part!=nullptr,"get_part returned nullptr, newPartName="<<newPartName);
+    STK_ThrowRequireMsg(part!=nullptr,"get_part returned nullptr, newPartName="<<newPartName);
     get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
     get_bulk().modification_end();
     stk::mesh::get_updated_ngp_mesh(get_bulk());

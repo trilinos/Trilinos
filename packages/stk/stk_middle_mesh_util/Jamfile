@@ -159,10 +159,10 @@ lib stk_middle_mesh_util
 
 exe stk_middle_mesh_util_utest
   :
-    [ glob $(stk_middle_mesh_util-root)/unit_tests/*.cpp ]
+    [ glob $(stk_middle_mesh_util-root)/../stk_unit_tests/stk_middle_mesh_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_middle_mesh_util
+    /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
   : <tag>@sierra-exec-tag
   ;
-

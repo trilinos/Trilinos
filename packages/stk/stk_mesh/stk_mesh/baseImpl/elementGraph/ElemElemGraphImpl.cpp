@@ -277,7 +277,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
     if(!bulkData.is_valid(side))
     {
         stk::mesh::PartVector side_parts = get_parts_for_creating_side(bulkData, parts_for_creating_side, local_element, side_id);
-//        ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
+//        STK_ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
 //        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, side_parts);
         side = bulkData.declare_element_side(local_element, side_ord, side_parts);
         shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
@@ -385,7 +385,7 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
     constexpr int MAX_SIDES_PER_ELEM = 12;
-    ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
+    STK_ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
     int elemSides[MAX_SIDES_PER_ELEM] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)

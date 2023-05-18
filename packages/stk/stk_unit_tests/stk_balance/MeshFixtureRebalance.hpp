@@ -132,7 +132,7 @@ protected:
 
         for (const std::string & subsetPartName : ag.subsetPartNames) {
           stk::mesh::Part * subsetPart = tMesh.get_meta().get_part(subsetPartName);
-          ThrowRequire(subsetPart != nullptr);
+          STK_ThrowRequire(subsetPart != nullptr);
           tMesh.get_meta().declare_part_subset(assemblyPart, *subsetPart);
         }
       }

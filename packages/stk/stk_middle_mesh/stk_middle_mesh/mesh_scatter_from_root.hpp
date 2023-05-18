@@ -32,7 +32,7 @@ class MeshScatterFromRoot
 
     std::shared_ptr<Mesh> scatter();
 
-    VariableSizeFieldPtr<RemoteSharedEntity> get_entity_desintations();
+    VariableSizeFieldPtr<RemoteSharedEntity> get_entity_destinations();
 
   private:
     void verify_only_one_root_debug_only(MPI_Comm unionComm, bool amIRoot);
