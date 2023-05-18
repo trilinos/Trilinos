@@ -1,14 +1,14 @@
 include(CMakeListsKokkos.txt)
 
 if(NOT ${Trilinos_ENABLE_OpenMP} STREQUAL "")
-  kokkos_set_option(ENABLE_OPENMP ${Trilinos_ENABLE_OpenMP})
+  set(Kokkos_ENABLE_OPENMP ${Trilinos_ENABLE_OPENMP} CACHE BOOL "Whether to build OpenMP backend" FORCE)
 endif()
 
 if(NOT ${TPL_ENABLE_CUDA} STREQUAL "")
-  kokkos_set_option(ENABLE_CUDA ${TPL_ENABLE_CUDA})
+  set(Kokkos_ENABLE_CUDA ${TPL_ENABLE_CUDA} CACHE BOOL "Whether to build Cuda backend" FORCE)
 endif()
 
-kokkos_set_option(ENABLE_COMPLEX_ALIGN OFF)
+set(Kokkoe_ENABLE_COMPLEX_ALIGN OFF CACHE BOOL "Whether to align Kokkos::complex to 2*alignof(RealType)" FORCE)
 
 add_library(Kokkos::all_libs ALIAS kokkos)
 tribits_package_postprocess()
