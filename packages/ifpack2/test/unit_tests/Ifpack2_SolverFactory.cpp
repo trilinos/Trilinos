@@ -8,6 +8,7 @@
 // Define typedefs and macros for testing over all template parameter
 // combinations.
 #include "Ifpack2_ETIHelperMacros.h"
+#include <type_traits>
 
 // FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
@@ -226,6 +227,7 @@ namespace {
       catch (...) {
         skip = true;
       }
+      skip |= (solverName == "MDF" && !std::is_arithmetic_v<SC>); // skip complex types in mdf for now
       if (! skip) {
         testSolver<SC, LO, GO, NT> (out, success, *X, A, *B, *X_exact, solverName);
         ++numSolversTested;
