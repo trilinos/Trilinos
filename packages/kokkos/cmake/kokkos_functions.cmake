@@ -49,7 +49,12 @@ FUNCTION(kokkos_option CAMEL_SUFFIX DEFAULT TYPE DOCSTRING)
   SET(KOKKOS_OPTION_TYPES ${KOKKOS_OPTION_TYPES} PARENT_SCOPE)
 
   # Make sure this appears in the cache with the appropriate DOCSTRING
-  SET(${CAMEL_NAME} ${DEFAULT} CACHE ${TYPE} ${DOCSTRING})
+  if(DEFINED CAMEL_NAME AND ${CAMEL_NAME} STREQUAL "")
+    # Trilinos/TriBITS is messing with our variables, make sure the option is not empty
+    SET(${CAMEL_NAME} ${DEFAULT} CACHE ${TYPE} ${DOCSTRING} FORCE)
+  else()
+    SET(${CAMEL_NAME} ${DEFAULT} CACHE ${TYPE} ${DOCSTRING})
+  endif()
 
   #I don't love doing it this way because it's N^2 in number options, but c'est la vie
   FOREACH(opt ${KOKKOS_GIVEN_VARIABLES})
