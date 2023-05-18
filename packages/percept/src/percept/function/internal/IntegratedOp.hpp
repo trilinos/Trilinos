@@ -177,18 +177,6 @@
         dJ(J);
         wXdJ(wt, dJ);
 
-        if (0)
-          {
-            using namespace shards;
-
-            std::cout << "dJ= \n" << dJ << std::endl;
-            std::cout << "wXdJ= \n" << wXdJ << std::endl;
-            std::cout << "xi= \n" << xi << std::endl;
-            std::cout << "wt= \n" << wt << std::endl;
-            std::cout << "cn= \n" << cn << std::endl;
-            Util::setDoPause(true);
-            Util::pause(true);
-          }
 
         // get physical coordinates at integration points
         pc(cn, xi);
@@ -210,20 +198,25 @@
 #else
         MDArray pc_mda;
         pc.copyTo(pc_mda);
-        std::vector<int>  ivDims;
-        ivD.dimensions( ivDims);
+        std::vector<int>  ivDims(ivD.rank());
+        for (size_t i=0; i<ivDims.size(); ++i)
+          ivDims[i] = ivD.extent_int(i);
 
 
         /// NOTE: m_integrand requires the ranks of in/out MDArrays to be such that out_rank >= in_rank
         /// Thus, we use IntegrandValuesDOF with [DOF] = 1, and then copy the result to IntegrandValues
-        /// which does not have the additional rightmost DOF index (Intrepid doesn't have the concept of
+        /// which does not have the additional rightmost DOF index (Intrepid2 doesn't have the concept of
         /// DOF's, it works on scalars only for the integration routines, or at least that's how I understand
         /// it currently.
 
         // create an array that percept::Function will like to hold the results
         ivDims[ivDims.size()-1] = m_nDOFs;
 
-        MDArray iv_mda ( Teuchos::Array<int>(ivDims.begin(), ivDims.end()));
+        std::vector<size_t> dimensions(8, KOKKOS_INVALID_INDEX);
+        for(size_t i=0; i< ivDims.size(); ++i) 
+          dimensions[i]=ivDims[i];
+
+        MDArray iv_mda ( "iv_mda", dimensions[0], dimensions[1], dimensions[2], dimensions[3], dimensions[4], dimensions[5], dimensions[6], dimensions[7]);
 
         if (m_turboOpt == TURBO_ELEMENT || m_turboOpt == TURBO_BUCKET)
           {
@@ -234,7 +227,7 @@
             m_integrand(pc_mda, iv_mda);
           }
 
-        // now, copy from the results to an array that Intrepid::integrate will like
+        // now, copy from the results to an array that Intrepid2::integrate will like
 
 #endif
 
@@ -245,7 +238,7 @@
             // get the integral
             if (m_accumulation_type == ACCUMULATE_SUM)
               {
-                Io(iv, wXdJ, COMP_BLAS);
+                Io(iv, wXdJ);
               }
 
             //optional design:
@@ -266,7 +259,7 @@
                 else if (m_accumulation_type == ACCUMULATE_MAX)
                   {
                     double valIo = 0.0;
-                    for (int ivpts = 0; ivpts < iv.dimension(1); ivpts++)
+                    for (int ivpts = 0; ivpts < iv.extent_int(1); ivpts++)
                       {
                         valIo = std::max(valIo, iv((int)iCell, ivpts));
                       }
@@ -295,7 +288,7 @@
        *   1. get parent element through side relations
        *   2. get integration points and weights on quad ref element
        *   3. get integration points and weights on hex ref element
-       *   4. get face normals (from Intrepid they are non-normalized normals, i.e. they are surface area vectors)
+       *   4. get face normals (from Intrepid2 they are non-normalized normals, i.e. they are surface area vectors)
        *   5. get norm of face normals
        *   6. get products with cubature weights
        */
@@ -388,7 +381,7 @@
 
         // get parent cell integration points
         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
-        CellTools<double>::mapToReferenceSubcell(xi,
+        CellTools<Kokkos::HostSpace>::mapToReferenceSubcell(xi,
                                                  xi_c,
                                                  2, i_face, cell_topo);  // FIXME magic
 
@@ -402,8 +395,8 @@
         //fn(J, i_face, cell_topo);
         MDArray J_mda;
         J.copyTo(J_mda);
-        MDArray fn_mda(im.m_Elements_Tag.num, numCubPoints_child, spaceDim);
-        CellTools<double>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
+        MDArray fn_mda("fn_mda", im.m_Elements_Tag.num, numCubPoints_child, spaceDim);
+        CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
 
         /// get norm of fn
         for (int icell = 0; icell < im.m_Elements_Tag.num; icell++)
@@ -417,19 +410,6 @@
                   }
                 wXfn(icell, ipt) = std::sqrt(sum) * wt_c(ipt);
               }
-          }
-
-        if (0)
-          {
-            using namespace shards;
-
-            //std::cout << "dJ= \n" << dJ << std::endl;
-            std::cout << "wXfn= \n" << wXfn << std::endl;
-            std::cout << "xi= \n" << xi << std::endl;
-            std::cout << "wt= \n" << wt << std::endl;
-            std::cout << "cn= \n" << cn << std::endl;
-            Util::setDoPause(true);
-            Util::pause(true);
           }
 
         // get physical coordinates at integration points
@@ -452,8 +432,9 @@
 #else
         MDArray pc_mda;
         pc.copyTo(pc_mda);
-        std::vector<int>  ivDims;
-        ivD.dimensions( ivDims);
+        std::vector<int>  ivDims(ivD.rank());
+        for (size_t i=0; i<ivDims.size(); ++i)
+          ivDims[i] = ivD.extent_int(i);
 
 
         /// NOTE: m_integrand requires the ranks of in/out MDArrays to be such that out_rank >= in_rank
@@ -466,7 +447,11 @@
 
         ivDims[ivDims.size()-1] = m_nDOFs;
 
-        MDArray iv_mda ( Teuchos::Array<int>(ivDims.begin(), ivDims.end()));
+        std::vector<size_t> dimensions(8, KOKKOS_INVALID_INDEX);
+        for(size_t i=0; i< ivDims.size(); ++i) 
+          dimensions[i]=ivDims[i];
+
+        MDArray iv_mda ( "iv_mda", dimensions[0], dimensions[1], dimensions[2], dimensions[3], dimensions[4], dimensions[5], dimensions[6], dimensions[7]);
 
         if (m_turboOpt == TURBO_ELEMENT || m_turboOpt == TURBO_BUCKET)
           {
@@ -477,7 +462,7 @@
             m_integrand(pc_mda, iv_mda);
           }
 
-        // now, copy from the results to an array that Intrepid::integrate will like
+        // now, copy from the results to an array that Intrepid2::integrate will like
 
 #endif
 
@@ -488,7 +473,7 @@
             // get the integral
             if (m_accumulation_type == ACCUMULATE_SUM)
               {
-                Io(iv, wXfn, COMP_BLAS);
+                Io(iv, wXfn);
               }
 
             //optional design:
@@ -509,7 +494,7 @@
                 else if (m_accumulation_type == ACCUMULATE_MAX)
                   {
                     double valIo = 0.0;
-                    for (int ivpts = 0; ivpts < iv.dimension(1); ivpts++)
+                    for (int ivpts = 0; ivpts < iv.extent_int(1); ivpts++)
                       {
                         valIo = std::max(valIo, iv((int)iCell, ivpts));
                       }

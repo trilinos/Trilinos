@@ -891,9 +891,6 @@ namespace percept {
 
       Elem::StdMeshObjTopologies::bootstrap();
 
-      //typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1, QuadTransition > FaceBreaker;
-      typedef RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1, TriHangingNode >  TriFaceBreakerType;
-
       m_bp.resize(6);
 
       m_bp[0] = new  RefinerPattern<shards::Wedge<6>, shards::Wedge<6>, -1, WedgeWedgePartial > (eMesh, block_names) ;

@@ -64,7 +64,7 @@
       m_functionExpr.setExpression(m_func_string.c_str()).parse();
       m_element = stk::mesh::Entity();
       m_bucket=0;
-      m_parametric_coordinates = MDArray(1,3);
+      m_parametric_coordinates = MDArray("m_parametric_coordinates",1,3);
       m_have_element = false;
       m_have_bucket = false;
     }
@@ -81,7 +81,7 @@
     StringFunction::set_gradient_strings(MDArrayString& gstring)
     {
       if (gstring.rank() != 1) throw std::runtime_error("set_gradient_strings takes a rank 1 matrix (i.e. a vector) of strings (MDArrayString)");
-      int len = gstring.dimension(0);
+      int len = gstring.extent_int(0);
       m_gradient_string = "";
       m_spatialDim = len;
       for (int i = 0; i < len; i++)
@@ -145,8 +145,8 @@
           VERIFY_OP(func.getNewCodomain().rank(), ==, 1, "StringFunction::evalFunctions: functions must be defined with domain/codomain of rank 1 for now");
           int numCells = 1;
 
-          MDArray f_inp = MDArray(numCells, func.getNewDomain().dimension(0));
-          MDArray f_out = MDArray(numCells, func.getNewCodomain().dimension(0));
+          MDArray f_inp = MDArray("f_inp", numCells, func.getNewDomain().extent_int(0));
+          MDArray f_out = MDArray("f_out", numCells, func.getNewCodomain().extent_int(0));
 
           int nInDim = last_dimension(f_inp);
           // FIXME - do we really need the extra array?
@@ -183,7 +183,7 @@
         }
       for (int ii = 0; ii < arr_offset; ii++)
         {
-          n_points[ii] = arr.dimension(ii);
+          n_points[ii] = arr.extent_int(ii);
         }
     }
 
@@ -194,14 +194,14 @@
       bool debug=true;
       std::string fstr = m_func_string;
       // FIXME this is just for a simple test and only works for linear functions
-      int outputDim = deriv_spec.dimension(0);
+      int outputDim = deriv_spec.extent_int(0);
       static std::string s_xyzt[] = {"x", "y", "z", "t"};
       std::string out_str;
       //if (debug) std::cout << "deriv_spec= " << deriv_spec << std::endl;
-      for (int iresult = 0; iresult < deriv_spec.dimension(0); iresult++)
+      for (int iresult = 0; iresult < deriv_spec.extent_int(0); iresult++)
         {
           fstr = m_func_string;
-          for (int jderiv = 0; jderiv < deriv_spec.dimension(1); jderiv++)
+          for (int jderiv = 0; jderiv < deriv_spec.extent_int(1); jderiv++)
             {
               if (debug) std::cout << "deriv_spec= " << deriv_spec(iresult, jderiv)  << " fstr= " << fstr << std::endl;
               char xyzt = deriv_spec(iresult, jderiv)[0];
@@ -214,7 +214,7 @@
               std::replace( fstr.begin(), fstr.end(), xyzt, '0' );
               if (debug) std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
             }
-          if (deriv_spec.dimension(0) > 1)
+          if (deriv_spec.extent_int(0) > 1)
             {
               out_str += "v["+std::to_string(iresult)+"]= " + fstr+";";
             }
@@ -238,15 +238,15 @@
       std::string fstr_p = m_func_string;
       std::string fstr_m = m_func_string;
       // FIXME this is just for a simple test and only works for linear functions
-      int outputDim = deriv_spec.dimension(0);
+      int outputDim = deriv_spec.extent_int(0);
       //static std::string s_xyzt[] = {"x", "y", "z", "t"};
       std::string out_str;
-      for (int iresult = 0; iresult < deriv_spec.dimension(0); iresult++)
+      for (int iresult = 0; iresult < deriv_spec.extent_int(0); iresult++)
         {
           fstr = m_func_string;
           fstr_p = m_func_string;
           fstr_m = m_func_string;
-          for (int jderiv = 0; jderiv < deriv_spec.dimension(1); jderiv++)
+          for (int jderiv = 0; jderiv < deriv_spec.extent_int(1); jderiv++)
             {
               //std::cout << "deriv_spec= " << deriv_spec(iresult, jderiv)  << " fstr= " << fstr << std::endl;
               std::string rep = "("+deriv_spec(iresult, jderiv)+"+"+eps_string+")";
@@ -256,7 +256,7 @@
               fstr = "(("+fstr_p+")-("+fstr_m+"))/(2.0*"+eps_string+")";
               //std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
             }
-          if (deriv_spec.dimension(0) > 1)
+          if (deriv_spec.extent_int(0) > 1)
             {
               out_str += "v["+std::to_string(iresult)+"]= " + fstr+";";
             }
@@ -320,7 +320,7 @@
       int inp_offset    = inp_rank - domain_rank;
       int out_offset    = out_rank - codomain_rank;
 
-      // returns 1,1,1,... etc. if that dimension doesn't exist
+      // returns 1,1,1,... etc. if that extent_int doesn't exist
       enum { maxRank = 3};
       VERIFY_OP_ON(inp_rank, <=,  maxRank, "StringFunction::operator() input array rank too large");
       VERIFY_OP_ON(out_rank, <=,  maxRank, "StringFunction::operator() output array rank too large");
@@ -332,8 +332,8 @@
       int nInDim  = m_domain_dimensions[0];
       int nOutDim = m_codomain_dimensions[0];
 
-      MDArray inp_loc(nInDim);
-      MDArray out_loc(nOutDim);
+      MDArray inp_loc("inp_loc", nInDim);
+      MDArray out_loc("out_loc", nOutDim);
 
       int iDim[maxRank-1] = {0,0};
       double *xyzt[] = {&m_x, &m_y, &m_z, &m_t};
@@ -415,35 +415,35 @@
       m_element = element;
       m_have_element = true;
       VERIFY_OP(parametric_coordinates.rank(), ==, 2, "StringFunction::operator() parametric_coordinates rank bad");
-      m_parametric_coordinates = MDArray(1, parametric_coordinates.dimension(1));
-      int nPoints=parametric_coordinates.dimension(0);
-      int spaceDim = parametric_coordinates.dimension(1);
+      m_parametric_coordinates = MDArray("m_parametric_coordinates", 1, parametric_coordinates.extent_int(1));
+      int nPoints=parametric_coordinates.extent_int(0);
+      int spaceDim = parametric_coordinates.extent_int(1);
 
       int rank_inp = input_phy_points.rank();
       int rank_out = output_values.rank();
       VERIFY_OP_ON(rank_inp, <=, 3, "bad input rank");
       VERIFY_OP_ON(rank_out, <=, 3, "bad output rank");
-      int nOutD = output_values.dimension(1);
-      MDArray input_phy_points_one(1, spaceDim), output_values_one(1, nOutD);
+      int nOutD = output_values.extent_int(1);
+      MDArray input_phy_points_one("input_phy_points_one", 1, spaceDim), output_values_one("output_values_one", 1, nOutD);
 
       int nCells = 1;
       if (rank_inp == 3)
         {
-          nCells = input_phy_points.dimension(0);
-          VERIFY_OP_ON(input_phy_points.dimension(1), ==, nPoints, "bad inp dim");
-          VERIFY_OP_ON(input_phy_points.dimension(2), ==, spaceDim, "bad inp dim");
+          nCells = input_phy_points.extent_int(0);
+          VERIFY_OP_ON(input_phy_points.extent_int(1), ==, nPoints, "bad inp dim");
+          VERIFY_OP_ON(input_phy_points.extent_int(2), ==, spaceDim, "bad inp dim");
 
-          VERIFY_OP_ON(output_values.dimension(0), ==, nCells, "bad out dim");
-          VERIFY_OP_ON(output_values.dimension(1), ==, nPoints, "bad out dim");
-          nOutD = output_values.dimension(2);
-          output_values_one.resize(1,nOutD);
+          VERIFY_OP_ON(output_values.extent_int(0), ==, nCells, "bad out dim");
+          VERIFY_OP_ON(output_values.extent_int(1), ==, nPoints, "bad out dim");
+          nOutD = output_values.extent_int(2);
+          Kokkos::resize(output_values_one,1,nOutD);
         }
       else
         {
-          VERIFY_OP_ON(input_phy_points.dimension(0), ==, nPoints, "bad inp dim");
-          VERIFY_OP_ON(input_phy_points.dimension(1), ==, spaceDim, "bad inp dim");
+          VERIFY_OP_ON(input_phy_points.extent_int(0), ==, nPoints, "bad inp dim");
+          VERIFY_OP_ON(input_phy_points.extent_int(1), ==, spaceDim, "bad inp dim");
 
-          VERIFY_OP_ON(output_values.dimension(0), ==, nPoints, "bad out dim");
+          VERIFY_OP_ON(output_values.extent_int(0), ==, nPoints, "bad out dim");
         }
 
       for (int iCell = 0; iCell < nCells; iCell++)
@@ -488,11 +488,11 @@
       PRINT("tmp srk StringFunction::operator(bucket) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
 
       VERIFY_OP(input_phy_points.rank(), ==, 3, "StringFunction::operator() must pass in input_phy_points(numCells, numPointsPerCell, spaceDim)");
-      int nPoints = input_phy_points.dimension(1);
-      int nSpaceDim = input_phy_points.dimension(2);
-      int nOutDim = output_values.dimension(2);
-      MDArray input_phy_points_one(1, nPoints, nSpaceDim);
-      MDArray output_values_one   (1, nPoints, nOutDim);
+      int nPoints = input_phy_points.extent_int(1);
+      int nSpaceDim = input_phy_points.extent_int(2);
+      int nOutDim = output_values.extent_int(2);
+      MDArray input_phy_points_one("input_phy_points_one", 1, nPoints, nSpaceDim);
+      MDArray output_values_one   ("output_values_one", 1, nPoints, nOutDim);
       const unsigned num_elements_in_bucket = bucket.size();
       for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
         {
