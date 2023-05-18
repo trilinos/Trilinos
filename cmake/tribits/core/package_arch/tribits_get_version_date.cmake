@@ -11,7 +11,7 @@
 #     -P tribits_get_version_date.cmake
 #   
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 # A) Validate input
 

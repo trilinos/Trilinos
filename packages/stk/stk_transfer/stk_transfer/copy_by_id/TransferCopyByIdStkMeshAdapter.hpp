@@ -79,7 +79,7 @@ public :
   {
     m_entity_keys.reserve(entities.size());
     for (size_t i=0 ; i<entities.size() ; ++i) {
-      ThrowRequireMsg(m_mesh.is_valid(entities[i]),
+      STK_ThrowRequireMsg(m_mesh.is_valid(entities[i]),
                       "P" << m_mesh.parallel_rank() <<
                       " stk::transfer::StkMeshAdapter Error, entities[" << i <<
                       "]=" << entities[i] << " in constructor is invalid!");
@@ -121,7 +121,7 @@ public :
 
   std::string field_name(const unsigned field_index) const override
   {
-    ThrowRequireMsg(field_index < m_transfer_fields.size(),
+    STK_ThrowRequireMsg(field_index < m_transfer_fields.size(),
                     "P" << m_mesh.parallel_rank() <<
                     " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << field_index <<
                     "] in get_field_name(const unsigned field_index) is invalid!");
@@ -132,7 +132,7 @@ public :
 
   stk::mesh::FieldBase* get_field(const unsigned field_index)
   {
-    ThrowRequireMsg(field_index < m_transfer_fields.size(),
+    STK_ThrowRequireMsg(field_index < m_transfer_fields.size(),
                     "P" << m_mesh.parallel_rank() <<
                     " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << field_index <<
                     "] in get_field(const unsigned field_index) is invalid!");
@@ -211,7 +211,7 @@ public :
 
   DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const override
   { 
-    ThrowRequireMsg(fieldIndex < m_transfer_fields.size(),
+    STK_ThrowRequireMsg(fieldIndex < m_transfer_fields.size(),
                     "P" << m_mesh.parallel_rank() <<
                     " stk::transfer::StkMeshAdapter Error, attempt to access invalid field index [" << fieldIndex <<
                     "] in get_field_type(const unsigned fieldIndex) is invalid!");
@@ -239,7 +239,7 @@ public :
     else if(field->type_is<long double>()) {
       dataType = DataTypeKey::data_t::LONG_DOUBLE;
     } else {
-      ThrowRequireMsg(false, "Unsupported data type");
+      STK_ThrowRequireMsg(false, "Unsupported data type");
     }
     return dataType;
   }

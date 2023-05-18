@@ -14,7 +14,7 @@ Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian": threshold = 0.01, blocksize = 1
 Lumping dropped entries

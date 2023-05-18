@@ -2,6 +2,8 @@
 #include "stk_middle_mesh/communication_api.hpp"
 #include "stk_middle_mesh/matrix.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh_util/create_stk_mesh.hpp"
+#include "stk_middle_mesh_util/exodus_writer.hpp"
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 
 
@@ -85,23 +87,28 @@ class ConservativeTransferUser
 
     std::shared_ptr<XiCoordinatesFE> create_xi_coords() { return m_finiteElement.create_xi_coords(); }
 
-    void interpolate_to_quad_pts(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleMesh,
-                               mesh::FieldPtr<utils::Point> middleMeshQuadPointOnInputMeshPtr,
-	                             mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMeshPtr,
-							                 mesh::FieldPtr<double> functionSolValsPtr, mesh::FieldPtr<double> functionQuadValsPtr)
+    void set_middle_mesh(std::shared_ptr<mesh::Mesh> middleMesh,
+                         mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMesh    ,
+                         mesh::FieldPtr<utils::Point> middleMeshQuadPointOnInputMesh)
     {
-      assert(inputMesh == m_inputMesh);
-      assert(functionSolValsPtr->get_mesh() == inputMesh);
-      assert(functionQuadValsPtr->get_mesh() == middleMesh);
+      m_middleMesh = middleMesh;
+      m_inputMeshToMiddleMesh = inputMeshToMiddleMesh;
+      m_middleMeshQuadPointsOnInputMesh = middleMeshQuadPointOnInputMesh;
+    }
+
+    void interpolate_to_quad_pts(mesh::FieldPtr<double> functionSolValsPtr, mesh::FieldPtr<double> functionQuadValsPtr)
+    {
+      assert(functionSolValsPtr->get_mesh() == m_inputMesh);
+      assert(functionQuadValsPtr->get_mesh() == m_middleMesh);
 
       int numQuadPointsPerElement          = functionQuadValsPtr->get_field_shape().count[2];
-      auto& inputMeshToMiddleMesh          = *inputMeshToMiddleMeshPtr;
-      auto& middleMeshQuadPointOnInputMesh = *middleMeshQuadPointOnInputMeshPtr;
+      auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
+      auto& middleMeshQuadPointOnInputMesh = *m_middleMeshQuadPointsOnInputMesh;
       auto& solVals  =  *functionSolValsPtr;
       auto& quadVals = *functionQuadValsPtr;
       std::array<double, mesh::MAX_DOWN> elInputVals, basisVals;
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> elInputVerts;
-      for (auto& elInput : inputMesh->get_elements())
+      for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
           int nverts = mesh::get_downward(elInput, 0, elInputVerts.data());
@@ -125,24 +132,20 @@ class ConservativeTransferUser
         }
     }
 
-    void finish_integration(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleMesh,
-                            mesh::FieldPtr<utils::Point> middleMeshQuadPointsOnInputMeshPtr,
-	                          mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMeshPtr,
-					                  mesh::FieldPtr<double> functionQuadValsPtr, mesh::FieldPtr<double> functionSolValsPtr)
+    void finish_integration(mesh::FieldPtr<double> functionQuadValsPtr, mesh::FieldPtr<double> functionSolValsPtr)
     {
-      assert(inputMesh == m_inputMesh);
-      assert(functionQuadValsPtr->get_mesh() == middleMesh);
-      assert(functionSolValsPtr->get_mesh() == inputMesh);
+      assert(functionQuadValsPtr->get_mesh() == m_middleMesh);
+      assert(functionSolValsPtr->get_mesh() == m_inputMesh);
 
       int numQuadPointsPerElement          = functionQuadValsPtr->get_field_shape().count[2];
-      auto& inputMeshToMiddleMesh          = *inputMeshToMiddleMeshPtr;
-      auto& middleMeshQuadPointOnInputMesh = *middleMeshQuadPointsOnInputMeshPtr;
+      auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
+      auto& middleMeshQuadPointOnInputMesh = *m_middleMeshQuadPointsOnInputMesh;
       auto& quadVals = *functionQuadValsPtr;
       auto& solVals  =  *functionSolValsPtr;
       solVals.set(0);
       std::array<double, mesh::MAX_DOWN> basisVals;
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> elInputVerts;
-      for (auto& elInput : inputMesh->get_elements())
+      for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
           int nverts = mesh::get_downward(elInput, 0, elInputVerts.data());
@@ -161,23 +164,21 @@ class ConservativeTransferUser
                 solVals(elInputVerts[k], 0, 0) += quadVals(elMiddle, j, 0) * basisVals[k] * weight * detJacobian;
             }
           }
-        }      
+        }   
     }
 
-    void solve_linear_system(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleMesh,
-                             mesh::FieldPtr<utils::Point> middleMeshQuadPointsOnInputMeshPtr,
-	                           mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMeshPtr,
-							               mesh::FieldPtr<double> linearSystemRhsPtr, mesh::FieldPtr<double> functionSolValsPtr)
+    void solve_linear_system(mesh::FieldPtr<double> linearSystemRhsPtr, mesh::FieldPtr<double> functionSolValsPtr)
     {                             
-      assert(inputMesh == m_inputMesh);
+      assert(linearSystemRhsPtr->get_mesh() == m_inputMesh);
+      assert(functionSolValsPtr->get_mesh() == m_inputMesh);
 
       utils::impl::Matrix<double> massMatrix(m_numDofs, m_numDofs);
-      compute_mass_matrix(inputMesh, middleMesh, middleMeshQuadPointsOnInputMeshPtr, inputMeshToMiddleMeshPtr, massMatrix);
+      compute_mass_matrix(massMatrix);
 
       std::vector<double> rhs(m_numDofs);
       auto& dofNums = *m_dofNums;
       auto& linearSystemRhs = *linearSystemRhsPtr;
-      for (auto& vert : inputMesh->get_vertices())
+      for (auto& vert : m_inputMesh->get_vertices())
         if (vert)
         {
           int dof = dofNums(vert, 0, 0);
@@ -188,7 +189,7 @@ class ConservativeTransferUser
       utils::impl::solve_linear_system(massMatrix, ipiv.data(), rhs.data());
 
       auto& solVals = *functionSolValsPtr;
-      for (auto& vert : inputMesh->get_vertices())
+      for (auto& vert : m_inputMesh->get_vertices())
         if (vert)
         {
           int dof = dofNums(vert, 0, 0);
@@ -197,22 +198,18 @@ class ConservativeTransferUser
     }
 
     // only needed for testing
-    double integrate_function(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleMesh,
-                              mesh::FieldPtr<utils::Point> middleMeshQuadPointOnInputMeshPtr,
-	                            mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMeshPtr,
-							                mesh::FieldPtr<double> functionSolValsPtr)
+    double integrate_function(mesh::FieldPtr<double> functionSolValsPtr)
     {
-      assert(inputMesh == m_inputMesh);
-      assert(functionSolValsPtr->get_mesh() == inputMesh);
+      assert(functionSolValsPtr->get_mesh() == m_inputMesh);
 
-      int numQuadPointsPerElement          = middleMeshQuadPointOnInputMeshPtr->get_field_shape().count[2];
-      auto& inputMeshToMiddleMesh          = *inputMeshToMiddleMeshPtr;
-      auto& middleMeshQuadPointOnInputMesh = *middleMeshQuadPointOnInputMeshPtr;
+      int numQuadPointsPerElement          = m_middleMeshQuadPointsOnInputMesh->get_field_shape().count[2];
+      auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
+      auto& middleMeshQuadPointOnInputMesh = *m_middleMeshQuadPointsOnInputMesh;
       auto& solVals  =  *functionSolValsPtr;
       std::array<double, mesh::MAX_DOWN> elInputVals, basisVals;
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> elInputVerts;
       double integralVal = 0;
-      for (auto& elInput : inputMesh->get_elements())
+      for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
           int nverts = mesh::get_downward(elInput, 0, elInputVerts.data());
@@ -245,22 +242,19 @@ class ConservativeTransferUser
 
   private:
 
-    void compute_mass_matrix(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleMesh,
-                             mesh::FieldPtr<utils::Point> middleMeshQuadPointsOnInputMeshPtr,
-	                           mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMeshPtr,
-							               utils::impl::Matrix<double>& massMatrix)
+    void compute_mass_matrix(utils::impl::Matrix<double>& massMatrix)
     {
       //TODO: you could also do the integration on the inputMesh rather than the middle mesh, but that would make
       //      it harder to experiment with different geometric terms
 
       massMatrix.fill(0);
 
-      int numQuadPointsPerElement          = middleMeshQuadPointsOnInputMeshPtr->get_field_shape().count[2];
-      auto& inputMeshToMiddleMesh          = *inputMeshToMiddleMeshPtr;
-      auto& middleMeshQuadPointOnInputMesh = *middleMeshQuadPointsOnInputMeshPtr;
+      int numQuadPointsPerElement          = m_middleMeshQuadPointsOnInputMesh->get_field_shape().count[2];
+      auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
+      auto& middleMeshQuadPointOnInputMesh = *m_middleMeshQuadPointsOnInputMesh;
       std::array<double, mesh::MAX_DOWN> basisVals;
       utils::impl::Matrix<double> elementMatrix(mesh::MAX_DOWN, mesh::MAX_DOWN);
-      for (auto& elInput : inputMesh->get_elements())
+      for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
           int nverts = elInput->get_type() == mesh::MeshEntityType::Quad ? 4 : 3;
@@ -336,32 +330,37 @@ class ConservativeTransferUser
     int m_numDofs = 0;
     utils::impl::Matrix<double> m_mat;
     FiniteElement m_finiteElement;
+
+
+    std::shared_ptr<mesh::Mesh> m_middleMesh;
+    mesh::FieldPtr<utils::Point> m_middleMeshQuadPointsOnInputMesh;
+	  mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> m_inputMeshToMiddleMesh;   
 };
 
 
 class ConservativeTransferSPMDStk
 {
   public:
-    ConservativeTransferSPMDStk(std::shared_ptr<mesh::Mesh> inputMesh1, std::shared_ptr<mesh::Mesh> inputMesh2,
-                                std::shared_ptr<ConservativeTransferUser> userMesh1, std::shared_ptr<ConservativeTransferUser> userMesh2) :
+    ConservativeTransferSPMDStk(MPI_Comm unionComm, std::shared_ptr<mesh::Mesh> inputMesh1, std::shared_ptr<mesh::Mesh> inputMesh2,
+                                std::shared_ptr<ConservativeTransferUser> transferCallback1, std::shared_ptr<ConservativeTransferUser> transferCallback2) :
+      m_unionComm(unionComm),
       m_inputMesh1(inputMesh1),
       m_inputMesh2(inputMesh2),
-      m_userMesh1(userMesh1),
-      m_userMesh2(userMesh2)
+      m_transferCallback1(transferCallback1),
+      m_transferCallback2(transferCallback2)
     {
       setup_for_transfer();
     }
 
     void setup_for_transfer()
     {
-      m_unionComm = MPI_COMM_WORLD;
       std::shared_ptr<XiCoordinates> xiCoords;
-      if (m_userMesh1)
-        xiCoords = m_userMesh1->create_xi_coords();
+      if (m_transferCallback1)
+        xiCoords = m_transferCallback1->create_xi_coords();
       else
-        xiCoords = m_userMesh2->create_xi_coords();
+        xiCoords = m_transferCallback2->create_xi_coords();
 
-	    std::shared_ptr<ApplicationInterfaceSPMD> interface = application_interface_spmd_factory(
+	    std::shared_ptr<ApplicationInterface> interface = application_interface_factory(
 	      ApplicationInterfaceType::FakeParallel, m_inputMesh1, m_inputMesh2, m_unionComm, xiCoords);
 
       interface->create_middle_grid();
@@ -372,6 +371,8 @@ class ConservativeTransferSPMDStk
         m_inputMesh1ToMiddleMesh           = interface->compute_mesh1_inverse_classification();
         m_remoteInfo1To2                   = interface->get_remote_info_mesh_one_to_two();
         m_middleMeshQuadPointsOnInputMesh1 = interface->get_xi_points_on_mesh1();
+
+        m_transferCallback1->set_middle_mesh(m_middleMesh1, m_inputMesh1ToMiddleMesh, m_middleMeshQuadPointsOnInputMesh1);
       }
 
       if (m_inputMesh2)
@@ -381,10 +382,12 @@ class ConservativeTransferSPMDStk
         m_inputMesh2ToMiddleMesh           = interface->compute_mesh2_inverse_classification();
         m_remoteInfo2To1                   = interface->get_remote_info_mesh_two_to_one();
         m_middleMeshQuadPointsOnInputMesh2 = interface->get_xi_points_on_mesh2();
+
+        m_transferCallback2->set_middle_mesh(m_middleMesh2, m_inputMesh2ToMiddleMesh, m_middleMeshQuadPointsOnInputMesh2);
       }
 
       m_exchanger = std::make_shared<MiddleMeshFieldCommunication<double>>(m_unionComm, m_middleMesh1, m_middleMesh2, 
-                                                                           m_remoteInfo1To2, m_remoteInfo2To1);      
+                                                                           m_remoteInfo1To2, m_remoteInfo2To1);   
     }
 
     void start_transfer(mesh::FieldPtr<double> functionValsSend, mesh::FieldPtr<double> functionValsRecv)
@@ -394,10 +397,10 @@ class ConservativeTransferSPMDStk
 
       if (functionValsSend)      
       {
-        sendData.user->interpolate_to_quad_pts(sendData.inputMesh, sendData.middleMesh,
-                                               sendData.middleMeshQuadPointsOnInputMesh, sendData.inputMeshToMiddleMesh,
-                                               functionValsSend, sendData.quadVals);
+        sendData.transferCallback->interpolate_to_quad_pts(functionValsSend, sendData.quadVals);
       }
+
+	    m_exchanger->start_exchange(sendData.quadVals, recvData.quadVals);
     }
 
     void finish_transfer(mesh::FieldPtr<double> functionValsSend, mesh::FieldPtr<double> functionValsRecv)
@@ -405,19 +408,13 @@ class ConservativeTransferSPMDStk
       MeshData sendData = get_mesh_data_send(functionValsSend);
       MeshData recvData = get_mesh_data_recv(functionValsRecv);
 
-	    m_exchanger->start_exchange(sendData.quadVals, recvData.quadVals);
-      //------------------------------------------------------
 	    m_exchanger->finish_exchange(recvData.quadVals);
 
       if (functionValsRecv)
       {
         mesh::FieldPtr<double> linearSystemRhs = mesh::create_field<double>(recvData.inputMesh, mesh::FieldShape(1, 0, 0), 1);
-        recvData.user->finish_integration(recvData.inputMesh, recvData.middleMesh, recvData.middleMeshQuadPointsOnInputMesh,
-                                          recvData.inputMeshToMiddleMesh,
-                                          recvData.quadVals, linearSystemRhs);
-        recvData.user->solve_linear_system(recvData.inputMesh, recvData.middleMesh, recvData.middleMeshQuadPointsOnInputMesh,
-                                           recvData.inputMeshToMiddleMesh,
-                                           linearSystemRhs, functionValsRecv);
+        recvData.transferCallback->finish_integration(recvData.quadVals, linearSystemRhs);
+        recvData.transferCallback->solve_linear_system(linearSystemRhs, functionValsRecv);
       }
 
       // for testing only
@@ -429,7 +426,7 @@ class ConservativeTransferSPMDStk
     struct MeshData
     {
       std::shared_ptr<mesh::Mesh> inputMesh;
-      std::shared_ptr<ConservativeTransferUser> user;
+      std::shared_ptr<ConservativeTransferUser> transferCallback;
       std::shared_ptr<mesh::Mesh> middleMesh;
       mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMesh;
       mesh::FieldPtr<utils::Point> middleMeshQuadPointsOnInputMesh;
@@ -446,7 +443,7 @@ class ConservativeTransferSPMDStk
 
         data.inputMesh  = sendOneToTwo ? m_inputMesh1 : m_inputMesh2;
         data.middleMesh = sendOneToTwo ? m_middleMesh1 : m_middleMesh2;
-        data.user       = sendOneToTwo ? m_userMesh1 : m_userMesh2;
+        data.transferCallback       = sendOneToTwo ? m_transferCallback1 : m_transferCallback2;
         data.middleMeshQuadPointsOnInputMesh = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh1 
                                                             : m_middleMeshQuadPointsOnInputMesh2;
         data.inputMeshToMiddleMesh = sendOneToTwo ? m_inputMesh1ToMiddleMesh : m_inputMesh2ToMiddleMesh;
@@ -474,7 +471,7 @@ class ConservativeTransferSPMDStk
 
         data.inputMesh  = sendOneToTwo ? m_inputMesh2 : m_inputMesh1;
         data.middleMesh = sendOneToTwo ? m_middleMesh2 : m_middleMesh1;
-        data.user       = sendOneToTwo ? m_userMesh2 : m_userMesh1;
+        data.transferCallback       = sendOneToTwo ? m_transferCallback2 : m_transferCallback1;
         data.middleMeshQuadPointsOnInputMesh = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh2 
                                                             : m_middleMeshQuadPointsOnInputMesh1;
         data.inputMeshToMiddleMesh = sendOneToTwo ? m_inputMesh2ToMiddleMesh : m_inputMesh1ToMiddleMesh;
@@ -500,40 +497,24 @@ class ConservativeTransferSPMDStk
       assert(functionValsSend);
       assert(functionValsRecv);
 
-      bool sendOneToTwo = functionValsSend->get_mesh() == m_inputMesh1;
+      MeshData sendData = get_mesh_data_send(functionValsSend);
+      MeshData recvData = get_mesh_data_recv(functionValsRecv);
 
-      auto inputMeshSend  = sendOneToTwo ? m_inputMesh1 : m_inputMesh2;
-      auto inputMeshRecv  = sendOneToTwo ? m_inputMesh2 : m_inputMesh1;
-      auto middleMeshSend = sendOneToTwo ? m_middleMesh1 : m_middleMesh2;
-      auto middleMeshRecv = sendOneToTwo ? m_middleMesh2 : m_middleMesh1;
-      auto userSend       = sendOneToTwo ? m_userMesh1 : m_userMesh2;
-      auto userRecv       = sendOneToTwo ? m_userMesh2 : m_userMesh1;
-
-      auto middleMeshQuadPointOnInputMeshSend = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh1 : m_middleMeshQuadPointsOnInputMesh2;
-      auto middleMeshQuadPointOnInputMeshRecv = sendOneToTwo ? m_middleMeshQuadPointsOnInputMesh2 : m_middleMeshQuadPointsOnInputMesh1;
-      auto sendMeshToMiddleMesh = sendOneToTwo ? m_inputMesh1ToMiddleMesh : m_inputMesh2ToMiddleMesh;
-      auto recvMeshToMiddleMesh = sendOneToTwo ? m_inputMesh2ToMiddleMesh : m_inputMesh1ToMiddleMesh;
-
-
-      double integralValSend = userSend->integrate_function(inputMeshSend, middleMeshSend, middleMeshQuadPointOnInputMeshSend,
-                                                            sendMeshToMiddleMesh, functionValsSend);
-      
-      double integralValRecv = userRecv->integrate_function(inputMeshRecv, middleMeshRecv, middleMeshQuadPointOnInputMeshRecv,
-                                                            recvMeshToMiddleMesh, functionValsRecv);
+      double integralValSend = sendData.transferCallback->integrate_function(functionValsSend);
+      double integralValRecv = recvData.transferCallback->integrate_function(functionValsRecv);
             
-      std::cout << "send integral val = " << integralValSend << ", recv integral val = " << integralValRecv << ", diff = " << std::abs(integralValSend - integralValRecv) << std::endl;
       if (std::abs(integralValSend - integralValRecv) > 1e-12)
         throw std::runtime_error("transfer was not conservative");
     }
 
+    MPI_Comm m_unionComm;
     std::shared_ptr<mesh::Mesh> m_inputMesh1;
     std::shared_ptr<mesh::Mesh> m_inputMesh2;
-    std::shared_ptr<ConservativeTransferUser> m_userMesh1;
-    std::shared_ptr<ConservativeTransferUser> m_userMesh2;
+    std::shared_ptr<ConservativeTransferUser> m_transferCallback1;
+    std::shared_ptr<ConservativeTransferUser> m_transferCallback2;
     std::shared_ptr<MiddleMeshFieldCommunication<double>> m_exchanger;
 
 
-    MPI_Comm m_unionComm;
     std::shared_ptr<mesh::Mesh> m_middleMesh1;
     std::shared_ptr<mesh::Mesh> m_middleMesh2;
     mesh::FieldPtr<mesh::MeshEntityPtr> m_middleMeshToInputMesh1Info;
@@ -560,7 +541,7 @@ void set_field(mesh::FieldPtr<double> fieldPtr, Tfunc func)
     }
 }
 
-/*
+
 template <typename Tfunc>
 void check_field(mesh::FieldPtr<double> fieldPtr, Tfunc func)
 {
@@ -575,7 +556,47 @@ void check_field(mesh::FieldPtr<double> fieldPtr, Tfunc func)
         throw std::runtime_error("field transfer was not exact");
     }
 }
-*/
+
+
+std::function<double(const utils::Point&)> function_factory(const std::string& functionName)
+{
+  if (functionName == "constant")
+  {
+    return [](const utils::Point& pt) { return 1; };  
+  } else if (functionName == "linear")
+  {
+    return [](const utils::Point& pt) { return pt.x + 2*pt.y + 3*pt.z; };
+  } else if (functionName == "quadratic")
+  {
+    return [](const utils::Point& pt) { return pt.x*pt.x + 2*pt.y*pt.y + 3*pt.z; };
+  } else if (functionName == "exponential")
+  {
+    return [](const utils::Point& pt) { return std::exp(pt.x + pt.y + pt.z ); };
+  } else
+    throw std::runtime_error("unrecognized function name: " + functionName);
+}
+
+void write_output(mesh::FieldPtr<double> field1, mesh::FieldPtr<double> field2, const std::string& functionName)
+{
+  std::shared_ptr<mesh::Mesh> inputMesh1 = field1->get_mesh();
+  std::shared_ptr<mesh::Mesh> inputMesh2 = field2->get_mesh();
+
+  auto func = function_factory(functionName);
+  auto field1Exact = mesh::create_field<double>(inputMesh1, mesh::FieldShape(1, 0, 0), 1);
+  auto field2Exact = mesh::create_field<double>(inputMesh2, mesh::FieldShape(1, 0, 0), 1);
+  set_field(field1Exact, func);
+  set_field(field2Exact, func);
+  
+  auto field1Adaptor = std::make_shared<stk_interface::impl::FieldOutputAdaptorDouble>(field1, "field");
+  auto field1ExactAdaptor = std::make_shared<stk_interface::impl::FieldOutputAdaptorDouble>(field1Exact, "fieldExact");
+  stk_interface::impl::ExodusWriter writer1(inputMesh1, {field1Adaptor, field1ExactAdaptor});
+  writer1.write("mesh1_conservative.exo");
+
+  auto field2Adaptor = std::make_shared<stk_interface::impl::FieldOutputAdaptorDouble>(field2, "field");
+  auto field2ExactAdaptor = std::make_shared<stk_interface::impl::FieldOutputAdaptorDouble>(field2Exact, "fieldExact");
+  stk_interface::impl::ExodusWriter writer2(inputMesh2, {field2Adaptor, field2ExactAdaptor});
+  writer2.write("mesh2_conservative.exo");   
+}
 
 
 int main(int argc, char* argv[])
@@ -588,33 +609,36 @@ int main(int argc, char* argv[])
   int sendOneToTwoDefault = true;
   bool sendOneToTwo = stk::get_command_line_option(argc, argv, "send-one-to-two", sendOneToTwoDefault);
 
+  std::string defaultFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
+  std::string defaultFileName2 = "generated:4x4x1|sideset:z|bbox:0,0,1,1,1,2";
+
+  std::string defaultFunctionName = "linear";
+  std::string functionName = stk::get_command_line_option(argc, argv, "function-name", defaultFunctionName);
+
+  std::string meshFileName1 = stk::get_command_line_option(argc, argv, "mesh1", defaultFileName1);
+  std::string meshFileName2 = stk::get_command_line_option(argc, argv, "mesh2", defaultFileName2);
+
+  std::string defaultPartName1 = "surface_1";
+  std::string defaultPartName2 = "surface_1";
+  std::string partName1 = stk::get_command_line_option(argc, argv, "part-name1", defaultPartName1);
+  std::string partName2 = stk::get_command_line_option(argc, argv, "part-name2", defaultPartName2);
+
+  int defaultNumIters = 64;
+  int numIters = stk::get_command_line_option(argc, argv, "num-iters", defaultNumIters);
+
   {
-    mesh::impl::MeshSpec spec1, spec2;
+    stk_interface::impl::StkMeshCreator creator1(meshFileName1, MPI_COMM_WORLD);
+    std::shared_ptr<mesh::Mesh> inputMesh1 = creator1.create_mesh_from_part(partName1).mesh;
 
-    spec1.xmin   = 0;
-    spec1.xmax   = 1;
-    spec1.ymin   = 0;
-    spec1.ymax   = 1;
-    spec1.numelX = 3;
-    spec1.numelY = 3;
+    stk_interface::impl::StkMeshCreator creator2(meshFileName2, MPI_COMM_WORLD);
+    std::shared_ptr<mesh::Mesh> inputMesh2 = creator2.create_mesh_from_part(partName2).mesh;
 
-    spec2.xmin   = 0;
-    spec2.xmax   = 1;
-    spec2.ymin   = 0;
-    spec2.ymax   = 1;
-    spec2.numelX = 4;
-    spec2.numelY = 4;    
+    auto transferCallback1 = std::make_shared<ConservativeTransferUser>(inputMesh1);
+    auto transferCallback2 = std::make_shared<ConservativeTransferUser>(inputMesh2);
+    MPI_Comm unionComm = MPI_COMM_WORLD;
+    ConservativeTransferSPMDStk transfer(unionComm, inputMesh1, inputMesh2, transferCallback1, transferCallback2);
 
-
-    auto f = [](const stk::middle_mesh::utils::Point& pt) { return pt; };
-    std::shared_ptr<mesh::Mesh> inputMesh1 = stk::middle_mesh::mesh::impl::create_mesh(spec1, f, MPI_COMM_WORLD);
-    std::shared_ptr<mesh::Mesh> inputMesh2 = stk::middle_mesh::mesh::impl::create_mesh(spec2, f, MPI_COMM_WORLD);
-
-    auto user1 = std::make_shared<ConservativeTransferUser>(inputMesh1);
-    auto user2 = std::make_shared<ConservativeTransferUser>(inputMesh2);
-    ConservativeTransferSPMDStk transfer(inputMesh1, inputMesh2, user1, user2);
-
-    auto func = [](const utils::Point& pt) { return pt.x*pt.x + 2*pt.y*pt.y + 3*pt.z; };
+    auto func = function_factory(functionName); // [](const utils::Point& pt) { return pt.x*pt.x + 2*pt.y*pt.y + 3*pt.z; };
     auto functionVals1 = mesh::create_field<double>(inputMesh1, mesh::FieldShape(1, 0, 0), 1);
     auto functionVals2 = mesh::create_field<double>(inputMesh2, mesh::FieldShape(1, 0, 0), 1);
 
@@ -622,10 +646,19 @@ int main(int argc, char* argv[])
     auto functionValsRecv = sendOneToTwo ? functionVals2 : functionVals1;
     set_field(functionValsSend, func);
     
-    transfer.start_transfer(functionValsSend, functionValsRecv);
-    transfer.finish_transfer(functionValsSend, functionValsRecv);
+    for (int i=0; i < numIters; ++i)
+    {
+      transfer.start_transfer(functionValsSend, functionValsRecv);
+      transfer.finish_transfer(functionValsSend, functionValsRecv);
 
-    //check_field(functionValsRecv, func);
+      transfer.start_transfer(functionValsRecv, functionValsSend);
+      transfer.finish_transfer(functionValsRecv, functionValsSend);
+    }
+
+    if (functionName == "linear")
+      check_field(functionValsRecv, func);
+
+    write_output(functionVals1, functionVals2, functionName);
   }
 
   stk::parallel_machine_finalize();

@@ -55,8 +55,6 @@
 
 #include "MueLu_Types.hpp"
 
-#include "MueLu_Monitor.hpp"
-#include "MueLu_MasterList.hpp"
 
 
 namespace MueLu {

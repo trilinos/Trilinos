@@ -33,7 +33,7 @@ namespace mesh
 
     bool SideSet::add(const SideSetEntry& entry)
     {
-        ThrowRequireMsg(m_bulk.entity_rank(entry.element) == stk::topology::ELEMENT_RANK,
+        STK_ThrowRequireMsg(m_bulk.entity_rank(entry.element) == stk::topology::ELEMENT_RANK,
                        "ERROR, stk::mesh::SideSet::add only allows element-rank entities.");
 
         bool modified = stk::util::insert_keep_sorted_and_unique(entry, m_data);

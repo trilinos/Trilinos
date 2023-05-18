@@ -51,8 +51,6 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_IO.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_BlockedCoordinatesTransferFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"

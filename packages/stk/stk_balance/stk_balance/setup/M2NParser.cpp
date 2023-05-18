@@ -121,7 +121,7 @@ void M2NParser::set_filename(M2NBalanceSettings& settings) const
 void M2NParser::set_num_procs(M2NBalanceSettings& settings) const
 {
   const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.nprocs);
-  ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
+  STK_ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
   settings.set_num_output_processors(numOutputProcs);
 }
 
@@ -147,7 +147,7 @@ void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const
     const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     const int finalNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (finalNumProcs % initialNumProcs) == 0;
-    ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
+    STK_ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
                     << "multiple of initial processors (" << initialNumProcs << ") to use a nested decomposition.");
   }
 }

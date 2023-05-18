@@ -52,7 +52,7 @@ class MeshClassificationScatterTester : public ::testing::Test
 
       mesh::impl::MeshScatterFromRoot scatterMiddleGrid(inputComm, middleGridSerial, meshComm, middleGridDestRanks);
       middleGridParallel = scatterMiddleGrid.scatter();
-      middleGridSerialEntityDestinations = scatterMiddleGrid.get_entity_desintations();
+      middleGridSerialEntityDestinations = scatterMiddleGrid.get_entity_destinations();
     }
 
     void runtest(double tol)

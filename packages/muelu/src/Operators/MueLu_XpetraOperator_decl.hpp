@@ -48,8 +48,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
 

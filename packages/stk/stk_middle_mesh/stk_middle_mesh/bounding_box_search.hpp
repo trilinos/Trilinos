@@ -64,8 +64,8 @@ inline void inflate_bounding_box(stk::search::Box<T>& b, U const& mult_fact, U c
 {
   const double zero = 0.0;
 
-  ThrowRequire(mult_fact >= zero);
-  ThrowRequire(add_fact >= zero);
+  STK_ThrowRequire(mult_fact >= zero);
+  STK_ThrowRequire(add_fact >= zero);
 
   stk::search::Point<T>& min_corner = b.min_corner();
   stk::search::Point<T>& max_corner = b.max_corner();
@@ -215,7 +215,7 @@ template <typename SEARCH> BoundingBoxSearch<SEARCH>::BoundingBoxSearch
     static_assert(8 == sizeof(typename SearchClass::EntityKeyA), "Size of SendMesh EntityKey needs to be 64 bit");
     static_assert(8 == sizeof(typename SearchClass::EntityKeyB), "Size of RecvMesh EntityKey needs to be 64 bit");
 
-    ThrowRequire(sendMesh || recvMesh);
+    STK_ThrowRequire(sendMesh || recvMesh);
   }
 
 template <class SEARCH> void BoundingBoxSearch<SEARCH>::delete_range_points_found

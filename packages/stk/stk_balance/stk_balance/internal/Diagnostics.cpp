@@ -62,7 +62,7 @@ UnsignedDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
         unsigned value;
         comm.recv_buffer(proc).unpack<int>(rank);
         comm.recv_buffer(proc).unpack<unsigned>(value);
-        ThrowRequire(rank < numRanks);
+        STK_ThrowRequire(rank < numRanks);
         m_values[rank] = value;
       }
     }
@@ -185,7 +185,7 @@ DoubleWithPercentDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
         double value;
         comm.recv_buffer(proc).unpack<int>(rank);
         comm.recv_buffer(proc).unpack<double>(value);
-        ThrowRequire(rank < numRanks);
+        STK_ThrowRequire(rank < numRanks);
         m_values[rank] = value;
       }
     }
@@ -314,7 +314,7 @@ MultiUnsignedDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
         comm.recv_buffer(proc).unpack<unsigned>(column);
         comm.recv_buffer(proc).unpack<int>(rank);
         comm.recv_buffer(proc).unpack<unsigned>(value);
-        ThrowRequire(rank < numRanks);
+        STK_ThrowRequire(rank < numRanks);
         m_values[column][rank] = value;
       }
     }

@@ -51,13 +51,11 @@
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 
 
-#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 

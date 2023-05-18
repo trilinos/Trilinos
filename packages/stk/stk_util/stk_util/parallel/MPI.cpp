@@ -276,7 +276,7 @@ all_reduce(
 
   MPI_Op_free(& mpi_op);
 
-  ThrowRequireMsg(MPI_SUCCESS == result, "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result);
+  STK_ThrowRequireMsg(MPI_SUCCESS == result, "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result);
 }
 
 struct ReduceCheck : public ReduceInterface
@@ -305,7 +305,7 @@ struct ReduceCheck : public ReduceInterface
 
     unsigned size = *t++;
 
-    ThrowRequireMsg(m_size == size, __FILE__ << ", " << __FUNCTION__ << ", size mismatch, size= " << size << ", m_size= " << m_size );
+    STK_ThrowRequireMsg(m_size == size, __FILE__ << ", " << __FUNCTION__ << ", size mismatch, size= " << size << ", m_size= " << m_size );
 
     outbuf = t;
   }

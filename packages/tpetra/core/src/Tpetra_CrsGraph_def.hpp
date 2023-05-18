@@ -4472,6 +4472,8 @@ namespace Tpetra {
 
       if (verbose_) {
         size_t totalNumDups = 0;
+        //Sync and mark-modified the local indices before disabling WDV tracking
+        lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
         Kokkos::parallel_reduce(range,
           [this, sorted, merged] (const LO lclRow, size_t& numDups)
           {
@@ -4484,6 +4486,8 @@ namespace Tpetra {
         std::cerr << os.str();
       }
       else {
+        //Sync and mark-modified the local indices before disabling WDV tracking
+        lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
         Kokkos::parallel_for(range,
           [this, sorted, merged] (const LO lclRow)
           {
@@ -5873,6 +5877,14 @@ namespace Tpetra {
     auto exports_h = exports.view_host ();
 
     errCount = 0;
+
+    // The following parallel_scan needs const host access to lclIndsUnpacked_wdv
+    // (if locally indexed) or gblInds_wdv (if globally indexed).
+    if(isLocallyIndexed())
+      lclIndsUnpacked_wdv.getHostView(Access::ReadOnly);
+    else if(isGloballyIndexed())
+      gblInds_wdv.getHostView(Access::ReadOnly);
+
     Kokkos::parallel_scan
       ("Tpetra::CrsGraph::packFillActiveNew: Pack exports",
        inputRange, [=, &prefix]

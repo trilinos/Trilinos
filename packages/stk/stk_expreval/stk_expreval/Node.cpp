@@ -73,7 +73,7 @@ Node::getNextNodeIndex() {
 }
 
 double Node::getResult() const {
-  ThrowAssertMsg(m_hasBeenEvaluated, "Requesting node result before it has been computed.");
+  STK_ThrowAssertMsg(m_hasBeenEvaluated, "Requesting node result before it has been computed.");
   return m_owner->get_result_buffer_value(m_resultIdx);
 }
 
@@ -220,11 +220,11 @@ Node::eval()
       ++i;
     }
 
-    ThrowRequireMsg(foundMatchingFunction, "Function had wrong number of arguments");
+    STK_ThrowRequireMsg(foundMatchingFunction, "Function had wrong number of arguments");
     break;
   }
   default: {
-    ThrowErrorMsg("Unknown OpCode (" + std::to_string(m_opcode) + ")");
+    STK_ThrowErrorMsg("Unknown OpCode (" + std::to_string(m_opcode) + ")");
   }
   }
 

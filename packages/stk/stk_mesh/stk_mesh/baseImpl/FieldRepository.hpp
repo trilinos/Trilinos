@@ -84,7 +84,7 @@ class FieldRepository {
 
     // return all fields of a given topological rank (node/face/elem, etc.)
     const FieldVector & get_fields(stk::topology::rank_t rank) const {
-      ThrowAssert(rank <= stk::topology::NUM_RANKS);
+      STK_ThrowAssert(rank <= stk::topology::NUM_RANKS);
       return m_rankedFields[rank];
     }
 

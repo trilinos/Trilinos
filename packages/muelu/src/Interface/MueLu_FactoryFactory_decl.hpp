@@ -88,7 +88,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CoarseningVisualizationFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_DropNegativeEntriesFactory.hpp"
@@ -160,7 +159,6 @@
 #include "MueLu_NodePartitionInterface.hpp"
 
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
@@ -250,7 +248,6 @@ namespace MueLu {
       if (factoryName == "CoalesceDropFactory")                   return Build2<CoalesceDropFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SmooVecCoalesceDropFactory")            return Build2<SmooVecCoalesceDropFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")                     return Build2<ConstraintFactory>                     (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "CoupledAggregationFactory")             return BuildCoupledAggregationFactory                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory")            return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "DirectSolver")                          return BuildDirectSolver                             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "DropNegativeEntriesFactory")            return Build2<DropNegativeEntriesFactory>            (paramList, factoryMapIn, factoryManagersIn);
@@ -306,7 +303,6 @@ namespace MueLu {
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
@@ -635,25 +631,6 @@ namespace MueLu {
         RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
         factory->AddCoordTransferFactory(p);
       }
-
-      return factory;
-    }
-
-    //! CoupledAggregationFactory
-    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
-
-      if (paramList.isParameter("aggregation: ordering"))
-        factory->SetOrdering(paramList.get<std::string>("aggregation: ordering"));
-
-      if (paramList.isParameter("aggregation: max selected neighbors"))
-        factory->SetMaxNeighAlreadySelected(paramList.get<int>("aggregation: max selected neighbors"));
-
-      if (paramList.isParameter("Phase3AggCreation"))
-        factory->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
-
-      if(paramList.isParameter("aggregation: min agg size"))
-        factory->SetMinNodesPerAggregate(paramList.get<int>("aggregation: min agg size"));
 
       return factory;
     }

@@ -64,18 +64,14 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
-#include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_KeepType.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
-#include "MueLu_RFactory_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherFactoryBase_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {

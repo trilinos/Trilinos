@@ -254,7 +254,7 @@ void communicate_field_data(const BulkData& mesh ,
   int* sendOffsets = send_sizes + parallel_size;
   int* recv_sizes = sendOffsets + parallel_size + 1;
   int* recvOffsets = recv_sizes + parallel_size;
-  ThrowAssertMsg(static_cast<size_t>(std::distance(send_sizes, recvOffsets+parallel_size+1)) == int_buffer.size(),
+  STK_ThrowAssertMsg(static_cast<size_t>(std::distance(send_sizes, recvOffsets+parallel_size+1)) == int_buffer.size(),
              "communicate_field_data: sizing error in poor-man's memory-pool.");
 
   std::vector<std::pair<int,int> > fieldRange(fields.size(), std::make_pair(-1,-1));
@@ -432,7 +432,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
     size_t reserve_len = 0;
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j];
-        ThrowRequireMsg(f.type_is<T>(),
+        STK_ThrowRequireMsg(f.type_is<T>(),
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
         f.sync_to_host();
@@ -542,7 +542,7 @@ void parallel_op(const BulkData& mesh, const std::vector<const FieldBase*>& fiel
     parallel_op_impl<unsigned long, OP>(mesh, fields, deterministic);
   }
   else {
-    ThrowRequireMsg(false, "Error, parallel_op only operates on fields of type long double, double, float, int, or unsigned long.");
+    STK_ThrowRequireMsg(false, "Error, parallel_op only operates on fields of type long double, double, float, int, or unsigned long.");
   }
 }
 
@@ -674,7 +674,7 @@ void assemble_to_owner(const stk::mesh::BulkData& mesh,
               }
               else
               {
-                  ThrowRequireMsg(false,"Unsupported field type in parallel_sum_including_ghosts");
+                  STK_ThrowRequireMsg(false,"Unsupported field type in parallel_sum_including_ghosts");
               }
             }
           }
@@ -740,7 +740,7 @@ void send_back_to_non_owners(const stk::mesh::BulkData& mesh,
               }
               else
               {
-                  ThrowRequireMsg(false,"Unsupported field type in parallel_sum_including_ghosts");
+                  STK_ThrowRequireMsg(false,"Unsupported field type in parallel_sum_including_ghosts");
               }
             }
           }
@@ -776,7 +776,7 @@ void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<
     f.modify_on_host();
 
     for (int i=fieldRange[fi].first; i<fieldRange[fi].second; ++i) {
-      ThrowAssertMsg(mesh.is_valid(comm_info_vec[i].entity),"parallel_sum_including_ghosts found invalid entity");
+      STK_ThrowAssertMsg(mesh.is_valid(comm_info_vec[i].entity),"parallel_sum_including_ghosts found invalid entity");
       const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
       const Bucket& bucket = *meshIndex.bucket;
 

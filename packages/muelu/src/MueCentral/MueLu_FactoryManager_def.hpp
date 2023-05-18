@@ -54,7 +54,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
-#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -73,13 +72,11 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_StructuredAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
 #include "MueLu_InverseApproximationFactory.hpp"
 
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
@@ -183,7 +180,7 @@ namespace MueLu {
       if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
-      if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
+      if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory()));
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
       if (varName == "AggregateQualities")              return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
       if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));

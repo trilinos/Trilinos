@@ -423,7 +423,7 @@ void DeviceMesh::fill_volatile_fast_shared_comm_map(const stk::mesh::BulkData & 
         }
       }
     }
-    ThrowRequireMsg(entryIndex == totalSizeForAllProcs, "Unexpected size for volatile fast shared comm map");
+    STK_ThrowRequireMsg(entryIndex == totalSizeForAllProcs, "Unexpected size for volatile fast shared comm map");
   }
 }
 

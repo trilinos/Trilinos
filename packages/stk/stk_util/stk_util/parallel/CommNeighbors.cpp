@@ -193,10 +193,10 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
                                                          std::vector<int>& recvCounts,
                                                          std::vector<int>& recvDispls)
 {
-  ThrowAssertMsg(sendCounts.size()==m_send_procs.size(), "Error, sendCounts should be same size as m_send_procs.");
-  ThrowAssertMsg(sendDispls.size()==m_send_procs.size(), "Error, sendDispls should be same size as m_send_procs.");
-  ThrowAssertMsg(recvCounts.size()==m_recv_procs.size(), "Error, recvCounts should be same size as m_recv_procs.");
-  ThrowAssertMsg(recvDispls.size()==m_recv_procs.size(), "Error, recvDispls should be same size as m_recv_procs.");
+  STK_ThrowAssertMsg(sendCounts.size()==m_send_procs.size(), "Error, sendCounts should be same size as m_send_procs.");
+  STK_ThrowAssertMsg(sendDispls.size()==m_send_procs.size(), "Error, sendDispls should be same size as m_send_procs.");
+  STK_ThrowAssertMsg(recvCounts.size()==m_recv_procs.size(), "Error, recvCounts should be same size as m_recv_procs.");
+  STK_ThrowAssertMsg(recvDispls.size()==m_recv_procs.size(), "Error, recvDispls should be same size as m_recv_procs.");
 
 #ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   const int* sendCountsPtr = sendCounts.size() > 0 ? sendCounts.data() : nullptr;

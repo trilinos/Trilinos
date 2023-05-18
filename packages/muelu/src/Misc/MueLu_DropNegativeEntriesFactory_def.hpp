@@ -55,10 +55,7 @@
 
 #include "MueLu_DropNegativeEntriesFactory_decl.hpp"
 
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

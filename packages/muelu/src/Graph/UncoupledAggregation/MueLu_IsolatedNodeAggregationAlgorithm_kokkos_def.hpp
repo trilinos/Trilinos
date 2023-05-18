@@ -51,7 +51,7 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"

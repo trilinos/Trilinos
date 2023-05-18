@@ -23,7 +23,7 @@ MPIFinalizationCallback::MPIFinalizationCallback(std::function<void()> callback)
   if (m_callback) {
     int isInitialized;
     MPI_Initialized(&isInitialized);
-    ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIFinalizationCallback");
+    STK_ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIFinalizationCallback");
 
     // The deleter function will be called when MPI_Finalize is invoked.  This
     // is the recommended way to execute callbacks, see Section 8.7.1 of the

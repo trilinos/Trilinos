@@ -51,7 +51,6 @@
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_Import.hpp>
@@ -66,7 +65,6 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ClassicalPFactory_decl.hpp"
 #include "MueLu_ClassicalMapFactory.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_GraphBase.hpp"
 

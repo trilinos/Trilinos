@@ -97,7 +97,7 @@ TEST(StkIo_legacy, sideset_polarity_AB)
 void update_sidesets(const stk::mesh::BulkData& bulk, std::ostream& os)
 {
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk.get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
 
     updaters[0]->set_output_stream(os);
 
@@ -133,7 +133,7 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_reconstruction)
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     updaters[0]->set_warn_about_internal_sideset(true);
 
     {//mesh was just modified, including elements touching the sideset, so expect warning
@@ -195,7 +195,7 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_incremental_update)
                             stk::mesh::ModificationObserverPriority::STK_INTERNAL);
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     std::ostringstream os;
     updaters[0]->set_output_stream(os);
     updaters[0]->set_warn_about_internal_sideset(true);
@@ -325,7 +325,7 @@ TEST(StkIo, sideset_polarity_AB)
 void update_sidesets(const stk::mesh::BulkData& bulk, std::ostream& os)
 {
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk.get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
 
     updaters[0]->set_output_stream(os);
 
@@ -361,7 +361,7 @@ TEST(StkIo, check_internal_sideset_warning_with_reconstruction)
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     updaters[0]->set_warn_about_internal_sideset(true);
 
     {//mesh was just modified, including elements touching the sideset, so expect warning
@@ -423,7 +423,7 @@ TEST(StkIo, check_internal_sideset_warning_with_incremental_update)
                             stk::mesh::ModificationObserverPriority::STK_INTERNAL);
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     std::ostringstream os;
     updaters[0]->set_output_stream(os);
     updaters[0]->set_warn_about_internal_sideset(true);

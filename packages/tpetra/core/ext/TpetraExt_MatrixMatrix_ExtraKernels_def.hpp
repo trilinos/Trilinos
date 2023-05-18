@@ -109,7 +109,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
-  //  typedef typename KCRS::device_type device_t;
+  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -182,8 +182,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
 
   // Thread-local memory
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -479,7 +479,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   // Lots and lots of typedefs
   typedef typename Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
-  //  typedef typename KCRS::device_type device_t;
+  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -559,8 +559,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
 
   // Thread-local memory
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -1137,8 +1137,8 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // ("orig") or P_remote ("Import").
 
         // Thread-local memory
-        Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind", thread_max);
-        Kokkos::View<u_scalar_view_t*> tl_values("top_values", thread_max);
+        Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind", thread_max);
+        Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values", thread_max);
 
         // For each row of R
         Kokkos::parallel_for("MMM::RAP::NewMatrix::LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)

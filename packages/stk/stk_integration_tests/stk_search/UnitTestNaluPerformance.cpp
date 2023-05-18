@@ -83,7 +83,7 @@ struct Options
 
      void checkForRequiredFile(const std::string &option, const std::string &file)
      {
-         ThrowRequireMsg(file != "NO_FILE_SPECIFIED", option << " required for this unit test.");
+         STK_ThrowRequireMsg(file != "NO_FILE_SPECIFIED", option << " required for this unit test.");
      }
 
      void setSphereFile()
@@ -107,7 +107,7 @@ struct Options
          std::string searchString = stk::unit_test_util::simple_fields::get_option(optionString, "gtk");
          if ( searchString != "gtk" && searchString != "kdtree")
          {
-             ThrowRequireMsg(false, "unrecognized search method");
+             STK_ThrowRequireMsg(false, "unrecognized search method");
          }
      }
 
@@ -171,7 +171,7 @@ void printOptions(const Options& options)
         }
         else
         {
-            ThrowRequireMsg(false,"Unrecognized search method "<<options.mSearchMethod);
+            STK_ThrowRequireMsg(false,"Unrecognized search method "<<options.mSearchMethod);
         }
     }
 }

@@ -75,7 +75,6 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"

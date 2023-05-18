@@ -45,7 +45,7 @@ class NewtonScalar
 
         rhs     = rhsFunc(x0);
         rhsNorm = std::abs(rhs);
-        // std::cout << "iteration " << iter << " rhs_norm = " << rhs_norm << std::endl;
+        //std::cout << "iteration " << iter << " rhs_norm = " << rhsNorm << std::endl;
         iter++;
       }
 

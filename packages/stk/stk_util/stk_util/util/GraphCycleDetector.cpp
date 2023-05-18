@@ -43,7 +43,7 @@ namespace impl {
 
 void GraphCycleDetector::add_edge(unsigned node1Id, unsigned node2Id)
 {
-  ThrowRequire(node1Id < numNodes && node2Id < numNodes);
+  STK_ThrowRequire(node1Id < numNodes && node2Id < numNodes);
   nodeGraph[node1Id].push_back(node2Id);
   nodeGraph[node2Id].push_back(node1Id);
 }

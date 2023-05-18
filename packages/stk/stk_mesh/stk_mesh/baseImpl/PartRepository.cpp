@@ -67,7 +67,7 @@ void assert_same_universe( const Part & superset ,
   const PartVector & a = superset.supersets();
   const PartVector & b = subset.supersets();
 
-  ThrowErrorMsgIf( a.empty() || b.empty() || a[0] != b[0],
+  STK_ThrowErrorMsgIf( a.empty() || b.empty() || a[0] != b[0],
                    method << "(...) FAILED Requirement that " <<
                    "Part[" << superset.name() << "] and " <<
                    "Part[" << subset.name() << "] are in the same " <<
@@ -78,7 +78,7 @@ void assert_not_same( const Part & part1 ,
                       const Part & part2 ,
                       const char * method )
 {
-  ThrowErrorMsgIf( & part1 == & part2,
+  STK_ThrowErrorMsgIf( & part1 == & part2,
                    method << "(...) FAILED Requirement that " <<
                    "Part[" << part1.name() << "] and " <<
                    "Part[" << part2.name() << "] are not the same" );
@@ -88,7 +88,7 @@ void assert_not_superset( const Part & superset ,
                           const Part & subset ,
                           const char * method )
 {
-  ThrowErrorMsgIf( contain( subset.supersets() , superset ),
+  STK_ThrowErrorMsgIf( contain( subset.supersets() , superset ),
                    method << "(...) FAILED Requirement that " <<
                    "Part[" << superset.name() << "] " <<
                    "is not a superset of " <<
@@ -99,7 +99,7 @@ void assert_rank_ordering( const Part & superset ,
                            const Part & subset ,
                            const char * method )
 {
-  ThrowErrorMsgIf( superset.primary_entity_rank() < subset.primary_entity_rank(),
+  STK_ThrowErrorMsgIf( superset.primary_entity_rank() < subset.primary_entity_rank(),
                    method << " Part '" << subset.name() << "' (rank="
                    << subset.primary_entity_rank() << ", topology=" 
                    << subset.topology() << ") can't be a subset of part '" << superset.name()

@@ -38,11 +38,31 @@
 # @HEADER
 
 
+################################################################################
+#
+# Module TribitsExternalPackageWithImportedTargetsFindTplModuleHelpers.cmake
+#
+# Contains functions for implementing FindTPL<tplName>.cmake files for
+# external packages using find_package(<externalPkg>) that producing modern
+# IMPORTED targets.
+#
+# NOTE: The acronym 'extpkgwit' stands for "External Package With Imported
+# Targets".
+# 
+################################################################################
+
+
+include(TribitsExternalPackageWriteConfigFile)
+
+
+
 # @FUNCTION: tribits_extpkg_create_imported_all_libs_target_and_config_file()
 #
-# Call from a ``FindTPL<tplName>.cmake`` module that calls inner
-# ``find_package(<externalPkg>)`` for external package that uses modern CMake
-# IMPORTED targets.
+# Called from a `FindTPL<tplName>.cmake`_ module which first calls
+# ``find_package(<externalPkg>)``and the calls this function to get and
+# external package that uses modern CMake IMPORTED targets. This function
+# creates the ``<tplName>::all_libs`` target and creates a TriBITS-compliant
+# external package wrapper file `<tplName>Config.cmake`.
 #
 # Usage::
 #
@@ -51,18 +71,21 @@
 #     INNER_FIND_PACKAGE_NAME <externalPkg>
 #     IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
 #
-# This function is called in a TriBITS ``FindTPL<tplName>.cmake`` wrapper
-# module after it calls ``find_package(<externalPkg>)`` and then creates the
-# IMPORTED target ``<tplName>::all_libs`` from the list of IMPORTED targets
-# ``<importedTarget0> <importedTarget1> ...`` which are defined from the call
-# ``find_package(<externalPkg>)``.  This function also takes care of
-# generating the correct ``<tplName>Config.cmake`` file under the directory::
+# This function is called from a TriBITS ``FindTPL<tplName>.cmake`` wrapper
+# module after it calls ``find_package(<externalPkg>)`` and then this function
+# creates the IMPORTED target ``<tplName>::all_libs`` from the list of
+# IMPORTED targets ``<importedTarget0> <importedTarget1> ...`` which are
+# defined from the call ``find_package(<externalPkg>)``.  This function also
+# takes care of generating the correct ``<tplName>Config.cmake`` file under
+# the directory::
 #
 #   ${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}
 #
-# The generated ``<tplName>Config.cmake`` file calls
-# ``find_dependency(<externalPkg>)`` (with no other argument) and then, again,
-# defines the correct imported library dependency.
+# The generated ``<tplName>Config.cmake`` file pulls in the upstream
+# TriBITS-compliant ``<UpstreamPkg>Config.cmake` files, calls
+# ``find_dependency(<externalPkg>)`` (with no other arguments), defines the
+# `<tplName>::all_libs`` target, and then sets up the correct dependencies
+# between these targets.
 #
 # For more details, see `Creating FindTPL<tplName>.cmake using find_package()
 # with IMPORTED targets`_.
@@ -87,56 +110,10 @@ function(tribits_extpkg_create_imported_all_libs_target_and_config_file
     target_link_libraries(${tplName}::all_libs  INTERFACE  ${importedTarget})
   endforeach()
 
-  # Create <tplName>Config.cmake file
-  tribits_extpkg_create_package_config_file_with_imported_targets(
+  # Create the TriBITS-compliant <tplName>Config.cmake wrapper file
+  tribits_extpkgwit_create_package_config_file(
     ${tplName}
     INNER_FIND_PACKAGE_NAME ${PARSE_INNER_FIND_PACKAGE_NAME}
     IMPORTED_TARGETS_FOR_ALL_LIBS ${PARSE_IMPORTED_TARGETS_FOR_ALL_LIBS} )
 
 endfunction()
-
-
-function(tribits_extpkg_create_package_config_file_with_imported_targets
-    tplName
-  )
-
-  # Parse arguments
-  cmake_parse_arguments(
-     PARSE_ARGV 1
-     PARSE "" "" # prefix, options, one_value_keywords
-     "INNER_FIND_PACKAGE_NAME;IMPORTED_TARGETS_FOR_ALL_LIBS"  #multi_value_keywords
-     )
-  tribits_check_for_unparsed_arguments(PARSE)
-  tribits_assert_parse_arg_one_value(PARSE  INNER_FIND_PACKAGE_NAME)
-  tribits_assert_parse_arg_one_or_more_values(PARSE IMPORTED_TARGETS_FOR_ALL_LIBS)
-  set(externalPkg ${PARSE_INNER_FIND_PACKAGE_NAME})
-
-  # Create <tplName>Config.cmake file
-  set(configFileStr "")
-  string(APPEND configFileStr
-    "include(CMakeFindDependencyMacro)\n" )
-  if (${externalPkg}_DIR)
-    string(APPEND configFileStr
-      "set(${externalPkg}_DIR \"${${externalPkg}_DIR}\")\n" )
-  endif()
-  string(APPEND configFileStr
-    "find_dependency(${externalPkg})\n"
-    "add_library(${tplName}::all_libs  INTERFACE  IMPORTED  GLOBAL)\n"
-    )
-  foreach (importedTarget  IN LISTS  PARSE_IMPORTED_TARGETS_FOR_ALL_LIBS)
-    string(APPEND configFileStr
-      "target_link_libraries(${tplName}::all_libs  INTERFACE  ${importedTarget})\n")
-  endforeach()
-  set(buildDirExternalPkgsDir
-    "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
-  set(tplConfigFile
-    "${buildDirExternalPkgsDir}/${tplName}/${tplName}Config.cmake")
-  file(WRITE "${tplConfigFile}" "${configFileStr}")
-
-endfunction()
-#
-# NOTE: Above, ${externalPkg}_DIR is only set when
-# find_package(${externalPkg}) finds a package configure file
-# ${externalPkg}Config.cmake and **not** when it uses a
-# Find${externalPkg}.cmake module.  Therefore, there is no reason to set
-# ${externalPkg}_DIR in this file if it will not be used.

@@ -63,7 +63,6 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_RAPFactory_decl.hpp"
 //#include "MueLu_Utilities.hpp"
 
 namespace MueLu {

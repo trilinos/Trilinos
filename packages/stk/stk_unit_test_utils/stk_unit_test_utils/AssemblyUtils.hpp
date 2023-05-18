@@ -62,7 +62,7 @@ struct AssemblyDescription {
     : id(id_)
     , partNames(group)
   {
-    ThrowRequireMsg(id != InvalidId, "Invalid id: " << id);
+    STK_ThrowRequireMsg(id != InvalidId, "Invalid id: " << id);
     stk::util::sort_and_unique(partNames);
   }
 

@@ -602,7 +602,7 @@ HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, stk::mesh
 
   if(hingeNode.is_a_hinge()) {
     insert_into_group(infoVec, groupVec);
-    ThrowAssert(groupVec.size() != 0);
+    STK_ThrowAssert(groupVec.size() != 0);
   } else {
     stk::mesh::EntityVector entityVec(bulk.begin_elements(node), bulk.begin_elements(node)+bulk.num_elements(node));
     if(entityVec.size() != 0) {
@@ -643,7 +643,7 @@ stk::mesh::ConstPartVector get_blocks_for_hinge_group(const stk::mesh::BulkData&
 
   for(stk::mesh::Entity elem : group) {
     const stk::mesh::Part* part = get_block_part_for_element(bulk, elem);
-    ThrowRequire(part != nullptr);
+    STK_ThrowRequire(part != nullptr);
     blocks.push_back(part);
   }
 

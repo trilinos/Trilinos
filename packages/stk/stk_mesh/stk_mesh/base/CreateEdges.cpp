@@ -136,7 +136,7 @@ struct create_single_edge_impl
     Entity side;
     Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     if (iedge == m_edge_map.end()) {
-      ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+      STK_ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
       EntityId edge_id = m_available_ids[m_count_edges];
       m_count_edges++;
 
@@ -156,7 +156,7 @@ struct create_single_edge_impl
       side = iedge->second;
     }
     perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
-    ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+    STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, side, m_edge_ordinal, perm, scratch1, scratch2, scratch3);
   }
 
@@ -250,7 +250,7 @@ struct create_edge_impl
         Entity side;
         Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
         if (iedge == m_edge_map.end()) {
-          ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+          STK_ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
           EntityId edge_id = m_available_ids[m_count_edges];
           m_count_edges++;
 
@@ -269,7 +269,7 @@ struct create_edge_impl
           side = iedge->second;
         }
         perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
-        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+        STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], side, e, perm, scratch1, scratch2, scratch3);
       }
     }
@@ -351,7 +351,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
         for(size_t i=0, e=element_buckets.size(); i<e; ++i) {
           Bucket& b = *element_buckets[i];
           stk::topology elemTopology = b.topology();
-          ThrowRequireMsg(elemTopology != stk::topology::INVALID_TOPOLOGY, "create_edges ERROR, element bucket with invalid topology.");
+          STK_ThrowRequireMsg(elemTopology != stk::topology::INVALID_TOPOLOGY, "create_edges ERROR, element bucket with invalid topology.");
           const unsigned numEdgesPerElem = elemTopology.num_edges();
           for(size_t j=0, jend=b.size(); j<jend; ++j) {
             const Entity* elemNodes = b.begin_nodes(j);

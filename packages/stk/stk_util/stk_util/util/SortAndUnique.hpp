@@ -114,7 +114,7 @@ bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec
 template<class VECTOR, typename COMPARE_LESS, typename COMPARE_EQUALS>
 bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec, COMPARE_LESS compare_less, COMPARE_EQUALS compare_equals)
 {
-  ThrowAssertMsg(is_sorted_and_unique(vec,compare_less), "input vector must be sorted and unique");
+  STK_ThrowAssertMsg(is_sorted_and_unique(vec,compare_less), "input vector must be sorted and unique");
 
   typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item, compare_less);
   if (iter == vec.end() || !compare_equals(*iter, item)) {
@@ -146,8 +146,8 @@ bool insert_keep_sorted(const VECTOR& sortedNewItems, VECTOR& sortedOldItems, CO
     return false;
   }
 
-  ThrowAssertMsg(is_sorted_and_unique(sortedNewItems, cmp), "input items must be sorted and unique");
-  ThrowAssertMsg(is_sorted_and_unique(sortedOldItems, cmp), "input vector must be sorted and unique");
+  STK_ThrowAssertMsg(is_sorted_and_unique(sortedNewItems, cmp), "input items must be sorted and unique");
+  STK_ThrowAssertMsg(is_sorted_and_unique(sortedOldItems, cmp), "input vector must be sorted and unique");
 
   const size_t oldLength = sortedOldItems.size();
 

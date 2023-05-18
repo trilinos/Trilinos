@@ -293,7 +293,6 @@ int main(int argc, char *argv[]) {
     CoupledAggFact11->SetMinNodesPerAggregate(9);
     CoupledAggFact11->SetMaxNeighAlreadySelected(2);
     CoupledAggFact11->SetOrdering("natural");
-    //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
     ///////////////////////////////////////// define transfer ops for A11
 #if 0

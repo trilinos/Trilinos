@@ -39,7 +39,7 @@ class TreeReductionIndexer
     {
       check_level(level);
       check_rank(myrank);
-      ThrowRequireMsg(level < m_treeDepth, "rank on top level has no parent");
+      STK_ThrowRequireMsg(level < m_treeDepth, "rank on top level has no parent");
 
       int rankOnLevel = myrank / int_pow(m_numChildren, level);
       return get_rank_on_level_zero(level, rankOnLevel);
@@ -49,8 +49,8 @@ class TreeReductionIndexer
     {
       check_level(level);
       check_rank(myrank);
-      ThrowRequireMsg(level < m_treeDepth - 1, "root rank is not anyones child");
-      ThrowRequireMsg(is_rank_on_level(level+1, myrank), "rank is not present above given level, cannot compute children");
+      STK_ThrowRequireMsg(level < m_treeDepth - 1, "root rank is not anyones child");
+      STK_ThrowRequireMsg(is_rank_on_level(level+1, myrank), "rank is not present above given level, cannot compute children");
 
       int treeWidthOnLevel = get_rank(level, get_parent_rank(level, m_treeWidth-1)) + 1;
       int rankOnLevel = get_rank(level, myrank);
@@ -77,8 +77,8 @@ class TreeReductionIndexer
 
     int get_rank(int level, int rankOnLevelZero) const
     {
-      ThrowRequireMsg(level >= 0, "Level must be positive");
-      ThrowRequireMsg(rankOnLevelZero >= 0, "rank on level zero must be positive");
+      STK_ThrowRequireMsg(level >= 0, "Level must be positive");
+      STK_ThrowRequireMsg(rankOnLevelZero >= 0, "rank on level zero must be positive");
 
       return rankOnLevelZero / int_pow(m_numChildren, level);
     }
@@ -98,7 +98,7 @@ class TreeReductionIndexer
 
     int compute_tree_depth() const
     {
-      ThrowRequireMsg(m_numChildren > 1, "Tree reduction requires number of children greater than one");
+      STK_ThrowRequireMsg(m_numChildren > 1, "Tree reduction requires number of children greater than one");
       
       int width = m_treeWidth;
       int depth = 1;
@@ -114,12 +114,12 @@ class TreeReductionIndexer
 
     void check_level(int level) const
     {
-      ThrowRequireMsg(level >= 0 && level < m_treeDepth, "must have 0 <= level < tree depth");
+      STK_ThrowRequireMsg(level >= 0 && level < m_treeDepth, "must have 0 <= level < tree depth");
     }
 
     void check_rank(int rank) const
     {
-      ThrowRequireMsg(rank >= 0 && rank < m_treeWidth, "must have 0 <= rank < tree width");
+      STK_ThrowRequireMsg(rank >= 0 && rank < m_treeWidth, "must have 0 <= rank < tree width");
 
     }
 

@@ -55,36 +55,28 @@
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraBlockCrsMatrix.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #endif
-#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
-#include <Xpetra_CrsGraph_fwd.hpp>
-#include <Xpetra_CrsGraphFactory_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_ExportFactory.hpp>
 
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
+#include <Xpetra_EpetraCrsMatrix.hpp>
 
 // needed because of inlined function
 //TODO: remove inline function?
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #endif
 

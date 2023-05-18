@@ -12,15 +12,12 @@
 
 //#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_BlockedMultiVector.hpp>
-#include <Xpetra_BlockedVector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_CrsGraphFactory.hpp> //TODO
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_CrsGraphFactory_fwd.hpp> //TODO
 
 #ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraCrsGraph.hpp>
+#include <Xpetra_EpetraCrsGraph_fwd.hpp>
 #endif
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -29,7 +26,6 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

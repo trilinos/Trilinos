@@ -26,7 +26,7 @@ std::shared_ptr<ApplicationInterfaceMPMD> application_interface_mpmd_factory(
 }
 */
 
-std::shared_ptr<ApplicationInterfaceSPMD> application_interface_spmd_factory(
+std::shared_ptr<ApplicationInterface> application_interface_factory(
     ApplicationInterfaceType type, std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
     MPI_Comm unionComm,
     std::shared_ptr<XiCoordinates> xiPts,   

@@ -63,7 +63,7 @@ double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
     const double *weight = stk::mesh::field_data(field, entity);
     if (weight != nullptr) {
-      ThrowRequireWithSierraHelpMsg(*weight >= 0);
+      STK_ThrowRequireWithSierraHelpMsg(*weight >= 0);
       return *weight;
     }
     else {
@@ -190,7 +190,7 @@ bool BalanceSettings::areVertexWeightsProvidedViaFields() const
 
 void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned criteria_index)
 {
-  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+  STK_ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
                   "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
                   "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
   m_vertexWeightFieldNames[criteria_index] = field_name;
@@ -198,7 +198,7 @@ void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned 
 
 std::string BalanceSettings::getVertexWeightFieldName(unsigned criteria_index) const
 { 
-  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+  STK_ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
                   "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
                   "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
   return m_vertexWeightFieldNames[criteria_index]; 
@@ -206,14 +206,14 @@ std::string BalanceSettings::getVertexWeightFieldName(unsigned criteria_index) c
 
 const stk::mesh::Field<double> * BalanceSettings::getVertexWeightField(const stk::mesh::BulkData & stkMeshBulkData, unsigned criteria_index) const
 {
-  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+  STK_ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
                   "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
                   "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
   if (m_vertexWeightFields[criteria_index] == nullptr) {
     m_vertexWeightFields[criteria_index] =
         stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                            getVertexWeightFieldName(criteria_index));
-    ThrowRequireMsg(m_vertexWeightFields[criteria_index] != nullptr,
+    STK_ThrowRequireMsg(m_vertexWeightFields[criteria_index] != nullptr,
                     "Must provide a field for criteria index (" + std::to_string(criteria_index) + ")");
   }
   return m_vertexWeightFields[criteria_index];
@@ -346,7 +346,7 @@ const stk::mesh::Field<double> * BalanceSettings::getDiagnosticElementWeightFiel
     m_diagnosticElementWeightsField =
         stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                            getDiagnosticElementWeightFieldName());
-    ThrowRequireMsg(m_diagnosticElementWeightsField != nullptr,
+    STK_ThrowRequireMsg(m_diagnosticElementWeightsField != nullptr,
                     "Must create diagnostic element weight field when printing balance diagnostics.");
   }
   return m_diagnosticElementWeightsField;
@@ -358,7 +358,7 @@ const stk::mesh::Field<double> * BalanceSettings::getVertexConnectivityWeightFie
     m_vertexConnectivityWeightField =
         stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                            getVertexConnectivityWeightFieldName());
-    ThrowRequireMsg(m_vertexConnectivityWeightField != nullptr,
+    STK_ThrowRequireMsg(m_vertexConnectivityWeightField != nullptr,
                     "Must create vertex connectivity weight field when printing balance diagnostics.");
   }
   return m_vertexConnectivityWeightField;
@@ -815,7 +815,7 @@ const stk::mesh::Field<int> * GraphCreationSettings::getSpiderBeamConnectivityCo
     m_spiderBeamConnectivityCountField =
         stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::NODE_RANK,
                                                         getSpiderBeamConnectivityCountFieldName());
-    ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
+    STK_ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
                     "Must create nodal spider beam connectivity count field when fixing spider elements.");
   }
   return m_spiderBeamConnectivityCountField;
@@ -827,7 +827,7 @@ const stk::mesh::Field<int> * GraphCreationSettings::getSpiderVolumeConnectivity
     m_spiderVolumeConnectivityCountField =
         stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::ELEM_RANK,
                                                         getSpiderVolumeConnectivityCountFieldName());
-    ThrowRequireMsg(m_spiderVolumeConnectivityCountField != nullptr,
+    STK_ThrowRequireMsg(m_spiderVolumeConnectivityCountField != nullptr,
                     "Must create element spider volume connectivity count field when fixing spider elements.");
   }
   return m_spiderVolumeConnectivityCountField;
@@ -839,7 +839,7 @@ const stk::mesh::Field<int> * GraphCreationSettings::getOutputSubdomainField(con
     m_outputSubdomainField =
         stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::ELEM_RANK,
                                                         getOutputSubdomainFieldName());
-    ThrowRequireMsg(m_outputSubdomainField != nullptr,
+    STK_ThrowRequireMsg(m_outputSubdomainField != nullptr,
                     "Must create output subdomain field when fixing spider elements.");
   }
   return m_outputSubdomainField;
@@ -898,7 +898,7 @@ stk::mesh::Part* get_coloring_part(const stk::mesh::BulkData& bulk, const stk::m
       colorPart = part;
     }
   }
-  ThrowRequireMsg(numColors <= 1, "Entity " << bulk.entity_key(entity) << " has " << numColors << " coloring parts.");
+  STK_ThrowRequireMsg(numColors <= 1, "Entity " << bulk.entity_key(entity) << " has " << numColors << " coloring parts.");
   return colorPart;
 }
 

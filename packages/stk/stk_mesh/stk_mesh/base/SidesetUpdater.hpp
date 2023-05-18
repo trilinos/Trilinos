@@ -101,7 +101,7 @@ public:
       std::ostringstream oss;
       oss << fileNamePrefix << "." << m_bulkData.parallel_rank();
       m_debugOutputFileStream = std::ofstream(oss.str(), std::ofstream::out);
-      ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
+      STK_ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
       set_output_stream(m_debugOutputFileStream);
     }
 

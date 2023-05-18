@@ -55,7 +55,6 @@
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
   /*!

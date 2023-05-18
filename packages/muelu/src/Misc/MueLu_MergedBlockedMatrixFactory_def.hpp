@@ -51,7 +51,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 
-#include "MueLu_MergedBlockedMatrixFactory.hpp"
+#include "MueLu_MergedBlockedMatrixFactory_decl.hpp"
 
 namespace MueLu {
 
