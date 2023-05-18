@@ -16,7 +16,7 @@ ENDIF()
 
 FUNCTION(VERIFY_EMPTY CONTEXT)
   if(${ARGN})
-    MESSAGE(FATAL_ERROR "Kokkos does not support all of Tribits. Unhandled arguments in ${CONTEXT}:\n${ARGN}")
+    MESSAGE(FATAL_ERROR "Unhandled arguments in ${CONTEXT}:\n${ARGN}")
   endif()
 ENDFUNCTION()
 
