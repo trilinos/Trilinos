@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+SET(KOKKOS_OPTION_KEYS   "" CACHE INTERNAL "" FORCE)
+SET(KOKKOS_OPTION_VALUES "" CACHE INTERNAL "" FORCE)
+SET(KOKKOS_OPTION_TYPES  "" CACHE INTERNAL "" FORCE)
+
 # Disable in-source builds to prevent source tree corruption.
 if( "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}" )
   message( FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files and delete CMakeCache.txt." )

@@ -1,26 +1,27 @@
 include(CMakeListsKokkos.txt)
 
+kokkos_set_option(ENABLE_OPENMP ${Trilinos_ENABLE_OpenMP})
 if(NOT ${Trilinos_ENABLE_OpenMP} STREQUAL "")
-  set(Kokkos_ENABLE_OPENMP ${Trilinos_ENABLE_OPENMP} CACHE BOOL "Whether to build OpenMP backend" FORCE)
+  kokkos_set_option(ENABLE_OPENMP ${Trilinos_ENABLE_OpenMP})
 endif()
 
 if(NOT ${TPL_ENABLE_CUDA} STREQUAL "")
-  set(Kokkos_ENABLE_CUDA ${TPL_ENABLE_CUDA} CACHE BOOL "Whether to build Cuda backend" FORCE)
+  kokkos_set_option(ENABLE_CUDA ${TPL_ENABLE_CUDA})
 endif()
 
 if(NOT ${TPL_ENABLE_HPX} STREQUAL "")
-  set(Kokkos_ENABLE_HPX ${TPL_ENABLE_HPX} CACHE BOOL "Whether to build HPX backend" FORCE)
+  kokkos_set_option(ENABLE_HPX ${TPL_ENABLE_HPX})
 endif()
 
 if(NOT ${TPL_ENABLE_quadmath} STREQUAL "")
-  set(Kokkos_ENABLE_LIQUADMATH ${TPL_ENABLE_quadmath} CACHE BOOL "Whether to enable the LIBQUADMATH library" FORCE)
+  kokkos_set_option(ENABLE_LIQUADMATH ${TPL_ENABLE_quadmath})
 endif()
 
 if(NOT ${TPL_ENABLE_DLlib} STREQUAL "")
-  set(Kokkos_ENABLE_LIBDL ${TPL_ENABLE_DLlib} CACHE BOOL "Whether to enable the LIBDL library" FORCE)
+  kokkos_set_option(ENABLE_LIBDL ${TPL_ENABLE_DLlib})
 endif()
 
-set(Kokkoe_ENABLE_COMPLEX_ALIGN OFF CACHE BOOL "Whether to align Kokkos::complex to 2*alignof(RealType)" FORCE)
+kokkos_set_option(ENABLE_COMPLEX_ALIGN OFF)
 
 add_library(Kokkos::all_libs ALIAS kokkos)
 tribits_package_postprocess()
