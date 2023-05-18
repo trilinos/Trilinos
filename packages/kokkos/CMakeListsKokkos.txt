@@ -191,8 +191,6 @@ INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_tribits.cmake)
 # to allow platform-specific checks
 INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_check_env.cmake)
 
-  # This does not work in Trilinos and we simply don't care
-  # to fix it for Trilinos
   # Gather information about the runtime environment
   INCLUDE(${KOKKOS_SRC_PATH}/cmake/build_env_info.cmake)
   check_git_setup()
