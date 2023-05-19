@@ -169,6 +169,10 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       entryIdx = rowIdx*blocksize + colIdx;
       basematrix[entryIdx] = ((entryIdx % 2) == 0 ? one : two);
     }
+    // We enforce that the block matrix is SPD by setting the diagonal value
+    // to a value which is greater than the sum of the absolute value of all the
+    // entries on the corresponding row knowing that the off diagonal blocks are
+    // set to minus identity.
     basematrix[rowIdx*blocksize + rowIdx] = three + 26 * one + blocksize * two;
 
     offmatrix[rowIdx*blocksize + rowIdx] = -one;
@@ -410,6 +414,9 @@ main (int argc, char* argv[])
     }
 
     int line_length = std::max(1, (int) std::ceil(args.nx  / args.sublinesPerLine));
+    // We compute the number of lines oriented along the x direction of the mesh.
+    // This number is called line_per_x_fiber where a fiber refers to an initial
+    // x line in the mesh before dividing it in sublines.
     int line_per_x_fiber = std::ceil(args.nx  / line_length);
     line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
