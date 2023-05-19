@@ -14,14 +14,11 @@
 #include "Teuchos_StackedTimer.hpp"
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <fstream>
-#include <sstream>
-
 namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),lpp(10),useStackedTimer(false),overlapCommAndComp(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),useStackedTimer(false),overlapCommAndComp(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -36,7 +33,7 @@ struct CmdLineArgs {
   int mx;
   int my;
   int mz;
-  int lpp;
+  int sublinesPerLine;
   bool useStackedTimer;
   bool overlapCommAndComp;
   std::string problemName;
@@ -59,13 +56,13 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("blockSize", &args.blockSize, "Size of block to use");
   cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
-  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
-  cmdp.setOption ("ny", &args.ny, "If using inline meshing, number of nodes in the y direction per proc");
-  cmdp.setOption ("nz", &args.nz, "If using inline meshing, number of nodes in the z direction per proc");
+  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction");
+  cmdp.setOption ("ny", &args.ny, "If using inline meshing, number of nodes in the y direction");
+  cmdp.setOption ("nz", &args.nz, "If using inline meshing, number of nodes in the z direction");
   cmdp.setOption ("mx", &args.mx, "If using inline meshing, number of procs in the x direction");
   cmdp.setOption ("my", &args.my, "If using inline meshing, number of procs in the y direction");
   cmdp.setOption ("mz", &args.mz, "If using inline meshing, number of procs in the z direction");
-  cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
+  cmdp.setOption ("sublinesPerLine", &args.sublinesPerLine, "If using inline meshing, number of sublines per mesh x line. If set to -1 the block Jacobi algorithm is used.");
   cmdp.setOption ("withStackedTimer", "withoutStackedTimer", &args.useStackedTimer,
       "Whether to run with a StackedTimer and print the timer tree at the end (and try to output Watchr report)");
   cmdp.setOption ("withOverlapCommAndComp", "withoutOverlapCommAndComp", &args.overlapCommAndComp,
@@ -214,7 +211,6 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
         } else {
           firstPrint = false;
         }
-        //std::cout << "Mesh graph global entry ( " << meshRowMap.getGlobalElement(localRowInd) << ", " << meshColMap.getGlobalElement(localColInds(k)) << ") on rank " << comm->getRank() << std::endl;
         streamI << meshRowMap.getGlobalElement(localRowInd);
         streamJ << meshColMap.getGlobalElement(localColInds(k));
         streamV << "1.";
@@ -407,8 +403,13 @@ main (int argc, char* argv[])
     B = rcp(new MV(Ablock->getRangeMap(),1));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    // line info (lpp lines per proc along direction x)
-    int line_length = std::max(1, (int) std::ceil(args.nx  / args.lpp));
+    // line info (sublinesPerLine lines per proc along direction x)
+    if ( args.sublinesPerLine < 1 && args.sublinesPerLine != -1) {
+      std::string msg = "the value of sublinesPerLine = " + std::to_string(args.sublinesPerLine) + " is not supported";
+      throw std::runtime_error(msg);
+    }
+
+    int line_length = std::max(1, (int) std::ceil(args.nx  / args.sublinesPerLine));
     int line_per_x_fiber = std::ceil(args.nx  / line_length);
     line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
@@ -426,7 +427,7 @@ main (int argc, char* argv[])
 		<< " nz = " << plist.get<GO>("nz")
 		<< std::endl;
       std::cout<< "Using block_size = " << args.blockSize
-	       << " # lines per proc (input provided by the user) = " << args.lpp //*args.ny*args.nz
+	       << " # lines per proc (input provided by the user) = " << args.sublinesPerLine //*args.ny*args.nz
          << " # lines per fiber = " << line_per_x_fiber
 	       << " and average line length = " << line_length<<std::endl;
     }
