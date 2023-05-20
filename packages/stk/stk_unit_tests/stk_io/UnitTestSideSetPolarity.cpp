@@ -128,8 +128,7 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_reconstruction)
     EXPECT_TRUE(ssPart != nullptr);
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector));
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
@@ -191,8 +190,7 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_incremental_update)
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
     STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
@@ -356,8 +354,7 @@ TEST(StkIo, check_internal_sideset_warning_with_reconstruction)
     EXPECT_TRUE(ssPart != nullptr);
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector));
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
@@ -419,8 +416,7 @@ TEST(StkIo, check_internal_sideset_warning_with_incremental_update)
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
     STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");

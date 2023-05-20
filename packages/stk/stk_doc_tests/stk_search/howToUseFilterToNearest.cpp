@@ -65,12 +65,53 @@
 #include "stk_search/Sphere.hpp"
 #include "stk_search/FineSearch.hpp"
 #include "stk_search/FilterToNearest.hpp"
+#include "stk_search/SearchInterface.hpp"
 #include "stk_search_util/ObjectCoordinates.hpp"               // for compute_entity_centroid
 #include "stk_topology/topology.hpp"                  // for topology, topol...
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/util/ReportHandler.hpp"            // for ThrowRequireMsg
 
-namespace {
+namespace doc_test {
+class SourceMesh;
+class SinglePointMesh;
+}
+
+namespace stk { namespace search {
+template<>
+struct MeshTraits<doc_test::SourceMesh>
+{
+  using Entity = stk::mesh::Entity;
+  using EntityVec = std::vector<Entity>;
+  using EntityKey = stk::mesh::EntityKey;
+  using EntityKeySet = std::set<EntityKey>;
+  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProcVec = std::vector<EntityProc>;
+  using Point = stk::search::Point<double>;
+  using Box = stk::search::Box<double>;
+  using BoundingBox = std::pair<Box, EntityProc>;
+  using CoordinateField = stk::mesh::Field<double>;
+};
+}}
+
+namespace stk { namespace search {
+template<>
+struct MeshTraits<doc_test::SinglePointMesh>
+{
+  using Entity = int;
+  using EntityVec = std::vector<Entity>;
+  using EntityKey = int;
+  using EntityKeySet = std::set<EntityKey> ;
+  using EntityProc = stk::search::IdentProc<EntityKey, unsigned> ;
+  using EntityProcVec = std::vector<EntityProc> ;
+  using Point = stk::search::Point<double> ;
+  using Box = stk::search::Box<double> ;
+  using Sphere = stk::search::Sphere<double>;
+  using BoundingBox = std::pair<Sphere, EntityProc>;
+  using CoordinateField = double*;
+};
+}}
+
+namespace doc_test {
 
 namespace Hex {
 double invSqrt(double x) {
@@ -348,18 +389,18 @@ double is_in_element(const double* elem_nodal_coor, // (8,3)
 }
 }
 
-class SourceMesh {
+class SourceMesh : public stk::search::SourceMeshInterface<SourceMesh> {
  public:
-  typedef stk::mesh::Entity Entity;
-  typedef std::vector<Entity> EntityVec;
-  typedef stk::mesh::EntityKey EntityKey;
-  typedef std::set<EntityKey> EntityKeySet;
-  typedef stk::search::IdentProc<EntityKey, unsigned> EntityProc;
-  typedef std::vector<EntityProc> EntityProcVec;
-  typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> Box;
-  typedef std::pair<Box, EntityProc> BoundingBox;
-  typedef stk::mesh::Field<double> CoordinateField;
+  using Entity = typename stk::search::MeshTraits<SourceMesh>::Entity;
+  using EntityVec = typename stk::search::MeshTraits<SourceMesh>::EntityVec;
+  using EntityKey = typename stk::search::MeshTraits<SourceMesh>::EntityKey;
+  using EntityKeySet = typename stk::search::MeshTraits<SourceMesh>::EntityKeySet;
+  using EntityProc = typename stk::search::MeshTraits<SourceMesh>::EntityProc;
+  using EntityProcVec = typename stk::search::MeshTraits<SourceMesh>::EntityProcVec;
+  using Point = typename stk::search::MeshTraits<SourceMesh>::Point;
+  using Box = typename stk::search::MeshTraits<SourceMesh>::Box;
+  using BoundingBox = typename stk::search::MeshTraits<SourceMesh>::BoundingBox;
+  using CoordinateField = typename stk::search::MeshTraits<SourceMesh>::CoordinateField;
 
   SourceMesh(stk::mesh::BulkData& bulkData, const stk::mesh::PartVector& sendParts,
              const stk::ParallelMachine comm, const double parametricTolerance)
@@ -447,16 +488,18 @@ class SourceMesh {
     return false;
   }
 
-  double get_distance_from_nearest_node(const Entity k, const double* point) const
+  double get_distance_from_nearest_node(const EntityKey k, const double* point) const
   {
-    STK_ThrowRequireMsg(m_bulk.entity_rank(k) == stk::topology::ELEM_RANK,
-                        "Invalid entity rank for object: " << m_bulk.entity_rank(k));
+    const stk::mesh::Entity e = m_bulk.get_entity(k);
+
+    STK_ThrowRequireMsg(m_bulk.entity_rank(e) == stk::topology::ELEM_RANK,
+                        "Invalid entity rank for object: " << m_bulk.entity_rank(e));
 
     double minDistance = std::numeric_limits<double>::max();
     const unsigned nDim = m_meta.spatial_dimension();
 
-    const stk::mesh::Entity* const nodes = m_bulk.begin_nodes(k);
-    const int num_nodes = m_bulk.num_nodes(k);
+    const stk::mesh::Entity* const nodes = m_bulk.begin_nodes(e);
+    const int num_nodes = m_bulk.num_nodes(e);
 
     for(int i = 0; i < num_nodes; ++i) {
       double d = 0.0;
@@ -475,8 +518,7 @@ class SourceMesh {
 
   double get_closest_geometric_distance_squared(const EntityKey k, const double* toCoords) const
   {
-    const stk::mesh::Entity e = m_bulk.get_entity(k);
-    double distance = get_distance_from_nearest_node(e, toCoords);
+    double distance = get_distance_from_nearest_node(k, toCoords);
     return distance*distance;
   }
 
@@ -552,19 +594,19 @@ class SourceMesh {
   }
 };
 
-class SinglePointMesh {
+class SinglePointMesh : public stk::search::DestinationMeshInterface<SinglePointMesh> {
  public:
-  using Entity = int;
-  using EntityVec = std::vector<Entity>;
-  using EntityKey = int;
-  using EntityKeySet = std::set<EntityKey> ;
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned> ;
-  using EntityProcVec = std::vector<EntityProc> ;
-  using Point = stk::search::Point<double> ;
-  using Box = stk::search::Box<double> ;
-  using Sphere = stk::search::Sphere<double>;
-  using BoundingBox = std::pair<Sphere, EntityProc>;
-  using CoordinateField = double*;
+  using Entity = typename stk::search::MeshTraits<SinglePointMesh>::Entity;
+  using EntityVec = typename stk::search::MeshTraits<SinglePointMesh>::EntityVec;
+  using EntityKey = typename stk::search::MeshTraits<SinglePointMesh>::EntityKey;
+  using EntityKeySet = typename stk::search::MeshTraits<SinglePointMesh>::EntityKeySet;
+  using EntityProc = typename stk::search::MeshTraits<SinglePointMesh>::EntityProc;
+  using EntityProcVec = typename stk::search::MeshTraits<SinglePointMesh>::EntityProcVec;
+  using Point = typename stk::search::MeshTraits<SinglePointMesh>::Point;
+  using Box = typename stk::search::MeshTraits<SinglePointMesh>::Box;
+  using Sphere = typename stk::search::MeshTraits<SinglePointMesh>::Sphere;
+  using BoundingBox = typename stk::search::MeshTraits<SinglePointMesh>::BoundingBox;
+  using CoordinateField = typename stk::search::MeshTraits<SinglePointMesh>::CoordinateField;
 
   SinglePointMesh(const stk::ParallelMachine comm, double x, double y, double z, double paramTol, double geomTol)
   : m_comm(comm)

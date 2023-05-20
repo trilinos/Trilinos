@@ -55,13 +55,15 @@ class MeshDiagnosticObserver : public stk::mesh::ModificationObserver
 {
 public:
     MeshDiagnosticObserver(stk::mesh::BulkData& bulkData)
-      : m_initialized(false),
+      : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY),
+        m_initialized(false),
         m_throwOnError(false),
         m_bulkData(bulkData),
         m_diagnosticFlag(NO_RULE) {}
 
     MeshDiagnosticObserver(stk::mesh::BulkData& bulkData, stk::mesh::MeshDiagnosticFlag diagnosticFlag)
-      : m_initialized(false),
+      : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY),
+        m_initialized(false),
         m_throwOnError(false),
         m_bulkData(bulkData),
         m_diagnosticFlag(diagnosticFlag) {}

@@ -831,8 +831,7 @@ public:
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer,
-                         stk::mesh::ModificationObserverPriority priority) const;
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
   void unregister_observer(std::shared_ptr<ModificationObserver> observer) const;
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }

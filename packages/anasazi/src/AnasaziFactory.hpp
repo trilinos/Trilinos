@@ -111,6 +111,8 @@ public:
     else
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         "Anasazi::Factory::create: Invalid solver type \"" << solverType << "\".");
+
+    return Teuchos::null;
   }
 
   template<class MV, class OP>
@@ -152,6 +154,8 @@ public:
     else
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
         "Anasazi::Factory::create: Invalid solverType type \"" << solverType << "\".");
+
+    return Teuchos::null;
   }
 
   //! Specialize create for BasicEigenproblem type.

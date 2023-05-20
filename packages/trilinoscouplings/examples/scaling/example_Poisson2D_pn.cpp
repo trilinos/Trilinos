@@ -136,7 +136,7 @@
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes

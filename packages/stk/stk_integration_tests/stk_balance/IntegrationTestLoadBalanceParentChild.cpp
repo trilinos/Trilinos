@@ -397,11 +397,11 @@ protected:
 
   void register_fields()
   {
-    m_elementWeightField = & get_meta().declare_field<double>(stk::topology::ELEM_RANK, "Element Weights", 1);
+    m_elementWeightField = & get_meta().declare_field<double>(stk::topology::ELEM_RANK, "Element Weights");
     stk::mesh::put_field_on_mesh(*m_elementWeightField, get_meta().universal_part(), nullptr);
 
-    stk::mesh::FieldBase & coordinateField = get_meta().declare_field<double>(stk::topology::NODE_RANK, "model_coordinates", 2);
-    stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), nullptr);
+    stk::mesh::FieldBase & coordinateField = get_meta().declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
+    stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), get_meta().spatial_dimension(), nullptr);
   }
 
   void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)

@@ -2025,7 +2025,7 @@ TEST_F(BulkDataWithHexes, test_total_field_data_footprint )
   const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
   for(size_t i = 0; i < node_buckets.size(); ++i)
   {
-    node_fields_footprint += node_buckets[i]->capacity() * field_bytes_per_entity(get_coord_field(), *node_buckets[i]);
+    node_fields_footprint += mesh.get_maximum_bucket_capacity() * field_bytes_per_entity(get_coord_field(), *node_buckets[i]);
   }
 
   EXPECT_EQ(node_fields_footprint, field_data_footprint);

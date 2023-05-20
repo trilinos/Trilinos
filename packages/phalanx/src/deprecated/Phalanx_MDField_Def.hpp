@@ -57,7 +57,7 @@
 #ifdef PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
 // no more intrepid dependencies!
 #else
-#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
+#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOS define
 #include "Intrepid2_KokkosRank.hpp"
 #endif // PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
 #endif //Phalanx_ENABLE_Intrepid2
@@ -1169,7 +1169,7 @@ std::ostream& PHX::operator<<(std::ostream& os,
 // no more intrepid dependencies!
 #else
 
-#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
+#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOS define
 #include "Intrepid2_KokkosRank.hpp"
 namespace Intrepid2 {
 template<typename DataT,

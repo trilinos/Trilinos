@@ -59,7 +59,8 @@ void reduce_max(std::vector<size_t> &localVector, stk::ParallelMachine comm)
 class TestListener : public stk::mesh::ModificationObserver {
 public:
   TestListener(stk::ParallelMachine comm)
-    : m_comm(comm),
+    : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION),
+      m_comm(comm),
       m_local_entities_created_or_deleted(5, 0),
       m_entity_comm_info_changed(5, 0),
       m_buckets_changed(5, 0)
@@ -119,7 +120,7 @@ TEST(MeshModNotifier, testLocalEvents)
 {
   std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(MPI_COMM_WORLD);
   stk::mesh::ModificationNotifier notifier;
-  notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
+  notifier.register_observer(listener);
 
   EXPECT_EQ(0u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 
@@ -137,7 +138,7 @@ TEST(MeshModNotifier, testGlobalEvents)
 
     std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
     stk::mesh::ModificationNotifier notifier;
-    notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
+    notifier.register_observer(listener);
 
     EXPECT_EQ(0u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
     EXPECT_EQ(0u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));

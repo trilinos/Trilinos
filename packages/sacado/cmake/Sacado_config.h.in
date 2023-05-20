@@ -29,10 +29,10 @@
 #cmakedefine HAVE_SACADO_TEUCHOSNUMERICS
 
 /* Define if want to build with kokkos-core enabled */
-#cmakedefine HAVE_SACADO_KOKKOSCORE
+#cmakedefine HAVE_SACADO_KOKKOS
 
 /* Define if want to build with kokkos-containers enabled */
-#cmakedefine HAVE_SACADO_KOKKOSCONTAINERS
+#cmakedefine HAVE_SACADO_KOKKOS
 
 /* Define if want to build with TeuchosKokkosComm subpackage enabled */
 #cmakedefine HAVE_SACADO_TEUCHOSKOKKOSCOMM

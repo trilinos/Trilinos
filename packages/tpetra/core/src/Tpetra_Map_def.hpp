@@ -1714,8 +1714,13 @@ namespace Tpetra {
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
-      Kokkos::deep_copy (execution_space(), lgMapHost, lgMap);
+      auto exec_instance = execution_space();
+      Kokkos::deep_copy (exec_instance, lgMapHost, lgMap);
 
+      // There's a non-trivial chance we'll grab this on the host,
+      // so let's make sure the copy finishes
+      exec_instance.fence();
+      
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
