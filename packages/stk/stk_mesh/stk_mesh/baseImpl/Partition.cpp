@@ -44,6 +44,7 @@
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -350,6 +351,10 @@ void Partition::sort(const EntitySorterBase& sorter)
 
   if (tmp_bucket) {
     m_repository->deallocate_bucket(tmp_bucket);
+  }
+
+  if (not m_buckets.empty()) {
+    m_buckets.back()->reset_empty_space(reduced_fields);
   }
 
   internal_check_invariants();

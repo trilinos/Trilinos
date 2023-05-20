@@ -1,5 +1,5 @@
-#include "mesh_io.hpp"
-#include "mesh_projection_calculator.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/mesh_projection_calculator.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

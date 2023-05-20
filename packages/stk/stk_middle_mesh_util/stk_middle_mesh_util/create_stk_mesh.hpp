@@ -9,8 +9,8 @@
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 
-#include "field.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 
 namespace stk {
 namespace middle_mesh {

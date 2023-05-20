@@ -1,6 +1,6 @@
-#include "create_mesh.hpp"
-#include "mesh_io.hpp"
-#include "predicates/point_classifier_normal_wrapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/predicates/point_classifier_normal_wrapper.hpp"
 #include "gtest/gtest.h"
 
 namespace {

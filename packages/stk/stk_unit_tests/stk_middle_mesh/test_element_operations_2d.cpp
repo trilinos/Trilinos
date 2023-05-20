@@ -1,5 +1,5 @@
-#include "element_operations_2d.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh/element_operations_2d.hpp"
+#include "stk_middle_mesh/utils.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

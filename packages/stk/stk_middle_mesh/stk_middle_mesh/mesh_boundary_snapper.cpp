@@ -15,7 +15,32 @@ using VertEdgePair = MeshBoundarySnapper::VertEdgePair;
 using MEPair       = std::pair<MeshEntityPtr, MeshEntityPtr>;
 } // namespace
 
-void MeshBoundarySnapper::snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2)
+void MeshBoundarySnapper::snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2, MPI_Comm unionComm)
+{
+  auto comm = unionComm;
+  auto nprocs = utils::impl::comm_size(comm);
+  auto rank = utils::impl::comm_rank(comm);
+  auto root = 0;
+
+  if (nprocs == 1) {
+    start_local_snap(mesh1, mesh2);
+  } else {
+    MeshExchangeBoundaryEdges exchange1(mesh1, unionComm, root);
+    auto meshToSnap1 = exchange1.get_boundary_edge_mesh();
+
+    MeshExchangeBoundaryEdges exchange2(mesh2, unionComm, root);
+    auto meshToSnap2 = exchange2.get_boundary_edge_mesh();
+
+    if(rank == root) {
+      start_local_snap(meshToSnap1, meshToSnap2);
+    }
+    
+    exchange1.update_remote_vertices();
+    exchange2.update_remote_vertices();
+  }
+}
+
+void MeshBoundarySnapper::start_local_snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2)
 {
   m_seenEdges1  = create_field<FakeBool>(mesh1, FieldShape(0, 1, 0), 1, false);
   m_seenEdges2  = create_field<FakeBool>(mesh2, FieldShape(0, 1, 0), 1, false);
@@ -239,7 +264,7 @@ bool MeshBoundarySnapper::would_create_zero_length_edge(MeshEntityPtr vert, cons
   for (int i = 0; i < vert->count_up(); ++i)
   {
     MeshEntityPtr edge = vert->get_up(i);
-    if (edge->count_up() == 1)
+    if (is_boundary_edge(edge))
     {
       utils::Point otherPt = get_other_vert(vert, edge)->get_point_orig(0);
       utils::Point disp    = newPt - otherPt;
@@ -316,7 +341,8 @@ VertEdgePair MeshBoundarySnapper::get_next_pair(VertEdgePair p)
   for (int i = 0; i < vOther->count_up(); ++i)
   {
     auto edge = vOther->get_up(i);
-    if (edge->count_up() == 1 && edge != p.second)
+
+    if (is_boundary_edge(edge) && edge != p.second)
       return std::make_pair(vOther, edge);
   }
 
@@ -361,9 +387,9 @@ MEPair MeshBoundarySnapper::find_coincident_verts(std::shared_ptr<Mesh> mesh1, s
   double eps     = 1e-12;
   double minDist = std::numeric_limits<double>::max();
   for (auto& edge1 : mesh1->get_edges())
-    if (edge1 && edge1->count_up() == 1 && !((*m_seenEdges1)(edge1, 0, 0)))
+    if (edge1 && is_boundary_edge(edge1) && !((*m_seenEdges1)(edge1, 0, 0)))
       for (auto& edge2 : mesh2->get_edges())
-        if (edge2 && edge2->count_up() == 1 && !(*m_seenEdges2)(edge2, 0, 0))
+        if (edge2 && is_boundary_edge(edge2) && !(*m_seenEdges2)(edge2, 0, 0))
         {
           // std::cout << "checking edges " << edge1 << " and " << edge2 << std::endl;
           auto v1   = edge1->get_down(0);
@@ -420,18 +446,22 @@ void MeshBoundarySnapper::get_boundary_edges(MeshEntityPtr v1, std::vector<MeshE
   for (int i = 0; i < v1->count_up(); ++i)
   {
     auto edge = v1->get_up(i);
-    if (edge->count_up() == 1)
+    if (is_boundary_edge(edge))
       candidates.push_back(edge);
   }
+}
+
+bool MeshBoundarySnapper::is_boundary_edge(MeshEntityPtr edge)
+{
+  return (edge && ((edge->count_up() == 1 && edge->count_remote_shared_entities() == 0) || edge->count_up() == 0));
 }
 
 int MeshBoundarySnapper::count_boundary_edges(std::shared_ptr<Mesh> mesh)
 {
   int count = 0;
   for (auto& edge : mesh->get_edges())
-    if (edge && edge->count_up() == 1)
+    if (is_boundary_edge(edge))
       count++;
-
   return count;
 }
 

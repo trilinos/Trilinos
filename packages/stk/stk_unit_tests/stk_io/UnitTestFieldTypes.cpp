@@ -763,7 +763,7 @@ TEST(StkIoFieldType_legacy, inputFile)
       stkIo.read_defined_input_fields(numSteps);
   }
 
-  Teuchos::RCP<Ioss::Region> ioRegion = stkIo.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_input_ioss_region();
 
   const Ioss::NodeBlockContainer &    nodeBlocks = ioRegion->get_node_blocks();
   const Ioss::ElementBlockContainer & elemBlocks = ioRegion->get_element_blocks();
@@ -2622,7 +2622,7 @@ TEST(StkIoFieldType, inputFile)
       stkIo.read_defined_input_fields(numSteps);
   }
 
-  Teuchos::RCP<Ioss::Region> ioRegion = stkIo.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_input_ioss_region();
 
   const Ioss::NodeBlockContainer &    nodeBlocks = ioRegion->get_node_blocks();
   const Ioss::ElementBlockContainer & elemBlocks = ioRegion->get_element_blocks();

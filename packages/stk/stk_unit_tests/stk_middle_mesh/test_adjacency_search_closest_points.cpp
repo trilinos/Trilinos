@@ -1,7 +1,7 @@
-#include "adjacency_search_closest_points.hpp"
-#include "create_mesh.hpp"
-#include "mesh.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh/adjacency_search_closest_points.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/utils.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

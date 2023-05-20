@@ -1052,6 +1052,11 @@ RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr en
 }
 
 
+bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
+{
+  return get_owner(mesh, entity) == utils::impl::comm_rank(mesh->get_comm());
+}
+
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank)
 {
   for (int i = 0; i < entity->count_remote_shared_entities(); ++i)

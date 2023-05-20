@@ -1,7 +1,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #include "write_stk_mesh.hpp"
-#include "field.hpp"
+#include "stk_middle_mesh/field.hpp"
 
 namespace stk {
 namespace middle_mesh {

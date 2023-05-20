@@ -1,16 +1,16 @@
-#include "create_mesh.hpp"
-#include "incremental_mesh_boundary_snapper.hpp"
-#include "mesh_io.hpp"
-#include "nonconformal4.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/nonconformal4.hpp"
 #include "util/meshes.hpp"
 #include "util/nonconformal_interface_helpers.hpp"
-#include "application_interface.hpp"
+#include "stk_middle_mesh/application_interface.hpp"
 #include "gtest/gtest.h"
 #include <cmath>
 
 #ifdef STK_BUILT_IN_SIERRA
-#include "create_stk_mesh.hpp"
-#include "exodus_writer.hpp"
+#include "stk_middle_mesh_util/create_stk_mesh.hpp"
+#include "stk_middle_mesh_util/exodus_writer.hpp"
 
 namespace stk {
 namespace middle_mesh {

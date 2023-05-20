@@ -4,10 +4,10 @@
 #include <fstream>
 #include <set>
 
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "util/meshes.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh/utils.hpp"
 
 namespace stk {
 namespace middle_mesh {

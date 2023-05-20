@@ -41,7 +41,7 @@
 #include "predicates/point_classifier_normal_wrapper.hpp"
 #include "bounding_box_search.hpp"
 #include "stk_search/Box.hpp"
-#include "stk_transfer/GeometricTransfer.hpp"
+//#include "stk_transfer/GeometricTransfer.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 
 #include <limits>
@@ -49,47 +49,9 @@
 
 namespace stk {
 namespace middle_mesh {
+namespace mesh {
 namespace impl {
 
-class MeshScatterSpec {
-public:
-  MeshScatterSpec() = default;
-
-  void add_destination(mesh::MeshEntityPtr entity, int destRank)
-  {
-    if(nullptr != entity) {
-      MapKey key(entity->get_id(), entity->get_type());
-
-      auto iter = m_entityProcMap.find(key);
-      if(iter != m_entityProcMap.end()) {
-        stk::util::insert_keep_sorted_and_unique(destRank, iter->second);
-      } else {
-        m_entityProcMap[key].push_back(destRank);
-      }
-    }
-  }
-
-  void get_destinations(mesh::MeshEntityPtr entity, std::vector<int>& destRanks)
-  {
-    if(nullptr != entity) {
-      MapKey key(entity->get_id(), entity->get_type());
-
-      auto iter = m_entityProcMap.find(key);
-      if(iter != m_entityProcMap.end()) {
-        destRanks.reserve(iter->second.size());
-        for(int dest : iter->second) {
-          destRanks.push_back(dest);
-        }
-      }
-    }
-  }
-
-private:
-  using MapKey = std::pair<int, mesh::MeshEntityType>;
-  using MapValue = std::vector<int>;
-
-  std::map<MapKey, MapValue> m_entityProcMap;
-};
 
 class SearchMesh {
  public:
@@ -172,6 +134,7 @@ enum class SplitCommColor {
       INVALID
 };
 
+}
 }
 }
 }

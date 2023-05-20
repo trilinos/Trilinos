@@ -2,6 +2,8 @@
 #define MESH_BOUNDARY_SNAPPER_H
 
 #include "mesh.hpp"
+#include "mesh_exchange_boundary_edges.hpp"
+#include <unordered_map>
 
 namespace stk {
 namespace middle_mesh {
@@ -13,7 +15,7 @@ class MeshBoundarySnapper
   public:
     using VertEdgePair = std::pair<MeshEntityPtr, MeshEntityPtr>;
 
-    void snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2);
+    void snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2, MPI_Comm unionComm);
 
     virtual ~MeshBoundarySnapper(){}; // TODO: why is this here?  There are no derived classes
 
@@ -28,6 +30,8 @@ class MeshBoundarySnapper
   private:
     // Field<bool> doesn't work because std::vector<bool> is non-standard
     using FakeBool = int_least8_t;
+
+    void start_local_snap(std::shared_ptr<Mesh> mesh1, std::shared_ptr<Mesh> mesh2);
 
     void snap_verts(VertEdgePair p1, VertEdgePair p2, double& maxSnapDist);
 
@@ -65,6 +69,8 @@ class MeshBoundarySnapper
                                                                   std::shared_ptr<Mesh> mesh2);
 
     void get_boundary_edges(MeshEntityPtr v1, std::vector<MeshEntityPtr>& candidates);
+
+    bool is_boundary_edge(MeshEntityPtr edge);
 
     int count_boundary_edges(std::shared_ptr<Mesh> mesh);
 

@@ -1364,6 +1364,8 @@ private:
 
   void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
   void add_entity_callback(EntityRank rank, unsigned bucketId, unsigned bucketCapacity, unsigned indexInBucket);
+  void reset_empty_field_data_callback(EntityRank rank, unsigned bucketId, unsigned bucketSize,
+                                       unsigned bucketCapacity, const FieldVector & fields);
 
   void initialize_arrays();
 

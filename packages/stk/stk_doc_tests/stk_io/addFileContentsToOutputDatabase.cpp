@@ -87,7 +87,7 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
     // Output...
     size_t fh = stkIo.create_output_mesh(filename,
                                          stk::io::WRITE_RESULTS);
-    Ioss::Region *io_reg = stkIo.get_output_io_region(fh).get();
+    Ioss::Region *io_reg = stkIo.get_output_ioss_region(fh).get();
 
     //+ Add the data from the file "application_input_file.i"
     //+    as information records on this file.

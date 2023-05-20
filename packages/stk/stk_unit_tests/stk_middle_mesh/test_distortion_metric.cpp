@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "distortion_metric.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/distortion_metric.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 
 namespace stk {
 namespace middle_mesh {

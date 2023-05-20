@@ -1,20 +1,20 @@
 #include "gtest/gtest.h"
 
-#include "boundary_fixture.hpp"
-#include "create_mesh.hpp"
-#include "create_mesh_quality_improver.hpp"
-#include "incremental_mesh_boundary_snapper.hpp"
-#include "mesh_boundary_snapper.hpp"
-#include "mesh_quality_improver.hpp"
-#include "mesh_quality_statistics.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/boundary_fixture.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/create_mesh_quality_improver.hpp"
+#include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_quality_improver.hpp"
+#include "stk_middle_mesh/mesh_quality_statistics.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 #include "util/meshes.hpp"
 
 #ifdef STK_BUILT_IN_SIERRA
-#include "create_stk_mesh.hpp"
+#include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #endif
 
-#include "mesh_io.hpp" //TODO: DEBUGGING
+#include "stk_middle_mesh/mesh_io.hpp" //TODO: DEBUGGING
 
 namespace stk {
 namespace middle_mesh {
@@ -363,10 +363,10 @@ TEST(MeshQualityImprover, TorusRotation)
     std::cout << "dtheta = " << i * dtheta * 180.0 / pi << std::endl;
 
     // std::cout << "creating mesh1" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, func);
+    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, MPI_COMM_WORLD, func);
 
     // std::cout << "\ncreating mesh2" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, func);
+    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, MPI_COMM_WORLD, func);
 
     // printVertEdges("mesh_initial", mesh2);
 

@@ -176,7 +176,7 @@ void StkFaceIoTest_legacy::test_output_mesh(stk::mesh::BulkData& bulk)
   EXPECT_EQ(expectedValues.globalEdgeCount, entityCounts[stk::topology::EDGE_RANK]);
   EXPECT_EQ(expectedValues.globalElemCount, entityCounts[stk::topology::ELEM_RANK]);
 
-  Teuchos::RCP<Ioss::Region> inputRegion = stkIoInput.get_input_io_region();
+  std::shared_ptr<Ioss::Region> inputRegion = stkIoInput.get_input_ioss_region();
   const Ioss::FaceBlockContainer& faceBlocks = inputRegion->get_face_blocks();
   ASSERT_EQ(1u, faceBlocks.size());
   EXPECT_TRUE(stk::equal_case(facePartName, faceBlocks[0]->name()));
@@ -403,7 +403,7 @@ void StkFaceIoTest::test_output_mesh(stk::mesh::BulkData& bulk)
   EXPECT_EQ(expectedValues.globalEdgeCount, entityCounts[stk::topology::EDGE_RANK]);
   EXPECT_EQ(expectedValues.globalElemCount, entityCounts[stk::topology::ELEM_RANK]);
 
-  Teuchos::RCP<Ioss::Region> inputRegion = stkIoInput.get_input_io_region();
+  std::shared_ptr<Ioss::Region> inputRegion = stkIoInput.get_input_ioss_region();
   const Ioss::FaceBlockContainer& faceBlocks = inputRegion->get_face_blocks();
   ASSERT_EQ(1u, faceBlocks.size());
   EXPECT_TRUE(stk::equal_case(facePartName, faceBlocks[0]->name()));

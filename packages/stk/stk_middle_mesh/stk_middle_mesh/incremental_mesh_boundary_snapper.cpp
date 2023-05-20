@@ -8,7 +8,7 @@ namespace impl {
 
 void IncrementalMeshBoundarySnapper::snap()
 {
-  m_snapper.snap(m_mesh1, m_mesh2);
+  m_snapper.snap(m_mesh1, m_mesh2, m_mesh1->get_comm());
 
   record_final_position_and_restore_initial_position(m_mesh1, m_mesh1Data);
   record_final_position_and_restore_initial_position(m_mesh2, m_mesh2Data);

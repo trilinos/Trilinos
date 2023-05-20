@@ -43,8 +43,17 @@
 #include <new>         // for bad_alloc
 #include <iostream>
 #include <stk_util/util/ReportHandler.hpp>
-
+#include <stk_util/stk_config.h>
 #include "Kokkos_Core.hpp"
+
+#if defined(STK_ASAN_IS_ON) && defined(STK_ASAN_FIELD_ACCESS)
+  #include <sanitizer/asan_interface.h>
+  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 1024;
+#else
+  #define ASAN_POISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
+  #define ASAN_UNPOISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
+  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 0;
+#endif
 
 namespace stk {
 
@@ -117,8 +126,10 @@ public:
 
   static Pointer allocate(SizeType num, const void* = 0)
   {
-    size_t alignedSize = ((num * sizeof(ValueType) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT;
-    return static_cast<Pointer>(aligned_alloc(ALIGNMENT, alignedSize));
+    size_t alignedSize = ((num * sizeof(ValueType) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT + ASAN_FIELD_PADDING_SIZE;
+    void * allocatedMemory = aligned_alloc(ALIGNMENT, alignedSize);
+    ASAN_POISON_MEMORY_REGION(allocatedMemory, alignedSize);
+    return static_cast<Pointer>(allocatedMemory);
   }
 
   static void deallocate(Pointer p, SizeType)

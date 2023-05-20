@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "patch_distortion_objective.hpp"
-#include "patch_energy_objective.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/patch_distortion_objective.hpp"
+#include "stk_middle_mesh/patch_energy_objective.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 
 namespace stk {
 namespace middle_mesh {

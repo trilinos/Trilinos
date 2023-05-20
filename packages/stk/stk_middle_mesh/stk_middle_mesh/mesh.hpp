@@ -165,6 +165,7 @@ int get_bridge_adjacent(MeshEntityPtr e, const int viaDim, const int targetDim, 
 int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 
 RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
+bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank);
 

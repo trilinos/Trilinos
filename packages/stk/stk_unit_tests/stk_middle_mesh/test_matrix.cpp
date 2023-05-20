@@ -1,4 +1,4 @@
-#include "matrix.hpp"
+#include "stk_middle_mesh/matrix.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

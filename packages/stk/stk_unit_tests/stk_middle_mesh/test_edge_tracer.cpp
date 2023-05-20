@@ -1,6 +1,6 @@
-#include "create_mesh.hpp"
-#include "edge_tracer.hpp"
-#include "field.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/edge_tracer.hpp"
+#include "stk_middle_mesh/field.hpp"
 #include "gtest/gtest.h"
 #include <limits>
 

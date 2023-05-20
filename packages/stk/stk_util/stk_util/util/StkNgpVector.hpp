@@ -70,6 +70,9 @@ public:
 
     std::string name() const { return hostVals.label(); }
 
+    auto view_host() { return Kokkos::subview(hostVals, Kokkos::make_pair(size_t(0), size())); }
+    auto view_device() { return Kokkos::subview(deviceVals, Kokkos::make_pair(size_t(0), size())); }
+
     KOKKOS_FUNCTION size_t size() const { return mSize; }
     KOKKOS_FUNCTION bool empty() const { return mSize == 0; }
     size_t capacity() const
