@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "stk_middle_mesh/remote_coordinate_updator.hpp"
-#include "create_mesh.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
 
 namespace {
 

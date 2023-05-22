@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "adjacency_search.hpp"
-#include "create_mesh.hpp"
-#include "predicates/intersection.hpp"
+#include "stk_middle_mesh/adjacency_search.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/predicates/intersection.hpp"
 
 namespace stk {
 namespace middle_mesh {

@@ -1,6 +1,6 @@
-#include "mesh_io.hpp"
-#include "mesh_projection_calculator.hpp"
-#include "middle_grid_constraint_generator.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/mesh_projection_calculator.hpp"
+#include "stk_middle_mesh/middle_grid_constraint_generator.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

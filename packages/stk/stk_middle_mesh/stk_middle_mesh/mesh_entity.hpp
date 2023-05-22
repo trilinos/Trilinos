@@ -60,6 +60,11 @@ inline std::ostream& operator<<(std::ostream& os, EntityOrientation orient)
 
 struct RemoteSharedEntity
 {
+  RemoteSharedEntity(int remoteRank_=0, int remoteId_=0) :
+    remoteRank(remoteRank_),
+    remoteId(remoteId_)
+  {}
+
     int remoteRank;
     int remoteId;
 };

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "mesh_agglomerator.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_agglomerator.hpp"
 #include <unordered_map>
 #include <unordered_set>
 

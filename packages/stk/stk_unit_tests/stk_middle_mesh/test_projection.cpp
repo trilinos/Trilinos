@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "projection.hpp"
+#include "stk_middle_mesh/projection.hpp"
 
 namespace stk {
 namespace middle_mesh {

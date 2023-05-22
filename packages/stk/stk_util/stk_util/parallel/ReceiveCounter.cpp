@@ -1,6 +1,8 @@
 #include "stk_util/parallel/ReceiveCounter.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
+#include <iostream>  //TODO: DEBUGGING
+
 namespace stk {
 
 void ReceiveCounter::start_receive_count(const std::vector<int> &sendCounts)
@@ -9,6 +11,9 @@ void ReceiveCounter::start_receive_count(const std::vector<int> &sendCounts)
     MPI_Comm_size(m_comm, &commSize);
     STK_ThrowRequireMsg(sendCounts.size() == static_cast<size_t>(commSize), "send counts must have same length as MPI Communicator size");
     STK_ThrowRequireMsg(m_recvFinished, "Previous receive count must have completed before starting a new one");
+
+    int commRank;
+    MPI_Comm_rank(m_comm, &commRank);
 
     m_recvFinished = false;
     m_sendCount.resize(sendCounts.size());

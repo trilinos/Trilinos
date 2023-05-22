@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "element_operations_2d.hpp"
-#include "incremental_mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/element_operations_2d.hpp"
+#include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
 #include "util/meshes.hpp"
 
 namespace stk {

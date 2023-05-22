@@ -181,15 +181,15 @@ struct FortranBLAS
         }
     }
 
-    inline static void fill(int kmax, const Scalar alpha, Scalar x[], const int inc=1)
+    inline static void fill(int numVals, Scalar alpha, Scalar x[], int stride = 1)
     {
-        auto ke = kmax*inc;
-        if (alpha == Scalar(0) ) {
-        	std::memset(x,0,ke*sizeof(Scalar));
-        } else {
-          for(int k = 0; k < ke ; k += inc) {
-              x[k] = alpha;
-          }
+        if (stride == 1) {
+            std::fill(x, x+numVals, alpha);
+        }
+        else {
+            for (Scalar * end = x+(numVals*stride); x < end; x+=stride) {
+                *x = alpha;
+            }
         }
     }
 
@@ -299,11 +299,10 @@ struct FortranBLAS<std::complex<Scalar> >
         }
     }
 
-    inline static void fill(int kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[], const int inc=1)
+    inline static void fill(int numVals, std::complex<Scalar> alpha, std::complex<Scalar> x[], int stride=1)
     {
-        auto ke = kmax*inc;
-        for(int k = 0; k < ke ; k += inc) {
-            x[k] = alpha;
+        for (std::complex<Scalar> * end = x+(numVals*stride); x < end; x+=stride) {
+            *x = alpha;
         }
     }
 
@@ -371,7 +370,7 @@ struct FortranBLAS<double>
 
     static void scal(int kmax, const double alpha, double x[]);
 
-    static void fill(int kmax, const double alpha, double x[], const int inc=1);
+    static void fill(int kmax, double alpha, double x[], int inc=1);
 
     static void swap(int kmax, double x[], double y[]);
 
@@ -399,7 +398,7 @@ struct FortranBLAS<float>
 
     static void scal(int kmax, const float alpha, float x[]);
 
-    static void fill(int kmax, const float alpha, float x[], const int inc=1);
+    static void fill(int kmax, float alpha, float x[], int inc=1);
 
     static void swap(int kmax, float x[], float y[]);
 

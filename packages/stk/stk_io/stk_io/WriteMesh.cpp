@@ -38,7 +38,7 @@ void write_mesh(const std::string &filename,
     size_t outputFileIndex = ioBroker.create_output_mesh(filename, databasePurpose);
     ioBroker.write_output_mesh(outputFileIndex);
 
-    auto region = ioBroker.get_output_io_region(outputFileIndex);
+    auto region = ioBroker.get_output_ioss_region(outputFileIndex);
     region->get_database()->closeDatabase();
 }
     
@@ -50,7 +50,7 @@ void write_mesh_with_canonical_name(const std::string &filename,
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulkData);
     size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
-    stkIo.get_output_io_region(outputFileIndex)->get_database()->set_use_generic_canonical_name(true);
+    stkIo.get_output_ioss_region(outputFileIndex)->get_database()->set_use_generic_canonical_name(true);
     stkIo.write_output_mesh(outputFileIndex);
 }
 

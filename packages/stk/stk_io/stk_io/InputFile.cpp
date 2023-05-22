@@ -67,6 +67,7 @@
 #include "StkIoUtils.hpp"                      // for part_primary_entity_rank
 #include "Teuchos_Ptr.hpp"                     // for Ptr::Ptr<T>
 #include "Teuchos_RCP.hpp"                     // for RCP::operator->, is_null
+#include "Teuchos_RCPDecl.hpp"              // for RCP
 #include "stk_io/DatabasePurpose.hpp"          // for READ_RESTART, Database...
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData
 #include "stk_mesh/base/FieldState.hpp"        // for FieldState
@@ -116,51 +117,91 @@ namespace stk {
 namespace io {
 
   InputFile::InputFile(std::string mesh_filename,
-                       MPI_Comm communicator,
-                       const std::string &mesh_type,
-                       DatabasePurpose purpose,
-                       Ioss::PropertyManager &properties)
+			                 MPI_Comm communicator, 
+			                 const std::string &mesh_type,
+			                 DatabasePurpose purpose,
+			                 Ioss::PropertyManager &properties)
     : m_db_purpose(purpose), m_region(nullptr),
-      m_startupTime(0.0),
-      m_periodLength(0.0),
-      m_scaleTime(1.0),
-      m_offsetTime(0.0),
-      m_startTime(-std::numeric_limits<double>::max()),
-      m_stopTime(std::numeric_limits<double>::max()),
-      m_periodType(CYCLIC),
-      m_fieldsInitialized(false),
-      m_haveCachedEntityList(false),
-      m_multiStateSuffixes(nullptr)
+	    m_startupTime(0.0),
+	    m_periodLength(0.0),
+	    m_scaleTime(1.0),
+	    m_offsetTime(0.0),
+	    m_startTime(-std::numeric_limits<double>::max()),
+	    m_stopTime(std::numeric_limits<double>::max()),
+	    m_periodType(CYCLIC),
+	    m_fieldsInitialized(false),
+        m_haveCachedEntityList(false),
+	    m_multiStateSuffixes(nullptr)
   {
     Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
     if (m_db_purpose == stk::io::READ_RESTART)
       db_usage = Ioss::READ_RESTART;
 
     stk::util::filename_substitution(mesh_filename);
-    m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-                                                      db_usage, communicator,
-                                                      properties));
-    STK_ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
-                    "ERROR: Could not open database '" << mesh_filename
-                    << "' of type '" << mesh_type << "'");
+    m_database = std::shared_ptr<Ioss::DatabaseIO>(Ioss::IOFactory::create(mesh_type, mesh_filename,
+ 	    				                                                             db_usage, communicator,
+      	    				                                                       properties), [](auto pointerWeWontDelete){});
+
+    if (m_database.get() == nullptr || !m_database->ok(true)) {
+      delete m_database.get();
+      STK_ThrowErrorMsg("ERROR: Could not open database '" << mesh_filename
+                        << "' of type '" << mesh_type << "'");
+    }
   }
 
-
-  InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
-    : m_database(ioss_input_region->get_database()), m_region(ioss_input_region),
-      m_startupTime(0.0),
-      m_periodLength(0.0),
-      m_scaleTime(1.0),
-      m_offsetTime(0.0),
-      m_startTime(-std::numeric_limits<double>::max()),
-      m_stopTime(std::numeric_limits<double>::max()),
-      m_periodType(CYCLIC),
-      m_fieldsInitialized(false),
-      m_haveCachedEntityList(false),
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
+  STK_DEPRECATED_MSG("This constructor has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
+    : m_database(ioss_input_region->get_database(),[](auto ptrWeWontDelete){}), m_region(Teuchos::get_shared_ptr(ioss_input_region)),
+	    m_startupTime(0.0),
+	    m_periodLength(0.0),
+	    m_scaleTime(1.0),
+	    m_offsetTime(0.0),
+	    m_startTime(-std::numeric_limits<double>::max()),
+	    m_stopTime(std::numeric_limits<double>::max()),
+	    m_periodType(CYCLIC),
+	    m_fieldsInitialized(false),
+        m_haveCachedEntityList(false),
       m_multiStateSuffixes(nullptr)
   {
-    STK_ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true),
-                    "ERROR: Invalid Ioss region detected in add_mesh_database");
+    STK_ThrowErrorMsgIf(m_database.get() == nullptr || !m_database->ok(true), 
+		                "ERROR: Invalid Ioss region detected in add_mesh_database");
+
+    Ioss::DatabaseUsage db_usage = m_database->usage();
+    if (db_usage == Ioss::READ_RESTART) {
+	    m_db_purpose = stk::io::READ_RESTART;
+    }
+    else if (db_usage == Ioss::READ_MODEL) {
+	    m_db_purpose = stk::io::READ_MESH;
+    }
+    else {
+      std::ostringstream msg;
+      msg << "ERROR: Unrecognized database usage for Ioss region named "
+	        << ioss_input_region->name()
+	        << ". Must be READ_RESTART or READ_MODEL";
+      throw std::runtime_error( msg.str() );
+    }
+
+    STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+		                "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+		                                                                    "Only 'Unstructured' mesh is currently supported.");
+  }
+#endif
+
+  InputFile::InputFile(std::shared_ptr<Ioss::Region> ioss_input_region)
+    : m_database(ioss_input_region->get_database(), [](auto pointerWeWontDelete){}), m_region(ioss_input_region),
+	    m_startupTime(0.0),
+	    m_periodLength(0.0),
+	    m_scaleTime(1.0),
+	    m_offsetTime(0.0),
+	    m_startTime(-std::numeric_limits<double>::max()),
+	    m_stopTime(std::numeric_limits<double>::max()),
+	    m_periodType(CYCLIC),
+	    m_fieldsInitialized(false),
+        m_haveCachedEntityList(false),
+      m_multiStateSuffixes(nullptr)
+  {
+    STK_ThrowErrorMsgIf(m_database == nullptr || !m_database->ok(true), 
+		                "ERROR: Invalid Ioss region detected in add_mesh_database");
 
     Ioss::DatabaseUsage db_usage = m_database->usage();
     if (db_usage == Ioss::READ_RESTART) {
@@ -181,15 +222,14 @@ namespace io {
                     "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
                                                                         "Only 'Unstructured' mesh is currently supported.");
 
-    m_database.release(); // The m_region will delete the m_database pointer.
   }
 
     void InputFile::create_ioss_region()
     {
       // If the m_region is null, try to create it from
       // the m_input_database. If that is null, throw an error.
-      if (Teuchos::is_null(m_region)) {
-        STK_ThrowErrorMsgIf(Teuchos::is_null(m_database),
+      if (m_region == nullptr) {
+        STK_ThrowErrorMsgIf(m_database.get() == nullptr,
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
@@ -200,8 +240,7 @@ namespace io {
           m_database.reset();
           throw;
         }
-        m_region = Teuchos::rcp(region);
-        m_database.release();
+        m_region = std::shared_ptr<Ioss::Region>(region);
 
         STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
 			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
@@ -261,7 +300,7 @@ namespace io {
 
     void InputFile::get_global_variable_names(std::vector<std::string> &names)
     {
-      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
 		       "Attempt to read global variables before restart initialized.");
       m_region->field_describe(Ioss::Field::REDUCTION, &names);
     }
@@ -336,7 +375,7 @@ namespace io {
 
     bool InputFile::read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk)
     {
-      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region == nullptr,
                        "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -411,7 +450,7 @@ namespace io {
       STK_ThrowErrorMsgIf(step <= 0, 
 		      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -792,7 +831,7 @@ namespace io {
       // See details in header file.
       double db_time = map_analysis_to_db_time(time);
 	
-      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
 		       "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -837,8 +876,8 @@ namespace io {
       STK_ThrowErrorMsgIf(step <= 0,
                       "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-      STK_ThrowErrorMsgIf(Teuchos::is_null(m_region),
-                      "There is no Input mesh/restart region associated with this Mesh Data.");
+        STK_ThrowErrorMsgIf (m_region.get() == nullptr,
+                         "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
 

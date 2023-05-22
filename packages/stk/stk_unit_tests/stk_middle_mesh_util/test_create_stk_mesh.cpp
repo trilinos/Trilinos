@@ -2,7 +2,7 @@
 #include <stk_middle_mesh_util/create_stk_mesh.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include "utils.hpp"
+#include "stk_middle_mesh/utils.hpp"
 #include "gtest/gtest.h"
 
 #include <iostream>

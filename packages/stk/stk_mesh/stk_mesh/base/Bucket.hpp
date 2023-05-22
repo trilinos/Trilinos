@@ -480,6 +480,8 @@ private:
 
   void debug_check_for_invalid_connectivity_request(ConnectivityType const* type) const;
 
+  void reset_empty_space(const FieldVector & fields);
+
   friend class impl::BucketRepository;
   friend class impl::Partition;
   friend struct impl::OverwriteEntityFunctor;
