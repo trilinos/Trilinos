@@ -189,12 +189,12 @@ namespace MueLu {
           // The domain map of P must match the range map of R.  See also note
           // below about domain/range map of R and its implications for P.
           //
-          // To change the domain map of P, P needs to be fillCompleted again
-          // with the new domain map.  To achieve this, P is copied into a new
-          // matrix that is not fill-completed.  The doImport() operation is
-          // just used here to make a copy of P: the importer is trivial and
-          // there is no data movement involved.  The reordering actually
-          // happens during the fillComplete() with domainMap == importer->getTargetMap().
+          // Rather than calling fillComplete (which would entail creating a new
+          // column map), it's sufficient to replace the domain map and importer.
+          //
+          // Note that this potentially violates the assumption that in the
+          // column map, local IDs appear before any off-rank IDs.
+          //
           RCP<Matrix> rebalancedP = originalP;
           RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
           TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Exceptions::BadCast, "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
