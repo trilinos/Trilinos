@@ -75,7 +75,8 @@ public:
   typedef typename vector_type::value_type scalar_type ;
 
   // Hack to get parallel_reduce to work
-  typedef typename Kokkos::IntrinsicScalarType<vector_type>::type value_type[] ;
+  typedef typename Kokkos::IntrinsicScalarType<vector_type>::type reduce_scalar_type;
+  typedef reduce_scalar_type value_type[] ;
   typedef typename Kokkos::CijkType<vector_type>::type cijk_type ;
 
   typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
@@ -130,7 +131,8 @@ public:
   {
     scalar_type response(cijk, value_count);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response.coeff() );
-    Kokkos::parallel_reduce( solution.extent(0) , *this , response.coeff() );
+    Kokkos::View<reduce_scalar_type*, Kokkos::HostSpace> resp_view(response.coeff(), value_count);
+    Kokkos::parallel_reduce( solution.extent(0) , *this , resp_view );
     return response;
   }
 
@@ -270,8 +272,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type  response ,
-             volatile const value_type input ) const
+  void join( value_type  response ,
+             const value_type input ) const
   {
     for (unsigned i=0; i<value_count; ++i)
       response[i] += input[i] ;
@@ -757,7 +759,7 @@ public:
     , jacobian( arg_jacobian )
     , scalar_solution( "scalar_solution", solution.extent(0) )
     , scalar_residual( "scalar_residual", residual.extent(0) )
-    , scalar_jacobian( "scalar_jacobian", jacobian.graph )
+    , scalar_jacobian( "scalar_jacobian", jacobian.graph, maximum_entry(jacobian.graph) + 1 )
     , scalar_diffusion_coefficient( arg_coeff_function.m_mean,
                                     arg_coeff_function.m_variance,
                                     arg_coeff_function.m_corr_len,
