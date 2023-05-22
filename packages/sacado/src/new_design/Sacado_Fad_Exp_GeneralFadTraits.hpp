@@ -214,7 +214,7 @@ namespace Teuchos {
 #endif
 
 // KokkosComm
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#if defined(HAVE_SACADO_KOKKOS) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 #include "KokkosExp_View_Fad.hpp"
 #endif
 

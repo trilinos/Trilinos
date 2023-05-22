@@ -19,7 +19,7 @@ double calculate_tet_volume_using_sides(const stk::math::Vector3d &side0, const 
 
 double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations)
 {
-  ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
+  STK_ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
 
   const stk::math::Vector3d side0 = nodeLocations[1] - nodeLocations[0];
   const stk::math::Vector3d side2 = nodeLocations[0] - nodeLocations[2];
@@ -47,7 +47,7 @@ double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vecto
 
 double ScaledJacobianQualityMetric::tet_scaled_jacobian(const std::vector<stk::math::Vector3d> &nodeLocations)
 {
-  ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
+  STK_ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
 
   const stk::math::Vector3d side0 = nodeLocations[1] - nodeLocations[0];
   const stk::math::Vector3d side1 = nodeLocations[2] - nodeLocations[1];
@@ -103,7 +103,7 @@ double ScaledJacobianQualityMetric::tri2d_scaled_jacobian(const std::vector<stk:
 
 double ScaledJacobianQualityMetric::tri3d_scaled_jacobian(const std::vector<stk::math::Vector3d> &nodeLocations)
 {
-  ThrowAssert(nodeLocations.size() == 3 || nodeLocations.size() == 6);
+  STK_ThrowAssert(nodeLocations.size() == 3 || nodeLocations.size() == 6);
 
   const stk::math::Vector3d edge0 = nodeLocations[1] - nodeLocations[0];
   const stk::math::Vector3d edge1 = nodeLocations[2] - nodeLocations[0];

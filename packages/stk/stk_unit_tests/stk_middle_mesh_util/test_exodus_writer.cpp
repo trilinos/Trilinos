@@ -32,7 +32,6 @@ void read_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
   reader.populate_mesh();
   reader.populate_field_data();
   reader.read_defined_input_fields(1);
-
 }
 
 int count_entities(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank)

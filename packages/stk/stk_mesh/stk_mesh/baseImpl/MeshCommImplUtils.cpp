@@ -475,14 +475,17 @@ void comm_shared_procs(PairIterEntityComm commInfo,
   }
 }
 
-void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs)
+void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
 {
   procs.clear();
-  const int n = ec.size(); 
-  for (int i=0; i<n; ++i) {
-    procs.push_back( ec[i].proc );
+  for(; !ec.empty(); ++ec) {
+    if (ec->ghost_id == 0 || procs.empty()) {
+      procs.push_back( ec->proc );
+    }
+    else {
+      stk::util::insert_keep_sorted_and_unique(ec->proc, procs);
+    }
   }
-  stk::util::sort_and_unique(procs);
 }
 
 void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)

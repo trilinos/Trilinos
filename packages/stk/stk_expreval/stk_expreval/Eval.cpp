@@ -475,6 +475,26 @@ Eval::bindVariable(const std::string &name, double &value_ref, int definedLength
   return *this;
 }
 
+Eval &
+Eval::unbindVariable(const std::string &name)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->unbind();
+  }
+  return *this;
+}
+
+Eval &
+Eval::deactivateVariable(const std::string &name)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->deactivate();
+  }
+  return *this;
+}
+
 Variable &
 Eval::getVariable(const std::string &name)
 {

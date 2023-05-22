@@ -14,7 +14,7 @@ namespace impl {
 
 class MeshProjectionCalculator
 {
-    std::set<int> m_vertIds = {21, 1904, 1925, 1033, 993};
+    std::set<int> m_vertIds = {1067, 2900};
 
   public:
     MeshProjectionCalculator(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,

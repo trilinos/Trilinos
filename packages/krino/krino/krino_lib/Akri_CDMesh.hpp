@@ -220,6 +220,9 @@ private:
   template <class MESH_FIXTURE>
   friend class AnalyticDecompositionFixture;
 
+  template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+  friend class DecompositionFixture;
+
   void build_parallel_hanging_edge_nodes();
   void handle_hanging_children(const InterfaceID & interface);
   void parallel_sync_nodes_on_interface();

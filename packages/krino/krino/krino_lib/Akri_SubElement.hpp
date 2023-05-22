@@ -236,7 +236,7 @@ public:
   bool check_entity(const stk::mesh::BulkData & mesh) const { return (my_entityId == 0) ? (my_entity == stk::mesh::Entity()) : (my_entityId == mesh.identifier(my_entity)); }
   stk::mesh::Entity & entity() const { return my_entity; }
   stk::mesh::EntityId entityId() const { return my_entityId; }
-  void set_entityId_from_entity(const stk::mesh::BulkData & mesh) const { ThrowAssert(mesh.is_valid(my_entity)); my_entityId = mesh.identifier(my_entity); }
+  void set_entityId_from_entity(const stk::mesh::BulkData & mesh) const { STK_ThrowAssert(mesh.is_valid(my_entity)); my_entityId = mesh.identifier(my_entity); }
 
   const Vector3d & owner_coords( const Mesh_Element * in_owner ) const {
     if ( in_owner != my_cached_owner ) {
@@ -259,12 +259,12 @@ public:
   static bool less_by_coordinates_then_by_entity_id(const SubElementNode & a, const SubElementNode & b);
   bool node_sign_is_set() const { return my_node_sign != -2; }
   void set_node_sign(const int sign) const { my_node_sign = (my_node_sign == 0 || my_node_sign == -sign) ? 0 : sign; }
-  int get_node_sign() const { ThrowRequire(node_sign_is_set()); return my_node_sign; }
+  int get_node_sign() const { STK_ThrowRequire(node_sign_is_set()); return my_node_sign; }
   void clear_node_sign() const { my_node_sign = -2; }
   void clear_node_score() const { my_node_score = 1.; }
   bool node_score_is_set() const { return my_node_score != 1.; }
   void set_node_score(const double score) const { my_node_score = std::min(my_node_score, score); }
-  double get_node_score() const { ThrowRequire(node_sign_is_set()); return my_node_score; }
+  double get_node_score() const { STK_ThrowRequire(node_sign_is_set()); return my_node_score; }
 
   // pure virtual function for recomputing local coordinates
   virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const = 0;
@@ -357,8 +357,8 @@ public:
 
   virtual ~SubElementEdgeNode() {}
 
-  double get_position() const { ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
-  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
+  double get_position() const { STK_ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
+  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
 
 private:
   bool check_parents(const SubElementNode *parent1, const SubElementNode *parent2) const {
@@ -386,9 +386,9 @@ public:
   }
   virtual bool is_mesh_node() const override { return my_is_mesh_node; }
 
-  virtual NodeVec get_parents() const override { ThrowRequire(!my_is_mesh_node); return NodeVec{my_parent1,my_parent2}; }
+  virtual NodeVec get_parents() const override { STK_ThrowRequire(!my_is_mesh_node); return NodeVec{my_parent1,my_parent2}; }
   virtual size_t get_num_parents() const override { return 2; }
-  virtual std::vector<double> get_parent_weights() const override { ThrowRequire(!my_is_mesh_node); return std::vector<double>{0.5,0.5}; }
+  virtual std::vector<double> get_parent_weights() const override { STK_ThrowRequire(!my_is_mesh_node); return std::vector<double>{0.5,0.5}; }
 
 protected:
   bool my_is_mesh_node;

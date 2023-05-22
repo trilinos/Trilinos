@@ -153,7 +153,7 @@ void HAdaptImpl::check_supported_element_types() const
       {
         continue;
       }
-      ThrowErrorMsg("Elements in block "
+      STK_ThrowErrorMsg("Elements in block "
           << part.name() << " have topology " << part.topology().name()
           << " which is currently not supported for adaptive refinement.");
     }
@@ -319,7 +319,7 @@ void fill_percept_refine_field(percept::PerceptMesh & eMesh,
     const bool is_parent = b.member(parent_part);
     const int length = b.size();
     const unsigned marker_field_length = stk::mesh::field_scalars_per_entity(marker_field, b);
-    ThrowRequire(1 == stk::mesh::field_scalars_per_entity(refine_field, b));
+    STK_ThrowRequire(1 == stk::mesh::field_scalars_per_entity(refine_field, b));
 
     int * marker = (int *)stk::mesh::field_data(marker_field, b);
     int * refine = (int *)stk::mesh::field_data(refine_field, b);
@@ -379,12 +379,12 @@ void delete_partless_faces_and_edges(stk::mesh::BulkData & mesh)
 
           for (size_t irel = 0; irel < relatives.size(); ++irel)
           {
-            ThrowRequireMsg(mesh.destroy_relation(relatives[irel], entity, relative_ordinals[irel]),
+            STK_ThrowRequireMsg(mesh.destroy_relation(relatives[irel], entity, relative_ordinals[irel]),
                 "Could not destroy relation between " << mesh.entity_key(relatives[irel]) << " and "
                                                       << mesh.entity_key(entity));
           }
         }
-        ThrowRequireMsg(
+        STK_ThrowRequireMsg(
             mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
       }
     }
@@ -397,7 +397,7 @@ stk::mesh::Part & get_refinement_active_part(const stk::mesh::MetaData & meta, s
 {
   const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
   stk::mesh::Part* active_part = meta.get_part(active_part_name);
-  ThrowRequireMsg(nullptr != active_part, "Active part not found: " << active_part_name);
+  STK_ThrowRequireMsg(nullptr != active_part, "Active part not found: " << active_part_name);
   return *active_part;
 }
 
@@ -460,7 +460,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
   /* %TRACE[ON]% */ Trace trace__(
       "void HAdapt::do_adaptive_refinement(const std::string &marker_field)"); /* %TRACE% */
 
-  ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
+  STK_ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
   static stk::diag::Timer timerAdapt_("Adapt", *my_root_timer);
   static stk::diag::Timer timerSetup_("Setup", timerAdapt_);
   static stk::diag::Timer timerFmwkUpdating_("Update Active Part", timerAdapt_);
@@ -481,7 +481,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
 
   const stk::mesh::FieldBase * element_marker_field =
       my_meta.get_field(stk::topology::ELEMENT_RANK, marker_field_name);
-  ThrowRequire(element_marker_field);
+  STK_ThrowRequire(element_marker_field);
   my_selector = stk::mesh::selectField(*element_marker_field);
 
   if (!my_breaker)
@@ -557,7 +557,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
     stk::diag::TimeBlock tbTimerRebuilding_(timerFmwkUpdating_);
     // The Encore-Percept interface also called induce_nodal_unranked_superset_parts
     // and topology nodeset inducer but I don't believe those are needed here.
-    ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
+    STK_ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
     update_active_inactive_entities(bulk, *my_active_part);
     fixup_side_permutation(bulk);
   }
@@ -568,7 +568,7 @@ void HAdaptImpl::do_initial_uniform_refinement(const int num_levels)
   /* %TRACE[ON]% */ Trace trace__(
       "void HAdapt::do_uniform_refinement()"); /* %TRACE% */
 
-  ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
+  STK_ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
   static stk::diag::Timer timerAdapt_("Adapt", *my_root_timer);
   static stk::diag::Timer timerSetup_("Setup", timerAdapt_);
   static stk::diag::Timer timerFmwkUpdating_("Update Active Part", timerAdapt_);
@@ -611,7 +611,7 @@ void HAdaptImpl::do_initial_uniform_refinement(const int num_levels)
     stk::diag::TimeBlock tbTimerRebuilding_(timerFmwkUpdating_);
     // The Encore-Percept interface also called induce_nodal_unranked_superset_parts
     // and topology nodeset inducer but I don't believe those are needed here.
-    ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
+    STK_ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
     update_active_inactive_entities(bulk, *my_active_part);
     fixup_side_permutation(bulk);
   }

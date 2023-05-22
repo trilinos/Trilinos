@@ -477,3 +477,131 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
 #endif
 }
 
+#if defined(STK_BUILT_IN_SIERRA) && !defined(NDEBUG)
+// clang-format off
+#define TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, cond) \
+{                                                        \
+  for (int i = 0; i < 1; ++i) {                          \
+    testThrow(++i == -1 || cond);                        \
+  }                                                      \
+  for (int i = 0; i < 1; ++i)                            \
+    testThrow(++i == -1 || cond);                        \
+  if (int i = 1) {                                       \
+    testThrow(++i == -1 || cond);                        \
+  }                                                      \
+  if (int i = 1)                                         \
+    testThrow(++i == -1 || cond);                        \
+}
+
+#define TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrowMsg, cond) \
+{                                                               \
+  for (int i = 0; i < 1; ++i) {                                 \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  }                                                             \
+  for (int i = 0; i < 1; ++i)                                   \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  if (int i = 1) {                                              \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  }                                                             \
+  if (int i = 1)                                                \
+    testThrowMsg(++i == -1 || cond, "");                        \
+}
+// clang-format on
+
+#define TEST_THROW_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_THROW_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_THROW_MSG_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, true)
+
+#define TEST_NGP_THROW_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_NGP_THROW_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_NGP_THROW_MSG_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, false)
+
+TEST(UnitTestingOfThrowMacros, ThrowsInSingleStatementBlock)
+{
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(ThrowRequireWithSierraHelpMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(ThrowRequire));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(ThrowErrorIf));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(ThrowInvalidArgIf));
+
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(ThrowRequireMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(ThrowErrorMsgIf));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(ThrowInvalidArgMsgIf));
+
+#ifdef NDEBUG
+  EXPECT_NO_THROW(TEST_THROW_MACROS_IN_BLOCKS(ThrowAssert));
+  EXPECT_NO_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(ThrowAssertMsg));
+#else
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(ThrowAssert));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(ThrowAssertMsg));
+#endif
+}
+
+TEST(UnitTestingOfThrowMacros, STK_ThrowsInSingleStatementBlock)
+{
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowRequireWithSierraHelpMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowRequire));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(STK_ThrowErrorIf));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(STK_ThrowInvalidArgIf));
+
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowRequireMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_ThrowErrorMsgIf));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_ThrowInvalidArgMsgIf));
+
+#ifdef NDEBUG
+  EXPECT_NO_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowAssert));
+  EXPECT_NO_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowAssertMsg));
+#else
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowAssert));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowAssertMsg));
+#endif
+}
+
+template <typename Lambda>
+void run_ngp_macros_test(Lambda lambda) {
+  EXPECT_NO_THROW( Kokkos::parallel_for(1, lambda) );
+}
+
+template <typename... Lambdas>
+void run_ngp_macros_in_single_statement_block(Lambdas... lambdas) {
+  (run_ngp_macros_test(lambdas), ...);
+}
+
+void test_ngp_macros_in_single_statement_block() {
+  auto ngpThrowRequire = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(NGP_ThrowRequire); };
+  auto ngpThrowAssert = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(NGP_ThrowAssert); };
+  auto ngpThrowErrorIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_IF_MACROS_IN_BLOCKS(NGP_ThrowErrorIf); };
+
+  auto ngpThrowRequireMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(NGP_ThrowRequireMsg); };
+  auto ngpThrowAssertMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(NGP_ThrowAssertMsg); };
+  auto ngpThrowErrorMsgIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_IF_MACROS_IN_BLOCKS(NGP_ThrowErrorMsgIf); };
+
+  run_ngp_macros_in_single_statement_block(ngpThrowRequire, ngpThrowAssert, ngpThrowErrorIf, ngpThrowRequireMsg,
+                                           ngpThrowRequire, ngpThrowAssertMsg,  ngpThrowErrorMsgIf);
+}
+
+TEST(UnitTestingOfThrowMacros, NGPThrowsInSingleStatementBlock)
+{
+  test_ngp_macros_in_single_statement_block();
+}
+
+void test_stk_ngp_macros_in_single_statement_block() {
+  auto ngpThrowRequire = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(STK_NGP_ThrowRequire); };
+  auto ngpThrowAssert = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(STK_NGP_ThrowAssert); };
+  auto ngpThrowErrorIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_IF_MACROS_IN_BLOCKS(STK_NGP_ThrowErrorIf); };
+
+  auto ngpThrowRequireMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(STK_NGP_ThrowRequireMsg); };
+  auto ngpThrowAssertMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(STK_NGP_ThrowAssertMsg); };
+  auto ngpThrowErrorMsgIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_NGP_ThrowErrorMsgIf); };
+
+  run_ngp_macros_in_single_statement_block(ngpThrowRequire, ngpThrowAssert, ngpThrowErrorIf, ngpThrowRequireMsg,
+                                           ngpThrowRequire, ngpThrowAssertMsg,  ngpThrowErrorMsgIf);
+}
+
+TEST(UnitTestingOfThrowMacros, STK_NGPThrowsInSingleStatementBlock)
+{
+  test_stk_ngp_macros_in_single_statement_block();
+}
+
+#endif

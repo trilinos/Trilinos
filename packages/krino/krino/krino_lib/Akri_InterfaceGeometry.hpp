@@ -46,6 +46,8 @@ class InterfaceGeometry {
 public:
   InterfaceGeometry() {}
 
+  static bool element_with_nodal_distance_intersects_interval(const std::vector<double> & elemNodeDist, const std::array<double,2> & loAndHi);
+
   virtual ~InterfaceGeometry() {}
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
@@ -53,6 +55,7 @@ public:
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
 
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const = 0;
+  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const = 0;
 
   virtual bool snapped_elements_may_have_new_intersections() const = 0;
 
@@ -82,6 +85,19 @@ public:
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const = 0;
 };
+
+inline bool InterfaceGeometry::element_with_nodal_distance_intersects_interval(const std::vector<double> & elemNodeDist, const std::array<double,2> & loAndHi)
+{
+  bool allLo = true;
+  bool allHi = true;
+  for(double dist : elemNodeDist)
+  {
+    if (dist >= loAndHi[0]) allLo = false;
+    if (dist <= loAndHi[1]) allHi = false;
+  }
+  return !allLo && !allHi;
+}
+
 }
 
 #endif // AKRI_INTERFACEGEOMETRY_H_

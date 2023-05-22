@@ -43,6 +43,8 @@ cmake \
 -DTrilinos_ENABLE_STKTransfer:BOOL=ON \
 -DTrilinos_ENABLE_STKSearch:BOOL=ON \
 -DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
+-DTPL_ENABLE_CDT:BOOL=ON \
+-DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \

@@ -23,7 +23,7 @@ class MeshQualityStatistics
       for (auto vert : mesh->get_vertices())
         if (vert)
         {
-          m_activeVerts.emplace_back(vert);
+          m_activeVerts.emplace_back(mesh, vert);
           nvals++;
         }
 

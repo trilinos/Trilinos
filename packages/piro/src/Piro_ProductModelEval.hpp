@@ -50,6 +50,7 @@
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
+#include "Thyra_DefaultBlockedLinearOp_decl.hpp"
 
 #ifdef HAVE_PIRO_ROL
 #include "ROL_Types.hpp"
@@ -484,7 +485,7 @@ ProductModelEvaluator<Real>::evalModelImpl(
     }
 
     if (supports_dfdp_op) {
-        Teko::BlockedLinearOp dfdp_op =
+        Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dfdp_op =
             Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DfDp(0).getLinearOp());
         if (!Teuchos::is_null(dfdp_op))
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
@@ -494,7 +495,7 @@ ProductModelEvaluator<Real>::evalModelImpl(
 
     for (auto i = 0; i < thyra_model_->Ng(); ++i) {
         if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,0).supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-            Teko::BlockedLinearOp dgdp_op =
+            Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op =
                 Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DgDp(i,0).getLinearOp());
             if (!Teuchos::is_null(dgdp_op)) {
                 for(std::size_t j=0; j<p_indices_.size(); ++j) {
@@ -698,7 +699,7 @@ template <typename Real>
 Teuchos::RCP<Thyra::LinearOpBase<Real> > 
 ProductModelEvaluator<Real>::create_DfDp_op(int l) const {
     
-    Teko::BlockedLinearOp J = Teko::createBlockedOp();
+    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> J = Teuchos::rcp(new Thyra::DefaultBlockedLinearOp<Real>());
     J->beginBlockFill(1, p_indices_.size());
     for(std::size_t i=0; i<p_indices_.size(); ++i) {
         Teuchos::RCP<Thyra::LinearOpBase<Real> > dfdp_op = thyra_model_->create_DfDp_op(p_indices_[i]);
@@ -711,7 +712,7 @@ ProductModelEvaluator<Real>::create_DfDp_op(int l) const {
 template <typename Real>
 Teuchos::RCP<Thyra::LinearOpBase<Real> > 
 ProductModelEvaluator<Real>::create_DgDp_op(int j, int l) const {    
-    Teko::BlockedLinearOp J = Teko::createBlockedOp();
+    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> J = Teuchos::rcp(new Thyra::DefaultBlockedLinearOp<Real>());
     J->beginBlockFill(1, p_indices_.size());
     for(std::size_t i=0; i<p_indices_.size(); ++i) {
         Teuchos::RCP<Thyra::LinearOpBase<Real> > dgdp_op = thyra_model_->create_DgDp_op(j, p_indices_[i]);
@@ -724,7 +725,7 @@ ProductModelEvaluator<Real>::create_DgDp_op(int j, int l) const {
 template <typename Real>
 Teuchos::RCP<Thyra::LinearOpBase<Real> > 
 ProductModelEvaluator<Real>::create_DgDp_op(int j, int l, Teuchos::RCP<Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp) const {    
-    Teko::BlockedLinearOp dgdp_op = Teko::createBlockedOp();
+    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op = Teuchos::rcp(new Thyra::DefaultBlockedLinearOp<Real>());
     dgdp_op->beginBlockFill(1, p_indices_.size());
     for(std::size_t i=0; i<p_indices_.size(); ++i) {
         Teuchos::RCP<Thyra::DefaultScaledAdjointLinearOp<Real>> dgdp_i_ALOP;

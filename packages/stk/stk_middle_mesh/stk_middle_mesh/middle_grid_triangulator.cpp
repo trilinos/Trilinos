@@ -3,6 +3,7 @@
 #include "element_mesh_classifier.hpp"
 #include "element_mesh_extractor.hpp"
 #include "element_mesh_triangulator.hpp"
+#include "mesh_io.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -27,6 +28,11 @@ void MiddleGridTriangulator::triangulate()
 
       ElementMeshData elementMeshData = extractor.extract_element_mesh(el1);
       int numConstraintEdges          = count_valid(elementMeshData.elementMeshIn->get_edges());
+
+      if (m_output)
+      {
+        mesh::impl::print_vert_edges("mesh_in_element", elementMeshData.elementMeshIn);
+      }
 
       triangulator.triangulate(elementMeshData);
 

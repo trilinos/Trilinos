@@ -31,7 +31,7 @@
 #define SACADO_FAD_EXP_ATOMIC_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 #include "Sacado_Fad_Exp_ViewFad.hpp"
 #include "Kokkos_Atomic.hpp"
@@ -566,5 +566,5 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // HAVE_SACADO_KOKKOSCORE
+#endif // HAVE_SACADO_KOKKOS
 #endif // SACADO_FAD_EXP_VIEWFAD_HPP

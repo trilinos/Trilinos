@@ -6,6 +6,8 @@
 #include "mesh.hpp"
 #include "variable_size_field.hpp"
 
+#include "utils.hpp"  //TODO: move to src file
+
 namespace stk {
 namespace middle_mesh {
 namespace impl {
@@ -29,7 +31,7 @@ class ApplicationInterfaceFakeParallelImpl : public ApplicationInterface
       , m_boundarySnapOpts(boundarySnapOpts)
       , m_middleGridOpts(middleGridOpts)
       , m_xiPts(xiPts)
-    
+      , m_rootRankOnUnionComm(decide_root_rank(unionComm, mesh1, mesh2))
     {
       if (unionComm == MPI_COMM_NULL)
         throw std::runtime_error("union communicator cannot be null");
@@ -102,6 +104,8 @@ class ApplicationInterfaceFakeParallelImpl : public ApplicationInterface
     mesh::FieldPtr<int> get_element_destinations(std::shared_ptr<mesh::Mesh> middleGridSerial,
                                                  mesh::FieldPtr<mesh::MeshEntityPtr> meshClassification,
                                                  mesh::FieldPtr<mesh::RemoteSharedEntity> elementOrigins);
+
+    int decide_root_rank(MPI_Comm unionComm, std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2);
 
     std::shared_ptr<mesh::Mesh> m_mesh1Parallel;
     std::shared_ptr<mesh::Mesh> m_mesh2Parallel;

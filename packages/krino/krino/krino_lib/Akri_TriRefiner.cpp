@@ -212,7 +212,7 @@ std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned
     }
   }
 
-  ThrowRequireMsg(numChild == childElemNodes.size(), "Mismatch of size " << numChild << "  " << childElemNodes.size() << " for case " << caseId << " " << permutedCaseId);
+  STK_ThrowRequireMsg(numChild == childElemNodes.size(), "Mismatch of size " << numChild << "  " << childElemNodes.size() << " for case " << caseId << " " << permutedCaseId);
 
   return childElemNodes;
 }

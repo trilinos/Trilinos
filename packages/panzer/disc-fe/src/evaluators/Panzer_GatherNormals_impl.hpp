@@ -58,7 +58,7 @@ template<typename EvalT,typename Traits>
 panzer::GatherNormals<EvalT, Traits>::
 GatherNormals(
   const Teuchos::ParameterList& p)
-{ 
+{
   dof_name_ = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
@@ -93,7 +93,7 @@ GatherNormals(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::GatherNormals<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
+postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   auto orientations = d.orientations_;
@@ -115,32 +115,31 @@ postRegistrationSetup(typename Traits::SetupData d,
   for (int i=0; i < numFaces; ++i)
     keys_host(i) = parentCell.getKey(sideDim,i);
   Kokkos::deep_copy(keys_,keys_host);
+
+  // allocate space that is sized correctly for AD
+  int cellDim = parentCell.getDimension();
+  refEdges_ = Kokkos::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"ref_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
+  phyEdges_ = Kokkos::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"phy_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
 }
 
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::GatherNormals<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
 
   if(workset.num_cells<=0)
     return;
 
-  const shards::CellTopology & parentCell = *basis_->getCellTopology();
-  int cellDim = parentCell.getDimension();
-  int sideDim = parentCell.getDimension()-1;
   int numFaces = gatherFieldNormals_.extent(1);
-
-  // allocate space that is sized correctly for AD
-  auto refEdges = Kokkos::createDynRankView(gatherFieldNormals_.get_static_view(),"ref_edges", sideDim, cellDim);
-  auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals_.get_static_view(),"phy_edges", sideDim, cellDim);
-
   const auto worksetJacobians = pointValues_.jac.get_view();
   const auto cell_local_ids = workset.getLocalCellIDs();
   auto gatherFieldNormals = gatherFieldNormals_;
   auto sideParam = sideParam_;
   auto keys = keys_;
   auto orientations = orientations_;
+  auto refEdges = refEdges_;
+  auto phyEdges = phyEdges_;
 
   // Loop over workset faces and edge points
   Kokkos::parallel_for("panzer::GatherNormals",workset.num_cells,KOKKOS_LAMBDA(const int c){
@@ -148,21 +147,22 @@ evaluateFields(typename Traits::EvalData workset)
     orientations(cell_local_ids(c)).getFaceOrientation(faceOrts, numFaces);
 
     for(int pt = 0; pt < numFaces; pt++) {
-      auto ortEdgeTan_U = Kokkos::subview(refEdges, 0, Kokkos::ALL());
-      auto ortEdgeTan_V = Kokkos::subview(refEdges, 1, Kokkos::ALL());
+      auto ortEdgeTan_U = Kokkos::subview(refEdges, c, 0, Kokkos::ALL());
+      auto ortEdgeTan_V = Kokkos::subview(refEdges, c, 1, Kokkos::ALL());
 
-      Intrepid2::Impl::OrientationTools::getRefSubcellTangents(refEdges,
+      auto tmpRefEdges = Kokkos::subview(refEdges, c, Kokkos::ALL(), Kokkos::ALL());
+      Intrepid2::Impl::OrientationTools::getRefSubcellTangents(tmpRefEdges,
                                                                sideParam,
                                                                keys(pt),
                                                                pt,
                                                                faceOrts[pt]);
 
-      auto phyEdgeTan_U = Kokkos::subview(phyEdges, 0, Kokkos::ALL());
-      auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());
+      auto phyEdgeTan_U = Kokkos::subview(phyEdges, c, 0, Kokkos::ALL());
+      auto phyEdgeTan_V = Kokkos::subview(phyEdges, c, 1, Kokkos::ALL());
       auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
 
-      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);            
-      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);            
+      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);
+      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);
 
       // take the cross product of the two vectors
       gatherFieldNormals(c,pt,0) = (phyEdgeTan_U(1)*phyEdgeTan_V(2) - phyEdgeTan_U(2)*phyEdgeTan_V(1));

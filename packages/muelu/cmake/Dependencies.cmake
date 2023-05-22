@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra Xpetra KokkosCore KokkosContainers KokkosKernels)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra Xpetra Kokkos KokkosKernels)
 SET(LIB_OPTIONAL_DEP_PACKAGES Amesos Amesos2 AvatarT Belos Epetra EpetraExt Teko
                               Ifpack Ifpack2 Intrepid2 ML
                               Zoltan Zoltan2Core Stratimikos Thyra ThyraTpetraAdapters

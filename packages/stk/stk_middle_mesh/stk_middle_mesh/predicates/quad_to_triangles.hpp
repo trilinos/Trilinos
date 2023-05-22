@@ -2,7 +2,7 @@
 #define PREDICATES_QUAD_TO_TRIANGLES
 
 #include "intersection_common.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "triangle_coord_utils.hpp"
 
 namespace stk {

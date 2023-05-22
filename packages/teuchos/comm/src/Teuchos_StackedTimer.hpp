@@ -56,7 +56,7 @@
 #include <ctime> // for timestamp support
 #include <iostream>
 
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 namespace Kokkos {
 namespace Profiling {
 extern void pushRegion (const std::string&);
@@ -495,7 +495,7 @@ public:
    */
   void startBaseTimer() {
     timer_.BaseTimer::start();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::pushRegion(timer_.get_full_name());
 #endif
   }
@@ -505,7 +505,7 @@ public:
    */
   void stopBaseTimer() {
     timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::popRegion();
 #endif
   }
@@ -522,7 +522,7 @@ public:
         top_ = timer_.start(name.c_str());
       else
         top_ = top_->start(name.c_str());
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (push_kokkos_profiling_region) {
         ::Kokkos::Profiling::pushRegion(name);
       }
@@ -561,7 +561,7 @@ public:
         top_ = top_->stop(name);
       else
         timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (pop_kokkos_profiling_region) {
         ::Kokkos::Profiling::popRegion();
       }

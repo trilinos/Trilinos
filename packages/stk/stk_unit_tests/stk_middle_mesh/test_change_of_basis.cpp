@@ -93,7 +93,7 @@ TEST(ChangeOfBasis, singleAxis)
 TEST(ChangeOfBasis, twoAxis)
 {
   // test cases where the normal vector is along two coordinate axes
-  utils::Point norm, p0;
+  utils::Point norm;
   std::array<utils::Point, 3> basis;
 
   // xy

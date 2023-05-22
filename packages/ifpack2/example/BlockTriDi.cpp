@@ -313,7 +313,7 @@ main (int argc, char* argv[])
       // Read matrix
       if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
-      if (comm->getSize() == 0)
+      if (comm->getSize() == 1)
         A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
       else {
         if(rank0) std::cout<<"Using per-rank reader..."<<std::endl;

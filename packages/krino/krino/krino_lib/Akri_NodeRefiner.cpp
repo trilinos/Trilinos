@@ -159,7 +159,7 @@ static void fill_procs_that_own_elements_using_edge(const stk::mesh::BulkData & 
 static
 std::vector<std::pair<std::array<stk::mesh::EntityKey,2>,std::vector<int>>> get_shared_edges_and_sharing_procs(const stk::mesh::BulkData & mesh, const typename NodeRefiner::RefinedEdgeMap & edgesToRefine)
 {
-  ThrowAssert(mesh.is_automatic_aura_on()); // NOTE: Uses AURA to determine which procs have elements that use this edge and therefore should create the child node
+  STK_ThrowAssert(mesh.is_automatic_aura_on()); // NOTE: Uses AURA to determine which procs have elements that use this edge and therefore should create the child node
   std::vector<int> sharingProcs;
   std::vector<std::pair<std::array<stk::mesh::EntityKey,2>,std::vector<int>>> edgesNodeKeysAndSharingProcs;
   std::vector<stk::mesh::Entity> edgeElems;

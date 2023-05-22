@@ -61,16 +61,26 @@ struct MPVectorWorkConfig {
   typedef ExecSpace          execution_space ;
   typedef Tag                work_tag ;
 
+  execution_space space_;
   size_t range;
   size_t team;
   size_t shared;
 
+
+  /*! \brief in the provided execution space instance */
+  MPVectorWorkConfig( const execution_space &space,
+                      const size_t range_,
+                      const size_t team_,
+                      const size_t shared_ = 0 ) :
+    space_(space), range(range_), team(team_), shared(shared_) {}
+
+  /*! \brief in the default execution space instance */
   MPVectorWorkConfig( const size_t range_,
                       const size_t team_,
                       const size_t shared_ = 0 ) :
-    range(range_), team(team_), shared(shared_) {}
+    MPVectorWorkConfig(execution_space(), range_, team_, shared_) {}
 
-  ExecSpace space() const { return ExecSpace(); }
+  ExecSpace space() const { return space_; }
 };
 
 namespace Impl {

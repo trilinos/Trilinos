@@ -44,7 +44,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshCommImplUtils.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/MeshPrintUtils.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 #include <vector>
 

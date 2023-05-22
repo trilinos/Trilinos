@@ -72,7 +72,7 @@ IF (Sacado_ENABLE_TeuchosCore)
 
   ENDIF()
 
-  IF (Sacado_ENABLE_KokkosCore)
+  IF (Sacado_ENABLE_Kokkos)
 
     IF (Kokkos_ENABLE_SERIAL)
       IF (Sacado_ENABLE_TeuchosKokkosComm)

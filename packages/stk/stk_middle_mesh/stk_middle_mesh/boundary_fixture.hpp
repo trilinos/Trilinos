@@ -26,7 +26,7 @@ class BoundaryFixture
       m_field     = create_field<Bool>(mesh, FieldShape(1, 0, 0), 1, true);
       auto& field = *m_field;
       for (auto& edge : mesh->get_edges())
-        if (edge && edge->count_up() == 1)
+        if (edge && edge->count_up() == 1 && edge->count_remote_shared_entities() == 0)
         {
           field(edge->get_down(0), 0, 0) = false;
           field(edge->get_down(1), 0, 0) = false;

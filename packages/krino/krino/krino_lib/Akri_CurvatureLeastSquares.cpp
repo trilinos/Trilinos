@@ -78,7 +78,7 @@ static void fill_matrix_and_rhs_for_curvature_least_squares(const std::vector<Ve
   }
   else
   {
-    ThrowRequireMsg(rotatedUniqueHaloNodeLocs.size() == 4, "Unexpected vector size in fill_matrix_and_rhs_for_curvature_least_squares.");
+    STK_ThrowRequireMsg(rotatedUniqueHaloNodeLocs.size() == 4, "Unexpected vector size in fill_matrix_and_rhs_for_curvature_least_squares.");
     std::array<std::array<double,3>,4> Apts;
     for (int i=0; i<4; ++i)
     {
@@ -182,7 +182,7 @@ static Vector3d compute_least_squares_curvature_times_normal(const std::vector<V
 
 static Vector3d compute_least_squares_normal(const std::vector<Vector3d> & rotatedUniqueHaloNodeLocs)
 {
-  ThrowRequire(rotatedUniqueHaloNodeLocs.size() >= 5);
+  STK_ThrowRequire(rotatedUniqueHaloNodeLocs.size() >= 5);
 
   std::array<std::array<double,5>,5> A;
   std::array<double,5> b;

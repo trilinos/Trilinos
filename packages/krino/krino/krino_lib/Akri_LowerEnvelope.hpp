@@ -87,7 +87,7 @@ public:
   }
   SegmentLowerEnvelope(const std::vector<double> & pos, const std::vector<std::vector<double>> & phi)
   {
-    ThrowRequire(pos.size() == phi.size() && pos.size() > 1);
+    STK_ThrowRequire(pos.size() == phi.size() && pos.size() > 1);
     add_segment(mySegments, pos.front(), phi.front(), pos.back(), phi.back());
     collapse_identical_segments(mySegments);
     adjust_piecewise_linear_positions(mySegments, pos, phi);

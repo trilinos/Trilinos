@@ -1234,6 +1234,51 @@ TEST(Mesh, GetRemoteSharedEntity)
   EXPECT_ANY_THROW(mesh::get_remote_shared_entity(vert, 3));
 }
 
+
+TEST(Mesh, ErrorRemotesNonSymmetric)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+    GTEST_SKIP();
+
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+  if (utils::impl::comm_rank(MPI_COMM_WORLD) == 0)
+  {
+    auto v1 = mesh->create_vertex(0, 0, 0);
+    auto v2 = mesh->create_vertex(0, 1, 0);
+    auto v3 = mesh->create_vertex(-1, 0.5);
+    mesh->create_triangle_from_verts(v1, v2, v3);
+
+    v1->add_remote_shared_entity({1, 0});
+  } else
+  {
+    auto v1 = mesh->create_vertex(0, 0,   0);
+    auto v2 = mesh->create_vertex(1, 0.5, 0);
+    auto v3 = mesh->create_vertex(0, 1,   0);
+    mesh->create_triangle_from_verts(v1, v2, v3);
+
+    v3->add_remote_shared_entity({0, 2});
+  }
+
+  EXPECT_ANY_THROW(check_topology(mesh));
+}
+
+TEST(Mesh, ErrorRemotesNotUnique)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(0, 1, 0);
+  auto v3 = mesh->create_vertex(-1, 0.5);
+  mesh->create_triangle_from_verts(v1, v2, v3);
+
+  v1->add_remote_shared_entity({1, 0});
+  v1->add_remote_shared_entity({1, 0});
+
+  EXPECT_ANY_THROW(check_topology(mesh));
+}
+
 } // namespace impl
 } // namespace middle_mesh
 } // namespace stk

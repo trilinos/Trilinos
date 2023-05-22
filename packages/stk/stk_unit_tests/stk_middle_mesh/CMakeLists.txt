@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE(
     )
 
 TRIBITS_ADD_TEST(
-    stk_middle_mesh_unit_tests
+    stk_middle_mesh_utest
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1

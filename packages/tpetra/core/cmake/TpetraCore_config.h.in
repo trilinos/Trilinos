@@ -80,11 +80,11 @@
 #cmakedefine HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
 /* Define when enabling KokkosCore in Tpetra */
-#cmakedefine HAVE_TPETRACORE_KOKKOSCORE
-#ifdef HAVE_TPETRACORE_KOKKOSCORE
+#cmakedefine HAVE_TPETRACORE_KOKKOS
+#ifdef HAVE_TPETRACORE_KOKKOS
 // For backwards compatibility
-#  define HAVE_TPETRA_KOKKOSCORE
-#endif // HAVE_TPETRACORE_KOKKOSCORE
+#  define HAVE_TPETRA_KOKKOS
+#endif // HAVE_TPETRACORE_KOKKOS
 
 /* Define when enabling KokkosCompat in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
@@ -96,11 +96,11 @@
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 /* Define when enabling KokkosContainers in TpetraCore */
-#cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS
-#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+#cmakedefine HAVE_TPETRACORE_KOKKOS
+#ifdef HAVE_TPETRACORE_KOKKOS
 // For backwards compatibility
-#  define HAVE_TPETRA_KOKKOSCONTAINERS
-#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
+#  define HAVE_TPETRA_KOKKOS
+#endif // HAVE_TPETRACORE_KOKKOS
 
 /* Define when enabling KokkosComm in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM

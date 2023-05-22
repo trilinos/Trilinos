@@ -92,6 +92,7 @@ private:
   void create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(const EdgeMarkerInterface & edgeMarker);
   bool do_unrefinement(const EdgeMarkerInterface & edgeMarker);
   void mark_already_refined_edges();
+  void destroy_custom_ghostings();
 
   stk::mesh::EntityId get_parent_id(const stk::mesh::Entity elem) const;
   int get_originating_processor_for_parent_element(const stk::mesh::Entity elem) const;

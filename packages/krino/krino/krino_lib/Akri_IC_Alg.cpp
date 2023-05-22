@@ -63,7 +63,7 @@ void IC_Alg::execute(const double time)
 
     for (int n = 0; n < length; ++n)
     {
-      ThrowAssert(&(dist[n]) != NULL);
+      STK_ThrowAssert(&(dist[n]) != NULL);
 
       const Vector3d x(&coord[spatial_dim*n], spatial_dim);
 
@@ -147,7 +147,7 @@ void IC_Alg::compute_IC_error_indicator()
       double err = 0.;
       for (int e=0; e < num_edges; ++e)
       {
-        ThrowAssert(topo.edge_topology(e).num_nodes() == 2);
+        STK_ThrowAssert(topo.edge_topology(e).num_nodes() == 2);
         topo.edge_node_ordinals(e, edge_nodes);
 
         const Vector3d & x0 = nodal_coordinates[edge_nodes[0]];

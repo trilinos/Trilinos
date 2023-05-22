@@ -52,6 +52,7 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
+#include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -424,7 +425,8 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Details::Spaces::User
   {
   // clang-format on
 private:
@@ -3003,6 +3005,13 @@ public:
      Kokkos::DualView<char*, buffer_device_type>& exports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
 
   private:
     /// \brief Unpack the imported column indices and values, and

@@ -797,7 +797,8 @@ namespace Tpetra {
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                          size_t& constantNumPackets);
+                          size_t& constantNumPackets,
+                          const execution_space &space);
 
     void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                             size_t constantNumPackets,
@@ -906,6 +907,19 @@ namespace Tpetra {
                     Kokkos::DualView<size_t*,
                       buffer_device_type> numPacketsPerLID,
                     size_t& constantNumPackets);
+
+    /*! \brief Same as packAndPrepare, but in an execution space instance
+    */
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    const execution_space &space);
 
     /// \brief Perform any unpacking and combining after
     ///   communication.

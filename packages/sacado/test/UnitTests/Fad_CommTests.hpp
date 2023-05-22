@@ -909,7 +909,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SendReceive ) {                   \
     success = true;                                                     \
 }
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM)
+#if defined(HAVE_SACADO_KOKKOS) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM)
 
 #include "Kokkos_Core.hpp"
 

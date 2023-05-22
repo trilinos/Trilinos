@@ -152,7 +152,7 @@ std::vector<InterfaceID> CDMesh::active_interface_ids(const std::vector<Surface_
     for (auto && elemInterface : elem->get_sorted_cutting_interfaces())
     {
       const auto lower = std::lower_bound(all_interfaces.begin(), all_interfaces.end(), elemInterface);
-      ThrowAssert(*lower == elemInterface);
+      STK_ThrowAssert(*lower == elemInterface);
       id_is_active_locally[std::distance(all_interfaces.begin(), lower)] = true;
     }
   }
@@ -194,7 +194,7 @@ static void interpolate_nodal_field(const FieldRef field,
   for (size_t iNode=0; iNode<interpNodes.size(); ++iNode)
   {
     const double * nodeVal = field_data<double>(field, interpNodes[iNode]);
-    ThrowRequire(nullptr != nodeVal);
+    STK_ThrowRequire(nullptr != nodeVal);
 
     for (unsigned i=0; i<fieldLength; ++i)
       val[i] += interpWeights[iNode] * nodeVal[i];
@@ -231,7 +231,7 @@ static void build_node_stencil(const stk::mesh::BulkData & mesh,
   auto parentIds = get_edge_node_parent_ids(mesh, parentIdField, node);
   const stk::mesh::Entity parent0 = mesh.get_entity(stk::topology::NODE_RANK, parentIds[0]);
   const stk::mesh::Entity parent1 = mesh.get_entity(stk::topology::NODE_RANK, parentIds[1]);
-  ThrowAssert(mesh.is_valid(parent0) && mesh.is_valid(parent1));
+  STK_ThrowAssert(mesh.is_valid(parent0) && mesh.is_valid(parent1));
   const double position = compute_child_position(mesh, node, parent0, parent1);
   build_node_stencil(mesh, childNodeSelector, parentIdField, parent0, selfWeight*(1.-position), parentNodes, parentWeights);
   build_node_stencil(mesh, childNodeSelector, parentIdField, parent1, selfWeight*position, parentNodes, parentWeights);
@@ -266,7 +266,7 @@ CDMesh::find_new_node_with_common_ancestry_as_existing_node_with_given_id(const 
     return cdmeshNode;
 
   const stk::mesh::Entity node = stk_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
-  ThrowAssert(stk_bulk().is_valid(node));
+  STK_ThrowAssert(stk_bulk().is_valid(node));
   if (stk_bulk().bucket(node).member(get_child_edge_node_part()))
     return find_new_node_with_common_ancestry_as_existing_child_node(node);
 
@@ -277,7 +277,7 @@ const SubElementNode *
 CDMesh::find_new_node_with_common_ancestry_as_existing_child_node(const stk::mesh::Entity node) const
 {
   // This only works with a lineage of edge nodes (not internal nodes).
-  ThrowAssert(stk_bulk().bucket(node).member(get_child_edge_node_part()));
+  STK_ThrowAssert(stk_bulk().bucket(node).member(get_child_edge_node_part()));
 
   auto parentIds = get_edge_node_parent_ids(stk_bulk(), get_parent_node_ids_field(), node);
   const SubElementNode * searchParent0 = find_new_node_with_common_ancestry_as_existing_node_with_given_id(parentIds[0]);
@@ -554,7 +554,7 @@ CDMesh::set_entities_for_existing_child_elements()
         if (subelem_node_entities.size() == subelem->get_nodes().size())
         {
           stk::mesh::get_entities_through_relations(stk_bulk(), subelem_node_entities, stk::topology::ELEMENT_RANK, existing_elems);
-          ThrowAssert(existing_elems.size() <= 1);
+          STK_ThrowAssert(existing_elems.size() <= 1);
         }
 
         if (existing_elems.empty())
@@ -564,7 +564,7 @@ CDMesh::set_entities_for_existing_child_elements()
         else
         {
           subelem->set_entity(stk_bulk(), existing_elems[0]);
-          ThrowAssert(subelem->check_entity_nodes(stk_bulk()));
+          STK_ThrowAssert(subelem->check_entity_nodes(stk_bulk()));
           if (all_element_entities_are_set_and_correct && elem_io_part_changed(*subelem)) all_element_entities_are_set_and_correct = false;
         }
       }
@@ -628,13 +628,27 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coord
 
   auto & refinement = refinementSupport.get_non_interface_conforming_refinement();
 
-  std::function<void(int)> marker_function =
-      [&mesh, &coordsField, &refinementSupport, &interfaceGeometry](int num_refinements)
-      {
-        mark_interface_elements_for_adaptivity(mesh, coordsField, refinementSupport, interfaceGeometry, num_refinements);
-      };
+  std::function<void(int)> markerFunction;
+  if (refinementSupport.has_refinement_interval())
+  {
+    markerFunction = [&mesh, &refinementSupport, &interfaceGeometry](int num_refinements)
+    {
+      mark_elements_that_intersect_interval(mesh,
+          refinementSupport.get_non_interface_conforming_refinement(),
+          interfaceGeometry,
+          refinementSupport,
+          num_refinements);
+    };
+  }
+  else
+  {
+    markerFunction = [&mesh, &coordsField, &refinementSupport, &interfaceGeometry](int num_refinements)
+    {
+      mark_interface_elements_for_adaptivity(mesh, coordsField, refinementSupport, interfaceGeometry, num_refinements);
+    };
+  }
 
-  perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector());
+  perform_multilevel_adaptivity(refinement, mesh, markerFunction, refinementSupport.get_do_not_refine_or_unrefine_selector());
 
   stk::log_with_time_and_memory(mesh.parallel(), "End Nonconformal Adaptivity.");
 }
@@ -668,7 +682,7 @@ static void delete_extraneous_inactive_sides(stk::mesh::BulkData & mesh, const R
 
   for (auto && side : sides)
     if (!side_is_adaptivity_or_cdfem_parent(mesh, refinementSupport, side, cdfemParentPart))
-      ThrowRequireMsg(disconnect_and_destroy_entity(mesh, side), "Could not destroy entity " << mesh.entity_key(side));
+      STK_ThrowRequireMsg(disconnect_and_destroy_entity(mesh, side), "Could not destroy entity " << mesh.entity_key(side));
 
   mesh.modification_end();
 }
@@ -849,7 +863,7 @@ CDMesh::restore_subelements()
     for(const auto & elem : *b_ptr)
     {
       const stk::mesh::Entity parent = get_parent_element(elem);
-      ThrowRequire(mesh.is_valid(parent) && parent != elem);
+      STK_ThrowRequire(mesh.is_valid(parent) && parent != elem);
 
       auto parentMeshElem = find_mesh_element(mesh.identifier(parent));
       if (!parentMeshElem)
@@ -891,7 +905,7 @@ CDMesh::restore_subelements()
         subelem->build_quadratic_subelements(*this);
         std::vector<SubElement *> highOrderSubElems;
         subelem->get_subelements( highOrderSubElems );
-        ThrowRequire(highOrderSubElems.size() == 1);
+        STK_ThrowRequire(highOrderSubElems.size() == 1);
         highOrderSubElems[0]->set_entity(stk_bulk(), elem);
       }
       else
@@ -1057,7 +1071,7 @@ void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
       stk::mesh::EntityId nodeId;
       commSparse.recv_buffer(procId).unpack(nodeId);
       stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
-      ThrowRequire(mesh.is_valid(node));
+      STK_ThrowRequire(mesh.is_valid(node));
       nodes.insert(node);
     }
   });
@@ -1103,7 +1117,7 @@ CDMesh::stash_nodal_field_data() const
         for (unsigned inode = 0; inode < num_elem_nodes; ++inode)
         {
           stk::mesh::Entity node = elem_nodes[inode];
-          ThrowAssert((stk_bulk().bucket(node).member(get_active_part())));
+          STK_ThrowAssert((stk_bulk().bucket(node).member(get_active_part())));
           ProlongationNodeData *& node_data = my_prolong_node_map[stk_bulk().identifier(node)];
           if (nullptr == node_data)
           {
@@ -1121,7 +1135,7 @@ CDMesh::stash_nodal_field_data() const
   {
     if (stk_bulk().bucket(node).member(get_active_part())) // Don't stash inactive midside nodes
     {
-      ThrowAssert(stk_bulk().is_valid(node));
+      STK_ThrowAssert(stk_bulk().is_valid(node));
       ProlongationNodeData *& node_data = my_prolong_node_map[stk_bulk().identifier(node)];
       if (nullptr == node_data)
       {
@@ -1195,7 +1209,7 @@ CDMesh::stash_nodal_field_data() const
       {
         for (auto&& side : *bucket_ptr)
         {
-          ThrowAssert( stk_bulk().num_elements(side) > 0 );
+          STK_ThrowAssert( stk_bulk().num_elements(side) > 0 );
 
           ProlongationFacet * prolong_facet = new ProlongationFacet(*this, side);
           my_prolong_facets.push_back(prolong_facet);
@@ -1218,10 +1232,10 @@ std::vector<std::vector<stk::mesh::Entity>> CDMesh::get_subelements_for_CDFEM_pa
     for(const auto & elem : *bucketPtr)
     {
       const stk::mesh::Entity parent = get_parent_element(elem);
-      ThrowRequire(stk_bulk().is_valid(parent) && parent != elem);
+      STK_ThrowRequire(stk_bulk().is_valid(parent) && parent != elem);
 
       auto iter = std::lower_bound(sortedCdfemParentElems.begin(), sortedCdfemParentElems.end(), parent, stk::mesh::EntityLess(stk_bulk()));
-      ThrowRequireMsg(iter != sortedCdfemParentElems.end() && *iter == parent, "Failed to find parent element:\n " << debug_entity_1line(stk_bulk(), parent) << "For child element " << debug_entity_1line(stk_bulk(), elem));
+      STK_ThrowRequireMsg(iter != sortedCdfemParentElems.end() && *iter == parent, "Failed to find parent element:\n " << debug_entity_1line(stk_bulk(), parent) << "For child element " << debug_entity_1line(stk_bulk(), elem));
 
       const size_t index = std::distance(sortedCdfemParentElems.begin(), iter);
       childrenForParents[index].push_back(elem);
@@ -1250,7 +1264,7 @@ CDMesh::stash_elemental_field_data() const
     if (subelems.empty())
     {
       ProlongationElementData * elem_data = new ProlongationLeafElementData(*this, myProlongPartAndFieldCollections, parent);
-      ThrowAssert(0 == my_prolong_element_map.count(parentId));
+      STK_ThrowAssert(0 == my_prolong_element_map.count(parentId));
       my_prolong_element_map[parentId] = elem_data;
     }
     else
@@ -1262,7 +1276,7 @@ CDMesh::stash_elemental_field_data() const
       {
         const stk::mesh::EntityId subelemId = stk_bulk().identifier(subelems[iSub]);
         ProlongationElementData * subElemData = new ProlongationLeafElementData(*this, myProlongPartAndFieldCollections, subelems[iSub]);
-        ThrowAssertMsg(0 == my_prolong_element_map.count(subelemId), "Duplicate subelement entityId " << subelemId);
+        STK_ThrowAssertMsg(0 == my_prolong_element_map.count(subelemId), "Duplicate subelement entityId " << subelemId);
         my_prolong_element_map[subelemId] = subElemData;
         subelemsData[iSub] = subElemData;
       }
@@ -1271,7 +1285,7 @@ CDMesh::stash_elemental_field_data() const
       if (!single_coincident_subelement)
       {
         ProlongationElementData * elemData = new ProlongationParentElementData(*this, parent, subelemsData, haveElemFields);
-        ThrowAssert(0 == my_prolong_element_map.count(parentId));
+        STK_ThrowAssert(0 == my_prolong_element_map.count(parentId));
         my_prolong_element_map[parentId] = elemData;
       }
     }
@@ -1310,7 +1324,7 @@ CDMesh::build_prolongation_trees() const
       std::vector<const ProlongationFacet *> & facets = entry.second;
 
       my_phase_prolong_tree_map[fields] = std::make_unique<SearchTree<const ProlongationFacet*>>(facets, ProlongationFacet::get_bounding_box);
-      ThrowRequire(!my_phase_prolong_tree_map[fields]->empty());
+      STK_ThrowRequire(!my_phase_prolong_tree_map[fields]->empty());
     }
   }
 }
@@ -1421,7 +1435,7 @@ static void find_nearest_matching_prolong_facet(const stk::mesh::BulkData & mesh
       {
         std::vector<const ProlongationFacet*> nearest_prolong_facets;
         facetTree->find_closest_entities( targetCoordinates, nearest_prolong_facets );
-        ThrowAssert(!nearest_prolong_facets.empty());
+        STK_ThrowAssert(!nearest_prolong_facets.empty());
 
         for (auto && prolong_facet : nearest_prolong_facets)
         {
@@ -1498,7 +1512,7 @@ CDMesh::find_prolongation_node(const SubElementNode & targetNode) const
 
   const std::vector<unsigned> requiredFields = targetNode.prolongation_node_fields(*this);
 
-  ThrowRequire(need_facets_for_prolongation());
+  STK_ThrowRequire(need_facets_for_prolongation());
 
   const ProlongationFacet * nearestProlongFacet = nullptr;
   FacetDistanceQuery nearestFacetQuery;
@@ -1766,7 +1780,7 @@ CDMesh::determine_conformal_parts(
   add_parts.clear();
   remove_parts.clear();
 
-  ThrowAssert(stk_bulk().is_valid(entity));
+  STK_ThrowAssert(stk_bulk().is_valid(entity));
 
   stk::mesh::EntityRank entity_rank = stk_bulk().entity_rank(entity);
   const stk::mesh::PartVector & current_parts = stk_bulk().bucket(entity).supersets();
@@ -1861,7 +1875,7 @@ CDMesh::set_phase_of_uncut_elements(const InterfaceGeometry & interfaceGeometry)
       }
       else
       {
-        ThrowRequire(1 == surfaceIDs.size());
+        STK_ThrowRequire(1 == surfaceIDs.size());
         elemPhase.add(surfaceIDs[0], entry.second);
         elem->set_phase(elemPhase);
       }
@@ -2086,7 +2100,7 @@ void pack_node_data_for_node_ancestries(const stk::mesh::BulkData & mesh, const 
 {
   stk::pack_and_communicate(commSparse,[&]()
   {
-    ThrowAssert(nodeAncestriesAndData.size() == destinationProcs.size());
+    STK_ThrowAssert(nodeAncestriesAndData.size() == destinationProcs.size());
     std::vector<stk::mesh::EntityKey> edgeNodeKeys;
 
     for (size_t i=0; i<nodeAncestriesAndData.size(); ++i)
@@ -2109,7 +2123,7 @@ void pack_node_data_for_node_ancestries(const stk::mesh::BulkData & mesh, const 
 }
 
 template <typename T>
-void set_node_sign_or_score(const SubElementNode * node, const T & signOrScore) { ThrowRequireMsg(false, "Unsupported type in set_node_sign_or_score."); }
+void set_node_sign_or_score(const SubElementNode * node, const T & signOrScore) { STK_ThrowRequireMsg(false, "Unsupported type in set_node_sign_or_score."); }
 
 template <>
 void set_node_sign_or_score(const SubElementNode * node, const int & sign) { node->set_node_sign(sign); }
@@ -2118,7 +2132,7 @@ template <>
 void set_node_sign_or_score(const SubElementNode * node, const double & score) { node->set_node_score(score); }
 
 template <typename T>
-T get_node_sign_or_score(const SubElementNode * node) { ThrowRequireMsg(false, "Unsupported type in get_node_sign_or_score."); }
+T get_node_sign_or_score(const SubElementNode * node) { STK_ThrowRequireMsg(false, "Unsupported type in get_node_sign_or_score."); }
 
 template <>
 int get_node_sign_or_score(const SubElementNode * node) { return node->get_node_sign(); }
@@ -2127,7 +2141,7 @@ template <>
 double get_node_sign_or_score(const SubElementNode * node) { return node->get_node_score(); }
 
 template <typename T>
-bool node_sign_or_score_is_set(const SubElementNode * node) { ThrowRequireMsg(false, "Unsupported type in node_sign_or_score_is_set."); return false; }
+bool node_sign_or_score_is_set(const SubElementNode * node) { STK_ThrowRequireMsg(false, "Unsupported type in node_sign_or_score_is_set."); return false; }
 
 template <>
 bool node_sign_or_score_is_set<int>(const SubElementNode * node) { return node->node_sign_is_set(); }
@@ -2187,7 +2201,7 @@ void receive_node_sign_or_score(CDMesh & cdmesh, stk::CommSparse &commSparse)
 template <typename T>
 void sync_node_sign_or_score_on_local_constrained_nodes(CDMesh & cdmesh, const std::vector<std::pair<SubElementChildNodeAncestry,T>> & constrainedNodesAndSignOrScore, const std::vector<std::vector<int>> & owningProcsOfNodesInAncestries)
 {
-  ThrowAssert(constrainedNodesAndSignOrScore.size() == owningProcsOfNodesInAncestries.size());
+  STK_ThrowAssert(constrainedNodesAndSignOrScore.size() == owningProcsOfNodesInAncestries.size());
 
   for (size_t i=0; i<constrainedNodesAndSignOrScore.size(); ++i)
   {
@@ -2437,10 +2451,10 @@ CDMesh::create_subelement_mesh_entities(
     if (0 == subelem->entityId())
     {
       const stk::mesh::EntityId new_id = my_entity_id_pool.get_EntityId(stk::topology::ELEMENT_RANK);
-      ThrowAssert(!stk_bulk().is_valid(stk_bulk().get_entity(stk::topology::ELEMENT_RANK, new_id)));
+      STK_ThrowAssert(!stk_bulk().is_valid(stk_bulk().get_entity(stk::topology::ELEMENT_RANK, new_id)));
       stk::mesh::Entity subelem_entity = stk_bulk().declare_element(new_id, subelem_parts);
       subelem->set_entity( stk_bulk(), subelem_entity );
-      ThrowAssert(stk_bulk().bucket(subelem_entity).topology() != stk::topology::INVALID_TOPOLOGY);
+      STK_ThrowAssert(stk_bulk().bucket(subelem_entity).topology() != stk::topology::INVALID_TOPOLOGY);
 
       const NodeVec & elem_nodes = subelem->get_nodes();
       for (unsigned n=0; n<elem_nodes.size(); ++n)
@@ -2505,7 +2519,7 @@ CDMesh::attach_existing_and_identify_missing_subelement_sides(
       }
       else
       {
-        ThrowRequire(sides.size() == 1);
+        STK_ThrowRequire(sides.size() == 1);
         attach_entity_to_element(stk_bulk(), stk_meta().side_rank(), sides[0], subelem->entity());
       }
     }
@@ -2581,7 +2595,7 @@ std::vector<unsigned> get_conformal_volume_part_ordinals(const stk::mesh::BulkDa
 bool have_multiple_conformal_volume_parts_in_common(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const std::vector<stk::mesh::Entity> & sideNodes)
 {
   const int numSideNodes = sideNodes.size();
-  ThrowRequire(numSideNodes > 0);
+  STK_ThrowRequire(numSideNodes > 0);
 
   std::vector<unsigned> commonConformalVolumeParts = get_conformal_volume_part_ordinals(mesh, phaseSupport, sideNodes[0]);
 
@@ -2641,7 +2655,7 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes)"); /* %TRACE% */
 
   // This method requires aura.
-  ThrowRequire(stk_bulk().is_automatic_aura_on());
+  STK_ThrowRequire(stk_bulk().is_automatic_aura_on());
 
   std::vector<stk::mesh::Entity> elems;
   stk::mesh::get_entities_through_relations(stk_bulk(), side_nodes, stk::topology::ELEMENT_RANK, elems);
@@ -2685,7 +2699,7 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
   for (unsigned iphase = 0; iphase<side_phases.size(); ++iphase)
   {
     side_phases[iphase] = my_phase_support.get_iopart_phase(*conformal_volume_parts[iphase]);
-    ThrowRequire(!side_phases[iphase].empty());
+    STK_ThrowRequire(!side_phases[iphase].empty());
   }
 
   std::vector<stk::mesh::Entity> sides;
@@ -2830,7 +2844,7 @@ CDMesh::determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::Pa
       krinolog << " " << debug_entity_1line(stk_bulk(), elem) << stk::diag::dendl;
   }
 
-  ThrowRequire(volume_parts.size() <= 2); // Can be zero for inactive elements supporting a face
+  STK_ThrowRequire(volume_parts.size() <= 2); // Can be zero for inactive elements supporting a face
 
   if (conformal_volume_parts.empty())
   {
@@ -2871,13 +2885,13 @@ CDMesh::determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::Pa
     return;
   }
 
-  ThrowRequire(conformal_volume_parts.size() == 1 || conformal_volume_parts.size() == 2);
+  STK_ThrowRequire(conformal_volume_parts.size() == 1 || conformal_volume_parts.size() == 2);
 
   std::vector<PhaseTag> side_phases(conformal_volume_parts.size());
   for (unsigned iphase = 0; iphase<side_phases.size(); ++iphase)
   {
     side_phases[iphase] = my_phase_support.get_iopart_phase(*conformal_volume_parts[iphase]);
-    ThrowRequire(!side_phases[iphase].empty());
+    STK_ThrowRequire(!side_phases[iphase].empty());
   }
 
   if (conformal_volume_parts.size() == 2 && side_phases[0] != side_phases[1])
@@ -3008,7 +3022,7 @@ CDMesh::get_parent_element(stk::mesh::Entity elem_entity) const
   std::vector<stk::mesh::Entity> parent_elems;
   stk::mesh::get_entities_through_relations(stk_bulk(), parent_elem_nodes, stk::topology::ELEMENT_RANK, parent_elems);
 
-  ThrowAssert(parent_elems.size() <= 1);
+  STK_ThrowAssert(parent_elems.size() <= 1);
 
   if (parent_elems.empty())
   {
@@ -3026,7 +3040,7 @@ CDMesh::get_parent_element(stk::mesh::Entity elem_entity) const
 bool
 CDMesh::get_parent_child_coord_transformation(stk::mesh::Entity elem_mesh_obj, double * dParentdChild) const
 {
-  ThrowAssert(my_cdfem_support.use_nonconformal_element_size());
+  STK_ThrowAssert(my_cdfem_support.use_nonconformal_element_size());
 
   const SubElement * subelem = find_child_element(elem_mesh_obj);
 
@@ -3048,8 +3062,8 @@ CDMesh::get_parent_nodes_and_weights(stk::mesh::Entity child, stk::mesh::Entity 
   auto find_existing = std::find_if(nodes.begin(), nodes.end(),
       [id](const std::unique_ptr<krino::SubElementNode> & compare)
       { return compare->entityId() == id; });
-  ThrowAssert(find_existing != nodes.end());
-  ThrowAssert(dynamic_cast<krino::SubElementEdgeNode *>(find_existing->get()) != nullptr);
+  STK_ThrowAssert(find_existing != nodes.end());
+  STK_ThrowAssert(dynamic_cast<krino::SubElementEdgeNode *>(find_existing->get()) != nullptr);
   const krino::SubElementEdgeNode& edge_node = dynamic_cast<krino::SubElementEdgeNode &>(*find_existing->get());
   krino::NodeVec edge_node_parents = edge_node.get_parents();
   position = edge_node.get_position();
@@ -3073,7 +3087,7 @@ std::function<double(stk::mesh::Entity)> build_get_local_length_scale_for_side_f
           if (elementSelector(mesh.bucket(elem)))
           {
             stk::mesh::Entity volumeElement = cdmesh.get_cdfem_support().use_nonconformal_element_size() ? cdmesh.get_parent_element(elem) : elem;
-            ThrowRequire(cdmesh.stk_bulk().is_valid(volumeElement));
+            STK_ThrowRequire(cdmesh.stk_bulk().is_valid(volumeElement));
             const double elemVol = ElementObj::volume( mesh, volumeElement, cdmesh.get_coords_field() );
             if (minElemVolume == 0. || elemVol < minElemVolume)
               minElemVolume = elemVol;
@@ -3262,7 +3276,7 @@ double CDMesh::compute_cdfem_cfl(const Interface_CFL_Length_Scale lengthScaleTyp
   }
   else
   {
-    ThrowRequire(lengthScaleType == L1_NORM_LENGTH_SCALE);
+    STK_ThrowRequire(lengthScaleType == L1_NORM_LENGTH_SCALE);
     const double lengthScaleNorm = compute_L1_norm_of_side_length_scales(*this, interfaceSideSelector);
     krinolog << "Using L1 Norm length scale " << lengthScaleNorm << " to compute Interface CFL." << stk::diag::dendl;
     get_length_scale_for_side = build_get_constant_length_scale_for_side_function(lengthScaleNorm);
@@ -3582,7 +3596,7 @@ CDMesh::prolongation()
       if (mustRedoGhosting)
       {
         const double maxAcceptableCFLGuess = 1.e4;
-        ThrowRequireMsg(maxCFLGuess < maxAcceptableCFLGuess, "Error in prolongation.  Communication did not succeed with CFL guess of " << maxCFLGuess);
+        STK_ThrowRequireMsg(maxCFLGuess < maxAcceptableCFLGuess, "Error in prolongation.  Communication did not succeed with CFL guess of " << maxCFLGuess);
 
         const double CFLFactorOfSafety = 1.5;
         const double CFLGrowthMultiplier = 2.0;
@@ -3663,7 +3677,7 @@ CDMesh::rebase_cdfem_displacements()
       stk::mesh::Entity node = objs[iObj];
 
       const double * old_data = field_data<double>( stk_fields[stk::mesh::StateOld], node);
-      ThrowRequire(nullptr != old_data);
+      STK_ThrowRequire(nullptr != old_data);
       for (unsigned d=0; d<field_length; ++d)
       {
         old_displacement[d] = old_data[d];
@@ -3672,7 +3686,7 @@ CDMesh::rebase_cdfem_displacements()
       for ( unsigned is = 0 ; is < cdfem_displacements_field.number_of_states(); ++is )
       {
         double * displacement = field_data<double>( stk_fields[is], node);
-        ThrowRequire(nullptr != displacement);
+        STK_ThrowRequire(nullptr != displacement);
         for (unsigned d=0; d<field_length; ++d)
         {
           displacement[d] -= old_displacement[d];
@@ -3694,7 +3708,7 @@ CDMesh::get_maximum_cdfem_displacement() const
     for( auto&& b : buckets )
     {
       double * cdfem_displacements = field_data<double>(cdfem_displacements_field, *b);
-      ThrowAssert(nullptr != cdfem_displacements);
+      STK_ThrowAssert(nullptr != cdfem_displacements);
 
       const unsigned field_length = cdfem_displacements_field.length(*b);
 

@@ -26,7 +26,7 @@ class IntersectionPoint
 {
 public:
   IntersectionPoint(const bool owned, const std::vector<stk::mesh::Entity> & nodes, const std::vector<double> & weights, const std::vector<int> & sortedDomains)
-  : mOwned(owned), mNodes(nodes), mWeights(weights), mSortedDomains(sortedDomains) {ThrowAssert(mNodes.size() == mWeights.size());}
+  : mOwned(owned), mNodes(nodes), mWeights(weights), mSortedDomains(sortedDomains) {STK_ThrowAssert(mNodes.size() == mWeights.size());}
   bool is_owned() const { return mOwned; }
   const std::vector<stk::mesh::Entity> & get_nodes() const { return mNodes; }
   const std::vector<double> & get_weights() const { return mWeights; }
@@ -42,7 +42,7 @@ class InterpolationPoint
 {
 public:
   InterpolationPoint(const std::vector<stk::mesh::Entity> & nodes, const std::vector<double> & weights)
-  : mNodes(nodes), mWeights(weights) {ThrowAssert(mNodes.size() == mWeights.size());}
+  : mNodes(nodes), mWeights(weights) {STK_ThrowAssert(mNodes.size() == mWeights.size());}
   const std::vector<stk::mesh::Entity> & get_nodes() const { return mNodes; }
   const std::vector<double> & get_weights() const { return mWeights; }
 private:

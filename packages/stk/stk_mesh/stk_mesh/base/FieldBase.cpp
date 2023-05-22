@@ -56,12 +56,29 @@ void get_parts_and_all_subsets(const PARTVECTOR& parts, OrdinalVector& parts_and
 {
   parts_and_all_subsets.clear();
   for(const Part* part : parts) {
-    stk::util::insert_keep_sorted_and_unique(part->mesh_meta_data_ordinal(), parts_and_all_subsets);
+    parts_and_all_subsets.push_back(part->mesh_meta_data_ordinal());
+  }
+  stk::util::sort_and_unique(parts_and_all_subsets);
 
+  OrdinalVector scratch;
+  scratch.reserve(256);
+  for(const Part* part : parts) {
     const PartVector& subsets = part->subsets();
     for(const Part* subset : subsets) {
-      stk::util::insert_keep_sorted_and_unique(subset->mesh_meta_data_ordinal(), parts_and_all_subsets);
+      unsigned ord = subset->mesh_meta_data_ordinal();
+      scratch.push_back(ord);
     }
+
+    if (scratch.size() >= parts_and_all_subsets.size()) {
+      stk::util::sort_and_unique(scratch);
+      stk::util::insert_keep_sorted_and_unique(scratch, parts_and_all_subsets, std::less<unsigned>());
+      scratch.clear();
+    }
+  }
+
+  if (!scratch.empty()) {
+    stk::util::sort_and_unique(scratch);
+    stk::util::insert_keep_sorted_and_unique(scratch, parts_and_all_subsets, std::less<unsigned>());
   }
 }
 

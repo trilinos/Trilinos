@@ -79,18 +79,18 @@ ElementBasedEdgeMarker::ElementBasedEdgeMarker(const stk::mesh::BulkData & mesh,
     : myMesh(mesh), myRefinement(refinement)
 {
   myElementMarkerField = static_cast<stk::mesh::Field<int> *>(mesh.mesh_meta_data().get_field(stk::topology::ELEMENT_RANK, elementMarkerFieldName));
-  ThrowRequireMsg(myElementMarkerField, "Element marker field \"" << elementMarkerFieldName << "\" not found.");
+  STK_ThrowRequireMsg(myElementMarkerField, "Element marker field \"" << elementMarkerFieldName << "\" not found.");
 }
 
 const std::string & ElementBasedEdgeMarker::get_marker_field_name() const
 {
-  ThrowAssert(myElementMarkerField);
+  STK_ThrowAssert(myElementMarkerField);
   return myElementMarkerField->name();
 }
 
 const stk::mesh::Field<int> & ElementBasedEdgeMarker::get_marker_field() const
 {
-  ThrowAssert(myElementMarkerField);
+  STK_ThrowAssert(myElementMarkerField);
   return *myElementMarkerField;
 }
 
@@ -187,7 +187,7 @@ void TransitionElementEdgeMarker::fill_existing_element_refined_edge_nodes(const
 {
   if (myRefinement.is_parent(elem))
   {
-    ThrowAssert(myRefinement.is_this_parent_element_partially_refined(elem));
+    STK_ThrowAssert(myRefinement.is_this_parent_element_partially_refined(elem));
     const std::vector<stk::mesh::Entity> transitionElements = myRefinement.get_children(elem);
     fill_existing_element_refined_edge_nodes_for_partially_refined_parent_element(elem, elemTopology, elemNumEdges, transitionElements, elemEdgeChildNodes);
   }

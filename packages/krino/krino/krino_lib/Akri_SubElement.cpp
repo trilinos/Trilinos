@@ -143,7 +143,7 @@ bool SubElementChildNode::needs_to_be_ale_prolonged(const CDMesh & mesh) const
 Vector3d SubElementChildNode::compute_owner_coords( const Mesh_Element * in_owner ) const
 {
   Vector3d calcOwnerCoords{Vector3d::ZERO};
-  ThrowAssert(my_parents.size() == my_weights.size());
+  STK_ThrowAssert(my_parents.size() == my_weights.size());
   for (size_t i=0; i<my_parents.size(); ++i)
     calcOwnerCoords += my_weights[i]*my_parents[i]->owner_coords(in_owner);
   return calcOwnerCoords;
@@ -177,7 +177,7 @@ SubElementChildNode::prolongate_fields(const CDMesh & mesh) const
 bool SubElementMidSideNode::is_mesh_node_that_needs_to_be_prolonged(const CDMesh & mesh) const
 {/* %TRACE[ON]% */ Trace trace__("SubElementMidSideNode::is_mesh_node_that_needs_to_be_prolonged() const"); /* %TRACE% */
 
-  ThrowRequire(my_is_mesh_node);
+  STK_ThrowRequire(my_is_mesh_node);
 
   const SubElementMeshNode * parent1 = dynamic_cast<const SubElementMeshNode *>(my_parent1);
   const SubElementMeshNode * parent2 = dynamic_cast<const SubElementMeshNode *>(my_parent2);
@@ -228,7 +228,7 @@ SubElementMidSideNode::prolong_interpolation_fields(const CDMesh & mesh) const
   const ProlongationElementData * interpolationElem = nullptr;
   Vector3d interp_elem_p_coords;
   const ProlongationElementData * prolongElem =  mesh.fetch_prolong_element(my_cached_owner->entityId());
-  ThrowRequire(prolongElem);
+  STK_ThrowRequire(prolongElem);
   prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interp_elem_p_coords);
 
   for(auto && field : mesh.get_interpolation_fields())
@@ -255,7 +255,7 @@ SubElementMidSideNode::prolong_ale_fields(const CDMesh & mesh) const
     {
       double * val1 = field_data<double>(field, my_parent1->entity());
       double * val2 = field_data<double>(field, my_parent2->entity());
-      ThrowRequire(val1 && val2);
+      STK_ThrowRequire(val1 && val2);
       for (unsigned i=0; i<field_length; ++i)
       {
         val[i] = 0.5*val1[i] + 0.5*val2[i];
@@ -421,7 +421,7 @@ void SubElementNode::prolong_cdfem_displacements(const CDMesh & mesh,
     else
     {
       const double * prolong_field = prolong_data->get_field_data(state_field);
-      ThrowRequire(NULL != prolong_field);
+      STK_ThrowRequire(NULL != prolong_field);
       std::copy(prolong_field, prolong_field+field_length, val);
 
       if (state == stk::mesh::StateNew)
@@ -441,7 +441,7 @@ const SubElementNode *
 SubElementNode::common_child( const NodeVec & parents )
 {
   const size_t numParents = parents.size();
-  ThrowAssert(numParents > 0);
+  STK_ThrowAssert(numParents > 0);
 
   for (auto && child : parents[0]->my_children)
   {
@@ -496,7 +496,7 @@ SubElementChildNode::prolong_ale_fields(const CDMesh & mesh, const ProlongationP
       // was found. Throw here to avoid the possibility of not prolonging a prolongation field that then
       // has its time derivative screwed up because it has a mesh velocity associated with it.
       // We think this should only occur in problems with multiple different level sets.
-      ThrowRequire(prolong_field);
+      STK_ThrowRequire(prolong_field);
       std::copy(prolong_field, prolong_field+field_length, val);
     }
     else
@@ -504,7 +504,7 @@ SubElementChildNode::prolong_ale_fields(const CDMesh & mesh, const ProlongationP
       if (nullptr == interpolationElem)
       {
         const ProlongationElementData * prolongElem = mesh.fetch_prolong_element(my_cached_owner->entityId());
-        ThrowRequire(prolongElem);
+        STK_ThrowRequire(prolongElem);
         prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interp_elem_p_coords);
       }
 
@@ -536,7 +536,7 @@ SubElementMeshNode::prolong_ale_fields(const CDMesh & mesh,
       // was found. Throw here to avoid the possibility of not prolonging a prolongation field that then
       // has its time derivative screwed up because it has a mesh velocity associated with it.
       // We think this should only occur in problems with multiple different level sets.
-      ThrowRequire(prolong_field);
+      STK_ThrowRequire(prolong_field);
       std::copy(prolong_field, prolong_field+field_length, val);
     }
     else if(old_node)
@@ -565,7 +565,7 @@ SubElementChildNode::prolong_interpolation_fields(const CDMesh & mesh) const
   const ProlongationElementData * interpolationElem = nullptr;
   Vector3d interpElemParamCoords;
   const ProlongationElementData * prolongElem =  mesh.fetch_prolong_element(my_cached_owner->entityId());
-  ThrowRequire(prolongElem);
+  STK_ThrowRequire(prolongElem);
   prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interpElemParamCoords);
 
   const FieldSet & interpolation_fields = mesh.get_interpolation_fields();
@@ -733,7 +733,7 @@ SubElementNode::build_stencil(std::map<const SubElementNode *, double> & stencil
 void
 SubElementNode::build_constraint_stencil(const FieldRef field, std::vector<stk::mesh::Entity> & entities, std::vector<double> & weights) const
 {
-  ThrowRequire(!is_mesh_node());
+  STK_ThrowRequire(!is_mesh_node());
   static const double wt_min = 1.e-9;
   typedef std::tuple<stk::mesh::EntityId, stk::mesh::Entity, double> EntityAndWeight;
   std::vector<EntityAndWeight> entitiesAndWeights;
@@ -788,8 +788,8 @@ SubElement::SubElement( const stk::topology topo,
       my_parent_side_ids( side_ids ),
       my_owner( owner )
 { /* %TRACE% */  /* %TRACE% */
-  ThrowAssert( nodes.size() == topology().num_nodes() );
-  ThrowAssert( my_parent_side_ids.size() == topology().num_sides() );
+  STK_ThrowAssert( nodes.size() == topology().num_nodes() );
+  STK_ThrowAssert( my_parent_side_ids.size() == topology().num_sides() );
 
   set_permutation();
 }
@@ -865,7 +865,7 @@ SubElement::get_owner_coord_transform(double * dOwnerdSub) const
 
   // Hard coded for linear simplex elements with constant transformations
   const unsigned nnodes = num_nodes();
-  ThrowAssert(my_master_elem.num_intg_pts() == nnodes);
+  STK_ThrowAssert(my_master_elem.num_intg_pts() == nnodes);
   const double * d_shape = my_master_elem.shape_fcn_deriv();
 
   const int dim = spatial_dim();
@@ -996,13 +996,13 @@ SubElement::maximum_relative_angle() const
   for ( unsigned edge0 = 0; edge0 < num_edges; edge0++ )
   {
     const unsigned * lnn0 = get_edge_node_ordinals(topol, edge0);
-    ThrowAssert(
+    STK_ThrowAssert(
         2 == topol.edge_topology(edge0).num_nodes() || 3 == topol.edge_topology(edge0).num_nodes());
 
     for ( unsigned edge1 = edge0+1; edge1 < num_edges; edge1++ )
     {
       const unsigned * lnn1 = get_edge_node_ordinals(topol, edge1);
-      ThrowAssert(2 == topol.edge_topology(edge1).num_nodes() ||
+      STK_ThrowAssert(2 == topol.edge_topology(edge1).num_nodes() ||
           3 == topol.edge_topology(edge1).num_nodes());
 
       int node0 = -1;
@@ -1068,7 +1068,7 @@ SubElement::find_refined_edges(std::vector<unsigned> & refined_edges) const
     const unsigned * edge_node_ordinals = get_edge_node_ordinals(topol, edge);
 
     const int num_edge_nodes = topol.edge_topology(edge).num_nodes();
-    ThrowRequire(2 == num_edge_nodes || 3 == num_edge_nodes);
+    STK_ThrowRequire(2 == num_edge_nodes || 3 == num_edge_nodes);
 
     if ((2 == num_edge_nodes &&
          NULL != SubElementNode::common_child({my_nodes[edge_node_ordinals[0]], my_nodes[edge_node_ordinals[1]]})) ||
@@ -1108,7 +1108,7 @@ SubElement::find_longest_bad_edge(std::vector<unsigned> & bad_edges) const
     const Vector3d & coord1 = node1->coordinates();
 
     const double edge_straight_length = (coord0 - coord1).length();
-    ThrowRequire(edge_straight_length > 0.0);
+    STK_ThrowRequire(edge_straight_length > 0.0);
 
     if (2 == num_edge_nodes)
     {
@@ -1116,7 +1116,7 @@ SubElement::find_longest_bad_edge(std::vector<unsigned> & bad_edges) const
     }
     else
     {
-      ThrowAssert (3 == num_edge_nodes);
+      STK_ThrowAssert(3 == num_edge_nodes);
       edge_midpt[index] = my_nodes[lnn[0]]->coordinates();
     }
 
@@ -1133,7 +1133,7 @@ SubElement::find_longest_bad_edge(std::vector<unsigned> & bad_edges) const
       // note that it is safe to assume that longest_bad_edge is already assigned if edge_length == max_length
       const Vector3d longest_edge_midside_coords = edge_midpt[longest_bad_edge_index];
 
-      ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
+      STK_ThrowAssert((utility::is_not_equal(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
                     utility::is_not_equal(edge_midside_coords[1],longest_edge_midside_coords[1])));
 
       if (utility::is_more(edge_midside_coords[0],longest_edge_midside_coords[0]) ||
@@ -1169,7 +1169,7 @@ SubElement::debug_subelements(const NodeVec & lnodes, const InterfaceID & interf
   }
   krinolog << " interface signs = ";
   const std::vector<InterfaceID> interfaces = my_owner->get_sorted_cutting_interfaces();
-  ThrowRequire(interfaces.size() == myInterfaceSigns.size());
+  STK_ThrowRequire(interfaces.size() == myInterfaceSigns.size());
   for (unsigned i=0; i<interfaces.size(); ++i) krinolog << interfaces[i] << "@" << myInterfaceSigns[i] << " ";
   krinolog << "\n";
   for (unsigned subid=0; subid<my_subelements.size(); ++subid)
@@ -1186,7 +1186,7 @@ SubElement::debug() const
   const double sub_vol = relative_volume();
   krinolog << "  owner_id=" << my_owner->entityId() << ", relative_volume=" << sub_vol << ", interface signs = ";
   const std::vector<InterfaceID> interfaces = my_owner->get_sorted_cutting_interfaces();
-  ThrowRequire(interfaces.size() == myInterfaceSigns.size());
+  STK_ThrowRequire(interfaces.size() == myInterfaceSigns.size());
   for (unsigned i=0; i<interfaces.size(); ++i) krinolog << interfaces[i] << "@" << myInterfaceSigns[i] << " ";
   krinolog << "\n";
   if (true || sub_vol < 1.e-10)
@@ -1335,7 +1335,7 @@ SubElement_Tri_3::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
     edge_case_id += 1<<edge_with_children;
   }
   // It is invalid to have all three edges with hanging children.
-  ThrowErrorMsgIf(edge_case_id == 7, "Found Tri 3, with invalid configuration of edges with hanging children.");
+  STK_ThrowErrorMsgIf(edge_case_id == 7, "Found Tri 3, with invalid configuration of edges with hanging children.");
 
   std::array<int,3> node_signs = {{0, 0, 0}};
 
@@ -1409,7 +1409,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   node_val[2] = case_id/9;
   node_val[1] = (case_id-9*node_val[2])/3;
   node_val[0] =  case_id-9*node_val[2]-3*node_val[1];
-  ThrowRequire(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9));
+  STK_ThrowRequire(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9));
 
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
 
@@ -1437,7 +1437,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     {
       lnodes[i3] = SubElementNode::common_child({lnodes[i0], lnodes[i1]});
       lnodes[i5] = SubElementNode::common_child({lnodes[i2], lnodes[i0]});
-      ThrowRequire(nullptr != lnodes[i3] && nullptr != lnodes[i5]);
+      STK_ThrowRequire(nullptr != lnodes[i3] && nullptr != lnodes[i5]);
 
       const bool diag = determine_diagonal_for_cut_triangle(simplexMethod, lnodes, i0, i1, i2, i3, i5);
 
@@ -1459,7 +1459,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 21: // ls[0]<0 && ls[1]=0 && ls[2]>0
     {
       lnodes[i5] = SubElementNode::common_child({lnodes[i2], lnodes[i0]});
-      ThrowRequire(nullptr != lnodes[i5]);
+      STK_ThrowRequire(nullptr != lnodes[i5]);
 
       const int sign = (permute_case_id==5) ? 1 : -1;
       handle_tri(lnodes, subelement_interface_signs(interface_key,  sign), i1,i5,i0, -1,s2,s0, true,false,false);
@@ -1500,7 +1500,7 @@ SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_M
   }
   else
   {
-    ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
+    STK_ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
 
     // Angle-based scheme
     // Select diagonal that cuts largest angle in quad.  Since there isn't an issue with
@@ -1517,7 +1517,7 @@ SubElement_Tri_3::handle_tri( NodeVec & lnodes,
                                const int s0, const int s1, const int s2,
                                const bool is_interface0, const bool is_interface1, const bool is_interface2)
 {
-  ThrowRequire(!is_degenerate(lnodes, i0,i1,i2));
+  STK_ThrowRequire(!is_degenerate(lnodes, i0,i1,i2));
 
   NodeVec sub_nodes(3,(SubElementNode *)NULL);
   std::vector<int> sub_parent_ids(3);
@@ -1611,7 +1611,7 @@ void SubElement_Tet_4::cut_face_intersection_point_with_permutation(CDMesh & mes
       {my_nodes[permuteNodes[0]], my_nodes[permuteNodes[1]], my_nodes[permuteNodes[2]]},
       {faceNodeWeights[0], faceNodeWeights[1], faceNodeWeights[2]});
   const auto & previousDomains = cutNode->get_sorted_node_domains();
-  ThrowRequire(previousDomains.empty() || sortedDomains == previousDomains);
+  STK_ThrowRequire(previousDomains.empty() || sortedDomains == previousDomains);
   cutNode->set_node_domains(sortedDomains);
 
   NodeVec lnodes;
@@ -1741,7 +1741,7 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       }
       if (!badCut)
       {
-        ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
+        STK_ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
         cut_face_intersection_point_with_permutation(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
         cut_face_interior_intersection_points(mesh, interface1, interface2, ++level);
         return;
@@ -1798,7 +1798,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
       0, 0, 0, 0                     // 60-63
     };
   const int case_id = case_id_from_edge_case_id[edge_case_id];
-  ThrowErrorMsgIf(case_id == 0, "Found Tet 4, with invalid configuration of edges with hanging children.");
+  STK_ThrowErrorMsgIf(case_id == 0, "Found Tet 4, with invalid configuration of edges with hanging children.");
 
   if (case_id == 1)
   {
@@ -1833,7 +1833,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
   }
   else
   {
-    ThrowAssert(case_id == 2 || case_id == 3 || case_id == 4);
+    STK_ThrowAssert(case_id == 2 || case_id == 3 || case_id == 4);
 
     static const int edge_case_permutations [] =
       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // 0-9
@@ -1846,7 +1846,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
       };
 
     const int permutation = edge_case_permutations[edge_case_id];
-    ThrowRequire(permutation >= 0);
+    STK_ThrowRequire(permutation >= 0);
 
     stk::topology topo = stk::topology::TETRAHEDRON_10;
     std::vector<unsigned> permute_nodes(10);
@@ -1879,7 +1879,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
     {
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i8] = SubElementNode::common_child({lnodes[i1], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i8]);
+      STK_ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i8]);
 
 
       handle_tet( lnodes, subInterfaceSigns, i6,i2,i3,i8, -1,s1,-1,s2 );
@@ -1892,7 +1892,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
       lnodes[i8] = SubElementNode::common_child({lnodes[i1], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
+      STK_ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
 
       const bool face0 = determine_diagonal_for_cut_triangular_face(simplexMethod, globalIDsAreParallelConsistent, lnodes, i3, i0, i1, i7, i8);
       const bool face2 = determine_diagonal_for_cut_triangular_face(simplexMethod, globalIDsAreParallelConsistent, lnodes, i0, i3, i2, i7, i6);
@@ -1907,7 +1907,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
       lnodes[i5] = SubElementNode::common_child({lnodes[i1], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
       lnodes[i8] = SubElementNode::common_child({lnodes[i1], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i5] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
+      STK_ThrowRequire(nullptr != lnodes[i5] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
 
       const bool face0 = determine_diagonal_for_cut_triangular_face(simplexMethod, globalIDsAreParallelConsistent, lnodes, i3, i0, i1, i7, i8);
       const bool face1 = determine_diagonal_for_cut_triangular_face(simplexMethod, globalIDsAreParallelConsistent, lnodes, i1, i2, i3, i5, i8);
@@ -1928,7 +1928,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
 void
 SubElement_Tet_4::determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key)
 {
-  ThrowAssert(!have_subelements());
+  STK_ThrowAssert(!have_subelements());
   determine_node_signs_on_edge( mesh, interface_key, 0,1 );
   determine_node_signs_on_edge( mesh, interface_key, 1,2 );
   determine_node_signs_on_edge( mesh, interface_key, 0,2 );
@@ -1940,7 +1940,7 @@ SubElement_Tet_4::determine_node_signs(const CDMesh & mesh, const InterfaceID in
 void
 SubElement_Tet_4::determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key)
 {
-  ThrowAssert(!have_subelements());
+  STK_ThrowAssert(!have_subelements());
 
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
   if (simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT)
@@ -2101,7 +2101,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   node_val[2] = (case_id-27*node_val[3])/9;
   node_val[1] = (case_id-27*node_val[3]-9*node_val[2])/3;
   node_val[0] =  case_id-27*node_val[3]-9*node_val[2]-3*node_val[1];
-  ThrowRequire(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9 + node_val[i3]*27));
+  STK_ThrowRequire(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9 + node_val[i3]*27));
 
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
   const bool globalIDsAreParallelConsistent = mesh.get_cdfem_support().get_global_ids_are_parallel_consistent();
@@ -2135,7 +2135,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
       lnodes[i4] = SubElementNode::common_child({lnodes[i0], lnodes[i1]});
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i4] && nullptr != lnodes[i6] && nullptr != lnodes[i7]);
+      STK_ThrowRequire(nullptr != lnodes[i4] && nullptr != lnodes[i6] && nullptr != lnodes[i7]);
 
       // face0: true: connect 4 and 3, false: connect 7 and 1
       // face2: true: connect 7 and 2, false: connect 6 and 3
@@ -2156,7 +2156,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
 
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i7]);
+      STK_ThrowRequire(nullptr != lnodes[i6] && nullptr != lnodes[i7]);
 
       // face2: true: connect 7 and 2, false: connect 6 and 3
       const bool face2 = determine_diagonal_for_cut_triangular_face(simplexMethod, globalIDsAreParallelConsistent, lnodes, i0, i3, i2, i7, i6);
@@ -2172,7 +2172,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
       lnodes[i8] = SubElementNode::common_child({lnodes[i1], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i5] && nullptr != lnodes[i6] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
+      STK_ThrowRequire(nullptr != lnodes[i5] && nullptr != lnodes[i6] && nullptr != lnodes[i7] && nullptr != lnodes[i8]);
 
       // face0: true: connect 7 and 1, false: connect 8 and 0
       // face1: true: connect 5 and 3, false: connect 8 and 2
@@ -2203,7 +2203,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 14: // ls[0]>0 && ls[1]=0 && ls[2]=0 && ls[3]<0
     {
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
-      ThrowRequire(nullptr != lnodes[i7]);
+      STK_ThrowRequire(nullptr != lnodes[i7]);
 
       handle_tet( lnodes, subelement_interface_signs(interface_key,  1), i1,i7,i2,i0, s0,s2,s3,-1 );
       handle_tet( lnodes, subelement_interface_signs(interface_key, -1), i2,i7,i1,i3, s2,s0,s1,-1 );
@@ -2239,7 +2239,7 @@ bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_
   }
   else
   {
-    ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
+    STK_ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
     return SubElementNode::higher_priority_by_score_then_ancestry(*lnodes[i2],*lnodes[i1], globalIDsAreParallelConsistent);
   }
 }
@@ -2252,7 +2252,7 @@ SubElement::get_edge_position(
     double & position )
 {
   const SubElementEdgeNode * edge_child = dynamic_cast<const SubElementEdgeNode *>( n2 );
-  ThrowRequire(NULL != edge_child);
+  STK_ThrowRequire(NULL != edge_child);
   position = edge_child->get_position(n0,n1);
 }
 
@@ -2281,7 +2281,7 @@ SubElement_Tet_4::handle_tet( NodeVec & lnodes,
                                const int i0, const int i1, const int i2, const int i3,
                                const int s0, const int s1, const int s2, const int s3)
 {
-  ThrowRequire(!is_degenerate(lnodes, i0,i1,i2,i3));
+  STK_ThrowRequire(!is_degenerate(lnodes, i0,i1,i2,i3));
 
   NodeVec sub_nodes(4,(SubElementNode *)NULL);
   std::vector<int> sub_parent_ids(4);
@@ -2395,11 +2395,11 @@ SubElement_Tet_4::handle_wedge( CDMesh & mesh,
   }
   else
   {
-    ThrowRequire(case_id == 3 || case_id == 4);
+    STK_ThrowRequire(case_id == 3 || case_id == 4);
     if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Schonhardt's polyhedron formed, Adding Steiner point." << "\n";
 
     // Schonhardt's polyhedra should never be forced now that diagonals are cut using a globally consistent nodal criterion
-    ThrowRequireMsg(false, "Schonhardt polyhedron found.  This should not happen.");
+    STK_ThrowRequireMsg(false, "Schonhardt polyhedron found.  This should not happen.");
 
     NodeVec wedge_nodevec(6);
     wedge_nodevec[0] = lnodes[i0];
@@ -2654,7 +2654,7 @@ SubElement::process_edge( CDMesh & mesh, const InterfaceID interface, const int 
       have_interface(interface))
   {
     const double position = my_owner->interface_crossing_position(interface, parent1, parent2);
-    ThrowRequireMsg(position > 0. && position < 1., "Error process_edge " << position << " " << parent1->get_node_sign() << " " << parent2->get_node_sign());
+    STK_ThrowRequireMsg(position > 0. && position < 1., "Error process_edge " << position << " " << parent1->get_node_sign() << " " << parent2->get_node_sign());
 
     std::unique_ptr<SubElementNode> newNode = std::make_unique<SubElementEdgeNode>(my_owner, position, parent1, parent2);
     subnode = mesh.add_managed_node(std::move(newNode));
@@ -2756,14 +2756,14 @@ SubElement::handle_hanging_children(CDMesh & mesh, const InterfaceID & interface
 
   for ( auto && subelem : my_subelements )
   {
-    ThrowRequire(!subelem->have_edges_with_children());
+    STK_ThrowRequire(!subelem->have_edges_with_children());
   }
 }
 
 void
 SubElement::build_quadratic_subelements(CDMesh & mesh)
 {
-  ThrowRequireMsg(have_subelements(), "This subelement type does not support quadratic subelements.");
+  STK_ThrowRequireMsg(have_subelements(), "This subelement type does not support quadratic subelements.");
   for ( auto && subelem : my_subelements )
   {
     subelem->build_quadratic_subelements(mesh);
@@ -2777,7 +2777,7 @@ SubElement::cut_face_interior_intersection_points(CDMesh & mesh, const Interface
   if (topology().num_faces() == 0)
     return;
 
-  ThrowRequireMsg(false, "This subelement type does not support cut_face_interior_intersection_points: " << topology());
+  STK_ThrowRequireMsg(false, "This subelement type does not support cut_face_interior_intersection_points: " << topology());
 }
 
 bool
