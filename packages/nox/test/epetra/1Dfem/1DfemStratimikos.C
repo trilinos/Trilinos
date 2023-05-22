@@ -332,6 +332,8 @@ int main(int argc, char *argv[])
     if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
       status = 3;
 
+    success = status==0;
+
     // Summarize test results
     if (status == 0)
       printing.out() << "Test passed!" << std::endl;
