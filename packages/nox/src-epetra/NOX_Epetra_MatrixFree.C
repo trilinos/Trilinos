@@ -118,7 +118,7 @@ int MatrixFree::SetUseTranspose(bool use_transpose)
   if (use_transpose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
      << "unavailable in Matrix-Free mode!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   return (-1);
 }
@@ -236,7 +236,7 @@ int MatrixFree::ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVect
 {
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
   TEUCHOS_UNREACHABLE_RETURN(-1);
 }
 
@@ -244,7 +244,7 @@ double MatrixFree::NormInf() const
 {
   utils.out() << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
        << "Matrix-Free mode!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
   TEUCHOS_UNREACHABLE_RETURN(1.0);
 }
 

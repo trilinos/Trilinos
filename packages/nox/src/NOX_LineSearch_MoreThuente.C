@@ -107,7 +107,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       (defaultstep <= 0))
   {
     print.out() << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   counter->reset();
@@ -120,7 +120,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else {
     print.out() << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
      << "\"Sufficient Decrease Condition\" is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   choice = p.get("Recovery Step Type", "Constant");
@@ -132,7 +132,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else {
     print.out() << "NOX::LineSearch::MoreThuente::reset - Invalid "
      << "\"Recovery Step Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   useOptimizedSlopeCalc = p.get("Optimize Slope Calculation", false);
@@ -273,7 +273,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     if (rtype != NOX::Abstract::Group::Ok)
     {
       print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     double f = meritFuncPtr->computef(newgrp);
@@ -284,14 +284,14 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
       if (rtype != NOX::Abstract::Group::Ok)
     {
       print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
       rtype = newgrp.computeGradient();
       if (rtype != NOX::Abstract::Group::Ok)
     {
       print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
     }
 

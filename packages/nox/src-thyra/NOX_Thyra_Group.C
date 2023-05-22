@@ -737,7 +737,7 @@ double NOX::Thyra::Group::getNormF() const
   if ( !(this->isF()) ) {
     std::cerr << "ERROR: NOX::Thyra::Group::getNormF() "
 	      << "- F is not up to date.  Please call computeF()!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return f_vec_->norm();

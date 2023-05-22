@@ -314,7 +314,7 @@ throwError(const std::string& functionName, const std::string& errorMsg)
     if (printing->isPrintType(NOX::Utils::Error))
       printing->err() << "NOX::InexactNewtonUtils::" << functionName << " - "
        << errorMsg << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 }
 
 // **************************************************************************

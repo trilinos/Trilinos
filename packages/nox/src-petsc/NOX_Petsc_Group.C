@@ -110,7 +110,7 @@ Group::Group(const Group& source, CopyType type) :
 
   default:
     std::cerr << "ERROR: Invalid ConstructorType for group copy constructor." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
 }
@@ -224,7 +224,7 @@ Group::computeF()
   if(status == false) {
     std::cout << "ERROR: Petsc::Group::computeF() - fill failed!!!"
          << std::endl;
-    throw "NOX Error: RHS Fill Failed";
+    throw std::runtime_error("NOX Error:) RHS Fill Failed";
   }
 
   normRHS = RHSVector.norm();
@@ -255,12 +255,12 @@ Group::computeJacobian()
     if (status == false) {
       std::cout << "ERROR: Petsc::Group::computeJacobian() - fill failed!!!"
            << std::endl;
-      throw "NOX Error: Jacobian Fill Failed";
+      throw std::runtime_error("NOX Error:) Jacobian Fill Failed";
     }
   }
   else if(jacType == "Finite Difference") {
     std::cout << "Finite Difference evaluation not yet supported !!\n\n";
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Update status
@@ -277,12 +277,12 @@ Group::computeGradient()
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - RHS is out of date wrt X!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - Jacobian is out of date wrt X!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Get a reference to the Jacobian (it's validity was checked above)
@@ -308,12 +308,12 @@ Group::computeNewton(Teuchos::ParameterList& p)
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Get the Jacobian
@@ -538,7 +538,7 @@ Group::getF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getF() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return RHSVector;
@@ -549,7 +549,7 @@ Group::getNormF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNormF() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return normRHS;
@@ -560,7 +560,7 @@ Group::getGradient() const
 {
   if (!isGradient()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getGradient() - invalid gradient" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return gradVector;
@@ -571,7 +571,7 @@ Group::getNewton() const
 {
   if (!isNewton()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNewton() - invalid Newton vector" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return NewtonVector;
@@ -588,7 +588,7 @@ Group::getFPtr() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getFPtr() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return Teuchos::rcp< const NOX::Abstract::Vector >(&RHSVector, false);
@@ -599,7 +599,7 @@ Group::getGradientPtr() const
 {
   if (!isGradient()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getGradientPtr() - invalid gradient" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return Teuchos::rcp< const NOX::Abstract::Vector >(&gradVector, false);
@@ -610,7 +610,7 @@ Group::getNewtonPtr() const
 {
   if (!isNewton()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNewtonPtr() - invalid Newton vector" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return Teuchos::rcp< const NOX::Abstract::Vector >(&NewtonVector, false);
