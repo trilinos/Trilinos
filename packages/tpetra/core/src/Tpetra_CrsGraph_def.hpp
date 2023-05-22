@@ -1656,7 +1656,7 @@ namespace Tpetra {
   insertGlobalIndicesImpl (const RowInfo& rowInfo,
                            const GlobalOrdinal inputGblColInds[],
                            const size_t numInputInds,
-                           std::function<void(const size_t, const size_t, const size_t)> fun)
+                           function_sss_t fun)
   {
     using Details::verbosePrintArray;
     using Kokkos::View;
@@ -1720,43 +1720,47 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  insertLocalIndicesImpl (const LocalOrdinal myRow,
-                          const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                          std::function<void(const size_t, const size_t, const size_t)> fun)
+  insertLocalIndicesImpl (const LocalOrdinal lclRow,
+                          const Teuchos::ArrayView<const local_ordinal_type>& lclColInds,
+                          function_sss_t fun)
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::subview;
-    using Kokkos::View;
-    using LO = LocalOrdinal;
+    Kokkos::View<const LocalOrdinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> indices_kv(lclColInds.getRawPtr(), lclColInds.size());
+    return this->insertLocalIndicesImpl(lclRow, indices_kv, fun);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  insertLocalIndicesImpl (const local_ordinal_type lclRow,
+                          const local_inds_host_view_type& lclColInds,
+                          function_sss_t fun)
+  {
     const char tfecfFuncName[] = "insertLocallIndicesImpl: ";
 
-    const RowInfo rowInfo = this->getRowInfo(myRow);
+    const RowInfo rowInfo = this->getRowInfo(lclRow);
 
     size_t numNewInds = 0;
     size_t newNumEntries = 0;
 
     auto numEntries = rowInfo.numEntries;
-    // Note: Teuchos::ArrayViews are in HostSpace
-    using inp_view_type = View<const LO*, Kokkos::HostSpace, MemoryUnmanaged>;
-    inp_view_type inputInds(indices.getRawPtr(), indices.size());
     size_t numInserted = 0;
     {
       auto lclInds = lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      numInserted = Details::insertCrsIndices(myRow, rowPtrsUnpacked_host_, lclInds,
-                                              numEntries, inputInds, fun);
+      numInserted = Details::insertCrsIndices(lclRow, rowPtrsUnpacked_host_, lclInds,
+                                              numEntries, lclColInds, fun);
     }
 
     const bool insertFailed =
       numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
     if(insertFailed) {
       constexpr size_t ONE (1);
-      const size_t numInputInds(indices.size());
+      const size_t numInputInds(lclColInds.size());
       const int myRank = this->getComm()->getRank();
       std::ostringstream os;
       os << "On MPI Process " << myRank << ": Not enough capacity to "
         "insert " << numInputInds
          << " ind" << (numInputInds != ONE ? "ices" : "ex")
-         << " into local row " << myRow << ", which currently has "
+         << " into local row " << lclRow << ", which currently has "
          << rowInfo.numEntries
          << " entr" << (rowInfo.numEntries != ONE ? "ies" : "y")
          << " and total allocation size " << rowInfo.allocSize << ".";
@@ -1766,14 +1770,14 @@ namespace Tpetra {
     numNewInds = numInserted;
     newNumEntries = rowInfo.numEntries + numNewInds;
 
-    this->k_numRowEntries_(myRow) += numNewInds;
+    this->k_numRowEntries_(lclRow) += numNewInds;
     this->setLocallyModified ();
 
     if (debug_) {
-      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow (myRow);
+      const size_t chkNewNumEntries = this->getNumEntriesInLocalRow(lclRow);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (chkNewNumEntries != newNumEntries, std::logic_error,
-         "getNumEntriesInLocalRow(" << myRow << ") = " << chkNewNumEntries
+         "getNumEntriesInLocalRow(" << lclRow << ") = " << chkNewNumEntries
          << " != newNumEntries = " << newNumEntries
          << ".  Please report this bug to the Tpetra developers.");
     }
@@ -1783,16 +1787,13 @@ namespace Tpetra {
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   findGlobalIndices(const RowInfo& rowInfo,
-                    const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                    std::function<void(const size_t, const size_t, const size_t)> fun) const
+                    const global_inds_host_view_type& indices,
+                    function_sss_t fun) const
   {
     using GO = GlobalOrdinal;
     using Kokkos::View;
     using Kokkos::MemoryUnmanaged;
     auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
-
-    using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
-    inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
     LocalOrdinal lclRow = rowInfo.localRow;
@@ -1804,13 +1805,13 @@ namespace Tpetra {
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
       numFound = Details::findCrsIndices(lclRow, rowPtrsUnpacked_host_,
         rowInfo.numEntries,
-        lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+        lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), indices, map, fun);
     }
     else if (this->isGloballyIndexed())
     {
       numFound = Details::findCrsIndices(lclRow, rowPtrsUnpacked_host_,
         rowInfo.numEntries,
-        gblInds_wdv.getHostView(Access::ReadOnly), inputInds, fun);
+        gblInds_wdv.getHostView(Access::ReadOnly), indices, fun);
     }
     return numFound;
   }

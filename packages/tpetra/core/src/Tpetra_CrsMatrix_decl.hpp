@@ -57,6 +57,9 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
 
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#include "std_algorithms/impl/Kokkos_RandomAccessIterator.hpp"
+
 #include <memory> // std::shared_ptr
 
 namespace Tpetra {
@@ -988,6 +991,12 @@ private:
                         const Teuchos::ArrayView<const GlobalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals);
 
+    //! @overload
+    void
+    insertGlobalValues (const GlobalOrdinal globalRow,
+                        const global_inds_host_view_type& cols,
+                        const values_host_view_type& vals);
+
     /// \brief Epetra compatibility version of insertGlobalValues (see
     ///   above) that takes arguments as raw pointers, rather than
     ///   Teuchos::ArrayView.
@@ -1056,6 +1065,13 @@ private:
                        const Teuchos::ArrayView<const Scalar> &vals,
                        const CombineMode CM=ADD);
 
+    //! @overload
+    void
+    insertLocalValues (const LocalOrdinal localRow,
+                       const local_inds_host_view_type &cols,
+                       const values_host_view_type &vals,
+                       const CombineMode CM=ADD);
+
     /// \brief Epetra compatibility version of insertLocalValues (see
     ///   above) that takes arguments as raw pointers, rather than
     ///   Teuchos::ArrayView.
@@ -1094,12 +1110,11 @@ private:
     /// \param newVals [in] For each k, replace the value in rowVals
     ///   corresponding to local column index inds[k] with newVals[k].
     virtual LocalOrdinal
-    replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+    replaceGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
-                             const GlobalOrdinal inds[],
-                             const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts);
+                             const global_inds_host_view_type& inds,
+                             const values_host_view_type& newVals);
 
   public:
     /// \brief Replace one or more entries' values, using global indices.
@@ -1300,12 +1315,11 @@ private:
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   protected:
     virtual LocalOrdinal
-    sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
+    sumIntoGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
-                             const GlobalOrdinal inds[],
-                             const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts,
+                             const global_inds_host_view_type& inds,
+                             const values_host_view_type& newVals,
                              const bool atomic = useAtomicUpdatesByDefault);
 
   public:
@@ -1378,6 +1392,13 @@ private:
                          const LocalOrdinal numEnt,
                          const Scalar vals[],
                          const GlobalOrdinal cols[],
+                         const bool atomic = useAtomicUpdatesByDefault);
+
+    //! @overload
+    LocalOrdinal
+    sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                         const values_host_view_type& vals,
+                         const global_inds_host_view_type& cols,
                          const bool atomic = useAtomicUpdatesByDefault);
 
   protected:
@@ -1541,12 +1562,11 @@ private:
     ///   method returns
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     LocalOrdinal
-    transformLocalValues (impl_scalar_type rowVals[],
+    transformLocalValues (const nonconst_values_host_view_type& rowVals,
                           const crs_graph_type& graph,
                           const RowInfo& rowInfo,
-                          const LocalOrdinal inds[],
-                          const impl_scalar_type newVals[],
-                          const LocalOrdinal numElts,
+                          const local_inds_host_view_type& inds,
+                          const values_host_view_type& newVals,
                           std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                           const bool atomic = useAtomicUpdatesByDefault);
 
@@ -1581,12 +1601,11 @@ private:
     ///   method returns
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     LocalOrdinal
-    transformGlobalValues (impl_scalar_type rowVals[],
+    transformGlobalValues (const nonconst_values_host_view_type& rowVals,
                            const crs_graph_type& graph,
                            const RowInfo& rowInfo,
-                           const GlobalOrdinal inds[],
-                           const impl_scalar_type newVals[],
-                           const LocalOrdinal numElts,
+                           const global_inds_host_view_type& inds,
+                           const values_host_view_type& newVals,
                            std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                            const bool atomic = useAtomicUpdatesByDefault);
 
@@ -1618,9 +1637,8 @@ private:
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     LocalOrdinal
     transformLocalValues (const LocalOrdinal lclRow,
-                          const LocalOrdinal numInputEnt,
-                          const impl_scalar_type inputVals[],
-                          const LocalOrdinal inputCols[],
+                          const values_host_view_type& inputVals,
+                          const local_inds_host_view_type& inputCols,
                           std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                           const bool atomic = useAtomicUpdatesByDefault);
 
@@ -1652,9 +1670,8 @@ private:
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     LocalOrdinal
     transformGlobalValues (const GlobalOrdinal gblRow,
-                           const LocalOrdinal numInputEnt,
-                           const impl_scalar_type inputVals[],
-                           const GlobalOrdinal inputCols[],
+                           const values_host_view_type& inputVals,
+                           const global_inds_host_view_type& inputCols,
                            std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                            const bool atomic = useAtomicUpdatesByDefault);
 
@@ -1746,9 +1763,8 @@ private:
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       return this->transformLocalValues (lclRow,
-                                         numInputEnt,
-                                         inputVals.data (),
-                                         inputInds.data (),
+                                         inputVals,
+                                         inputInds,
                                          f,
                                          atomic);
     }
@@ -1812,9 +1828,8 @@ private:
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       return this->transformGlobalValues (gblRow,
-                                          numInputEnt,
-                                          inputVals.data (),
-                                          inputInds.data (),
+                                          inputVals,
+                                          inputInds,
                                           f,
                                           atomic);
     }
@@ -3225,9 +3240,8 @@ public:
     size_t
     packRow (char exports[],
              const size_t offset,
-             const size_t numEnt,
-             const GlobalOrdinal gidsIn[],
-             const impl_scalar_type valsIn[],
+             const global_inds_host_view_type& gidsIn,
+             const values_host_view_type& valsIn,
              const size_t numBytesPerValue) const;
 
     /// \brief Pack data for the current row to send, if the matrix's
@@ -3286,12 +3300,11 @@ public:
     ///   zero bytes (we don't even pack the number of entries in that
     ///   case).
     size_t
-    unpackRow (GlobalOrdinal gidsOut[],
-               impl_scalar_type valsOut[],
+    unpackRow (const nonconst_global_inds_host_view_type& gidsOut,
+               const nonconst_values_host_view_type& valsOut,
                const char imports[],
                const size_t offset,
                const size_t numBytes,
-               const size_t numEnt,
                const size_t numBytesPerValue);
 
     /// \brief Allocate space for packNew() to pack entries to send.
@@ -3557,9 +3570,8 @@ public:
     virtual void
     insertGlobalValuesImpl (crs_graph_type& graph,
                             RowInfo& rowInfo,
-                            const GlobalOrdinal gblColInds[],
-                            const impl_scalar_type vals[],
-                            const size_t numInputEnt);
+                            const global_inds_host_view_type& gblColInds,
+                            const values_host_view_type& vals);
 
   private:
     /// \brief Like insertGlobalValues(), but with column filtering.
@@ -3574,8 +3586,8 @@ public:
     void
     insertGlobalValuesFiltered(
       const GlobalOrdinal globalRow,
-      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-      const Teuchos::ArrayView<const Scalar>& values,
+      const global_inds_host_view_type& indices,
+      const values_host_view_type& values,
       const bool debug);
 
     /// \brief Wrapper for insertGlobalValuesFiltered that prints
@@ -3583,8 +3595,8 @@ public:
     void
     insertGlobalValuesFilteredChecked(
       const GlobalOrdinal globalRow,
-      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-      const Teuchos::ArrayView<const Scalar>& values,
+      const global_inds_host_view_type& indices,
+      const values_host_view_type& values,
       const char* const prefix,
       const bool debug,
       const bool verbose);
@@ -3603,8 +3615,8 @@ public:
     void
     combineGlobalValues(
       const GlobalOrdinal globalRowIndex,
-      const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
-      const Teuchos::ArrayView<const Scalar>& values,
+      const global_inds_host_view_type& columnIndices,
+      const values_host_view_type& values,
       const Tpetra::CombineMode combineMode,
       const char* const prefix,
       const bool debug,
@@ -3655,25 +3667,20 @@ public:
     template<class BinaryFunction>
     LocalOrdinal
     transformGlobalValues (const GlobalOrdinal globalRow,
-                           const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                           const Teuchos::ArrayView<const Scalar>& values,
+                           const global_inds_host_view_type& indices,
+                           const values_host_view_type& values,
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault)
     {
-      typedef impl_scalar_type IST;
       typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
 
       const LO numInputEnt = static_cast<LO> (indices.size ());
       if (static_cast<LO> (values.size ()) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const GO* const inputCols = indices.getRawPtr ();
-      const IST* const inputVals =
-        reinterpret_cast<const IST*> (values.getRawPtr ());
-      return this->transformGlobalValues (globalRow, numInputEnt, inputVals,
-                                          inputCols, f, atomic);
+      return this->transformGlobalValues (globalRow, values,
+                                          indices, f, atomic);
     }
 
     /// \brief Special case of insertGlobalValues for when globalRow
@@ -3684,8 +3691,8 @@ public:
     /// for the input array type.
     void
     insertNonownedGlobalValues (const GlobalOrdinal globalRow,
-                                const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                                const Teuchos::ArrayView<const Scalar>& values);
+                                const global_inds_host_view_type& indices,
+                                const values_host_view_type& values);
 
     /// \brief Insert indices and their values into the given row.
     ///
@@ -3785,8 +3792,10 @@ public:
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
     /// \return The new row length, after merging.
+    using nonconst_local_inds_host_view_type_it_type = Kokkos::Experimental::Impl::RandomAccessIterator<nonconst_local_inds_host_view_type>;
+    using nonconst_values_host_view_type_it_type = Kokkos::Experimental::Impl::RandomAccessIterator<nonconst_values_host_view_type>;
     static size_t
-    mergeRowIndicesAndValues (size_t rowLen, local_ordinal_type* cols, impl_scalar_type* vals);
+    mergeRowIndicesAndValues (size_t rowLen, nonconst_local_inds_host_view_type_it_type cols, nonconst_values_host_view_type_it_type vals);
 
     /// \brief Sort and merge duplicate local column indices in all
     ///   rows on the calling process, along with their corresponding

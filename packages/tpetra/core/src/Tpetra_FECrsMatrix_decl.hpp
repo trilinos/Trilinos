@@ -67,9 +67,12 @@ public:
     //! @name Typedefs
     //@{
 
+    /// \brief Parent CrsMatrix type using the same scalars
+    using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
     /// \brief This class' first template parameter; the type of each
     ///        entry in the matrix.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scalar_type scalar_type;
+    using typename crs_matrix_type::scalar_type;
 
     /// \brief The type used internally in place of \c Scalar.
     ///
@@ -80,55 +83,56 @@ public:
     /// internally with the (usually) bitwise identical type
     /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
     /// corresponding to \c Scalar = std::complex.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type impl_scalar_type;
+    using typename crs_matrix_type::impl_scalar_type;
 
     //! This class' second template parameter; the type of local indices.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_ordinal_type local_ordinal_type;
+    using typename crs_matrix_type::local_ordinal_type;
 
     //! This class' third template parameter; the type of global indices.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type global_ordinal_type;
+    using typename crs_matrix_type::global_ordinal_type;
 
     //! This class' fourth template parameter; the Kokkos device type.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
+    using typename crs_matrix_type::node_type;
 
     //! The Kokkos device type.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type device_type;
+    using typename crs_matrix_type::device_type;
 
     //! The Kokkos execution space.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space execution_space;
+    using typename crs_matrix_type::execution_space;
 
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+    using typename crs_matrix_type::mag_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
+    using typename crs_matrix_type::map_type;
 
     //! The Import specialization suitable for this CrsMatrix specialization
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::import_type import_type;
+    using typename crs_matrix_type::import_type;
 
     //! The Export specialization suitable for this CrsMatrix specialization.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::export_type export_type;
+    using typename crs_matrix_type::export_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_graph_type crs_graph_type;
+    using typename crs_matrix_type::crs_graph_type;
 
     //! The part of the sparse matrix's graph on each MPI process.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type local_graph_device_type;
+    using typename crs_matrix_type::local_graph_device_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///        the part of the sparse matrix for each MPI process on device.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type local_matrix_device_type;
+    using typename crs_matrix_type::local_matrix_device_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///        the part of the sparse matrix for each MPI process on host.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type local_matrix_host_type;
+    using typename crs_matrix_type::local_matrix_host_type;
 
-    /// \brief Parent CrsMatrix type using the same scalars
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+    using typename crs_matrix_type::nonconst_values_host_view_type;
+    using typename crs_matrix_type::values_host_view_type;
+    using typename crs_matrix_type::global_inds_host_view_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     typedef FECrsGraph<LocalOrdinal, GlobalOrdinal, Node> fe_crs_graph_type;
@@ -172,17 +176,17 @@ public:
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Copy constructor (forbidden).
-    FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+    FECrsMatrix (const FECrsMatrix&) = delete;
 
     //! Move constructor (forbidden).
-    FECrsMatrix (FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+    FECrsMatrix (FECrsMatrix&&) = delete;
 
     //! Copy assignment (forbidden).
     FECrsMatrix&
-    operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+    operator= (const FECrsMatrix&) = delete;
     //! Move assignment (forbidden).
     FECrsMatrix&
-    operator= (FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+    operator= (FECrsMatrix&&) = delete;
 
     /// \brief Destructor (virtual for memory safety of derived classes).
     ///
@@ -261,12 +265,11 @@ public:
 
     //! Overloads of modification methods
     LocalOrdinal
-    replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+    replaceGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
-                             const GlobalOrdinal inds[],
-                             const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts);
+                             const global_inds_host_view_type& inds,
+                             const values_host_view_type& newVals);
 
     LocalOrdinal
     replaceLocalValuesImpl (impl_scalar_type rowVals[],
@@ -277,12 +280,11 @@ public:
                             const LocalOrdinal numElts);
 
     LocalOrdinal
-    sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
+    sumIntoGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
-                             const GlobalOrdinal inds[],
-                             const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts,
+                             const global_inds_host_view_type& inds,
+                             const values_host_view_type& newVals,
                              const bool atomic = useAtomicUpdatesByDefault);
 
     LocalOrdinal
@@ -297,9 +299,8 @@ public:
     void
     insertGlobalValuesImpl (crs_graph_type& graph,
                             RowInfo& rowInfo,
-                            const GlobalOrdinal gblColInds[],
-                            const impl_scalar_type vals[],
-                            const size_t numInputEnt);
+                            const global_inds_host_view_type& gblColInds,
+                            const values_host_view_type& vals);
 
   protected:
     /// \brief Migrate data from the owned+shared to the owned matrix
@@ -327,7 +328,7 @@ public:
     Teuchos::RCP<const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node> > feGraph_;
 
     // This is whichever multivector isn't currently active
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsMatrix_;
+    Teuchos::RCP<crs_matrix_type > inactiveCrsMatrix_;
     // This is in RCP to make shallow copies of the FECrsMatrix work correctly
     Teuchos::RCP<FEWhichActive> activeCrsMatrix_;
 

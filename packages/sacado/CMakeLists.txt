@@ -135,9 +135,6 @@ int main()
 CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}"
   HAS_C99_TR1_CMATH)
 
-# FIXME: Remove this hard-coded setting.  We always have C++11 now.
-SET(HAVE_SACADO_CXX11 ON)
-
 #
 # C) Add the libraries, tests, and examples
 #

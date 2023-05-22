@@ -208,12 +208,11 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endModify() {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 LocalOrdinal
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
-  impl_scalar_type rowVals[],
+  const nonconst_values_host_view_type& rowVals,
   const crs_graph_type& graph,
   const RowInfo& rowInfo,
-  const GlobalOrdinal inds[],
-  const impl_scalar_type newVals[],
-  const LocalOrdinal numElts)
+  const global_inds_host_view_type& inds,
+  const values_host_view_type& newVals)
 {
   const char tfecfFuncName[] = "FECrsMatrix::replaceGlobalValues: ";
   if (*fillState_ != FillState::open)
@@ -224,7 +223,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
            << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
-  return crs_matrix_type::replaceGlobalValuesImpl(rowVals, graph, rowInfo, inds, newVals, numElts);
+  return crs_matrix_type::replaceGlobalValuesImpl(rowVals, graph, rowInfo, inds, newVals);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -251,12 +250,11 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValuesImpl(
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 LocalOrdinal
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
-  impl_scalar_type rowVals[],
+  const nonconst_values_host_view_type& rowVals,
   const crs_graph_type& graph,
   const RowInfo& rowInfo,
-  const GlobalOrdinal inds[],
-  const impl_scalar_type newVals[],
-  const LocalOrdinal numElts,
+  const global_inds_host_view_type& inds,
+  const values_host_view_type& newVals,
   const bool atomic)
 {
   const char tfecfFuncName[] = "FECrsMatrix::sumIntoGlobalValues: ";
@@ -269,7 +267,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   return crs_matrix_type::sumIntoGlobalValuesImpl(
-    rowVals, graph, rowInfo, inds, newVals, numElts, atomic
+    rowVals, graph, rowInfo, inds, newVals, atomic
   );
 }
 
@@ -303,9 +301,8 @@ void
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
   crs_graph_type& graph,
   RowInfo& rowInfo,
-  const GlobalOrdinal gblColInds[],
-  const impl_scalar_type vals[],
-  const size_t numInputEnt)
+  const global_inds_host_view_type& gblColInds,
+  const values_host_view_type& vals)
 {
   const char tfecfFuncName[] = "FECrsMatrix::insertGlobalValues: ";
   if (*fillState_ != FillState::open)
@@ -316,7 +313,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
            << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
-  return crs_matrix_type::insertGlobalValuesImpl(graph, rowInfo, gblColInds, vals, numInputEnt);
+  return crs_matrix_type::insertGlobalValuesImpl(graph, rowInfo, gblColInds, vals);
 }
 
 }  // end namespace Tpetra

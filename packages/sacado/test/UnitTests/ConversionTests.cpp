@@ -92,7 +92,6 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
   TEST_EQUALITY_CONST( is_ad_scalar, false );
   TEST_EQUALITY( is_int_ad, is_not_view );
 
-#ifdef HAVE_SACADO_CXX11
   // Get the type of the result of the expression 'ad_type * ad_type'
   // The use of declval gets around actually instantiation objects of type
   // ad_type.
@@ -109,7 +108,6 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
 
   // typedef typename ad_expr_type::value_type ad_expr_value_type;
   // std::cout << typeid(ad_expr_value_type).name() << std::endl;
-#endif
 
   return success;
 }

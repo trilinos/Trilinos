@@ -33,7 +33,6 @@
 // While this code does not directly use C++11 features, it uses mpl::vector,
 // which does
 #include "Sacado_ConfigDefs.h"
-#ifdef HAVE_SACADO_CXX11
 
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
@@ -275,5 +274,4 @@ namespace Sacado {
 
 }
 
-#endif
 #endif

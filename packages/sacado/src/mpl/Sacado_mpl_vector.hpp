@@ -31,7 +31,6 @@
 #define SACADO_MPL_VECTOR_HPP
 
 #include "Sacado_ConfigDefs.h"
-#ifdef HAVE_SACADO_CXX11
 
 #include "Sacado_mpl_none.hpp"
 #include "Sacado_mpl_size.hpp"
@@ -129,7 +128,5 @@ namespace Sacado {
 
   }
 }
-
-#endif
 
 #endif

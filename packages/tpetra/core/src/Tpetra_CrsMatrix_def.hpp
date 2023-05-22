@@ -77,11 +77,31 @@
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
 #include "KokkosBlas.hpp"
 
+#include "Kokkos_StdAlgorithms.hpp"
+
+namespace KE = Kokkos::Experimental;
+
 #include <memory>
 #include <sstream>
 #include <typeinfo>
 #include <utility>
 #include <vector>
+
+//! This seems to be a bad idea.
+#define KOKKOS_VIEW_TO_TEUCHOS_ARRAY(__view__) \
+  Teuchos::ArrayView(__view__.data(), __view__.extent(0), Teuchos::RCP_DISABLE_NODE_LOOKUP)
+
+//! Build an unmanaged @c Kokkos host view of global indices.
+#define CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES(__name__, __ptr__, __size__) \
+  Kokkos::View<const GlobalOrdinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> __name__(__ptr__, __size__)
+
+//! Build an unmanaged @c Kokkos host view of local indices.
+#define CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_LOCAL_INDICES(__name__, __ptr__, __size__) \
+  Kokkos::View<const LocalOrdinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> __name__(__ptr__, __size__)
+
+//! Build an unmanaged @c Kokkos host view of @c impl_scalar_type using @c reinterpret_cast for e.g. @c Kokkos::complex.
+#define CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(__name__, __ptr__, __size__) \
+    Kokkos::View<const impl_scalar_type*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> __name__(reinterpret_cast<const impl_scalar_type*>(__ptr__), __size__)
 
 namespace Tpetra {
 
@@ -1761,9 +1781,22 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  insertLocalValues (const LocalOrdinal localRow,
+                     const Teuchos::ArrayView<const LocalOrdinal> &cols,
+                     const Teuchos::ArrayView<const Scalar> &vals,
+                     const CombineMode CM)
+  {
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_LOCAL_INDICES   (cols_kv, cols.getRawPtr(), cols.size());
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(vals_kv, vals.getRawPtr(), vals.size());
+    return this->insertLocalValues(localRow, cols_kv, vals_kv, CM);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertLocalValues (const LocalOrdinal lclRow,
-                     const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     const Teuchos::ArrayView<const Scalar>& values,
+                     const local_inds_host_view_type& indices,
+                     const values_host_view_type& values,
                      const CombineMode CM)
   {
     using std::endl;
@@ -1864,9 +1897,9 @@ namespace Tpetra {
                      const LocalOrdinal cols[],
                      const CombineMode CM)
   {
-    Teuchos::ArrayView<const LocalOrdinal> colsT (cols, numEnt);
-    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
-    this->insertLocalValues (localRow, colsT, valsT, CM);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_LOCAL_INDICES   (cols_kv, cols, numEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(vals_kv, vals, numEnt);
+    this->insertLocalValues (localRow, cols_kv, vals_kv, CM);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1874,9 +1907,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertGlobalValuesImpl (crs_graph_type& graph,
                           RowInfo& rowInfo,
-                          const GlobalOrdinal gblColInds[],
-                          const impl_scalar_type vals[],
-                          const size_t numInputEnt)
+                          const global_inds_host_view_type& gblColInds,
+                          const values_host_view_type& vals)
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
@@ -1906,7 +1938,7 @@ namespace Tpetra {
     //numInserted is only used inside the debug code below.
     auto numInserted =
 #endif
-    graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
+    graph.insertGlobalIndicesImpl(rowInfo, gblColInds.data(), gblColInds.size(), cb);
 
 #ifdef HAVE_TPETRA_DEBUG
     size_t newNumEnt = curNumEnt + numInserted;
@@ -1993,13 +2025,24 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  insertGlobalValues (const GlobalOrdinal globalRow,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& cols,
+                      const Teuchos::ArrayView<const Scalar>& vals)
+  {
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (cols_kv, cols.getRawPtr(), cols.size());
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(vals_kv, vals.getRawPtr(), vals.size());
+    return this->insertGlobalValues(globalRow, cols_kv, vals_kv);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertGlobalValues (const GlobalOrdinal gblRow,
-                      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                      const Teuchos::ArrayView<const Scalar>& values)
+                      const global_inds_host_view_type& indices,
+                      const values_host_view_type& values)
   {
     using Teuchos::toString;
     using std::endl;
-    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Tpetra::Details::OrdinalTraits<LO> OTLO;
@@ -2042,10 +2085,6 @@ namespace Tpetra {
       }
 
       crs_graph_type& graph = * (this->myGraph_);
-      const IST* const inputVals =
-        reinterpret_cast<const IST*> (values.getRawPtr ());
-      const GO* const inputGblColInds = indices.getRawPtr ();
-      const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
       // If the matrix has a column Map, check at this point whether
@@ -2078,7 +2117,7 @@ namespace Tpetra {
         if (! allInColMap) {
           std::ostringstream os;
           os << "You attempted to insert entries in owned row " << gblRow
-             << ", at the following column indices: " << toString (indices)
+             << ", at the following column indices: " << KOKKOS_VIEW_TO_TEUCHOS_ARRAY(indices)
              << "." << endl;
 #ifdef HAVE_TPETRA_DEBUG
           os << "Of those, the following indices are not in the column Map "
@@ -2096,8 +2135,8 @@ namespace Tpetra {
         }
       }
 
-      this->insertGlobalValuesImpl (graph, rowInfo, inputGblColInds,
-                                    inputVals, numInputEnt);
+      this->insertGlobalValuesImpl (graph, rowInfo, indices,
+                                    values);
     }
   }
 
@@ -2110,9 +2149,9 @@ namespace Tpetra {
                       const Scalar vals[],
                       const GlobalOrdinal inds[])
   {
-    Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
-    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
-    this->insertGlobalValues (globalRow, indsT, valsT);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (cols_kv, inds, numEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(vals_kv, vals, numEnt);
+    this->insertGlobalValues (globalRow, cols_kv, vals_kv);
   }
 
 
@@ -2121,13 +2160,11 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertGlobalValuesFiltered(
     const GlobalOrdinal gblRow,
-    const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-    const Teuchos::ArrayView<const Scalar>& values,
+    const global_inds_host_view_type& indices,
+    const values_host_view_type& values,
     const bool debug)
   {
-    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     typedef Tpetra::Details::OrdinalTraits<LO> OTLO;
     const char tfecfFuncName[] = "insertGlobalValuesFiltered: ";
 
@@ -2166,9 +2203,6 @@ namespace Tpetra {
       }
 
       crs_graph_type& graph = * (this->myGraph_);
-      const IST* const inputVals =
-        reinterpret_cast<const IST*> (values.getRawPtr ());
-      const GO* const inputGblColInds = indices.getRawPtr ();
       const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
@@ -2188,7 +2222,7 @@ namespace Tpetra {
           Teuchos::Array<LO> lclIndices;
           size_t endOffset = curOffset;
           for ( ; endOffset < numInputEnt; ++endOffset) {
-            auto lclIndex = colMap.getLocalElement(inputGblColInds[endOffset]);
+            auto lclIndex = colMap.getLocalElement(indices(endOffset));
             if (lclIndex != OTLO::invalid())
               lclIndices.push_back(lclIndex);
             else
@@ -2197,16 +2231,18 @@ namespace Tpetra {
           // curOffset, endOffset: half-exclusive range of indices in the column
           // Map on the calling process. If endOffset == curOffset, the range is
           // empty.
-          const LO numIndInSeq = (endOffset - curOffset);
+          const size_t numIndInSeq = (endOffset - curOffset);
           if (numIndInSeq != 0) {
-            this->insertLocalValues(lclRow, lclIndices(), values(curOffset, numIndInSeq));
+            this->insertLocalValues(lclRow,
+              CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_LOCAL_INDICES(, lclIndices.getRawPtr(), lclIndices.size()),
+              Kokkos::subview(values, Kokkos::make_pair(curOffset, curOffset + numIndInSeq)));
           }
           // Invariant before the increment line: Either endOffset ==
           // numInputEnt, or inputGblColInds[endOffset] is not in the column Map
           // on the calling process.
           if (debug) {
             const bool invariant = endOffset == numInputEnt ||
-              colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
+              colMap.getLocalElement (indices(endOffset)) == OTLO::invalid ();
             TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
               (! invariant, std::logic_error, std::endl << "Invariant failed!");
           }
@@ -2222,7 +2258,7 @@ namespace Tpetra {
           // instead of one at a time, amortizes some overhead.
           size_t endOffset = curOffset;
           for ( ; endOffset < numInputEnt &&
-                  colMap.getLocalElement (inputGblColInds[endOffset]) != OTLO::invalid ();
+                  colMap.getLocalElement (indices(endOffset)) != OTLO::invalid ();
                 ++endOffset)
             {}
           // curOffset, endOffset: half-exclusive range of indices in
@@ -2232,16 +2268,15 @@ namespace Tpetra {
           if (numIndInSeq != 0) {
             rowInfo = graph.getRowInfo(lclRow);  // KDD 5/19 Need fresh RowInfo in each loop iteration
             this->insertGlobalValuesImpl (graph, rowInfo,
-                                          inputGblColInds + curOffset,
-                                          inputVals + curOffset,
-                                          numIndInSeq);
+                                          Kokkos::subview(indices, Kokkos::make_pair(curOffset, curOffset + numIndInSeq)),
+                                          Kokkos::subview( values, Kokkos::make_pair(curOffset, curOffset + numIndInSeq)));
           }
           // Invariant before the increment line: Either endOffset ==
           // numInputEnt, or inputGblColInds[endOffset] is not in the
           // column Map on the calling process.
           if (debug) {
             const bool invariant = endOffset == numInputEnt ||
-              colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
+              colMap.getLocalElement (indices(endOffset)) == OTLO::invalid ();
             TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
               (! invariant, std::logic_error, std::endl << "Invariant failed!");
           }
@@ -2249,8 +2284,8 @@ namespace Tpetra {
         }
       }
       else { // we don't have a column Map.
-        this->insertGlobalValuesImpl (graph, rowInfo, inputGblColInds,
-                                      inputVals, numInputEnt);
+        this->insertGlobalValuesImpl (graph, rowInfo, indices,
+                                      values);
       }
     }
   }
@@ -2260,8 +2295,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertGlobalValuesFilteredChecked(
     const GlobalOrdinal gblRow,
-    const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-    const Teuchos::ArrayView<const Scalar>& values,
+    const global_inds_host_view_type& indices,
+    const values_host_view_type& values,
     const char* const prefix,
     const bool debug,
     const bool verbose)
@@ -2435,20 +2470,18 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+  replaceGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                            const crs_graph_type& graph,
                            const RowInfo& rowInfo,
-                           const GlobalOrdinal inds[],
-                           const impl_scalar_type newVals[],
-                           const LocalOrdinal numElts)
+                           const global_inds_host_view_type& inds,
+                           const values_host_view_type& newVals)
   {
-    Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
     auto fun =
       [&](size_t const k, size_t const /*start*/, size_t const offset) {
-        rowVals[offset] = newVals[k];
+        rowVals(offset) = newVals[k];
       };
     std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-    return graph.findGlobalIndices(rowInfo, indsT, cb);
+    return graph.findGlobalIndices(rowInfo, inds, cb);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2477,7 +2510,6 @@ namespace Tpetra {
                        const Scalar inputVals[],
                        const GlobalOrdinal inputGblColInds[])
   {
-    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
 
     if (! this->isFillActive () || this->staticGraph_.is_null ()) {
@@ -2494,9 +2526,10 @@ namespace Tpetra {
     }
 
     auto curRowVals = this->getValuesViewHostNonConst (rowInfo);
-    const IST* const inVals = reinterpret_cast<const IST*> (inputVals);
-    return this->replaceGlobalValuesImpl (curRowVals.data (), graph, rowInfo,
-                                          inputGblColInds, inVals, numEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (indices_kv, inputGblColInds, numEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE( values_kv, inputVals      , numEnt);
+    return this->replaceGlobalValuesImpl (curRowVals, graph, rowInfo,
+                                          indices_kv, values_kv);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2528,12 +2561,11 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
+  sumIntoGlobalValuesImpl (const nonconst_values_host_view_type& rowVals,
                            const crs_graph_type& graph,
                            const RowInfo& rowInfo,
-                           const GlobalOrdinal inds[],
-                           const impl_scalar_type newVals[],
-                           const LocalOrdinal numElts,
+                           const global_inds_host_view_type& inds,
+                           const values_host_view_type& newVals,
                            const bool atomic)
   {
     typedef LocalOrdinal LO;
@@ -2561,7 +2593,7 @@ namespace Tpetra {
       auto colInds = graph.getLocalIndsViewHost (rowInfo);
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
 
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const LO lclColInd = colMap.getLocalElement (inds[j]);
         if (lclColInd != LINV) {
           const size_t offset =
@@ -2572,7 +2604,7 @@ namespace Tpetra {
               Kokkos::atomic_add (&rowVals[offset], newVals[j]);
             }
             else {
-              rowVals[offset] += newVals[j];
+              rowVals(offset) += newVals[j];
             }
             hint = offset + 1;
             numValid++;
@@ -2585,7 +2617,7 @@ namespace Tpetra {
       // the cost of getting the view over all the entries of inds.
       auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const GO gblColInd = inds[j];
         const size_t offset =
           KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
@@ -2617,16 +2649,11 @@ namespace Tpetra {
                        const Teuchos::ArrayView<const Scalar>& inputVals,
                        const bool atomic)
   {
-    typedef LocalOrdinal LO;
-
-    const LO numInputEnt = static_cast<LO> (inputGblColInds.size ());
-    if (static_cast<LO> (inputVals.size ()) != numInputEnt) {
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-    return this->sumIntoGlobalValues (gblRow, numInputEnt,
-                                      inputVals.getRawPtr (),
-                                      inputGblColInds.getRawPtr (),
-                                      atomic);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (indices_kv, inputGblColInds.getRawPtr(), inputGblColInds.size());
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE( values_kv, inputVals      .getRawPtr(), inputVals      .size());
+    return this->sumIntoGlobalValues(
+      gblRow, values_kv, indices_kv, atomic
+    );
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2638,9 +2665,22 @@ namespace Tpetra {
                        const GlobalOrdinal inputGblColInds[],
                        const bool atomic)
   {
-    typedef impl_scalar_type IST;
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (indices_kv, inputGblColInds, numInputEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE( values_kv, inputVals      , numInputEnt);
+    return this->sumIntoGlobalValues(gblRow, values_kv, indices_kv, atomic);
+  }
+  
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                       const values_host_view_type& vals,
+                       const global_inds_host_view_type& cols,
+                       const bool atomic)
+  {
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
+
+    const auto numInputEnt = vals.extent(0);
 
     if (! this->isFillActive () || this->staticGraph_.is_null ()) {
       // Fill must be active and the "nonconst" graph must exist.
@@ -2648,25 +2688,19 @@ namespace Tpetra {
     }
     const crs_graph_type& graph = * (this->staticGraph_);
 
-    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (gblRow);
+    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (globalRow);
     if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // mfh 23 Mar 2017, 26 Jul 2017: This branch may not be not
       // thread safe in a debug build, in part because it uses
       // Teuchos::ArrayView, and in part because of the data structure
       // used to stash outgoing entries.
-      using Teuchos::ArrayView;
-      ArrayView<const GO> inputGblColInds_av(
-        numInputEnt == 0 ? nullptr : inputGblColInds,
-        numInputEnt);
-      ArrayView<const Scalar> inputVals_av(
-        numInputEnt == 0 ? nullptr :
-        inputVals, numInputEnt);
+
       // gblRow is not in the row Map on the calling process, so stash
       // the given entries away in a separate data structure.
       // globalAssemble() (called during fillComplete()) will exchange
       // that data and sum it in using sumIntoGlobalValues().
-      this->insertNonownedGlobalValues (gblRow, inputGblColInds_av,
-                                        inputVals_av);
+      this->insertNonownedGlobalValues (globalRow, cols,
+                                        vals);
       // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
       // since we won't know whether the given indices were valid
       // until globalAssemble (called in fillComplete) is called.
@@ -2677,10 +2711,9 @@ namespace Tpetra {
     }
     else { // input row is in the row Map on the calling process
       auto curRowVals = this->getValuesViewHostNonConst (rowInfo);
-      const IST* const inVals = reinterpret_cast<const IST*> (inputVals);
-      return this->sumIntoGlobalValuesImpl (curRowVals.data (), graph, rowInfo,
-                                            inputGblColInds, inVals,
-                                            numInputEnt, atomic);
+      return this->sumIntoGlobalValuesImpl (curRowVals, graph, rowInfo,
+                                            cols, vals,
+                                            atomic);
     }
   }
 
@@ -2688,9 +2721,8 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   transformLocalValues (const LocalOrdinal lclRow,
-                        const LocalOrdinal numInputEnt,
-                        const impl_scalar_type inputVals[],
-                        const LocalOrdinal inputCols[],
+                        const values_host_view_type& inputVals,
+                        const local_inds_host_view_type& inputCols,
                         std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                         const bool atomic)
   {
@@ -2710,18 +2742,17 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     auto curRowVals = this->getValuesViewHostNonConst (rowInfo);
-    return this->transformLocalValues (curRowVals.data (), graph,
+    return this->transformLocalValues (curRowVals, graph,
                                        rowInfo, inputCols, inputVals,
-                                       numInputEnt, f, atomic);
+                                       f, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   transformGlobalValues (const GlobalOrdinal gblRow,
-                         const LocalOrdinal numInputEnt,
-                         const impl_scalar_type inputVals[],
-                         const GlobalOrdinal inputCols[],
+                         const values_host_view_type& inputVals,
+                         const global_inds_host_view_type& inputCols,
                          std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                          const bool atomic)
   {
@@ -2741,20 +2772,19 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     auto curRowVals = this->getValuesViewHostNonConst (rowInfo);
-    return this->transformGlobalValues (curRowVals.data (), graph,
+    return this->transformGlobalValues (curRowVals, graph,
                                         rowInfo, inputCols, inputVals,
-                                        numInputEnt, f, atomic);
+                                        f, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  transformLocalValues (impl_scalar_type rowVals[],
+  transformLocalValues (const nonconst_values_host_view_type& rowVals,
                         const crs_graph_type& graph,
                         const RowInfo& rowInfo,
-                        const LocalOrdinal inds[],
-                        const impl_scalar_type newVals[],
-                        const LocalOrdinal numElts,
+                        const local_inds_host_view_type& inds,
+                        const values_host_view_type& newVals,
                         std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                         const bool atomic)
   {
@@ -2777,7 +2807,7 @@ namespace Tpetra {
       // the cost of getting the view over all the entries of inds.
       auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const LO lclColInd = inds[j];
         const size_t offset =
           KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
@@ -2791,12 +2821,12 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            volatile ST* const dest = &rowVals(offset);
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
             // use binary function f
-            rowVals[offset] = f (rowVals[offset], newVals[j]);
+            rowVals(offset) = f (rowVals[offset], newVals[j]);
           }
           hint = offset + 1;
           ++numValid;
@@ -2820,7 +2850,7 @@ namespace Tpetra {
       auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const GO gblColInd = colMap.getGlobalElement (inds[j]);
         if (gblColInd != GINV) {
           const size_t offset =
@@ -2858,12 +2888,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  transformGlobalValues (impl_scalar_type rowVals[],
+  transformGlobalValues (const nonconst_values_host_view_type& rowVals,
                          const crs_graph_type& graph,
                          const RowInfo& rowInfo,
-                         const GlobalOrdinal inds[],
-                         const impl_scalar_type newVals[],
-                         const LocalOrdinal numElts,
+                         const global_inds_host_view_type& inds,
+                         const values_host_view_type& newVals,
                          std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
                          const bool atomic)
   {
@@ -2886,7 +2915,7 @@ namespace Tpetra {
       // the cost of getting the view over all the entries of inds.
       auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const GO gblColInd = inds[j];
         const size_t offset =
           KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
@@ -2900,7 +2929,7 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            volatile ST* const dest = &rowVals(offset);
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
@@ -2928,7 +2957,7 @@ namespace Tpetra {
       auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
-      for (LO j = 0; j < numElts; ++j) {
+      for (size_t j = 0; j < newVals.size(); ++j) {
         const LO lclColInd = colMap.getLocalElement (inds[j]);
         if (lclColInd != LINV) {
           const size_t offset =
@@ -2948,7 +2977,7 @@ namespace Tpetra {
             }
             else {
               // use binary function f
-              rowVals[offset] = f (rowVals[offset], newVals[j]);
+              rowVals[offset] = f (rowVals(offset), newVals[j]);
             }
             hint = offset + 1;
             numValid++;
@@ -4017,8 +4046,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertNonownedGlobalValues (const GlobalOrdinal globalRow,
-                              const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                              const Teuchos::ArrayView<const Scalar>& values)
+                              const global_inds_host_view_type& indices,
+                              const values_host_view_type& values)
   {
     using Teuchos::Array;
     typedef GlobalOrdinal GO;
@@ -4597,17 +4626,25 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  mergeRowIndicesAndValues (size_t rowLen, LocalOrdinal* cols, impl_scalar_type* vals)
+  mergeRowIndicesAndValues (size_t rowLen, nonconst_local_inds_host_view_type_it_type cols, nonconst_values_host_view_type_it_type vals)
   {
-    impl_scalar_type* rowValueIter = vals;
+    //! Ensure that the iterators has modifiable view.
+    static_assert(
+      std::is_same_v<
+        typename nonconst_values_host_view_type_it_type::view_type::value_type,
+        typename nonconst_values_host_view_type_it_type::view_type::non_const_value_type
+      >, "Iterators cannot modify the view."
+    );
+
+    nonconst_values_host_view_type_it_type rowValueIter = vals;
     // beg,end define a half-exclusive interval over which to iterate.
-    LocalOrdinal* beg = cols;
-    LocalOrdinal* end = cols + rowLen;
-    LocalOrdinal* newend = beg;
+    nonconst_local_inds_host_view_type_it_type beg = cols;
+    nonconst_local_inds_host_view_type_it_type end = cols + rowLen;
+    nonconst_local_inds_host_view_type_it_type newend = beg;
     if (beg != end) {
-      LocalOrdinal* cur = beg + 1;
-      impl_scalar_type* vcur = rowValueIter + 1;
-      impl_scalar_type* vend = rowValueIter;
+      nonconst_local_inds_host_view_type_it_type cur = beg + 1;
+      nonconst_values_host_view_type_it_type vcur = rowValueIter + 1;
+      nonconst_values_host_view_type_it_type vend = rowValueIter;
       cur = beg+1;
       while (cur != end) {
         if (*cur != *newend) {
@@ -4669,8 +4706,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           [=] (const LO lclRow, size_t& numDups) {
             size_t rowBegin = rowBegins_(lclRow);
             size_t rowLen = rowLengths_(lclRow);
-            LO* cols = cols_.data() + rowBegin;
-            impl_scalar_type* vals = vals_.data() + rowBegin;
+            auto cols = KE::begin(cols_) + rowBegin;
+            auto vals = KE::begin(vals_) + rowBegin;
             if (! sorted) {
               sort2 (cols, cols + rowLen, vals);
             }
@@ -5664,8 +5701,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
       const GO targetGID = sourceGID;
 
-      ArrayView<const GO>rowIndsConstView;
-      ArrayView<const Scalar> rowValsConstView;
+      global_inds_host_view_type rowIndsConstView;
+      values_host_view_type      rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
@@ -5693,16 +5730,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              "a row length of " << checkRowLength << "." << suffix);
         }
 
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
@@ -5710,16 +5739,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         global_inds_host_view_type rowIndsView;
         values_host_view_type rowValsView;
         srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
 
@@ -5742,8 +5764,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
       const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
 
-      ArrayView<const GO> rowIndsConstView;
-      ArrayView<const Scalar> rowValsConstView;
+      global_inds_host_view_type rowIndsConstView;
+      values_host_view_type      rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
@@ -5771,16 +5793,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              << checkRowLength << "." << suffix);
         }
 
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
@@ -5788,16 +5802,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         global_inds_host_view_type rowIndsView;
         values_host_view_type rowValsView;
         srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
@@ -5872,8 +5878,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
       const GO targetGID = sourceGID;
 
-      ArrayView<const GO> rowIndsConstView;
-      ArrayView<const Scalar> rowValsConstView;
+      global_inds_host_view_type rowIndsConstView;
+      values_host_view_type      rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
 
@@ -5901,24 +5907,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              "of " << rowLength << ", but getGlobalRowCopy reports "
              "a row length of " << checkRowLength << "." << suffix);
         }
-        rowIndsConstView = Teuchos::ArrayView<const GO>(rowIndsView.data(), rowLength);
-        rowValsConstView = Teuchos::ArrayView<const Scalar>(reinterpret_cast<Scalar *>(rowValsView.data()), rowLength);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
       }
       else { // source matrix is globally indexed.
         global_inds_host_view_type rowIndsView;
         values_host_view_type rowValsView;
         srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
 
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
@@ -5940,8 +5938,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
       const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
 
-      ArrayView<const GO> rowIndsConstView;
-      ArrayView<const Scalar> rowValsConstView;
+      global_inds_host_view_type rowIndsConstView;
+      values_host_view_type      rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
@@ -5968,24 +5966,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              rowLength << ", but getGlobalRowCopy a row length of "
              << checkRowLength << "." << suffix);
         }
-        rowIndsConstView = Teuchos::ArrayView<const GO>(rowIndsView.data(), rowLength);
-        rowValsConstView = Teuchos::ArrayView<const Scalar>(reinterpret_cast<Scalar *>(rowValsView.data()), rowLength);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
       }
       else {
         global_inds_host_view_type rowIndsView;
         values_host_view_type rowValsView;
         srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
 
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                           rowIndsView.data(), rowIndsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowIndsConstView = rowIndsView;
+        rowValsConstView = rowValsView;
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
@@ -6290,17 +6280,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packRow (char exports[],
            const size_t offset,
-           const size_t numEnt,
-           const GlobalOrdinal gidsIn[],
-           const impl_scalar_type valsIn[],
+           const global_inds_host_view_type& gidsIn,
+           const values_host_view_type& valsIn,
            const size_t numBytesPerValue) const
   {
-    using Kokkos::View;
-    using Kokkos::subview;
     using Tpetra::Details::PackTraits;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
+
+    const auto numEnt = valsIn.size();
 
     if (numEnt == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
@@ -6327,11 +6316,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO>::packArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO>::packArray (gidsOut, gidsIn.data(), gidsIn.size());
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST>::packArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST>::packArray (valsOut, valsIn.data(), valsIn.size());
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -6351,16 +6340,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackRow (GlobalOrdinal gidsOut[],
-             impl_scalar_type valsOut[],
+  unpackRow (const nonconst_global_inds_host_view_type& gidsOut,
+             const nonconst_values_host_view_type& valsOut,
              const char imports[],
              const size_t offset,
              const size_t numBytes,
-             const size_t numEnt,
              const size_t numBytesPerValue)
   {
-    using Kokkos::View;
-    using Kokkos::subview;
     using Tpetra::Details::PackTraits;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -6370,6 +6356,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       "Tpetra::CrsMatrix::unpackRow",
       "Import/Export"
     );
+
+    const auto numEnt = valsOut.size();
 
     if (numBytes == 0) {
       // Rows with zero bytes should always have zero entries.
@@ -6439,11 +6427,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO>::unpackArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO>::unpackArray (gidsOut.data(), gidsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST>::unpackArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST>::unpackArray (valsOut.data(), valsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -6685,8 +6673,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
         const size_t numBytesPerValue =
           PackTraits<ST>::packValueCount (valsIn[0]);
-        numBytes = this->packRow (exports_h.data (), offset, numEnt,
-                                  gidsIn.data (), valsIn.data (), 
+        numBytes = this->packRow (exports_h.data (), offset,
+                                  gidsIn, valsIn, 
                                   numBytesPerValue);
       }
       else if (this->isGloballyIndexed ()) {
@@ -6703,8 +6691,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
         const size_t numBytesPerValue =
           PackTraits<ST>::packValueCount (valsIn[0]);
-        numBytes = this->packRow (exports_h.data (), offset, numEnt, 
-                                  gidsIn.data (), valsIn.data (),
+        numBytes = this->packRow (exports_h.data (), offset, 
+                                  gidsIn, valsIn,
                                   numBytesPerValue);
       }
       // mfh 11 Sep 2017: Currently, if the matrix is neither globally
@@ -6749,20 +6737,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                          const bool debug,
                          const bool verbose)
   {
-    using GO = GlobalOrdinal;
-
-    // mfh 23 Mar 2017: This branch is not thread safe in a debug
-    // build, due to use of Teuchos::ArrayView; see #229.
-    const GO gblRow = myGraph_->rowMap_->getGlobalElement(lclRow);
-    Teuchos::ArrayView<const GO> cols_av
-      (numEnt == 0 ? nullptr : cols, numEnt);
-    Teuchos::ArrayView<const Scalar> vals_av
-      (numEnt == 0 ? nullptr : reinterpret_cast<const Scalar*> (vals), numEnt);
+    /// Romin Tomasetti: This function takes global column indices and values but the local row index.
+    ///                  This is weird. Moreover, it seems nobody uses this function anymore.
+    ///                  It could be deleted.
+    const global_ordinal_type gblRow = myGraph_->rowMap_->getGlobalElement(lclRow);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_GLOBAL_INDICES  (cols_kv, cols, numEnt);
+    CONVERT_TO_KOKKOS_VIEW_OF_UNMANAGED_IMPL_SCALAR_TYPE(vals_kv, vals, numEnt);
 
     // FIXME (mfh 23 Mar 2017) This is a work-around for less common
     // combine modes.  combineGlobalValues throws on error; it does
     // not return an error code.  Thus, if it returns, it succeeded.
-    combineGlobalValues(gblRow, cols_av, vals_av, combMode,
+    combineGlobalValues(gblRow, cols_kv, vals_kv, combMode,
                         prefix, debug, verbose);
     return numEnt;
   }
@@ -6772,8 +6757,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   combineGlobalValues(
     const GlobalOrdinal globalRowIndex,
-    const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
-    const Teuchos::ArrayView<const Scalar>& values,
+    const global_inds_host_view_type& columnIndices,
+    const values_host_view_type& values,
     const Tpetra::CombineMode combineMode,
     const char* const prefix,
     const bool debug,
@@ -6786,7 +6771,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // aren't allowed to change the structure of the graph.
       // However, all the other combine modes work.
       if (combineMode == ADD) {
-        sumIntoGlobalValues (globalRowIndex, columnIndices, values);
+        sumIntoGlobalValues (globalRowIndex, values, columnIndices);
       }
       else if (combineMode == REPLACE) {
         replaceGlobalValues (globalRowIndex, columnIndices, values);
@@ -7236,16 +7221,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       vals_out_type valsOut = subview (vals, pair_type (0, numEnt));
 
       const size_t numBytesOut =
-        unpackRow (gidsOut.data (), valsOut.data (), imports_h.data (),
-                   offset, numBytes, numEnt, numBytesPerValue);
+        unpackRow (gidsOut, valsOut, imports_h.data (),
+                   offset, numBytes, numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numBytes != numBytesOut, std::logic_error, ": At i=" << i
          << ", numBytes=" << numBytes << " != numBytesOut="
          << numBytesOut << ".");
 
-      const ST* const valsRaw = const_cast<const ST*> (valsOut.data ());
-      const GO* const gidsRaw = const_cast<const GO*> (gidsOut.data ());
-      combineGlobalValuesRaw(lclRow, numEnt, valsRaw, gidsRaw,
+      combineGlobalValues(lclRow, gidsOut, valsOut,
                              combineMode, prefix_raw, debug, verbose);
       // Don't update offset until current LID has succeeded.
       offset += numBytes;

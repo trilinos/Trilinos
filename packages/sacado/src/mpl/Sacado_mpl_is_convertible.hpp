@@ -32,56 +32,12 @@
 
 #include "Sacado_ConfigDefs.h"
 
-#ifdef HAVE_SACADO_CXX11
-
 #include <type_traits>
+
 namespace Sacado {
   namespace mpl {
     using std::is_convertible;
   }
 }
-
-#else
-
-namespace Sacado {
-
-  namespace mpl {
-
-    //
-    // A simplified implementation of boost type-trait
-    // is_convertible<From,To>.  We use this in a much more limited context
-    // within Sacado, and so the easy implementation should always work.
-    // We assume From and To are "scalar" types, e.g., are not pointer or
-    // reference types.
-    //
-
-    struct convertible_impl {
-      typedef char yes;       // sizeof(yes) == 1
-      typedef char (&no)[2];  // sizeof(no)  == 2
-
-      // A function that takes anything convertible to a To
-      template <typename To> static yes tester(To);
-
-      // Overload resolution prefers anything over ...
-      template <typename To> static no tester(...);
-
-      // Check if From is convertible to To
-      template <typename From, typename To>
-      struct checker {
-        static From& f;
-        static const bool value = sizeof(tester<To>(f)) == sizeof(yes);
-      };
-    };
-
-    template <typename From, typename To>
-    struct is_convertible {
-      static const bool value = convertible_impl::checker<From,To>::value;
-    };
-
-  }
-
-}
-
-#endif
 
 #endif // SACADO_MPL_IS_CONVERTIBLE_HPP

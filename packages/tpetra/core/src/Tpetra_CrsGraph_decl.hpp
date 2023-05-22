@@ -278,6 +278,9 @@ protected:
     using global_inds_wdv_type =
           Details::WrappedDualView<global_inds_dualv_type>;
 
+    //! Type of a function taking 3 @c size_t.
+    using function_sss_t = std::function<void(const size_t, const size_t, const size_t)>;
+
 public:
     using row_graph_type = RowGraph<LocalOrdinal, GlobalOrdinal, Node>;
     using row_ptrs_device_view_type =
@@ -1866,14 +1869,19 @@ public:
     insertGlobalIndicesImpl (const RowInfo& rowInfo,
                              const global_ordinal_type inputGblColInds[],
                              const size_t numInputInds,
-                             std::function<void(const size_t, const size_t, const size_t)> fun =
-                                 std::function<void(const size_t, const size_t, const size_t)>());
+                             function_sss_t fun = function_sss_t());
 
+    //! Insert local indices.
     void
     insertLocalIndicesImpl (const local_ordinal_type lclRow,
-                            const Teuchos::ArrayView<const local_ordinal_type>& gblColInds,
-                            std::function<void(const size_t, const size_t, const size_t)> fun =
-                                std::function<void(const size_t, const size_t, const size_t)>());
+                            const Teuchos::ArrayView<const local_ordinal_type>& lclColInds,
+                            function_sss_t fun = function_sss_t());
+
+    //! @overload
+    void
+    insertLocalIndicesImpl (const local_ordinal_type lclRow,
+                            const local_inds_host_view_type& lclColInds,
+                            function_sss_t fun = function_sss_t());
 
     /// \brief Finds indices in the given row.
     ///
@@ -1892,8 +1900,8 @@ public:
     /// \return The number of indices found.
     size_t
     findGlobalIndices(const RowInfo& rowInfo,
-                      const Teuchos::ArrayView<const global_ordinal_type>& indices,
-                      std::function<void(const size_t, const size_t, const size_t)> fun) const;
+                      const global_inds_host_view_type& indices,
+                      function_sss_t fun) const;
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
