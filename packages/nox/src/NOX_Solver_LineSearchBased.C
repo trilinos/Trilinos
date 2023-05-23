@@ -165,7 +165,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->out() << "NOX::Solver::LineSearchBased::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess

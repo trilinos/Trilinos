@@ -111,7 +111,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
                     << "Invalid Solver Method " << solveTypeName << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Print out parameters
@@ -196,7 +196,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
     {
       utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess
@@ -272,7 +272,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
                     << "Unable to compute F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Evaluate the current status.
@@ -316,7 +316,7 @@ NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup() const
 {
   utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup - "
                   << "Old group not available.  This method is not currently supported." << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 Teuchos::RCP< const NOX::Abstract::Group>
@@ -324,7 +324,7 @@ NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr() const
 {
   utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr - "
                   << "Old group not available.  This method is not currently supported." << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 int NOX::Multiphysics::Solver::FixedPointBased::getNumIterations() const

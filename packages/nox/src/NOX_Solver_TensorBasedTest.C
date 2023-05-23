@@ -184,7 +184,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     if (rtype != NOX::Abstract::Group::Ok)    {
       utilsPtr->out() << "NOX::Solver::TensorBasedTest::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess

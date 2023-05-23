@@ -72,7 +72,7 @@ SchurCoupler::SetUseTranspose( bool UseTranspose )
   {
     std::cout << "ERROR: NOX::Epetra::SchurCoupler::SetUseTranspose() - Transpose is "
      << "unavailable for this operator!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   return (-1);
 }
@@ -111,7 +111,7 @@ SchurCoupler::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 {
   std::cout << "ERROR: NOX::Epetra::SchurCoupler::ApplyInverse() - Not valid "
        << "for this operator!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 
   return (-1);
 }
@@ -121,7 +121,7 @@ SchurCoupler::NormInf() const
 {
   std::cout << "ERROR: NOX::Epetra::SchurCoupler::NormInf() - Not Available for "
        << "this operator!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 
   return 1.0;
 }
@@ -196,7 +196,7 @@ SchurCoupler::getSchurOperator( int rowBlock, int colBlock )
   {
     std::cout << "ERROR: NOX::Epetra::SchurCoupler::getSchurOperator() - Off operators not supported."
          << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return schurOperators[rowBlock];

@@ -227,7 +227,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->out() << "NOX::Solver::PseudoTransient::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess
@@ -320,7 +320,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->out() << "NOX::Solver::PseudoTransient::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
   }
   else {
