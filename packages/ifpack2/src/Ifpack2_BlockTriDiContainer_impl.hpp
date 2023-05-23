@@ -871,7 +871,6 @@ namespace Ifpack2 {
         // 2. cleanup all open comm
         waitall(reqs.send.size(), reqs.send.data());
 #endif // HAVE_IFPACK2_MPI
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 #endif //defined(KOKKOS_ENABLE_CUDA|HIP|SYCL)
 
@@ -995,7 +994,6 @@ namespace Ifpack2 {
         // wait on the sends to match all Isends with a cleanup operation.
         waitall(reqs.send.size(), reqs.send.data());
 #endif
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       ///
@@ -3914,7 +3912,6 @@ namespace Ifpack2 {
 # endif
         }
 #endif
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
       }
 
       // Check if the norm-based termination criterion is met. tol2 is the
@@ -3953,7 +3950,6 @@ namespace Ifpack2 {
         } else {
           sweep_step_ = sweep_step_upper_bound_;
         }
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
         return r_val;
       }
 
@@ -4150,7 +4146,6 @@ namespace Ifpack2 {
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
 
-      IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
       return sweep;
     }
 
