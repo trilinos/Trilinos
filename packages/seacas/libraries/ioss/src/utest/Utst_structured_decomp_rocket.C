@@ -5,6 +5,9 @@
 // See packages/seacas/LICENSE for details
 
 #include "Utst_structured_decomp.h"
+#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+#define DOCTEST_CONFIG_NO_MULTITHREADING
 #include <doctest.h>
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
