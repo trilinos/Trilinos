@@ -1155,6 +1155,7 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
+      auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
       m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
                     m_impl_offset.span(), m_sacado_size.value );
 
@@ -1168,6 +1169,7 @@ public:
 
       // Construct values
       record->m_destroy.construct_shared_allocation();
+      space.fence();
     }
 
     return record ;
