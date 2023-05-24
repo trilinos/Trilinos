@@ -329,8 +329,10 @@ namespace Ifpack2 {
 
 #if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
 #define IFPACK2_BLOCKTRIDICONTAINER_TIMER(label) TEUCHOS_FUNC_TIME_MONITOR(label);
+#define IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space) execution_space().fence();
 #else
 #define IFPACK2_BLOCKTRIDICONTAINER_TIMER(label)
+#define IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
@@ -454,7 +456,10 @@ namespace Ifpack2 {
       const auto src = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getDomainMap(), blocksize)));
       const auto tgt = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getColMap()   , blocksize)));
 
-      return Teuchos::rcp(new tpetra_import_type(src, tgt));
+      auto blockCrsTpetraImporter = Teuchos::rcp(new tpetra_import_type(src, tgt));
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
+
+      return blockCrsTpetraImporter;
     }
 
     // Partial replacement for forward-mode MultiVector::doImport.
@@ -840,6 +845,7 @@ namespace Ifpack2 {
           MPI_Iprobe(pids.recv[i], 42, comm, &flag, &stat);
         }
 #endif // HAVE_IFPACK2_MPI
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       void syncRecvVar1() {
@@ -972,6 +978,7 @@ namespace Ifpack2 {
           MPI_Iprobe(pids.recv[i], 42, comm, &flag, &stat);
         }
 #endif
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       void syncRecvVar0() {
@@ -1019,6 +1026,7 @@ namespace Ifpack2 {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::SyncExchange");
         asyncSendRecv(mv);
         syncRecv();
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       impl_scalar_type_2d_view_tpetra getRemoteMultiVectorLocalView() const { return remote_multivector; }
@@ -1842,6 +1850,7 @@ namespace Ifpack2 {
                                
         }
       }
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
     }
 
 
@@ -2298,6 +2307,7 @@ namespace Ifpack2 {
       IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NumericPhase");
       ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
       function.run();
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
     }
 
     ///
@@ -2433,6 +2443,7 @@ namespace Ifpack2 {
             ("MultiVectorConverter::RangePolicy", policy, *this);
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
     };
 
@@ -3087,6 +3098,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS
 
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
     };
 
@@ -3638,6 +3650,7 @@ namespace Ifpack2 {
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (x , x_remote)
@@ -3710,6 +3723,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (y , y_remote)
@@ -3797,6 +3811,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+        IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(execution_space)
       }
     };
 
@@ -3823,6 +3838,7 @@ namespace Ifpack2 {
       vals[0] = Kokkos::ArithTraits<impl_scalar_type>::abs(norm2);
 
       IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)
     }
 
     ///

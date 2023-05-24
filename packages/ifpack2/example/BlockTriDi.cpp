@@ -577,6 +577,7 @@ main (int argc, char* argv[])
 
     if(rank0) std::cout<<"Computing preconditioner..."<<std::endl;
     precond->compute ();
+    Kokkos::DefaultExecutionSpace().fence();
   }
 
   // Solver Parameters
@@ -593,6 +594,7 @@ main (int argc, char* argv[])
   {
     Teuchos::TimeMonitor solveTimeMon (*solveTime);
     nits = precond->applyInverseJacobi(*B,*X,ap); 
+    Kokkos::DefaultExecutionSpace().fence(); 
   }
 
   auto norm0 = precond->getNorms0();
