@@ -546,7 +546,7 @@ public:
     enable_if_t<rank != 7, void>
     storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
-      std::cout << "rank: " << rank << std::endl;
+      std::cout << "rank: " << rank << std::endl << std::flush;
       auto policy = dataExtentRangePolicy<rank>();
       
       // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
@@ -589,7 +589,7 @@ public:
         }
         return -1;
       };
-      std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
+      std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl << std::flush;
       if (this_constant)
       {
         // then A, B are constant, too
@@ -716,7 +716,7 @@ public:
       }
       else // neither A nor B constant
       {
-        std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
+        std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl << std::flush;
         if (this_1D && (get1DArgIndex(thisData) != -1))
         {
           // possible ways that "this" could have full-extent, 1D data
@@ -779,7 +779,7 @@ public:
         }
         else if (this_full)
         {
-          std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
+          std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl << std::flush;
           // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
           auto & this_underlying = this->getUnderlyingView<rank>();
           auto thisAE = fullArgs;
@@ -850,7 +850,7 @@ public:
             }
             else // A not full, and not full-extent 1D
             {
-              std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
+              std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl << std::flush;
               // unoptimized in A, B accesses.
               auto AAE    = fullArgsData;
               auto BAE    = fullArgsData;
