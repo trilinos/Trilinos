@@ -36,70 +36,72 @@ namespace Intrepid2 {
   , GENERAL             /// arbitrary variation
   };
 
-// DEBUGGING
-//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > const&
-//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > &
-//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> >
-template<typename T>
-struct TypeParseTraits;
+template<class DataScalar,typename DeviceType>
+class Data;
+
+namespace {
+  // DEBUGGING
+  //  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > const&
+  //  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > &
+  //  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> >
+  template<typename T>
+  struct TypeParseTraits;
 
 #define REGISTER_PARSE_TYPE(X) template <> struct TypeParseTraits<X> \
   { static const char* name; } ; const char* TypeParseTraits<X>::name = #X
 
-template<class DataScalar,typename DeviceType>
-class Data;
+  using Intrepid2Data = Data<double, Kokkos::DefaultExecutionSpace::device_type >;
 
-using Intrepid2Data = Data<double, Kokkos::DefaultExecutionSpace::device_type >;
+  REGISTER_PARSE_TYPE(int);
+  REGISTER_PARSE_TYPE(double);
+  REGISTER_PARSE_TYPE(const Intrepid2Data &);
+  REGISTER_PARSE_TYPE(Intrepid2Data &);
+  REGISTER_PARSE_TYPE(const Intrepid2Data);
+  REGISTER_PARSE_TYPE(Intrepid2Data);
 
-REGISTER_PARSE_TYPE(int);
-REGISTER_PARSE_TYPE(double);
-REGISTER_PARSE_TYPE(const Intrepid2Data &);
-REGISTER_PARSE_TYPE(Intrepid2Data &);
-REGISTER_PARSE_TYPE(const Intrepid2Data);
-REGISTER_PARSE_TYPE(Intrepid2Data);
+  using DoubleView1 = Kokkos::View<double *, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView2 = Kokkos::View<double **, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView3 = Kokkos::View<double ***, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView4 = Kokkos::View<double ****, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView5 = Kokkos::View<double *****, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView6 = Kokkos::View<double ******, Kokkos::DefaultExecutionSpace::device_type>;
+  using DoubleView7 = Kokkos::View<double *******, Kokkos::DefaultExecutionSpace::device_type>;
 
-using DoubleView1 = Kokkos::View<double *, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView2 = Kokkos::View<double **, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView3 = Kokkos::View<double ***, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView4 = Kokkos::View<double ****, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView5 = Kokkos::View<double *****, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView6 = Kokkos::View<double ******, Kokkos::DefaultExecutionSpace::device_type>;
-using DoubleView7 = Kokkos::View<double *******, Kokkos::DefaultExecutionSpace::device_type>;
+  REGISTER_PARSE_TYPE(      DoubleView1  );
+  REGISTER_PARSE_TYPE(const DoubleView1  );
+  REGISTER_PARSE_TYPE(      DoubleView1 &);
+  REGISTER_PARSE_TYPE(const DoubleView1 &);
 
-REGISTER_PARSE_TYPE(DoubleView1);
-REGISTER_PARSE_TYPE(const DoubleView1);
-REGISTER_PARSE_TYPE(DoubleView1 &);
-REGISTER_PARSE_TYPE(const DoubleView1 &);
+  REGISTER_PARSE_TYPE(      DoubleView2  );
+  REGISTER_PARSE_TYPE(const DoubleView2  );
+  REGISTER_PARSE_TYPE(      DoubleView2 &);
+  REGISTER_PARSE_TYPE(const DoubleView2 &);
 
-REGISTER_PARSE_TYPE(      DoubleView2  );
-REGISTER_PARSE_TYPE(const DoubleView2  );
-REGISTER_PARSE_TYPE(      DoubleView2 &);
-REGISTER_PARSE_TYPE(const DoubleView2 &);
+  REGISTER_PARSE_TYPE(      DoubleView3  );
+  REGISTER_PARSE_TYPE(const DoubleView3  );
+  REGISTER_PARSE_TYPE(      DoubleView3 &);
+  REGISTER_PARSE_TYPE(const DoubleView3 &);
 
-REGISTER_PARSE_TYPE(      DoubleView3  );
-REGISTER_PARSE_TYPE(const DoubleView3  );
-REGISTER_PARSE_TYPE(      DoubleView3 &);
-REGISTER_PARSE_TYPE(const DoubleView3 &);
+  REGISTER_PARSE_TYPE(      DoubleView4  );
+  REGISTER_PARSE_TYPE(const DoubleView4  );
+  REGISTER_PARSE_TYPE(      DoubleView4 &);
+  REGISTER_PARSE_TYPE(const DoubleView4 &);
 
-REGISTER_PARSE_TYPE(      DoubleView4  );
-REGISTER_PARSE_TYPE(const DoubleView4  );
-REGISTER_PARSE_TYPE(      DoubleView4 &);
-REGISTER_PARSE_TYPE(const DoubleView4 &);
+  REGISTER_PARSE_TYPE(      DoubleView5  );
+  REGISTER_PARSE_TYPE(const DoubleView5  );
+  REGISTER_PARSE_TYPE(      DoubleView5 &);
+  REGISTER_PARSE_TYPE(const DoubleView5 &);
 
-REGISTER_PARSE_TYPE(      DoubleView5  );
-REGISTER_PARSE_TYPE(const DoubleView5  );
-REGISTER_PARSE_TYPE(      DoubleView5 &);
-REGISTER_PARSE_TYPE(const DoubleView5 &);
+  REGISTER_PARSE_TYPE(      DoubleView6  );
+  REGISTER_PARSE_TYPE(const DoubleView6  );
+  REGISTER_PARSE_TYPE(      DoubleView6 &);
+  REGISTER_PARSE_TYPE(const DoubleView6 &);
 
-REGISTER_PARSE_TYPE(      DoubleView6  );
-REGISTER_PARSE_TYPE(const DoubleView6  );
-REGISTER_PARSE_TYPE(      DoubleView6 &);
-REGISTER_PARSE_TYPE(const DoubleView6 &);
-
-REGISTER_PARSE_TYPE(      DoubleView7  );
-REGISTER_PARSE_TYPE(const DoubleView7  );
-REGISTER_PARSE_TYPE(      DoubleView7 &);
-REGISTER_PARSE_TYPE(const DoubleView7 &);
+  REGISTER_PARSE_TYPE(      DoubleView7  );
+  REGISTER_PARSE_TYPE(const DoubleView7  );
+  REGISTER_PARSE_TYPE(      DoubleView7 &);
+  REGISTER_PARSE_TYPE(const DoubleView7 &);
+} // anonymous namespace
 
 // end DEBUGGING
 
