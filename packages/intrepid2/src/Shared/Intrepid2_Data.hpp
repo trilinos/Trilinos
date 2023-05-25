@@ -478,13 +478,14 @@ public:
       binaryOperator_(binaryOperator)
       {
         INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
-        std::cout << "ThisUnderlyingViewType: " << typeid(ThisUnderlyingViewType).name() << std::endl;
-        std::cout << "AUnderlyingViewType:    " << typeid(AUnderlyingViewType).name() << std::endl;
-        std::cout << "BUnderlyingViewType:    " << typeid(BUnderlyingViewType).name() << std::endl;
+//        std::cout << "ThisUnderlyingViewType: " << typeid(ThisUnderlyingViewType).name() << std::endl;
+//        std::cout << "AUnderlyingViewType:    " << typeid(AUnderlyingViewType).name() << std::endl;
+//        std::cout << "BUnderlyingViewType:    " << typeid(BUnderlyingViewType).name() << std::endl;
         
         std::cout << "ThisUnderlyingViewType: " << TypeParseTraits<ThisUnderlyingViewType>::name << std::endl;
         std::cout << "AUnderlyingViewType:    " << TypeParseTraits<AUnderlyingViewType>::name    << std::endl;
         std::cout << "BUnderlyingViewType:    " << TypeParseTraits<BUnderlyingViewType>::name    << std::endl;
+        std::cout << std::flush;
       }
       
       InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
@@ -545,6 +546,7 @@ public:
     enable_if_t<rank != 7, void>
     storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
+      std::cout << "rank: " << rank << std::endl;
       auto policy = dataExtentRangePolicy<rank>();
       
       // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
@@ -587,6 +589,7 @@ public:
         }
         return -1;
       };
+      std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
       if (this_constant)
       {
         // then A, B are constant, too
@@ -713,6 +716,7 @@ public:
       }
       else // neither A nor B constant
       {
+        std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
         if (this_1D && (get1DArgIndex(thisData) != -1))
         {
           // possible ways that "this" could have full-extent, 1D data
@@ -775,6 +779,7 @@ public:
         }
         else if (this_full)
         {
+          std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
           // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
           auto & this_underlying = this->getUnderlyingView<rank>();
           auto thisAE = fullArgs;
@@ -845,6 +850,7 @@ public:
             }
             else // A not full, and not full-extent 1D
             {
+              std::cout << "Intrepid2_Data.hpp:" << __LINE__ << std::endl;
               // unoptimized in A, B accesses.
               auto AAE    = fullArgsData;
               auto BAE    = fullArgsData;
