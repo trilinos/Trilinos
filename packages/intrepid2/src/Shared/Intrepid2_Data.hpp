@@ -53,9 +53,9 @@ using Intrepid2Data = Data<double, Kokkos::DefaultExecutionSpace::device_type >;
 
 REGISTER_PARSE_TYPE(int);
 REGISTER_PARSE_TYPE(double);
-REGISTER_PARSE_TYPE(Intrepid2Data const&);
+REGISTER_PARSE_TYPE(const Intrepid2Data &);
 REGISTER_PARSE_TYPE(Intrepid2Data &);
-REGISTER_PARSE_TYPE(Intrepid2Data);
+REGISTER_PARSE_TYPE(const Intrepid2Data);
 
 // end DEBUGGING
 
