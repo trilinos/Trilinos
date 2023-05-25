@@ -1229,6 +1229,7 @@ namespace Tpetra {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
             Kokkos::deep_copy (space, tgt_j, src_j); 
+            space.fence();
           }
         }
       }
@@ -1256,6 +1257,7 @@ namespace Tpetra {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
             Kokkos::deep_copy (space, tgt_j, src_j); 
+            space.fence();
           }
         }
       }
