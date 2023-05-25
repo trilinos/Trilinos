@@ -223,6 +223,7 @@ int main(int argc, char *argv[]) {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST PASSED" << std::endl;
     }
+    success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
