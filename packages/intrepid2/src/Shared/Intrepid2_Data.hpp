@@ -36,6 +36,29 @@ namespace Intrepid2 {
   , GENERAL             /// arbitrary variation
   };
 
+// DEBUGGING
+//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > const&
+//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> > &
+//  Intrepid2::Data<double, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> >
+template<typename T>
+struct TypeParseTraits;
+
+#define REGISTER_PARSE_TYPE(X) template <> struct TypeParseTraits<X> \
+  { static const char* name; } ; const char* TypeParseTraits<X>::name = #X
+
+template<class DataScalar,typename DeviceType>
+class Data;
+
+using Intrepid2Data = Data<double, Kokkos::DefaultExecutionSpace::device_type >;
+
+REGISTER_PARSE_TYPE(int);
+REGISTER_PARSE_TYPE(double);
+REGISTER_PARSE_TYPE(Intrepid2Data const&);
+REGISTER_PARSE_TYPE(Intrepid2Data &);
+REGISTER_PARSE_TYPE(Intrepid2Data);
+
+// end DEBUGGING
+
 /** \struct  Intrepid2::DimensionInfo
     \brief Struct expressing all variation information about a Data object in a single dimension, including its logical extent and storage extent.
 */
@@ -409,6 +432,13 @@ public:
       binaryOperator_(binaryOperator)
       {
         INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
+        std::cout << "ThisUnderlyingViewType: " << typeid(ThisUnderlyingViewType).name() << std::endl;
+        std::cout << "AUnderlyingViewType:    " << typeid(AUnderlyingViewType).name() << std::endl;
+        std::cout << "BUnderlyingViewType:    " << typeid(BUnderlyingViewType).name() << std::endl;
+        
+        std::cout << "ThisUnderlyingViewType: " << TypeParseTraits<ThisUnderlyingViewType>::name << std::endl;
+        std::cout << "AUnderlyingViewType:    " << TypeParseTraits<AUnderlyingViewType>::name    << std::endl;
+        std::cout << "BUnderlyingViewType:    " << TypeParseTraits<BUnderlyingViewType>::name    << std::endl;
       }
       
       InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
