@@ -57,6 +57,13 @@ REGISTER_PARSE_TYPE(const Intrepid2Data &);
 REGISTER_PARSE_TYPE(Intrepid2Data &);
 REGISTER_PARSE_TYPE(const Intrepid2Data);
 
+using DoubleView = Kokkos::View<double *, Kokkos::DefaultExecutionSpace::device_type>;
+
+REGISTER_PARSE_TYPE(DoubleView);
+REGISTER_PARSE_TYPE(const DoubleView);
+REGISTER_PARSE_TYPE(DoubleView &);
+REGISTER_PARSE_TYPE(const DoubleView &);
+
 // end DEBUGGING
 
 /** \struct  Intrepid2::DimensionInfo
