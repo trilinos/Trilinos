@@ -8,6 +8,7 @@
 // Define typedefs and macros for testing over all template parameter
 // combinations.
 #include "Ifpack2_ETIHelperMacros.h"
+#include <type_traits>
 
 // FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
@@ -209,9 +210,9 @@ namespace {
 
     // FIXME (mfh 26 Jul 2015) Need to test more solvers.  In
     // particular, it's important to test AdditiveSchwarz.
-    const int numSolvers = 5;
-    const char* solverNames[5] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
-                                  "ILUT", "RILUK"};
+    constexpr int numSolvers = 6;
+    const char* solverNames[numSolvers] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
+                                  "ILUT", "RILUK", "MDF"};
     int numSolversTested = 0;
     for (int k = 0; k < numSolvers; ++k) {
       const std::string solverName (solverNames[k]);
@@ -226,6 +227,7 @@ namespace {
       catch (...) {
         skip = true;
       }
+      skip |= (solverName == "MDF" && !std::is_arithmetic_v<SC>); // skip complex types in mdf for now
       if (! skip) {
         testSolver<SC, LO, GO, NT> (out, success, *X, A, *B, *X_exact, solverName);
         ++numSolversTested;

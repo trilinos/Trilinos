@@ -144,6 +144,9 @@ public:
   /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
   virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
+  //! The number of degrees of freedom per mesh point.
+  virtual LocalOrdinal getBlockSize () const;
+
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
 
