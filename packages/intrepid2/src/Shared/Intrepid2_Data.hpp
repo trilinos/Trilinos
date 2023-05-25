@@ -56,6 +56,7 @@ REGISTER_PARSE_TYPE(double);
 REGISTER_PARSE_TYPE(const Intrepid2Data &);
 REGISTER_PARSE_TYPE(Intrepid2Data &);
 REGISTER_PARSE_TYPE(const Intrepid2Data);
+REGISTER_PARSE_TYPE(Intrepid2Data);
 
 using DoubleView1 = Kokkos::View<double *, Kokkos::DefaultExecutionSpace::device_type>;
 using DoubleView2 = Kokkos::View<double **, Kokkos::DefaultExecutionSpace::device_type>;
