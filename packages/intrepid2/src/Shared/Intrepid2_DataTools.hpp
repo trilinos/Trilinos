@@ -72,7 +72,7 @@ public:
     variationTypes[rank+1]       = CONSTANT;
     
     auto scalarDataInExtended = scalarDataIn.shallowCopy(rank + 2, extents, variationTypes);
-    resultMatrixData.storeInPlaceProduct(scalarDataInExtended,matrixDataIn);
+    resultMatrixData.storeInPlaceProduct(matrixDataIn,scalarDataInExtended);
   }
   
   //! Allocates and fills Data object of logical shape (C,P,D,D) corresponding to the pointwise product of an object of shape (C,P,D,D) with one of shape (C,P).
@@ -95,7 +95,7 @@ public:
     
     auto result = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(scalarDataInExtended, matrixDataIn);
     
-    result.storeInPlaceProduct(scalarDataInExtended,matrixDataIn);
+    result.storeInPlaceProduct(matrixDataIn,scalarDataInExtended);
     return result;
   }
 };
