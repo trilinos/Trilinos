@@ -293,6 +293,7 @@ int main(int argc, char *argv[])
     if (!converged)
       status = 2;
 
+    success = status==0;
 
     // Summarize test results
     if (converged && status == 0)

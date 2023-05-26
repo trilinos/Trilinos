@@ -233,6 +233,8 @@ int main()
     solnGrp.computeF();
     std::cout << "\n" << "-- Expected Solution --" << "\n";
     solnGrp.print();
+
+    success = status==0;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
