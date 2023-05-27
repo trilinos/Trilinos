@@ -45,10 +45,10 @@
     \brief Test interpolation and projection capabilities for quadrilateral elements
 
     The test considers two quadrilaterals in the physical space sharing a common face.
-    In order to test significant configurations, we consider 4 mappings of the reference quadrilateral
+    In order to test significant configurations, we consider 4 rotations of the reference quadrilateral
     to the first (physical) quadrilateral, so that the common face is mapped from all the 4 sides
     of the reference quadrilateral.
-    Then, for each of the mappings, the global ids of the vertices of the common side are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common side are permuted (2 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -654,7 +654,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1119,7 +1119,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1595,7 +1595,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
