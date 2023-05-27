@@ -650,7 +650,13 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
       hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
       hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
-    else  {
+    else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key) {
+      if(iface < 3)
+        hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      else
+        hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+    }
+    else {
       std::stringstream ss;
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
           << "Method not implemented for basis " << name;
@@ -760,6 +766,8 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
       hgradBasis = new Basis_HGRAD_HEX_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
       hgradBasis = new Basis_HGRAD_TET_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+    else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key)
+      hgradBasis = new typename DerivedNodalBasisFamily<DeviceType,scalarType,scalarType>::HGRAD_WEDGE(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
       hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)

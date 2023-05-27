@@ -1397,7 +1397,9 @@ struct OperatorTensorDecomposition
     /** \brief  Fills in coefficients of degrees of freedom on the reference cell
         \param [out] dofCoeffs - the container into which to place the degrees of freedom.
 
-     dofCoeffs is a rank 1 with dimension equal to the cardinality of the basis.
+     dofCoeffs has the rank 1 or 2 and the first dimension equals the cardinality of the basis.
+     dofCoeffs has rank 2 if either basis1 or basis2 is a vector basis, in which case the second dimension equals the number of vector components
+     We do not support the case where both basis1 and basis2 are vector bases
 
      Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
      */
@@ -1407,14 +1409,22 @@ struct OperatorTensorDecomposition
       using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
 
-      ViewType dofCoeffs1("dofCoeffs1",basis1_->getCardinality());
-      ViewType dofCoeffs2("dofCoeffs2",basis2_->getCardinality());
-
-      basis1_->getDofCoeffs(dofCoeffs1);
-      basis2_->getDofCoeffs(dofCoeffs2);
-
       const ordinal_type basisCardinality1 = basis1_->getCardinality();
       const ordinal_type basisCardinality2 = basis2_->getCardinality();
+
+      bool isVectorBasis1 = getFieldRank(basis1_->getFunctionSpace()) == 1;
+      bool isVectorBasis2 = getFieldRank(basis2_->getFunctionSpace()) == 1;
+
+      INTREPID2_TEST_FOR_EXCEPTION(isVectorBasis1 && isVectorBasis2, std::invalid_argument, "the case in which basis1 and basis2 are vector bases is not supported");
+
+      int basisDim1 = isVectorBasis1 ? basis1_->getBaseCellTopology().getDimension() : 1;
+      int basisDim2 = isVectorBasis2 ? basis2_->getBaseCellTopology().getDimension() : 1;
+
+      auto dofCoeffs1 = isVectorBasis1 ? ViewType("dofCoeffs1",basis1_->getCardinality(), basisDim1) : ViewType("dofCoeffs1",basis1_->getCardinality());
+      auto dofCoeffs2 = isVectorBasis2 ? ViewType("dofCoeffs2",basis2_->getCardinality(), basisDim2) : ViewType("dofCoeffs2",basis2_->getCardinality());
+      
+      basis1_->getDofCoeffs(dofCoeffs1);
+      basis2_->getDofCoeffs(dofCoeffs2);
 
       Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality2);
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal2)
@@ -1422,8 +1432,12 @@ struct OperatorTensorDecomposition
          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
          {
            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
-           dofCoeffs(fieldOrdinal)  = dofCoeffs1(fieldOrdinal1);
-           dofCoeffs(fieldOrdinal) *= dofCoeffs2(fieldOrdinal2);
+           for (int d1 = 0; d1 <basisDim1; d1++) {
+             for (int d2 = 0; d2 <basisDim2; d2++) {
+               dofCoeffs.access(fieldOrdinal,d1+d2)  = dofCoeffs1.access(fieldOrdinal1,d1);
+               dofCoeffs.access(fieldOrdinal,d1+d2) *= dofCoeffs2.access(fieldOrdinal2,d2);
+             }
+           }
          }
        });
     }
@@ -2374,6 +2388,44 @@ struct OperatorTensorDecomposition
       using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputValueType, OutputViewType>;
       FunctorType functor(outputValues, outputValues1, outputValues2, outputValues3, tensorPoints, weight);
       Kokkos::parallel_for("TensorBasis3_Functor", policy , functor);
+    }
+
+    /** \brief  Fills in coefficients of degrees of freedom on the reference cell
+      \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs is a rank 1 with dimension equal to the cardinality of the basis.
+
+     Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
+     */
+    virtual void getDofCoeffs( typename BasisBase::ScalarViewType dofCoeffs ) const override
+    {
+      using ValueType    = typename BasisBase::ScalarViewType::value_type;
+      using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
+      using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, typename TensorBasis::DeviceType >;
+
+      const ordinal_type basisCardinality1 = basis1_->getCardinality();
+      const ordinal_type basisCardinality2 = basis2_->getCardinality();
+      const ordinal_type basisCardinality3 = basis3_->getCardinality();
+
+      auto dofCoeffs1 = ViewType("dofCoeffs1",basisCardinality1);
+      auto dofCoeffs2 = ViewType("dofCoeffs2",basisCardinality2);
+      auto dofCoeffs3 = ViewType("dofCoeffs3",basisCardinality3);
+
+      basis1_->getDofCoeffs(dofCoeffs1);
+      basis2_->getDofCoeffs(dofCoeffs2);
+      basis3_->getDofCoeffs(dofCoeffs3);
+
+      Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality3);
+      Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal3)
+       {
+         for (int fieldOrdinal2=0; fieldOrdinal2<basisCardinality2; fieldOrdinal2++)
+          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
+          {
+            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1 + fieldOrdinal3 * (basisCardinality1*basisCardinality2);
+            dofCoeffs(fieldOrdinal)  = dofCoeffs1(fieldOrdinal1);
+            dofCoeffs(fieldOrdinal) *= dofCoeffs2(fieldOrdinal2) * dofCoeffs3(fieldOrdinal3);
+          }
+       });
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
