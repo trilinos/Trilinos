@@ -50,7 +50,6 @@ Piro::getValidPiroParameters()
      Teuchos::rcp(new Teuchos::ParameterList("Valid Piro Params"));;
   validPL->sublist("NOX", false, "");
   validPL->sublist("LOCA", false, "");
-  validPL->sublist("Rythmos", false, "");
   validPL->sublist("Stochastic Galerkin", false, "");
   validPL->set<std::string>("Solver Type", "","");
 

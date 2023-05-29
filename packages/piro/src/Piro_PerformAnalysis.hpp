@@ -78,15 +78,6 @@ namespace Piro {
      );
   //@}
 
-  //! \brief Performs analysis of a solved model using Dakota via %TriKota.
-  //! \details Requires that the %TriKota package is available.
-  //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformDakotaAnalysis(
-     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-     Teuchos::ParameterList& dakotaParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
-     );
-
   //! \brief Performs analysis of a solved model using ROL.
   //! \details Requires that the ROL package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
@@ -104,12 +95,6 @@ namespace Piro {
   //! \ingroup Piro_analysis_driver_grp
   Teuchos::RCP<const Teuchos::ParameterList>
     getValidPiroAnalysisParameters();
-
-  //! Valid parameters for the list sent to PerformDakotaAnalysis
-  //! \ingroup Piro_analysis_driver_grp
-  Teuchos::RCP<const Teuchos::ParameterList>
-    getValidPiroAnalysisDakotaParameters();
-  //@}
 
   //! Valid parameters for the list sent to PerformROLAnalysis
   //! \ingroup Piro_analysis_driver_grp
