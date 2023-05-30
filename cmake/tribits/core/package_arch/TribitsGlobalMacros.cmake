@@ -439,7 +439,7 @@ macro(tribits_define_global_options_and_define_extra_repos)
     message(FATAL_ERROR "Error, the value of"
       " ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS ="
       " '${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS}' is invalid!"
-      " Valid valules include 'WANRING', 'SEND_ERROR', and 'FATAL_ERROR'"
+      " Valid values include 'WARNING', 'SEND_ERROR', and 'FATAL_ERROR'"
       )
   endif()
 

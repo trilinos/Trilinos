@@ -231,11 +231,11 @@ have the following files:
    this projec t and where to find them
 #. *TPLsList.cmke* - Tells tribits which TPLs that packages my depend
    on and how to find them
-#. *ProjectName.cmake* - defines the projet name and possibly some
+#. *ProjectName.cmake* - defines the project name and possibly some
    other project level settings
 #. *Version.cmake* - set the version of the software being built
 #. *Package Directories* - A directory for each package that contains
-   everything nesseesary for a Tribits package described above. Often
+   everything necessary for a Tribits package described above. Often
    Projects will have a packages directory that contains all of the
    individual package directories in the project
 
@@ -393,14 +393,14 @@ in this project level CMakeLists file:
    for this project o build.  If you try and run with a lower version
    then there will be an error. You cannot specify a version lower than
    3.23.0
-#. Include ProjectNmae.cmake and call project() with argument PROJECT_NAME
+#. Include ProjectName.cmake and call project() with argument PROJECT_NAME
 #. specify the directory to tribits and include TriBITS.cmake
 #. specify which packages are turned on/off by default
 #. call tribits_project()
 
-Here is an examlpe of a project CMakeLists::
+Here is an example of a project CMakeLists::
 
-  # Deefine your minimum CMake version
+  # Define your minimum CMake version
   cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
   # Define your project name and set up major project options
