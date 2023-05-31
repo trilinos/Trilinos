@@ -1,6 +1,6 @@
 // Program to debug segfaults being reported in CDASH when
-//  -D Kokkos_ENABLE_Pthreadi:BOOL=ON 
-//  -D Tpetra_INST_PTHREAD:BOOL=ON 
+//  -D Kokkos_ENABLE_THREADS:BOOL=ON
+//  -D Tpetra_INST_PTHREAD:BOOL=ON
 // Problem appears to be in creation of Xpetra::EpetraCrsMatrixT
 
 #include <Teuchos_RCP.hpp>
