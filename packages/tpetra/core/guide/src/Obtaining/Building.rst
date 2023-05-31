@@ -123,5 +123,5 @@ The best option for building Tpetra is to enable the execution space type at the
 
 - Enabling CUDA (by using NVCC and ``nvcc_wrapper``) makes CUDA Tpetra's default execution space.
 - Enabling OpenMP (``Trilinos_ENABLE_OpenMP:BOOL=ON``), but not enabling CUDA, makes OpenMP Tpetra's default execution space.
-- The Pthreads (``Kokkos::Threads``) back-end is a special case; it does not get enabled by default. This avoids surprises, because Trilinos enables its Pthreads TPL by default as long as it can detect it. Users may set the CMake option ``Kokkos_ENABLE_Pthread:BOOL=ON`` to enable use of Pthreads in Tpetra, and to make it default.
+- The Pthreads (``Kokkos::Threads``) back-end is a special case; it does not get enabled by default. This avoids surprises, because Trilinos enables its Pthreads TPL by default as long as it can detect it. Users may set the CMake option ``Kokkos_ENABLE_THREADS:BOOL=ON`` to enable use of Pthreads in Tpetra, and to make it default.
 
