@@ -2157,10 +2157,7 @@ public:
     //! stores the in-place (entrywise) product, A .* B, into this container.
     void storeInPlaceProduct(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
     {
-      auto product = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
-      {
-        return a * b;
-      };
+      ScalarProductFunctor<DataScalar> product;
       storeInPlaceCombination(A, B, product);
     }
     
