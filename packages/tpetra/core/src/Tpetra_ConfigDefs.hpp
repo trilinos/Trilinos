@@ -150,7 +150,7 @@ namespace Tpetra {
   /// this and other reasons not to state <tt>using namespace
   /// std;</tt> in the global namespace.
   template<class Arg1, class Arg2>
-  class project1st : public std::binary_function<Arg1, Arg2, Arg1> {
+  class project1st {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
@@ -176,7 +176,7 @@ namespace Tpetra {
   /// this and other reasons not to state <tt>using namespace
   /// std;</tt> in the global namespace.
   template<class Arg1, class Arg2>
-  class project2nd : public std::binary_function<Arg1, Arg2, Arg2> {
+  class project2nd {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
