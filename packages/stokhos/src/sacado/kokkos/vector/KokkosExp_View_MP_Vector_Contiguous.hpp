@@ -1162,7 +1162,7 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_impl_handle.create_functor(
-        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        space
         , ctor_prop::initialize
         , m_impl_offset.span()
         , m_sacado_size.value );

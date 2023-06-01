@@ -1525,7 +1525,7 @@ public:
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
 				if (execution_space_specified)
-					record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+					record->m_destroy = functor_type( space
 							, (fad_value_type *) m_impl_handle
 							, m_array_offset.span()
 							, record->get_label()
