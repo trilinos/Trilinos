@@ -1155,19 +1155,21 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
+      auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
       m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
                     m_impl_offset.span(), m_sacado_size.value );
 
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_impl_handle.create_functor(
-        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        space
         , ctor_prop::initialize
         , m_impl_offset.span()
         , m_sacado_size.value );
 
       // Construct values
       record->m_destroy.construct_shared_allocation();
+      space.fence();
     }
 
     return record ;
