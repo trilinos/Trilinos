@@ -11,10 +11,6 @@
 #include "trilinos_btf_decl.h"
 #include "trilinos_klu_version.h"
 
-#ifdef TRILINOSSS_HAVE_OMP
-#include <omp.h>
-#endif
-
 /* ========================================================================== */
 /* make sure debugging and printing is turned off */
 
