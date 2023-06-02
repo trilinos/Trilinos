@@ -53,13 +53,14 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
   namespace Impl {
-
+    
+    template<bool serendipity>
     template<EOperator opType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_WEDGE_C2_FEM::Serial<opType>::
+    Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<opType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       switch (opType) {
@@ -85,9 +86,11 @@ namespace Intrepid2 {
         output.access(12) = -2.*x*(-1. + x + y)*z*(1. + z);
         output.access(13) =  2.*x*y*z*(1. + z);
         output.access(14) = -2.*y*(-1. + x + y)*z*(1. + z);
-        output.access(15) =  4.*x*(-1. + x + y)*(-1. + z)*(1. + z);
-        output.access(16) = -4.*x*y*(-1. + z)*(1. + z);
-        output.access(17) =  4.*y*(-1. + x + y)*(-1. + z)*(1. + z);
+        if constexpr (!serendipity) {
+          output.access(15) =  4.*x*(-1. + x + y)*(-1. + z)*(1. + z);
+          output.access(16) = -4.*x*y*(-1. + z)*(1. + z);
+          output.access(17) =  4.*y*(-1. + x + y)*(-1. + z)*(1. + z);
+        }
         break;
       }
       case OPERATOR_GRAD: {
@@ -156,17 +159,19 @@ namespace Intrepid2 {
         output.access(14, 1) = -2*(-1 + x + 2*y)*z*(1 + z);
         output.access(14, 2) = -2*y*(-1 + x + y)*(1 + 2*z);
 
-        output.access(15, 0) =  4*(-1 + 2*x + y)*(-1 + z*z);
-        output.access(15, 1) =  4*x*(-1 + z)*(1 + z);
-        output.access(15, 2) =  8*x*(-1 + x + y)*z;
+        if constexpr (!serendipity) {
+          output.access(15, 0) =  4*(-1 + 2*x + y)*(-1 + z*z);
+          output.access(15, 1) =  4*x*(-1 + z)*(1 + z);
+          output.access(15, 2) =  8*x*(-1 + x + y)*z;
 
-        output.access(16, 0) = -4*y*(-1 + z)*(1 + z);
-        output.access(16, 1) = -4*x*(-1 + z)*(1 + z);
-        output.access(16, 2) = -8*x*y*z;
+          output.access(16, 0) = -4*y*(-1 + z)*(1 + z);
+          output.access(16, 1) = -4*x*(-1 + z)*(1 + z);
+          output.access(16, 2) = -8*x*y*z;
 
-        output.access(17, 0) =  4*y*(-1 + z)*(1 + z);
-        output.access(17, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
-        output.access(17, 2) =  8*y*(-1 + x + y)*z;
+          output.access(17, 0) =  4*y*(-1 + z)*(1 + z);
+          output.access(17, 1) =  4*(-1 + x + 2*y)*(-1 + z*z);
+          output.access(17, 2) =  8*y*(-1 + x + y)*z;
+        }
         break;
       }
       case OPERATOR_D2: {
@@ -279,27 +284,29 @@ namespace Intrepid2 {
         output.access(14, 4) = -2.*(-1. + x + 2.*y)*(1. + 2.*z);
         output.access(14, 5) = -4.*y*(-1. + x + y);
 
-        output.access(15, 0) =  8.*(-1. + z*z);
-        output.access(15, 1) =  4.*(-1. + z*z);
-        output.access(15, 2) =  8.*(-1. + 2.*x + y)*z;
-        output.access(15, 3) =  0.;
-        output.access(15, 4) =  8.*x*z;
-        output.access(15, 5) =  8.*x*(-1. + x + y);
+        if constexpr (!serendipity) {
+          output.access(15, 0) =  8.*(-1. + z*z);
+          output.access(15, 1) =  4.*(-1. + z*z);
+          output.access(15, 2) =  8.*(-1. + 2.*x + y)*z;
+          output.access(15, 3) =  0.;
+          output.access(15, 4) =  8.*x*z;
+          output.access(15, 5) =  8.*x*(-1. + x + y);
 
-        output.access(16, 0) =  0.;
-        output.access(16, 1) =  4. - 4.*z*z;
-        output.access(16, 2) = -8.*y*z;
-        output.access(16, 3) =  0.;
-        output.access(16, 4) = -8.*x*z;
-        output.access(16, 5) = -8.*x*y;
+          output.access(16, 0) =  0.;
+          output.access(16, 1) =  4. - 4.*z*z;
+          output.access(16, 2) = -8.*y*z;
+          output.access(16, 3) =  0.;
+          output.access(16, 4) = -8.*x*z;
+          output.access(16, 5) = -8.*x*y;
 
 
-        output.access(17, 0) =  0.;
-        output.access(17, 1) =  4.*(-1. + z*z);
-        output.access(17, 2) =  8.*y*z;
-        output.access(17, 3) =  8.*(-1. + z*z);
-        output.access(17, 4) =  8.*(-1. + x + 2.*y)*z;
-        output.access(17, 5) =  8.*y*(-1. + x + y);
+          output.access(17, 0) =  0.;
+          output.access(17, 1) =  4.*(-1. + z*z);
+          output.access(17, 2) =  8.*y*z;
+          output.access(17, 3) =  8.*(-1. + z*z);
+          output.access(17, 4) =  8.*(-1. + x + 2.*y)*z;
+          output.access(17, 5) =  8.*y*(-1. + x + y);
+        }
         break;
       }
       case OPERATOR_D3: {
@@ -472,38 +479,40 @@ namespace Intrepid2 {
         output.access(14, 8) = -4.*(-1 + x + 2*y);
         output.access(14, 9) =  0.;
 
-        output.access(15, 0) =  0.;
-        output.access(15, 1) =  0.;
-        output.access(15, 2) =  16.*z;
-        output.access(15, 3) =  0.;
-        output.access(15, 4) =  8.*z;
-        output.access(15, 5) =  8.*(-1 + 2*x + y);
-        output.access(15, 6) =  0.;
-        output.access(15, 7) =  0.;
-        output.access(15, 8) =  8.*x;
-        output.access(15, 9) =  0.;
+        if constexpr (!serendipity) {
+          output.access(15, 0) =  0.;
+          output.access(15, 1) =  0.;
+          output.access(15, 2) =  16.*z;
+          output.access(15, 3) =  0.;
+          output.access(15, 4) =  8.*z;
+          output.access(15, 5) =  8.*(-1 + 2*x + y);
+          output.access(15, 6) =  0.;
+          output.access(15, 7) =  0.;
+          output.access(15, 8) =  8.*x;
+          output.access(15, 9) =  0.;
 
-        output.access(16, 0) =  0.;
-        output.access(16, 1) =  0.;
-        output.access(16, 2) =  0.;
-        output.access(16, 3) =  0.;
-        output.access(16, 4) = -8.*z;
-        output.access(16, 5) = -8.*y;
-        output.access(16, 6) =  0.;
-        output.access(16, 7) =  0.;
-        output.access(16, 8) = -8.*x;
-        output.access(16, 9) =  0.;
+          output.access(16, 0) =  0.;
+          output.access(16, 1) =  0.;
+          output.access(16, 2) =  0.;
+          output.access(16, 3) =  0.;
+          output.access(16, 4) = -8.*z;
+          output.access(16, 5) = -8.*y;
+          output.access(16, 6) =  0.;
+          output.access(16, 7) =  0.;
+          output.access(16, 8) = -8.*x;
+          output.access(16, 9) =  0.;
 
-        output.access(17, 0) =  0.;
-        output.access(17, 1) =  0.;
-        output.access(17, 2) =  0.;
-        output.access(17, 3) =  0.;
-        output.access(17, 4) =  8.*z;
-        output.access(17, 5) =  8.*y;
-        output.access(17, 6) =  0.;
-        output.access(17, 7) =  16.*z;
-        output.access(17, 8) =  8.*(-1 + x + 2*y);
-        output.access(17, 9) =  0.;
+          output.access(17, 0) =  0.;
+          output.access(17, 1) =  0.;
+          output.access(17, 2) =  0.;
+          output.access(17, 3) =  0.;
+          output.access(17, 4) =  8.*z;
+          output.access(17, 5) =  8.*y;
+          output.access(17, 6) =  0.;
+          output.access(17, 7) =  16.*z;
+          output.access(17, 8) =  8.*(-1 + x + 2*y);
+          output.access(17, 9) =  0.;
+        }
         break;
       }
       case OPERATOR_D4: {
@@ -554,14 +563,16 @@ namespace Intrepid2 {
         output.access(14, 8) =-4;
         output.access(14,12) =-8.;
 
-        output.access(15, 5) =16.;
-        output.access(15, 8) = 8.;
+        if constexpr (!serendipity) {
+          output.access(15, 5) =16.;
+          output.access(15, 8) = 8.;
 
-        output.access(16, 8) =-8.;
+          output.access(16, 8) =-8.;
 
 
-        output.access(17, 8) = 8.;
-        output.access(17,12) =16.;
+          output.access(17, 8) = 8.;
+          output.access(17,12) =16.;
+        }
         break;
       }
       case OPERATOR_MAX : {
@@ -581,17 +592,17 @@ namespace Intrepid2 {
                                   opType != OPERATOR_D3 &&
                                   opType != OPERATOR_D4 &&
                                   opType != OPERATOR_MAX,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_C2_FEM::Serial::getValues) operator is not supported");
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM::Serial::getValues) operator is not supported");
       }
       }
     }
 
-
-    template<typename DT,
+    template<bool serendipity>
+    template<typename DT, 
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
-    Basis_HGRAD_WEDGE_C2_FEM::
+    Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::
     getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
@@ -602,6 +613,7 @@ namespace Intrepid2 {
       // Number of evaluation points = dim 0 of inputPoints
       const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
       switch (operatorType) {
 
       case OPERATOR_VALUE: {
@@ -617,12 +629,12 @@ namespace Intrepid2 {
       }
       case OPERATOR_CURL: {
         INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_CURL, std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_WEDGE_C2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
+                                      ">>> ERROR (Basis_HGRAD_WEDGE_DEG2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
         break;
       }
       case OPERATOR_DIV: {
         INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_WEDGE_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
+                                      ">>> ERROR (Basis_HGRAD_WEDGE_DEG2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
         break;
       }
       case OPERATOR_D2: {
@@ -652,18 +664,19 @@ namespace Intrepid2 {
       }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_WEDGE_C2_FEM): Invalid operator type");
+                                      ">>> ERROR (Basis_HGRAD_WEDGE_DEG2_FEM): Invalid operator type");
       }
       }
     }
 
   }
+
   // -------------------------------------------------------------------------------------
 
-  template<typename DT, typename OT, typename PT>
-  Basis_HGRAD_WEDGE_C2_FEM<DT,OT,PT>::
-  Basis_HGRAD_WEDGE_C2_FEM() {
-    this->basisCardinality_  = 18;
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  Basis_HGRAD_WEDGE_DEG2_FEM<serendipity,DT,OT,PT>::
+  Basis_HGRAD_WEDGE_DEG2_FEM() {
+    this->basisCardinality_  = serendipity ? 15 : 18;
     this->basisDegree_       = 2;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
@@ -694,17 +707,16 @@ namespace Intrepid2 {
                                  1, 3, 0, 1,
                                  1, 4, 0, 1,
                                  1, 5, 0, 1,
+                                 // following entries not used for serendipity elements
                                  2, 0, 0, 1,
                                  2, 1, 0, 1,
                                  2, 2, 0, 1
       };
 
       // host tags
-      OrdinalTypeArray1DHost tagView(&tags[0], 72);
+      OrdinalTypeArray1DHost tagView(&tags[0], serendipity ? 60 : 72);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      //OrdinalTypeArray2DHost ordinalToTag;
-      //OrdinalTypeArray3DHost tagToOrdinal;
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
                               tagView,
@@ -736,9 +748,12 @@ namespace Intrepid2 {
     dofCoords(12,0)=  0.5;  dofCoords(12,1)=  0.0;  dofCoords(12,2)=  1.0;
     dofCoords(13,0)=  0.5;  dofCoords(13,1)=  0.5;  dofCoords(13,2)=  1.0;
     dofCoords(14,0)=  0.0;  dofCoords(14,1)=  0.5;  dofCoords(14,2)=  1.0;
-    dofCoords(15,0)=  0.5;  dofCoords(15,1)=  0.0;  dofCoords(15,2)=  0.0;
-    dofCoords(16,0)=  0.5;  dofCoords(16,1)=  0.5;  dofCoords(16,2)=  0.0;
-    dofCoords(17,0)=  0.0;  dofCoords(17,1)=  0.5;  dofCoords(17,2)=  0.0;
+
+    if constexpr (!serendipity) {
+      dofCoords(15,0)=  0.5;  dofCoords(15,1)=  0.0;  dofCoords(15,2)=  0.0;
+      dofCoords(16,0)=  0.5;  dofCoords(16,1)=  0.5;  dofCoords(16,2)=  0.0;
+      dofCoords(17,0)=  0.0;  dofCoords(17,1)=  0.5;  dofCoords(17,2)=  0.0;
+    }
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);

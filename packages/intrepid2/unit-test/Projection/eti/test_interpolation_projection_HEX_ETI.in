@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Test for checking orientation tools for tetrahedral elements.
+    \brief  Test for checking orientation tools for hexahedral elements.
     \author Created by Mauro Perego
 */
 

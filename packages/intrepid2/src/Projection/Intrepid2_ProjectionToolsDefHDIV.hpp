@@ -462,6 +462,8 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     hcurlBasis = new Basis_HCURL_HEX_In_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
     hcurlBasis = new Basis_HCURL_TET_In_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
+  else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key)
+    hcurlBasis = new typename DerivedNodalBasisFamily<DeviceType,scalarType,scalarType>::HCURL_WEDGE(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
     hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)

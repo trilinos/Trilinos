@@ -40,21 +40,21 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_02.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_LINE_C2_FEM class.
-    \author Created by P. Bochev, D. Ridzal, K. Peterson.
+/** \file test_01.cpp
+    \brief  Test for checking orientation tools for wedge elements.
+    \author Created by Mauro Perego
 */
 
+#include "test_interpolation_projection_WEDGE.hpp"
 #include "Kokkos_Core.hpp"
 
-#include "test_02.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
-
-  const int r_val = Intrepid2::Test::HGRAD_HEX_C2_FEM_Test02<@ETI_VALUETYPE@, @ETI_DEVICE@>(verbose);
+  
+  const int r_val = Intrepid2::Test::InterpolationProjectionWedge<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
 
   Kokkos::finalize();
   return r_val;
