@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-SET(KOKKOS_OPTION_KEYS   "" CACHE INTERNAL "" FORCE)
-SET(KOKKOS_OPTION_VALUES "" CACHE INTERNAL "" FORCE)
-SET(KOKKOS_OPTION_TYPES  "" CACHE INTERNAL "" FORCE)
-
 # Disable in-source builds to prevent source tree corruption.
 if( "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}" )
   message( FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files and delete CMakeCache.txt." )
@@ -199,6 +195,8 @@ INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_check_env.cmake)
   INCLUDE(${KOKKOS_SRC_PATH}/cmake/build_env_info.cmake)
   check_git_setup()
 
+INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_configure_trilinos.cmake)
+
 # The build environment setup goes in the following steps
 # 1) Check all the enable options. This includes checking Kokkos_DEVICES
 # 2) Check the compiler ID (type and version)
@@ -229,8 +227,6 @@ ENDIF()
 # A) Forward declare the package so that certain options are also defined for
 # subpackages
 
-INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_configure_trilinos.cmake)
-
 #------------------------------------------------------------------------------
 #
 # D) Process the subpackages (subdirectories) for Kokkos
@@ -256,7 +252,6 @@ ENDIF()
 INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_install.cmake)
 
 add_library(Kokkos::all_libs ALIAS kokkos)
-tribits_package_postprocess()
 file(GLOB KOKKOS_CMAKE_FILES ${Kokkos_BINARY_DIR}/*.cmake)
 file(COPY ${KOKKOS_CMAKE_FILES} DESTINATION ${Trilinos_BINARY_DIR}/cmake_packages/kokkos/)
 

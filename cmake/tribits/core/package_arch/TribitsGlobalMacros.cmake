@@ -2177,7 +2177,7 @@ macro(tribits_configure_enabled_packages)
         endif()
         if (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
           tribits_report_invalid_tribits_usage(
-            "ERROR: Forgot to call tribits_package_postprocess() for ${PACKAGE_NAME} in"
+            "ERROR: Forgot to call tribits_package_postprocess() for in"
             " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         endif()
 

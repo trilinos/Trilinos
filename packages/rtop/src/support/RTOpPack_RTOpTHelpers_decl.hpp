@@ -182,7 +182,6 @@ public:
     { return concreteReductObj_; }
   /** \brief. */
   std::string description() const;
-
 private:
   ConcreteReductObj concreteReductObj_;
 };
