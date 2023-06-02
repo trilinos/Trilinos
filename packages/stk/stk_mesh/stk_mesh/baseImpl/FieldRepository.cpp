@@ -42,7 +42,6 @@
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
-#include <iostream>
 
 namespace stk { namespace mesh { class Part; } }
 
