@@ -42,6 +42,7 @@
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
+#include <iostream>
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -71,7 +72,7 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
 
 // Check for compatibility:
 // 1) Scalar type must match
-// 2) Number of states must match
+// 2) Number of states must be nonzero
 // 3) Dimension must be different by at most one rank,
 //    where the tags match for the smaller rank.
 void
@@ -81,10 +82,9 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
                                    const shards::ArrayDimTag * const * arg_dim_tags,
                                    unsigned                            arg_num_states) const
 {
-
   const bool ok_traits = arg_traits.is_void || &arg_traits == &arg_field.data_traits();
 
-  const bool ok_number_states = not arg_num_states || arg_num_states == arg_field.number_of_states();
+  const bool ok_number_states = arg_num_states != 0;
 
   if (m_meta.is_using_simple_fields()) {
     const bool has_extra_template_parameters = (arg_field.m_field_rank > 0);
@@ -96,7 +96,7 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
                     "\" , #states = " << arg_field.number_of_states() << " ]" <<
                     " Expected field info = " <<
                     print_field_type(arg_traits, arg_rank, arg_dim_tags) <<
-                    "[ #states = " << arg_num_states << " ]");
+                    "[ #states > 0 ]");
   }
   else {
     bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
@@ -116,7 +116,7 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
                     "\" , #states = " << arg_field.number_of_states() << " ]" <<
                     " Expected field info = " <<
                     print_field_type(arg_traits, arg_rank, arg_dim_tags) <<
-                    "[ #states = " << arg_num_states << " ]");
+                    "[ #states > 0 ]");
   }
 }
 

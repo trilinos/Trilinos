@@ -80,6 +80,28 @@ namespace {
 const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 using stk::unit_test_util::build_mesh;
 
+TEST(UnitTestField, testFieldStates)
+{
+  stk::ParallelMachine pm = MPI_COMM_SELF;
+
+  typedef stk::mesh::Field<double> rank_one_field;
+  const std::string name1("test_field_1");
+  const std::string name2("test_field_2");
+  const int spatial_dimension = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+
+  // Redeclaration with fewer number of states.
+  rank_one_field* field1_v1 = &meta_data.declare_field<double>(stk::topology::ELEMENT_RANK, name1, 2);
+  rank_one_field* field1_v2 = &meta_data.declare_field<double>(stk::topology::ELEMENT_RANK, name1, 1);
+  EXPECT_EQ(field1_v1, field1_v2);
+
+  // Redeclaration with greater number of states.
+  rank_one_field* field2_v1 = &meta_data.declare_field<double>(stk::topology::ELEMENT_RANK, name2, 1);
+  rank_one_field* field2_v2 = &meta_data.declare_field<double>(stk::topology::ELEMENT_RANK, name2, 2);
+  EXPECT_EQ(field2_v1, field2_v2);
+}
+
 TEST(UnitTestField, testFieldMaxSize)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;

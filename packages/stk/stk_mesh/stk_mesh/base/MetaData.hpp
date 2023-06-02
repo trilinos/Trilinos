@@ -880,7 +880,7 @@ field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
 
   Traits::assign_tags( tags );
 
-  FieldBase * const field = m_field_repo.get_field( arg_entity_rank, name , dt , Traits::Rank , tags , 0 );
+  FieldBase * const field = m_field_repo.get_field( arg_entity_rank, name , dt , Traits::Rank , tags , 1);
 
   STK_ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
                   "field " << field->name() << " has type " << field->data_traits().type_info.name() << " when expecting type " << dt.type_info.name());
@@ -904,7 +904,7 @@ Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
 
   Traits::assign_tags(tags);
 
-  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, Traits::Rank, tags, 0);
+  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, Traits::Rank, tags, 1);
 
   STK_ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
                   "field " << field->name() << " has type " << field->data_traits().type_info.name()
@@ -1073,12 +1073,44 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
   }
 
   if (f[0] != nullptr) {
-    for (unsigned i = 1; i < number_of_states; ++i) {
-      f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+    const unsigned current_number_of_states = f[0]->number_of_states();
+    if (current_number_of_states >= number_of_states) {
+      // Field exists and all of the requested states exist.
+      for (unsigned i = 1; i < current_number_of_states; ++i) {
+        f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+      }
+    } else {
+      // Field exists but only some of the requested states exist.
+      // Fetch the existing states.
+      for (unsigned i = 1; i < current_number_of_states; ++i) {
+        f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+      }
+
+      // Create the new states.
+      for (unsigned i = current_number_of_states; i < number_of_states; ++i) {
+        std::string field_name = name;
+        field_name.append(reservedStateSuffix[i]);
+
+        f[i] = new Field<T>(this,
+                            arg_entity_rank,
+                            m_field_repo.get_fields().size(),
+                            field_name,
+                            traits,
+                            Traits::Rank,
+                            dim_tags,
+                            number_of_states,
+                            static_cast<FieldState>(i));
+
+        m_field_repo.add_field(f[i]);
+      }
+
+      // Update the field states.
+      for (unsigned i = 0; i < number_of_states; ++i) {
+        f[i]->set_field_states(f);
+      }
     }
-  }
-  else {
-    // Field does not exist then create it
+  } else {
+    // Field does not exist then create it.
 
     std::string field_names[MaximumFieldStates];
 
@@ -1087,8 +1119,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     if (2 == number_of_states) {
       field_names[1] = name;
       field_names[1].append(reservedStateSuffix[0]);
-    }
-    else {
+    } else {
       for (unsigned i = 1; i < number_of_states; ++i) {
         field_names[i] = name;
         field_names[i].append(reservedStateSuffix[i]);
@@ -1096,7 +1127,6 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     }
 
     for (unsigned i = 0; i < number_of_states; ++i) {
-
       f[i] = new Field<T>(this,
                           arg_entity_rank,
                           m_field_repo.get_fields().size(),
@@ -1111,7 +1141,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     }
 
     for (unsigned i = 0; i < number_of_states; ++i) {
-      f[i]->set_field_states( f );
+      f[i]->set_field_states(f);
     }
   }
 
