@@ -1220,6 +1220,7 @@ max(const typename PCE<Storage>::value_type& a,
 }
 
 template <typename Storage>
+KOKKOS_INLINE_FUNCTION
 PCE<Storage>
 max(const PCE<Storage>& a,
     const typename PCE<Storage>::value_type& b)
@@ -1545,6 +1546,7 @@ operator >> (std::istream& is, PCE<Storage>& a)
 }
 
 template <typename Storage>
+KOKKOS_INLINE_FUNCTION
 void
 CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c) {
     typedef typename PCE<Storage>::ordinal_type ordinal_type;
