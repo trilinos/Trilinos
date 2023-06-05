@@ -1624,7 +1624,16 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    // add element block part and cell topology
    elementBlocks_.insert(std::make_pair(name,block));
-   elementBlockCT_.insert(std::make_pair(name,ct));
+   elementBlockCT_.insert(std::make_pair(name,ct));  // TODO BWR remove?
+   // TODO BWR Add MeshGeometryManager to the block??  Can it store just its own nodes?
+   // TODO BWR what about side sets?
+
+   // create a mesh geometry manager for the block
+
+   Teuchos::RCP<panzer::MeshGeometryManager> mgm 
+      = Teuchos::rcp(new panzer::MeshGeometryManager(ct));
+
+   elementBlockMGM_.insert(std::make_pair(name,mgm));
 }
 
 Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getEdgesOrderedByLID() const

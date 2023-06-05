@@ -65,6 +65,8 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::ParameterList;
   using PHX::Evaluator;
 
+  // TODO BWR how do IP fields get here?
+
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
     userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
@@ -153,12 +155,16 @@ buildClosureModels(const std::string& model_id,
         blockIdEvaluated_[block_id] = true;
      } 
 
-     // if a requested field is found then add in cell quantity evaluator
+     // if a requested field is found then add in nodal field evaluator
      BlockIdToFields::const_iterator nodalItr = blockIdToNodalFields_.find(block_id);
+     // TODO BWR have access to block id here, can get mesh basis from MGM
      if(nodalItr!=blockIdToNodalFields_.end() ) {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
-        Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
+        //Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
+        Teuchos::RCP<const panzer::PureBasis> basis = mesh_.getMeshGeometryManager(block_id)->getMeshPureBasis(ir->workset_size);
+
+        // TODO BWR check if we need to project...
    
         // setup scatter nodal fields
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval

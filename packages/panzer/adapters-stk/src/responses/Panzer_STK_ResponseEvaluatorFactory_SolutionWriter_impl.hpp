@@ -97,7 +97,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
   if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
 
-  // add in bases for any addtional fields
+  // add in bases for any additional fields
   for(std::size_t i=0;i<additionalFields_.size();i++)
     bases[additionalFields_[i].second->name()] = additionalFields_[i].second;
 
@@ -165,9 +165,22 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         fields_concat += fields[f];
       }
 
+      // TODO BWR Given the physics block, what is the mesh basis?
+      // get eblock, get mesh basis, check and see if we need to project
+
+      auto eBlock = physicsBlock.elementBlockID();
+      Teuchos::RCP<const panzer::PureBasis> meshBasis = 
+        mesh_.getMeshGeometryManager(eBlock)->getMeshPureBasis(basis->numCells());
+
+      if (meshBasis->getIntrepid2Basis().getName() != basis->getIntrepid2Basis().getName()) {
+        // TODO BWR project
+        // TODO BWR may need to add capabilities to do MULTIPLE field projections of same type...
+        // TODO BWR akin to scatter below
+      }
+
       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval = 
         Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name()+": "+fields_concat,
-                                                      mesh_, basis, fields,scalars));
+                                                      mesh_, basis, fields, scalars));
 
       // register and require evaluator fields
       this->template registerEvaluator<EvalT>(fm, eval);

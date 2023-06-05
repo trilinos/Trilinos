@@ -79,6 +79,7 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
     string element_block_id = itr->first;
     string physics_block_id = itr->second;
 
+    // TODO BWR remove stuff like this??
     map<string,RCP<const shards::CellTopology> >::const_iterator ct_itr =
       block_ids_to_cell_topo.find(element_block_id);
     TEUCHOS_TEST_FOR_EXCEPTION(ct_itr==block_ids_to_cell_topo.end(),

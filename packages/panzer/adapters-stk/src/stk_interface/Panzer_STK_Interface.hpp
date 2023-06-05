@@ -62,6 +62,9 @@
 
 #include <unordered_map>
 
+// TODO BWR REMOVE?
+#include "Panzer_MeshGeometryManager.hpp"
+
 #ifdef PANZER_HAVE_IOSS
 #include <stk_io/StkMeshIoBroker.hpp>
 #endif
@@ -1453,7 +1456,10 @@ protected:
    std::map<std::string, stk::mesh::Part*> edgeBlocks_;     // Edge blocks
    std::map<std::string, stk::mesh::Part*> faceBlocks_;     // Face blocks
 
+   // TODO BWR get rid of this and use a map with MeshGeometryManagers
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
+   // TODO BWR introduces a dependence on panzer namespace and disc-fe here...
+   std::map<std::string, Teuchos::RCP<panzer::MeshGeometryManager> > elementBlockMGM_;
 
    // for storing/accessing nodes
    stk::mesh::Part * nodesPart_;
