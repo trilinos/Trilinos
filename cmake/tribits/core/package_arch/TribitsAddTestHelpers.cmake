@@ -736,7 +736,7 @@ endfunction()
 
 
 #
-# Set the timeout for a test already aded
+# Set the timeout for a test already added
 #
 function(tribits_private_add_test_set_timeout  TEST_NAME_IN   TIMEOUT_USED_OUT)
 
@@ -753,7 +753,7 @@ endfunction()
 
 
 #
-# Set the environment for a test already aded
+# Set the environment for a test already added
 #
 function(tribits_private_add_test_set_environment  TEST_NAME_IN)
 
@@ -768,7 +768,7 @@ endfunction()
 
 
 #
-# Set the environment for a test already aded
+# Set the environment for a test already added
 #
 function(tribits_private_add_test_set_processors  TEST_NAME_IN
   NUM_TOTAL_CORES_USED_IN  PROCESSORS_OUT

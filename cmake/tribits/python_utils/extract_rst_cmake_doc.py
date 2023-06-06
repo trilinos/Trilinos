@@ -185,7 +185,7 @@ The rules for this format are:
   error will occur.
 
 See the unit tests in extract_rst_cmake_doc_UnitTest.py for examples of
-behavior w.r.t. different errors and fomatting mistakes.
+behavior w.r.t. different errors and formatting mistakes.
 """
 
 #

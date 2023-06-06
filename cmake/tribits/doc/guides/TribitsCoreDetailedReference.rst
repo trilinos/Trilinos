@@ -279,7 +279,7 @@ These options are described below.
   processed in CTest -S driver scripts using ``tribits_ctest_driver()``.)
 
   In general, a project should change the default to ``TRUE`` when using a
-  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  newer CDash installation with CDash versions 3.0+ that can accommodate the
   results coming from ctest -S and display them package-by-package very
   nicely.  Otherwise, most projects are better off with package-by-package
   mode since it results in nicer display on CDash for older CDash versions.

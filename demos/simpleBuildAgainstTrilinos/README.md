@@ -45,6 +45,15 @@ This will put a file called `TrilinosConfig.cmake` under a subdirectory of
     <trilinos-src>/demos/simpleBuildAgainstTrilinos
 ```
 
+NOTE: To use the alternative `CMakeLists.txt` file that calls
+`find_package(Tpetra)` and links to `Tpetra::all_libs` instead of
+`find_package(Trilinos)`, copy the source tree `simpleBuildAgainstTrilinos` to
+a directory outside of the Trilinos source tree, copy the file
+`simpleBuildAgainstTrilinos/CMakeLists.by_package.cmake` to
+`simpleBuildAgainstTrilinos/CMakeLists.txt` and then configure as shown above
+(pointing to the copied and modified `simpleBuildAgainstTrilinos` source
+tree).
+
 ## 4. Build the application
 
 ```

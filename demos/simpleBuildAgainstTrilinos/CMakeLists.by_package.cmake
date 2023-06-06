@@ -12,25 +12,16 @@ project(MyApp C CXX)
 # Disable Kokkos warning about not supporting C++ extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Get Trilinos as one entity but require just the packages we are using
-find_package(Trilinos REQUIRED COMPONENTS Teuchos Tpetra)
+# Get just Tpetra as
+find_package(Tpetra REQUIRED)
 
 # Echo trilinos build info just for fun
-MESSAGE("\nFound Trilinos!  Here are the details: ")
-MESSAGE("   Trilinos_DIR = ${Trilinos_DIR}")
-MESSAGE("   Trilinos_VERSION = ${Trilinos_VERSION}")
-MESSAGE("   Trilinos_PACKAGE_LIST = ${Trilinos_PACKAGE_LIST}")
-MESSAGE("   Trilinos_LIBRARIES = ${Trilinos_LIBRARIES}")
-MESSAGE("   Trilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
-MESSAGE("   Trilinos_TPL_LIST = ${Trilinos_TPL_LIST}")
-MESSAGE("   Trilinos_TPL_LIBRARIES = ${Trilinos_TPL_LIBRARIES}")
-MESSAGE("   Trilinos_BUILD_SHARED_LIBS = ${Trilinos_BUILD_SHARED_LIBS}")
-MESSAGE("End of Trilinos details\n")
+message("\nFound Tpetra!  Here are the details: ")
+message("   Tpetra_DIR = ${Tpetra_DIR}")
 
 # Build the APP and link to Trilinos
 add_executable(MyApp ${CMAKE_CURRENT_SOURCE_DIR}/app.cpp)
-target_link_libraries(MyApp  Trilinos::all_selected_libs)
-# Or, above could have linked to just Tpetra::all_libs
+target_link_libraries(MyApp  Tpetra::all_libs)
 
 # Set up a test
 enable_testing()
