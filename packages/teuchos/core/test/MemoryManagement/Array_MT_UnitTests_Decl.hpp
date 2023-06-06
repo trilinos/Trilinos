@@ -363,15 +363,15 @@ static void do_read_operations_on_array(RCP<arrayType> shared_array,
       }
     }
   }
-  catch (DanglingReferenceError) {
+  catch (DanglingReferenceError&) {
     // If test throws a dangling reference error, record the cycle it occurred.
     index_tracker.danglingReference = cycle;
   }
-  catch (RangeError) {
+  catch (RangeError&) {
     // If tests throws a range error, record the cycle it occurred.
     index_tracker.outOfRangeError = cycle;
   }
-  catch (std::out_of_range) {
+  catch (std::out_of_range&) {
     // We could also get std::out_of_range
     // Note that here were are counting Trilinos RangeError and STL
     // std::out_of_range as all the same - they both happen since the bad
