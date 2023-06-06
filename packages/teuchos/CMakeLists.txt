@@ -252,24 +252,27 @@ IF (DEFINED BUILD_SHARED_LIBS)
   ENDIF ()
 ENDIF ()
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
-  HAVE_TEUCHOS_THREAD_SAFE
-  "Enable thread safe code for RCP classes."
-  ${Trilinos_ENABLE_THREAD_SAFE}
-  )
 
 # As per the discussion in #11921, we explicitly enable thread safe RCPs,
 # if Kokkos has a host thread-parallel backend
+SET(Teuchos_ENABLE_THREAD_SAFE_Default ${Trilinos_ENABLE_THREAD_SAFE})
 IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
   IF( (DEFINED Kokkos_ENABLE_THREADS AND Kokkos_ENABLE_THREADS) OR
       (DEFINED Kokkos_ENABLE_OPENMP AND Kokkos_ENABLE_OPENMP) )
     IF (NOT ${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
       MESSAGE(WARNING "A Kokkos host thread-parallel backend is enabled, requiring Trilinos to enable thread-safe RCP classes.  You can do this manually by specifying Teuchos_ENABLE_THREAD_SAFE=ON")
-      GLOBAL_SET(${PACKAGE_NAME}_ENABLE_THREAD_SAFE ON)
+      SET(Teuchos_ENABLE_THREAD_SAFE_Default ON)
     ENDIF()
   ENDIF()
 ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+  HAVE_TEUCHOS_THREAD_SAFE
+  "Enable thread safe code for RCP classes."
+  ${Teuchos_ENABLE_THREAD_SAFE_Default}
+  )
+
 
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
