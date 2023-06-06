@@ -285,7 +285,7 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
       getParamTryingTypes<int, int>(par_ilut_vector_size, par_ilut_plist, paramName, prefix);
 
       paramName = "fill in limit";
-      getParamTryingTypes<float, float, magnitude_type, double>(par_ilut_fill_in_limit, par_ilut_plist, paramName, prefix);
+      getParamTryingTypes<float, float, double>(par_ilut_fill_in_limit, par_ilut_plist, paramName, prefix);
 
       paramName = "verbose";
       getParamTryingTypes<bool, bool>(par_ilut_verbose, par_ilut_plist, paramName, prefix);
@@ -560,18 +560,10 @@ void ILUT<MatrixType>::initialize ()
       }
       auto A_local_crs_device = A_local_crs->getLocalMatrixDevice();
 
-      typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
-      typedef typename crs_graph_type::local_graph_device_type local_graph_device_type;
-      typedef typename local_graph_device_type::array_layout   array_layout;
-      typedef typename local_graph_device_type::device_type    device_type;
-      typedef typename local_graph_device_type::size_type      usize_type;
-
       //KokkosKernels requires unsigned
       //typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
       typedef typename Kokkos::View<usize_type*, array_layout, device_type> lno_row_view_t;
       const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
-      //lno_row_view_t     L_rowmap("L_row_map", NumMyRows + 1);
-      //lno_row_view_t     U_rowmap("U_row_map", NumMyRows + 1);
       L_rowmap_ = lno_row_view_t("L_row_map", NumMyRows + 1);
       U_rowmap_ = lno_row_view_t("U_row_map", NumMyRows + 1);
 
@@ -983,24 +975,23 @@ void ILUT<MatrixType>::compute ()
       A_local_values_  = lclMtx.values;
     }
 
-      //JHU TODO Should allocation of L & U's column (aka entry) and value arrays occur here or in init()?
-      auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
-      auto nnzL = par_ilut_handle->get_nnzL();
-      L_entries_ = static_graph_entries_t("L_entries", nnzL);
-      L_values_ = local_matrix_values_t("L_values", nnzL);
+    //JHU TODO Should allocation of L & U's column (aka entry) and value arrays occur here or in init()?
+    auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
+    auto nnzL = par_ilut_handle->get_nnzL();
+    static_graph_entries_t L_entries_ = static_graph_entries_t("L_entries", nnzL);
+    local_matrix_values_t L_values_ = local_matrix_values_t("L_values", nnzL);
 
-      auto nnzU = par_ilut_handle->get_nnzU();
-      U_entries_ = static_graph_entries_t("U_entries", nnzU);
-      U_values_ = local_matrix_values_t("U_values", nnzU);
+    auto nnzU = par_ilut_handle->get_nnzU();
+    static_graph_entries_t U_entries_ = static_graph_entries_t("U_entries", nnzU);
+    local_matrix_values_t U_values_ = local_matrix_values_t("U_values", nnzU);
 
-      KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(),
+    KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(),
                                                    A_local_rowmap_, A_local_entries_, A_local_values_,
                                                    L_rowmap_, L_entries_, L_values_, U_rowmap_, U_entries_, U_values_);
 
     auto L_kokkosCrsGraph = local_graph_device_type(L_entries_, L_rowmap_);
     auto U_kokkosCrsGraph = local_graph_device_type(U_entries_, U_rowmap_);
 
-    using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
     local_matrix_device_type L_localCrsMatrix_device;
     L_localCrsMatrix_device = local_matrix_device_type("L_Factor_localmatrix",
                                                        A_local_->getLocalNumRows(),

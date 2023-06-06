@@ -440,10 +440,6 @@ private:
   Teuchos::RCP<crs_matrix_type> L_;
   lno_urow_view_t     L_rowmap_;
   lno_urow_view_t     U_rowmap_;
-  static_graph_entries_t L_entries_;
-  static_graph_entries_t U_entries_;
-  local_matrix_values_t L_values_;
-  local_matrix_values_t U_values_;
   //! Sparse triangular solver for L
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! U factor of the incomplete LU factorization of A_local_.
