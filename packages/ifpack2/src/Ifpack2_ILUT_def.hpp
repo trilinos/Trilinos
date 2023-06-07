@@ -516,9 +516,7 @@ void ILUT<MatrixType>::initialize ()
 
     if (this->useKokkosKernelsParILUT_) {
       this->KernelHandle_ = Teuchos::rcp(new kk_handle_type());
-      KernelHandle_->create_par_ilut_handle( A_local_->getLocalNumRows(),
-                                             0, 0, par_ilut_options_.max_iter);
-
+      KernelHandle_->create_par_ilut_handle();
       auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
       par_ilut_handle->set_residual_norm_delta_stop(par_ilut_options_.residual_norm_delta_stop);
       par_ilut_handle->set_team_size(par_ilut_options_.team_size);
@@ -553,11 +551,10 @@ void ILUT<MatrixType>::initialize ()
       auto A_local_crs_device = A_local_crs->getLocalMatrixDevice();
 
       //KokkosKernels requires unsigned
-      //typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
-      typedef typename Kokkos::View<usize_type*, array_layout, device_type> lno_row_view_t;
+      typedef typename Kokkos::View<usize_type*, array_layout, device_type> ulno_row_view_t;
       const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
-      L_rowmap_ = lno_row_view_t("L_row_map", NumMyRows + 1);
-      U_rowmap_ = lno_row_view_t("U_row_map", NumMyRows + 1);
+      L_rowmap_ = ulno_row_view_t("L_row_map", NumMyRows + 1);
+      U_rowmap_ = ulno_row_view_t("U_row_map", NumMyRows + 1);
 
       KokkosSparse::Experimental::par_ilut_symbolic(KernelHandle_.getRawPtr(),
                                                     A_local_crs_device.graph.row_map, A_local_crs_device.graph.entries,
