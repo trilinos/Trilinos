@@ -138,6 +138,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
 
   using prec_type = Ifpack2::ILUT<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >;
 
+  {
+    prec_type prec (A);
+    Teuchos::ParameterList params;
+    params.set("fact: type", "par_ilut");
+    params.set("fact: ilut level-of-fill",0.5);
+    TEST_THROW( prec.setParameters (params), std::runtime_error);
+  }
+
   prec_type prec (A);
   {
     Teuchos::ParameterList params;

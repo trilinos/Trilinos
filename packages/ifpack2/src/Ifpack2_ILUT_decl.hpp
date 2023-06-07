@@ -187,7 +187,7 @@ public:
   explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
-  virtual ~ILUT ();
+  virtual ~ILUT () = default;
 
   //@}
   //! \name Methods for setting up and computing the incomplete factorization

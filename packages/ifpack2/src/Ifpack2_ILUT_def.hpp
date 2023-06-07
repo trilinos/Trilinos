@@ -153,15 +153,6 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
 }
 
 template<class MatrixType>
-ILUT<MatrixType>::~ILUT()
-{
-  if (Teuchos::nonnull (KernelHandle_))
-  {
-    KernelHandle_->destroy_par_ilut_handle();
-  }
-}
-
-template<class MatrixType>
 void ILUT<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
@@ -180,19 +171,44 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   // all parameters.  This ensures that setParameters satisfies the
   // strong exception guarantee (i.e., is transactional).
 
+  // Parsing implementation type
+  IlutImplType::Enum ilutimplType = IlutImplType::Serial;
+  do {
+    static const char typeName[] = "fact: type";
+
+    if ( ! params.isType<std::string>(typeName)) break;
+
+    // Map std::string <-> IlutImplType::Enum.
+    Teuchos::Array<std::string> ilutimplTypeStrs;
+    Teuchos::Array<IlutImplType::Enum> ilutimplTypeEnums;
+    IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
+    Teuchos::StringToIntegralParameterEntryValidator<IlutImplType::Enum>
+      s2i(ilutimplTypeStrs (), ilutimplTypeEnums (), typeName, false);
+
+    ilutimplType = s2i.getIntegralValue(params.get<std::string>(typeName));
+  } while (0);
+
+  if (ilutimplType == IlutImplType::PAR_ILUT) {
+    this->useKokkosKernelsParILUT_ = true;
+  }
+  else {
+    this->useKokkosKernelsParILUT_ = false;
+  }
+
   // Fill level in ILUT is a double, not a magnitude_type, because it
   // depends on LO and GO, not on Scalar.  Also, you can't cast
   // arbitrary magnitude_type (e.g., Sacado::MP::Vector) to double.
   double fillLevel = LevelOfFill_;
   {
-    //JHU FIXME level-of-fill is meaningless for parilut
-    //    FIXME should we throw if it's set?
     const std::string paramName ("fact: ilut level-of-fill");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (params.isParameter(paramName) && this->useKokkosKernelsParILUT_), std::runtime_error,
+      "Ifpack2::ILUT: Parameter " << paramName << " is meaningless for algorithm par_ilut.");
     getParamTryingTypes<double, double, float>
       (fillLevel, params, paramName, prefix);
     TEUCHOS_TEST_FOR_EXCEPTION
       (fillLevel < 1.0, std::runtime_error,
-       "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be >= "
+       "Ifpack2::ILUT: The \"" << paramName << "\" parameter must be >= "
        "1.0, but you set it to " << fillLevel << ".  For ILUT, the fill level "
        "means something different than it does for ILU(k).  ILU(0) produces "
        "factors with the same sparsity structure as the input matrix A. For "
@@ -227,31 +243,6 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     const std::string paramName ("fact: drop tolerance");
     getParamTryingTypes<magnitude_type, magnitude_type, double>
       (dropTol, params, paramName, prefix);
-  }
-
-
-  // Parsing implementation type
-  IlutImplType::Enum ilutimplType = IlutImplType::Serial;
-  do {
-    static const char typeName[] = "fact: type";
-
-    if ( ! params.isType<std::string>(typeName)) break;
-
-    // Map std::string <-> IlutImplType::Enum.
-    Teuchos::Array<std::string> ilutimplTypeStrs;
-    Teuchos::Array<IlutImplType::Enum> ilutimplTypeEnums;
-    IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
-    Teuchos::StringToIntegralParameterEntryValidator<IlutImplType::Enum>
-      s2i(ilutimplTypeStrs (), ilutimplTypeEnums (), typeName, false);
-
-    ilutimplType = s2i.getIntegralValue(params.get<std::string>(typeName));
-  } while (0);
-
-  if (ilutimplType == IlutImplType::PAR_ILUT) {
-    this->useKokkosKernelsParILUT_ = true;
-  }
-  else {
-    this->useKokkosKernelsParILUT_ = false;
   }
 
   int par_ilut_max_iter=20;
@@ -292,6 +283,13 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 
     } // if (params.isSublist(par_ilut_plist_name))
 
+    par_ilut_options_.max_iter = par_ilut_max_iter;
+    par_ilut_options_.residual_norm_delta_stop = par_ilut_residual_norm_delta_stop;
+    par_ilut_options_.team_size = par_ilut_team_size;
+    par_ilut_options_.vector_size = par_ilut_vector_size;
+    par_ilut_options_.fill_in_limit = par_ilut_fill_in_limit;
+    par_ilut_options_.verbose = par_ilut_verbose;
+
   } //if (this->useKokkosKernelsParILUT_)
 
   // Forward to trisolvers.
@@ -303,12 +301,6 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   Rthresh_ = relThresh;
   RelaxValue_ = relaxValue;
   DropTolerance_ = dropTol;
-  par_ilut_options_.max_iter = par_ilut_max_iter;
-  par_ilut_options_.residual_norm_delta_stop = par_ilut_residual_norm_delta_stop;
-  par_ilut_options_.team_size = par_ilut_team_size;
-  par_ilut_options_.vector_size = par_ilut_vector_size;
-  par_ilut_options_.fill_in_limit = par_ilut_fill_in_limit;
-  par_ilut_options_.verbose = par_ilut_verbose;
 }
 
 
