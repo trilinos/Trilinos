@@ -52,11 +52,6 @@ ENDIF()
 # Set the package version number
 SET(PyTrilinos2_VERSION ${Trilinos_VERSION})
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Binder
-  PYTRILINOS2_GENERATE_SRC
-  "Enable regeneration of source files with Binder."
-  OFF )
-
 MESSAGE("-- PYTHON_EXECUTABLE:")
 IF(NOT DEFINED ${PYTHON_EXECUTABLE})
   find_program(PYTHON_EXECUTABLE
