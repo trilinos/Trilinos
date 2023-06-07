@@ -138,6 +138,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Panzer                packages/panzer                   PT
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
   PyTrilinos            packages/PyTrilinos               ST
+  PyTrilinos2           packages/PyTrilinos2              ST
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
@@ -197,6 +198,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(FEI)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(MOOCHO Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phalanx Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(PyTrilinos Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(PyTrilinos2 Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Sundance Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Tpetra Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack2 Windows)
