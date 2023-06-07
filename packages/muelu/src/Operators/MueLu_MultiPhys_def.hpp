@@ -148,9 +148,9 @@ namespace MueLu {
 
      */
 
-#ifdef HAVE_MUELU_CUDA
-    if (paramListMultiphysics_.get<bool>("multiphysics: cuda profile setup", false)) cudaProfilerStart();
-#endif
+//#ifdef HAVE_MUELU_CUDA
+//   if (paramListMultiphysics_.get<bool>("multiphysics: cuda profile setup", false)) cudaProfilerStart();
+//#endif
 
     std::string timerLabel;
     if (reuse)
