@@ -53,7 +53,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
@@ -185,8 +185,9 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::OptimizationProblem<RealT> problem(obj,z,bnd);
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    auto problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
+    problem->addBoundConstraint(bnd);
+    ROL::Solver<RealT> solver(problem,*parlist);
     z->zero();
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

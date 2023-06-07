@@ -47,6 +47,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_LinearAlgebra.hpp"
 #include "ROL_LAPACK.hpp"
+#include "ROL_UpdateType.hpp"
 #include "ROL_Types.hpp"
 #include <random>
 #include <chrono>
@@ -361,6 +362,21 @@ public:
     flagC_ = false;
     // Randomize Psi and Omega and zero W and Y
     reset();
+  }
+
+  void update(UpdateType type) {
+    switch(type) {
+      case UpdateType::Initial:
+      case UpdateType::Accept:
+      case UpdateType::Trial:
+      case UpdateType::Revert:
+      case UpdateType::Temp:
+        flagP_ = false; flagQ_ = false; flagC_ = false;
+        reset();
+        break;
+      default:
+        break;
+    }
   }
 
   int advance(const Real nu, Vector<Real> &h, const int col, const Real eta = 1.0) {
