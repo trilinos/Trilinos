@@ -41,12 +41,6 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    example_06
-    SOURCES example_06.cpp
-    ADD_DIR_TO_NAME
-  )
-
   TRIBITS_ADD_TEST(
     example_01
     ARGS PrintItAll
