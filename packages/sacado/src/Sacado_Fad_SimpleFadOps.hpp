@@ -79,7 +79,6 @@ namespace Sacado {
       return SimpleFad<ValueT>(a, t1, t2);
     }
 
-#ifdef HAVE_SACADO_CXX11
     template <typename ValueT>
     SimpleFad<ValueT>
     cbrt(const SimpleFad<ValueT>& a) {
@@ -87,7 +86,6 @@ namespace Sacado {
       ValueT t2 = 1.0/(3.0*t1*t1);
       return SimpleFad<ValueT>(a, t1, t2);
     }
-#endif
 
     template <typename ValueT>
     SimpleFad<ValueT>
