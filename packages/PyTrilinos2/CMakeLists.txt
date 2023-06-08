@@ -52,6 +52,21 @@ ENDIF()
 # Set the package version number
 SET(PyTrilinos2_VERSION ${Trilinos_VERSION})
 
+TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_SUPPRESS_ERRORS
+  PYTRILINOS2_SUPPRESS_ERRORS
+  "Enable the suppress errors option of binder."
+  OFF )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_CMAKE_ERROR
+PYTRILINOS2_CMAKE_ERROR
+  "Stop the configuration if binder fails."
+  ON )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_VERBOSE
+  PYTRILINOS2_B_VERBOSE
+  "Increase the verbosity of binder."
+  OFF ) 
+
 MESSAGE("-- PYTHON_EXECUTABLE:")
 IF(NOT DEFINED ${PYTHON_EXECUTABLE})
   find_program(PYTHON_EXECUTABLE
@@ -220,6 +235,12 @@ list(APPEND BINDER_OPTIONS -max-file-size=1000000)
 list(APPEND BINDER_OPTIONS --bind Teuchos)
 list(APPEND BINDER_OPTIONS --bind Tpetra)
 list(APPEND BINDER_OPTIONS --bind MueLu)
+IF(PYTRILINOS2_B_VERBOSE)
+  list(APPEND BINDER_OPTIONS -v)
+ENDIF()
+IF(PYTRILINOS2_SUPPRESS_ERRORS)
+  list(APPEND BINDER_OPTIONS --suppress-errors)
+ENDIF()  
 list(APPEND BINDER_OPTIONS --config ${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyTrilinos2_config.cfg)
 list(APPEND BINDER_OPTIONS --)
 IF(TPL_ENABLE_CUDA)
@@ -240,13 +261,24 @@ list(APPEND BINDER_OPTIONS -DNDEBUG)
 
 message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
 
+
 EXECUTE_PROCESS(COMMAND
-
-${PyTrilinos2_BINDER_EXECUTABLE} ${BINDER_OPTIONS}
-
-#${PyTrilinos2_BINDER_EXECUTABLE} --root-module PyTrilinos2 --prefix ${CMAKE_CURRENT_BINARY_DIR}/binder  -annotate-includes -max-file-size=1000000 --bind Teuchos --bind Tpetra --bind MueLu --config ${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyTrilinos2_config.cfg ${binder_include_name} -- -std=c++17 -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp -I${CMAKE_CURRENT_SOURCE_DIR}/src --gcc-toolchain=${PyTrilinos2_BINDER_GCC_TOOLCHAIN} -DNDEBUG
-
+  ${PyTrilinos2_BINDER_EXECUTABLE} ${BINDER_OPTIONS}
+  RESULT_VARIABLE STATUS
+  OUTPUT_VARIABLE OUTPUT_BINDER 
 )
+
+if(STATUS AND NOT STATUS EQUAL 0)
+  message("${OUTPUT_BINDER}")
+  if(PYTRILINOS2_CMAKE_ERROR)
+    message(FATAL_ERROR "BINDER FAILED: ${STATUS}")
+  else()
+    message("BINDER FAILED: ${STATUS}")
+  endif()
+else()
+  message(STATUS "BINDER SUCCESS:") 
+  message("${OUTPUT_BINDER}")
+endif()
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   SET(PyTrilinos2_DEFAULT_INSTALL_PREFIX ${PYTHON_PREFIX})

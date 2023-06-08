@@ -109,66 +109,6 @@ namespace MueLu {
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateTpetraPreconditioner2(Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>  &inA,
-                             Teuchos::ParameterList& inParamList)
-  {
-    typedef Scalar          SC;
-    typedef LocalOrdinal    LO;
-    typedef GlobalOrdinal   GO;
-    typedef Node            NO;
-
-    using   Teuchos::ParameterList;
-
-    typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
-    typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
-    typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
-    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
-
-    return Teuchos::null;
-
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateTpetraPreconditioner3(const std::shared_ptr<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  &inA,
-                             Teuchos::ParameterList& inParamList)
-  {
-    typedef Scalar          SC;
-    typedef LocalOrdinal    LO;
-    typedef GlobalOrdinal   GO;
-    typedef Node            NO;
-
-    using   Teuchos::ParameterList;
-
-    typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
-    typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
-    typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
-    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
-
-    return null;
-
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateTpetraPreconditioner4(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA,
-                             Teuchos::ParameterList& inParamList)
-  {
-    return Teuchos::null;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  CreateTpetraPreconditioner5(const Teuchos::RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA,
-                             Teuchos::ParameterList& inParamList)
-  {
-    return Teuchos::null;
-  }
-
 
   /*!
     @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
