@@ -1249,7 +1249,7 @@ namespace Xpetra {
 
     /// \brief Access the local Kokkos::CrsMatrix data
     typename local_matrix_type::HostMirror getLocalMatrixHost () const {
-      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type::HostMirror());
+      TEUCHOS_UNREACHABLE_RETURN(typename local_matrix_type::HostMirror());
     }
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrixDevice () const {
