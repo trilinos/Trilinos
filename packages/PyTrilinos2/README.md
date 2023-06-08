@@ -1,12 +1,11 @@
 # PyTrilinos2
 
-PyTrilinos2 requires Pybind11 which can be installed via
-python -m pip install pybind11
+PyTrilinos2 requires both Pybind11 and Binder 
 
-If Trilinos is configured with default options, the provided header
-files will work out-of-the-box. Otherwise, Binder needs to be
-available as well. Instructions on how to install Binder can be found
-below.
+## Pybind11 installation:
+
+Pybind11 can be installed via
+python -m pip install pybind11
 
 ## Binder installation:
 
@@ -15,7 +14,7 @@ To build Binder execute the following command sequence in shell with `$HOMEBINDE
 ```
 # clone Binder
 cd $HOMEBINDER
-git clone https://github.com/kliegeois/binder.git && cd binder
+git clone https://github.com/RosettaCommons/binder.git && cd binder
 git checkout teuchos_rcp
 
 # Create build dir
@@ -47,17 +46,24 @@ cmake -S ../llvm/llvm -DLLVM_ENABLE_PROJECTS="clang;libcxx;libcxxabi;clang-tools
 
 ## PyTrilinos2 configuration:
 
-Basic options:
 ```
 -D Trilinos_ENABLE_PyTrilinos2:BOOL=ON \
 -D PYTHON_EXECUTABLE=... \
 -D PyTrilinos2_ENABLE_TESTS=ON \
-```
-Advanced options to regenerate the source files and potentially update the source files:
-```
--D PyTrilinos2_ENABLE_Binder=ON \
 -D PyTrilinos2_BINDER_EXECUTABLE=... \
 -D PyTrilinos2_BINDER_GCC_TOOLCHAIN=...\
--D PyTrilinos2_ENABLE_Update_Binder=ON \
 ```
-The last option specify if the source files have to be updated (to be committed).
+Alternatively, the last option can be replace by the following options to include C++ std headers:
+```
+-D PyTrilinos2_BINDER_clang_include_dirs=... \
+-D PyTrilinos2_BINDER_LibClang_include_dir=... \
+```
+Depending on the enabled exacution space, Binder might need some extra flags.
+For example, for OpenMP, binder needs the `-fopenmp` and an include path of where the OpenMP headers can be included.
+```
+-D PyTrilinos2_BINDER_FLAGS="-fopenmp;-I..." \
+```
+As a second example, for CUDA, one might need to specify the used architecture and a path to CUDA related headers:
+```
+-D PyTrilinos2_BINDER_FLAGS="--cuda-gpu-arch=sm_70;--cuda-path=..." \
+```
