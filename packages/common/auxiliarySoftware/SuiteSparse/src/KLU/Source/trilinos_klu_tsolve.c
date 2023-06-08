@@ -12,6 +12,10 @@
 #include "TrilinosSS_config.h"
 #include "trilinos_klu_internal.h"
 
+#ifdef TRILINOSSS_HAVE_OMP
+#include <omp.h>
+#endif
+
 Int TRILINOS_KLU_tsolve
 (
     /* inputs, not modified */
