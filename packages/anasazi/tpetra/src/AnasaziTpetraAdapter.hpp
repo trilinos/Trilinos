@@ -702,7 +702,8 @@ namespace Anasazi {
     }
 
     static void MvPrint (const MV& mv, std::ostream& os) {
-      mv.print (os);
+      Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
+      mv.describe (fos, Teuchos::VERB_EXTREME);
     }
 
 #ifdef HAVE_ANASAZI_TSQR

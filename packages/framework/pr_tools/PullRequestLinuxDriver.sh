@@ -7,7 +7,21 @@ source ${SCRIPTPATH:?}/common.bash
 # Fetch arguments
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
+bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
 
+# Configure ccache via environment variables
+function configure_ccache() {
+    print_banner "Configuring ccache"
+
+    envvar_set_or_create CCACHE_NODISABLE true
+    envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
+    envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
+    envvar_set_or_create CCACHE_NOHARDLINK true
+    envvar_set_or_create CCACHE_UMASK 077
+    envvar_set_or_create CCACHE_MAXSIZE 100G
+
+    message_std "PRDriver> " "$(ccache --show-stats --verbose)"
+}
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -20,33 +34,31 @@ function bootstrap_modules() {
         execute_command_checked "module load git/2.20.0"
         execute_command_checked "module load python/3.7.2"
         get_python_packages pip3
-        envvar_set_or_create PYTHON_EXE python3
         # Always create user's tmp dir for nvcc. See https://github.com/trilinos/Trilinos/issues/10428#issuecomment-1109956415.
         mkdir -p /tmp/trilinos
+
+        module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
         module load git/2.10.1
         module load python/3.7.3
         get_python_packages pip3
-        export PYTHON_EXE=python3
+
+        module list
     else
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
         execute_command_checked "module unload sems-archive-git"
         execute_command_checked "module unload sems-archive-python"
         execute_command_checked "module load sems-archive-git/2.10.1"
+        execute_command_checked "module load sems-ccache"
+        configure_ccache
 
-        envvar_set_or_create     PYTHON_EXE $(which python3)
+        module list
     fi
-
-    module list
-
-    message_std "PRDriver> " "Python EXE : ${PYTHON_EXE:?}"
-    message_std "PRDriver> " "           : $(which ${PYTHON_EXE})"
 
     print_banner "Bootstrap environment modules complete"
 }
-
 
 print_banner "PullRequestLinuxDriver.sh"
 
@@ -58,10 +70,13 @@ envvar_set_or_create no_proxy    'localhost,.sandia.gov,localnets,127.0.0.1,169.
 #export http_proxy=http://proxy.sandia.gov:80
 #export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
-
 # bootstrap the python and git modules for this system
-bootstrap_modules
+if [[ ${bootstrap} == "1" ]]; then
+    bootstrap_modules
+fi
 
+envvar_set_or_create PYTHON_EXE $(which python3)
+message_std "PRDriver> " "Python EXE : ${PYTHON_EXE:?}"
 
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`

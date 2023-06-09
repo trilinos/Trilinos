@@ -127,10 +127,11 @@ int main(int argc, char *argv[]) {
   tetNodes(8,0) =  0.5;  tetNodes(8,1) =  0.0;  tetNodes(8,2) =  0.5;
   tetNodes(9,0) =  0.0;  tetNodes(9,1) =  0.5;  tetNodes(9,2) =  0.5;
 
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+    
     // exception #1: GRAD cannot be applied to HDIV functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
     vals.resize(tetBasis.getCardinality(), tetNodes.dimension(0), 3 );

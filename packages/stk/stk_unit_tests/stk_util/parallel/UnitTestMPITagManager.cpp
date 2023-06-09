@@ -106,6 +106,8 @@ TEST_F(TagManagerTester, TagComm)
   EXPECT_EQ(tag2.get_comm(), comm2);
   EXPECT_EQ(tag3.get_comm(), comm1);
   EXPECT_EQ(tag4.get_comm(), comm2);
+
+  std::cout << "about to exit function" << std::endl;
 }
 
 

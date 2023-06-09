@@ -74,7 +74,7 @@ enum blockParams{
  *
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
- *  \param ids    an Identifier model
+ *  \param adapter    adapter used to create IdentifierModel
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
@@ -94,7 +94,7 @@ class AlgBlock : public Algorithm<Adapter>
 private:
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
-  const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
+  const RCP<const typename Adapter::base_adapter_t > adapter;
 
 public:
   typedef typename Adapter::lno_t lno_t;       // local ids
@@ -106,9 +106,9 @@ public:
   AlgBlock(
     const RCP<const Environment> &env_,
     const RCP<const Comm<int> > &problemComm_,
-    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_
-  ) : 
-    env(env_), problemComm(problemComm_), ids(ids_)
+    const RCP<const typename Adapter::base_adapter_t > &adapter_
+  ) :
+    env(env_), problemComm(problemComm_), adapter(adapter_)
   {}
 
   // Partitioning method
@@ -125,13 +125,15 @@ public:
     //    number of weights per gno
     //    the weights
 
-    size_t numGnos = ids->getLocalNumIdentifiers();
+    modelFlag_t modelFlag;
+    IdentifierModel<typename Adapter::base_adapter_t> ids(adapter, env, problemComm, modelFlag);
+    size_t numGnos = ids.getLocalNumIdentifiers();
 
     ArrayView<const gno_t> idList;
     typedef StridedData<lno_t, scalar_t> input_t;
     ArrayView<input_t> wgtList;
-  
-    ids->getIdentifierList(idList, wgtList);
+
+    ids.getIdentifierList(idList, wgtList);
 
     // If user supplied no weights, we use uniform weights.
     bool uniformWeights = (wgtList.size() == 0);
@@ -182,7 +184,7 @@ public:
     // Block partitioning algorithm lifted from zoltan/src/simple/block.c
     // The solution is:
     //    a list of part numbers in gno order
-    //    an imbalance for each weight 
+    //    an imbalance for each weight
 
     scalar_t wtsum(0);
 
@@ -229,7 +231,7 @@ public:
       /* wtsum is now sum of all lower-ordered object */
       /* determine new part number for this object,
          using the "center of gravity" */
-      while (unsigned(part)<numGlobalParts-1 && 
+      while (unsigned(part)<numGlobalParts-1 &&
              (wtsum+0.5*gnoWeight) > part_sizes[part]*globalTotalWeight)
         part++;
       gnoPart[i] = part;

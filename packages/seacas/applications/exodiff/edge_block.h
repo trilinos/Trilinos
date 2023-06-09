@@ -3,9 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef EDGE_BLOCK_H
-#define EDGE_BLOCK_H
+#pragma once
 
 #include "exo_entity.h"
 #include <iostream>
@@ -25,7 +23,7 @@ public:
   int Check_State() const;
 
 private:
-  Edge_Block(const Edge_Block &) = delete;                  // Not written.
+  Edge_Block(const Edge_Block &)                  = delete; // Not written.
   const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
 
   void entity_load_params() override;
@@ -39,5 +37,3 @@ private:
 
   friend class ExoII_Read<INT>;
 };
-
-#endif

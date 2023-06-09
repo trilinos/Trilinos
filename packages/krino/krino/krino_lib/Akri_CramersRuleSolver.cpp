@@ -22,7 +22,7 @@ std::array<double,3> solve3x3(
 {
     double det = compute_determinant3x3( a11, a12, a13, a21, a22, a23, a31, a32, a33 );
 
-    ThrowRequireMsg(det != 0.0, "Bad determinant.  Are the points really unique?");
+    STK_ThrowRequireMsg(det != 0.0, "Bad determinant.  Are the points really unique?");
 
     std::array<double,3> answer;
 
@@ -52,7 +52,7 @@ std::array<double,5> solve5x5(
         a41, a42, a43, a44, a45,
         a51, a52, a53, a54, a55 );
 
-    ThrowRequireMsg(det != 0.0, "Bad determinant.  Are the points really unique?");
+    STK_ThrowRequireMsg(det != 0.0, "Bad determinant.  Are the points really unique?");
 
     std::array<double,5> answer;
     answer[0] = compute_determinant5x5(

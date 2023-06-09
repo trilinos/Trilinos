@@ -46,8 +46,6 @@
 #ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 // Xpetra includes
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -56,11 +54,10 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 // MueLu specific includes (kokkos version)
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 #include "MueLu_AggregationStructuredAlgorithm_kokkos.hpp"
 
@@ -218,9 +215,9 @@ namespace MueLu {
       = rcp(new AggregationStructuredAlgorithm_kokkos());
 
     if(interpolationOrder == 0 && outputAggregates){
-      RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(graph->GetDomainMap()));
+      RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
       aggregates->setObjectLabel("ST");
-      aggregates->SetIndexManager(geoData);
+      aggregates->SetIndexManagerKokkos(geoData);
       aggregates->AggregatesCrossProcessors(false);
       aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
 
@@ -257,5 +254,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP */

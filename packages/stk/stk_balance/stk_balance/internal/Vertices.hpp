@@ -59,7 +59,7 @@ public:
 
   void set_vertex_weight( size_t idx, double weight)
   {
-    ThrowRequireMsg(mNumFieldCriteria==1 && idx < mVertexWeights.size(), "invalid index for " << __PRETTY_FUNCTION__);
+    STK_ThrowRequireMsg(mNumFieldCriteria==1 && idx < mVertexWeights.size(), "invalid index for " << __PRETTY_FUNCTION__);
     mVertexWeights[idx] = weight;
   }
 
@@ -80,6 +80,11 @@ protected:
   void fillCoordinates(const stk::mesh::BulkData& bulkData, const std::string& coords_field_name, const stk::mesh::EntityVector &entities);
 
   void fillVertexWeights(const stk::mesh::BulkData& bulkData, const stk::balance::BalanceSettings& balanceSettings, const stk::mesh::EntityVector &entities, const std::vector<stk::mesh::Selector> &selectors);
+
+  void fillFieldVertexWeightsOld(const stk::balance::BalanceSettings& balanceSettings,
+                              const stk::mesh::BulkData& stkMeshBulkData,
+                              const std::vector<stk::mesh::Selector>& selectors,
+                              const stk::mesh::EntityVector &entitiesToBalance);
 
   void fillFieldVertexWeights(const stk::balance::BalanceSettings& balanceSettings,
                               const stk::mesh::BulkData& stkMeshBulkData,

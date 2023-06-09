@@ -3,9 +3,12 @@
 #define PACKAGES_MUELU_ADAPTERS_AZTECOO_MUELU_AZTECEPETRAOPERATOR_CPP_
 
 #include "Xpetra_EpetraMultiVector.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_EpetraCrsMatrix.hpp"
 
 #include "MueLu_config.hpp"             // for HAVE_MUELU_DEBUG
 #include "MueLu_RefMaxwell.hpp"
+#include "MueLu_Exceptions.hpp"
 
 #include "MueLu_AztecEpetraOperator.hpp"
 

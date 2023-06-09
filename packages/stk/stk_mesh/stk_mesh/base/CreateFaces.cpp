@@ -128,7 +128,7 @@ struct create_face_impl
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       Entity const *elem_nodes = m_bucket.begin_nodes(ielem);
-      ThrowRequire(m_bucket.num_nodes(ielem) == Topology::num_nodes);
+      STK_ThrowRequire(m_bucket.num_nodes(ielem) == Topology::num_nodes);
       for (unsigned n=0; n != Topology::num_nodes; ++n) {
         elem_node_ids[n] = mesh.identifier(elem_nodes[n]);
       }
@@ -136,7 +136,7 @@ struct create_face_impl
       std::vector<bool> face_exists(Topology::num_faces,false);
       {
         const int num_existing_faces = m_bucket.num_faces(ielem);
-        ThrowRequire(num_existing_faces <= static_cast<int>(Topology::num_faces));
+        STK_ThrowRequire(num_existing_faces <= static_cast<int>(Topology::num_faces));
 
         Entity const *face_entity = m_bucket.begin_faces(ielem);
         ConnectivityOrdinal const *face_ords = m_bucket.begin_face_ordinals(ielem);
@@ -157,7 +157,7 @@ struct create_face_impl
 
                   typename face_map_type::iterator iface = m_face_map.find(permuted_face_nodes);
                   if (iface == m_face_map.end()) {
-                      ThrowRequireMsg(m_count_faces < m_available_ids.size(), "Error: face generation exhausted available identifier list. Report to sierra-help");
+                      STK_ThrowRequireMsg(m_count_faces < m_available_ids.size(), "Error: face generation exhausted available identifier list. Report to sierra-help");
                       EntityId face_id = m_available_ids[m_count_faces];
                       m_count_faces++;
 
@@ -181,7 +181,7 @@ struct create_face_impl
                       face = iface->second;
                       Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
                                                                  faceTopology, &permuted_face_nodes[0], side_ordinal);
-                      ThrowRequireMsg(permut != INVALID_PERMUTATION, "CreateFaces:  could not find valid permutation to connect face to element");
+                      STK_ThrowRequireMsg(permut != INVALID_PERMUTATION, "CreateFaces:  could not find valid permutation to connect face to element");
                       mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
                   }
               }

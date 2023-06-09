@@ -79,7 +79,7 @@ my_func(const View1& v1, const View2& v2)
   return vtmp;
 }
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#if defined(HAVE_SACADO_KOKKOS)
 // An example function that takes two dynamic-rank views of various ranks and
 // scalar types and produces a third allocated using the ViewFactory
 template <class View1, class View2>
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
 
   }
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#if defined(HAVE_SACADO_KOKKOS)
   // Now use the dynamic-rank view
   {
 

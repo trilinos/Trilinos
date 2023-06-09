@@ -7,12 +7,18 @@
 #ifndef __CATALYST_EXODUS_MESH_BASE_H
 #define __CATALYST_EXODUS_MESH_BASE_H
 
+#ifndef __CATALYST_PLUGIN_BUILD
+#include "iovs_export.h"
+#else
+#define IOVS_EXPORT
+#endif
+
 #include <string>
 #include <vector>
 
 namespace Iovs_exodus {
 
-  class CatalystExodusMeshBase
+  class IOVS_EXPORT CatalystExodusMeshBase
   {
 
   public:
@@ -22,7 +28,7 @@ namespace Iovs_exodus {
     // Description:
     // Calls the ParaView Catalyst pipeline to run co-processing
     // for this time iteration.
-    virtual void PerformCoProcessing(std::vector<int> &        error_and_warning_codes,
+    virtual void PerformCoProcessing(std::vector<int>         &error_and_warning_codes,
                                      std::vector<std::string> &error_and_warning_messages) = 0;
 
     // Description:
@@ -32,43 +38,50 @@ namespace Iovs_exodus {
     virtual void SetTimeData(double currentTime, int timeStep) = 0;
 
     // Description:
-    // Clears all nodal and element variables from the vtkMultiBlockDataSet.
-    // Clears the global vtkPoints.
-    virtual void ReleaseMemory() = 0;
-
-    // Description:
     // Collects memory usage information from all processors and
     // writes the min, max, and mean to the log file.  Also writes the
     // min, max, and mean of the elapsed time since this method was
     // last called.
     virtual void logMemoryUsageAndTakeTimerReading() = 0;
 
+    // Description:
+    // Clears memory buffers used in mesh construction and field data
+    // for the current time-step. Clears the global vtkPoints.
+    virtual void ReleaseMemory() = 0;
+
     virtual void Delete() = 0;
 
     // Description:
-    // Creates a global variable on the vtkExodusIIMultiBlockDataSet.
+    // Creates a global variable
     // Creates the global variable on all element blocks.
-    virtual void CreateGlobalVariable(std::vector<std::string> &component_names,
-                                      const double *            data) = 0;
+    virtual void CreateGlobalVariable(const std::string &variable_name, int num_comps,
+                                      const double *data) = 0;
 
     // Description:
-    // Creates a global variable on the vtkExodusIIMultiBlockDataSet.
+    // Creates a global variable
     // Creates the global variable on all element blocks.
-    virtual void CreateGlobalVariable(std::vector<std::string> &component_names,
-                                      const int *               data) = 0;
+    virtual void CreateGlobalVariable(const std::string &variable_name, int num_comps,
+                                      const int *data) = 0;
 
     // Description:
-    // Initializes the vtkMultiBlockDataSet with a global array of points
+    // Creates a global variable
+    // Creates the global variable on all element blocks.
+    virtual void CreateGlobalVariable(const std::string &variable_name, int num_comps,
+                                      const int64_t *data) = 0;
+
+    // Description:
+    // Initializes the global array of points
     // defined by num_points, dimension (2,3), and data.  Clears any existing data.
     virtual void InitializeGlobalPoints(int num_points, int dimension, const double *data) = 0;
 
     // Description:
-    // Initializes the element blocks to NULL data sets with ids in element_block_id_list.
+    // Initializes the element blocks to NULL data sets with ids and names in elemBlkIdNameList.
     // This method must be called first.
-    virtual void InitializeElementBlocks(const std::vector<int> &element_block_id_list) = 0;
+    using ElementBlockIdNameList = std::vector<std::pair<int, std::string>>;
+    virtual void InitializeElementBlocks(const ElementBlockIdNameList &elemBlkIdNameList) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid on the vtkExodusIIMultiBlockDataSet
+    // Creates a vtkUnstructuredGrid
     // that represents and element block in the Exodus II data.  The global_points
     // array contains all of the points in the Exodus II file.
     virtual void CreateElementBlock(const char *elem_block_name, int elem_block_id,
@@ -76,7 +89,7 @@ namespace Iovs_exodus {
                                     const int64_t *global_elem_ids, int *connectivity) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid on the vtkExodusIIMultiBlockDataSet
+    // Creates a vtkUnstructuredGrid
     // that represents and element block in the Exodus II data.  The global_points
     // array contains all of the points in the Exodus II file.
     virtual void CreateElementBlock(const char *elem_block_name, int elem_block_id,
@@ -84,58 +97,34 @@ namespace Iovs_exodus {
                                     const int64_t *global_elem_ids, int64_t *connectivity) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid representing the node set in the Exodus II
-    // data. Node sets are arbitrary lists of mesh point ids.
-    virtual void CreateNodeSet(const char *node_set_name, int node_set_id, int num_ids,
-                               const int *data) = 0;
+    // Creates an element variable
+    virtual void CreateElementVariable(const std::string &variable_name, int num_comps,
+                                       int elem_block_id, const double *data) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid representing the node set in the Exodus II
-    // data. Node sets are arbitrary lists of mesh point ids.
-    virtual void CreateNodeSet(const char *node_set_name, int node_set_id, int num_ids,
-                               const int64_t *data) = 0;
+    // Creates an element variable
+    virtual void CreateElementVariable(const std::string &variable_name, int num_comps,
+                                       int elem_block_id, const int *data) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid representing the side set (also Side Block) in
-    // the Exodus II data. Side sets are collections of element faces and edges.
-    virtual void CreateSideSet(const char *ss_owner_name, int side_set_id, int num_ids,
-                               const int *element_ids, const int *face_ids) = 0;
+    // Creates an element variable
+    virtual void CreateElementVariable(const std::string &variable_name, int num_comps,
+                                       int elem_block_id, const int64_t *data) = 0;
 
     // Description:
-    // Creates a vtkUnstructuredGrid representing the side set (also Side Block) in
-    // the Exodus II data. Side sets are collections of element faces and edges.
-    virtual void CreateSideSet(const char *ss_owner_name, int side_set_id, int num_ids,
-                               const int64_t *element_ids, const int64_t *face_ids) = 0;
+    // Creates a nodal variable
+    virtual void CreateNodalVariable(const std::string &variable_name, int num_comps,
+                                     const double *data) = 0;
 
     // Description:
-    // Creates an element variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
-                                       const double *data) = 0;
+    // Creates a nodal variable
+    virtual void CreateNodalVariable(const std::string &variable_name, int num_comps,
+                                     const int *data) = 0;
 
     // Description:
-    // Creates an element variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
-                                       const int *data) = 0;
-
-    // Description:
-    // Creates an element variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateElementVariable(std::vector<std::string> &component_names, int elem_block_id,
-                                       const int64_t *data) = 0;
-
-    // Description:
-    // Creates a nodal variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateNodalVariable(std::vector<std::string> &component_names,
-                                     const double *            data) = 0;
-
-    // Description:
-    // Creates a nodal variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateNodalVariable(std::vector<std::string> &component_names,
-                                     const int *               data) = 0;
-
-    // Description:
-    // Creates a nodal variable the vtkExodusIIMultiBlockDataSet.
-    virtual void CreateNodalVariable(std::vector<std::string> &component_names,
-                                     const int64_t *           data) = 0;
+    // Creates a nodal variable
+    virtual void CreateNodalVariable(const std::string &variable_name, int num_comps,
+                                     const int64_t *data) = 0;
   };
 
 } // namespace Iovs_exodus

@@ -25,7 +25,6 @@
 #include "stk_mesh/base/EntityKey.hpp"             // for EntityKey
 #include "stk_mesh/base/FEMHelpers.hpp"            // for declare_element_edge
 #include "stk_mesh/base/Field.hpp"                 // for Field
-#include "stk_mesh/base/FieldTraits.hpp"           // for FieldTraits, Field...
 #include "stk_mesh/base/SideSetEntry.hpp"          // for SideSet
 #include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
 #include "stk_mesh/base/Types.hpp"                 // for EntityId, PartVector
@@ -33,6 +32,7 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"     // for connect_edge_to_el...
 #include "stk_topology/topology.hpp"               // for topology, topology...
 #include "stk_util/diag/StringUtil.hpp"            // for case_strcmp
+#include "stk_util/environment/RuntimeWarning.hpp"
 #include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, pack_a...
 #include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
 #include "stk_util/util/ReportHandler.hpp"         // for ThrowRequireMsg
@@ -59,7 +59,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   if (meta.is_using_simple_fields()) {
     coord_field = &meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
     stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
-    stk::io::set_field_output_type(*coord_field, "Vector_3D");
+    stk::io::set_field_output_type(*coord_field, stk::io::FieldOutputType::VECTOR_3D);
   }
   else {
     coord_field = &meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK,
@@ -263,10 +263,23 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
         if (stk::io::include_entity(block)) {
             std::vector<INT> elem_side ;
 
-            stk::mesh::Part *sb_part = get_part_for_grouping_entity(*region, meta, block);
-            if (sb_part == nullptr)
-            {
-               sb_part = get_part_for_grouping_entity(*region, meta, sset);
+            stk::mesh::Part *sbPart = get_part_for_grouping_entity(*region, meta, block);
+            if (sbPart == nullptr) {
+               sbPart = get_part_for_grouping_entity(*region, meta, sset);
+            }
+
+            stk::mesh::SideSet *sbSideSet = nullptr;
+            if(nullptr != sbPart) {
+                if(sbPart->id() != stkSideSetPart->id())
+                  stk::RuntimeWarning() << "process_surface_entity: sideblock " << sbPart->name() << " with id " << sbPart->id()
+                                        << " does not have the same id as parent sideset "
+                                        << stkSideSetPart->name() << " with id " << stkSideSetPart->id();
+
+                const stk::mesh::Part& sbParentPart = stk::mesh::get_sideset_parent(*sbPart);
+
+                if(sbParentPart.mesh_meta_data_ordinal() != stkSideSetPart->mesh_meta_data_ordinal()) {
+                  sbSideSet = & bulk.create_sideset(*sbPart);
+                }
             }
 
             stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -283,8 +296,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             block->get_field_data("element_side", elem_side);
             stk::mesh::PartVector add_parts;
 
-            if(nullptr != sb_part) {
-                add_parts.push_back(sb_part);
+            if(nullptr != sbPart) {
+                add_parts.push_back(sbPart);
             }
 
             // Get topology of the sides being defined to see if they
@@ -319,10 +332,14 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                         par_dimen = ioss_topo->parametric_dimension();
                     }
 
-                    ThrowRequireMsg((par_dimen == 1) || (par_dimen == 2), "Invalid value for par_dimen:" << par_dimen);
+                    STK_ThrowRequireMsg((par_dimen == 1) || (par_dimen == 2), "Invalid value for par_dimen:" << par_dimen);
 
-                    if(nullptr != stkSideSet) {
-                        stkSideSet->add({elem, side_ordinal});
+                    if(nullptr != sbSideSet) {
+                        sbSideSet->add({elem, side_ordinal});
+                    } else {
+                         if(nullptr != stkSideSet) {
+                           stkSideSet->add({elem, side_ordinal});
+                         }
                     }
 
                     if (par_dimen == 1) {
@@ -478,7 +495,7 @@ void create_shared_edges(stk::mesh::BulkData& bulk, stk::mesh::Part* part)
                              if(nodesPerEdge == 0) {
                                  nodesPerEdge = numNodes;
                              }
-                             ThrowAssert(numNodes == nodesPerEdge);
+                             STK_ThrowAssert(numNodes == nodesPerEdge);
     
                              for(unsigned i = 0; i < numNodes; i++) {
                                  commSparse.recv_buffer(procId).unpack<stk::mesh::EntityKey>(nodeKey);
@@ -500,11 +517,11 @@ void process_face_entity(const Ioss::FaceBlock* fb, stk::mesh::BulkData & bulk)
     Ioss::Region *region = fb->get_database()->get_region();
 
     stk::mesh::Part *part = get_part_for_grouping_entity(*region, meta, fb);
-    ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << fb->name() << " does not exist");
+    STK_ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << fb->name() << " does not exist");
     stk::mesh::PartVector faceParts = {part};
 
     stk::topology topo = part->topology();
-    ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+    STK_ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
     std::vector<INT> face_ids;
     std::vector<INT> connectivity ;
@@ -527,11 +544,11 @@ void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
     Ioss::Region *region = eb->get_database()->get_region();
 
     stk::mesh::Part *part = get_part_for_grouping_entity(*region, meta, eb);
-    ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << eb->name() << " does not exist");
+    STK_ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << eb->name() << " does not exist");
     stk::mesh::PartVector edgeParts = {part};
 
     stk::topology topo = part->topology();
-    ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+    STK_ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
     std::vector<INT> edge_ids;
     std::vector<INT> connectivity ;
@@ -574,7 +591,7 @@ void send_element_side_to_element_owner(stk::CommSparse &comm,
     for(const ElemSidePartOrds& sideToMove : sidesToMove)
     {
         const stk::mesh::EntityIdProcMap::const_iterator iter = elemIdMovedToProc.find(sideToMove.elem);
-        ThrowRequireWithSierraHelpMsg(iter!=elemIdMovedToProc.end());
+        STK_ThrowRequireWithSierraHelpMsg(iter!=elemIdMovedToProc.end());
         int destProc = iter->second;
         comm.send_buffer(destProc).pack(sideToMove.elem);
         comm.send_buffer(destProc).pack(sideToMove.sideOrdinal);
@@ -592,7 +609,7 @@ void unpack_and_declare_element_side(stk::CommSparse & comm, stk::mesh::BulkData
     unpack_vector_from_proc(comm, partOrdinals, procId);
 
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
-    ThrowRequireWithSierraHelpMsg(bulk.is_valid(elem));
+    STK_ThrowRequireWithSierraHelpMsg(bulk.is_valid(elem));
     stk::mesh::PartVector add_parts;
     stk::mesh::impl::convert_part_ordinals_to_parts(bulk.mesh_meta_data(), partOrdinals, add_parts);
     bulk.declare_element_side(elem, sideOrdinal, add_parts);

@@ -118,6 +118,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
   set_vertex_weight_method(settings);
+  set_vertex_weight_field_name(settings);
   set_contact_search_edge_weight(settings);
   set_contact_search_vertex_weight_multiplier(settings);
   set_edge_weight_multiplier(settings);
@@ -205,7 +206,10 @@ void Parser::add_options_to_parser()
 
   stk::CommandLineOption vertexWeightMethod{m_optionNames.vertexWeightMethod, "",
                            "Method used to calculate vertex weights given to the partitioner. "
-                           "[constant|topology|connectivity]"};
+                           "[constant|topology|connectivity|field]"};
+  stk::CommandLineOption vertexWeightFieldName{m_optionNames.vertexWeightFieldName, "",
+                           "Field name for field vertex weights given to the partitioner. "
+                           "Using this option implies --vertex-weight-method=field."};
   stk::CommandLineOption contactSearchEdgeWeight{m_optionNames.contactSearchEdgeWeight, "",
                            "Graph edge weight to use between elements that are determined to be "
                            "in contact."};
@@ -235,6 +239,7 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_flag(useNested);
 
   m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
+  m_commandLineParser.add_optional<std::string>(vertexWeightFieldName);
   m_commandLineParser.add_optional<double>(contactSearchEdgeWeight, DefaultSettings::faceSearchEdgeWeight);
   m_commandLineParser.add_optional<double>(contactSearchVertexWeightMultiplier, DefaultSettings::faceSearchVertexMultiplier);
   m_commandLineParser.add_optional<double>(edgeWeightMultiplier, DefaultSettings::graphEdgeWeightMultiplier);
@@ -267,7 +272,7 @@ void Parser::set_processors(BalanceSettings& settings) const
 {
   if (m_commandLineParser.is_option_parsed(m_optionNames.rebalanceTo)) {
     const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.rebalanceTo);
-    ThrowRequireMsg(numOutputProcs > 0, "Must specify a positive output processor count");
+    STK_ThrowRequireMsg(numOutputProcs > 0, "Must specify a positive output processor count");
     settings.set_num_input_processors(stk::parallel_machine_size(m_comm));
     settings.set_num_output_processors(numOutputProcs);
     settings.set_is_rebalancing(true);
@@ -299,7 +304,7 @@ void Parser::set_app_type_defaults(BalanceSettings& settings) const
   bool useSM = m_commandLineParser.is_option_provided(m_optionNames.smDefaults);
   bool useSD = m_commandLineParser.is_option_provided(m_optionNames.sdDefaults);
 
-  ThrowRequireMsg( !(useSM && useSD), "Can't set default settings for multiple apps at the same time");
+  STK_ThrowRequireMsg( !(useSM && useSD), "Can't set default settings for multiple apps at the same time");
 
   if (useSM) {
     settings.setVertexWeightMethod(DefaultSettings::smVertexWeightMethod);
@@ -324,7 +329,7 @@ void Parser::set_contact_search(BalanceSettings& settings) const
     std::string searchOption = m_commandLineParser.get_option_value<std::string>(m_optionNames.contactSearch);
     std::transform(searchOption.begin(), searchOption.end(), searchOption.begin(), ::tolower);
 
-    ThrowRequireMsg(searchOption == "on" || searchOption == "off",
+    STK_ThrowRequireMsg(searchOption == "on" || searchOption == "off",
         "Invalid contact search type (" + searchOption + ").  Must be one of: [on|off]");
 
     settings.setIncludeSearchResultsInGraph(searchOption == "on");
@@ -337,7 +342,7 @@ void Parser::set_fix_spiders(BalanceSettings& settings) const
     std::string fixSpiders = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixSpiders);
     std::transform(fixSpiders.begin(), fixSpiders.end(), fixSpiders.begin(), ::tolower);
 
-    ThrowRequireMsg(fixSpiders == "on" || fixSpiders == "off",
+    STK_ThrowRequireMsg(fixSpiders == "on" || fixSpiders == "off",
         "Invalid spider fixing argument (" + fixSpiders + ").  Must be one of: [on|off]");
 
     settings.setShouldFixSpiders(fixSpiders == "on");
@@ -350,7 +355,7 @@ void Parser::set_fix_mechanisms(BalanceSettings& settings) const
     std::string fixMechanisms = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixMechanisms);
     std::transform(fixMechanisms.begin(), fixMechanisms.end(), fixMechanisms.begin(), ::tolower);
 
-    ThrowRequireMsg(fixMechanisms == "on" || fixMechanisms == "off",
+    STK_ThrowRequireMsg(fixMechanisms == "on" || fixMechanisms == "off",
         "Invalid mechanism fixing argument (" + fixMechanisms + ").  Must be one of: [on|off]");
 
     settings.setShouldFixMechanisms(fixMechanisms == "on");
@@ -362,7 +367,7 @@ void Parser::set_contact_search_tolerance(BalanceSettings& settings) const
   bool useAbsTol = m_commandLineParser.is_option_provided(m_optionNames.faceSearchAbsTol);
   bool useRelTol = m_commandLineParser.is_option_provided(m_optionNames.faceSearchRelTol);
 
-  ThrowRequireMsg( !(useAbsTol && useRelTol), "Must not specify both an absolute and relative tolerance");
+  STK_ThrowRequireMsg( !(useAbsTol && useRelTol), "Must not specify both an absolute and relative tolerance");
 
   if (useAbsTol) {
     settings.setToleranceForFaceSearch(m_commandLineParser.get_option_value<double>(m_optionNames.faceSearchAbsTol));
@@ -392,7 +397,7 @@ void Parser::set_vertex_weight_block_multiplier(BalanceSettings& settings) const
     std::vector<std::string> blockSegments = stk::split_csv_string(blockMultiplierString);
     for (const std::string & blockSegment : blockSegments) {
       std::vector<std::string> multiplierSegments = stk::split_string(stk::trim_string(blockSegment), ':');
-      ThrowRequireMsg(multiplierSegments.size() == 2,
+      STK_ThrowRequireMsg(multiplierSegments.size() == 2,
                       "Require block_name:value pairs for vertex weight block multiplier (" <<
                       stk::trim_string(blockSegment) << ")");
       const std::string blockName = stk::trim_string(multiplierSegments[0]);
@@ -411,7 +416,7 @@ void Parser::set_use_nested_decomp(BalanceSettings& settings) const
     const int inputNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     const int outputNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
-    ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
+    STK_ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
                     << "multiple of input processors (" << inputNumProcs << ") to use a nested decomposition.");
    }
  }
@@ -442,9 +447,22 @@ void Parser::set_vertex_weight_method(BalanceSettings &settings) const
       settings.setVertexWeightMethod(VertexWeightMethod::CONNECTIVITY);
       settings.setGraphEdgeWeightMultiplier(10.0);
     }
-    else {
-      ThrowErrorMsg("Unrecognized vertex weight method: " << vertexWeightMethodName);
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::FIELD)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
     }
+    else {
+      STK_ThrowErrorMsg("Unrecognized vertex weight method: " << vertexWeightMethodName);
+    }
+  }
+}
+
+void Parser::set_vertex_weight_field_name(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightFieldName)) {
+    settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
+    settings.setGraphEdgeWeightMultiplier(1.0);
+    const std::string vertexWeightFieldName = m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightFieldName);
+    settings.setVertexWeightFieldName(vertexWeightFieldName);
   }
 }
 

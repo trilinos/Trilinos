@@ -199,7 +199,17 @@ int main(int argc, char *argv[])
     // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new
                             Isorropia::Epetra::Partitioner(A, isoList, false);
+
+    Teuchos::Time ptime("Partition time");
+    ptime.start();
     partitioner->partition();
+    ptime.stop();
+    if (myPID == 0)
+    {
+        cout << "Time to partition   : " << ptime.totalElapsedTime() << endl << endl;
+    }
+
+    Teuchos::Time rtime("Redistribute time");
     Isorropia::Epetra::Redistributor rd(partitioner);
 
     Epetra_CrsMatrix *newA;
@@ -209,22 +219,25 @@ int main(int argc, char *argv[])
     A = newA;
     RCP<Epetra_CrsMatrix> rcpA(A, false);
 
+    rtime.start();
     rd.redistribute(x, newX);
     rd.redistribute(*b1, newB);
+    rtime.stop();
+
     delete b1;
     RCP<Epetra_MultiVector> rcpx (newX, false);
     RCP<Epetra_MultiVector> rcpb (newB, false);
     //OPT::Apply(*rcpA, *rcpx, *rcpb );
-
+    if (myPID == 0)
+    {
+        cout << "Time to redistribute: " << rtime.totalElapsedTime() << endl << endl;
+    }
 
     Epetra_CrsMatrix *iterA = 0;
     Epetra_CrsMatrix *redistA = 0;
     Epetra_MultiVector *iterb1 = 0;
     Ifpack_Preconditioner *prec;
     ML_Epetra::MultiLevelPreconditioner *MLprec;
-//#ifdef TIMING_OUTPUT
-        Teuchos::Time ftime("solve time");
-//#endif
     while(file_number < maxFiles+startFile)
     {
 
@@ -232,9 +245,8 @@ int main(int argc, char *argv[])
         {
             if (file_number == startFile)
             {
-//#ifdef TIMING_OUTPUT
-        ftime.start();
-//#endif
+                Teuchos::Time itime("Initialize time");
+                itime.start();
                 prec = new Ifpack_ShyLU(A);
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
                 Teuchos::ParameterList shyluParameters;
@@ -244,17 +256,20 @@ int main(int argc, char *argv[])
                 prec->SetParameters(shyLUList);
 #endif
                 prec->Initialize();
-//#ifdef TIMING_OUTPUT
-        ftime.stop();
-//#endif
+                itime.stop();
+                if (myPID == 0)
+                {
+                    cout << "Time to initialiize : " << itime.totalElapsedTime() << endl << endl;
+                }
             }
-//#ifdef TIMING_OUTPUT
-        ftime.start();
-//#endif
+            Teuchos::Time ftime("Compute    time");
+            ftime.start();
             prec->Compute();
-//#ifdef TIMING_OUTPUT
-        ftime.stop();
-//#endif
+            ftime.stop();
+            if (myPID == 0)
+            {
+                cout << "Time to compute     : " << ftime.totalElapsedTime() << endl << endl;
+            }
             //cout << " Going to set it in solver" << endl ;
             //solver.SetPrecOperator(prec);
             //cout << " Done setting the solver" << endl ;
@@ -310,20 +325,20 @@ int main(int argc, char *argv[])
         RCP<Belos::LinearProblem<double,MV,OP> > problem
         = rcp( new Belos::LinearProblem<double,MV,OP>( rcpA, rcpx, rcpb ) );
         if (leftprec) {
-        problem->setLeftPrec( belosPrec );
+            problem->setLeftPrec( belosPrec );
         }
         else {
-        problem->setRightPrec( belosPrec );
+            problem->setRightPrec( belosPrec );
         }
         bool set = problem->setProblem();
         if (set == false) {
-        if (proc_verbose)
-          {
-          cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
-          }
-          cout << fail << endl;
-          success = false;
-          return -1;
+            if (proc_verbose)
+            {
+                cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+            }
+            cout << fail << endl;
+            success = false;
+            return -1;
         }
 
         // Create an iterative solver manager.
@@ -336,7 +351,7 @@ int main(int argc, char *argv[])
         // *************Start the block Gmres iteration*************************
         // *******************************************************************
         //
-        if (proc_verbose)
+        if (proc_verbose && myPID == 0)
         {
             cout << std::endl << std::endl;
             cout << "Dimension of matrix: " << NumGlobalElements << endl;
@@ -359,23 +374,20 @@ int main(int argc, char *argv[])
         //
         // Perform solve
         //
-//#ifdef TIMING_OUTPUT
-        ftime.start();
-//#endif
-        // mfh 26 Mar 2015: Don't introduce a variable (like 'ret')
-        // unless you plan to use it.  The commented-out code causes a
-        // build warning.
-        //
-        //Belos::ReturnType ret = solver->solve();
+        Teuchos::Time stime("Solve      time");
+        stime.start();
         solver->solve ();
-//#ifdef TIMING_OUTPUT
-        ftime.stop();
-//#endif
+        stime.stop();
+        if (myPID == 0)
+        {
+            cout << "Time to solve       : " << stime.totalElapsedTime() << endl << endl;
+        }
+
         //
         // Get the number of iterations for this solve.
         //
         int numIters = solver->getNumIters();
-        if (proc_verbose)
+        if (proc_verbose && myPID == 0)
         {
             cout << "Number of iterations performed for this solve: " <<
                      numIters << endl;
@@ -391,16 +403,19 @@ int main(int argc, char *argv[])
         MVT::MvAddMv( -1.0, resid, 1.0, *rcpb, resid );
         MVT::MvNorm( resid, actual_resids );
         MVT::MvNorm( *rcpb, rhs_norm );
-        if (proc_verbose)
+        if (proc_verbose && myPID == 0)
         {
             cout<< "------ Actual Residuals (normalized) -------"<<endl;
             for ( int i=0; i<numrhs; i++)
             {
                 double actRes = actual_resids[i]/rhs_norm[i];
-                std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+                std::cout<<"Problem "<<i<<" : \t"<< actRes;
                 if (actRes > tol) {
                   //badRes = true; // unused
+                  std::cout<<" (NOT CONVERGED)"<< std::endl;
                   success = false;
+                } else {
+                  std::cout<<" (CONVERGED)"<< std::endl;
                 }
             }
         }
@@ -459,8 +474,8 @@ int main(int argc, char *argv[])
             }
         }
     }
-//#ifdef TIMING_OUTPUT
-        cout << "Time to solve: " << ftime.totalElapsedTime() << endl;
+    if (myPID == 0)
+    {
         if(success)
           {
             cout << pass << endl;
@@ -469,8 +484,8 @@ int main(int argc, char *argv[])
           {
             cout << fail << endl;
           }
+    }
 
-//#endif
     if (redistA != NULL) delete redistA;
     if (iterb1 != NULL) delete iterb1;
 

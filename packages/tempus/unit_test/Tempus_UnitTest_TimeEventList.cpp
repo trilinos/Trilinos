@@ -336,9 +336,7 @@ TEUCHOS_UNIT_TEST(TimeEventList, createTimeEventList)
   // Construct TimeEventList from ParameterList.
   auto tel = Tempus::createTimeEventList<double>(pl);
 
-  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
-  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //tel->describe(*my_out, Teuchos::VERB_EXTREME);
+  tel->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE          ( tel->getName()         , ==, "Unit Test Time Event List");
   TEST_COMPARE          ( tel->getType()         , ==, "List"      );

@@ -137,9 +137,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Range1D_UnitTest
+  Range1D_UnitTests
   SOURCES
     Range1D_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+
+#
+# VerbosityLevel unit tests
+#
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  VerbosityLevel_UnitTests
+  SOURCES
+    VerbosityLevel_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

@@ -6,8 +6,11 @@
  * See packages/seacas/LICENSE for details
  */
 #pragma once
+
+#include "ioss_export.h"
+
 namespace Ioss {
-  class Tracer
+  class IOSS_EXPORT Tracer
   {
   public:
     explicit Tracer(const char *function);

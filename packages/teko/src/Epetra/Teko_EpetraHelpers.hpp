@@ -163,8 +163,7 @@ public:
    double NormInf() const { return -1.0; }
 
    //!
-   const char* Label() const
-   {return ("zeroed( "+std::string(epetraOp_->Label())+" )").c_str(); }
+   const char* Label() const {return label_.c_str();}
 
    //!
    bool UseTranspose() const {return false;}
@@ -186,6 +185,7 @@ public:
 protected:
    std::vector<int> zeroIndices_;
    const Teuchos::RCP<const Epetra_Operator> epetraOp_;
+   std::string label_;
 };
 
 } // end namespace Epetra

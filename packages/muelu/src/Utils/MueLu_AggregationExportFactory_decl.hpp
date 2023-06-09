@@ -54,7 +54,6 @@
 #define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
@@ -65,7 +64,6 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -87,7 +85,7 @@ namespace MueLu {
     | aggregation: output filename           | string  |   |  | * |   | filename for VTK-style visualization output |
     | aggregation: output file: time step    | int     | 0 |  | * |   | time step (overwrites '%TIMESTEP' in output file name) |
     | aggregation: output file: iter         | int     | 0 |  | * |   | nonlinear iteration (overwrites '%ITER' in output file name) |
-    | aggregation: output file: agg style    | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", "Convex Hulls" or "Alpha Hulls" |
+    | aggregation: output file: agg style    | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", or "Convex Hulls" |
     | aggregation: output file: fine graph edges | bool | false  |   | * |  | Draw fine node connections in VTK output (only works for 1 dofs per node!) |
     | aggregation: output file: build colormap | bool | false  |   | * |  | Output a random color map for paraView in a separate xml file. |
     | Output filename | string |   |    | * |  | Output file name for aggregation data export (outdated, do not use) |
@@ -146,17 +144,15 @@ namespace MueLu {
     //! Build an object with this factory.
     void Build(Level &fineLevel, Level &coarseLevel) const;
 
+    using coordinate_type       = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using CoordinateMultiVector = typename Xpetra::MultiVector<coordinate_type, LO, GO, NO>;
+
     //@}
 
   private:
     //Break different viz styles into separate functions for organization:
     void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #ifdef HAVE_MUELU_CGAL
-    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    #endif
     void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
 
     // write VTK data
@@ -168,13 +164,9 @@ namespace MueLu {
     static const int CONTRAST_2_ = -2;
     static const int CONTRAST_3_ = -3;
 
-    //Data that the different styles need to have available when building geometry
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords_; //fine local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx_; //coarse local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz_;
+    // Data that the different styles need to have available when building geometry
+    mutable Teuchos::RCP<CoordinateMultiVector> coords_; // fine local coordinates
+    mutable Teuchos::RCP<CoordinateMultiVector> coordsCoarse_; // coarse local coordinates
     mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
     mutable std::vector<bool> isRoot_;

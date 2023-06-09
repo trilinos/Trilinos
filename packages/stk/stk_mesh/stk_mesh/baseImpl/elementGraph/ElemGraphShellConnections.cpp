@@ -98,6 +98,7 @@ bool SideConnections::does_side_have_both_connection_to_shell_and_to_nonshell(in
 
 void fill_non_shell_graph_edges_to_delete(GraphInfo &graphInfo, const stk::mesh::impl::ElementSidePair &elementSidePair, std::vector<GraphEdge>& edgesToDelete)
 {
+    std::vector<GraphEdge> pllEdgesToDelete;
     for(const stk::mesh::GraphEdge& graphEdge : graphInfo.graph.get_edges_for_element_side(elementSidePair.first, elementSidePair.second))
     {
         bool thisIsShell = is_this_element_shell(graphEdge, graphInfo.elementTopologies);
@@ -105,11 +106,13 @@ void fill_non_shell_graph_edges_to_delete(GraphInfo &graphInfo, const stk::mesh:
 
         if(!thisIsShell && !thatIsShell)
         {
-            if(!impl::is_local_element(graphEdge.elem2()))
-                graphInfo.parGraphInfo.erase_parallel_info_for_graph_edge(graphEdge);
+            if(!impl::is_local_element(graphEdge.elem2())) {
+                pllEdgesToDelete.push_back(graphEdge);
+            }
             edgesToDelete.push_back(graphEdge);
         }
     }
+    graphInfo.parGraphInfo.erase_edges(pllEdgesToDelete);
 }
 
 void remove_graph_edges_blocked_by_shell(GraphInfo &graphInfo)

@@ -35,7 +35,7 @@
 // This file is setup to always work even when KokkosContainers (which contains
 // Kokkos::DynRankView) isn't enabled.
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#if defined(HAVE_SACADO_KOKKOS)
 
 // We are hooking into Kokkos Core internals here
 // Need to define this macro since we include non-public headers
@@ -122,6 +122,20 @@ create_mirror(
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type * = 0 );
+
+}
 
 } // namespace Kokkos
 
@@ -1267,11 +1281,41 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
 }
 
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type*)
+{
+  if (v.rank() != N) {
+    KOKKOS_IF_ON_HOST(
+        const std::string message =
+            "Converting DynRankView of rank " + std::to_string(v.rank()) +
+            " to a View of mis-matched rank " + std::to_string(N) + "!";
+        Kokkos::abort(message.c_str());)
+    KOKKOS_IF_ON_DEVICE(
+        Kokkos::abort("Converting DynRankView to a View of mis-matched rank!");)
+  }
+
+  auto layout = v.impl_map().layout();
+  layout.dimension[v.rank()] = Kokkos::dimension_scalar(v);
+  return View<typename RankDataType<T, N>::type, Args...>(
+      v.data(), Impl::reconstructLayout(layout, v.rank()+1));
+}
+
+}
+
 } // end Kokkos
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #include "Kokkos_DynRankView_Fad_Contiguous.hpp"
 

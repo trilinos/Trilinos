@@ -121,7 +121,7 @@ enum EntityTopologyType {
 */
 
 template <typename User>
-class MeshAdapter : public BaseAdapter<User> {
+class MeshAdapter : public AdapterWithCoords<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -136,7 +136,7 @@ public:
   typedef MeshAdapter<User> base_adapter_t;
 #endif
 
-  enum BaseAdapterType adapterType() const {return MeshAdapterType;}
+  enum BaseAdapterType adapterType() const override {return MeshAdapterType;}
 
   /*! \brief Destructor
    */
@@ -450,16 +450,16 @@ public:
 
   ///////////////////////////////////////////
   // Functions from the BaseAdapter interface
-  size_t getLocalNumIDs() const {
+  size_t getLocalNumIDs() const override {
     return getLocalNumOf(getPrimaryEntityType());
   }
 
-  void getIDsView(const gno_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const override {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 
   void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const
+    typename node_t::device_type> &ids) const override
   {
     Kokkos::View<gno_t *, typename node_t::device_type>
       kokkos_ids("gids", getLocalNumIDs());
@@ -474,23 +474,23 @@ public:
     ids = kokkos_ids;
   }
 
-  int getNumWeightsPerID() const {
+  int getNumWeightsPerID() const override {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
 
-  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const override {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
 
   void getCoordinatesView(const scalar_t *&coords, int &stride,
-                          int coordDim) const
+                          int coordDim) const override
   {
     getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
   }
 
-  inline void getCoordinatesKokkosView(
+  void getCoordinatesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const override
   {
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>

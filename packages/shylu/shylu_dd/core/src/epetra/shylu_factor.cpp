@@ -758,7 +758,7 @@ int shylu_symbolic_factor
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    std::cout << "Symbolic Factorization Time" << ftime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Symbolic Factorization Time : " << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -781,7 +781,7 @@ int shylu_symbolic_factor
         prober->color();
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to color" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Time to color " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
         ftime.start();
 #endif
@@ -832,7 +832,7 @@ int shylu_symbolic_factor
     //data->amesosSchurTime = Teuchos::rcp(new Teuchos::Time("amesos schur time"));
 #ifdef TIMING_OUTPUT
     symtime.stop();
-    std::cout << "Symbolic Time" << symtime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Total Time " << symtime.totalElapsedTime() << std::endl;
     symtime.reset();
 #endif
 
@@ -844,6 +844,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
              shylu_config *config)
 {
 #ifdef TIMING_OUTPUT
+    int myPID = A->Comm().MyPID();
     Teuchos::Time fact_time("factor time");
     fact_time.start();
 #endif
@@ -877,7 +878,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    std::cout << "Time to factor" << ftime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Factor(" << myPID << ") :: Time to factor " << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -912,7 +913,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //std::cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to probe" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Factor(" << myPID << ") :: Time to probe " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
     }
@@ -941,7 +942,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //std::cout << *Sbar << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Factor(" << myPID << ") :: Time to Compute Approx Schur Complement " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
         //std::cout << "Computed Approx Schur complement" << std::endl;
@@ -1096,7 +1097,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     //std::cout << " Out of factor" << std::endl ;
 #ifdef TIMING_OUTPUT
     fact_time.stop();
-    std::cout << "Factor Time" << fact_time.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Factor(" << myPID << ") :: Total Time" << fact_time.totalElapsedTime() << std::endl;
     fact_time.reset();
 #endif
     return 0;

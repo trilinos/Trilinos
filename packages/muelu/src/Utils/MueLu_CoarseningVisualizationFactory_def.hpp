@@ -281,14 +281,6 @@ namespace MueLu {
         else if(coords->getNumVectors() == 2)
           this->doConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords);
       }
-      else if(aggStyle == "CGAL Convex Hulls") {
-#ifdef HAVE_MUELU_CGAL
-        if(coords->getNumVectors() == 3)
-          this->doCGALConvexHulls3D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
-        else if(coords->getNumVectors() == 2)
-          this->doCGALConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords);
-#endif
-      }
       else
       {
         GetOStream(Warnings0) << "   Warning: Unrecognized agg style.\nPossible values are Point Cloud, Jacks, Convex Hulls.\nDefaulting to Point Cloud." << std::endl;

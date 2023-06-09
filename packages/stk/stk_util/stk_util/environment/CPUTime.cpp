@@ -33,15 +33,22 @@
 // 
 
 #include "stk_util/environment/CPUTime.hpp"
-#include <chrono>
+#include <sys/resource.h>  // for rusage, getrusage, RUSAGE_SELF
+#include <sys/time.h>      // for timeval
 
 namespace stk {
 
 double
 cpu_time()
 {
-  auto time = std::chrono::high_resolution_clock::now();
-  return std::chrono::duration<double>(time.time_since_epoch()).count();
+  struct rusage my_rusage;
+
+  ::getrusage(RUSAGE_SELF, &my_rusage);
+
+  double seconds = my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec;
+  double micro_seconds = my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec;
+  
+  return seconds + micro_seconds*1.0e-6;
 }
 
 } // namespace stk

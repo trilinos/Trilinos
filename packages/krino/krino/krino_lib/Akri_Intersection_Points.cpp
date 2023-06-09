@@ -20,11 +20,11 @@ namespace krino {
 EdgeIntersection::EdgeIntersection(const IntersectionPoint & intersectionPt)
 {
   const std::vector<stk::mesh::Entity> & intPtNodes = intersectionPt.get_nodes();
-  ThrowAssert(intPtNodes.size() == 2);
+  STK_ThrowAssert(intPtNodes.size() == 2);
   nodes = {intPtNodes[0], intPtNodes[1]};
   crossingLocation = intersectionPt.get_weights()[1];
   const auto & domains = intersectionPt.get_sorted_domains();
-  ThrowAssert(domains.size() == 1 || domains.size() == 2);
+  STK_ThrowAssert(domains.size() == 1 || domains.size() == 2);
   interface = (domains.size() == 1) ? InterfaceID(domains[0],domains[0]) : InterfaceID(domains[0], domains[1]);
 }
 

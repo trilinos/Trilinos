@@ -52,12 +52,6 @@ namespace Tpetra {
 }
 
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 1
-#else
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 0
-#endif
-
 #ifdef HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   #define TPETRA_PRINTS_EFFICIENCY_WARNINGS 1
 #else
@@ -156,7 +150,7 @@ namespace Tpetra {
   /// this and other reasons not to state <tt>using namespace
   /// std;</tt> in the global namespace.
   template<class Arg1, class Arg2>
-  class project1st : public std::binary_function<Arg1, Arg2, Arg1> {
+  class project1st {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
@@ -182,7 +176,7 @@ namespace Tpetra {
   /// this and other reasons not to state <tt>using namespace
   /// std;</tt> in the global namespace.
   template<class Arg1, class Arg2>
-  class project2nd : public std::binary_function<Arg1, Arg2, Arg2> {
+  class project2nd {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;

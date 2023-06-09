@@ -36,7 +36,7 @@ namespace Tacho {
 template <typename ArgUplo, typename ArgAlgo> struct LDL;
 
 struct LDL_Algorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

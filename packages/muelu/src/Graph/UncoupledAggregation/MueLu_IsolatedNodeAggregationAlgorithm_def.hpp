@@ -59,7 +59,7 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm_decl.hpp"
 
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"

@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -90,11 +89,6 @@ public:
   virtual GraphOption getGraphOption() const
   {
     return BalanceSettings::LOAD_BALANCE;
-  }
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-  {
-    return 1.0;
   }
 };
 

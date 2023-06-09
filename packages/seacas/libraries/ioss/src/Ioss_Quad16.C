@@ -25,7 +25,6 @@ namespace Ioss {
   };
 } // namespace Ioss
 // ========================================================================
-Ioss::Quad16 Ioss::Quad16::instance_;
 
 namespace {
   struct Constants
@@ -73,6 +72,7 @@ int Ioss::Quad16::number_edges_face(int /* face */) const { return 0; }
 Ioss::IntVector Ioss::Quad16::edge_connectivity(int edge_number) const
 {
   assert(edge_number > 0 && edge_number <= number_edges());
+  IOSS_ASSERT_USED(edge_number);
   Ioss::IntVector connectivity(Constants::nedgenode);
   assert(edge_number > 0 && edge_number <= Constants::nedge);
 
@@ -106,5 +106,6 @@ Ioss::ElementTopology *Ioss::Quad16::face_type(int /* face_number */) const
 Ioss::ElementTopology *Ioss::Quad16::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
+  IOSS_ASSERT_USED(edge_number);
   return Ioss::ElementTopology::factory("edge4");
 }

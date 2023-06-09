@@ -1,11 +1,13 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #pragma once
+
+#include "io_info_lib_export.h"
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <iosfwd>            // for ostream
@@ -14,7 +16,7 @@
 /** \brief A special namespace for the io_info demonstration program interFace.
  */
 namespace Info {
-  class Interface
+  class IO_INFO_LIB_EXPORT Interface
   {
   public:
     Interface();
@@ -30,6 +32,7 @@ namespace Info {
     bool ints_64_bit() const { return ints64Bit_; }
     bool list_groups() const { return listGroups_; }
     bool show_config() const { return showConfig_; }
+    bool query_timesteps_only() const { return queryTimeOnly_; }
 
     int         surface_split_scheme() const { return surfaceSplitScheme_; }
     char        field_suffix_separator() const { return fieldSuffixSeparator_; }
@@ -39,6 +42,7 @@ namespace Info {
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
     std::string groupname() const { return groupname_; }
+    std::string custom_field() const { return customField_; }
 
     //! Dumps representation of data in this class to cerr
 
@@ -50,6 +54,7 @@ namespace Info {
     std::string         filename_{};
     std::string         groupname_{};
     std::string         decompMethod_{};
+    std::string         customField_{};
 
     bool checkNodeStatus_{false};
     bool computeVolume_{false};
@@ -61,6 +66,7 @@ namespace Info {
     bool disableFieldRecognition_{false};
     bool showConfig_{false};
     bool summary_{false};
+    bool queryTimeOnly_{false};
 
     char fieldSuffixSeparator_{'_'};
 

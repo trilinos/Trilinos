@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_CRSGRAPH_DECL_HPP
 #define TPETRA_CRSGRAPH_DECL_HPP
 
@@ -1155,6 +1156,12 @@ public:
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
+                      /// use copyAndPermutes for anything we don't override
+  // clang-format off
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -1225,6 +1232,13 @@ public:
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       size_t& constantNumPackets) override;
 
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+  // clang-format off
+
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
           Teuchos::Array<global_ordinal_type>& exports,
@@ -1245,6 +1259,13 @@ public:
                        Kokkos::DualView<size_t*,
                          buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets) const;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+  // clang-format off
 
     virtual void
     unpackAndCombine
@@ -2142,6 +2163,16 @@ public:
            Kokkos::create_mirror_view_and_copy(
                        typename row_ptrs_device_view_type::host_mirror_space(),
                        dview);
+    }
+
+    // There are common cases where both packed and unpacked views are set to the same array.
+    // Doing this in a single call can reduce dataspace on host, and reduce runtime by
+    // removing a deep_copy from device to host.
+
+    void setRowPtrs(const row_ptrs_device_view_type &dview) {
+      setRowPtrsUnpacked(dview);
+      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
+      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
     }
     
     //TODO:  Make private -- matrix shouldn't access directly the guts of graph

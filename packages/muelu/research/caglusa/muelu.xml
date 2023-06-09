@@ -5,17 +5,29 @@
   <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
 
   <!-- reduces setup cost for symmetric problems -->
-  <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+  <Parameter        name="transpose: use implicit"              type="bool"     value="false"/>
 
 
   <Parameter        name="coarse: type"                       type="string"   value="lapack"/>
+  <ParameterList    name="coarse: params">
+    <ParameterList    name="Amesos2">
+      <ParameterList    name="LAPACK">
+        <Parameter        name="IsContiguous"              type="bool"     value="false"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
   <ParameterList    name="smoother: params">
-    <Parameter      name="relaxation: sweeps"                   type="int"      value="2"/>>
-    <Parameter      name="relaxation: damping factor"           type="double"   value="0.666"/>
+    <Parameter      name="relaxation: sweeps"                   type="int"      value="1"/>>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="0.95"/>
     <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+  </ParameterList>
+
+  <ParameterList name="matvec params">
+    <!-- <Parameter name="Send type" type="string" value="Send"/> -->
+    <Parameter name="Send type" type="string" value="Isend"/>
   </ParameterList>
 
 </ParameterList>

@@ -55,7 +55,8 @@ namespace Details {
 /// not rely on these values in your code.
 enum EDistributorSendType {
   DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
-  DISTRIBUTOR_SEND   // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_ALLTOALL // Use MPI_Alltoall
 };
 
 /// \brief Convert an EDistributorSendType enum value to a string.

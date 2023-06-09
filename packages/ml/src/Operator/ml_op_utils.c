@@ -2095,8 +2095,8 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
     which limits.h did not exist.  In any case, I decided to leave the
     line of code alone.
     */
-    minStencil = ML_gmin_int( (proc_active ? mat->min_nz_per_row : 1e11), comm);
-    minproc = ML_gmax_int( (minStencil == mat->min_nz_per_row ? mypid:0), comm);
+    minStencil = ML_gmin_int(proc_active ? mat->min_nz_per_row : (int)1e11, comm);
+    minproc = ML_gmax_int(minStencil == mat->min_nz_per_row ? mypid:0, comm);
     t1 = NglobNonzeros/((double) Nglobrows);
     if (mypid == 0) {
       printf("%s: max stencil size (pid %d) \t= %d\n",

@@ -24,7 +24,6 @@ void SideSetHelper::remove_element_entries_from_sidesets(SideSetVector& sidesets
 
       sideset->erase(lowerBound, upperBound);
 
-
       if(nullptr != touchedSidesetParts) {
         const Part* part = sideset->get_part();
 
@@ -42,25 +41,33 @@ void SideSetHelper::remove_element_entries_from_sidesets(const Entity entity, st
   remove_element_entries_from_sidesets(sidesets, entity, touchedSidesetParts);
 }
 
+void SideSetHelper::remove_side_entry_from_sideset(SideSet* sideset, const SideSetEntry& entry,
+                                                   std::set<const Part*> *touchedSidesetParts)
+{
+  STK_ThrowAssert(entry.side != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(entry.element) == stk::topology::ELEM_RANK);
+
+  std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), entry);
+
+  if(lowerBound != sideset->end() && *lowerBound == entry) {
+    sideset->erase(lowerBound);
+  }
+
+  if(nullptr != touchedSidesetParts) {
+    const Part* part = sideset->get_part();
+
+    if(nullptr != part) {
+      touchedSidesetParts->insert(part);
+    }
+  }
+}
+
 void SideSetHelper::remove_side_entry_from_sidesets(SideSetVector& sidesets, Entity elem, ConnectivityOrdinal ordinal,
-                                     std::set<const Part*> *touchedSidesetParts)
+                                                    std::set<const Part*> *touchedSidesetParts)
 {
   if(ordinal != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(elem) == stk::topology::ELEM_RANK) {
     SideSetEntry entry(elem, ordinal);
     for (SideSet* sideset : sidesets) {
-      std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), entry);
-
-      if(lowerBound != sideset->end() && *lowerBound == entry) {
-        sideset->erase(lowerBound);
-      }
-
-      if(nullptr != touchedSidesetParts) {
-        const Part* part = sideset->get_part();
-
-        if(nullptr != part) {
-          touchedSidesetParts->insert(part);
-        }
-      }
+      remove_side_entry_from_sideset(sideset, entry, touchedSidesetParts);
     }
   }
 }
@@ -130,7 +137,7 @@ void SideSetHelper::add_element_side_entry_to_sideset(SideSetSelector& sidesetSe
     SideSet* sideset = sidesetSelector.sideset();
     const Selector* selector = sidesetSelector.selector();
 
-    ThrowAssertMsg(nullptr != selector, "NULL Element block selector for sideset: " << sideset->get_name());
+    STK_ThrowAssertMsg(nullptr != selector, "NULL Element block selector for sideset: " << sideset->get_name());
 
     if(mesh.bucket(elem).owned() && (*selector)(mesh.bucket(elem))) {
       sideset->add(elem, ordinal);
@@ -230,8 +237,8 @@ stk::mesh::Part* SideSetHelper::get_element_block_from_part_ordinals(const stk::
     }
 
     bool elementIsAssociatedWithOnlyOneElementBlock = block_counter == 1;
-    ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
-    ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
+    STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
+    STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
     return elementBlockPart;
 }
 
@@ -249,7 +256,7 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
   } else {
     // Remote connectivity
     const auto iter = parallelPartInfo.find(graphEdge.elem2());
-    //          ThrowRequireWithSierraHelpMsg(iter != parallelPartInfo.end());
+    //          STK_ThrowRequireWithSierraHelpMsg(iter != parallelPartInfo.end());
     if(iter == parallelPartInfo.end()) { return false; }
 
     const std::vector<stk::mesh::PartOrdinal>& otherElementPartOrdinals = iter->second;
@@ -366,7 +373,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
     EntityVector sideNodes;
     impl::fill_element_side_nodes_from_topology(mesh.bucket(element).topology(), mesh.begin_nodes(element), ordinal, sideNodes);
     stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, element, sideRank, sideNodes);
-    ThrowRequire(connectedOrdAndPerm.second != INVALID_PERMUTATION);
+    STK_ThrowRequire(connectedOrdAndPerm.second != INVALID_PERMUTATION);
     bool localPolarity = mesh.bucket(element).topology().sub_topology(sideRank, connectedOrdAndPerm.first).is_positive_polarity(connectedOrdAndPerm.second);
 
     for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elemLocalId)) {

@@ -27,11 +27,11 @@ public:
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
 
-  void update_values() { ThrowErrorMsg("EmptySendAdapter shouldn't be called.");}
+  void update_values() { STK_ThrowErrorMsg("EmptySendAdapter shouldn't be called.");}
 
   void bounding_boxes(std::vector<BoundingBox> & /* domain_vector */) const
   {
-    ThrowErrorMsg("EmptySendAdapter shouldn't be called.");
+    STK_ThrowErrorMsg("EmptySendAdapter shouldn't be called.");
   }
 };
 

@@ -21,18 +21,12 @@
 #cmakedefine HAVE_PIRO_NOX
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_NOX
-#cmakedefine HAVE_PIRO_RYTHMOS
-/* DEPRECATED */
-#cmakedefine Piro_ENABLE_Rythmos
 #cmakedefine HAVE_PIRO_TEMPUS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Tempus
 #cmakedefine HAVE_PIRO_STOKHOS
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Stokhos
-#cmakedefine HAVE_PIRO_TRIKOTA
-/* DEPRECATED */
-#cmakedefine Piro_ENABLE_TriKota
 #cmakedefine HAVE_PIRO_ROL
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_ROL
@@ -48,6 +42,7 @@
 #cmakedefine HAVE_PIRO_EPETRAEXT
 #cmakedefine HAVE_PIRO_TPETRA
 #cmakedefine HAVE_PIRO_TEKO
+#cmakedefine HAVE_PIRO_STRATIMIKOS
 
 /* Define to the address where bug reports for this package should be sent. */
 #cmakedefine PACKAGE_BUGREPORT

@@ -45,10 +45,10 @@
     \brief Test interpolation and projection capabilities for quadrilateral elements
 
     The test considers two quadrilaterals in the physical space sharing a common face.
-    In order to test significant configurations, we consider 4 mappings of the reference quadrilateral
+    In order to test significant configurations, we consider 4 rotations of the reference quadrilateral
     to the first (physical) quadrilateral, so that the common face is mapped from all the 4 sides
     of the reference quadrilateral.
-    Then, for each of the mappings, the global ids of the vertices of the common side are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common side are permuted (2 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -73,6 +73,7 @@
 #include "Intrepid2_ProjectionTools.hpp"
 #include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
@@ -291,6 +292,8 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_QUAD_C1_FEM<DeviceType,ValueType,ValueType>());
+          if(degree==2)
+            basis_set.push_back(new Basis_HGRAD_QUAD_C2_FEM<DeviceType,ValueType,ValueType>());
           basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(degree,POINTTYPE_WARPBLEND));
           basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(degree,POINTTYPE_EQUISPACED));
 
@@ -651,7 +654,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1116,7 +1119,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1592,7 +1595,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+4)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

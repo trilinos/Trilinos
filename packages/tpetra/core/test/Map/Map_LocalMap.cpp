@@ -322,6 +322,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
   }
 }
 
+/**
+ * @test This test ensures that the fix brought by trilinos/Trilinos#11218 is tested.
+ *
+ * Mainly, it creates a dual view of local maps, assigns on the host view and syncs.
+ * Without the fix from trilinos/Trilinos#11218, the assignment would crash at runtime
+ * when running with Cuda UVM.
+ */
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, KokkosView, LO, GO, NT )
+{
+    using execution_space = typename NT::execution_space;
+    using map_t           = Tpetra::Map<LO, GO, NT>;
+    using local_map_t     = typename map_t::local_map_type;
+    using dual_view_t     = Kokkos::DualView<local_map_t*, execution_space>;
+
+    dual_view_t my_dual_view("test view with local maps",1);
+
+    my_dual_view.h_view(0) = local_map_t();
+
+    my_dual_view.sync_device();
+}
+
 //
 // INSTANTIATIONS
 //
@@ -329,7 +350,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
 #define UNIT_TEST_GROUP( LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LocalMap, UniformContig, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LocalMap, NonuniformContig, LO, GO, NT ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LocalMap, Noncontig, LO, GO, NT )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LocalMap, Noncontig, LO, GO, NT ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LocalMap, KokkosView, LO, GO, NT )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

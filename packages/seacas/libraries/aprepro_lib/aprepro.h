@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022,  National Technology & Engineering Solutions
+// Copyright(C) 1999-2023,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,9 +7,7 @@
 // Might be good to add a callback function which would be called
 // when there was output -- In LexerOutput for example.  Default
 // could be to just write to std::cout or to resultsOutput stringstream...
-
-#ifndef SEAMS_DRIVER_H
-#define SEAMS_DRIVER_H
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -91,7 +89,7 @@ namespace SEAMS {
     /// construct a new parser aprepro context
     Aprepro();
     ~Aprepro();
-    Aprepro(const Aprepro &) = delete;
+    Aprepro(const Aprepro &)            = delete;
     Aprepro &operator=(const Aprepro &) = delete;
 
     enum class SYMBOL_TYPE {
@@ -204,9 +202,12 @@ namespace SEAMS {
 
     // The info stream. To only print out info messages if the -M option was
     // specified, use info(...) instead.
+    bool          closeInfo{false};
     std::ostream *infoStream{&std::cout};
 
     void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info);
+    void set_error_streams(std::ostream *c_error, std::ostream *c_warning, std::ostream *c_info,
+                           bool close_error, bool close_warning, bool close_info);
 
     void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
@@ -233,9 +234,14 @@ namespace SEAMS {
     // For error handling
     std::ostream *errorStream{&std::cerr};
     std::ostream *warningStream{&std::cerr};
+    bool          closeError{false};
+    bool          closeWarning{false};
 
     // For substitution history.
     std::vector<history_data> history{};
+
+    // For repeatble and user-friendly help/dump output.
+    std::vector<SEAMS::symrec *> get_sorted_sym_table() const;
 
     mutable int parseErrorCount{0};
     mutable int parseWarningCount{0};
@@ -268,5 +274,3 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-
-#endif // SEAMS_DRIVER_H

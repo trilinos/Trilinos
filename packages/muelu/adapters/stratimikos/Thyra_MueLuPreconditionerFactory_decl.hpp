@@ -56,10 +56,8 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
-#ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
@@ -83,17 +81,15 @@
 #include <MueLu_MasterList.hpp>
 #include <MueLu_XpetraOperator_decl.hpp> // todo fix me
 #include <MueLu_CreateXpetraPreconditioner.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
 #endif
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <list>
 
@@ -109,7 +105,7 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_EPETRA
   template <class GlobalOrdinal>
-  struct Converters<double, int, GlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode> {
+  struct Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
     static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
   };
 #endif
@@ -119,7 +115,7 @@ namespace Thyra {
       Add support for MueLu preconditioners in Thyra. This class provides an interface both
       for Epetra and Tpetra.
   */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
 

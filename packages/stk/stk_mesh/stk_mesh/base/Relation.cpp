@@ -56,6 +56,7 @@ Relation::RawRelationType & Relation::RawRelationType::operator =(const Relation
     return *this;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after October 2022
 //----------------------------------------------------------------------
 
 namespace {
@@ -102,7 +103,7 @@ void get_entities_through_relations(
 
 } // namespace
 
-void get_entities_through_relations(
+STK_DEPRECATED void get_entities_through_relations(
   const BulkData &mesh,
   const std::vector<Entity> & entities ,
         std::vector<Entity> & entities_related )
@@ -128,6 +129,7 @@ void get_entities_through_relations(
     }
   }
 }
+#endif
 
 void get_entities_through_relations(
   const BulkData& mesh,
@@ -146,7 +148,7 @@ void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
                                    OrdinalVector & induced_parts)
 {
-  ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
+  STK_ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
 
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());

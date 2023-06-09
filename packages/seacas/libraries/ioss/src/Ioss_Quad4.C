@@ -25,7 +25,6 @@ namespace Ioss {
   };
 } // namespace Ioss
 // ========================================================================
-Ioss::Quad4 Ioss::Quad4::instance_;
 
 namespace {
   struct Constants
@@ -106,5 +105,6 @@ Ioss::ElementTopology *Ioss::Quad4::face_type(int /* face_number */) const
 Ioss::ElementTopology *Ioss::Quad4::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
+  IOSS_ASSERT_USED(edge_number);
   return Ioss::ElementTopology::factory("edge2");
 }

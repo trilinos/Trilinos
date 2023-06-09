@@ -163,6 +163,7 @@ lib stk_ngp_test
     /tpl/gtest//gtest
     /tpl/trilinos//kokkoscore
     /mpi//mpi
+    /sierra/stk_util//stk_util_ngp
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -188,6 +189,7 @@ lib stk_ngp_test_main
     /tpl/gtest//gtest
     /tpl/trilinos//kokkoscore
     /mpi//mpi
+    /sierra/stk_util//stk_util_ngp
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

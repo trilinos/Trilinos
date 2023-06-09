@@ -133,9 +133,7 @@ UNARYFUNC_MACRO(asinh, ASinhOp)
 UNARYFUNC_MACRO(atanh, ATanhOp)
 UNARYFUNC_MACRO(abs, AbsOp)
 UNARYFUNC_MACRO(fabs, FAbsOp)
-#ifdef HAVE_SACADO_CXX11
 UNARYFUNC_MACRO(cbrt, CbrtOp)
-#endif
 
 #undef UNARYFUNC_MACRO
 
@@ -460,7 +458,7 @@ BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 namespace Sacado {
 #ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT

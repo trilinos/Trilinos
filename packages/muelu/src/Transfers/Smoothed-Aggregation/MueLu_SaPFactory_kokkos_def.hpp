@@ -46,8 +46,6 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #ifdef out
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spgemm.hpp"
@@ -63,16 +61,15 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include <sstream>
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -98,7 +95,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
@@ -109,16 +106,13 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
-
-    // Add debugging information
-    typename DeviceType::execution_space().print_configuration(GetOStream(Runtime1));
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -132,21 +126,28 @@ namespace MueLu {
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
+    RCP<Matrix> finalP;
+    // If Tentative facctory bailed out (e.g., number of global aggregates is 0), then SaPFactory bails
+    //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if (Ptent == Teuchos::null) {
+      finalP = Teuchos::null;
+      Set(coarseLevel, "P", finalP);
+      return;
+    }
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
 
-      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitly
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
 
     //Build final prolongator
-    RCP<Matrix> finalP; // output
 
     // Reuse pattern if available
     RCP<ParameterList> APparams;
-    if(pL.isSublist("matrixmatrix: kernel params")) 
+    if(pL.isSublist("matrixmatrix: kernel params"))
       APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else 
+    else
       APparams= rcp(new ParameterList);
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
@@ -184,11 +185,11 @@ namespace MueLu {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
           ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Magnitude stopTol = 1e-4;
-          invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
           if (useAbsValueRowSum)
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           else
-            lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -207,7 +208,7 @@ namespace MueLu {
           if (useAbsValueRowSum)
             GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
           if (invDiag == Teuchos::null)
-            invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
+            invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
         }
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
@@ -236,7 +237,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
+      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
       if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 
@@ -256,7 +257,7 @@ namespace MueLu {
 
   // Analyze the grid transfer produced by smoothed aggregation and make
   // modifications if it does not look right. In particular, if there are
-  // negative entries or entries larger than 1, modify P's rows. 
+  // negative entries or entries larger than 1, modify P's rows.
   //
   // Note: this kind of evaluation probably only makes sense if not doing QR
   // when constructing tentative P.
@@ -265,8 +266,8 @@ namespace MueLu {
   // these entries to the constraint value and modify the rest of the row
   // so that the row sum remains the same as before by adding an equal
   // amount to each remaining entry. However, if the original row sum value
-  // violates the constraints, we set the row sum back to 1 (the row sum of 
-  // tentative P). After doing the modification to a row, we need to check 
+  // violates the constraints, we set the row sum back to 1 (the row sum of
+  // tentative P). After doing the modification to a row, we need to check
   // again the entire row to make sure that the modified row does not violate
   // the constraints.
 
@@ -303,23 +304,23 @@ struct constraintKernel {
       if (rowPtr(rowIdx + 1) == rowPtr(rowIdx)) checkRow = false;
 
 
-      while (checkRow) { 
+      while (checkRow) {
 
         // check constraints and compute the row sum
     
         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++)  {
-          Rsum(rowIdx, entryIdx%nPDEs) += values(entryIdx); 
-          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) < Kokkos::ArithTraits<SC>::real(zero)) { 
+          Rsum(rowIdx, entryIdx%nPDEs) += values(entryIdx);
+          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) < Kokkos::ArithTraits<SC>::real(zero)) {
 
-            ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += values(entryIdx); 
+            ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += values(entryIdx);
             values(entryIdx) = zero;
           }
           else {
             if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) != Kokkos::ArithTraits<SC>::real(zero))
               nPositive(rowIdx, entryIdx%nPDEs) = nPositive(rowIdx, entryIdx%nPDEs) + 1;
     
-            if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(1.00001  )) { 
-              ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += (values(entryIdx) - one); 
+            if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(1.00001  )) {
+              ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += (values(entryIdx) - one);
               values(entryIdx) =  one;
             }
           }
@@ -332,14 +333,14 @@ struct constraintKernel {
         for (size_t k=0; k < (size_t) nPDEs; k++) {
 
           if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) < Kokkos::ArithTraits<SC>::magnitude(zero)) {
-              ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k) - Rsum(rowIdx, k);  // rstumin 
+              ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k) - Rsum(rowIdx, k);  // rstumin
           }
           else if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) > Kokkos::ArithTraits<SC>::magnitude(1.00001)) {
               ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k)+ (one - Rsum(rowIdx, k));  // rstumin
           }
         }
 
-        // check if row need modification 
+        // check if row need modification
         for (size_t k=0; k < (size_t) nPDEs; k++) {
           if (Kokkos::ArithTraits<SC>::magnitude(ConstraintViolationSum(rowIdx, k)) != Kokkos::ArithTraits<SC>::magnitude(zero))
              checkRow = true;
@@ -347,14 +348,14 @@ struct constraintKernel {
         // modify row
         if (checkRow) {
 	   for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++)  {
-             if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(zero)) { 
+             if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(zero)) {
 	       values(entryIdx) = values(entryIdx) +
 		 (ConstraintViolationSum(rowIdx, entryIdx%nPDEs)/ (Scalar (nPositive(rowIdx, entryIdx%nPDEs)) != zero ? Scalar (nPositive(rowIdx, entryIdx%nPDEs)) : one));
              }
            }
-           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(rowIdx, k) = zero; 
+           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(rowIdx, k) = zero;
         }
-        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum(rowIdx, k) = zero; 
+        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum(rowIdx, k) = zero;
         for (size_t k=0; k < (size_t) nPDEs; k++) nPositive(rowIdx, k) = 0;
       } // while (checkRow) ...
 
@@ -406,7 +407,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
          SC leftBound = zero;
          SC rghtBound = one;
-         if ((KAT::real(rsumTarget) >= KAT::real(leftBound*(static_cast<SC>(nnz)))) && 
+         if ((KAT::real(rsumTarget) >= KAT::real(leftBound*(static_cast<SC>(nnz)))) &&
              (KAT::real(rsumTarget) <= KAT::real(rghtBound*(static_cast<SC>(nnz))))){ // has Feasible solution
 
            flipped    = false;
@@ -414,7 +415,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
            // something large so that an if statement will be false
            aBigNumber = KAT::zero();
            for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
-             if ( KAT::magnitude( values(entryIdx) ) > KAT::magnitude(aBigNumber)) 
+             if ( KAT::magnitude( values(entryIdx) ) > KAT::magnitude(aBigNumber))
                aBigNumber = KAT::magnitude( values(entryIdx) );
            }
            aBigNumber = aBigNumber+ (KAT::magnitude(leftBound) + KAT::magnitude(rghtBound))*(100*one);
@@ -456,8 +457,8 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
            closestToRghtBound = closestToLeftBound;
            while ((closestToRghtBound < static_cast<LO>(nnz)) && (KAT::real(origSorted(rowIdx, closestToRghtBound)) <= KAT::real(rghtBound))) closestToRghtBound++;
   
-           // compute distance between closestToLeftBound and the left bound and the 
-           // distance between closestToRghtBound and the right bound. 
+           // compute distance between closestToLeftBound and the left bound and the
+           // distance between closestToRghtBound and the right bound.
         
            closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
            if (closestToRghtBound == static_cast<LO>(nnz)) closestToRghtBoundDist= aBigNumber;
@@ -466,15 +467,15 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
            // compute how far the rowSum is off from the target row sum taking into account
            // numbers that have been shifted to satisfy bound constraint
   
-           rowSumDeviation = leftBound*(static_cast<SC>(closestToLeftBound)) + (static_cast<SC>(nnz-closestToRghtBound))*rghtBound - rsumTarget; 
+           rowSumDeviation = leftBound*(static_cast<SC>(closestToLeftBound)) + (static_cast<SC>(nnz-closestToRghtBound))*rghtBound - rsumTarget;
            for (LO i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted(rowIdx, i);
   
            // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
-           // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
+           // is not the case, flip the signs of everything so that rowSumDeviation is now positive.
            // Later we will flip the data back to its original form.
            if (KAT::real(rowSumDeviation) < KAT::real(KAT::zero())) {
              flipped = true;
-             temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
+             temp = leftBound; leftBound = -rghtBound; rghtBound = temp;
          
              /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
          
@@ -482,15 +483,15 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
              if ((nnz%2) == 1) origSorted(rowIdx, (nnz/2)  ) =  -origSorted(rowIdx, (nnz/2)  );
              for (LO i=0; i < static_cast<LO>(nnz/2); i++) {
                temp=origSorted(rowIdx, i);
-               origSorted(rowIdx, i) = -origSorted(rowIdx, nnz-1-i); 
+               origSorted(rowIdx, i) = -origSorted(rowIdx, nnz-1-i);
                origSorted(rowIdx, nnz-i-1) = -temp;
              }
            
              /* reverse bounds */
          
-             LO itemp = closestToLeftBound; 
+             LO itemp = closestToLeftBound;
              closestToLeftBound = nnz-closestToRghtBound;
-             closestToRghtBound = nnz-itemp; 
+             closestToRghtBound = nnz-itemp;
              closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
              if (closestToRghtBound == static_cast<LO>(nnz)) closestToRghtBoundDist= aBigNumber;
              else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
@@ -507,7 +508,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
            while ((KAT::magnitude(rowSumDeviation) > KAT::magnitude((one*1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
             if (closestToRghtBound !=  closestToLeftBound)
                  delta = rowSumDeviation/ static_cast<SC>(closestToRghtBound -  closestToLeftBound);
-            else delta = aBigNumber; 
+            else delta = aBigNumber;
          
             if (KAT::magnitude(closestToLeftBoundDist) <= KAT::magnitude(closestToRghtBoundDist)) {
                if (KAT::magnitude(delta) <= KAT::magnitude(closestToLeftBoundDist)) {
@@ -515,7 +516,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
                  for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
                }
                else {
-                 rowSumDeviation = rowSumDeviation - closestToLeftBoundDist; 
+                 rowSumDeviation = rowSumDeviation - closestToLeftBoundDist;
                  fixedSorted(rowIdx, closestToLeftBound) = leftBound;
                  closestToLeftBound++;
                  if (closestToLeftBound < static_cast<LO>(nnz)) closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
@@ -529,7 +530,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
                }
                else {
                  rowSumDeviation = rowSumDeviation + closestToRghtBoundDist;
-         //        if (closestToRghtBound < nEntries) { 
+         //        if (closestToRghtBound < nEntries) {
                    fixedSorted(rowIdx, closestToRghtBound) = origSorted(rowIdx, closestToRghtBound);
                    closestToRghtBound++;
           //       }
@@ -546,7 +547,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
              if ((nnz%2) == 1) fixedSorted(rowIdx, (nnz/2)  ) =  -fixedSorted(rowIdx, (nnz/2)  );
              for (LO i=0; i < static_cast<LO>(nnz/2); i++) {
                temp=fixedSorted(rowIdx, i);
-               fixedSorted(rowIdx, i) = -fixedSorted(rowIdx, nnz-1-i); 
+               fixedSorted(rowIdx, i) = -fixedSorted(rowIdx, nnz-1-i);
                fixedSorted(rowIdx, nnz-i-1) = -temp;
              }
            }
@@ -566,7 +567,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
    
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = A->GetFixedBlockSize();
@@ -579,7 +580,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
   } //SatsifyPConstraints()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = 1;//A->GetFixedBlockSize();
@@ -593,7 +594,6 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

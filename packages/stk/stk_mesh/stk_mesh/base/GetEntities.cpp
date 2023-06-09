@@ -155,9 +155,7 @@ void get_entities( const BulkData& bulk,
   entities.reserve(count);
 
   for (const Bucket* bptr : buckets) {
-    for(Entity entity : *bptr) {
-      entities.push_back(entity);
-    }
+    entities.insert(entities.end(), bptr->begin(), bptr->end());
   }
 
   if (entities.size() > 0 && sortByGlobalId) {

@@ -64,26 +64,26 @@ exe cd ${stk_build_dir}
 exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
 
 printf "Configuring trilinos/stk (running cmake)...\n";
-exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_user_facing >& ${stk_config_log}'
+exe "TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_user_facing >& ${stk_config_log}"
 if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
   exit 1;
 fi
 
 printf "Now building trilinos/stk using make...\n";
-exe 'make VERBOSE=1 -j8 >& ${stk_make_log}';
+exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
 if [ $? -ne 0 ] ; then
   echo "!! error in make, check output in ${stk_make_log} !!";
   exit 1;
 fi
 
-exe 'ctest >& ${stk_ctest_log}';
+exe "ctest >& ${stk_ctest_log}";
 if [ $? -ne 0 ] ; then
   echo "!! error in ctest, check output in ${stk_ctest_log} !!";
   exit 1;
 fi
 
-exe 'make install >& ${stk_install_log}';
+exe "make install >& ${stk_install_log}";
 if [ $? -ne 0 ] ; then
   echo "!! error in make install, check output in ${stk_install_log} !!";
   exit 1;
@@ -96,13 +96,13 @@ exe mkdir ${stk_app_build_dir}
 exe cp ${stk_cmake_testing_source_dir}/stk_test_app/run_cmake_stk_test_app ${stk_app_build_dir}
 exe cd ${stk_app_build_dir};
 
-exe './run_cmake_stk_test_app ${trilinos_install_dir} ${stk_cmake_testing_source_dir}/stk_test_app >& ${stk_app_config_log}';
+exe "./run_cmake_stk_test_app ${trilinos_install_dir} ${stk_cmake_testing_source_dir}/stk_test_app >& ${stk_app_config_log}";
 if [ $? -ne 0 ] ; then
   printf "!! error running cmake for stk test-app, check output in ${stk_app_config_log}\n";
   exit 1;
 fi
 
-exe 'make >& ${stk_app_make_log}';
+exe "make >& ${stk_app_make_log}";
 if [ $? -ne 0 ] ; then
   printf "!! error building stk-test-app, check output in ${stk_app_make_log}\n";
   exit 1;

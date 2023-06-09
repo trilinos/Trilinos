@@ -78,10 +78,11 @@ include(TribitsAddTestHelpers)
 #     )
 #
 # The tests are only added if tests are enabled for the package
-# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_) or the parent package (if this is a
-# subpackage) (i.e. ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS``).  (NOTE: A more
-# efficient way to optionally enable tests is to put them in a ``test/``
-# subdir and then include that subdir with `tribits_add_test_directories()`_.)
+# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_ ``= ON``).  (NOTE: A more efficient
+# way to optionally enable tests or examples is to put them in a ``test/`` or
+# ``example/`` subdir and then include that subdir with
+# `tribits_add_test_directories()`_ or `tribits_add_example_directories()`_,
+# respectively.)
 #
 # *Sections:*
 #
@@ -852,7 +853,7 @@ function(tribits_add_test EXE_NAME)
   elseif (PARSE_POSTFIX_AND_ARGS_0)
     # We will use this list instead
   else()
-    # Niether 'ARGS' nor 'POSTFIX_AND_ARGS' was selected so just assume one
+    # Neither 'ARGS' nor 'POSTFIX_AND_ARGS' was selected so just assume one
     # empty arg
     set(PARSE_ARGS " ")
     set(NUM_PARSE_ARGS 1)

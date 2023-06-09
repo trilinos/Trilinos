@@ -50,7 +50,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SegregatedAFactory_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
@@ -80,22 +79,15 @@ namespace MueLu {
 
   public:
 
-    //! @name Constructors/Destructors.
-    //@{
-
-    SegregatedAFactory() { }
-
-    //! Destructor.
-    virtual ~SegregatedAFactory() { }
-
-    RCP<const ParameterList> GetValidParameterList() const;
-
-    //@}
+    //! Constructor.
+    SegregatedAFactory() = default;
 
     //! Input
     //@{
 
     void DeclareInput(Level& currentLevel) const;
+
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 
@@ -110,6 +102,11 @@ namespace MueLu {
     void Build(Level& currentLevel) const;
 
     //@}
+
+  private:
+
+    //! Generating factory of input variable
+    mutable RCP<const FactoryBase> mapFact_;
 
   }; //class SegregatedAFactory
 

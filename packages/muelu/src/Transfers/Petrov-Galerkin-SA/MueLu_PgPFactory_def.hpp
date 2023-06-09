@@ -62,9 +62,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PgPFactory_decl.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -151,7 +148,7 @@ namespace MueLu {
 
     doFillComplete=true;
     optimizeStorage=false;
-    Teuchos::ArrayRCP<Scalar> diag = Utilities::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<Scalar> diag = Utilities::GetMatrixDiagonal_arcp(*A);
     Utilities::MyOldScaleMatrix(*DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     /////////////////// calculate local damping factors omega
@@ -312,7 +309,7 @@ namespace MueLu {
         // compute D^{-1} * A * D^{-1} * A * P0
         bool doFillComplete=true;
         bool optimizeStorage=true;
-        Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
+        Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal_arcp(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 	diagA = Teuchos::ArrayRCP<Scalar>();

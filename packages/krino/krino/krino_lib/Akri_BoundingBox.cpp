@@ -86,7 +86,7 @@ REAL
 BoundingBox_T<REAL,DIM>::SqrDistLowerBnd( const VecType & pt ) const
 {
   // make sure bbox is valid
-  ThrowAssert( valid() );
+  STK_ThrowAssert( valid() );
 
   Real delta, SqrDist = 0.;
 
@@ -111,7 +111,7 @@ REAL
 BoundingBox_T<REAL,DIM>::SqrDistUpperBnd( const VecType & pt ) const
 { /* %TRACE% */  /* %TRACE% */
 // make sure bbox is valid
-  ThrowAssert( valid() );
+  STK_ThrowAssert( valid() );
 
   // We are guaranteed that there is a point on the surface on each face of the
   // bounding box.  So we know that the upper bound for the distance to a face is
@@ -158,7 +158,7 @@ BoundingBox_T<REAL,DIM>::SqrDistUpperBnd( const VecType & pt ) const
   }
   else
   {
-    ThrowAssert(2 == DIM);
+    STK_ThrowAssert(2 == DIM);
     const Real zero = 0.0;
     SqrDistMin = (pt-VecType(close_pt[0],far_pt[1],zero)).length_squared();
     SqrDistMin = std::min(SqrDistMin,(pt-VecType(far_pt[0],close_pt[1],zero)).length_squared());
@@ -182,7 +182,7 @@ BoundingBox_T<REAL,DIM>::SqrDistUpperBnd( const BoundingBox_T<REAL,DIM> & pt_box
     return std::numeric_limits<REAL>::max();
 
   // make sure bbox is valid
-  ThrowAssert( valid() );
+  STK_ThrowAssert( valid() );
 
   Real SqrDistMin = 0.0;
   for ( int j = 0; j < DIM; j++ )
@@ -194,7 +194,7 @@ BoundingBox_T<REAL,DIM>::SqrDistUpperBnd( const BoundingBox_T<REAL,DIM> & pt_box
       {
         const Real delta = (i!=j) ? std::max(pt_box.max[i]-min[i],max[i]-pt_box.min[i]) :
             ((side==0) ? std::max(min[i]-pt_box.min[i], pt_box.max[i]-min[i]) : std::max(max[i]-pt_box.min[i], pt_box.max[i]-max[i]));
-        ThrowAssert(delta >= 0.0);
+        STK_ThrowAssert(delta >= 0.0);
         SqrDistSideMin += delta*delta;
       }
       if (SqrDistMin==0.0 || SqrDistSideMin<SqrDistMin)

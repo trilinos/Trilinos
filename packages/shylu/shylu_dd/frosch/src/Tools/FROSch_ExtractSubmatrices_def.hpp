@@ -133,7 +133,7 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
 
 // "fillComplete" is quite expensive, and it seem to be cheaper to replace values each row at a time
-#if 0 //defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if 0 //defined(HAVE_XPETRA_TPETRA)
         if (globalMatrix->getRowMap()->lib() == UseTpetra) 
         {
             // NOTE: this fillComplete is expensive on GPUs
@@ -285,8 +285,9 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START(buildSubmatricesTime,"BuildSubmatrices");
         // We need four Maps
-        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
-        RCP<Map<LO,GO,NO> > mapILocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indI(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapILocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indI.size(),0,k->getRowMap()->getComm());
 
         Array<GO> indJ;
         for (unsigned i=0; i<k->getLocalNumRows(); i++) {
@@ -295,10 +296,10 @@ namespace FROSch {
             }
         }
 
-        RCP<Map<LO,GO,NO> > mapJ = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ(),0,k->getRowMap()->getComm());
-        RCP<Map<LO,GO,NO> > mapJLocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indJ.size(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapJ = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapJLocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ.size(),0,k->getRowMap()->getComm());
         RCP<const Map<LO,GO,NO> > colMap = k->getColMap();
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
         if (k->getRowMap()->lib() == UseTpetra) 
         {
             using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
@@ -534,8 +535,9 @@ namespace FROSch {
                        RCP<Matrix<SC,LO,GO,NO> > &kII)
     {
         FROSCH_DETAILTIMER_START(buildSubmatrixTime,"BuildSubmatrix");
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indI(),0,k->getRowMap()->getComm());
 
         kII = MatrixFactory<SC,LO,GO,NO>::Build(mapI,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
@@ -573,8 +575,9 @@ namespace FROSch {
                       RCP<CrsGraph<LO,GO,NO> > &kII)
     {
         FROSCH_DETAILTIMER_START(buildSubgraphTime,"BuildSubgraph");
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
+        RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indI(),0,k->getRowMap()->getComm());
 
         kII = CrsGraphFactory<LO,GO,NO>::Build(mapI,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();

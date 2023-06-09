@@ -380,21 +380,3 @@ TEUCHOS_UNIT_TEST( UQ_PCE_Serialization, FadPCEEmptyAll ) {
       x, *setup.fad_pce_serializer,
       std::string("UQ::PCE") + " Nested Empty All", out);
 }
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Kokkos::initialize();
-//  Kokkos::HostSpace::execution_space::initialize();
-//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::initialize();
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-//  Kokkos::HostSpace::execution_space::finalize();
-//  if (Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::finalize();
-
-  return res;
-}

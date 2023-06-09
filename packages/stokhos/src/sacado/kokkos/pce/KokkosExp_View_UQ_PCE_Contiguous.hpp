@@ -685,6 +685,35 @@ void deep_copy( const View<DT,DP...> & dst ,
   Kokkos::fence();
 }
 
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::Rank &&
+    std::is_same<typename ViewTraits<Args...>::specialize,
+                 Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v) {
+  return v;
+}
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::Rank &&
+        std::is_same<typename ViewTraits<T, Args...>::specialize,
+                     Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>) {
+  Kokkos::Impl::throw_runtime_exception(
+      "Trying to get at a View of the wrong rank");
+  return {};
+}
+
+}
+
 }
 
 //----------------------------------------------------------------------------
@@ -1368,6 +1397,7 @@ public:
     //  Only set the the pointer and initialize if the allocation is non-zero.
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
+      auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
 
       m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
                     m_impl_offset.span(), m_sacado_size );
@@ -1375,7 +1405,7 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_impl_handle.create_functor(
-        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        space
         , ctor_prop::initialize
         , m_impl_offset.span()
         , m_sacado_size
@@ -1383,6 +1413,7 @@ public:
 
       // Construct values
       record->m_destroy.construct_shared_allocation();
+      space.fence();
     }
 
     return record ;

@@ -6,6 +6,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_MeshHelpers.hpp>
+
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
@@ -18,16 +20,23 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_EntityIdPool.hpp>
-#include <Akri_MeshHelpers.hpp>
 #include <Akri_ParallelCommHelpers.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_Vec.hpp>
 #include <stk_util/environment/Env.hpp>
-#include "Akri_ReportHandler.hpp"
+#include <Akri_ReportHandler.hpp>
 
 namespace krino{
+
+size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank)
+{
+  size_t numEntities = stk::mesh::count_selected_entities(mesh.mesh_meta_data().locally_owned_part(), mesh.buckets(entityRank));
+  const size_t localNumEntities = numEntities;
+  stk::all_reduce_sum(mesh.parallel(), &localNumEntities, &numEntities, 1);
+  return numEntities;
+}
 
 template <class CONTAINER>
 class ContainerResizer
@@ -44,7 +53,7 @@ class ContainerResizer<std::array<T, SIZE>>
 {
 public:
   ContainerResizer(std::array<T, SIZE> & container) : myContainer(container) {}
-  void resize(size_t size) { ThrowRequire(SIZE == size); }
+  void resize(size_t size) { STK_ThrowRequire(SIZE == size); }
 private:
   std::array<T, SIZE> & myContainer;
 };
@@ -75,14 +84,14 @@ Vector3d get_side_normal(const stk::mesh::BulkData& mesh,
     const Vector3d v1(field_data<double>(coordsField, sideNodes[1]), 2);
     return crossZ(v1-v0).unit_vector();
   }
-  ThrowRequireMsg(false, "Unsupported topology " << sideTopology);
+  STK_ThrowRequireMsg(false, "Unsupported topology " << sideTopology);
 
   return Vector3d::ZERO;
 }
 
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode)
 {
-    ThrowAssert(bulkData.parallel_owner_rank(node)==bulkData.parallel_rank());
+    STK_ThrowAssert(bulkData.parallel_owner_rank(node)==bulkData.parallel_rank());
     bulkData.comm_procs(node, procsOwningSharingOrGhostingNode);
     procsOwningSharingOrGhostingNode.push_back(bulkData.parallel_rank());
 }
@@ -104,7 +113,7 @@ void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::
 
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, const int dim, std::vector<Vector3d> & elementNodeCoords)
 {
-  ThrowAssert(dim == 3 || dim == 2);
+  STK_ThrowAssert(dim == 3 || dim == 2);
   if (dim == 2)
     fill_element_node_coordinates<2>(mesh, element, coordsField, elementNodeCoords);
   else
@@ -121,7 +130,7 @@ void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::
 
 static std::array<krino::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
-  ThrowAssert(mesh.bucket(element).topology() == stk::topology::TETRAHEDRON_4);
+  STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TETRAHEDRON_4);
   std::array<krino::Vector3d,4> elementNodeCoords;
   fill_element_node_coordinates<3>(mesh, element, coordsField, elementNodeCoords);
   return elementNodeCoords;
@@ -129,7 +138,7 @@ static std::array<krino::Vector3d,4> gather_tet_coordinates(const stk::mesh::Bul
 
 static std::array<krino::Vector3d,3> gather_tri_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
-  ThrowAssert(mesh.bucket(element).topology() == stk::topology::TRIANGLE_3_2D);
+  STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TRIANGLE_3_2D);
   std::array<krino::Vector3d,3> elementNodeCoords;
   fill_element_node_coordinates<2>(mesh, element, coordsField, elementNodeCoords);
   return elementNodeCoords;
@@ -140,14 +149,31 @@ double compute_tri_volume(const std::array<krino::Vector3d,3> & elementNodeCoord
   return 0.5*(Cross(elementNodeCoords[1]-elementNodeCoords[0], elementNodeCoords[2]-elementNodeCoords[0]).length());
 }
 
+double compute_tri_volume(const krino::Vector3d * elementNodeCoords)
+{
+  return 0.5*(Cross(elementNodeCoords[1]-elementNodeCoords[0], elementNodeCoords[2]-elementNodeCoords[0]).length());
+}
+
+double compute_tri_volume(const std::array<krino::Vector2d,3> & elementNodeCoords)
+{
+  return 0.5 * (elementNodeCoords[0][0]*(elementNodeCoords[1][1] - elementNodeCoords[2][1]) +
+      elementNodeCoords[1][0]*(elementNodeCoords[2][1] - elementNodeCoords[0][1]) +
+      elementNodeCoords[2][0]*(elementNodeCoords[0][1] - elementNodeCoords[1][1]));
+}
+
 double compute_tet_volume(const std::array<krino::Vector3d,4> & elementNodeCoords)
+{
+  return Dot(elementNodeCoords[3]-elementNodeCoords[0],Cross(elementNodeCoords[1]-elementNodeCoords[0], elementNodeCoords[2]-elementNodeCoords[0]))/6.0;
+}
+
+double compute_tet_volume(const krino::Vector3d * elementNodeCoords)
 {
   return Dot(elementNodeCoords[3]-elementNodeCoords[0],Cross(elementNodeCoords[1]-elementNodeCoords[0], elementNodeCoords[2]-elementNodeCoords[0]))/6.0;
 }
 
 double compute_tri_or_tet_volume(const std::vector<krino::Vector3d> & elementNodeCoords)
 {
-  ThrowAssert(elementNodeCoords.size() == 4 || elementNodeCoords.size() == 3);
+  STK_ThrowAssert(elementNodeCoords.size() == 4 || elementNodeCoords.size() == 3);
   if (elementNodeCoords.size() == 4)
     return compute_tet_volume({{elementNodeCoords[0],elementNodeCoords[1],elementNodeCoords[2],elementNodeCoords[3]}});
   return compute_tri_volume({{elementNodeCoords[0],elementNodeCoords[1],elementNodeCoords[2]}});
@@ -163,7 +189,7 @@ static double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, stk::m
     return compute_tet_volume(elementNodeCoords);
   }
 
-  ThrowRequireMsg(elemTopology == stk::topology::TRIANGLE_3_2D, "Topology " << elemTopology << " not supported in compute_tri_or_tet_volume.");
+  STK_ThrowRequireMsg(elemTopology == stk::topology::TRIANGLE_3_2D, "Topology " << elemTopology << " not supported in compute_tri_or_tet_volume.");
   const auto elementNodeCoords = gather_tri_coordinates(mesh, element, coordsField);
   return compute_tri_volume(elementNodeCoords);
 }
@@ -194,14 +220,14 @@ void update_max_edge_lengths_squared(const CONTAINER & elementNodeCoords, double
 //--------------------------------------------------------------------------------
 
 double
-compute_maximum_element_size(stk::mesh::BulkData& mesh)
+compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector)
 {
   const unsigned ndim = mesh.mesh_meta_data().spatial_dimension();
   double max_sqr_edge_length = 0.0;
 
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
 
-  stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
+  stk::mesh::Selector locally_owned_selector = selector & mesh.mesh_meta_data().locally_owned_part();
 
   const stk::mesh::BucketVector & buckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, locally_owned_selector );
   std::vector<krino::Vector3d> elementNodeCoords;
@@ -219,6 +245,28 @@ compute_maximum_element_size(stk::mesh::BulkData& mesh)
   stk::all_reduce_max(mesh.parallel(), &local_max, &max_sqr_edge_length, 1);
 
   return std::sqrt(max_sqr_edge_length);
+}
+
+double
+compute_maximum_size_of_selected_elements_using_node(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity node)
+{
+  const unsigned ndim = mesh.mesh_meta_data().spatial_dimension();
+  double maxSqrEdgeLength = 0.0;
+
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+
+  std::vector<krino::Vector3d> elementNodeCoords;
+
+  for (auto && element : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
+  {
+    if (selector(mesh.bucket(element)))
+    {
+      fill_element_node_coordinates(mesh, element, coordsField, ndim, elementNodeCoords);
+      update_max_edge_lengths_squared(elementNodeCoords, maxSqrEdgeLength);
+    }
+  }
+
+  return std::sqrt(maxSqrEdgeLength);
 }
 
 //--------------------------------------------------------------------------------
@@ -275,7 +323,7 @@ void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeL
 
 static std::vector<stk::mesh::Entity> get_owned_nodes_with_nodal_volume_below_threshold(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
 {
-  ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
+  STK_ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
 
   // This would be more efficient if a nodal field was used because it could compute the element volume only once.
   std::vector<stk::mesh::Entity> ownedNodesWithNodalVolBelowThreshold;
@@ -309,7 +357,7 @@ static std::vector<stk::mesh::Entity> get_owned_nodes_with_nodal_volume_below_th
 
 static std::vector<stk::mesh::Entity> get_nodes_with_no_attached_elements(const stk::mesh::BulkData & mesh)
 {
-  ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
+  STK_ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
 
   std::vector<stk::mesh::Entity> nodesWithNoAttachedElements;
 
@@ -321,7 +369,6 @@ static std::vector<stk::mesh::Entity> get_nodes_with_no_attached_elements(const 
   return nodesWithNoAttachedElements;
 }
 
-static
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & entities,
     stk::CommSparse &commSparse)
@@ -341,7 +388,6 @@ void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh,
   });
 }
 
-static
 void unpack_shared_entities(const stk::mesh::BulkData & mesh,
     std::vector<stk::mesh::Entity> & sharedEntities,
     stk::CommSparse &commSparse)
@@ -355,7 +401,7 @@ void unpack_shared_entities(const stk::mesh::BulkData & mesh,
       stk::mesh::EntityKey entityKey;
       commSparse.recv_buffer(procId).unpack(entityKey);
       stk::mesh::Entity entity = mesh.get_entity(entityKey);
-      ThrowAssert(mesh.is_valid(entity));
+      STK_ThrowAssert(mesh.is_valid(entity));
       sharedEntities.push_back(entity);
     }
   });
@@ -384,9 +430,9 @@ void delete_node_and_all_entities_using_it(stk::mesh::BulkData & mesh, const stk
   {
     relatives.assign(mesh.begin(node, irank), mesh.end(node, irank));
     for (auto && relative : relatives)
-      ThrowRequire(mesh.destroy_entity(relative));
+      STK_ThrowRequire(mesh.destroy_entity(relative));
   }
-  ThrowRequire(mesh.destroy_entity(node));
+  STK_ThrowRequire(mesh.destroy_entity(node));
 }
 
 static void delete_nodes_and_all_entities_using_them(stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & nodesToDelete)
@@ -444,31 +490,74 @@ void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh
     sierra::Env::outputP0() << "Terminating after performing max iterations.  There still may be nodes with a nodal volume less than " << threshold << "." << std::endl;
 }
 
+template <class FIRST_CONTAINER_TYPE>
+inline
+void append_1st_container_to_end_of_2nd_vector(
+        const FIRST_CONTAINER_TYPE &firstContainer,
+        std::vector<typename FIRST_CONTAINER_TYPE::value_type> &targetVec)
+{
+    targetVec.insert(targetVec.end(), firstContainer.begin(), firstContainer.end());
+}
+
+void get_nodes_of_subentity(const stk::mesh::BulkData & bulk,
+    const stk::mesh::Entity entity,
+    const stk::mesh::EntityRank subEntityRank,
+    const stk::mesh::ConnectivityOrdinal subEntityOrdinal,
+    std::vector<stk::mesh::Entity> & subEntityNodes)
+{
+  const stk::mesh::Entity *entityNodeEntities = bulk.begin_nodes(entity);
+  const stk::topology entityTopology = bulk.bucket(entity).topology();
+  subEntityNodes.resize(entityTopology.sub_topology(subEntityRank,subEntityOrdinal).num_nodes());
+  entityTopology.sub_topology_nodes(entityNodeEntities, subEntityRank, subEntityOrdinal, subEntityNodes.data());
+}
+
+void get_nodes_of_element_side(const stk::mesh::BulkData & bulk,
+    const stk::mesh::Entity element,
+    const stk::mesh::ConnectivityOrdinal elementSideOrdinal,
+    std::vector<stk::mesh::Entity> & elementSideNodes)
+{
+  get_nodes_of_subentity(bulk, element, bulk.mesh_meta_data().side_rank(), elementSideOrdinal, elementSideNodes);
+}
+
+bool does_element_side_exist(stk::mesh::BulkData& mesh, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
+{
+  stk::mesh::Entity side = stk::mesh::Entity();
+  stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
+
+  unsigned elem_num_sides = mesh.num_connectivity(element, side_rank);
+  const stk::mesh::Entity * elem_sides = mesh.begin(element, side_rank);
+  const stk::mesh::ConnectivityOrdinal * elem_ord_it = mesh.begin_ordinals(element, side_rank);
+  for (unsigned i=0 ; i<elem_num_sides ; ++i)
+  {
+    if (elem_ord_it[i] == side_ordinal)
+    {
+      side = elem_sides[i];
+      break;
+    }
+  }
+
+  return mesh.is_valid(side);
+}
+
 //--------------------------------------------------------------------------------
 
 void
-batch_create_sides(stk::mesh::BulkData & mesh, const std::vector<SideRequest> & side_requests)
+batch_create_sides(stk::mesh::BulkData & mesh, const std::vector<SideDescription> & sideDescriptions)
 {
-  const stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
-
   if (!mesh.has_face_adjacent_element_graph())
   {
     mesh.initialize_face_adjacent_element_graph();
   }
 
   mesh.modification_begin();
-  for (auto && side_request : side_requests)
+  for (auto && sideDescription : sideDescriptions)
   {
-    stk::mesh::Entity element = side_request.element;
-    const unsigned element_side_ord = side_request.element_side_ordinal;
-
-    stk::mesh::Entity existing_element_side = find_entity_by_ordinal(mesh, element, side_rank, element_side_ord);
-    if (mesh.is_valid(existing_element_side))
+    if (mesh.is_valid(sideDescription.element))
     {
-      continue;
+      STK_ThrowAssertMsg(mesh.bucket(sideDescription.element).owned(), "Expecting owned entity");
+      if (!does_element_side_exist(mesh, sideDescription.element, sideDescription.elementSideOrdinal))
+          mesh.declare_element_side(sideDescription.element, sideDescription.elementSideOrdinal, sideDescription.sideParts);
     }
-
-    mesh.declare_element_side(element, element_side_ord, side_request.side_parts);
   }
   mesh.modification_end();
 
@@ -488,7 +577,7 @@ make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh)
   std::vector<stk::mesh::Entity> sides;
   stk::mesh::get_selected_entities( not_ghost_selector, mesh.buckets(side_rank), sides );
 
-  std::vector<SideRequest> side_requests;
+  std::vector<SideDescription> side_requests;
 
   mesh.modification_begin();
   for (auto&& side : sides)
@@ -496,7 +585,7 @@ make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh)
     const unsigned num_side_elems = mesh.num_elements(side);
     const stk::mesh::Entity* side_elems = mesh.begin_elements(side);
     const stk::mesh::ConnectivityOrdinal* side_elem_ordinals = mesh.begin_element_ordinals(side);
-    ThrowRequire(num_side_elems > 0);
+    STK_ThrowRequire(num_side_elems > 0);
     stk::mesh::EntityId newId = 0;
     for (unsigned i=0; i<num_side_elems; ++i)
     {
@@ -542,6 +631,30 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
 
 //--------------------------------------------------------------------------------
 
+template<typename T>
+void debug_write_entity_field_if_present(std::ostream & output, const stk::mesh::BulkData & mesh, const FieldRef field, const stk::mesh::Entity entity)
+{
+  field.field().sync_to_host();
+  if (field.entity_rank() == mesh.entity_rank(entity) && field.type_is<T>())
+  {
+    const auto * data = field_data<T>(field, entity);
+    if (nullptr != data)
+    {
+      const unsigned field_length = field.length();
+      if (1 == field_length)
+      {
+        output << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", value=" << *data << "\n";
+      }
+      else
+      {
+        output << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", values[] = ";
+        for (unsigned i = 0; i < field_length; ++i) output << data[i] << " ";
+        output << "\n";
+      }
+    }
+  }
+}
+
 static void
 debug_entity(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields)
 {
@@ -550,8 +663,8 @@ debug_entity(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh:
     output << "Invalid entity: " << mesh.entity_key(entity) << std::endl;
     return;
   }
-  output << mesh.entity_key(entity) << ", parallel owner = " << mesh.parallel_owner_rank(entity) << " {" << std::endl;
-  output << "  Connectivity:" << std::endl;
+  output << mesh.entity_key(entity) << ", parallel owner = " << mesh.parallel_owner_rank(entity) << " \n";
+  output << "  Connectivity:" << "\n";
   const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
   for (stk::mesh::EntityRank r = stk::topology::BEGIN_RANK; r < end_rank; ++r) {
     unsigned num_rels = mesh.num_connectivity(entity, r);
@@ -562,7 +675,7 @@ debug_entity(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh:
       output << " " << mesh.entity_key(rel_entities[i])
          << " @" << rel_ordinals[i];
       if (rel_permutations) output << ":" << (int)rel_permutations[i];
-      output << std::endl;
+      output << "\n";
     }
   }
   output << "  Parts: ";
@@ -572,58 +685,19 @@ debug_entity(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh:
     const stk::mesh::Part * const part = *part_iter;
     output << part->name() << " ";
   }
-  output << std::endl;
+  output << "\n";
 
   if (includeFields)
   {
-    const stk::mesh::FieldVector & all_fields = mesh.mesh_meta_data().get_fields();
-    for ( stk::mesh::FieldVector::const_iterator it = all_fields.begin(); it != all_fields.end() ; ++it )
+    for ( auto && fieldPtr : mesh.mesh_meta_data().get_fields())
     {
-      const FieldRef field = (const FieldRef)(**it);
+      const FieldRef field = *fieldPtr;
 
-      if(field.entity_rank()!=mesh.entity_rank(entity)) continue;
-
-      const unsigned field_length = field.length();
-
-      field.field().sync_to_host();
-      if (field.type_is<double>())
-      {
-        const double * data = field_data<double>(field, entity);
-        if (NULL != data)
-        {
-          if (1 == field_length)
-          {
-            output << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value=" << *data << std::endl;
-          }
-          else
-          {
-            for (unsigned i = 0; i < field_length; ++i)
-            {
-              output << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value[" << i << "]=" << data[i] << std::endl;
-            }
-          }
-        }
-      }
-      else if (field.type_is<int>())
-      {
-        const int * data = field_data<int>(field, entity);
-        if (NULL != data)
-        {
-          if (1 == field_length)
-          {
-            output << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value=" << *data << std::endl;
-          }
-          else
-          {
-            for (unsigned i = 0; i < field_length; ++i)
-            {
-              output << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value[" << i << "]=" << data[i] << std::endl;
-            }
-          }
-        }
-      }
+      debug_write_entity_field_if_present<double>(output, mesh, field, entity);
+      debug_write_entity_field_if_present<int>(output, mesh, field, entity);
+      debug_write_entity_field_if_present<uint64_t>(output, mesh, field, entity);
     }
-    output << std::endl;
+    output << "\n";
   }
 }
 
@@ -642,17 +716,21 @@ debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
 }
 
 static void
-debug_entity_1line(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
+debug_entity_1line(std::ostream & output, const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool omitSideRank)
 {
   if (!mesh.is_valid(entity))
   {
-    output << "Invalid entity: " << mesh.entity_key(entity) << std::endl;
+    output << "Invalid entity: " << mesh.entity_key(entity) << "\n";
     return;
   }
   output << mesh.entity_key(entity);
+  output << ",  Owner: " << mesh.parallel_owner_rank(entity);
   output << ",  Connectivity: ";
   const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-  for (stk::mesh::EntityRank r = stk::topology::BEGIN_RANK; r < end_rank; ++r) {
+  for (stk::mesh::EntityRank r = stk::topology::BEGIN_RANK; r < end_rank; ++r)
+  {
+    if (omitSideRank && r == mesh.mesh_meta_data().side_rank())
+      continue;
     unsigned num_rels = mesh.num_connectivity(entity, r);
     stk::mesh::Entity const *rel_entities = mesh.begin(entity, r);
     stk::mesh::ConnectivityOrdinal const *rel_ordinals = mesh.begin_ordinals(entity, r);
@@ -669,10 +747,10 @@ debug_entity_1line(std::ostream & output, const stk::mesh::BulkData & mesh, stk:
 }
 
 std::string
-debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
+debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool omitSideRank)
 {
   std::ostringstream out;
-  debug_entity_1line(out, mesh, entity);
+  debug_entity_1line(out, mesh, entity, omitSideRank);
   return out.str();
 }
 
@@ -722,7 +800,7 @@ get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permuta
 const stk::mesh::Part &
 find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
 {
-  ThrowAssert(mesh.entity_rank(elem) == stk::topology::ELEMENT_RANK);
+  STK_ThrowAssert(mesh.entity_rank(elem) == stk::topology::ELEMENT_RANK);
   const stk::mesh::Part * elem_io_part = nullptr;
 
   const stk::mesh::PartVector & elem_parts = mesh.bucket(elem).supersets();
@@ -732,11 +810,11 @@ find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK && part->subsets().empty() && part->topology() != stk::topology::INVALID_TOPOLOGY)
     {
       // there should only be one element rank part without subsets with topology on the element
-      ThrowRequireMsg(nullptr == elem_io_part, "For element " << mesh.identifier(elem) << ", more than one element rank part was found: " << elem_io_part->name() << " " << part->name());
+      STK_ThrowRequireMsg(nullptr == elem_io_part, "For element " << mesh.identifier(elem) << ", more than one element rank part was found: " << elem_io_part->name() << " " << part->name());
       elem_io_part = part;
     }
   }
-  ThrowRequire(NULL != elem_io_part);
+  STK_ThrowRequire(NULL != elem_io_part);
 
   return *elem_io_part;
 }
@@ -778,7 +856,7 @@ disconnect_and_destroy_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity enti
 
 bool
 check_induced_parts(const stk::mesh::BulkData & mesh)
-{ /* %TRACE[ON]% */ Trace trace__("krino::debug_induced_parts()"); /* %TRACE% */
+{
 
   // This method requires aura to work correctly.
   if (!mesh.is_automatic_aura_on() && mesh.parallel_size() > 1)
@@ -809,7 +887,7 @@ check_induced_parts(const stk::mesh::BulkData & mesh)
         for(stk::mesh::PartVector::const_iterator part_iter = entity_parts.begin(); part_iter != entity_parts.end(); ++part_iter)
         {
           const stk::mesh::Part * const entity_part = *part_iter;
-          if (entity_part->primary_entity_rank() == entity_rank)
+          if (entity_part->primary_entity_rank() == entity_rank && !entity_part->force_no_induce())
           {
             bool have_relative_missing_part = false;
             const unsigned num_relatives = mesh.num_connectivity(entity, relative_rank);
@@ -945,7 +1023,7 @@ check_shared_entity_nodes(const stk::mesh::BulkData & mesh, std::vector<stk::mes
       stk::mesh::Entity entity = *it_entity;
       std::vector<stk::mesh::Entity> entity_nodes(mesh.begin_nodes(entity), mesh.end_nodes(entity));
       stk::mesh::EntityKey entity_key = mesh.entity_key(entity);
-      ThrowRequire(mesh.bucket(entity).shared());
+      STK_ThrowRequire(mesh.bucket(entity).shared());
 
       mesh.shared_procs_intersection(entity_nodes, sharing_procs);
       for (size_t proc_index=0;proc_index<sharing_procs.size();++proc_index)
@@ -1050,7 +1128,7 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
         if (entity_elems.empty())
         {
           krinolog << "Relation error, entity not attached to any elements: " << stk::diag::dendl;
-          krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
+          krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
           success = false;
         }
 
@@ -1093,15 +1171,15 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
               if (!should_be_attached)
               {
                 krinolog << "Relation error, entity is attached to element, but should not be (due to coincident shell on side): " << stk::diag::dendl;
-                krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                 success = false;
               }
               if (already_attached)
               {
                 krinolog << "Relation error, entity attached to element more than once: " << stk::diag::dendl;
-                krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                 success = false;
               }
               else
@@ -1114,15 +1192,15 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
                 if (relationship.first != elem_ordinals[it_s])
                 {
                   krinolog << "Relation error, ordinal is incorrect: " << relationship.first << "!=" << elem_ordinals[it_s] << stk::diag::dendl;
-                  krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                  krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                  krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                  krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                   success = false;
                 }
                 if (relationship.second != elem_permutations[it_s])
                 {
                   krinolog << "Relation error, permutation is incorrect: " << relationship.second << "!=" << elem_permutations[it_s] << stk::diag::dendl;
-                  krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-                  krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+                  krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+                  krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
                   success = false;
                 }
               }
@@ -1132,14 +1210,14 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
           {
 
             krinolog << "Relation error, entity is not attached to element: " << stk::diag::dendl;
-            krinolog << "Entity: " << debug_entity(mesh, entity) << stk::diag::dendl;
-            krinolog << "Element: " << debug_entity(mesh, elem) << stk::diag::dendl;
+            krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
+            krinolog << "Element: " << debug_entity_1line(mesh, elem) << stk::diag::dendl;
             std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> relationship = determine_ordinal_and_permutation(mesh, elem, entity);
             for (unsigned it_s=0; it_s<num_elem_entities; ++it_s)
             {
               if (elem_ordinals[it_s] == relationship.first)
               {
-                krinolog << "Another side is already attached to this element with ordinal " << relationship.first << ": " << debug_entity(mesh, elem_entities[it_s]) << stk::diag::dendl;
+                krinolog << "Another side is already attached to this element with ordinal " << relationship.first << ": " << debug_entity_1line(mesh, elem_entities[it_s]) << stk::diag::dendl;
               }
             }
             success = false;
@@ -1153,7 +1231,7 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
 
 void
 attach_sides_to_elements(stk::mesh::BulkData & mesh)
-{/* %TRACE[ON]% */ Trace trace__("krino::Mesh::attach_sides_to_elements(stk::mesh::BulkData & mesh)"); /* %TRACE% */
+{
   stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
   std::vector<stk::mesh::Entity> entities;
@@ -1173,6 +1251,23 @@ static bool is_entity_attached_to_element(const stk::mesh::BulkData & mesh, cons
     if (elemEntity == entity)
       return true;
   return false;
+}
+
+void
+attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element)
+{
+  //Sorry! Passing these scratch vectors into stk's declare_relation function is
+  //a performance improvement (fewer allocations). But stk will try to clean up
+  //this ugliness soon. (i.e., find a better way to get the performance.)
+  stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+  //const auto & [ordinal, permutation] = determine_ordinal_and_permutation(mesh, element, entity);
+  const auto & ordinalAndPermutations = determine_ordinal_and_permutation(mesh, element, entity);
+  const auto & ordinal = ordinalAndPermutations.first;
+  const auto & permutation = ordinalAndPermutations.second;
+
+  mesh.declare_relation( element, entity, ordinal, permutation, scratch1, scratch2, scratch3 );
+  STK_ThrowRequireMsg(is_entity_attached_to_element(mesh, entityRank, entity, element),  "Could not attach " << debug_entity_1line(mesh,entity) << "  to element " << debug_entity_1line(mesh,element));
 }
 
 void
@@ -1222,7 +1317,7 @@ attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
         stk::topology elem_topology = mesh.bucket(elem).topology();
         if (elem_topology.is_shell() && elem_topology.num_nodes() == entity_topology.num_nodes())
         {
-          ThrowAssertMsg(shell_relationship.second == determine_permutation(mesh, elem, entity, shell_relationship.first), "All shells should have same permutation for side.");
+          STK_ThrowAssertMsg(shell_relationship.second == determine_permutation(mesh, elem, entity, shell_relationship.first), "All shells should have same permutation for side.");
           relationship = shell_relationship;
         }
         else
@@ -1250,7 +1345,7 @@ attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
         krinolog << "Attached " << debug_entity_1line(mesh,entity) << "\n";
         krinolog << "  to element " << debug_entity_1line(mesh,elem) << stk::diag::dendl;
       }
-      ThrowRequire(successfullyAttached);
+      STK_ThrowRequire(successfullyAttached);
     }
   }
 }
@@ -1355,115 +1450,59 @@ void destroy_custom_ghostings(stk::mesh::BulkData & mesh)
 
 //--------------------------------------------------------------------------------
 
-void
-delete_mesh_entities(stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & child_elems)
-{ /* %TRACE[ON]% */ Trace trace__("krino::Mesh::delete_old_mesh_entities(void)"); /* %TRACE% */
+bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::Entity entity)
+{
+  if(!mesh.is_valid(entity))
+    return false;
 
-  stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const stk::mesh::EntityRank entityRank = mesh.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(entityRank + 1); conRank <= endRank; ++conRank)
+    if(mesh.num_connectivity(entity, conRank) > 0)
+      return true;
 
-  stk::mesh::Selector not_ghost_selector = meta.locally_owned_part() | meta.globally_shared_part();
-  stk::mesh::Selector universal_selector = meta.universal_part();
+  return false;
+}
 
-  std::vector<stk::mesh::Entity> child_sides;
-  std::vector<stk::mesh::Entity> child_edges;
-  std::vector<stk::mesh::Entity> child_nodes;
+//--------------------------------------------------------------------------------
 
-  for (unsigned i=0; i<child_elems.size(); ++i)
+bool bucket_has_entity_rank_part(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket)
+{
+  for (auto && bucketPart : bucket.supersets())
+    if (bucketPart->primary_entity_rank() == bucket.entity_rank() && !stk::mesh::is_auto_declared_part(*bucketPart))
+      return true;
+  return false;
+}
+
+void delete_faces_and_edges_without_entity_rank_parts(stk::mesh::BulkData & mesh)
+{
+  std::vector<stk::mesh::Entity> entitiesToDelete;
+  for (stk::mesh::EntityRank entityRank : {stk::topology::FACE_RANK, stk::topology::EDGE_RANK})
   {
-    stk::mesh::Entity child = child_elems[i];
-    if (!mesh.is_valid(child)) continue;
-
-    const unsigned num_child_sides = mesh.num_connectivity(child,meta.side_rank());
-    const stk::mesh::Entity* this_child_sides = mesh.begin(child,meta.side_rank());
-    for (unsigned child_side_index=0; child_side_index<num_child_sides; ++child_side_index)
-    {
-      stk::mesh::Entity side = this_child_sides[child_side_index];
-      child_sides.push_back(side);
-    }
-
-    if (meta.spatial_dimension() == 3)
-    {
-      const unsigned num_child_edges = mesh.num_edges(child);
-      const stk::mesh::Entity* this_child_edges = mesh.begin_edges(child);
-      for (unsigned child_edge_index=0; child_edge_index<num_child_edges; ++child_edge_index)
-      {
-        stk::mesh::Entity edge = this_child_edges[child_edge_index];
-        child_edges.push_back(edge);
-      }
-    }
-
-    const unsigned num_child_nodes = mesh.num_nodes(child);
-    const stk::mesh::Entity* this_child_nodes = mesh.begin_nodes(child);
-    for (unsigned child_node_index=0; child_node_index<num_child_nodes; ++child_node_index)
-    {
-      stk::mesh::Entity node = this_child_nodes[child_node_index];
-      child_nodes.push_back(node);
-    }
-
-    if(krinolog.shouldPrint(LOG_DEBUG))
-      krinolog << "Destroying child, elem#" << mesh.identifier(child) << ":" << stk::diag::dendl;
-
-    ThrowRequireMsg(mesh.destroy_entity(child), "Failed to destroy entity" << mesh.entity_key(child));
+    for (auto && bucket : mesh.buckets(entityRank))
+      if (!bucket_has_entity_rank_part(mesh, *bucket))
+        entitiesToDelete.insert(entitiesToDelete.end(), bucket->begin(), bucket->end());
   }
 
-  for (unsigned i=0; i<child_sides.size(); ++i)
+  if(stk::is_true_on_any_proc(mesh.parallel(), !entitiesToDelete.empty()))
   {
-    stk::mesh::Entity side = child_sides[i];
-    if (mesh.is_valid(side))
+    mesh.modification_begin();
+    for (auto && entityToDelete : entitiesToDelete)
     {
-      const unsigned num_side_elements = mesh.num_elements(side);
-      if (0 == num_side_elements)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child side#" << mesh.identifier(side) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(side), "Failed to destroy entity" << mesh.entity_key(side));
-      }
-      else if(krinolog.shouldPrint(LOG_DEBUG))
-      {
-        krinolog << "Can't destroy child side#" << mesh.identifier(side) << ":" << stk::diag::dendl;
-      }
+      krinolog << "Deleting " << debug_entity_1line(mesh, entityToDelete) << stk::diag::dendl;
+      STK_ThrowRequireMsg(disconnect_and_destroy_entity(mesh, entityToDelete), "Could not destroy entity " << mesh.entity_key(entityToDelete));
     }
-  }
-
-  for (unsigned i=0; i<child_edges.size(); ++i)
-  {
-    stk::mesh::Entity edge = child_edges[i];
-    if (mesh.is_valid(edge))
-    {
-      const unsigned num_edge_elements = mesh.num_elements(edge);
-      if (0 == num_edge_elements)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child edge#" << mesh.identifier(edge) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(edge), "Failed to destroy entity" << mesh.entity_key(edge));
-      }
-    }
-  }
-
-  for (unsigned i=0; i<child_nodes.size(); ++i)
-  {
-    stk::mesh::Entity node = child_nodes[i];
-    if (mesh.is_valid(node))
-    {
-      const unsigned num_node_elements = mesh.num_elements(node);
-      if (0 == num_node_elements)
-      {
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "Destroying child node#" << mesh.identifier(node) << ":" << stk::diag::dendl;
-
-        ThrowRequireMsg(mesh.destroy_entity(node), "Failed to destroy entity" << mesh.entity_key(node));
-      }
-    }
+    mesh.modification_end();
   }
 }
+
+//--------------------------------------------------------------------------------
 
 double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entity child, stk::mesh::Entity parent0, stk::mesh::Entity parent1)
 {
   // if this function is not sufficiently precise or too expensive, then this position should be stored elsewhere
   const stk::mesh::Field<double> * const coords_field = reinterpret_cast<const stk::mesh::Field<double>*>(mesh.mesh_meta_data().coordinate_field());
-  ThrowRequireMsg(nullptr != coords_field, "Coordinates must be defined.");
+  STK_ThrowRequireMsg(nullptr != coords_field, "Coordinates must be defined.");
 
   double * child_coords = stk::mesh::field_data(*coords_field, child);
   double * parent0_coords = stk::mesh::field_data(*coords_field, parent0);
@@ -1496,7 +1535,7 @@ store_edge_node_parent_ids(const stk::mesh::BulkData & mesh,
   if (parent_id_field.type_is<unsigned>())
   {
     auto * stored_parent_ids = field_data<unsigned>(parent_id_field, edge_node_entity);
-    ThrowAssertMsg(stored_parent_ids, "Node " << mesh.identifier(edge_node_entity)
+    STK_ThrowAssertMsg(stored_parent_ids, "Node " << mesh.identifier(edge_node_entity)
         << " does not have the parent_ids field suggesting it is a mesh node.");
     stored_parent_ids[0] = parent0_id;
     stored_parent_ids[1] = parent1_id;
@@ -1504,14 +1543,14 @@ store_edge_node_parent_ids(const stk::mesh::BulkData & mesh,
   else if (parent_id_field.type_is<uint64_t>())
   {
     auto * stored_parent_ids = field_data<uint64_t>(parent_id_field, edge_node_entity);
-    ThrowAssertMsg(stored_parent_ids, "Node " << mesh.identifier(edge_node_entity)
+    STK_ThrowAssertMsg(stored_parent_ids, "Node " << mesh.identifier(edge_node_entity)
         << " does not have the parent_ids field suggesting it is a mesh node.");
     stored_parent_ids[0] = parent0_id;
     stored_parent_ids[1] = parent1_id;
   }
   else
   {
-    ThrowRequireMsg(false, "Unsupported field type for parent_node_ids_field");
+    STK_ThrowRequireMsg(false, "Unsupported field type for parent_node_ids_field");
   }
 }
 
@@ -1527,7 +1566,7 @@ get_edge_node_parent_ids(const stk::mesh::BulkData & mesh,
   if (parent_id_field.type_is<unsigned>())
   {
     const auto * stored_parent_ids = field_data<unsigned>(parent_id_field, edge_node_entity);
-    ThrowRequireMsg(stored_parent_ids, "No SubElementNode found for node " << mesh.identifier(edge_node_entity)
+    STK_ThrowRequireMsg(stored_parent_ids, "No SubElementNode found for node " << mesh.identifier(edge_node_entity)
         << ", but it does not have the parent_ids field suggesting it is a mesh node.");
     parent_ids[0] = stored_parent_ids[0];
     parent_ids[1] = stored_parent_ids[1];
@@ -1535,14 +1574,14 @@ get_edge_node_parent_ids(const stk::mesh::BulkData & mesh,
   else if (parent_id_field.type_is<uint64_t>())
   {
     const auto * stored_parent_ids = field_data<uint64_t>(parent_id_field, edge_node_entity);
-    ThrowRequireMsg(stored_parent_ids, "No SubElementNode found for node " << mesh.identifier(edge_node_entity)
+    STK_ThrowRequireMsg(stored_parent_ids, "No SubElementNode found for node " << mesh.identifier(edge_node_entity)
         << ", but it does not have the parent_ids field suggesting it is a mesh node.");
     parent_ids[0] = stored_parent_ids[0];
     parent_ids[1] = stored_parent_ids[1];
   }
   else
   {
-    ThrowRequireMsg(false, "Unsupported field type for parent_node_ids_field");
+    STK_ThrowRequireMsg(false, "Unsupported field type for parent_node_ids_field");
   }
   return parent_ids;
 }
@@ -1558,7 +1597,7 @@ void get_parent_nodes_from_child(const stk::mesh::BulkData & mesh,
     auto parent_ids = get_edge_node_parent_ids(mesh, parent_id_field, child);
     const stk::mesh::Entity parent0 = mesh.get_entity(stk::topology::NODE_RANK, parent_ids[0]);
     const stk::mesh::Entity parent1 = mesh.get_entity(stk::topology::NODE_RANK, parent_ids[1]);
-    ThrowRequire(mesh.is_valid(parent0) && mesh.is_valid(parent1));
+    STK_ThrowRequire(mesh.is_valid(parent0) && mesh.is_valid(parent1));
     get_parent_nodes_from_child(mesh, parent0, parent_id_field, parent_nodes);
     get_parent_nodes_from_child(mesh, parent1, parent_id_field, parent_nodes);
   }
@@ -1603,7 +1642,7 @@ void
 activate_selected_sides_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::Selector & side_selector, stk::mesh::Part & active_part)
 {
   // This method requires AURA
-  ThrowRequire(mesh.is_automatic_aura_on());
+  STK_ThrowRequire(mesh.is_automatic_aura_on());
 
   mesh.modification_begin();
   stk::mesh::PartVector active_part_vec(1, &active_part);
@@ -1656,7 +1695,7 @@ get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, st
     if (is_degenerate_side) continue;
 
     stk::mesh::get_entities_through_relations(mesh, elem_side_nodes, stk::topology::ELEMENT_RANK, elem_nbrs);
-    ThrowRequire(!elem_nbrs.empty());
+    STK_ThrowRequire(!elem_nbrs.empty());
 
     for (auto && nbr : elem_nbrs)
     {
@@ -1694,7 +1733,7 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
     std::vector<stk::mesh::Entity> & activeSideElements)
 {
   stk::mesh::get_entities_through_relations(mesh, sideNodes, stk::topology::ELEMENT_RANK, sideEntities);
-  ThrowRequire(!sideEntities.empty());
+  STK_ThrowRequire(!sideEntities.empty());
 
   activeSideElements.clear();
   for (auto && sideElement : sideEntities)
@@ -1713,19 +1752,19 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
     stk::mesh::get_entities_through_relations(mesh, sideNodes, mesh.mesh_meta_data().side_rank(), sideEntities);
     if (!sideEntities.empty())
     {
-      krinolog << "Sides using side nodes: " << stk::diag::dendl;
+      krinolog << "  Sides using side nodes: " << stk::diag::dendl;
       for (auto && side : sideEntities)
-        krinolog << debug_entity(mesh, side) << stk::diag::dendl;
+        krinolog << "    " << debug_entity_1line(mesh, side) << stk::diag::dendl;
     }
 
-    krinolog << "Elements using side nodes: " << stk::diag::dendl;
+    krinolog << "  Elements using side nodes: " << stk::diag::dendl;
     for (auto && sideElement : activeSideElements)
     {
-      krinolog << debug_entity(mesh, sideElement) << stk::diag::dendl;
+      krinolog << "    elem: " << debug_entity_1line(mesh, sideElement) << stk::diag::dendl;
       for (auto && elemSide : StkMeshEntities{mesh.begin(sideElement, sideRank), mesh.end(sideElement, sideRank)})
-        krinolog << debug_entity(mesh, elemSide) << stk::diag::dendl;
+        krinolog << "      elem side: " << debug_entity_1line(mesh, elemSide) << stk::diag::dendl;
       for (auto && elemNode : StkMeshEntities{mesh.begin_nodes(sideElement), mesh.end_nodes(sideElement)})
-        krinolog << debug_entity(mesh, elemNode) << stk::diag::dendl;
+        krinolog << "      elem node: " << debug_entity_1line(mesh, elemNode) << stk::diag::dendl;
     }
 
     if (activeSideElements.size() != 2)
@@ -1815,7 +1854,7 @@ check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Par
   {
     element_nodes.assign(mesh.begin_nodes(element), mesh.end_nodes(element));
     stk::mesh::get_entities_through_relations(mesh, element_nodes, stk::topology::ELEMENT_RANK, coincident_elements);
-    ThrowRequire(!coincident_elements.empty());
+    STK_ThrowRequire(!coincident_elements.empty());
     stk::topology element_topology = mesh.bucket(element).topology();
 
     bool coincident_element_error = false;
@@ -1831,7 +1870,7 @@ check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Par
       else
       {
         stk::EquivalentPermutation result = element_topology.is_equivalent(mesh.begin_nodes(coincident), element_nodes.data());
-        ThrowRequire(result.is_equivalent);
+        STK_ThrowRequire(result.is_equivalent);
         if (result.permutation_number != stk::mesh::DEFAULT_PERMUTATION)
         {
           err << "Elements " << mesh.entity_key(element) << " and " << mesh.entity_key(coincident)
@@ -1913,6 +1952,38 @@ fix_coincident_element_ownership(stk::mesh::BulkData & mesh)
   return global_made_moves;
 }
 
+static bool is_coincident_shell(const stk::topology elemTopology, const stk::topology entityTopology)
+{
+  return elemTopology.is_shell() && elemTopology.num_nodes() == entityTopology.num_nodes();
+}
+
+static bool has_coincident_shell(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const StkMeshEntities & entityElements)
+{
+  const stk::topology entityTopology = mesh.bucket(entity).topology();
+  for (auto elem : entityElements)
+    if (is_coincident_shell(mesh.bucket(elem).topology(), entityTopology))
+      return true;
+   return false;
+}
+
+static int determine_new_owner_for_owned_face_or_edge(const stk::mesh::BulkData & mesh, const stk::mesh::Entity faceOrEdge)
+{
+  const int currentOwner = mesh.parallel_rank();
+  int newOwner = mesh.parallel_size();
+  const StkMeshEntities entityElements{mesh.begin_elements(faceOrEdge), mesh.end_elements(faceOrEdge)};
+  const bool hasCoincidentShell = has_coincident_shell(mesh, faceOrEdge, entityElements);
+  const stk::topology entityTopology = mesh.bucket(faceOrEdge).topology();
+  for (auto elem : entityElements)
+  {
+    const bool doConsiderElement = !hasCoincidentShell || is_coincident_shell(mesh.bucket(elem).topology(), entityTopology);
+    const int elemOwner = mesh.parallel_owner_rank(elem);
+    if (doConsiderElement)
+      if (elemOwner == currentOwner) return currentOwner;
+    if (elemOwner < newOwner) newOwner = elemOwner;
+  }
+  return newOwner;
+}
+
 bool
 fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
 {
@@ -1923,46 +1994,94 @@ fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
     return false;
   }
 
-  stk::mesh::MetaData & meta = mesh.mesh_meta_data();
-  stk::mesh::Selector locally_owned_selector(meta.locally_owned_part());
+  const int parallelRank = mesh.parallel_rank();
+  stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
 
-  std::vector< stk::mesh::Entity> entities;
-  std::vector< stk::mesh::Entity> entity_elems;
+  std::vector<stk::mesh::EntityProc> entitiesToMove;
 
-  std::vector<stk::mesh::EntityProc> entities_to_move;
-
-  for (stk::mesh::EntityRank entity_rank = stk::topology::EDGE_RANK; entity_rank <= stk::topology::FACE_RANK; ++entity_rank)
+  for (auto && edgeOrFaceRank : {stk::topology::EDGE_RANK, stk::topology::FACE_RANK})
   {
-    stk::mesh::get_selected_entities( locally_owned_selector, mesh.buckets(entity_rank), entities );
-
-    for (auto && entity : entities)
+    for (auto && bucket : mesh.get_buckets( edgeOrFaceRank, locallyOwnedSelector ))
     {
-      entity_elems.assign(mesh.begin_elements(entity), mesh.end_elements(entity));
-      ThrowRequire(!entity_elems.empty());
-
-      int new_owner = mesh.parallel_size();
-      for (auto && entity_elem : entity_elems)
+      for ( auto && faceOrEdge : *bucket )
       {
-        const int elem_owner = mesh.parallel_owner_rank(entity_elem);
-        if (elem_owner < new_owner) new_owner = elem_owner;
-      }
-
-      if (new_owner != mesh.parallel_owner_rank(entity))
-      {
-        entities_to_move.push_back(stk::mesh::EntityProc(entity, new_owner));
+        const int newOwner = determine_new_owner_for_owned_face_or_edge(mesh, faceOrEdge);
+        if (newOwner != parallelRank)
+          entitiesToMove.push_back(stk::mesh::EntityProc(faceOrEdge, newOwner));
       }
     }
   }
 
-  const int local_made_moves = !entities_to_move.empty();
-  int global_made_moves = false;
-  stk::all_reduce_max(mesh.parallel(), &local_made_moves, &global_made_moves, 1);
-
-  if (global_made_moves)
+  if(stk::is_true_on_any_proc(mesh.parallel(), !entitiesToMove.empty()))
   {
-    mesh.change_entity_owner(entities_to_move);
+    mesh.change_entity_owner(entitiesToMove);
+    return true;
   }
-  return global_made_moves;
+
+  return false;
+}
+
+static int determine_new_owner_for_owned_node_to_assure_active_owned_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const stk::mesh::Part & activePart)
+{
+  const int currentOwner = mesh.parallel_rank();
+  int newOwner = mesh.parallel_size();
+  for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
+  {
+    if (mesh.bucket(elem).member(activePart))
+    {
+      const int elemOwner = mesh.parallel_owner_rank(elem);
+      if (elemOwner == currentOwner)
+        return currentOwner;
+      if (elemOwner < newOwner)
+        newOwner = elemOwner;
+    }
+  }
+  if (newOwner == mesh.parallel_size())
+    return currentOwner;
+  return newOwner;
+}
+
+bool
+fix_node_owners_to_assure_active_owned_element_for_node(stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart)
+{
+  // This method exploits aura to choose which processor the faces and edges should be owned by
+  if (!mesh.is_automatic_aura_on())
+  {
+    // Make no changes, hope for the best.
+    return false;
+  }
+
+  const int parallelRank = mesh.parallel_rank();
+  stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
+
+  std::vector<stk::mesh::EntityProc> entitiesToMove;
+
+  for (auto && bucket : mesh.get_buckets( stk::topology::NODE_RANK, locallyOwnedSelector ))
+  {
+    for ( auto && node : *bucket )
+    {
+      const int newOwner = determine_new_owner_for_owned_node_to_assure_active_owned_element(mesh, node, activePart);
+      if (newOwner != parallelRank)
+        entitiesToMove.push_back(stk::mesh::EntityProc(node, newOwner));
+    }
+  }
+
+  if(stk::is_true_on_any_proc(mesh.parallel(), !entitiesToMove.empty()))
+  {
+    mesh.change_entity_owner(entitiesToMove);
+    return true;
+  }
+
+  return false;
+}
+
+static int does_face_or_edge_have_an_element_with_the_same_owning_proc(const stk::mesh::BulkData & mesh, const stk::mesh::Entity faceOrEdge)
+{
+  int entityOwner = mesh.parallel_owner_rank(faceOrEdge);
+  for (auto elem : StkMeshEntities{mesh.begin_elements(faceOrEdge), mesh.end_elements(faceOrEdge)})
+    if (mesh.parallel_owner_rank(elem) == entityOwner)
+      return true;
+  return false;
 }
 
 bool
@@ -1975,59 +2094,39 @@ check_face_and_edge_ownership(const stk::mesh::BulkData & mesh)
     return true;
   }
 
-  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
-  stk::mesh::Selector locally_owned_selector(meta.locally_owned_part());
+  stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
 
-  std::vector< stk::mesh::Entity> entities;
-  std::vector< stk::mesh::Entity> entity_elems;
-  std::vector< stk::mesh::Entity> entity_nodes;
-
-  for (stk::mesh::EntityRank entity_rank = stk::topology::EDGE_RANK; entity_rank <= stk::topology::FACE_RANK; ++entity_rank)
+  bool error = false;
+  for (auto && edgeOrFaceRank : {stk::topology::EDGE_RANK, stk::topology::FACE_RANK})
   {
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets( entity_rank, locally_owned_selector );
-
-    stk::mesh::BucketVector::const_iterator ib = buckets.begin();
-    stk::mesh::BucketVector::const_iterator ib_end = buckets.end();
-
-    for ( ; ib != ib_end; ++ib )
+    for (auto && bucket : mesh.get_buckets( edgeOrFaceRank, locallyOwnedSelector ))
     {
-      const stk::mesh::Bucket & b = **ib;
-      const size_t length = b.size();
-      for (size_t it_entity = 0; it_entity < length; ++it_entity)
+      for ( auto && faceOrEdge : *bucket )
       {
-        stk::mesh::Entity entity = b[it_entity];
-        const int entity_owner = mesh.parallel_owner_rank(entity);
-
-        entity_nodes.assign(mesh.begin_nodes(entity), mesh.end_nodes(entity));
-        entity_elems.assign(mesh.begin_elements(entity), mesh.end_elements(entity));
-
-        bool have_element_on_owning_proc = false;
-        for (std::vector<stk::mesh::Entity>::iterator it_elem = entity_elems.begin(); it_elem != entity_elems.end(); ++it_elem)
+        if (!does_face_or_edge_have_an_element_with_the_same_owning_proc(mesh, faceOrEdge))
         {
-          if (mesh.parallel_owner_rank(*it_elem) == entity_owner)
-          {
-            have_element_on_owning_proc = true;
-            break;
-          }
+          error = true;
+          krinolog << "Error: " << mesh.entity_key(faceOrEdge)
+            << " is owned on processor " << mesh.parallel_owner_rank(faceOrEdge)
+            << " but does not have any elements that are owned on this processor.\n";
+          krinolog << debug_entity_1line(mesh, faceOrEdge) << "\n";
+          for (auto elem : StkMeshEntities{mesh.begin_elements(faceOrEdge), mesh.end_elements(faceOrEdge)})
+            krinolog << "  " << debug_entity_1line(mesh, elem) << "\n";
         }
-        ThrowRequireMsg(have_element_on_owning_proc, "Error: " << mesh.entity_key(entity)
-            << " is owned on processor " << entity_owner
-            << " but does not have any elements that are owned on this processor.");
       }
     }
   }
-  const bool success = true;
-  return success;
+  return !(stk::is_true_on_any_proc(mesh.parallel(), error));
 }
 
 bool
 set_region_id_on_unset_entity_and_neighbors(stk::mesh::BulkData & mesh, stk::mesh::Entity & entity, stk::mesh::EntityRank entity_rank, stk::mesh::FieldBase & region_id_field, const unsigned region_id)
 {
   unsigned * region_id_data = stk::mesh::field_data(reinterpret_cast<stk::mesh::Field<unsigned>&>(region_id_field), entity);
-  ThrowAssert(NULL != region_id_data);
+  STK_ThrowAssert(NULL != region_id_data);
   if (*region_id_data != 0)
   {
-    ThrowAssert(*region_id_data == region_id);
+    STK_ThrowAssert(*region_id_data == region_id);
     return false;
   }
 
@@ -2056,7 +2155,7 @@ set_region_id_on_unset_entity_and_neighbors(stk::mesh::BulkData & mesh, stk::mes
 
 void
 identify_isolated_regions(stk::mesh::Part & part, stk::mesh::FieldBase & region_id_field)
-{ /* %TRACE[ON]% */ Trace trace__("krino::Mesh::identify_isolated_portions_of_part(stk::mesh::Part & part)"); /* %TRACE% */
+{
   stk::mesh::BulkData & mesh = part.mesh_bulk_data();
   stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
@@ -2073,7 +2172,7 @@ identify_isolated_regions(stk::mesh::Part & part, stk::mesh::FieldBase & region_
     const stk::mesh::Bucket & b = **ib;
     const size_t length = b.size();
     unsigned * region_id = stk::mesh::field_data(reinterpret_cast<stk::mesh::Field<unsigned>&>(region_id_field), b);
-    ThrowAssert(NULL != region_id);
+    STK_ThrowAssert(NULL != region_id);
     std::fill(region_id, region_id+length, 0);
   }
 
@@ -2173,117 +2272,6 @@ stk::mesh::PartVector get_removable_parts(const stk::mesh::BulkData & mesh, cons
   return get_removable_parts(mesh, mesh.bucket(entity));
 }
 
-//--------------------------------------------------------------------------------
-bool is_refinement_child(const stk::mesh::BulkData & stk_bulk, const stk::mesh::Entity entity)
-{
-  const stk::mesh::EntityRank entity_rank = stk_bulk.entity_rank(entity);
-  const unsigned num_family_trees = stk_bulk.num_connectivity(entity, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = stk_bulk.begin(entity, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity ft = family_trees[ifamily];
-    const stk::mesh::Entity* family_tree_entities = stk_bulk.begin(ft, entity_rank);
-    if(family_tree_entities[0] != entity) return true;
-  }
-  return false;
-}
-
-void
-get_refinement_immediate_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children)
-{
-  children.clear();
-  stk::mesh::EntityRank entity_rank = stk_bulk.entity_rank(parent);
-  const unsigned num_family_trees = stk_bulk.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = stk_bulk.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = stk_bulk.begin(family_trees[ifamily], entity_rank);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      const unsigned num_family_tree_entities = stk_bulk.num_connectivity(family_trees[ifamily], entity_rank);
-      for (unsigned ichild=1; ichild < num_family_tree_entities; ++ichild)
-      {
-        children.push_back(family_tree_entities[ichild]);
-      }
-    }
-  }
-}
-
-//--------------------------------------------------------------------------------
-
-bool
-has_refinement_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity parent)
-{
-  stk::mesh::EntityRank entity_rank = stk_bulk.entity_rank(parent);
-  const unsigned num_family_trees = stk_bulk.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = stk_bulk.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = stk_bulk.begin(family_trees[ifamily], entity_rank);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-//--------------------------------------------------------------------------------
-
-namespace {
-void
-get_refinement_leaf_children(const stk::mesh::BulkData& stk_bulk, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & leaf_children)
-{
-  std::vector<stk::mesh::Entity> grand_children;
-  for (auto&& child : children)
-  {
-    get_refinement_immediate_children(stk_bulk, child, grand_children);
-    if (grand_children.empty())
-    {
-      leaf_children.push_back(child);
-    }
-    else
-    {
-      get_refinement_leaf_children(stk_bulk, grand_children, leaf_children);
-    }
-  }
-}
-
-void
-get_refinement_all_children(const stk::mesh::BulkData& stk_bulk, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & all_children)
-{
-  std::vector<stk::mesh::Entity> grand_children;
-  for (auto&& child : children)
-  {
-    get_refinement_immediate_children(stk_bulk, child, grand_children);
-    all_children.insert(all_children.end(), grand_children.begin(), grand_children.end()); 
-    get_refinement_all_children(stk_bulk, grand_children, all_children);
-  }
-}
-}
-
-//--------------------------------------------------------------------------------
-
-void
-get_refinement_leaf_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children)
-{
-  leaf_children.clear();
-  std::vector<stk::mesh::Entity> children;
-  get_refinement_immediate_children(stk_bulk, entity, children);
-  get_refinement_leaf_children(stk_bulk, children, leaf_children);
-}
-
-void
-get_refinement_all_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & all_children)
-{
-  std::vector<stk::mesh::Entity> children;
-  get_refinement_immediate_children(stk_bulk, entity, children);
-  all_children = children;
-  get_refinement_all_children(stk_bulk, children, all_children);
-}
-
 void set_relation_permutation(stk::mesh::BulkData & mesh, stk::mesh::Entity from, stk::mesh::Entity to, stk::mesh::ConnectivityOrdinal to_ord, stk::mesh::Permutation to_permutation)
 {
   const stk::mesh::EntityRank from_rank = mesh.entity_rank(from);
@@ -2325,7 +2313,7 @@ determine_shell_side_ordinal_and_permutation(const stk::mesh::BulkData & mesh, s
   // We will figure out what the ordinal for this shell-side relation based on the existing
   // connectivity of the side.
   const unsigned num_side_elems = mesh.num_elements(side);
-  ThrowRequireMsg(num_side_elems > 0, "Cannot determine shell_side_ordinal for completely disconnected side.");
+  STK_ThrowRequireMsg(num_side_elems > 0, "Cannot determine shell_side_ordinal for completely disconnected side.");
 
   stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
   stk::topology side_topology = mesh.bucket(side).topology();
@@ -2340,18 +2328,18 @@ determine_shell_side_ordinal_and_permutation(const stk::mesh::BulkData & mesh, s
     if (mesh.bucket(elem).topology().is_shell())
     {
       const auto shell_relationship = std::make_pair(side_elem_ordinals[it],side_elem_permutations[it]);
-      ThrowRequireMsg(0==it || shell_relationship == result, "Side is inconsistently attached to a shell.");
+      STK_ThrowRequireMsg(0==it || shell_relationship == result, "Side is inconsistently attached to a shell.");
       result = shell_relationship;
     }
     else
     {
       const stk::mesh::ConnectivityOrdinal ordinal = side_elem_ordinals[it];
       stk::EquivalentPermutation equiv = stk::mesh::sub_rank_equivalent(mesh, elem, ordinal, side_rank, mesh.begin_nodes(shell));
-      ThrowRequireMsg(equiv.is_equivalent, "Logic error in figuring out element-side connectivity.");
+      STK_ThrowRequireMsg(equiv.is_equivalent, "Logic error in figuring out element-side connectivity.");
       const stk::mesh::ConnectivityOrdinal shell_side_ordinal = (side_topology.is_positive_polarity(equiv.permutation_number)) ? stk::mesh::ConnectivityOrdinal(1) : stk::mesh::ConnectivityOrdinal(0);
       const stk::mesh::Permutation shell_side_perm = determine_permutation(mesh, shell, side, shell_side_ordinal);
       const auto shell_relationship = std::make_pair(shell_side_ordinal, shell_side_perm);
-      ThrowRequireMsg(0==it || shell_relationship == result, "Side is inconsistently attached to a volume element.");
+      STK_ThrowRequireMsg(0==it || shell_relationship == result, "Side is inconsistently attached to a volume element.");
       result = shell_relationship;
     }
   }
@@ -2362,14 +2350,14 @@ stk::mesh::Permutation
 determine_permutation(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity relative, const stk::mesh::ConnectivityOrdinal ordinal)
 {
   const stk::mesh::EntityRank relative_rank = mesh.entity_rank(relative);
-  ThrowAssert(mesh.entity_rank(entity) > relative_rank);
+  STK_ThrowAssert(mesh.entity_rank(entity) > relative_rank);
 
   const stk::mesh::Entity * relative_nodes = mesh.begin_nodes(relative);
 
   const stk::EquivalentPermutation equiv = stk::mesh::sub_rank_equivalent(mesh, entity, ordinal, relative_rank, relative_nodes);
   if(!equiv.is_equivalent)
   {
-    ThrowErrorMsg("Could not find connection between " << mesh.entity_key(entity) <<" and "
+    STK_ThrowErrorMsg("Could not find connection between " << mesh.entity_key(entity) <<" and "
         << mesh.entity_key(relative) << " with ordinal " << ordinal
         << debug_entity(mesh, entity) << debug_entity(mesh, relative));
   }
@@ -2381,9 +2369,9 @@ std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
 determine_ordinal_and_permutation(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity relative)
 {
   const stk::mesh::EntityRank relative_rank = mesh.entity_rank(relative);
-  ThrowAssert(mesh.entity_rank(entity) > relative_rank);
+  STK_ThrowAssert(mesh.entity_rank(entity) > relative_rank);
   stk::topology relative_topology = mesh.bucket(relative).topology();
-  ThrowAssert(relative_topology.num_nodes() == mesh.num_nodes(relative));
+  STK_ThrowAssert(relative_topology.num_nodes() == mesh.num_nodes(relative));
 
   const stk::mesh::Entity * relative_nodes = mesh.begin_nodes(relative);
 
@@ -2403,6 +2391,54 @@ determine_ordinal_and_permutation(const stk::mesh::BulkData & mesh, const stk::m
     }
   }
   ThrowRuntimeError("Could not find connection between " << mesh.entity_key(entity) << " and " << mesh.entity_key(relative) << debug_entity(mesh, entity) << debug_entity(mesh, relative));
+}
+
+static
+void pack_owned_entities_for_ghosting_procs(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & entities,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> elemCommProcs;
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto entity : entities)
+    {
+      if (mesh.bucket(entity).owned())
+      {
+        mesh.comm_procs(entity, elemCommProcs);
+        for (int procId : elemCommProcs)
+          if (procId != commSparse.parallel_rank())
+            commSparse.send_buffer(procId).pack(mesh.entity_key(entity));
+      }
+    }
+  });
+}
+
+static
+void unpack_ghosted_entities_from_owners(const stk::mesh::BulkData & mesh,
+    std::vector<stk::mesh::Entity> & entities,
+    stk::CommSparse &commSparse)
+{
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityKey entityKey;
+      commSparse.recv_buffer(procId).unpack(entityKey);
+      stk::mesh::Entity entity = mesh.get_entity(entityKey);
+      STK_ThrowRequire(mesh.is_valid(entity));
+      entities.push_back(entity);
+    }
+  });
+}
+
+void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_owned_entities_for_ghosting_procs(mesh, entities, commSparse);
+  unpack_ghosted_entities_from_owners(mesh, entities, commSparse);
 }
 
 } // namespace krino

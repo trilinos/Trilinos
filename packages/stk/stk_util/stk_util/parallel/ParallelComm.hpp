@@ -42,6 +42,7 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternBlocking.hpp"  // for DataExchangeUnknownPatternBlocking
 #include "stk_util/parallel/CommBuffer.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
+#include <stddef.h>
 #include <cstddef>                          // for size_t, ptrdiff_t
 #include <map>                              // for map
 #include <stdexcept>                        // for runtime_error
@@ -57,6 +58,7 @@ public:
   ParallelMachine parallel()      const { return m_comm ; }
   int             parallel_size() const { return m_size ; }
   int             parallel_rank() const { return m_rank ; }
+  int             root_rank() const { return m_root_rank; }
 
   /** Obtain the message buffer for the root_rank processor */
   CommBuffer & send_buffer();
@@ -87,6 +89,17 @@ private:
   CommBuffer      m_buffer ;
 };
 
+template<typename PACK_ALGORITHM>
+bool pack_and_communicate(CommBroadcast & comm, const PACK_ALGORITHM & algorithm)
+{
+  algorithm();
+  comm.allocate_buffer();
+  algorithm();
+  comm.communicate();
+
+  return (comm.parallel_rank() == comm.root_rank() && comm.send_buffer().capacity() > 0)
+      || (comm.parallel_rank() != comm.root_rank() && comm.recv_buffer().capacity() > 0);
+}
 
 std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
 
@@ -114,7 +127,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &sendLists,
     MPI_Comm_size(mpiCommunicator, &num_procs);
     int my_proc;
     MPI_Comm_rank(mpiCommunicator, &my_proc);
-    ThrowRequire((unsigned int) num_procs == sendLists.size() && (unsigned int) num_procs == recvLists.size());
+    STK_ThrowRequire((unsigned int) num_procs == sendLists.size() && (unsigned int) num_procs == recvLists.size());
     int class_size = sizeof(T);
     //
     //  Determine number of items each other processor will send to the current processor
@@ -147,8 +160,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &sendLists,
     }
     for(int iproc = 0; iproc < num_procs; ++iproc) {
       if(recvLists[iproc].size() > 0) {
-        MPI_Status status;
-        MPI_Wait( &recv_handles[iproc], &status );
+        MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
       }
     }
   }
@@ -177,30 +189,33 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   //  Send the actual messages as raw byte streams.
   //
   std::vector<MPI_Request> recv_handles(num_procs);
+  std::vector<MPI_Request> send_handles(num_procs);
+  int numRecvs = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     recv_lists[iproc].resize(send_lists[iproc].size());
     if(recv_lists[iproc].size() > 0) {
       char* recv_buffer = (char*)recv_lists[iproc].data();
       int recv_size = recv_lists[iproc].size()*class_size;
       MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
+                iproc, msg_tag, mpi_communicator, &recv_handles[numRecvs++]);
     }
   }
-  MPI_Barrier(mpi_communicator);
+  if (stk::util::get_common_coupling_version() <= 11) {
+    MPI_Barrier(mpi_communicator);
+  }
+
+  int numSends = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
       char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
+      MPI_Isend(send_buffer, send_size, MPI_CHAR,
+                iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
     }
   }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
+
+  MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+  MPI_Waitall(numRecvs, recv_handles.data(), MPI_STATUSES_IGNORE);
 #endif
 }
 
@@ -221,33 +236,33 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
   //  Send the actual messages as raw byte streams.
   //
   std::vector<MPI_Request> recv_handles(num_procs);
+  std::vector<MPI_Request> send_handles(num_procs);
+  int numRecvs = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
     if(recvSize > 0) {
       char* recvBuffer = (char*)(&recvData[recvOffsets[iproc]]);
       const int recvSizeBytes = recvSize*bytesPerScalar;
-      MPI_Irecv(recvBuffer, recvSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
+      MPI_Irecv(recvBuffer, recvSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[numRecvs++]);
     }
   }
 
-  MPI_Barrier(mpi_communicator);
+  if (stk::util::get_common_coupling_version() <= 11) {
+    MPI_Barrier(mpi_communicator);
+  }
 
+  int numSends = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     const int sendSize = sendOffsets[iproc+1]-sendOffsets[iproc];
     if(sendSize > 0) {
       char* sendBuffer = (char*)(&sendData[sendOffsets[iproc]]);
       const int sendSizeBytes = sendSize*bytesPerScalar;
-      MPI_Send(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator);
+      MPI_Isend(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
     }
   }
 
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
-    if(recvSize > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
+  MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+  MPI_Waitall(numRecvs, recv_handles.data(), MPI_STATUSES_IGNORE);
 #endif
 }
 
@@ -281,16 +296,24 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
       MPI_Irecv(&recv_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
     }
   }
-  MPI_Barrier(mpi_communicator);
+
+  if (stk::util::get_common_coupling_version() <= 11) {
+    MPI_Barrier(mpi_communicator);
+  }
+
+  int numSends = 0;
+  std::vector<MPI_Request> send_handles(num_procs);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size()>0) {
-      MPI_Send(&send_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator);
+      MPI_Isend(&send_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
     }
   }
+
+  MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
       recv_lists[iproc].resize(recv_msg_sizes[iproc]);
     }
   }
@@ -305,19 +328,26 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
                 iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
     }
   }
-  MPI_Barrier(mpi_communicator);
+
+  if (stk::util::get_common_coupling_version() <= 11) {
+    MPI_Barrier(mpi_communicator);
+  }
+
+  numSends = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
       char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
+      MPI_Isend(send_buffer, send_size, MPI_CHAR,
+               iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
     }
   }
+
+  MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
+      MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
     }
   }
 #endif
@@ -339,7 +369,6 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   std::vector<std::vector<T> > recv_data(num_comm_procs);
   std::vector<MPI_Request> send_requests(num_comm_procs);
   std::vector<MPI_Request> recv_requests(num_comm_procs);
-  std::vector<MPI_Status> statuses(num_comm_procs);
 
   for(int i=0; i<num_comm_procs; ++i) {
     int iproc = comm_procs[i];
@@ -353,19 +382,18 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
   }
 
-  MPI_Status status;
   for(int i = 0; i < num_comm_procs; ++i) {
       int idx = i;
       if (deterministic) {
-          MPI_Wait(&recv_requests[i], &status);
+          MPI_Wait(&recv_requests[i], MPI_STATUS_IGNORE);
       }   
       else {
-          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
+          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, MPI_STATUS_IGNORE);
       }   
       unpack_msg(comm_procs[idx], recv_data[idx]);
   }
 
-  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
+  MPI_Waitall(num_comm_procs, send_requests.data(), MPI_STATUSES_IGNORE);
 #endif
 }
 

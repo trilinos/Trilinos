@@ -189,7 +189,7 @@ TEST_CASE_METHOD(CatalystTestFixture, "ImagesetInvalidCameraShortcut", "[imageSe
       begin camera fooCamera
       end camera
       begin imageset foo
-        look at absolute point = 1 2 3 
+        look at absolute point = 1 2 3
         camera = fooCamera
       end imageset
     end

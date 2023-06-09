@@ -103,7 +103,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   
-#include <MueLu_UseShortNames.hpp>   
+#include <MueLu_UseShortNames.hpp>
     Xpetra::Parameters            xpetraParameters(clp);
     int  optNmults         = 1;     clp.setOption("nmults",               &optNmults,           "number of matrix matrix multiplies to perform");
 

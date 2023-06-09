@@ -63,6 +63,11 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
 
   stkIo.populate_bulk_data();
 
+  if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
+    const int numTimeSteps = stkIo.get_num_time_steps();
+    stkIo.read_defined_input_fields_at_step(numTimeSteps, nullptr);
+  }
+
   if(stkIo.check_integer_size_requirements() == 8) {
     bulkData.set_large_ids_flag(true);
   }
@@ -108,6 +113,7 @@ void BalanceIO::write(BalanceMesh& mesh)
   outputBroker.use_simple_fields();
   outputBroker.set_bulk_data(mesh.get_bulk());
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
+  m_inputBroker.cache_entity_list_for_transient_steps(true);
 
   stk::transfer_utils::TransientFieldTransferById transfer(m_inputBroker, outputBroker);
   transfer.transfer_and_write_transient_fields(m_settings.get_output_filename());

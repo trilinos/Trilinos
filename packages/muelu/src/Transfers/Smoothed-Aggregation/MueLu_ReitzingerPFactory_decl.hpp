@@ -52,25 +52,15 @@
 
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
 
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
@@ -92,7 +82,7 @@ namespace MueLu {
      A        | Factory | null |   | * | * | Generating factory of the matrix A
      P        | Factory | null |   | * | * | Generating factory of the nodal Prolongator
      D0       | Factory | null |   | * | * | Generating factory of the discrete gradient operator
-     NodeMatrix  | Factory | null |   | * | * | Generating factory of the nodal A matrix    
+     NodeMatrix  | Factory | null |   | * | * | Generating factory of the nodal A matrix
 
     The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
     The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see ReitzingerPFactory::GetValidParameters).<br>
@@ -140,7 +130,7 @@ template <class Scalar = DefaultScalar,
     //@{
 
     void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const; 
+    void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 

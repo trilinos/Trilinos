@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_SORT_HPP_
 #define KOKKOS_SORT_HPP_
@@ -50,8 +22,49 @@
 #endif
 
 #include <Kokkos_Core.hpp>
-
+#include <Kokkos_NestedSort.hpp>
+#include <std_algorithms/Kokkos_BeginEnd.hpp>
 #include <algorithm>
+
+#if defined(KOKKOS_ENABLE_CUDA)
+
+// Workaround for `Instruction 'shfl' without '.sync' is not supported on
+// .target sm_70 and higher from PTX ISA version 6.4`.
+// Also see https://github.com/NVIDIA/cub/pull/170.
+#if !defined(CUB_USE_COOPERATIVE_GROUPS)
+#define CUB_USE_COOPERATIVE_GROUPS
+#endif
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
+#if defined(KOKKOS_COMPILER_CLANG)
+// Some versions of Clang fail to compile Thrust, failing with errors like
+// this:
+//    <snip>/thrust/system/cuda/detail/core/agent_launcher.h:557:11:
+//    error: use of undeclared identifier 'va_printf'
+// The exact combination of versions for Clang and Thrust (or CUDA) for this
+// failure was not investigated, however even very recent version combination
+// (Clang 10.0.0 and Cuda 10.0) demonstrated failure.
+//
+// Defining _CubLog here locally allows us to avoid that code path, however
+// disabling some debugging diagnostics
+#pragma push_macro("_CubLog")
+#ifdef _CubLog
+#undef _CubLog
+#endif
+#define _CubLog
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#pragma pop_macro("_CubLog")
+#else
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#endif
+
+#pragma GCC diagnostic pop
+
+#endif
 
 namespace Kokkos {
 
@@ -265,8 +278,8 @@ class BinSort {
   //----------------------------------------
   // Create the permutation vector, the bin_offset array and the bin_count
   // array. Can be called again if keys changed
-  template <class ExecutionSpace = exec_space>
-  void create_permute_vector(const ExecutionSpace& exec = exec_space{}) {
+  template <class ExecutionSpace>
+  void create_permute_vector(const ExecutionSpace& exec) {
     static_assert(
         Kokkos::SpaceAccessibility<ExecutionSpace,
                                    typename Space::memory_space>::accessible,
@@ -295,6 +308,15 @@ class BinSort {
           Kokkos::RangePolicy<ExecutionSpace, bin_sort_bins_tag>(
               exec, 0, bin_op.max_bins()),
           *this);
+  }
+
+  // Create the permutation vector, the bin_offset array and the bin_count
+  // array. Can be called again if keys changed
+  void create_permute_vector() {
+    Kokkos::fence("Kokkos::Binsort::create_permute_vector: before");
+    exec_space e{};
+    create_permute_vector(e);
+    e.fence("Kokkos::Binsort::create_permute_vector: after");
   }
 
   // Sort a subset of a view with respect to the first dimension using the
@@ -372,9 +394,10 @@ class BinSort {
   template <class ValuesViewType>
   void sort(ValuesViewType const& values, int values_range_begin,
             int values_range_end) const {
+    Kokkos::fence("Kokkos::Binsort::sort: before");
     exec_space exec;
     sort(exec, values, values_range_begin, values_range_end);
-    exec.fence("Kokkos::Sort: fence after sorting");
+    exec.fence("Kokkos::BinSort:sort: after");
   }
 
   template <class ExecutionSpace, class ValuesViewType>
@@ -549,24 +572,6 @@ struct BinOp3D {
 
 namespace Impl {
 
-template <class ViewType, class ExecutionSpace>
-bool try_std_sort(ViewType view, const ExecutionSpace& exec) {
-  bool possible    = true;
-  size_t stride[8] = {view.stride_0(), view.stride_1(), view.stride_2(),
-                      view.stride_3(), view.stride_4(), view.stride_5(),
-                      view.stride_6(), view.stride_7()};
-  possible         = possible &&
-             SpaceAccessibility<HostSpace,
-                                typename ViewType::memory_space>::accessible;
-  possible = possible && (ViewType::Rank == 1);
-  possible = possible && (stride[0] == 1);
-  if (possible) {
-    exec.fence("Kokkos::sort: Fence before sorting on the host");
-    std::sort(view.data(), view.data() + view.extent(0));
-  }
-  return possible;
-}
-
 template <class ViewType>
 struct min_max_functor {
   using minmax_scalar =
@@ -584,9 +589,14 @@ struct min_max_functor {
 
 }  // namespace Impl
 
-template <class ExecutionSpace, class ViewType>
-std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value> sort(
-    const ExecutionSpace& exec, ViewType const& view) {
+template <class ExecutionSpace, class DataType, class... Properties>
+std::enable_if_t<(Kokkos::is_execution_space<ExecutionSpace>::value) &&
+                 (!SpaceAccessibility<
+                     HostSpace, typename Kokkos::View<DataType, Properties...>::
+                                    memory_space>::accessible)>
+sort(const ExecutionSpace& exec,
+     const Kokkos::View<DataType, Properties...>& view) {
+  using ViewType = Kokkos::View<DataType, Properties...>;
   using CompType = BinOp1D<ViewType>;
 
   Kokkos::MinMaxScalar<typename ViewType::non_const_value_type> result;
@@ -624,38 +634,35 @@ std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value> sort(
   bin_sort.sort(exec, view);
 }
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
-template <class ExecutionSpace, class ViewType>
-KOKKOS_DEPRECATED_WITH_COMMENT(
-    "Use the overload not taking bool always_use_kokkos_sort")
-std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value> sort(
-    const ExecutionSpace& exec, ViewType const& view,
-    bool const always_use_kokkos_sort) {
-  if (!always_use_kokkos_sort && Impl::try_std_sort(view, exec)) {
-    return;
-  } else {
-    sort(exec, view);
-  }
+template <class ExecutionSpace, class DataType, class... Properties>
+std::enable_if_t<(Kokkos::is_execution_space<ExecutionSpace>::value) &&
+                 (SpaceAccessibility<
+                     HostSpace, typename Kokkos::View<DataType, Properties...>::
+                                    memory_space>::accessible)>
+sort(const ExecutionSpace&, const Kokkos::View<DataType, Properties...>& view) {
+  auto first = Experimental::begin(view);
+  auto last  = Experimental::end(view);
+  std::sort(first, last);
+}
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <class DataType, class... Properties>
+void sort(const Cuda& space,
+          const Kokkos::View<DataType, Properties...>& view) {
+  const auto exec = thrust::cuda::par.on(space.cuda_stream());
+  auto first      = Experimental::begin(view);
+  auto last       = Experimental::end(view);
+  thrust::sort(exec, first, last);
 }
 #endif
 
 template <class ViewType>
 void sort(ViewType const& view) {
+  Kokkos::fence("Kokkos::sort: before");
   typename ViewType::execution_space exec;
   sort(exec, view);
-  exec.fence("Kokkos::Sort: fence after sorting");
+  exec.fence("Kokkos::sort: fence after sorting");
 }
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
-template <class ViewType>
-KOKKOS_DEPRECATED_WITH_COMMENT(
-    "Use the overload not taking bool always_use_kokkos_sort")
-void sort(ViewType const& view, bool const always_use_kokkos_sort) {
-  typename ViewType::execution_space exec;
-  sort(exec, view, always_use_kokkos_sort);
-  exec.fence("Kokkos::Sort: fence after sorting");
-}
-#endif
 
 template <class ExecutionSpace, class ViewType>
 std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value> sort(
@@ -682,6 +689,7 @@ std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value> sort(
 
 template <class ViewType>
 void sort(ViewType view, size_t const begin, size_t const end) {
+  Kokkos::fence("Kokkos::sort: before");
   typename ViewType::execution_space exec;
   sort(exec, view, begin, end);
   exec.fence("Kokkos::Sort: fence after sorting");

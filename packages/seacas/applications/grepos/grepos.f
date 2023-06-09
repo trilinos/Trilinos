@@ -57,7 +57,7 @@ C     --   none
       include 'gp_attrot.blk'
       INCLUDE 'argparse.inc'
 
-      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX
+      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX, HELP
       CHARACTER*80 SCRSTR
 
 C... String containing name of common element topology in model
@@ -100,10 +100,13 @@ C     --A - the dynamic numeric memory base array
 C .. Get filename from command line.  If not specified, emit error message
       SYNTAX =
      *  'Syntax is: "grepos [-name_length len] [-64] file_in file_out"'
+      HELP = 'Documentation: https://sandialabs.github.io' //
+     $     '/seacas-docs/sphinx/html/index.html#grepos'
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+        CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
         GOTO 60
       end if
 
@@ -125,6 +128,7 @@ C ... Parse options...
             SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
             CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
             CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+            CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
           end if
           if (iarg .gt. narg-2) exit
         end do

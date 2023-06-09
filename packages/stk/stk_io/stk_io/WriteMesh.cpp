@@ -6,8 +6,6 @@
 #include "Ioss_Field.h"                // for Field, Field::RoleType, Field:...
 #include "Ioss_Property.h"             // for Property
 #include "Ioss_Region.h"               // for Region
-#include "Teuchos_RCP.hpp"             // for RCP::operator->
-#include "Teuchos_RCPDecl.hpp"         // for RCP
 #include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose
 #include "stk_io/IossBridge.hpp"       // for get_field_role
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
@@ -40,7 +38,7 @@ void write_mesh(const std::string &filename,
     size_t outputFileIndex = ioBroker.create_output_mesh(filename, databasePurpose);
     ioBroker.write_output_mesh(outputFileIndex);
 
-    auto region = ioBroker.get_output_io_region(outputFileIndex);
+    auto region = ioBroker.get_output_ioss_region(outputFileIndex);
     region->get_database()->closeDatabase();
 }
     
@@ -52,7 +50,7 @@ void write_mesh_with_canonical_name(const std::string &filename,
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulkData);
     size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
-    stkIo.get_output_io_region(outputFileIndex)->get_database()->set_use_generic_canonical_name(true);
+    stkIo.get_output_ioss_region(outputFileIndex)->get_database()->set_use_generic_canonical_name(true);
     stkIo.write_output_mesh(outputFileIndex);
 }
 

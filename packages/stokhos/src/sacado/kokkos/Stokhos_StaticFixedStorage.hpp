@@ -52,7 +52,11 @@
 #define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #endif
 #include "Kokkos_Core_fwd.hpp"
+#if KOKKOS_VERSION < 40099
 #include "Kokkos_Cuda.hpp"
+#else
+#include "Cuda/Kokkos_Cuda.hpp"
+#endif
 #ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
@@ -522,22 +526,7 @@ namespace Stokhos {
 
 }
 
-namespace Sacado {
-  template <typename ordinal_t, typename value_t, int Num, typename device_t>
-  struct StringName< Stokhos::StaticFixedStorage<ordinal_t,
-                                                 value_t,
-                                                 Num,
-                                                 device_t> > {
-    static std::string eval() {
-      std::stringstream ss;
-      ss << "Stokhos::StaticFixedStorage<"
-         << StringName<ordinal_t>::eval() << ","
-         << StringName<value_t>::eval() << ","
-         << Num << ","
-         << StringName<device_t>::eval() << ">";
-      return ss.str();
-    }
-  };
-}
+#include "Stokhos_StorageHelpers.hpp"
+STOKHOS_STORAGE_HELPER_STRINGNAME_STATIC(StaticFixedStorage)
 
 #endif // STOKHOS_STATIC_FIXED_STORAGE_HPP

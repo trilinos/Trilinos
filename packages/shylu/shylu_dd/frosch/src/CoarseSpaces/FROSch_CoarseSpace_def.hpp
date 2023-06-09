@@ -126,8 +126,17 @@ namespace FROSch {
                 XMapPtr serialMap = MapFactory<LO,GO,NO>::Build(AssembledBasisMap_->lib(),totalSize,0,this->SerialComm_);
 
                 AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getLocalNumElements());
-                #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+                #if defined(HAVE_XPETRA_TPETRA)
                 if (AssembledBasis_->getMap()->lib() == UseTpetra) {
+                    using execution_space = typename XMap::local_map_type::execution_space;
+                    // Xpetra wrapper for Tpetra MV
+                    auto assembledXTpetraMVector = rcp_dynamic_cast<TpetraMultiVector<SC,LO,GO,NO>>(AssembledBasis_, true);
+                    // Tpetra MV
+                    auto assembledTpetraMVector = assembledXTpetraMVector->getTpetra_MultiVector();
+                    // Kokkos View
+                    auto assembledView = assembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                    auto assembledCols = Tpetra::getMultiVectorWhichVectors(*  assembledTpetraMVector);
+
                     UN itmp = 0;
                     for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                         if (!UnassembledSubspaceBases_[i].is_null()) {
@@ -138,16 +147,21 @@ namespace FROSch {
                             FROSCH_ASSERT(NumVectors_i+itmp <= AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace: NumVectors_i+itmp <= AssembledBasis_->getNumVectors()");
                             FROSCH_ASSERT(LocalLength_i+Offsets_[i] <= AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace: LocalLength_i+Offsets_[i] <= AssembledBasis_");
 
+                            Kokkos::RangePolicy<execution_space> policy (0, LocalLength_i);
+                            // Xpetra wrapper for Tpetra MV
+                            auto unassembledXTpetraMVector = rcp_dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO>>(UnassembledSubspaceBases_[i], true);
+                            // Tpetra MV
+                            auto unassembledTpetraMVector = unassembledXTpetraMVector->getTpetra_MultiVector();
+                            // Views
+                            auto unassembledView = unassembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                            auto unassembledCols = Tpetra::getMultiVectorWhichVectors(*unassembledTpetraMVector);
                             for (UN j=0; j < NumVectors_i; j++) {
-                                auto unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j).getRawPtr();
-                                auto   assembledSubspaceBasesData = AssembledBasis_->getDataNonConst(itmp+j);
-
-                                using execution_space = typename XMap::local_map_type::execution_space;
-                                Kokkos::RangePolicy<execution_space> policy (0, LocalLength_i);
+                                int col_in  = unassembledTpetraMVector->isConstantStride() ? j      : unassembledCols[j];
+                                int col_out =   assembledTpetraMVector->isConstantStride() ? j+itmp :   assembledCols[j+itmp];
                                 Kokkos::parallel_for(
                                     "FROSch_CoarseSpace::assembleCoarseSpace", policy,
                                     KOKKOS_LAMBDA(const UN k) {
-                                        assembledSubspaceBasesData[k+Offset_i] = unassembledSubspaceBasesData[k];
+                                        assembledView(k+Offset_i, col_out) = unassembledView(k, col_in);
                                     });
                             }
                             itmp += NumVectors_i;
@@ -203,7 +217,7 @@ namespace FROSch {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
 
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
         if (rowMap->lib() == UseTpetra) {
             UN numRows = AssembledBasis_->getLocalLength();
             UN numCols = AssembledBasis_->getNumVectors();

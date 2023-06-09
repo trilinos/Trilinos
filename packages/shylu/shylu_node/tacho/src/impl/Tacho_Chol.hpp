@@ -36,7 +36,7 @@ namespace Tacho {
 template <typename ArgUplo, typename ArgAlgo> struct Chol;
 
 struct CholAlgorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

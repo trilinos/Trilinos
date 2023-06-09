@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
@@ -38,12 +38,12 @@ SET(UNIT_TEST_DRIVER
 # If this assumption is incorrect, or the build system is changed this might
 # have to be fixed!
 ###############################################################################
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 
 SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp)
-IF(PANZER_HAVE_EPETRA)
+IF(PANZER_HAVE_EPETRA_STACK)
   APPEND_SET(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
              tEpetra_GlbEvalData.cpp)
 
@@ -60,7 +60,7 @@ IF(PANZER_HAVE_EPETRA)
     COMM mpi
     NUM_MPI_PROCS 2
   )
-ENDIF(PANZER_HAVE_EPETRA)
+ENDIF(PANZER_HAVE_EPETRA_STACK)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LinearObjFactory_Tests

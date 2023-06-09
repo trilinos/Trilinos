@@ -48,7 +48,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
 class NgpFieldSyncTest : public stk::unit_test_util::simple_fields::MeshFixture
@@ -114,7 +114,7 @@ public:
     stk::mesh::PartVector elemBlockParts;
     stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
     const unsigned numBlocks = elemBlockParts.size();
-    ThrowRequire(numBlocksToSync <= numBlocks);
+    STK_ThrowRequire(numBlocksToSync <= numBlocks);
 
     for(unsigned i = 0; i < numBlocksToSync; i++) {
       parts.push_back(elemBlockParts[i]);
@@ -232,7 +232,7 @@ public:
   {
     get_bulk().modification_begin();
     const stk::mesh::Part* part = get_part();
-    ThrowRequireMsg(part!=nullptr,"get_part returned nullptr, newPartName="<<newPartName);
+    STK_ThrowRequireMsg(part!=nullptr,"get_part returned nullptr, newPartName="<<newPartName);
     get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
     get_bulk().modification_end();
     stk::mesh::get_updated_ngp_mesh(get_bulk());
@@ -323,74 +323,100 @@ TEST_F( NgpMeshChangeElementPartMembershipWithFields, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 800;
+  const unsigned NUM_RUNS = 5;
+  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  const int NUM_ITERS = 50;
+  #else
+  const int NUM_ITERS = 2500;
+  #endif
+  const int NUM_FAKE_ITERS = 2500;
 
-  stk::performance_tests::Timer timer(get_comm());
-  setup_host_mesh();
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
 
-  timer.start_timing();
-  for (int i=0; i<NUM_RUNS; i++) {
-    change_element_part_membership(i);
-    update_fields();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
+
+    for (int i = 0; i < NUM_ITERS; i++) {
+      change_element_part_membership(i);
+      update_fields();
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_FAKE_ITERS);
 }
 
 TEST_F( NgpMeshCreateEntityWithFields, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int numModCycles = 400;
+  const unsigned NUM_RUNS = 5;
+  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  const int numModCycles = 50;
+  #else
+  const int numModCycles = 4000;
+  #endif
+  const int numFakeModCycles = 4000;
   const int numElemsToCreatePerModCycle = 40;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
 
-  setup_host_mesh();
 
-  for (int i=0; i<numModCycles; i++) {
-    create_entity(i, numElemsToCreatePerModCycle);
-    update_fields();
+    for (int i=0; i<numModCycles; i++) {
+      create_entity(i, numElemsToCreatePerModCycle);
+      update_fields();
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(numModCycles);
+  batchTimer.print_batch_timing(numFakeModCycles);
 };
 
 TEST_F( NgpMeshGhostingEntityWithFields, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  const int NUM_RUNS = 100;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 500;
 
-  stk::performance_tests::Timer timer(get_comm());
-  setup_host_mesh();
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
 
-  timer.start_timing();
-  for (int i=0; i<NUM_RUNS; i++) {
-    ghost_element(i);
-    update_fields();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < NUM_ITERS; i++) {
+      ghost_element(i);
+      update_fields();
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(NgpFieldSyncTest, PartialSyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1000);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 20000000);
   unsigned numComponents = stk::unit_test_util::simple_fields::get_command_line_option("-c", 1);
-  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 100);
-  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-s", 10);
-  unsigned numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 500);
+  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 20);
+  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-s", 5);
+  unsigned numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 100);
   unsigned tensorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("--tensorField", 72);
   unsigned vectorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("-vectorField", 8);
   bool justSyncAll = stk::unit_test_util::simple_fields::get_command_line_option("-a", false);
   bool contiguousBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-t", true);
   numBlocksToSync = std::min(numBlocks, numBlocksToSync);
-  stk::performance_tests::Timer timer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   setup_fields(numComponents, tensorFieldSizePerElem, vectorFieldSizePerElem);
@@ -410,24 +436,28 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
     selector = get_non_contiguous_partial_selector(numBlocksToSync);
   }
 
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
-    timer.start_timing();
-    if(justSyncAll) {
-      ngpIntField.modify_on_host();
-      ngpTensorField.modify_on_host();
-      ngpVectorField.modify_on_host();
-    } else {
-      ngpIntField.modify_on_host(selector);
-      ngpTensorField.modify_on_host(selector);
-      ngpVectorField.modify_on_host(selector);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      if(justSyncAll) {
+        ngpIntField.modify_on_host();
+        ngpTensorField.modify_on_host();
+        ngpVectorField.modify_on_host();
+      } 
+      else {
+        ngpIntField.modify_on_host(selector);
+        ngpTensorField.modify_on_host(selector);
+        ngpVectorField.modify_on_host(selector);
+      }
+      ngpIntField.sync_to_device();
+      ngpTensorField.sync_to_device();
+      ngpVectorField.sync_to_device();
     }
-    ngpIntField.sync_to_device();
-    ngpTensorField.sync_to_device();
-    ngpVectorField.sync_to_device();
-    timer.update_timing();
+      batchTimer.stop_batch_timer();
   }
 
   std::cout << "Blocks: " << numBlocks << " Blocks to sync: "
             << numBlocksToSync << " (" << (numBlocksToSync * 100.0 / numBlocks) << " %)" << std::endl;
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }

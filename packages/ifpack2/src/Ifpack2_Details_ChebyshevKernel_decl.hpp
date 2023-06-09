@@ -87,7 +87,8 @@ private:
   using vector_type = Tpetra::Vector<SC, LO, GO, NT>;
 
 public:
-  ChebyshevKernel (const Teuchos::RCP<const operator_type>& A);
+  ChebyshevKernel (const Teuchos::RCP<const operator_type>& A,
+                   const bool useNativeSpMV=false);
 
   void
   setMatrix (const Teuchos::RCP<const operator_type>& A);
@@ -112,6 +113,10 @@ private:
   std::unique_ptr<multivector_type> V1_;
 
   Teuchos::RCP<vector_type> W_vec_, B_vec_, X_vec_;
+
+  // External override to not fuse operations into a single kernel
+  // And use native blas/SpMV operations
+  bool useNativeSpMV_;
 
   // Do the Import, if needed, and return the column Map version of X.
   vector_type&

@@ -50,138 +50,138 @@
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
 #ifdef XPETRA_CRSMATRIX_SHORT
-typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
+using CrsMatrix [[maybe_unused]] = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_IO_SHORT
-typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node> IO;
+using IO [[maybe_unused]] = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_ITERATOROPS_SHORT
-typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorOps;
+using IteratorOps [[maybe_unused]] = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_VECTOR_SHORT
-typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
+using Vector [[maybe_unused]] = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_BLOCKEDVECTOR_SHORT
-typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedVector;
+using BlockedVector [[maybe_unused]] = Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MULTIVECTOR_SHORT
-typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+using MultiVector [[maybe_unused]] = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MATRIX_SHORT
-typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+using Matrix [[maybe_unused]] = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MATRIXMATRIX_SHORT
-typedef Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixMatrix;
+using MatrixMatrix [[maybe_unused]] = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TRIPLEMATRIXMULTIPLY_SHORT
-typedef Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node> TripleMatrixMultiply;
+using TripleMatrixMultiply [[maybe_unused]] = Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MATRIXUTILS_SHORT
-typedef Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixUtils;
+using MatrixUtils [[maybe_unused]] = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_OPERATOR_SHORT
-typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Operator;
+using Operator [[maybe_unused]] = Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TPETRAOPERATOR_SHORT
-typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraOperator;
+using TpetraOperator [[maybe_unused]] = Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TPETRAHALFPRECISIONOPERATOR_SHORT
-typedef Xpetra::TpetraHalfPrecisionOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraHalfPrecisionOperator;
+using TpetraHalfPrecisionOperator [[maybe_unused]] = Xpetra::TpetraHalfPrecisionOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
-typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
+using BlockedCrsMatrix [[maybe_unused]] = Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_BLOCKEDMULTIVECTOR_SHORT
-typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
+using BlockedMultiVector [[maybe_unused]] = Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_REORDEREDBLOCKEDMULTIVECTOR_SHORT
-typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedMultiVector;
+using ReorderedBlockedMultiVector [[maybe_unused]] = Xpetra::ReorderedBlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_REORDEREDBLOCKEDCRSMATRIX_SHORT
-typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
+using ReorderedBlockedCrsMatrix [[maybe_unused]] = Xpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef HAVE_XPETRA_THYRA
 #ifdef XPETRA_THYRAUTILS_SHORT
-typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraUtils;
+using ThyraUtils [[maybe_unused]] = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #endif
 
 #ifdef XPETRA_CRSMATRIXWRAP_SHORT
-typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixWrap;
+using CrsMatrixWrap [[maybe_unused]] = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_VECTORFACTORY_SHORT
-typedef Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> VectorFactory;
+using VectorFactory [[maybe_unused]] = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_CRSMATRIXFACTORY_SHORT
-typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
+using CrsMatrixFactory [[maybe_unused]] = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MULTIVECTORFACTORY_SHORT
-typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
+using MultiVectorFactory [[maybe_unused]] = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MATRIXFACTORY_SHORT
-typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixFactory;
+using MatrixFactory [[maybe_unused]] = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MATRIXFACTORY2_SHORT
-typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixFactory2;
+using MatrixFactory2 [[maybe_unused]] = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT
-typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
+using TpetraCrsMatrix [[maybe_unused]] = Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TPETRABLOCKCRSMATRIX_SHORT
-typedef Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraBlockCrsMatrix;
+using TpetraBlockCrsMatrix [[maybe_unused]] = Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 // TODO remove this
 #ifdef XPETRA_EPETRACRSMATRIX_SHORT
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-typedef Xpetra::EpetraCrsMatrixT<long long, Xpetra::EpetraNode> EpetraCrsMatrix64;
+using EpetraCrsMatrix64 [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<long long, Xpetra::EpetraNode>;
 #endif
-typedef Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode> EpetraCrsMatrix; // do we need this???
+using EpetraCrsMatrix [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>; // do we need this???
 #endif
 // TODO remove above entries
 
 #ifdef XPETRA_TPETRAMULTIVECTOR_SHORT
-typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
+using TpetraMultiVector [[maybe_unused]] = Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_TPETRAVECTOR_SHORT
-typedef Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraVector;
+using TpetraVector [[maybe_unused]] = Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MAPEXTRACTOR_SHORT
-typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+using MapExtractor [[maybe_unused]] = Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 #ifdef XPETRA_MAPEXTRACTORFACTORY_SHORT
-typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
+using MapExtractorFactory [[maybe_unused]] =  Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 // TODO: add namespace {} for shortcut types
 
 // Define convenient shortcut for data types
-typedef Scalar    SC;
+using SC [[maybe_unused]] = Scalar;
 // TODO: do the same for Epetra object (problem of namespace)

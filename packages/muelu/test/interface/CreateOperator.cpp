@@ -63,12 +63,10 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
 #include <Xpetra_EpetraVector.hpp>
@@ -93,7 +91,6 @@ namespace MueLuExamples {
     std::filebuf    buffer;
     std::streambuf* oldbuffer = NULL;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
     typedef Tpetra::Vector<SC,LO,GO,NO> Tpetra_Vector;
@@ -115,7 +112,6 @@ namespace MueLuExamples {
         buffer.close();
       }
     }
-#endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
     if (lib == Xpetra::UseEpetra) {
       if (myRank == 0) {
@@ -293,28 +289,28 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     bool useKokkos = false;
     if(lib == Xpetra::UseTpetra) {
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-      useKokkos = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
-      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
         useKokkos = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
         useKokkos = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
         useKokkos = true;
 # endif
 # ifdef HAVE_MUELU_HIP
-      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
         useKokkos = true;
 # endif
-#endif
+# ifdef HAVE_MUELU_SYCL
+      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
+        useKokkos = true;
+# endif      
     }
-    clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
+    clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -340,16 +336,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     std::string prefix;
     if (useKokkos) {
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
       if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
         prefix = "kokkos-complex/";
       } else {
         prefix = "kokkos/";
       }
-#else
-      out << "No kokkos refactor available." << std::endl;
-      return EXIT_FAILURE;
-#endif
     } else {
       if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
         prefix = "complex/";

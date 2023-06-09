@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 #define STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 
+#include <stk_util/util/IndentStreambuf.hpp>
 #include <streambuf>  // for ostream, basic_streambuf<>::int_type, streamsize
 #include <string>     // for string, char_traits
 
@@ -241,6 +242,14 @@ std::ostream &tout();               ///< Regression test textual output stream
 
 std::ostream &dwout();              ///< Diagnostic writer stream
 
+/**
+ * @brief Function <b>configure_dwout</b> is called automatically the first time dwout() is called, if
+ * the diagnostic writer stream hasn't been created yet.
+ * If configure_dwout(..) is called later, it will replace the diagnostic writer stream with a
+ * new stream instance, configured according to the indentSize and flags arguments passed by the caller.
+ */
+void configure_dwout(size_t indentSize=2,
+                     unsigned flags = stk::indent_streambuf::BRACES | stk::indent_streambuf::NO_BLANK_LINES);
 } // namespace sierra
 
 

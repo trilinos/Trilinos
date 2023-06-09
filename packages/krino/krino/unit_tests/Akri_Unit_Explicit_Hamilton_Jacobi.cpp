@@ -15,7 +15,6 @@
 #include <Akri_Vec.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/WriteMesh.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Relation.hpp>

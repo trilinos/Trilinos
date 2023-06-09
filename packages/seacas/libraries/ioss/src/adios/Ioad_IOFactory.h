@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioad_export.h"
+
 #include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>   // for DatabaseUsage
@@ -18,7 +20,7 @@ namespace Ioss {
 
 namespace Ioad {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOAD_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();

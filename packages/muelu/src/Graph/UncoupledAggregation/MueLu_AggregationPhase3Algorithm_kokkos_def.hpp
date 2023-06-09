@@ -46,8 +46,6 @@
 #ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -55,7 +53,7 @@
 
 #include "MueLu_AggregationPhase3Algorithm_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
@@ -70,7 +68,7 @@ namespace MueLu {
   void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& aggregates,
+                  Aggregates& aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
@@ -91,7 +89,7 @@ namespace MueLu {
   void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesRandom(const ParameterList& params,
                         const LWGraph_kokkos& graph,
-                        Aggregates_kokkos& aggregates,
+                        Aggregates& aggregates,
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const {
 
@@ -231,5 +229,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP

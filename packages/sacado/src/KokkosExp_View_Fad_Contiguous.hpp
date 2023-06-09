@@ -31,7 +31,7 @@
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_CONTIGUOUS_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 #include "Kokkos_LayoutContiguous.hpp"
 
@@ -1796,6 +1796,6 @@ public:
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

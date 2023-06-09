@@ -65,4 +65,3 @@ C to object file on some compilers...
       data onode /.true./
       data kidsiz /0/
       end
-

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,6 +20,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_Utils.h>
 
 #include <cgns/Iocgns_Utils.h>
 
@@ -77,12 +78,10 @@ namespace {
     // At this point, the variable_list contains one or more entries
     // of fields that should be output on combined file.  Run through
     // list and see if `field_name` is in the list.
-    for (const auto &valid : variable_list) {
-      if (Ioss::Utils::str_equal(valid, field_name) == 0) {
-        return true;
-      }
-    }
-    return false;
+    return std::any_of(variable_list.begin(), variable_list.end(),
+                       [&field_name](const auto &valid) {
+                         return Ioss::Utils::str_equal(valid, field_name) == 0;
+                       });
   }
 
   int verify_timestep_count(const PartVector &part_mesh)
@@ -155,6 +154,7 @@ int main(int argc, char *argv[])
   catch (std::exception &e) {
     fmt::print(stderr, "ERROR: Standard exception: {}\n", e.what());
   }
+  exit(EXIT_SUCCESS);
 }
 
 template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*/)
@@ -163,8 +163,25 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
   PartVector part_mesh(interFace.processor_count());
   for (int p = 0; p < interFace.processor_count(); p++) {
-    std::string inp_file = interFace.basename() + "." + interFace.cgns_suffix();
-    auto        filename = Ioss::Utils::decode_filename(inp_file, p, interFace.processor_count());
+    std::string root_dir = interFace.root_dir();
+    std::string sub_dir  = interFace.sub_dir();
+    std::string prepend;
+
+    if (!root_dir.empty()) {
+      prepend = root_dir + "/";
+    }
+    else if (Ioss::Utils::is_path_absolute(prepend)) {
+      prepend = "";
+    }
+    else {
+      prepend = "./";
+    }
+    if (!sub_dir.empty()) {
+      prepend += sub_dir + "/";
+    }
+
+    prepend += interFace.basename() + "." + interFace.cgns_suffix();
+    auto filename = Ioss::Utils::decode_filename(prepend, p, interFace.processor_count());
 
     if (debug_level & 1) {
       fmt::print(stderr, "{} Processor rank {:{}}, file {}\n", time_stamp(tsFormat), p, width,
@@ -180,7 +197,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
     // NOTE: region owns database pointer at this time...
     std::string name = "CPUP_" + std::to_string(p + 1);
-    part_mesh[p]     = std::unique_ptr<Ioss::Region>(new Ioss::Region(dbi, name));
+    part_mesh[p]     = std::make_unique<Ioss::Region>(dbi, name);
 
     if (part_mesh[p]->mesh_type() != Ioss::MeshType::STRUCTURED) {
       part_mesh[p]->output_summary(std::cerr);
@@ -203,7 +220,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   GlobalBlockMap all_blocks;
   GlobalIJKMap   global_block;
   for (const auto &part : part_mesh) {
-    auto &blocks = part->get_structured_blocks();
+    const auto &blocks = part->get_structured_blocks();
     for (const auto &block : blocks) {
       auto &name       = block->name();
       all_blocks[name] = block;
@@ -311,7 +328,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   //        .. Add each valid block and node_block field
   const auto &variable_list = interFace.var_names();
   if (!(variable_list.size() == 1 && Ioss::Utils::str_equal(variable_list[0], "none") == 0)) {
-    auto &blocks = output_region.get_structured_blocks();
+    const auto &blocks = output_region.get_structured_blocks();
     for (const auto &block : blocks) {
       int64_t num_cell = block->get_property("cell_count").get_int();
       int64_t num_node = block->get_property("node_count").get_int();
@@ -320,7 +337,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
       // Find all corresponding blocks on the input part meshes...
       for (const auto &prt : part_mesh) {
-        auto &pblocks = prt->get_structured_blocks();
+        const auto &pblocks = prt->get_structured_blocks();
         for (const auto &pblock : pblocks) {
           auto &name      = pblock->name();
           auto  name_proc = Iocgns::Utils::decompose_name(name, true);
@@ -344,7 +361,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
             pnb.field_describe(Ioss::Field::TRANSIENT, &fields);
             for (const auto &field_name : fields) {
               if (is_field_valid(variable_list, field_name)) {
-                Ioss::Field field = pblock->get_field(field_name);
+                Ioss::Field field = pnb.get_field(field_name);
                 if (!onb.field_exists(field_name)) {
                   field.reset_count(num_node);
                   // If the field does not already exist, add it to the output block...
@@ -424,7 +441,7 @@ namespace {
   {
     GlobalZgcMap global_zgc;
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto name_proc = Iocgns::Utils::decompose_name(block->name(), true);
 
@@ -475,11 +492,11 @@ namespace {
   {
     GlobalBcMap global_bc;
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         Ioss::IJK_t offset    = block->get_ijk_offset();
         auto        name_proc = Iocgns::Utils::decompose_name(block->name(), true);
-        auto       &sb_bc     = block->m_boundaryConditions;
+        const auto &sb_bc     = block->m_boundaryConditions;
         for (const auto &bc : sb_bc) {
           auto &gbc = global_bc[std::make_pair(name_proc.first, bc.m_bcName)];
           if (gbc.m_bcName.empty()) {
@@ -554,7 +571,7 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &pblocks = part->get_structured_blocks();
+          const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
             auto &name      = pblock->name();
             auto  name_proc = Iocgns::Utils::decompose_name(name, true);
@@ -585,7 +602,7 @@ namespace {
     do {
       change_made = false;
       for (const auto &part : part_mesh) {
-        auto &blocks = part->get_structured_blocks();
+        const auto &blocks = part->get_structured_blocks();
         for (const auto &block : blocks) {
           for (const auto &zgc : block->m_zoneConnectivity) {
             if (zgc.is_from_decomp()) {
@@ -612,7 +629,7 @@ namespace {
   void update_global_ijk(const PartVector &part_mesh, GlobalIJKMap &global_block)
   {
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto  ijk_o      = block->get_ijk_offset();
         auto  ijk_g      = block->get_ijk_global();
@@ -625,7 +642,7 @@ namespace {
     }
 
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto  name_proc  = Iocgns::Utils::decompose_name(block->name(), true);
         auto &cur_global = global_block[name_proc.first];
@@ -744,7 +761,7 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &pblocks = part->get_structured_blocks();
+          const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
             auto &name      = pblock->name();
             auto  name_proc = Iocgns::Utils::decompose_name(name, true);

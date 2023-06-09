@@ -23,7 +23,8 @@ class MockCommInfoObserver : public stk::mesh::ModificationObserver
 {
 public:
   MockCommInfoObserver()
-    : commInfoWasChangedByRank(stk::topology::NUM_RANKS, false)
+    : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION),
+      commInfoWasChangedByRank(stk::topology::NUM_RANKS, false)
   {
   }
 
@@ -60,7 +61,7 @@ protected:
     stk::io::fill_mesh("generated:1x1x4", bulk);
 
     observer = std::make_shared<MockCommInfoObserver>();
-    bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
+    bulk.register_observer(observer);
 
     bulk.modification_begin();
     ghost = &bulk.create_ghosting("Clyde");

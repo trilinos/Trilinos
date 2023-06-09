@@ -22,6 +22,15 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_TEST(
+  ImportExport2_UnitTests
+  NAME ImportExport2_UnitTests_Alltoall
+  COMM serial mpi
+  ARGS "--distributor-send-type=Alltoall --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  STANDARD_PASS_OUTPUT
+  )
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AsyncTransfer_UnitTests
   SOURCES

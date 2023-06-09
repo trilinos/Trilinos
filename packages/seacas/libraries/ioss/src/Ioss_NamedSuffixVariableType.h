@@ -7,13 +7,15 @@
  */
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <string>
 
 #include <Ioss_VariableType.h>
 
 namespace Ioss {
-  class NamedSuffixVariableType : public VariableType
+  class IOSS_EXPORT NamedSuffixVariableType : public VariableType
   {
   public:
     //  'which' is 1-based

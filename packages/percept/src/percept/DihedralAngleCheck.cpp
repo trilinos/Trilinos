@@ -74,7 +74,7 @@ namespace percept {
             const auto * nodes = mesh.get_bulk_data()->begin(elem, stk::topology::NODE_RANK);
             for (int i = 0; i < num_nodes; ++i)
               {
-                nodal_coords[i] = stk::mesh::field_data(*mesh.get_coordinates_field(), nodes[i]);
+                nodal_coords[i] = static_cast<double*>(stk::mesh::field_data(*mesh.get_coordinates_field(), nodes[i]));
               }
 
             // Determine normal vectors of each side

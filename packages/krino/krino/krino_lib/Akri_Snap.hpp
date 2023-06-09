@@ -16,19 +16,16 @@
 namespace krino
 {
 class InterfaceGeometry;
-class QualityMetric;
 
 NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,
     const FieldSet & interpolationFields,
     const InterfaceGeometry & geometry,
     const bool globalIDsAreParallelConsistent,
-    const double snappingSharpFeatureAngleInDegrees);
+    const double snappingSharpFeatureAngleInDegrees,
+    const double minIntPtWeightForEstimatingCutQuality);
 
-double determine_quality(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & elementSelector,
-    const QualityMetric &qualityMetric);
-
+void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields);
 }
 
 

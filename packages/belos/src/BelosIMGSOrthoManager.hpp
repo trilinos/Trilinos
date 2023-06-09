@@ -855,14 +855,12 @@ namespace Belos {
                         "Belos::IMGSOrthoManager::project(): Size of X not consistant with MX,Q" );
 
     // tally up size of all Q and check/allocate C
-    int baslen = 0;
     for (int i=0; i<nq; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
                           "Belos::IMGSOrthoManager::project(): Q lengths not mutually consistant" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Belos::IMGSOrthoManager::project(): Q has less rows than columns" );
-      baslen += qcs[i];
 
       // check size of C[i]
       if ( C[i] == Teuchos::null ) {

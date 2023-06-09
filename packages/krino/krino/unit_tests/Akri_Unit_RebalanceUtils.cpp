@@ -6,10 +6,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <stk_io/FillMesh.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <gtest/gtest.h>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
@@ -24,11 +25,27 @@
 #include <Akri_RebalanceUtils_Impl.hpp>
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_MeshHelpers.hpp>
+#include <Akri_RefinementInterface.hpp>
+#include <Akri_AdaptivityInterface.hpp>
+#include <stk_util/diag/Timer.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 namespace rebalance_utils {
 
 namespace {
+
+RefinementInterface & build_refinement(stk::mesh::MetaData & meta, const bool usePercept = false)
+{
+  meta.enable_late_fields();
+
+  RefinementInterface & refinement = create_refinement(meta, usePercept, sierra::Diag::sierraTimer());
+
+  meta.disable_late_fields();
+
+  return refinement;
+}
 
 /*
  * Builds a single tri mesh with 1 level of adaptivity. Parent element is ID 1,
@@ -50,303 +67,618 @@ void create_block_and_register_fields(SimpleStkFixture & fixture)
   auto & meta = fixture.meta_data();
   meta.declare_part_with_topology("block_1", stk::topology::TRIANGLE_3_2D);
 
-  meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
+  auto & coords = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
+  stk::mesh::put_field_on_entire_mesh(coords, 2);
   auto & load_field = meta.declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights");
   stk::mesh::put_field_on_mesh(load_field, meta.universal_part(), nullptr);
 
   fixture.commit();
 }
 
-void build_unadapted_single_tri_mesh(SimpleStkFixture & fixture)
+void set_node_coordinates(const stk::mesh::BulkData & mesh, const stk::mesh::EntityId nodeId, const stk::math::Vector2d &loc)
 {
-  auto & bulk_data = fixture.bulk_data();
-  auto & block_1 = *fixture.meta_data().get_part("block_1");
-
-  bulk_data.modification_begin();
-  if(bulk_data.parallel_rank() == 0)
+  stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+  if (mesh.is_valid(node))
   {
-    stk::mesh::declare_element(bulk_data, block_1, 1, {1, 2, 3});
+    double* node_coords = (double*)stk::mesh::field_data(*mesh.mesh_meta_data().coordinate_field(), node);
+    node_coords[0] = loc[0];
+    node_coords[1] = loc[1];
   }
-  bulk_data.modification_end();
 }
 
-void build_one_level_adapted_single_tri_mesh(SimpleStkFixture & fixture)
-{
-  auto & bulk_data = fixture.bulk_data();
-  auto & block_1 = *fixture.meta_data().get_part("block_1");
 
-  bulk_data.modification_begin();
-  if(bulk_data.parallel_rank() == 0)
+void build_unadapted_single_tri_mesh(stk::mesh::BulkData & mesh)
+{
+  auto & block_1 = *mesh.mesh_meta_data().get_part("block_1");
+  auto & active_part = AuxMetaData::get(mesh.mesh_meta_data()).active_part();
+
+  mesh.modification_begin();
+  if(mesh.parallel_rank() == 0)
   {
-    auto parent_elem = stk::mesh::declare_element(bulk_data, block_1, 1, {1, 2, 3});
-    auto child1 = stk::mesh::declare_element(bulk_data, block_1, 2, {1, 4, 6});
-    auto child2 = stk::mesh::declare_element(bulk_data, block_1, 3, {4, 5, 6});
-    auto child3 = stk::mesh::declare_element(bulk_data, block_1, 4, {4, 2, 5});
-    auto child4 = stk::mesh::declare_element(bulk_data, block_1, 5, {6, 5, 3});
-    auto family_tree = bulk_data.declare_constraint(1);
-    bulk_data.declare_relation(family_tree, parent_elem, 0);
-    bulk_data.declare_relation(family_tree, child1, 1);
-    bulk_data.declare_relation(family_tree, child2, 2);
-    bulk_data.declare_relation(family_tree, child3, 3);
-    bulk_data.declare_relation(family_tree, child4, 4);
+    stk::mesh::PartVector elemParts{&block_1, &active_part};
+    stk::mesh::declare_element(mesh, elemParts, 1, {1, 2, 3});
   }
-  bulk_data.modification_end();
+  mesh.modification_end();
+  set_node_coordinates(mesh, 1, {0.,0.});
+  set_node_coordinates(mesh, 2, {1.,0.});
+  set_node_coordinates(mesh, 3, {0.5,1.});
 }
 
-void build_two_level_adapted_single_tri_mesh(SimpleStkFixture & fixture)
+void build_one_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementInterface & refinement)
 {
-  build_one_level_adapted_single_tri_mesh(fixture);
+  build_unadapted_single_tri_mesh(mesh);
 
-  auto & bulk_data = fixture.bulk_data();
-  auto & block_1 = *fixture.meta_data().get_part("block_1");
+  mark_elements_with_given_ids_for_refinement(mesh, refinement, {1});
+  refinement.do_refinement();
+}
+
+void build_two_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementInterface & refinement)
+{
+  build_one_level_adapted_single_tri_mesh(mesh, refinement);
 
   // Refine child elem 3 an additional time and make others into transition elements
-  bulk_data.modification_begin();
-  if(bulk_data.parallel_rank() == 0)
+
+  clear_refinement_marker(refinement);
+
+  if(mesh.parallel_rank() == 0)
   {
+    auto parentElem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
+    stk::mesh::EntityVector childElems;
+    refinement.fill_children(parentElem, childElems);
+    ASSERT_EQ(4u, childElems.size());
+
+    mark_elements_for_refinement(refinement, {childElems[3]});
+  }
+
+  refinement.do_refinement();
+}
+
+}
+
+class FixtureWithBlockAndFields : public ::testing::Test
+{
+public:
+  FixtureWithBlockAndFields(MPI_Comm comm) :
+    fixture(2, comm),
+    mesh(fixture.bulk_data())
+  {
+    create_block_and_register_fields(fixture);
+  }
+protected:
+  SimpleStkFixture fixture;
+  stk::mesh::BulkData & mesh;
+};
+
+class RebalanceForAdaptivityFixture : public FixtureWithBlockAndFields
+{
+public:
+  RebalanceForAdaptivityFixture(bool usePercept = false, MPI_Comm comm = MPI_COMM_SELF) : 
+    FixtureWithBlockAndFields(comm),
+    refinement(build_refinement(fixture.meta_data(), usePercept)) {}
+protected:
+  stk::mesh::Entity parent_elem() const { return mesh.get_entity(stk::topology::ELEMENT_RANK, 1); }
+  stk::mesh::EntityVector all_child_elems() const { stk::mesh::EntityVector allChildElems; fill_all_children(refinement, parent_elem(), allChildElems); return allChildElems; }
+  void test_all_elems_have_no_destination(const stk::mesh::EntityVector & elems) const
+  {
+    for(auto && elem : elems)
     {
-      auto parent = bulk_data.get_entity(stk::topology::ELEMENT_RANK, 3);
-      auto child1 = stk::mesh::declare_element(bulk_data, block_1, 6, {4, 8, 7});
-      auto child2 = stk::mesh::declare_element(bulk_data, block_1, 7, {7, 8, 9});
-      auto child3 = stk::mesh::declare_element(bulk_data, block_1, 8, {8, 5, 9});
-      auto child4 = stk::mesh::declare_element(bulk_data, block_1, 9, {9, 6, 7});
-
-      auto family_tree = bulk_data.declare_constraint(2);
-      bulk_data.declare_relation(family_tree, parent, 0);
-      bulk_data.declare_relation(family_tree, child1, 1);
-      bulk_data.declare_relation(family_tree, child2, 2);
-      bulk_data.declare_relation(family_tree, child3, 3);
-      bulk_data.declare_relation(family_tree, child4, 4);
+      EXPECT_FALSE(change_list.has_entity(elem));
     }
-
+  }
+  void test_all_entities_have_destination(const stk::mesh::EntityVector & entities, const int dest_proc) const
+  {
+    for(auto && entity : entities)
     {
-      auto parent = bulk_data.get_entity(stk::topology::ELEMENT_RANK, 2);
-      auto child1 = stk::mesh::declare_element(bulk_data, block_1, 10, {1, 4, 7});
-      auto child2 = stk::mesh::declare_element(bulk_data, block_1, 11, {1, 7, 6});
-
-      auto family_tree = bulk_data.declare_constraint(3);
-      bulk_data.declare_relation(family_tree, parent, 0);
-      bulk_data.declare_relation(family_tree, child1, 1);
-      bulk_data.declare_relation(family_tree, child2, 2);
+      EXPECT_TRUE(change_list.has_entity(entity));
+      EXPECT_EQ(dest_proc, change_list.get_entity_destination(entity));
     }
+  }
+  void test_all_family_tree_entities_have_destination(const int dest_proc) const
+  {
+    stk::mesh::EntityVector family_trees;
+    mesh.get_entities(
+        stk::topology::CONSTRAINT_RANK, mesh.mesh_meta_data().locally_owned_part(), family_trees);
+    for(auto && ft : family_trees)
     {
-      auto parent = bulk_data.get_entity(stk::topology::ELEMENT_RANK, 4);
-      auto child1 = stk::mesh::declare_element(bulk_data, block_1, 12, {4, 2, 8});
-      auto child2 = stk::mesh::declare_element(bulk_data, block_1, 13, {2, 5, 8});
-
-      auto family_tree = bulk_data.declare_constraint(4);
-      bulk_data.declare_relation(family_tree, parent, 0);
-      bulk_data.declare_relation(family_tree, child1, 1);
-      bulk_data.declare_relation(family_tree, child2, 2);
-    }
-    {
-      auto parent = bulk_data.get_entity(stk::topology::ELEMENT_RANK, 4);
-      auto child1 = stk::mesh::declare_element(bulk_data, block_1, 14, {9, 5, 3});
-      auto child2 = stk::mesh::declare_element(bulk_data, block_1, 15, {9, 3, 6});
-
-      auto family_tree = bulk_data.declare_constraint(5);
-      bulk_data.declare_relation(family_tree, parent, 0);
-      bulk_data.declare_relation(family_tree, child1, 1);
-      bulk_data.declare_relation(family_tree, child2, 2);
+      if (mesh.num_elements(ft) > 0)
+      {
+        EXPECT_TRUE(change_list.has_entity(ft));
+        EXPECT_EQ(dest_proc, change_list.get_entity_destination(ft));
+      }
     }
   }
-  bulk_data.modification_end();
-}
-
-}
-
-TEST(UpdateRebalanceForAdaptivity, OneLevel)
-{
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_one_level_adapted_single_tri_mesh(fixture);
-
-  const auto & mesh = fixture.bulk_data();
-
-  stk::balance::DecompositionChangeList change_list(fixture.bulk_data(), {});
-  auto parent_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
-
-  stk::mesh::EntityVector child_elems;
-  for(int child_id=2; child_id < 6; ++child_id)
+  stk::mesh::Field<double> & weights_field() const
   {
-    auto child_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, child_id);
-    ASSERT_TRUE(mesh.is_valid(child_elem));
-    child_elems.push_back(child_elem);
-  }
-
-  const int dest_proc = 2;
-  change_list.set_entity_destination(parent_elem, dest_proc);
-
-  for(auto && child_elem : child_elems)
-  {
-    ASSERT_FALSE(change_list.has_entity(child_elem));
-  }
-
-  impl::update_rebalance_for_adaptivity(change_list, mesh);
-
-  for(auto && child_elem : child_elems)
-  {
-    EXPECT_TRUE(change_list.has_entity(child_elem));
-    EXPECT_EQ(dest_proc, change_list.get_entity_destination(child_elem));
-  }
-}
-
-TEST(UpdateRebalanceForAdaptivity, OneLevelChildMovedWithoutParent)
-{
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_one_level_adapted_single_tri_mesh(fixture);
-
-  const auto & mesh = fixture.bulk_data();
-
-  stk::balance::DecompositionChangeList change_list(fixture.bulk_data(), {});
-
-  stk::mesh::EntityVector child_elems;
-  for(int child_id=2; child_id < 6; ++child_id)
-  {
-    auto child_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, child_id);
-    ASSERT_TRUE(mesh.is_valid(child_elem));
-    child_elems.push_back(child_elem);
-    change_list.set_entity_destination(child_elem, child_id);
-  }
-
-  impl::update_rebalance_for_adaptivity(change_list, mesh);
-
-  for(auto && child_elem : child_elems)
-  {
-    EXPECT_FALSE(change_list.has_entity(child_elem));
-  }
-}
-
-TEST(UpdateRebalanceForAdaptivity, TwoLevels)
-{
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_two_level_adapted_single_tri_mesh(fixture);
-
-  const auto & mesh = fixture.bulk_data();
-
-  stk::balance::DecompositionChangeList change_list(fixture.bulk_data(), {});
-  auto parent_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
-
-  stk::mesh::EntityVector child_elems;
-  for(int child_id=2; child_id < 15; ++child_id)
-  {
-    auto child_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, child_id);
-    ASSERT_TRUE(mesh.is_valid(child_elem));
-    child_elems.push_back(child_elem);
-  }
-
-  const int dest_proc = 2;
-  change_list.set_entity_destination(parent_elem, dest_proc);
-
-  impl::update_rebalance_for_adaptivity(change_list, mesh);
-
-  for(auto && child_elem : child_elems)
-  {
-    EXPECT_TRUE(change_list.has_entity(child_elem));
-    EXPECT_EQ(dest_proc, change_list.get_entity_destination(child_elem));
-  }
-
-  stk::mesh::EntityVector family_trees;
-  mesh.get_entities(
-      stk::topology::CONSTRAINT_RANK, mesh.mesh_meta_data().locally_owned_part(), family_trees);
-  for(auto && ft : family_trees)
-  {
-    EXPECT_TRUE(change_list.has_entity(ft));
-    EXPECT_EQ(dest_proc, change_list.get_entity_destination(ft));
-  }
-}
-
-TEST(UpdateRebalanceForAdaptivity, TwoLevelsFirstLevelChildInitialDifferentProc)
-{
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_two_level_adapted_single_tri_mesh(fixture);
-
-  const auto & mesh = fixture.bulk_data();
-
-  stk::balance::DecompositionChangeList change_list(fixture.bulk_data(), {});
-  auto parent_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
-
-  stk::mesh::EntityVector child_elems;
-  for(int child_id=2; child_id < 15; ++child_id)
-  {
-    auto child_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, child_id);
-    ASSERT_TRUE(mesh.is_valid(child_elem));
-    child_elems.push_back(child_elem);
-  }
-
-  const int dest_proc = 2;
-  change_list.set_entity_destination(parent_elem, dest_proc);
-  change_list.set_entity_destination(mesh.get_entity(stk::topology::ELEMENT_RANK, 3), 5);
-
-  impl::update_rebalance_for_adaptivity(change_list, mesh);
-
-  for(auto && child_elem : child_elems)
-  {
-    EXPECT_TRUE(change_list.has_entity(child_elem));
-    EXPECT_EQ(dest_proc, change_list.get_entity_destination(child_elem));
-  }
-}
-
-TEST(AccumulateAdaptivityChildWeights, TwoLevelAdaptedTri)
-{
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_two_level_adapted_single_tri_mesh(fixture);
-
-  const auto & mesh = fixture.bulk_data();
-
-  stk::mesh::Field<double> & weights_field = static_cast<stk::mesh::Field<double> &>(
+    stk::mesh::Field<double> & weightsField = static_cast<stk::mesh::Field<double> &>(
       *fixture.meta_data().get_field(stk::topology::ELEMENT_RANK, "element_weights"));
-
-  auto parent_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
-  double & parent_weight = *stk::mesh::field_data(weights_field, parent_elem);
-  parent_weight = 10.;
-  stk::mesh::EntityVector child_elems;
-  for (int child_id = 2; child_id < 15; ++child_id)
-  {
-    auto child_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, child_id);
-    ASSERT_TRUE(mesh.is_valid(child_elem));
-    child_elems.push_back(child_elem);
-
-    double & weight = *stk::mesh::field_data(weights_field, child_elem);
-    weight = 1.;
+    return weightsField;
   }
-
-  impl::accumulate_adaptivity_child_weights_to_parents(mesh, weights_field);
-
-  for (auto && child_elem : child_elems)
+  void set_weight_for_elem(stk::mesh::Entity elem, const double newWeight) const
   {
-    const double & weight = *stk::mesh::field_data(weights_field, child_elem);
-    EXPECT_DOUBLE_EQ(0., weight);
+    stk::mesh::Field<double> & weightsField = weights_field();
+    double & weight = *stk::mesh::field_data(weightsField, elem);
+    weight = newWeight;
   }
-  EXPECT_DOUBLE_EQ(23., parent_weight);
-}
+  void test_element_has_weight(const stk::mesh::Entity & elem, const double goldWeight) const
+  {
+    stk::mesh::Field<double> & weightsField = weights_field();
+    const double & weight = *stk::mesh::field_data(weightsField, elem);
+    EXPECT_DOUBLE_EQ(goldWeight, weight);
+  }
+  void test_elements_have_weight(const stk::mesh::EntityVector & elems, const double goldWeight) const
+  {
+    stk::mesh::Field<double> & weightsField = weights_field();
+    for (auto && elem : elems)
+    {
+      const double & weight = *stk::mesh::field_data(weightsField, elem);
+      EXPECT_DOUBLE_EQ(goldWeight, weight);
+    }
+  }
+  RefinementInterface & refinement;
+  stk::balance::DecompositionChangeList change_list{fixture.bulk_data(), {}};
+};
 
-TEST(AccumulateAdaptivityChildWeights, UnadaptedElement)
+class RebalanceForAdaptivityFixtureForPercept : public RebalanceForAdaptivityFixture
 {
-  SimpleStkFixture fixture(2, MPI_COMM_SELF);
-  create_block_and_register_fields(fixture);
-  build_unadapted_single_tri_mesh(fixture);
+public:
+  RebalanceForAdaptivityFixtureForPercept() : RebalanceForAdaptivityFixture(true) {}
+private:
+};
 
-  const auto & mesh = fixture.bulk_data();
+class ParallelRebalanceForAdaptivityFixture3D : public ::testing::Test
+{
+public:
+  ParallelRebalanceForAdaptivityFixture3D() :
+    bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+      .set_spatial_dimension(3)
+      .set_entity_rank_names(entity_rank_names_with_ft())
+      .create()),
+    meta(bulk->mesh_meta_data_ptr()),
+    load_field(meta->declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights")),
+    change_list(*bulk, {})
+  {
+    meta->use_simple_fields();
+    AuxMetaData::create(*meta);
+    double zero_val = 0.;
+    stk::mesh::put_field_on_mesh(load_field, meta->universal_part(), &zero_val);
 
-  stk::mesh::Field<double> & weights_field = static_cast<stk::mesh::Field<double> &>(
-      *fixture.meta_data().get_field(stk::topology::ELEMENT_RANK, "element_weights"));
+    stk::io::fill_mesh("generated:2x2x4|bbox:-1,-1,-1,1,1,1|tets", *bulk);
+    refinement_ptr = &build_refinement(*meta);
+  }
 
-  auto parent_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
-  double & parent_weight = *stk::mesh::field_data(weights_field, parent_elem);
-  parent_weight = 10.;
+  void refine_z_boundary()
+  {
+    RefinementInterface & refinement = *refinement_ptr;
+    clear_refinement_marker(refinement);
+    auto elem_buckets = 
+      bulk->get_buckets(stk::topology::ELEMENT_RANK, bulk->mesh_meta_data().locally_owned_part());
+    for(auto && bucket : elem_buckets)
+    {
+      for(auto && elem : *bucket)
+      {
+        if(refinement.is_parent(elem)) continue;
+        stk::mesh::Entity const * entity_node_rels = bulk->begin_nodes(elem);
+        int num_entity_nodes = bulk->num_nodes(elem);
+        for(int ni = 0; ni < num_entity_nodes; ++ni)
+        {
+          stk::mesh::Entity node = entity_node_rels[ni];
+          auto * coords = field_data<double>(*meta->coordinate_field(), node);
+          if(std::fabs(coords[meta->spatial_dimension()-1]-1.) <= 1e-6)
+          {
+            int * elemMarker = field_data<int>(refinement.get_marker_field(), elem);
+            *elemMarker = Refinement::REFINE;
+          }
+        }
+      }
+    }
+    refinement.do_refinement();
+  }
 
-  impl::accumulate_adaptivity_child_weights_to_parents(mesh, weights_field);
+  void set_active_element_weights()
+  {
+    auto & refinement = *refinement_ptr;
+    auto elem_buckets = 
+      bulk->get_buckets(stk::topology::ELEMENT_RANK, bulk->mesh_meta_data().locally_owned_part());
+    for(auto && bucket : elem_buckets)
+    {
+      for(auto && elem : *bucket)
+      {
+        auto * elem_load = field_data<double>(load_field, elem);
+        if(refinement.is_parent(elem)) *elem_load = 0.;
+        else *elem_load = 1.;
+      }
+    }
+  }
 
-  EXPECT_DOUBLE_EQ(10., parent_weight);
+  void execute_rebalance()
+  {
+    rebalance_mesh(*bulk, refinement_ptr, nullptr, 
+      load_field.name(), 
+      meta->coordinate_field()->name(), 
+      {meta->universal_part()}, 10, "rcb");
+  }
+protected:
+  std::unique_ptr<stk::mesh::BulkData> bulk;
+  std::shared_ptr<stk::mesh::MetaData> meta;
+  stk::mesh::Field<double> & load_field;
+  RefinementInterface * refinement_ptr;
+  stk::balance::DecompositionChangeList change_list;
+};
+
+TEST_F(RebalanceForAdaptivityFixture, OneLevel)
+{
+  build_one_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector childElems = all_child_elems();
+
+  const int destProc = 2;
+  change_list.set_entity_destination(parent_elem(), destProc);
+
+  test_all_elems_have_no_destination(childElems);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_entities_have_destination(childElems, destProc);
 }
+
+TEST_F(RebalanceForAdaptivityFixture, OneLevelChildMovedWithoutParent)
+{
+  build_one_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector childElems = all_child_elems();
+
+  test_all_elems_have_no_destination(childElems);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_elems_have_no_destination(childElems);
+}
+
+TEST_F(RebalanceForAdaptivityFixture, TwoLevelsLeafChildInitialDifferentProc)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector allChildElems = all_child_elems();
+  ASSERT_EQ(14u, allChildElems.size());
+
+  //Leaf children must move with their immediate parents. Build set of parents of leaf children and assign
+  //each a proc to move to
+  stk::mesh::EntityVector leaf_children;
+  std::set<stk::mesh::Entity> leaf_parents;
+  fill_leaf_children(refinement, parent_elem(), leaf_children);
+  for (auto && leaf_child : leaf_children)
+  {
+    leaf_parents.insert(refinement.get_parent(leaf_child));
+    change_list.set_entity_destination(leaf_child, 10);
+  }
+  int destProc = 2;
+  for (auto && leaf_parent : leaf_parents)
+  {
+    change_list.set_entity_destination(leaf_parent, destProc);
+    destProc++;
+  }
+  //The grandparent should not be allowed to move if any of its children are being moved. Give it
+  //a destination to ensure it gets zeroed out
+  change_list.set_entity_destination(parent_elem(), destProc);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  //Verify all leaf children are moving with their parents
+  for (auto && leaf_child : leaf_children)
+  {
+    auto parent = refinement.get_parent(leaf_child);
+    EXPECT_TRUE(change_list.has_entity(leaf_child));
+    EXPECT_TRUE(change_list.has_entity(parent));
+    EXPECT_EQ(change_list.get_entity_destination(parent), change_list.get_entity_destination(leaf_child));
+  }
+  //Verify grandparent is staying put
+  EXPECT_FALSE(change_list.has_entity(parent_elem()));
+}
+
+TEST_F(RebalanceForAdaptivityFixture, AccumulateAdaptivityChildWeightsTwoLevelAdaptedTri)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  set_weight_for_elem(parent_elem(), 10.);
+
+  const stk::mesh::EntityVector allChildElems = all_child_elems();
+  ASSERT_EQ(14u, allChildElems.size());
+
+  for (auto childElem : allChildElems)
+    set_weight_for_elem(childElem, 1.);
+
+  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
+
+  //Only parents of leaf children should have weights accumulated. All other weights untouched
+  //Build set of parents of leaf children
+  stk::mesh::EntityVector leaf_children;
+  std::set<stk::mesh::Entity> leaf_parents;
+  fill_leaf_children(refinement, parent_elem(), leaf_children);
+  for (auto && leaf_child : leaf_children)
+  {
+    leaf_parents.insert(refinement.get_parent(leaf_child));
+  }
+
+  //Test that all elements not in the set of parents of leaf children have original weight and those in the set
+  //have weight equal to their number of children + their weight
+  test_element_has_weight(parent_elem(), 10.);
+  for (auto && childElem : allChildElems )
+  {
+    if(leaf_parents.find(childElem) != leaf_parents.end())
+      test_element_has_weight(childElem, refinement.get_num_children(childElem) + 1);
+    else if(!refinement.is_parent(childElem))
+      test_element_has_weight(childElem, 0.);
+    else
+      test_element_has_weight(childElem, 1.);
+  }
+}
+
+TEST_F(RebalanceForAdaptivityFixture, AccumulateAdaptivityChildWeightsUnadaptedElement)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  set_weight_for_elem(parent_elem(), 10.);
+
+  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
+
+  test_element_has_weight(parent_elem(), 10.);
+}
+
+TEST_F(ParallelRebalanceForAdaptivityFixture3D, TwoLevelsLeafChildenConstrainedUnadaptedFree)
+{
+  auto & refinement = *refinement_ptr;
+  for(unsigned i=0; i<2; i++)
+  {
+    refine_z_boundary();
+  }
+
+  //Leaf children must move with their immediate parents. Build set of parents of leaf children and assign
+  //each a proc to move to
+  std::set<stk::mesh::Entity> free_parents;
+  stk::mesh::EntityVector children;
+  auto elem_buckets = 
+    bulk->get_buckets(stk::topology::ELEMENT_RANK, meta->locally_owned_part());
+  int free_destProc = 10000;
+  int destProc = 2;
+  for(auto && bucket : elem_buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(refinement.is_parent(elem))
+      {
+        children.clear();
+        refinement.fill_children(elem, children);
+        if(std::any_of(children.cbegin(), children.cend(), 
+          [&](stk::mesh::Entity e){ return refinement.is_parent(e); }))
+        {
+          //expectation is that these moves will be deleted
+          change_list.set_entity_destination(elem, free_destProc);
+        }
+        else 
+        {
+          //These moves should trigger children to move along with them
+          change_list.set_entity_destination(elem, destProc);
+          free_parents.insert(elem);
+          destProc++;
+        }
+      }
+      //These moves should be allowed for unadapted elements, but not allowed for leaf elements
+      else change_list.set_entity_destination(elem, free_destProc);
+    }
+  }
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, *bulk);
+
+  //Verify all leaf children are moving with their parents and unadapted elements are free to move
+  for(auto && bucket : elem_buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(refinement.is_parent(elem))
+      {
+        if(free_parents.find(elem) == free_parents.end())
+        {
+          //Parent has children that are also parent, isn't allowed to move
+          EXPECT_FALSE(change_list.has_entity(elem));
+        }
+      }
+      else if(refinement.is_child(elem))
+      {
+        auto parent = refinement.get_parent(elem);
+        if(free_parents.find(parent) != free_parents.end())
+        {
+          //Leaf element has parent whose children are all leaf elements, they can move, but need to do so together
+          EXPECT_TRUE(change_list.has_entity(elem));
+          EXPECT_TRUE(change_list.has_entity(parent));
+          EXPECT_EQ(change_list.get_entity_destination(parent), change_list.get_entity_destination(elem));
+        }
+        //otherwise, leaf element has a parent with children who are also parent. Should not move
+        else EXPECT_FALSE(change_list.has_entity(elem));
+      }
+      //These are unadapted elements, can move freely
+      else EXPECT_EQ(change_list.get_entity_destination(elem), free_destProc);
+    }
+  }
+}
+
+TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
+{
+  auto & refinement = *refinement_ptr;
+  for(unsigned i=0; i<3; i++)
+  {
+    refine_z_boundary();
+  }
+
+  set_active_element_weights();
+
+  execute_rebalance();
+
+  //Verify leaf elements have their parent element on the same processor and flag for coarsening
+  {
+    clear_refinement_marker(refinement);
+    FieldRef markerField = refinement.get_marker_field();
+    auto elem_buckets = 
+      bulk->get_buckets(stk::topology::ELEMENT_RANK, meta->locally_owned_part());
+    for(auto && bucket : elem_buckets)
+    {
+      for(auto && elem : *bucket)
+      {
+        if(refinement.is_parent(elem) || (!refinement.is_child(elem))) continue;
+        auto parent = refinement.get_parent(elem);
+        EXPECT_TRUE(parent != stk::mesh::Entity());
+        EXPECT_TRUE(refinement.is_parent(parent));
+        int * elemMarker = field_data<int>(markerField, elem);
+        *elemMarker = Refinement::COARSEN;
+      }
+    }
+    refinement.do_refinement();
+  }
+
+  //Verify leaf elements still have their parent element on the same processor after coarsening
+  {
+    auto elem_buckets = 
+      bulk->get_buckets(stk::topology::ELEMENT_RANK, meta->locally_owned_part());
+    for(auto && bucket : elem_buckets)
+    {
+      for(auto && elem : *bucket)
+      {
+        if(refinement.is_parent(elem) || (!refinement.is_child(elem))) continue;
+        auto parent = refinement.get_parent(elem);
+        EXPECT_TRUE(parent != stk::mesh::Entity());
+        EXPECT_TRUE(refinement.is_parent(parent));
+      }
+    }
+  }
+}
+
+TEST_F(ParallelRebalanceForAdaptivityFixture3D, EffectiveLoadBalance)
+{
+  auto & refinement = *refinement_ptr;
+
+  for(unsigned i=0; i<5; i++)
+  {
+    refine_z_boundary();
+    set_active_element_weights();
+    execute_rebalance();
+  }
+
+  unsigned elem_cnt = 0;
+  auto elem_buckets = 
+    bulk->get_buckets(stk::topology::ELEMENT_RANK, bulk->mesh_meta_data().locally_owned_part());
+  for(auto && bucket : elem_buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(!refinement.is_parent(elem)) elem_cnt++;
+    }
+  }
+  
+  double elem_max = stk::get_global_max(bulk->parallel(), elem_cnt);
+  double elem_min = stk::get_global_min(bulk->parallel(), elem_cnt);
+
+  EXPECT_LT(elem_max/elem_min, 1.2);
+}
+
+// FIXME: Temporary version of tests for percept
+#if 1
+TEST_F(RebalanceForAdaptivityFixtureForPercept, OneLevel)
+{
+  build_one_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector childElems = all_child_elems();
+
+  const int destProc = 2;
+  change_list.set_entity_destination(parent_elem(), destProc);
+
+  test_all_elems_have_no_destination(childElems);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_entities_have_destination(childElems, destProc);
+}
+
+TEST_F(RebalanceForAdaptivityFixtureForPercept, OneLevelChildMovedWithoutParent)
+{
+  build_one_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector childElems = all_child_elems();
+
+  test_all_elems_have_no_destination(childElems);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_elems_have_no_destination(childElems);
+}
+
+TEST_F(RebalanceForAdaptivityFixtureForPercept, TwoLevels)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector allChildElems = all_child_elems();
+  ASSERT_EQ(14u, allChildElems.size());
+
+  const int destProc = 2;
+  change_list.set_entity_destination(parent_elem(), destProc);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_entities_have_destination(allChildElems, destProc);
+  test_all_family_tree_entities_have_destination(destProc);
+}
+
+TEST_F(RebalanceForAdaptivityFixtureForPercept, TwoLevelsFirstLevelChildInitialDifferentProc)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  const stk::mesh::EntityVector allChildElems = all_child_elems();
+  ASSERT_EQ(14u, allChildElems.size());
+
+  const int destProc = 2;
+  change_list.set_entity_destination(parent_elem(), destProc);
+  change_list.set_entity_destination(allChildElems[2], 5);
+
+  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
+
+  test_all_entities_have_destination(allChildElems, destProc);
+  test_all_family_tree_entities_have_destination(destProc);
+}
+
+TEST_F(RebalanceForAdaptivityFixtureForPercept, AccumulateAdaptivityChildWeightsTwoLevelAdaptedTri)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  set_weight_for_elem(parent_elem(), 10.);
+
+  const stk::mesh::EntityVector allChildElems = all_child_elems();
+  ASSERT_EQ(14u, allChildElems.size());
+  const stk::mesh::EntityVector allButLastChildElems(allChildElems.begin(), allChildElems.begin()+13);
+
+  for (auto childElem : allButLastChildElems)
+    set_weight_for_elem(childElem, 1.);
+
+  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
+
+  test_elements_have_weight(allButLastChildElems, 0.);
+  test_element_has_weight(parent_elem(), 23.);
+}
+
+TEST_F(RebalanceForAdaptivityFixtureForPercept, AccumulateAdaptivityChildWeightsUnadaptedElement)
+{
+  build_two_level_adapted_single_tri_mesh(mesh, refinement);
+
+  set_weight_for_elem(parent_elem(), 10.);
+
+  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
+
+  test_element_has_weight(parent_elem(), 10.);
+}
+#endif
 
 TEST(Rebalance, MultipleWeightFields)
 {
+  if (!rebalance_utils::have_parmetis())
+    return;
+
   SimpleStkFixture fixture(2, MPI_COMM_WORLD);
 
   auto & mesh = fixture.bulk_data();
@@ -427,6 +759,7 @@ TEST(Rebalance, MultipleWeightFields)
   }
 
   rebalance_utils::rebalance_mesh(mesh,
+      nullptr,
       nullptr,
       {weights_field_1.name(), weights_field_2.name()},
       "coordinates",

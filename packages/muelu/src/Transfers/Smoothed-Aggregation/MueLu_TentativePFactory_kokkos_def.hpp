@@ -46,23 +46,17 @@
 #ifndef MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include "Kokkos_UnorderedMap.hpp"
 #include "Xpetra_CrsGraphFactory.hpp"
 
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 
 #include "MueLu_MasterList.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
 
 #include "Xpetra_IO.hpp"
 
@@ -384,7 +378,7 @@ namespace MueLu {
   } // namespace anonymous
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -409,7 +403,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
     // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
@@ -432,12 +426,12 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
@@ -446,17 +440,24 @@ namespace MueLu {
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto A             = Get< RCP<Matrix> >                  (fineLevel, "A");
-    auto aggregates    = Get< RCP<Aggregates_kokkos> >       (fineLevel, "Aggregates");
-    auto amalgInfo     = Get< RCP<AmalgamationInfo_kokkos> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >             (fineLevel, nspName);
-    auto coarseMap     = Get< RCP<const Map> >               (fineLevel, "CoarseMap");
+    auto A             = Get< RCP<Matrix> >            (fineLevel, "A");
+    auto aggregates    = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
+    auto amalgInfo     = Get< RCP<AmalgamationInfo> >  (fineLevel, "UnAmalgamationInfo");
+    auto fineNullspace = Get< RCP<MultiVector> >       (fineLevel, nspName);
+    auto coarseMap     = Get< RCP<const Map> >         (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
       fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
     }
 
     RCP<Matrix>      Ptentative;
+    // No coarse DoFs so we need to bail by setting Ptentattive to null and returning
+    // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if ( aggregates->GetNumGlobalAggregatesComputeIfNeeded() == 0) {
+      Ptentative = Teuchos::null;
+      Set(coarseLevel, "P", Ptentative);
+      return;
+    }
     RCP<MultiVector> coarseNullspace;
     RCP<RealValuedMultiVector> coarseCoords;
 
@@ -574,9 +575,9 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
-                  RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+  BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
+                  RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
     auto rowMap = A->getRowMap();
@@ -592,7 +593,7 @@ namespace MueLu {
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-    typename Aggregates_kokkos::local_graph_type aggGraph;
+    typename Aggregates::local_graph_type aggGraph;
     {
       SubFactoryMonitor m2(*this, "Get Aggregates graph", coarseLevel);
       aggGraph = aggregates->GetGraph();
@@ -635,7 +636,7 @@ namespace MueLu {
     // Create Kokkos::View (on the device) to store the aggreate dof sizes
     // Later used to get aggregate dof offsets
     // NOTE: This zeros itself on construction
-    typedef typename Aggregates_kokkos::aggregates_sizes_type::non_const_type AggSizeType;
+    typedef typename Aggregates::aggregates_sizes_type::non_const_type AggSizeType;
     AggSizeType aggDofSizes;
 
     if (stridedBlockSize == 1) {
@@ -979,13 +980,12 @@ namespace MueLu {
 
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-    BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
-                  RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+    BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
+                  RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative,
                   RCP<MultiVector>& coarseNullspace, const int levelID) const {
-#ifdef HAVE_MUELU_TPETRA
-  /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
+  /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
        2) QR is not supported:  Under assumption #1, this shouldn't cause problems.
@@ -1000,8 +1000,8 @@ namespace MueLu {
     //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType Magnitude;
+    // typedef Teuchos::ScalarTraits<SC> STS;
+    // typedef typename STS::magnitudeType Magnitude;
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
@@ -1014,7 +1014,7 @@ namespace MueLu {
     auto aggSizes          = aggregates->ComputeAggregateSizes();
 
 
-    typename Aggregates_kokkos::local_graph_type aggGraph;
+    typename Aggregates::local_graph_type aggGraph;
     {
       SubFactoryMonitor m2(*this, "Get Aggregates graph", coarseLevel);
       aggGraph = aggregates->GetGraph();
@@ -1032,7 +1032,7 @@ namespace MueLu {
                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                       numCoarseBlockRows,
                                                       coarsePointMap->getIndexBase(),
-                                                      coarsePointMap->getComm());    
+                                                      coarsePointMap->getComm());
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     //    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
@@ -1070,7 +1070,7 @@ namespace MueLu {
     // Create Kokkos::View (on the device) to store the aggreate dof sizes
     // Later used to get aggregate dof offsets
     // NOTE: This zeros itself on construction
-    typedef typename Aggregates_kokkos::aggregates_sizes_type::non_const_type AggSizeType;
+    typedef typename Aggregates::aggregates_sizes_type::non_const_type AggSizeType;
     AggSizeType aggDofSizes; // This turns into "starts" after the parallel_scan
 
     {
@@ -1080,7 +1080,7 @@ namespace MueLu {
       aggDofSizes = AggSizeType("agg_dof_sizes", numAggregates+1);
 
       Kokkos::deep_copy(Kokkos::subview(aggDofSizes, Kokkos::make_pair(static_cast<size_t>(1), numAggregates+1)), aggSizes);
-    } 
+    }
 
     // Find maximum dof size for aggregates
     // Later used to reserve enough scratch space for local QR decompositions
@@ -1133,7 +1133,7 @@ namespace MueLu {
     typedef typename Xpetra::Matrix<SC,LO,GO,NO>::local_matrix_type    local_matrix_type;
     typedef typename local_matrix_type::row_map_type::non_const_type   rows_type;
     typedef typename local_matrix_type::index_type::non_const_type     cols_type;
-    typedef typename local_matrix_type::values_type::non_const_type    vals_type;
+    // typedef typename local_matrix_type::values_type::non_const_type    vals_type;
 
 
     // Device View for status (error messages...)
@@ -1148,7 +1148,7 @@ namespace MueLu {
 
     // BlockCrs requires that we build the (block) graph first, so let's do that...
 
-    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one 
+    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one
     // block non-zero per row in the matrix;
     rows_type ia(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_rowptr"), numFineBlockRows+1);
     cols_type ja(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_colind"), numFineBlockRows);
@@ -1190,7 +1190,7 @@ namespace MueLu {
       LO nnz=0;
       Kokkos::parallel_scan("MueLu:TentativePF:BlockCrs:compress_rows", range_type(0,numFineBlockRows),
                             KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-                              if(final) 
+                              if(final)
                                 i_temp[i] = upd;
                               for (auto j = ia[i]; j < ia[i+1]; j++)
                                 if (ja[j] != INVALID)
@@ -1211,7 +1211,7 @@ namespace MueLu {
                                  j_temp[rowStart+lnnz] = ja[j];
                                  lnnz++;
                                }
-                           });     
+                           });
       
       ia = i_temp;
       ja = j_temp;
@@ -1274,27 +1274,23 @@ namespace MueLu {
 
                            // R = norm
                            for(LO j=0; j<(LO)NSDim; j++)
-                             coarseNS(offset+j,j) = one;                                                    
+                             coarseNS(offset+j,j) = one;
                          });
 
-  Ptentative = P_wrap;
-
-#else
-    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
-#endif
+    Ptentative = P_wrap;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */,
-                RCP<AmalgamationInfo_kokkos> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates> /* aggregates */,
+                RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
                 RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */,
                 RCP<MultiVector>& /* coarseNullspace */) const {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   isGoodMap(const Map& rowMap, const Map& colMap) const {
     auto rowLocalMap = rowMap.getLocalMap();
     auto colLocalMap = colMap.getLocalMap();
@@ -1317,5 +1313,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_TENTATIVEPFACTORY_KOKKOS_DEF_HPP

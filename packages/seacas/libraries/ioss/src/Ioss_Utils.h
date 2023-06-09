@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,8 +6,11 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_EntityType.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <Ioss_Sort.h>
@@ -32,34 +35,16 @@ namespace Ioss {
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
 
-namespace {
-  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
-  template <typename T> size_t unique(std::vector<T> &out, bool skip_first)
-  {
-    if (out.empty())
-      return 0;
-    size_t i    = 1;
-    size_t pos  = 1;
-    T      oldv = out[0];
-    if (skip_first) {
-      i    = 2;
-      pos  = 2;
-      oldv = out[1];
-    }
-    for (; i < out.size(); ++i) {
-      T newv   = out[i];
-      out[pos] = newv;
-      pos += (newv != oldv);
-      oldv = newv;
-    }
-    return pos;
-  }
-} // namespace
+#ifdef NDEBUG
+#define IOSS_ASSERT_USED(x) (void)x
+#else
+#define IOSS_ASSERT_USED(x)
+#endif
 
 namespace Ioss {
   /* \brief Utility methods.
    */
-  class Utils
+  class IOSS_EXPORT Utils
   {
   public:
     Utils()  = default;
@@ -79,27 +64,31 @@ namespace Ioss {
     /** \brief set the stream for all streams (output, debug, and warning) to the specified
      * `out_stream`
      */
-    static void set_all_streams(std::ostream &out_stream)
-    {
-      m_outputStream  = &out_stream;
-      m_debugStream   = &out_stream;
-      m_warningStream = &out_stream;
-    }
+    static void set_all_streams(std::ostream &out_stream);
+
+    /** \brief get the debug stream.
+     */
+    static std::ostream &get_debug_stream();
+
+    /** \brief get the warning stream.
+     */
+    static std::ostream &get_warning_stream();
+
+    /** \brief get the output stream.
+     */
+    static std::ostream &get_output_stream();
 
     /** \brief set the output stream to the specified `output_stream`
      */
-    static void set_output_stream(std::ostream &output_stream) { m_outputStream = &output_stream; }
+    static void set_output_stream(std::ostream &output_stream);
 
     /** \brief set the debug stream to the specified `debug_stream`
      */
-    static void set_debug_stream(std::ostream &debug_stream) { m_debugStream = &debug_stream; }
+    static void set_debug_stream(std::ostream &debug_stream);
 
     /** \brief set the warning stream to the specified `warning_stream`
      */
-    static void set_warning_stream(std::ostream &warning_stream)
-    {
-      m_warningStream = &warning_stream;
-    }
+    static void set_warning_stream(std::ostream &warning_stream);
 
     /** \brief set the pre-warning text
      * Sets the text output prior to a warning to the specified text.
@@ -117,6 +106,15 @@ namespace Ioss {
         errmsg << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
         IOSS_ERROR(errmsg);
       }
+    }
+
+    static bool is_path_absolute(const std::string &path)
+    {
+#ifdef __IOSS_WINDOWS__
+      return path[0] == '\\' || path[1] == ':';
+#else
+      return path[0] == '/';
+#endif
     }
 
     /** \brief guess file type from extension */
@@ -191,7 +189,7 @@ namespace Ioss {
 
     template <size_t size> static void copy_string(char (&output)[size], const char *source)
     {
-      // Copy the string — don’t copy too many bytes.
+      // Copy the string don't copy too many bytes.
       copy_string(output, source, size);
     }
 
@@ -240,7 +238,8 @@ namespace Ioss {
       return pow2;
     }
 
-    template <typename T> static bool check_block_order(const std::vector<T *> &blocks)
+    template <typename T>
+    static bool check_block_order(IOSS_MAYBE_UNUSED const std::vector<T *> &blocks)
     {
 #ifndef NDEBUG
       // Verify that element blocks are defined in sorted offset order...
@@ -286,6 +285,12 @@ namespace Ioss {
     static int         get_number(const std::string &suffix);
     static int         extract_id(const std::string &name_id);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
+
+    /** Return the trailing digits (if any) from `name`
+     * `hex20` would return the string `20`
+     * `tetra` would return an empty string.
+     */
+    static std::string get_trailing_digits(const std::string &name);
 
     /** \brief create a string that describes the list of input `ids` collapsing ranges if possible.
      *
@@ -394,6 +399,13 @@ namespace Ioss {
      */
     static bool substr_equal(const std::string &prefix, const std::string &str);
 
+    /** Check all values in `data` to make sure that if they are converted to a double and
+     * back again, there will be no data loss.  This requires that the value be less than 2^53.
+     * This is done in the exodus database since it stores all transient data as doubles...
+     */
+    static bool check_int_to_real_overflow(const Ioss::Field &field, int64_t *data,
+                                           size_t num_entity);
+
     /** \brief Get a string containing `uname` output.
      *
      *  This output contains information about the current computing platform.
@@ -403,10 +415,6 @@ namespace Ioss {
      *  \returns The platform information string.
      */
     static std::string platform_information();
-
-    /** \brief Return amount of memory being used on this processor */
-    static size_t get_memory_info();
-    static size_t get_hwm_memory_info();
 
     /** \brief Get a filename relative to the specified working directory (if any)
      *         of the current execution.
@@ -490,7 +498,9 @@ namespace Ioss {
     static std::string variable_name_kluge(const std::string &name, size_t component_count,
                                            size_t copies, size_t max_var_len);
 
-    static std::string shape_to_string(const ElementShape &shape);
+    static std::string shape_to_string(const Ioss::ElementShape &shape);
+
+    static std::string entity_type_to_string(const Ioss::EntityType &type);
 
     /** \brief Create a nominal mesh for use in history databases.
      *
@@ -509,15 +519,40 @@ namespace Ioss {
     static void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
                               const std::string &header, const std::string &suffix = "\n\t",
                               bool print_empty = false);
+
+  private:
+    // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
+    template <typename T> static size_t unique(std::vector<T> &out, bool skip_first)
+    {
+      if (out.empty())
+        return 0;
+      size_t i    = 1;
+      size_t pos  = 1;
+      T      oldv = out[0];
+      if (skip_first) {
+        i    = 2;
+        pos  = 2;
+        oldv = out[1];
+      }
+      for (; i < out.size(); ++i) {
+        T newv   = out[i];
+        out[pos] = newv;
+        pos += (newv != oldv);
+        oldv = newv;
+      }
+      return pos;
+    }
   };
 
   inline std::ostream &OUTPUT() { return *Utils::m_outputStream; }
 
-  inline std::ostream &DEBUG() { return *Utils::m_debugStream; }
+  inline std::ostream &DebugOut() { return *Utils::m_debugStream; }
 
-  inline std::ostream &WARNING()
+  inline std::ostream &WarnOut(bool output_prewarning = true)
   {
-    *Utils::m_warningStream << Utils::m_preWarningText;
+    if (output_prewarning) {
+      *Utils::m_warningStream << Utils::m_preWarningText;
+    }
     return *Utils::m_warningStream;
   }
 

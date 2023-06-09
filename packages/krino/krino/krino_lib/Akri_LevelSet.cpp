@@ -27,14 +27,16 @@
 #include <iomanip>
 #include <cstdio>
 
-#include <Ioss_SubSystem.h>
 #include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_FastIterativeMethod.hpp>
 #include <Akri_Surface_Manager.hpp>
+#include <Akri_OutputUtils.hpp>
+#include <Akri_PatchInterpolator.hpp>
 
 namespace krino {
 
@@ -111,7 +113,7 @@ void LevelSet::setup(stk::mesh::MetaData & meta)
 
 void LevelSet::post_commit_setup(stk::mesh::MetaData & meta)
 {
-  const double max_elem_size = compute_maximum_element_size(meta.mesh_bulk_data());
+  const double max_elem_size = compute_maximum_element_size(meta.mesh_bulk_data(), meta.universal_part());
 
   const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
   for (auto&& ls : surfaceManager.get_levelsets())
@@ -124,7 +126,7 @@ void LevelSet::post_commit_setup(stk::mesh::MetaData & meta)
     else if (ls->narrow_band_size() > 0.)
     {
       const double narrow_band = ls->narrow_band_size();
-      ThrowErrorMsgIf(!(narrow_band > max_elem_size),
+      STK_ThrowErrorMsgIf(!(narrow_band > max_elem_size),
           "Currently, narrow_band_size must be greater than the maximum element size of " << max_elem_size << std::endl
           << "in order to avoid unintentional accuracy degradation. If this feature is needed, please contact krino developers.");
     }
@@ -164,7 +166,7 @@ void LevelSet::register_fields(void)
       }
       else
       {
-        ThrowErrorMsgIf(
+        STK_ThrowErrorMsgIf(
             true, "Isosurface variable '" << my_isovar_name << "' should already be registered.");
       }
     }
@@ -218,7 +220,8 @@ void LevelSet::register_fields(void)
     }
     else
     {
-      FieldRef distance_ref = aux_meta().register_field( my_distance_name, type_double, stk::topology::NODE_RANK, 2, 1, meta().universal_part() );
+      FieldRef distance_ref = aux_meta().register_field(
+          my_distance_name, type_double, stk::topology::NODE_RANK, 2, 1, meta().universal_part());
       set_old_distance_field( FieldRef( distance_ref, stk::mesh::StateOld ) );
       set_distance_field( FieldRef( distance_ref, stk::mesh::StateNew ) );
     }
@@ -237,7 +240,7 @@ void LevelSet::register_fields(void)
       }
       else
       {
-        ThrowErrorMsgIf(true, "Could not find block " << entry.first << " when setting speed for computing time-of-arrival.");
+        STK_ThrowErrorMsgIf(true, "Could not find block " << entry.first << " when setting speed for computing time-of-arrival.");
       }
     }
   }
@@ -245,9 +248,17 @@ void LevelSet::register_fields(void)
   if (!my_time_of_arrival_element_speed_field_name.empty())
   {
     const bool hasSpeedField = aux_meta().has_field(stk::topology::ELEMENT_RANK, my_time_of_arrival_element_speed_field_name);
-    ThrowErrorMsgIf(!hasSpeedField, "Could not find element speed field " << my_time_of_arrival_element_speed_field_name << " for computing time-of-arrival.");
+    STK_ThrowErrorMsgIf(!hasSpeedField, "Could not find element speed field " << my_time_of_arrival_element_speed_field_name << " for computing time-of-arrival.");
     myTimeOfArrivalElementSpeedField = aux_meta().get_field(stk::topology::ELEMENT_RANK, my_time_of_arrival_element_speed_field_name);
-    ThrowRequireMsg(myTimeOfArrivalBlockSpeeds.empty(), "Speed for time-of-arrival calculation should be specified via element speed or block speed (not both).");
+    STK_ThrowRequireMsg(myTimeOfArrivalBlockSpeeds.empty(), "Speed for time-of-arrival calculation should be specified via element speed or block speed (not both).");
+  }
+
+  const bool usingLocallyConservedRedistancing = true; // where should this be?
+  if (usingLocallyConservedRedistancing)
+  {
+    const FieldType & type_double  = FieldType::REAL;
+    myDistanceCorrectionNumerator = aux_meta().register_field( "DistanceCorrectionNumerator", type_double, stk::topology::NODE_RANK, 1, 1, meta().universal_part() );
+    myDistanceCorrectionDenominator = aux_meta().register_field( "DistanceCorrectionDenominator", type_double, stk::topology::NODE_RANK, 1, 1, meta().universal_part() );
   }
 }
 
@@ -259,127 +270,18 @@ LevelSet::set_time_of_arrival_block_speed(const std::string & blockName, const d
   std::string lowerBlockName = blockName;
   std::transform(lowerBlockName.begin(), lowerBlockName.end(), lowerBlockName.begin(), ::tolower);
   auto entry = myTimeOfArrivalBlockSpeedsByName.find(lowerBlockName);
-  ThrowRequireMsg(entry == myTimeOfArrivalBlockSpeedsByName.end(), "Speed for block " << blockName << " specified more than once.");
+  STK_ThrowRequireMsg(entry == myTimeOfArrivalBlockSpeedsByName.end(), "Speed for block " << blockName << " specified more than once.");
   myTimeOfArrivalBlockSpeedsByName[lowerBlockName] = blockSpeed;
 }
 
 //-----------------------------------------------------------------------------------
 void
-LevelSet::facets_exoii(void)
+LevelSet::write_facets(void)
 {
   /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::facets_exoii(void)"); /* %TRACE% */
   Faceted_Surface & f = *facets;
-  facets_exoii(f);
-}
-
-
-void
-LevelSet::facets_exoii(Faceted_Surface & cs)
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::facets_exoii(Faceted_Surface & cs)"); /* %TRACE% */
-
-  int nfaces = cs.size();
-  const int nodes_per_elem = spatial_dimension;
-  const int nnodes = nfaces * nodes_per_elem;
-  const int nelems = nfaces * 1; //writing out faces as elements
-
-  // construct file name
-  ThrowAssert(my_facetFileIndex <= 99999);
-  char counterChar[6];
-  std::sprintf(counterChar, "%.5d", my_facetFileIndex);
-  std::string fn = std::string("facets.") + name() + ".e-s" + std::string(counterChar);
-
-  // Type (ExodusII) is hard-wired at this time.
-  Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", fn, Ioss::WRITE_RESULTS);
-  Ioss::Region io(db, "FacetRegion");
-
-  // find offsets for consistent global numbering
-  int elem_start = 0;
-  if ( mesh().parallel_size() > 1 ) {
-    std::vector< int > num_faces;
-    num_faces.resize( mesh().parallel_size() );
-
-    // Gather everyone's facet list sizes
-    // I don't think there is a framework call for this...
-    MPI_Allgather( &nfaces, 1, MPI_INT,
-		   &(num_faces[0]), 1, MPI_INT, mesh().parallel() );
-    for (int i = 0; i< mesh().parallel_rank(); ++i) {
-      elem_start += num_faces[i];
-    }
-  }
-
-  const std::string description = "level set interface facets";
-  io.property_add(Ioss::Property("title", description));
-  io.begin_mode(Ioss::STATE_DEFINE_MODEL);
-
-  // if we have no elements bail now
-  if ( 0 == nelems ) {
-    io.end_mode(Ioss::STATE_DEFINE_MODEL);
-    my_facetFileIndex++;
-    return;
-  }
-
-  Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", nnodes, spatial_dimension);
-  io.add(nb);
-
-  std::string el_type;
-  if (spatial_dimension == 3)
-    el_type = "trishell3";
-  else
-    el_type = "shellline2d2";
-
-  Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "block_1", el_type, nelems);
-  io.add(eb);
-
-  io.end_mode(Ioss::STATE_DEFINE_MODEL);
-  io.begin_mode(Ioss::STATE_MODEL);
-
-  const FacetOwningVec & cs_surfaces = cs.get_facets();
-
-  // loop over elements and node to create maps
-  {
-    std::vector< int > nmap, emap;
-    nmap.reserve(nnodes);
-    emap.reserve(nelems);
-
-    for ( unsigned n=0, e=0; e<cs_surfaces.size(); ++e ) {
-      emap.push_back(elem_start + e + 1);
-      for ( int j = 0; j < nodes_per_elem; ++j ) {
-	nmap.push_back(nodes_per_elem*elem_start + n + 1);
-	++n;
-      }
-    }
-    nb->put_field_data("ids", nmap);
-    eb->put_field_data("ids", emap);
-  }
-
-  // generate coordinates
-  {
-    std::vector< double > xyz;
-    xyz.reserve(spatial_dimension*nnodes);
-
-    for ( auto&& cs_surface : cs_surfaces ) {
-      for ( int j = 0; j < nodes_per_elem; ++j ) {
-	const Vector3d & vert = cs_surface->facet_vertex(j);
-	xyz.push_back(vert[0]);
-	xyz.push_back(vert[1]);
-	if (3 == spatial_dimension) xyz.push_back(vert[2]);
-      }
-    }
-    nb->put_field_data("mesh_model_coordinates", xyz);
-  }
-
-  // generate connectivity
-  {
-    std::vector< int > conn;
-    conn.reserve(nnodes);
-    for ( int n = 0; n < nnodes; ++n ) {
-      conn.push_back(nodes_per_elem*elem_start + n+1);
-    }
-    eb->put_field_data("connectivity", conn);
-  }
-
-  io.end_mode(Ioss::STATE_MODEL);
-  my_facetFileIndex++;
+  const std::string fileBaseName = "facets_" + name();
+  krino::write_facets(spatial_dimension, f, fileBaseName, my_facetFileIndex++, mesh().parallel());
 }
 
 //-----------------------------------------------------------------------------------
@@ -468,7 +370,7 @@ LevelSet::advance_semilagrangian(const double deltaTime)
     // debugging
     if (krinolog.shouldPrint(LOG_FACETS))
     {
-      facets_exoii();
+      write_facets();
     }
   }
 }
@@ -551,7 +453,176 @@ LevelSet::clear_initialization_data()
     my_IC_alg->clear();
 }
 
-double LevelSet::constrained_redistance(const bool use_initial_vol)
+static void accumulate_levelset_integrals_on_element(const stk::mesh::BulkData & mesh,
+    stk::mesh::Entity elem,
+    double & area,
+    double & negVol,
+    double & posVol,
+    const double avgElemSize,
+    const FieldRef coordsField,
+    const FieldRef isoField,
+    const double isoVal)
+{
+  ContourElement contourElement(mesh, elem, coordsField, isoField, isoVal);
+  contourElement.compute_subelement_decomposition(avgElemSize);
+
+  area += contourElement.compute_area_of_interface();
+  negVol += contourElement.compute_signed_volume(-1);
+  posVol += contourElement.compute_signed_volume(1);
+}
+
+
+void LevelSet::locally_conserved_redistance()
+{
+  const double avgElemSize = compute_average_edge_length();
+  const double edgeTolForCalculatingCorrection = 1.e-6;
+
+  sierra::ArrayContainer<double,DIM,NINT> intgPtLocations;
+  sierra::ArrayContainer<double,NINT> intgWeights;
+  sierra::ArrayContainer<double,NINT> determinants;
+  sierra::ArrayContainer<double, NPE_VAR, NINT> weightFnsOnInterface;
+
+  const FieldRef coordsField = get_coordinates_field();
+  const FieldRef isoField = get_isovar_field();
+  const FieldRef dField = get_distance_field();
+
+  stk::mesh::Selector active_field_selector =
+      stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
+  std::vector<stk::mesh::Entity> elements;
+  stk::mesh::get_selected_entities(
+      active_field_selector, mesh().buckets(stk::topology::ELEMENT_RANK), elements);
+
+  const double isoVal = 0.0;
+
+  std::vector<double> negVolBefore;
+  negVolBefore.reserve(elements.size());
+
+  for (auto && elem : elements)
+  {
+    ContourElement contourElement(mesh(), elem, coordsField, isoField, isoVal);
+    contourElement.compute_subelement_decomposition(avgElemSize, edgeTolForCalculatingCorrection);
+    const double negVol = contourElement.compute_signed_volume(-1);
+    negVolBefore.push_back(negVol);
+  }
+
+  redistance();
+
+  const stk::mesh::Selector active_not_ghost_field_selector = aux_meta().active_not_ghost_selector() & stk::mesh::selectField(dField);
+
+  const int dim = mesh().mesh_meta_data().spatial_dimension();
+  const double volNorm = std::pow(avgElemSize, dim);
+  const double convergenceTol = 1.e-6;
+
+  const bool useWeightedCorrection = true;
+  const bool useWeightedErrorAndArea = !useWeightedCorrection;
+
+  const int maxCorrectionSteps = 30;
+  bool done = false;
+  int iter = 0;
+  while (!done)
+  {
+    stk::mesh::field_fill(0., myDistanceCorrectionNumerator);
+    stk::mesh::field_fill(0., myDistanceCorrectionDenominator);
+
+    double sumVolErrorSquared = 0.;
+    double count = 0.;
+    for (unsigned iElem = 0; iElem < elements.size(); iElem++)
+    {
+      const auto elem = elements[iElem];
+
+      ContourElement contourElement(mesh(), elem, coordsField, isoField, isoVal);
+      contourElement.compute_subelement_decomposition(avgElemSize, edgeTolForCalculatingCorrection);
+
+      const double negVolCurrent = contourElement.compute_signed_volume(-1);
+
+      const int numAreaIntgPts = contourElement.gather_intg_pts(0, intgPtLocations, intgWeights, determinants);
+      const double area = ContourElement::compute_domain_integral(intgPtLocations, intgWeights, determinants);
+
+      if (area == 0.)
+        continue;
+
+      weightFnsOnInterface.resize(contourElement.dist_topology().num_nodes(), numAreaIntgPts);
+      contourElement.dist_master_elem().shape_fcn(numAreaIntgPts, intgPtLocations.ptr(), weightFnsOnInterface.ptr());
+
+      const double volError = negVolCurrent - negVolBefore[iElem];
+
+      const StkMeshEntities elemNodes{mesh().begin_nodes(elem), mesh().end_nodes(elem)};
+      for (size_t i=0; i<elemNodes.size(); ++i)
+      {
+        double area_wi = 0;
+        for (int ip = 0; ip < numAreaIntgPts; ++ip)
+        {
+          area_wi += weightFnsOnInterface(i, ip) * intgWeights(ip) * determinants(ip);
+        }
+
+        double & correctionNum = *(field_data<double>(myDistanceCorrectionNumerator, elemNodes[i]));
+        double & correctionDenom = *(field_data<double>(myDistanceCorrectionDenominator, elemNodes[i]));
+
+        if (useWeightedCorrection)
+        {
+          const double elementCorrection = volError/area;
+          correctionNum += elementCorrection * area_wi;
+          correctionDenom += area_wi;
+        }
+        else if (useWeightedErrorAndArea)
+        {
+          correctionNum += volError * area_wi;
+          correctionDenom += area * area_wi;
+        }
+      }
+
+      sumVolErrorSquared += (negVolCurrent - negVolBefore[iElem])*(negVolCurrent - negVolBefore[iElem]);
+      count += 1.;
+    }
+
+    stk::mesh::parallel_sum(mesh(), {&myDistanceCorrectionNumerator.field(), &myDistanceCorrectionDenominator.field()});
+
+    double sumCorrectionSquared = 0.;
+    size_t countCorrection = 0;
+    for ( auto && bucket : mesh().get_buckets( stk::topology::NODE_RANK, active_not_ghost_field_selector) )
+    {
+      const stk::mesh::Bucket & b = *bucket;
+
+      double *d = field_data<double>(dField , b);
+      double * correctionNum = field_data<double>(myDistanceCorrectionNumerator, b);
+      double * correctionDenom = field_data<double>(myDistanceCorrectionDenominator, b);
+      countCorrection += b.size();
+
+      for (size_t i = 0; i < b.size(); ++i)
+      {
+        if (correctionDenom[i] != 0)
+        {
+          const double correction = correctionNum[i]/correctionDenom[i];
+          d[i] += correction;
+          sumCorrectionSquared += correction*correction;
+        }
+      }
+    }  // end bucket loop
+
+    const double localSumCorrectionSquared = sumCorrectionSquared;
+    stk::all_reduce_sum(mesh().parallel(), &localSumCorrectionSquared, &sumCorrectionSquared, 1);
+    const size_t localCountCorrection = countCorrection;
+    stk::all_reduce_sum(mesh().parallel(), &localCountCorrection, &countCorrection, 1);
+
+    const double correctionNorm = std::sqrt(sumCorrectionSquared/countCorrection/avgElemSize);
+    if(krinolog.shouldPrint(LOG_DEBUG))
+      krinolog << "Iteration " << iter << ", error = " << std::sqrt(sumVolErrorSquared/count/volNorm) << ", correction = " << correctionNorm << "\n";
+    done = !(++iter < maxCorrectionSteps) || (correctionNorm < convergenceTol);
+  }
+}
+
+std::pair<double,double> LevelSet::get_conserved_negative_volume_and_time() const
+{
+  return std::make_pair(myConservedNegVolume, myConservedNegVolumeTime);
+}
+
+void LevelSet::set_conserved_negative_volume_and_time(const double vol, const double time)
+{
+  myConservedNegVolume = vol;
+  myConservedNegVolumeTime = time;
+}
+
+double LevelSet::constrained_redistance(const bool use_initial_vol, const double & signChangePurturbationTol)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::constrained_redistance(const bool use_initial_vol)"); /* %TRACE% */
 
   // Steps:
@@ -582,12 +653,12 @@ double LevelSet::constrained_redistance(const bool use_initial_vol)
   {
     krinolog << "Performing conserved redistancing..." << stk::diag::dendl;
 
-    if (my_initial_neg_vol <= 0.0)
+    if (myConservedNegVolume <= 0.0)
     {
-      my_initial_neg_vol = start_neg_vol;
+      myConservedNegVolume = start_neg_vol;
     }
-    start_pos_vol = start_neg_vol + start_pos_vol - my_initial_neg_vol;
-    start_neg_vol = my_initial_neg_vol;
+    start_pos_vol = start_neg_vol + start_pos_vol - myConservedNegVolume;
+    start_neg_vol = myConservedNegVolume;
   }
   else
   {
@@ -600,12 +671,20 @@ double LevelSet::constrained_redistance(const bool use_initial_vol)
   krinolog << "Correcting for volume change:" << stk::diag::dendl;
 
   // find correction needed to conserve volume
+
   const double correction = find_redistance_correction( start_area, start_neg_vol, start_pos_vol );
 
-  // update nodal distance field
-  increment_distance( -correction, true );
+  double area_i = 0;
+  double neg_vol_i = 0;
+  double pos_vol_i = 0;
 
-  return my_initial_neg_vol;
+  compute_sizes(area_i, neg_vol_i, pos_vol_i, 0);
+  // update nodal distance field
+  increment_distance( -correction, true, signChangePurturbationTol);
+
+  compute_sizes(area_i, neg_vol_i, pos_vol_i, 0);
+
+  return myConservedNegVolume;
 }
 
 //--------------------------------------------------------------------------------
@@ -629,36 +708,28 @@ static std::function<std::pair<double,double>(const double)> build_volume_error_
   return volume_error_function_with_derivative;
 }
 
-double
-LevelSet::find_redistance_correction( const double start_area,
-                                      const double start_neg_vol,
-                                      const double start_pos_vol,
-                                      const int max_iterations,
-                                      const double tol )
-{ /* %TRACE% */  /* %TRACE% */
-  auto volume_error_function_with_derivative = build_volume_error_function_with_derivative(*this, start_neg_vol, start_pos_vol);
-  const auto result = find_root_newton_raphson(volume_error_function_with_derivative, 0., max_iterations, tol);
+double LevelSet::find_redistance_correction(const double start_area,
+    const double start_neg_vol,
+    const double start_pos_vol,
+    const int max_iterations,
+    const double tol)
+{ /* %TRACE% */ /* %TRACE% */
+  auto volume_error_function_with_derivative =
+      build_volume_error_function_with_derivative(*this, start_neg_vol, start_pos_vol);
+  const auto result =
+      find_root_newton_raphson(volume_error_function_with_derivative, 0., max_iterations, tol);
 
   if (!result.first)
   {
     stk::RuntimeWarningAdHoc() << "\nConstrained renormalization failed to converge to root within "
-      << max_iterations << " iterations. Continuing with correction " << result.second << "\n";
+                               << max_iterations << " iterations. Continuing with correction "
+                               << result.second << "\n";
   }
   return result.second;
 }
 
-void
-LevelSet::redistance()
+void LevelSet::sync_all_fields_to_host()
 {
-  redistance(my_meta.universal_part());
-}
-
-void
-LevelSet::redistance(const stk::mesh::Selector & selector)
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::redistance(void)"); /* %TRACE% */
-
-  ThrowErrorMsgIf(!my_time_of_arrival_element_speed_field_name.empty(), "Redistancing a time-of-arrival field will corrupt it.");
-
   if (get_isovar_field().valid()) get_isovar_field().field().sync_to_host();
   if (get_distance_field().valid()) get_distance_field().field().sync_to_host();
   if (get_old_distance_field().valid()) get_old_distance_field().field().sync_to_host();
@@ -666,26 +737,14 @@ LevelSet::redistance(const stk::mesh::Selector & selector)
   if (get_isovar_field().valid()) get_isovar_field().field().modify_on_host();
   if (get_distance_field().valid()) get_distance_field().field().modify_on_host();
   if (get_old_distance_field().valid()) get_old_distance_field().field().modify_on_host();
+}
 
-  if (FAST_MARCHING == my_redistance_method || FAST_ITERATIVE == my_redistance_method)
-  {
-    fast_methods_redistance(selector);
-    return;
-  }
-  ThrowRequire(CLOSEST_POINT == my_redistance_method);
-
-  krinolog << "Redistancing the level set field..." << stk::diag::dendl;
-
-  // our starting point is a nodal variable (like distance or temperature)
-  // that needs to be contoured to form the surface
-  // after forming the surface, the nodal distance needs to be calculated
-  // the newly formed surface should be remain in the vector facets
-  build_facets_locally(selector);
-
+void LevelSet::redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector)
+{
   // debugging
   if (krinolog.shouldPrint(LOG_FACETS))
     {
-      facets_exoii();
+      write_facets();
     }
 
   // swap these facets into facet_old to take advantage of routines
@@ -694,14 +753,131 @@ LevelSet::redistance(const stk::mesh::Selector & selector)
 
   // get non-local facets such that we have copies of all "old" facets
   // within the range of this proc's nodes
-  prepare_to_compute_distance( 0., selector );
+  prepare_to_compute_distance( 0., volumeSelector );
 
   // compute nodal distances with semi-lagrangian step
-  compute_distance_semilagrangian( 0., selector );
+  compute_distance_semilagrangian( 0., volumeSelector );
 
   // swap so that the facets that were formed remain in the vector facets
   facets->swap( *facets_old );
+}
 
+void LevelSet::redistance() { redistance(my_meta.universal_part()); }
+
+void
+LevelSet::redistance(const stk::mesh::Selector & volumeSelector)
+{
+
+  STK_ThrowErrorMsgIf(!my_time_of_arrival_element_speed_field_name.empty(), "Redistancing a time-of-arrival field will corrupt it.");
+
+  sync_all_fields_to_host();
+
+  if (FAST_MARCHING == my_redistance_method || FAST_ITERATIVE == my_redistance_method)
+  {
+    fast_methods_redistance(volumeSelector);
+    return;
+  }
+  STK_ThrowRequire(CLOSEST_POINT == my_redistance_method);
+
+  krinolog << "Redistancing the level set field..." << stk::diag::dendl;
+
+  // our starting point is a nodal variable (like distance or temperature)
+  // that needs to be contoured to form the surface
+  // after forming the surface, the nodal distance needs to be calculated
+  // the newly formed surface should be remain in the vector facets
+  build_facets_locally(volumeSelector);
+
+  redistance_using_existing_facets(volumeSelector);
+}
+
+void
+LevelSet::interface_conforming_redistance()
+{
+  krinolog << "Redistancing the level set field..." << stk::diag::dendl;
+
+  sync_all_fields_to_host();
+
+  const auto & phaseSupport = Phase_Support::get(meta());
+  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(my_identifier);
+  const stk::mesh::Selector negativeBlockSelector = phaseSupport.get_negative_levelset_block_selector(my_identifier);
+  build_interface_conforming_facets(interfaceSelector, negativeBlockSelector);
+
+  redistance_using_existing_facets(my_meta.universal_part());
+}
+
+static bool determine_polarity_for_negative_side_of_interface(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
+{
+  const stk::topology sideTopology = mesh.bucket(side).topology();
+  const unsigned numSideElems = mesh.num_elements(side);
+  const stk::mesh::Entity * sideElems = mesh.begin_elements(side);
+  const stk::mesh::Permutation * sideElemPermutatons = mesh.begin_permutations(side, stk::topology::ELEMENT_RANK);
+
+  for (unsigned iElem = 0; iElem < numSideElems; ++iElem)
+    if (negativeSideElementSelector(mesh.bucket(sideElems[iElem])))
+      return sideTopology.is_positive_polarity(sideElemPermutatons[iElem]);
+
+  STK_ThrowRequireMsg(false, "determine_polarity_for_negative_side_of_interface has no selected element.");
+  return false;
+}
+
+static std::array<stk::mesh::Entity,3> get_oriented_triangle_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
+{
+  const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
+  const bool polarity = determine_polarity_for_negative_side_of_interface(mesh, negativeSideElementSelector, side);
+
+  if (polarity)
+    return {{sideNodes[0], sideNodes[1], sideNodes[2]}};
+  return {{sideNodes[0], sideNodes[2], sideNodes[1]}};
+}
+
+static void append_facets_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, Faceted_Surface & facets)
+{
+  const std::array<stk::mesh::Entity,3> orientedSideNodes = get_oriented_triangle_side_nodes(mesh, negativeSideElementSelector, side);
+
+  const std::array<Vector3d,3> sideNodeCoords{{Vector3d(field_data<double>(coords, orientedSideNodes[0]), 3), Vector3d(field_data<double>(coords, orientedSideNodes[1]), 3), Vector3d(field_data<double>(coords, orientedSideNodes[2]), 3)}};
+  std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2] );
+  facets.add( std::move(facet) );
+}
+
+static std::array<stk::mesh::Entity,2> get_oriented_line_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
+{
+  const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
+  const bool polarity = determine_polarity_for_negative_side_of_interface(mesh, negativeSideElementSelector, side);
+
+  if (polarity)
+    return {{sideNodes[0], sideNodes[1]}};
+  return {{sideNodes[1], sideNodes[0]}};
+}
+
+static void append_facets_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, Faceted_Surface & facets)
+{
+  const std::array<stk::mesh::Entity,2> orientedSideNodes = get_oriented_line_side_nodes(mesh, negativeSideElementSelector, side);
+
+  const std::array<Vector3d,2> sideNodeCoords{{Vector3d(field_data<double>(coords, orientedSideNodes[0]), 2), Vector3d(field_data<double>(coords, orientedSideNodes[1]), 2)}};
+  std::unique_ptr<Facet> facet = std::make_unique<Facet2d>(sideNodeCoords[0], sideNodeCoords[1]);
+  facets.add( std::move(facet) );
+}
+
+void LevelSet::append_facets_from_side(const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side)
+{
+  if (mesh().bucket(side).topology() == stk::topology::TRIANGLE_3)
+    append_facets_from_triangle_side(mesh(), get_coordinates_field(), sideSelector, negativeSideElementSelector, side, *facets);
+  else if (mesh().bucket(side).topology() == stk::topology::LINE_2)
+    append_facets_from_line_side(mesh(), get_coordinates_field(), sideSelector, negativeSideElementSelector, side, *facets);
+}
+
+void
+LevelSet::build_interface_conforming_facets(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideBlockSelector)
+{
+  const stk::mesh::Selector sideSelector = interfaceSelector & aux_meta().active_part();
+  const stk::mesh::Selector ownedSideSelector = sideSelector & meta().locally_owned_part();
+
+  std::vector< stk::mesh::Entity> sides;
+  stk::mesh::get_selected_entities( ownedSideSelector, mesh().buckets( meta().side_rank() ), sides );
+
+  facets->clear();
+  for (auto && side : sides)
+    append_facets_from_side(sideSelector, negativeSideBlockSelector, side);
 }
 
 double
@@ -726,7 +902,7 @@ LevelSet::get_time_of_arrival_speed(stk::mesh::Entity elem, ParallelErrorMessage
   {
     const stk::mesh::Part & elemPart = find_element_part(mesh(), elem);
     speed = myTimeOfArrivalBlockSpeeds[elemPart.mesh_meta_data_ordinal()];
-    ThrowAssert(speed >= 0.0); // Negative speeds should have already been caught and generated error.
+    STK_ThrowAssert(speed >= 0.0); // Negative speeds should have already been caught and generated error.
     if (speed == 0.0)
       err << "Speed not specified for block " << elemPart.name() << "\n";
   }
@@ -755,7 +931,7 @@ LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bo
   }
   else
   {
-    ThrowRequire(my_redistance_method == FAST_ITERATIVE);
+    STK_ThrowRequire(my_redistance_method == FAST_ITERATIVE);
     std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> get_interface_speed;
     if (compute_time_of_arrival)
     {
@@ -769,7 +945,7 @@ LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bo
 
     FastIterativeMethod fim(mesh(), selector, get_coordinates_field(), get_distance_field(), get_interface_speed, get_timer());
     fim.redistance();
-    ThrowAssertMsg(fim.check_converged_solution(), "Fast iterative method did not fully converge.");
+    STK_ThrowAssertMsg(fim.check_converged_solution(), "Fast iterative method did not fully converge.");
   }
 }
 
@@ -783,8 +959,8 @@ LevelSet::set_distance( const double & in_distance ) const
 }
 
 void
-LevelSet::increment_distance( const double increment, const bool enforce_sign ) const
-{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::increment_distance( const double & increment ) const"); /* %TRACE% */
+LevelSet::increment_distance( const double increment, const bool enforce_sign, const double & signChangePurtubationTol )
+{
   //
   // increment the distance everywhere by the given value
   //
@@ -804,7 +980,7 @@ LevelSet::increment_distance( const double increment, const bool enforce_sign ) 
 
     for (size_t i = 0; i < length; ++i)
     {
-      const double change = (enforce_sign && sign_change(d[i],d[i]+increment)) ? -0.5*d[i] : increment;
+      const double change = (enforce_sign && sign_change(d[i],d[i]+increment)) ? -(1-signChangePurtubationTol)*d[i] : increment;
       d[i] += change;
     }
   }  // end bucket loop
@@ -1413,7 +1589,7 @@ LevelSet::elem_on_interface(stk::mesh::Entity e) const
   const FieldRef isoField = get_isovar_field();
 
   const unsigned nnodes = mesh().num_nodes(e);
-  ThrowAssert( 0 < nnodes );
+  STK_ThrowAssert( 0 < nnodes );
   const stk::mesh::Entity* nodes = mesh().begin_nodes(e);
 
   // guilty till proven innocent here
@@ -1444,90 +1620,156 @@ LevelSet::elem_on_interface(stk::mesh::Entity e) const
 
 //--------------------------------------------------------------------------------
 void
-LevelSet::compute_sizes( double & area, double & neg_vol, double & pos_vol, const double iso_val )
-{ /* %TRACE[ON]% */ /* %TRACE% */
-
-  // initialize
+LevelSet::compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const
+{ 
   area = 0.0;
-  neg_vol = 0.0;
-  pos_vol = 0.0;
+  negVol = 0.0;
+  posVol = 0.0;
 
   const double h_avg = compute_average_edge_length();
 
-  sierra::ArrayContainer<double,DIM,NINT> intg_pt_locations;
-  sierra::ArrayContainer<double,NINT> intg_weights;
-  sierra::ArrayContainer<double,NINT> determinants;
-
   const FieldRef xField = get_coordinates_field();
-  const FieldRef isoField = get_isovar_field();
-  //const Vector3d extv = get_extension_velocity();
 
-  stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
-  std::vector< stk::mesh::Entity> objs;
-  stk::mesh::get_selected_entities(active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs);
+  stk::mesh::Selector active_field_selector =
+      stk::mesh::selectField(isovar) & aux_meta().active_locally_owned_selector();
+  std::vector<stk::mesh::Entity> objs;
+  stk::mesh::get_selected_entities(
+      active_field_selector, mesh().buckets(stk::topology::ELEMENT_RANK), objs);
 
-  for ( auto && elem : objs )
-  {
-    // create element that is decomposed into subelements
-    ContourElement ls_elem( mesh(), elem, xField, isoField, iso_val );
-
-    ls_elem.compute_subelement_decomposition(h_avg);
-
-    // get integration point locations, weights, and determinants for surface
-    int num_intg_pts = ls_elem.gather_intg_pts( 0,		// interface
-                                                intg_pt_locations,// gauss pt locations
-                                                intg_weights,	// integration wts at gauss pts
-                                                determinants,	// determinant at gauss pts
-                                                true );		// map_to_real_coords
-    for ( int ip = 0; ip < num_intg_pts; ++ip )
-      {
-        area += intg_weights(ip) * determinants(ip);
-      }
-
-    // get integration point locations, weights, and determinants for negative volume
-    num_intg_pts = ls_elem.gather_intg_pts( -1,			// negative side of interface
-                                            intg_pt_locations,	// gauss pt locations
-                                            intg_weights,		// integration wts at gauss pts
-                                            determinants,		// determinant at gauss pts
-                                            true );		// map_to_real_coords
-    for ( int ip = 0; ip < num_intg_pts; ++ip )
-      {
-        neg_vol += intg_weights(ip) * determinants(ip);
-      }
-
-    // get integration point locations, weights, and determinants for positive volume
-    num_intg_pts = ls_elem.gather_intg_pts( 1,			// positive side of interface
-                                            intg_pt_locations,	// gauss pt locations
-                                            intg_weights,		// integration wts at gauss pts
-                                            determinants,		// determinant at gauss pts
-                                            true );		// map_to_real_coords
-    for ( int ip = 0; ip < num_intg_pts; ++ip )
-      {
-        pos_vol += intg_weights(ip) * determinants(ip);
-      }
-  }
+  for (auto && elem : objs)
+    accumulate_levelset_integrals_on_element(mesh(), elem, area, negVol, posVol, h_avg, xField, isovar, isoval);
 
   // communicate global sums
   const int vec_length = 3;
   std::vector <double> local_sum( vec_length );
   std::vector <double> global_sum( vec_length );
   local_sum[0] = area;
-  local_sum[1] = neg_vol;
-  local_sum[2] = pos_vol;
+  local_sum[1] = negVol;
+  local_sum[2] = posVol;
 
   stk::all_reduce_sum(mesh().parallel(), &local_sum[0], &global_sum[0], vec_length);
 
-  area    = global_sum[0];
-  neg_vol = global_sum[1];
-  pos_vol = global_sum[2];
+  area = global_sum[0];
+  negVol = global_sum[1];
+  posVol = global_sum[2];
 
+}
+//--------------------------------------------------------------------------------
+void
+LevelSet::compute_sizes( double & area, double & negVol, double & posVol, const double isoval ) const
+{
+  compute_levelset_sizes(area, negVol, posVol, get_isovar_field(), isoval);
+}
+
+template<typename... Args>
+void all_reduce_sum(stk::ParallelMachine comm, Args&&... args)
+{
+  typedef typename std::common_type<Args...>::type T;
+  const std::array<T, sizeof...(Args)> local = {{ args... }};
+  std::array<T, sizeof...(Args)> global;
+  stk::all_reduce_sum(comm, local.data(), global.data(), local.size());
+  const T * data = global.data();
+  ((std::forward<Args>(args) = *(data++)), ...);
+}
+
+template<typename... Args>
+void all_reduce_max(stk::ParallelMachine comm, Args&&... args)
+{
+  typedef typename std::common_type<Args...>::type T;
+  const std::array<T, sizeof...(Args)> local = {{ args... }};
+  std::array<T, sizeof...(Args)> global;
+  stk::all_reduce_max(comm, local.data(), global.data(), local.size());
+  const T * data = global.data();
+  ((std::forward<Args>(args) = *(data++)), ...);
+}
+
+static double get_gradient_magnitude_at_ip(const sierra::ArrayContainer<double,DIM,NINT> & gradDist, const int ip)
+{
+  double mag2GradPhi = 0.;
+  for ( unsigned dim = 0; dim < gradDist.dimension(0); ++dim )
+    mag2GradPhi += gradDist(dim,ip) * gradDist(dim,ip);
+  return sqrt(mag2GradPhi);
+}
+
+//--------------------------------------------------------------------------------
+void accumulate_side_area_and_gradient_magnitude_error_integrals(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const FieldRef distField,
+    const stk::mesh::Selector & elementSelector,
+    const stk::mesh::Entity side,
+    sierra::ArrayContainer<double,NINT> & determinants,
+    sierra::ArrayContainer<double,DIM,NINT> & gradDist,
+    double & area,
+    double & sumL2Error)
+{
+  sierra::Array<const double,DIM,NINT> intgPtLocations;
+  sierra::Array<const double,NINT> intgWeights;
+
+  const StkMeshEntities sideElems{mesh.begin_elements(side), mesh.end_elements(side)};
+  const stk::mesh::ConnectivityOrdinal * sideOrdinals = mesh.begin_element_ordinals(side);
+  for (size_t i=0; i<sideElems.size(); ++i)
+  {
+    stk::mesh::Entity sideElem = sideElems[i];
+    if (elementSelector(mesh.bucket(sideElem)))
+    {
+      ContourElement contourElem( mesh, sideElem, coordsField, distField );
+
+      const int numIntgPts = contourElem.std_side_intg_pts( sideOrdinals[i], intgPtLocations, intgWeights, determinants, contourElem.dist_master_elem() );
+
+      contourElem.compute_distance_gradient( intgPtLocations, gradDist );
+
+      for ( int ip = 0; ip < numIntgPts; ++ip )
+      {
+        const double magGradPhi = get_gradient_magnitude_at_ip(gradDist, ip);
+
+        sumL2Error += (magGradPhi - 1.) * (magGradPhi - 1.) * intgWeights(ip) * determinants(ip);
+        area += intgWeights(ip) * determinants(ip);
+      }
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------
+double
+LevelSet::CDFEM_gradient_magnitude_error()
+{
+  sierra::ArrayContainer<double,NINT> determinants;
+  sierra::ArrayContainer<double,DIM,NINT> gradDist;
+
+  const FieldRef coordsField = get_coordinates_field();
+  const FieldRef distField = get_isovar_field();
+  coordsField.field().sync_to_host();
+  distField.field().sync_to_host();
+
+  const auto & phaseSupport = Phase_Support::get(meta());
+  const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(my_identifier);
+
+  stk::mesh::Selector sideSelector = interfaceSelector & aux_meta().active_locally_owned_selector();
+  stk::mesh::Selector elementSelector = aux_meta().active_part();
+
+  double area = 0.;
+  double sumL2 = 0.;
+
+  for ( auto && bucket : mesh().get_buckets(meta().side_rank(), sideSelector) )
+    for ( auto side : *bucket)
+      accumulate_side_area_and_gradient_magnitude_error_integrals(mesh(), coordsField, distField, elementSelector, side, determinants, gradDist, area, sumL2);
+
+  all_reduce_sum(mesh().parallel(), area, sumL2);
+
+  double L2Norm = 0.;
+  if (area > 0.)
+    L2Norm = std::sqrt(sumL2/area);
+
+  krinolog << "Gradient jump norm for " << name() << ": L2 = " << L2Norm << stk::diag::dendl;
+
+  return L2Norm;
 }
 //--------------------------------------------------------------------------------
 double
 LevelSet::gradient_magnitude_error(void)
 { /* %TRACE[ON]% */ /* %TRACE% */
 
-  double area = 0., sum_L2 = 0., global_L2 = 0., local_Loo = 0., global_Loo = 0.;
+  double area = 0., sum_L2 = 0., errorLoo = 0.;
 
   sierra::ArrayContainer<double,DIM,NINT> intg_pt_locations;
   sierra::ArrayContainer<double,NINT> intg_weights;
@@ -1538,6 +1780,8 @@ LevelSet::gradient_magnitude_error(void)
 
   const FieldRef xField = get_coordinates_field();
   const FieldRef isoField = get_isovar_field();
+  xField.field().sync_to_host();
+  isoField.field().sync_to_host();
   //const Vector3d extv = get_extension_velocity();
 
   stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
@@ -1555,8 +1799,7 @@ LevelSet::gradient_magnitude_error(void)
     int num_intg_pts = ls_elem.gather_intg_pts( 0,		// interface
                                                 intg_pt_locations,// gauss pt locations
                                                 intg_weights,	// integration wts at gauss pts
-                                                determinants,	// determinant at gauss pts
-                                                true );		// map_to_real_coords
+                                                determinants ); // determinant at gauss pts
 
     ls_elem.compute_distance_gradient( intg_pt_locations, grad_dist );
     for ( int ip = 0; ip < num_intg_pts; ++ip )
@@ -1568,67 +1811,59 @@ LevelSet::gradient_magnitude_error(void)
       sum_L2 += (mag_grad_phi - 1.) * (mag_grad_phi - 1.) * intg_weights(ip) * determinants(ip);
       area += intg_weights(ip) * determinants(ip);
 
-      if ( fabs(mag_grad_phi - 1.) > local_Loo ) local_Loo = fabs(mag_grad_phi - 1.);
+      if ( fabs(mag_grad_phi - 1.) > errorLoo ) errorLoo = fabs(mag_grad_phi - 1.);
     }
   }
 
-  // communicate global norms
-  const int vec_length = 2;
-  std::vector <double> local_sum( vec_length );
-  std::vector <double> global_sum( vec_length );
-  local_sum[0] = sum_L2;
-  local_sum[1] = area;
+  all_reduce_sum(mesh().parallel(), area, sum_L2);
+  all_reduce_max(mesh().parallel(), errorLoo);
 
-  stk::all_reduce_sum(mesh().parallel(), &local_sum[0], &global_sum[0], vec_length);
-  stk::all_reduce_max(mesh().parallel(), &local_Loo, &global_Loo, 1);
+  double errorL2 = 0.;
+  if (area > 0.)
+    errorL2 = std::sqrt(sum_L2/area);
 
-  if ( global_sum[1] > 0. )
-    {
-      global_L2 = global_sum[0] / global_sum[1];
-    }
-
-  krinolog << "Gradient norm error for " << name() << ": L2 = " << global_L2 << ", Loo = " << global_Loo << stk::diag::dendl;
-
-  // L2 is the standard now, maybe Loo would be better?
-  return global_L2;
+  return errorL2;
 }
 //--------------------------------------------------------------------------------
-double
-LevelSet::compute_average_edge_length() const
-{ /* %TRACE[ON]% */ /* %TRACE% */
 
-  double sum_avg_edge_lengths = 0.0;
-  int num_elems = 0;
+double LevelSet::compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect)
+{
+  double sumAvgEdgeLengths = 0.0;
 
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef isoField = get_isovar_field();
-
-  stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
-  std::vector< stk::mesh::Entity> objs;
-  stk::mesh::get_selected_entities( active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs );
-
-  for ( auto && elem : objs )
+  for ( auto && elem : elementsToIntersect )
   {
-    ++num_elems;
-
-    // create element
-    ContourElement ls_elem( mesh(), elem, xField, isoField );
-
-    sum_avg_edge_lengths += ls_elem.average_edge_length();
+    ContourElement lsElem( mesh, elem, xField, isoField );
+    sumAvgEdgeLengths += lsElem.average_edge_length();
   }
 
   // communicate global sums
   const int vec_length = 2;
   std::vector <double> local_sum( vec_length );
   std::vector <double> global_sum( vec_length );
-  local_sum[0] = sum_avg_edge_lengths;
-  local_sum[1] = 1.0*num_elems;
+  local_sum[0] = sumAvgEdgeLengths;
+  local_sum[1] = 1.0*elementsToIntersect.size();
 
-  stk::all_reduce_sum(mesh().parallel(), &local_sum[0], &global_sum[0], vec_length);
+  stk::all_reduce_sum(mesh.parallel(), &local_sum[0], &global_sum[0], vec_length);
 
   const double h_avg = ( global_sum[1] != 0.0 ) ? global_sum[0]/global_sum[1] : 0.0;
 
   return h_avg;
+}
+
+double
+LevelSet::compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const stk::mesh::Selector & elementSelector)
+{
+  std::vector< stk::mesh::Entity> elems;
+  stk::mesh::get_selected_entities( elementSelector, mesh.buckets( stk::topology::ELEMENT_RANK ), elems );
+
+  return compute_global_average_edge_length_for_elements(mesh, xField, isoField, elems);
+}
+
+double
+LevelSet::compute_average_edge_length() const
+{
+  const stk::mesh::Selector activeFieldSelector = stk::mesh::selectField(get_isovar_field()) & aux_meta().active_locally_owned_selector();
+  return compute_global_average_edge_length_for_selected_elements(mesh(), get_coordinates_field(), get_isovar_field(), activeFieldSelector);
 }
 
 //--------------------------------------------------------------------------------
@@ -1637,25 +1872,25 @@ void
 LevelSet::build_facets_locally(const stk::mesh::Selector & selector)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::build_facets_locally(void)"); /* %TRACE% */
 
-  // clear vector of facets
-  facets->clear();
-
-  const double h_avg = compute_average_edge_length();
-
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef isoField = get_isovar_field();
-
-  stk::mesh::Selector active_field_selector = selector & stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
+  stk::mesh::Selector active_field_selector = selector & stk::mesh::selectField(get_isovar_field()) & aux_meta().active_locally_owned_selector();
   std::vector< stk::mesh::Entity> objs;
   stk::mesh::get_selected_entities( active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs );
 
-  for ( auto && elem : objs )
-  {
-    // create element that is decomposed into subelements
-    ContourElement ls_elem( mesh(), elem, xField, isoField );
-    ls_elem.compute_subelement_decomposition(h_avg);
+  const double avgEdgeLength = compute_average_edge_length();
+  build_facets_for_elements(mesh(), get_coordinates_field(), get_isovar_field(), objs, avgEdgeLength, *facets);
+}
 
-    ls_elem.build_subelement_facets( *facets );
+void
+LevelSet::build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets)
+{
+  facets.clear();
+
+  for ( auto && elem : elementsToIntersect )
+  {
+    ContourElement lsElem( mesh, elem, xField, isoField );
+    lsElem.compute_subelement_decomposition(avgEdgeLength);
+
+    lsElem.build_subelement_facets( facets );
   }
 }
 
@@ -1667,7 +1902,7 @@ LevelSet::build(
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::build(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
   Surface_Manager & surfaceManager = Surface_Manager::get(in_meta);
 
-  ThrowRequire(!surfaceManager.has_levelset(ls_name));
+  STK_ThrowRequire(!surfaceManager.has_levelset(ls_name));
   LevelSet * ls = new LevelSet(in_meta, ls_name, parent_timer);
   surfaceManager.add_levelset(ls);
   return *ls;
@@ -1697,7 +1932,6 @@ LevelSet::LevelSet(
     epsilon(1.0e-16),
     trackIsoSurface(false),
     my_facetFileIndex(1),
-    my_initial_neg_vol(0.0),
     my_needs_reinitialize_every_step(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::LevelSet(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
   my_coordinates_field = my_aux_meta.get_current_coordinates();
@@ -1739,7 +1973,7 @@ LevelSet::gather_nodal_field(
     }
   }
 
-  ThrowAssert( (unsigned)j == ncomp_field * stk_mesh.num_nodes(obj));
+  STK_ThrowAssert( (unsigned)j == ncomp_field * stk_mesh.num_nodes(obj));
 }
 //--------------------------------------------------------------------------------
 std::string

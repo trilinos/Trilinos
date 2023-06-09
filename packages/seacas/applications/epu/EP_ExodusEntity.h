@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef SEACAS_ExodusEntity_H
-#define SEACAS_ExodusEntity_H
+#pragma once
 
 #define NO_NETCDF_2
 #include "EP_ObjectType.h"
@@ -287,8 +286,8 @@ namespace Excn {
   class CommunicationMetaData
   {
   public:
-    CommunicationMetaData()                              = default;
-    CommunicationMetaData(const CommunicationMetaData &) = delete;
+    CommunicationMetaData()                                              = default;
+    CommunicationMetaData(const CommunicationMetaData &)                 = delete;
     CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
     std::vector<CommunicationMap> nodeMap{};
@@ -305,4 +304,3 @@ namespace Excn {
     int64_t elementsBorder{0};
   };
 } // namespace Excn
-#endif /* SEACAS_ExodusEntity_H */

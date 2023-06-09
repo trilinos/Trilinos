@@ -117,7 +117,7 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits< MagnitudeType > MT;
+    typedef Teuchos::ScalarTraits< MagnitudeType > MST;
 
   public:
 
@@ -408,7 +408,6 @@ namespace Belos {
     using Teuchos::rcpFromRef;
     using Teuchos::EnhancedNumberValidator;
     typedef MagnitudeType MT;
-    typedef Teuchos::ScalarTraits<MT> MST;
 
     // List of parameters accepted by MINRES, and their default values.
     RCP<ParameterList> pl = parameterList ("MINRES");

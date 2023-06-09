@@ -47,20 +47,14 @@
 #define PACKAGES_MUELU_SRC_REBALANCING_MUELU_CLONEREPARTITIONINTERFACE_DECL_HPP_
 
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

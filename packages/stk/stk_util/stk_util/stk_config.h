@@ -39,7 +39,7 @@
 
 #define STK_HAS_MPI
 #define STK_HAVE_BOOST
-#define STK_HAVE_KOKKOSCORE
+#define STK_HAVE_KOKKOS
 #define STK_HAVE_STKMESH
 #define STK_HAVE_STKIO
 #define STK_HAVE_STKNGP_TEST
@@ -67,13 +67,23 @@
 #endif
 #endif
 
-#define STK_PACKAGE stk
-#define STK_HAS_SNL_EXODUSII
+// GCC address sanitizer
+#ifdef __SANITIZE_ADDRESS__
+#  define STK_ASAN_IS_ON
+#endif
+
+// Clang address sanitizer
+#if !defined(STK_ASAN_IS_ON) && defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define STK_ASAN_IS_ON
+#  endif
+#endif
 
 //----------------------------------------------------------------------
 
 // Use macro below to deprecate:
 //   classes (class STK_DEPRECATED Class;), 
+//   structs (struct STK_DEPRECATED Struct;), 
 //   typedefs (STK_DEPRECATED typedef Type 1 Type2;, using Type1 STK_DEPRECATED = Type2;), 
 //   variables (STK_DEPRECATED int variable;), 
 //   non-static data members (union Union { STK_DEPRECATED int variable; }), 

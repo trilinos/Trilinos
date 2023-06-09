@@ -57,7 +57,7 @@ namespace MueLu {
 
   /*!
     @class SmootherPrototype
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Base class for smoother prototypes
 
     A smoother prototype is a smoother which can be in two states:

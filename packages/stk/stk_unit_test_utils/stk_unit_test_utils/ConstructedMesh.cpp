@@ -37,7 +37,7 @@ namespace unit_test_util
 void ConstructedMesh::create_block_elements_and_nodes(stk::mesh::BulkData& bulk, const ConstructedElementBlock& block, const unsigned elemIdOffset)
 {
   stk::mesh::Part* part = bulk.mesh_meta_data().get_part(block.name);
-  ThrowRequire(nullptr != part);
+  STK_ThrowRequire(nullptr != part);
 
   size_t elementIndex = elemIdOffset;
 
@@ -130,7 +130,7 @@ void ConstructedMesh::create_block_elements_and_nodes(stk::mesh::BulkData& bulk,
                                                       const unsigned elemIdOffset)
 {
   stk::mesh::Part* part = bulk.mesh_meta_data().get_part(block.name);
-  ThrowRequire(nullptr != part);
+  STK_ThrowRequire(nullptr != part);
 
   size_t elementIndex = elemIdOffset;
 
@@ -170,7 +170,7 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
 
   stk::mesh::Field<double> & coordsField = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
   stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), m_spatialDimension, nullptr);
-  stk::io::set_field_output_type(coordsField, "Vector_3D");
+  stk::io::set_field_output_type(coordsField, stk::io::FieldOutputType::VECTOR_3D);
 
   bulk.modification_begin();
   if(bulk.parallel_rank() == 0) {

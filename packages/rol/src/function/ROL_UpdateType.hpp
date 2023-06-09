@@ -56,6 +56,19 @@ enum class UpdateType : std::uint8_t {
   Temp         // For temporary uses including finite difference computations
 };
 
+
+inline std::string UpdateTypeToString(const UpdateType& type) {
+  std::string retString;
+  switch(type) {
+    case UpdateType::Initial:  retString = "Initial";  break;
+    case UpdateType::Accept:   retString = "Accept";   break;
+    case UpdateType::Revert:   retString = "Revert";   break;
+    case UpdateType::Trial:    retString = "Trial";    break;
+    case UpdateType::Temp:     retString = "Temp";     break;
+  }
+  return retString;
+}
+
 } // namespace ROL
 
 #endif

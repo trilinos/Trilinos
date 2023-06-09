@@ -90,7 +90,7 @@ NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) 
 
   default:
     std::cerr << "NOX:LAPACK::Group - invalid CopyType for copy constructor." << std::endl;
-    throw "NOX LAPACK Error";
+    throw std::runtime_error("NOX LAPACK Error");
   }
 
 }
@@ -234,12 +234,12 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeNewton(Teuchos::Para
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   NOX::Abstract::Group::ReturnType status = applyJacobianInverse(p, fVector, newtonVector);
@@ -314,7 +314,7 @@ NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& /* p */,
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Solve Jacobian
@@ -334,7 +334,7 @@ NOX::LAPACK::Group::applyJacobianInverseMultiVector(
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() "
      << "- invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Number of RHS
@@ -403,7 +403,7 @@ double NOX::LAPACK::Group::getNormF() const
   if (!isValidF) {
     std::cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
 	      << "- invalid F, please call computeF() first." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return fVector.norm();

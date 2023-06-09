@@ -245,8 +245,8 @@ namespace
     
     std::vector<EOperator> opsToTest {OPERATOR_VALUE};
     
-    const double relTol=1e-12;
-    const double absTol=1e-12;
+    const double relTol=1e-11;
+    const double absTol=1e-11;
     
     for (ordinal_type polyOrder=1; polyOrder<5; polyOrder++)
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,6 +10,7 @@
 #include "FileInfo.h"
 #include "GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_CodeTypes.h"
+#include "Ioss_Utils.h"
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
@@ -37,15 +38,6 @@
 #endif
 
 namespace {
-  bool is_path_absolute(const std::string &path)
-  {
-#ifdef __IOSS_WINDOWS__
-    return path[0] == '\\' || path[1] == ':';
-#else
-    return path[0] == '/';
-#endif
-  }
-
   bool str_equal(const std::string &s1, const std::string &s2)
   {
     return (s1.size() == s2.size()) &&
@@ -77,7 +69,7 @@ void Cpup::SystemInterface::enroll_options()
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
   options_.enroll("extension", GetLongOption::MandatoryValue,
-                  "CGNS database extension for the input files", "e");
+                  "CGNS database extension for the input files", "cgns");
 
   options_.enroll("output", GetLongOption::MandatoryValue, "filename for output CGNS database",
                   nullptr);
@@ -235,6 +227,8 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
     if (myRank_ == 0) {
       options_.usage();
       fmt::print("\n\tCan also set options via CPUP_OPTIONS environment variable.\n\n"
+                 "\n\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#cpup\n"
                  "\tWrites: current_directory/basename.output_extension\n"
                  "\tReads:  root/sub/basename.extension.#p.0 to\n"
                  "\t\troot/sub/basename.extension.#p.#p-1\n"
@@ -427,7 +421,7 @@ std::string Cpup::SystemInterface::output_filename() const
       outputFilename_ += "." + output_suffix();
     }
 
-    if (!cwd().empty() && !is_path_absolute(outputFilename_)) {
+    if (!cwd().empty() && !Ioss::Utils::is_path_absolute(outputFilename_)) {
       outputFilename_ = cwd() + "/" + outputFilename_;
     }
     set_output_filename(outputFilename_);
@@ -476,17 +470,13 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals{stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        ;
-        int k = 0;
+        int  k = 0;
 
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
@@ -583,7 +573,7 @@ namespace {
     if (tokens != nullptr) {
       std::string        token_string(tokens);
       Cpup::StringVector var_list = SLIB::tokenize(token_string, ",");
-      for (auto &var : var_list) {
+      for (const auto &var : var_list) {
         std::string low_var = LowerCase(var);
         (*variable_list).push_back(low_var);
       }

@@ -38,8 +38,8 @@ size_t Graph::get_num_edges_for_element(impl::LocalId elem) const
 
 const GraphEdge & Graph::get_edge_for_element(impl::LocalId elem1, size_t index) const
 {
-    ThrowAssertMsg(get_num_edges_for_element(elem1) != 0, "Cannot retrieve graph edge for element that has no faces");
-    ThrowAssertMsg(get_num_edges_for_element(elem1) > index, "index out of range");
+    STK_ThrowAssertMsg(get_num_edges_for_element(elem1) != 0, "Cannot retrieve graph edge for element that has no faces");
+    STK_ThrowAssertMsg(get_num_edges_for_element(elem1) > index, "index out of range");
 
     return m_graphEdges[m_elemOffsets[elem1].first+index];
 }
@@ -87,7 +87,7 @@ void Graph::set_offsets()
     impl::LocalId nextElem = m_graphEdges[i].elem1();
     if (nextElem != currElem)
     {
-      ThrowAssertMsg(currElem >= 0 && size_t(currElem) <= m_elemOffsets.size(), "element out of range");
+      STK_ThrowAssertMsg(currElem >= 0 && size_t(currElem) <= m_elemOffsets.size(), "element out of range");
       m_elemOffsets[currElem] = IndexRange(startIdx, i);
       for (impl::LocalId elem=currElem+1; elem < nextElem; elem++)
       {
@@ -107,7 +107,7 @@ using IterType = std::vector<GraphEdge>::iterator;
 
 void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
-  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   for (auto& edge : graphEdges)
   {
@@ -186,7 +186,7 @@ unsigned Graph::find_sorted_insertion_index(IndexRange indices, const GraphEdge&
 
 void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 {
-  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   m_graphEdges.swap(graphEdges);
   set_offsets();
@@ -196,7 +196,7 @@ void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 
 void Graph::delete_sorted_edges(const std::vector<GraphEdge>& edgesToDelete)
 {
-  ThrowAssertMsg(std::is_sorted(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1()),
+  STK_ThrowAssertMsg(std::is_sorted(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1()),
                 "Input vector is expected to be sorted");
 
   int startIdx = 0;
@@ -315,7 +315,7 @@ void Graph::compress_graph()
     }
   }
 
-  ThrowRequireMsg(is_valid(m_graphEdges[m_graphEdges.size() - offset - 1]), "The count of unused edges is incorrect");
+  STK_ThrowRequireMsg(is_valid(m_graphEdges[m_graphEdges.size() - offset - 1]), "The count of unused edges is incorrect");
   m_graphEdges.resize(m_graphEdges.size() - offset);
   m_numUnusedEntries = 0;
 }
@@ -333,27 +333,49 @@ bool Graph::check_for_edge(const GraphEdge& edge)
   return false;
 }
 
-
-
 impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {
-    return const_cast<impl::ParallelInfo&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);
+  return const_cast<impl::ParallelInfo&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);
 }
 
 const impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const
 {
-    return get_parallel_info_iterator_for_graph_edge(graphEdge)->second;
+  return get_parallel_info_iterator_for_graph_edge(graphEdge)->second;
+}
+
+void ParallelInfoForGraphEdges::erase_edges(const std::vector<GraphEdge>& edges)
+{
+  for(const GraphEdge& edge : edges) {
+    auto iter = get_parallel_info_iterator_for_graph_edge(edge);
+    if (iter != m_parallel_graph_info.end()) {
+      iter->second.set_proc_rank(-1);
+    }
+  }
+  m_parallel_graph_info.erase(std::remove_if(m_parallel_graph_info.begin(), m_parallel_graph_info.end(),
+                                             [&](const std::pair<GraphEdge,impl::ParallelInfo>& info){ return info.second.get_proc_rank_of_neighbor() == -1; }),
+                              m_parallel_graph_info.end());
 }
 
 void ParallelInfoForGraphEdges::erase_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {
-    m_parallel_graph_info.erase(graphEdge);
+  auto iter = get_parallel_info_iterator_for_graph_edge(graphEdge);
+  if (iter != m_parallel_graph_info.end()) {
+    m_parallel_graph_info.erase(iter);
+  }
 }
 
 impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const
 {
-    impl::ParallelGraphInfo::const_iterator iter = m_parallel_graph_info.find(graphEdge);
-    ThrowRequireMsg( iter != m_parallel_graph_info.end(), "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+    impl::ParallelGraphInfo::const_iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
+    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+                     << graphEdge << ".");
+    return iter;
+}
+
+impl::ParallelGraphInfo::iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge)
+{
+    impl::ParallelGraphInfo::iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
+    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
                      << graphEdge << ".");
     return iter;
 }
@@ -367,25 +389,39 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
     return s.str();
 }
 
+void ParallelInfoForGraphEdges::insert_sorted_edges(const impl::ParallelGraphInfo& newParallelEdges)
+{
+  m_parallel_graph_info.reserve(m_parallel_graph_info.size() + newParallelEdges.size());
+  stk::util::insert_keep_sorted(newParallelEdges, m_parallel_graph_info, GraphEdgeLessByElem2());
+}
+
+bool ParallelInfoForGraphEdges::find_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const
+{
+    impl::ParallelGraphInfo::const_iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
+    return iter != m_parallel_graph_info.end() && iter->first == graphEdge;
+}
+
 bool ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
 {
-    std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.emplace(graphEdge, parInfo);
-    if (!inserted.second)
+    impl::ParallelGraphInfo::iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
+    if (iter == m_parallel_graph_info.end() || iter->first != graphEdge)
     {
-        const impl::ParallelInfo &existingParInfo = inserted.first->second;
-        if (existingParInfo != parInfo) {
-            ThrowErrorMsg("Program error. local elem/remote elem pair"
+        m_parallel_graph_info.insert(iter, std::make_pair(graphEdge, parInfo));
+    }
+    else {
+        if (iter->second != parInfo) {
+            STK_ThrowErrorMsg("Program error. local elem/remote elem pair"
                             << " (" << graphEdge.elem1() << "," << graphEdge.side1() << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2()) << "," << graphEdge.side2() << ")"
                             << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
                             << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl
                             << "existing par info " << std::endl
-                            << get_par_info_description(existingParInfo)
+                            << get_par_info_description(iter->second)
                             << "new par info " << std::endl
                             << get_par_info_description(parInfo));
         }
     }
 
-    return inserted.second;
+    return true;
 }
 
 impl::LocalId ParallelInfoForGraphEdges::convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const

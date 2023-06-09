@@ -44,6 +44,7 @@
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/CommEntityMods.hpp>
 
 namespace stk { namespace unit_test_util {
 
@@ -73,14 +74,18 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, stk::mesh::BulkData::AUTO_AURA)
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            stk::mesh::BulkData::AUTO_AURA)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-            : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option)
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            auto_aura_option)
     {
     }
 
@@ -89,12 +94,17 @@ public:
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool _add_fmwk_data,
                    stk::mesh::FieldDataManager *field_data_manager,
-                   unsigned bucket_capacity) :
-                     stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option
+                   unsigned initial_bucket_capacity = stk::mesh::get_default_initial_bucket_capacity(),
+                   unsigned maximum_bucket_capacity = stk::mesh::get_default_maximum_bucket_capacity())
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+                            comm,
+                            auto_aura_option,
 #ifdef SIERRA_MIGRATION
-, _add_fmwk_data
+                            _add_fmwk_data,
 #endif
-  , field_data_manager, bucket_capacity)
+                            field_data_manager,
+                            initial_bucket_capacity,
+                            maximum_bucket_capacity)
     {
     }
 
@@ -146,7 +156,7 @@ public:
         this->resolve_ownership_of_modified_entities(shared_new);
     }
 
-    std::pair<stk::mesh::EntityComm*,bool> my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    std::pair<int,bool> my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
     {
         return BulkData::entity_comm_map_insert(entity, val);
     }
@@ -224,13 +234,19 @@ public:
     void my_internal_resolve_shared_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
+        this->m_meshModification.delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing); 
+        
+        stk::mesh::impl::CommEntityMods commEntityMods(*this, internal_comm_db(), internal_comm_list());
+        commEntityMods.communicate(stk::mesh::impl::CommEntityMods::PACK_SHARED);
+        this->m_meshModification.internal_resolve_shared_modify_delete(commEntityMods.get_shared_mods(), entitiesToRemoveFromSharing, entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()
     {
-        stk::mesh::EntityVector entitiesNoLongerShared;
-        this->m_meshModification.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
+        stk::mesh::impl::CommEntityMods commEntityMods(*this, internal_comm_db(), internal_comm_list());
+        commEntityMods.communicate(stk::mesh::impl::CommEntityMods::PACK_GHOSTED);
+        this->m_meshModification.internal_resolve_ghosted_modify_delete(commEntityMods.get_ghosted_mods());
     }
 
     void my_internal_resolve_parallel_create()
@@ -280,12 +296,12 @@ public:
         set_state(entity,entity_state);
     }
 
-    void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, const std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>& new_send)
+    void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, stk::mesh::EntityProcVec&& new_send)
     {
-        ghost_entities_and_fields(ghosting, new_send);
+        ghost_entities_and_fields(ghosting, std::move(new_send));
     }
 
-    void my_add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+    void my_add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, stk::mesh::EntityProcVec& entitiesWithClosure)
     {
         add_closure_entities(ghosting, entities, entitiesWithClosure);
     }
@@ -338,7 +354,7 @@ public:
 
     stk::mesh::impl::BucketRepository& my_get_bucket_repository()
     {
-        return get_bucket_repository();
+        return m_bucket_repository;
     }
 };
 

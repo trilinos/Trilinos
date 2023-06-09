@@ -1,9 +1,9 @@
 #This should build a single serial version of nas2exo
-#This build is open to any compiler 
+#This build is open to any compiler
 
 TRIBITS_SUBPACKAGE(Nas2exo)
 
-INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
+TRIBITS_INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 SET(HEADERS "")
@@ -14,7 +14,7 @@ TRIBITS_ADD_EXECUTABLE(
 	nas2exo
 	NOEXEPREFIX
  	NOEXESUFFIX
-	SOURCES ${SOURCES} 
+	SOURCES ${SOURCES}
 	COMM serial mpi
         INSTALLABLE
 	)

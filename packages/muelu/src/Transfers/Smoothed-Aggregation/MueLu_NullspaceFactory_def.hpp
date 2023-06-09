@@ -290,8 +290,8 @@ namespace MueLu {
          }
          /*
           // Scale columns to match what Galeri does. Not sure that this is necessary as the qr factorizatoin
-          // of the tentative prolongator also takes care of scaling issues. I'm leaving the code here 
-          // just in case. 
+          // of the tentative prolongator also takes care of scaling issues. I'm leaving the code here
+          // just in case.
           if ( (int) nullspaceDim > numPDEs ) {
             Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms2(nullspaceDim);
             nullspace->norm2(norms2);

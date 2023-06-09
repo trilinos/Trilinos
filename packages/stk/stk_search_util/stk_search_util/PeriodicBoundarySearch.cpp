@@ -33,6 +33,8 @@
 // 
 
 #include <stk_search_util/PeriodicBoundarySearch.hpp>
+#include <stk_search_util/ObjectCoordinates.hpp>
+#include <stk_search/DistanceComparison.hpp>
 
 #include <iostream>
 

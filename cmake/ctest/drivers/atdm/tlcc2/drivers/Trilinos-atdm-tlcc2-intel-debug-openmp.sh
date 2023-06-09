@@ -8,4 +8,5 @@ if [ "${Trilinos_TRACK}" == "" ] ; then
   export Trilinos_TRACK=SecondaryATDM
 fi
 
-$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/tlcc2/local-driver.sh
+echo "Build Trilinos-atdm-tlcc2-intel-debug-openmp has been disabled (see #10355)"
+#$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/tlcc2/local-driver.sh

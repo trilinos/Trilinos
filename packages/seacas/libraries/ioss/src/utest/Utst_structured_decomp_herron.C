@@ -1,11 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "Utst_structured_decomp.h"
-#include <catch.hpp>
+#include <doctest.h>
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
 #ifndef __NVCC__
@@ -16,7 +16,7 @@
 #endif
 
 ATTRIBUTE_NO_SANITIZE_ADDRESS
-TEST_CASE("herron-dutton", "[herron-dutton_zgc]")
+DOCTEST_TEST_CASE("herron-dutton")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -169,13 +169,13 @@ TEST_CASE("herron-dutton", "[herron-dutton_zgc]")
   double load_balance_tolerance = 1.4;
   for (size_t proc_count = 35; proc_count < 64; proc_count++) {
     std::string name = "Herron_Dutton_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
 
   load_balance_tolerance = 1.25;
   for (size_t proc_count = 4508; proc_count >= 10; proc_count /= 2) {
     std::string name = "Herron_Dutton_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
 
   cleanup(zones);

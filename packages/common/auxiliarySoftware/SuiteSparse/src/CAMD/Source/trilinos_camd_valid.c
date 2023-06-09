@@ -64,7 +64,7 @@ GLOBAL Int TRILINOS_CAMD_valid
 	    TRILINOS_CAMD_DEBUG0 (("column "ID" pointer bad\n", j)) ;
 	    return (TRILINOS_CAMD_INVALID) ;
 	}
-	ilast = EMPTY ;
+	ilast = TRILINOS_CAMD_EMPTY ;
 	for (p = p1 ; p < p2 ; p++)
 	{
 	    i = Ai [p] ;

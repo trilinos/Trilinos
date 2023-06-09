@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,15 +29,13 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 {
   int          ii, i, j, iss, ioff;
   ex_entity_id side_set_id;
-  int          num_side_sets, num_elem_blks, ndim;
-  int64_t      tot_num_elem = 0, tot_num_ss_elem = 0, num_df = 0, side, elem;
+  int64_t      tot_num_ss_elem = 0, num_df = 0;
   void_int    *elem_blk_ids       = NULL;
   void_int    *side_set_ids       = NULL;
   void_int    *ss_elem_ndx        = NULL;
   void_int    *side_set_elem_list = NULL;
   void_int    *side_set_side_list = NULL;
   size_t       elem_ctr;
-  int          int_size, ids_size;
   int          status;
 
   struct ex__elem_blk_parm *elem_blk_parms = NULL;
@@ -51,7 +49,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
-  num_side_sets = ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
+  int num_side_sets = (int)ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
   if (num_side_sets < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of side sets in file id %d",
              exoid);
@@ -65,7 +63,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  num_elem_blks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
+  int num_elem_blks = (int)ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
   if (num_elem_blks < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element blocks in file id %d",
              exoid);
@@ -73,7 +71,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
+  int64_t tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
   if (tot_num_elem < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get total number of elements in file id %d",
              exoid);
@@ -83,20 +81,18 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 
   /* get the dimensionality of the coordinates;  this is necessary to
      distinguish between 2d TRIs and 3d TRIs */
-  ndim = ex_inquire_int(exoid, EX_INQ_DIM);
+  int ndim = (int)ex_inquire_int(exoid, EX_INQ_DIM);
   if (ndim < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get dimensionality in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    int_size = sizeof(int64_t);
-  }
+  bool ints_64  = ex_int64_status(exoid) & EX_BULK_INT64_API;
+  int  int_size = ints_64 ? sizeof(int64_t) : sizeof(int);
 
   /* Allocate space for the element block ids */
-  ids_size = sizeof(int);
+  int ids_size = sizeof(int);
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     ids_size = sizeof(int64_t);
   }
@@ -252,7 +248,9 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
     for (ii = 0; ii < tot_num_ss_elem; ii++) {
 
       int64_t elem_ndx;
-      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+      int64_t elem;
+      int64_t side;
+      if (ints_64) {
         elem_ndx = ((int64_t *)ss_elem_ndx)[ii];
         elem     = ((int64_t *)side_set_elem_list)[elem_ndx];
         side     = ((int64_t *)side_set_side_list)[elem_ndx] - 1;

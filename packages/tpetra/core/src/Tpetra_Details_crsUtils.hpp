@@ -220,14 +220,23 @@ pad_crs_arrays(
   size_t increase = 0;
   {
     // Must do on host because padding uses std::map
+    execution_space exec_space_instance = execution_space();
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_end_h, row_ptr_end);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_end_h, row_ptr_end);
     auto row_ptr_beg_h = create_mirror_view(
       hostSpace, row_ptr_beg, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_beg_h, row_ptr_beg);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_beg_h, row_ptr_beg);
+
+    // lbv 03/15/23: The execution space deep_copy does an asynchronous
+    // copy so we really want to fence that space before touching the
+    // host data as it is not guarenteed to have arrived by the time we
+    // start the parallel_reduce below which might use a different
+    // execution space, see:
+    // https://kokkos.github.io/kokkos-core-wiki/API/core/view/deep_copy.html#semantics
+    exec_space_instance.fence();
 
     auto newAllocPerRow_h = create_mirror_view(
       hostSpace, newAllocPerRow, verbose, prefix.get());
@@ -280,101 +289,103 @@ pad_crs_arrays(
         typename Indices::t_dev::non_const_value_type;
   using vals_value_type = typename Values::t_dev::non_const_value_type;
 
-  auto indices_old = indices_wdv.getDeviceView(Access::ReadOnly);
-  const size_t newIndsSize = size_t(indices_old.size()) + increase;
-  auto indices_new = make_uninitialized_view<typename Indices::t_dev>(
-    "Tpetra::CrsGraph column indices", newIndsSize, verbose,
-    prefix.get());
+  {
+    auto indices_old = indices_wdv.getDeviceView(Access::ReadOnly);
+    const size_t newIndsSize = size_t(indices_old.size()) + increase;
+    auto indices_new = make_uninitialized_view<typename Indices::t_dev>(
+      "Tpetra::CrsGraph column indices", newIndsSize, verbose,
+      prefix.get());
 
-  typename Values::t_dev values_new;
-  auto values_old = values_wdv.getDeviceView(Access::ReadOnly);
-  if (action == PadCrsAction::INDICES_AND_VALUES) {
-    const size_t newValsSize = newIndsSize;
-    // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
-    // then the CrsMatrix tests fail.
-    values_new = make_initialized_view<typename Values::t_dev>(
-      "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
-  }
+    typename Values::t_dev values_new;
+    auto values_old = values_wdv.getDeviceView(Access::ReadOnly);
+    if (action == PadCrsAction::INDICES_AND_VALUES) {
+      const size_t newValsSize = newIndsSize;
+      // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
+      // then the CrsMatrix tests fail.
+      values_new = make_initialized_view<typename Values::t_dev>(
+        "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
+    }
 
-  if (verbose) {
-    std::ostringstream os;
-    os << *prefix << "Repack" << endl;
-    std::cerr << os.str();
-  }
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Repack" << endl;
+      std::cerr << os.str();
+    }
 
-  using range_type = Kokkos::RangePolicy<execution_space, size_t>;
-  Kokkos::parallel_scan(
-    "Tpetra::CrsGraph or CrsMatrix repack",
-    range_type(size_t(0), size_t(lclNumRows+1)),
-    KOKKOS_LAMBDA (const size_t lclRow, size_t& newRowBeg,
-                   const bool finalPass)
-    {
-      // row_ptr_beg    has lclNumRows + 1 entries.
-      // row_ptr_end    has lclNumRows     entries.
-      // newAllocPerRow has lclNumRows     entries.
-      const size_t row_beg = row_ptr_beg[lclRow];
-      const size_t row_end =
-        lclRow < lclNumRows ? row_ptr_end[lclRow] : row_beg;
-      const size_t numEnt = row_end - row_beg;
-      const size_t newRowAllocSize =
-        lclRow < lclNumRows ? newAllocPerRow[lclRow] : size_t(0);
-      if (finalPass) {
-        if (lclRow < lclNumRows) {
-          const Kokkos::pair<size_t, size_t> oldRange(
-            row_beg, row_beg + numEnt);
-          const Kokkos::pair<size_t, size_t> newRange(
-            newRowBeg, newRowBeg + numEnt);
-          auto oldColInds = Kokkos::subview(indices_old, oldRange);
-          auto newColInds = Kokkos::subview(indices_new, newRange);
-          // memcpy works fine on device; the next step is to
-          // introduce two-level parallelism and use team copy.
-          memcpy(newColInds.data(), oldColInds.data(),
-                 numEnt * sizeof(inds_value_type));
-          if (action == PadCrsAction::INDICES_AND_VALUES) {
-            auto oldVals = 
-                 Kokkos::subview(values_old, oldRange);
-            auto newVals = Kokkos::subview(values_new, newRange);
-            memcpy(newVals.data(), oldVals.data(),
-                   numEnt * sizeof(vals_value_type));
+    using range_type = Kokkos::RangePolicy<execution_space, size_t>;
+    Kokkos::parallel_scan(
+      "Tpetra::CrsGraph or CrsMatrix repack",
+      range_type(size_t(0), size_t(lclNumRows+1)),
+      KOKKOS_LAMBDA (const size_t lclRow, size_t& newRowBeg,
+                    const bool finalPass)
+      {
+        // row_ptr_beg    has lclNumRows + 1 entries.
+        // row_ptr_end    has lclNumRows     entries.
+        // newAllocPerRow has lclNumRows     entries.
+        const size_t row_beg = row_ptr_beg[lclRow];
+        const size_t row_end =
+          lclRow < lclNumRows ? row_ptr_end[lclRow] : row_beg;
+        const size_t numEnt = row_end - row_beg;
+        const size_t newRowAllocSize =
+          lclRow < lclNumRows ? newAllocPerRow[lclRow] : size_t(0);
+        if (finalPass) {
+          if (lclRow < lclNumRows) {
+            const Kokkos::pair<size_t, size_t> oldRange(
+              row_beg, row_beg + numEnt);
+            const Kokkos::pair<size_t, size_t> newRange(
+              newRowBeg, newRowBeg + numEnt);
+            auto oldColInds = Kokkos::subview(indices_old, oldRange);
+            auto newColInds = Kokkos::subview(indices_new, newRange);
+            // memcpy works fine on device; the next step is to
+            // introduce two-level parallelism and use team copy.
+            memcpy(newColInds.data(), oldColInds.data(),
+                  numEnt * sizeof(inds_value_type));
+            if (action == PadCrsAction::INDICES_AND_VALUES) {
+              auto oldVals = 
+                  Kokkos::subview(values_old, oldRange);
+              auto newVals = Kokkos::subview(values_new, newRange);
+              memcpy(newVals.data(), oldVals.data(),
+                    numEnt * sizeof(vals_value_type));
+            }
+          }
+          // It's the final pass, so we can modify these arrays.
+          row_ptr_beg[lclRow] = newRowBeg;
+          if (lclRow < lclNumRows) {
+            row_ptr_end[lclRow] = newRowBeg + numEnt;
           }
         }
-        // It's the final pass, so we can modify these arrays.
-        row_ptr_beg[lclRow] = newRowBeg;
-        if (lclRow < lclNumRows) {
-          row_ptr_end[lclRow] = newRowBeg + numEnt;
-        }
-      }
-      newRowBeg += newRowAllocSize;
-    });
+        newRowBeg += newRowAllocSize;
+      });
 
-  if (verbose) 
-  {
-    std::ostringstream os;
+    if (verbose) 
+    {
+      std::ostringstream os;
 
-    os << *prefix;
-    auto row_ptr_beg_h =
-      Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
-    // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
-    verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
-                      maxNumToPrint);
-    os << endl;
+      os << *prefix;
+      auto row_ptr_beg_h =
+        Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
+      // DEEP_COPY REVIEW - NOT TESTED
+      Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
+      verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
+                        maxNumToPrint);
+      os << endl;
 
-    os << *prefix;
-    auto row_ptr_end_h =
-      Kokkos::create_mirror_view(hostSpace, row_ptr_end);
-    // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
-    verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
-                      maxNumToPrint);
-    os << endl;
+      os << *prefix;
+      auto row_ptr_end_h =
+        Kokkos::create_mirror_view(hostSpace, row_ptr_end);
+      // DEEP_COPY REVIEW - NOT TESTED
+      Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+      verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
+                        maxNumToPrint);
+      os << endl;
 
-    std::cout << os.str();
+      std::cout << os.str();
+    }
+
+    indices_wdv = Indices(indices_new);
+    values_wdv = Values(values_new);
   }
-
-  indices_wdv = Indices(indices_new);
-  values_wdv = Values(values_new);
-
+  
   if (verbose) {
     auto indices_h = indices_wdv.getHostView(Access::ReadOnly);
     auto values_h = values_wdv.getHostView(Access::ReadOnly);

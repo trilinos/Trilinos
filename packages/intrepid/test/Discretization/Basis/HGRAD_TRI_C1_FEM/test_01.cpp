@@ -122,10 +122,11 @@ int main(int argc, char *argv[]) {
   triNodes(3,0) =  0.5;  triNodes(3,1) =  0.5;
   triNodes(4,0) =  0.0;  triNodes(4,1) =  0.75;
   
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+    
     // exception #1: DIV cannot be applied to scalar functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
     vals.resize(triBasis.getCardinality(), triNodes.dimension(0) );

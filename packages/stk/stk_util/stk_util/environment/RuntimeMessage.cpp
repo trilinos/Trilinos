@@ -131,7 +131,7 @@ struct DeferredMessage
 
 typedef std::vector<DeferredMessage> DeferredMessageVector;
 
-struct DeferredMessageLess : public std::binary_function<DeferredMessage, DeferredMessage, bool>
+struct DeferredMessageLess
 {
   bool operator()(const DeferredMessage &key_1, const DeferredMessage &key_2) const {
     return (key_1.m_type < key_2.m_type)
@@ -234,7 +234,7 @@ get_message_count(
 
 unsigned get_message_printed_count(unsigned messageType)
 {
-  ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
+  STK_ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
   unsigned totalPrinted = 0;
   for(auto& iter : s_messageIdMap) {
     totalPrinted += std::min(iter.second.m_count, iter.second.m_cutoff);

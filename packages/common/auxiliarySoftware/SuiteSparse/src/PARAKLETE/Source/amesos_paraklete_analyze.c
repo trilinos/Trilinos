@@ -44,8 +44,8 @@ static Int paraklete_bcast_symbolic
     cholmod_common *cm ;
 
     cm = &(Common->cm) ;
-    n = EMPTY ;
-    ncomponents = EMPTY ;
+    n = TRILINOS_CHOLMOD_EMPTY ;
+    ncomponents = TRILINOS_CHOLMOD_EMPTY ;
 
     if (Common->myid == 0)
     {
@@ -68,7 +68,7 @@ static Int paraklete_bcast_symbolic
     MPI_Bcast (&header, 2, MPI_Int, TAG0, MPI_COMM_WORLD) ;
     n = header [0] ;
     ncomponents = header [1] ;
-    if (n == EMPTY)
+    if (n == TRILINOS_CHOLMOD_EMPTY)
     {
 	/* the analysis in the root process failed */
 	PR0 ((Common->file, "proc "ID" root analyze fails\n", Common->myid)) ;
@@ -288,7 +288,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 
     /* Cperm [k] = i if row/col i of A is the kth row/col of A(p,p)
      * ncomponents = # of components in separator tree
-     * Cparent [c] is parent of c in separator tree, or EMPTY if c is a root
+     * Cparent [c] is parent of c in separator tree, or TRILINOS_CHOLMOD_EMPTY if c is a root
      * Cmember [i] = c if row/col i of A is in component c
      */
 
@@ -318,7 +318,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 
 #ifndef NDEBUG
     /* check results: */
-    clast = EMPTY ;
+    clast = TRILINOS_CHOLMOD_EMPTY ;
     for (k = 0 ; k < n ; k++)
     {
 	c = Cmember [Cperm [k]] ;
@@ -440,7 +440,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     /* ---------------------------------------------------------------------- */
 
     /* Nchildren [c] = the number of children of node c */
-    /* Merged [c] = node that c is merged into, or EMPTY if c is not merged */
+    /* Merged [c] = node that c is merged into, or TRILINOS_CHOLMOD_EMPTY if c is not merged */
     /* Leaves [0..nleaves-1] is a list of the leaves of the current tree */
 
     /* Note that W [0..n-1] is still in use for ColCount [0..n-1] */
@@ -451,12 +451,12 @@ paraklete_symbolic *amesos_paraklete_analyze
     for (c = 0 ; c <= ncomponents ; c++)
     {
 	Nchildren [c] = 0 ;
-	Merged [c] = EMPTY ;
+	Merged [c] = TRILINOS_CHOLMOD_EMPTY ;
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
 	parent = Cparent [c] ;
-	if (parent == EMPTY)
+	if (parent == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    parent = ncomponents ;
 	}
@@ -487,14 +487,14 @@ paraklete_symbolic *amesos_paraklete_analyze
 	PR1 ((Common->file, "\n------------ nleaves: "ID"\n", nleaves)) ;
 
 	/* find the lightest leaf (skip node ncomponents-1) */
-	work = EMPTY ;
-	c = EMPTY ;
-	cp = EMPTY ;
+	work = TRILINOS_CHOLMOD_EMPTY ;
+	c = TRILINOS_CHOLMOD_EMPTY ;
+	cp = TRILINOS_CHOLMOD_EMPTY ;
 	for (p = 0 ; p < nleaves ; p++)
 	{
 	    PR2 ((Common->file, "Leaf "ID" work %g\n",
 			Leaves [p], Cwork [Leaves [p]])) ;
-	    ASSERT (Merged [Leaves [p]] == EMPTY) ;
+	    ASSERT (Merged [Leaves [p]] == TRILINOS_CHOLMOD_EMPTY) ;
 	    if (Leaves [p] == ncomponents-1)
 	    {
 		/* node ncomponents-1 has no live node to its right (that is,
@@ -506,14 +506,14 @@ paraklete_symbolic *amesos_paraklete_analyze
 		 * case. */
 		continue ;
 	    }
-	    if (work == EMPTY || Cwork [Leaves [p]] < work)
+	    if (work == TRILINOS_CHOLMOD_EMPTY || Cwork [Leaves [p]] < work)
 	    {
 		c = Leaves [p] ;
 		work = Cwork [c] ;
 		cp = p ;
 	    }
 	}
-	ASSERT (c != EMPTY) ;
+	ASSERT (c != TRILINOS_CHOLMOD_EMPTY) ;
 	PR2 ((Common->file,"Lightest leaf is "ID" with work %g\n", c, Cwork [c]));
 	ASSERT (c < ncomponents-1) ;
 	ASSERT (Nchildren [c] == 0) ;
@@ -521,7 +521,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 	/* find the live node to the right of this node */
 	for (cmerge = c+1 ; cmerge < ncomponents ; cmerge++)
 	{
-	    if (Merged [cmerge] == EMPTY)
+	    if (Merged [cmerge] == TRILINOS_CHOLMOD_EMPTY)
 	    {
 		break ;
 	    }
@@ -529,7 +529,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 
 	/* find the parent of c */
 	parent = Cparent [c] ;
-	if (parent == EMPTY)
+	if (parent == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    parent = ncomponents ;
 	}
@@ -542,7 +542,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 	Merged [c] = cmerge ;
 	Leaves [cp] = Leaves [--nleaves] ;
 	Nchildren [parent]-- ;
-	ASSERT (Merged [parent] == EMPTY) ;
+	ASSERT (Merged [parent] == TRILINOS_CHOLMOD_EMPTY) ;
 
 	if (Nchildren [parent] == 0 && parent != ncomponents)
 	{
@@ -559,10 +559,10 @@ paraklete_symbolic *amesos_paraklete_analyze
     /* merge nodes that have just one child, with the one child */
     for (c = 0 ; c < ncomponents-1 ; c++)
     {
-	if (Merged [c] == EMPTY)
+	if (Merged [c] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    parent = Cparent [c] ;
-	    if (parent == EMPTY) continue ;
+	    if (parent == TRILINOS_CHOLMOD_EMPTY) continue ;
 	    if (Nchildren [parent] == 1)
 	    {
 		PR1 ((Common->file, "\nparent "ID" of c "ID" has one child\n",
@@ -573,7 +573,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 		for (cc = c+1 ; cc < parent ; cc++)
 		{
 		    PR1 ((Common->file, "merge "ID" into "ID"\n", cc, parent)) ;
-		    ASSERT (Merged [cc] != EMPTY) ;
+		    ASSERT (Merged [cc] != TRILINOS_CHOLMOD_EMPTY) ;
 		    Merged [cc] = parent ;
 		}
 	    }
@@ -587,8 +587,8 @@ paraklete_symbolic *amesos_paraklete_analyze
     {
 	/* find the ultimate node that node c was merged into */
 	PR1 ((Common->file, "\nFind ultimate node for "ID"\n", c)) ;
-	for (cc = c ; Merged [cc] != EMPTY ; cc = Merged [cc]) ;
-	for (c2 = c ; Merged [c2] != EMPTY ; c2 = Merged [c2])
+	for (cc = c ; Merged [cc] != TRILINOS_CHOLMOD_EMPTY ; cc = Merged [cc]) ;
+	for (c2 = c ; Merged [c2] != TRILINOS_CHOLMOD_EMPTY ; c2 = Merged [c2])
 	{
 	    PR1 ((Common->file, "   merge "ID" into "ID"\n", c2, cc)) ;
 	    Merged [c2] = cc ;
@@ -600,7 +600,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     ncomp2 = 0 ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	if (Merged [c] == EMPTY)
+	if (Merged [c] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    PR1 ((Common->file, "Live node "ID" becomes node "ID"\n", c, ncomp2)) ;
 	    NewNode [c] = ncomp2++ ;
@@ -608,7 +608,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
-	if (Merged [c] != EMPTY)
+	if (Merged [c] != TRILINOS_CHOLMOD_EMPTY)
 	{
 	    NewNode [c] = NewNode [Merged [c]] ;
 	    PR1 ((Common->file, "Dead node "ID" becomes part of node "ID"\n",
@@ -628,11 +628,11 @@ paraklete_symbolic *amesos_paraklete_analyze
     Cparent2 = Nchildren ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	if (Merged [c] == EMPTY)
+	if (Merged [c] == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    c2 = NewNode [c] ;
 	    parent = Cparent [c] ;
-	    parent2 = (parent == EMPTY) ? EMPTY : (NewNode [parent]) ;
+	    parent2 = (parent == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : (NewNode [parent]) ;
 	    Cparent2 [c2] = parent2 ;
 	}
     }
@@ -700,7 +700,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     /* Cstart = start and end nodes of each component */
     /* ---------------------------------------------------------------------- */
 
-    clast = EMPTY ;
+    clast = TRILINOS_CHOLMOD_EMPTY ;
     for (k = 0 ; k < n ; k++)
     {
 	c = Cmember [Cperm [k]] ;
@@ -753,7 +753,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     {
 	parent = Cparent [c] ;
 	PR1 ((Common->file, "node "ID": parent "ID"\n", c, parent)) ;
-	if (parent == EMPTY)
+	if (parent == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    nroots++ ;
 	}
@@ -801,7 +801,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     for (c = 0 ; c < ncomponents ; c++)
     {
 	parent = Cparent [c] ;
-	if (parent != EMPTY)
+	if (parent != TRILINOS_CHOLMOD_EMPTY)
 	{
 	    Child [Cn [parent]++] = c ;
 	}
@@ -826,7 +826,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     for (c = ncomponents - 1 ; c >= 0 ; c--)
     {
 	parent = Cparent [c] ;
-	nparent = (parent == EMPTY) ? 0 : Cn [parent] ;
+	nparent = (parent == TRILINOS_CHOLMOD_EMPTY) ? 0 : Cn [parent] ;
 	Cn [c] = (Cstart [c+1] - Cstart [c]) + nparent ;
 	PR1 ((Common->file, "node "ID" Cn: "ID"\n", c, Cn [c])) ;
     }
@@ -892,7 +892,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 
     for (c = 0 ; c < ncomponents ; c++)
     {
-	Sched [c] = EMPTY ;
+	Sched [c] = TRILINOS_CHOLMOD_EMPTY ;
         Lo_id [c] = -1 ;
         Hi_id [c] = -1 ;
     }
@@ -960,7 +960,7 @@ paraklete_symbolic *amesos_paraklete_analyze
 	if (nchild == 0)
 	{
 	    PR1 ((Common->file,"\nSchedule child "ID" to process "ID"\n", c, proc));
-	    for (cc = c ; cc != EMPTY && Sched [cc] == EMPTY ; cc = Cparent[cc])
+	    for (cc = c ; cc != TRILINOS_CHOLMOD_EMPTY && Sched [cc] == TRILINOS_CHOLMOD_EMPTY ; cc = Cparent[cc])
 	    {
 		PR1 ((Common->file, "  node "ID" to process "ID"\n", cc, proc)) ;
 		Sched [cc] = proc ;
@@ -986,7 +986,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     {
 	PR0 ((Common->file, "    node "ID" Sched "ID" : Cparent "ID" proc "ID"\n",
 		    c, Sched [c], Cparent [c],
-		    (Cparent [c] == EMPTY) ? EMPTY : Sched [Cparent [c]])) ;
+		    (Cparent [c] == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : Sched [Cparent [c]])) ;
     }
 #endif
 
@@ -995,7 +995,7 @@ paraklete_symbolic *amesos_paraklete_analyze
     {
         printf ("   node "ID" on "ID" : Cparent "ID" on "ID"\n",
 		    c, Sched [c], Cparent [c],
-		    (Cparent [c] == EMPTY) ? EMPTY : Sched [Cparent [c]]) ;
+		    (Cparent [c] == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : Sched [Cparent [c]]) ;
     }
 #endif
 

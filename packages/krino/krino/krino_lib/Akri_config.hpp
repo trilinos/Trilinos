@@ -38,6 +38,7 @@
 #ifdef KRINO_BUILT_IN_SIERRA
 
 #define KRINO_HAVE_YAML
+#define KRINO_HAVE_PARMETIS
 
 #else
 

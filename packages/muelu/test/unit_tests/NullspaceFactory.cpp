@@ -111,17 +111,17 @@ namespace MueLuTests {
     nspace->Build(fineLevel);
     RCP<MultiVector> nullSpace = fineLevel.Get<RCP<MultiVector> >("Nullspace",nspace.get());
 
-    ArrayRCP<real_type> xvals = coordinates->getDataNonConst(0); 
-    ArrayRCP<real_type> yvals = coordinates->getDataNonConst(1); 
-    ArrayRCP<real_type> zvals = coordinates->getDataNonConst(2); 
+    ArrayRCP<real_type> xvals = coordinates->getDataNonConst(0);
+    ArrayRCP<real_type> yvals = coordinates->getDataNonConst(1);
+    ArrayRCP<real_type> zvals = coordinates->getDataNonConst(2);
     size_t nullDim = 6;
     RCP<MultiVector> handCompNullSpace = MultiVectorFactory::Build(Op->getRowMap(), nullDim);
     handCompNullSpace->putScalar(0.0);
     {
       ArrayRCP<Scalar> nsValues;
-      nsValues = handCompNullSpace->getDataNonConst(0); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
-      nsValues = handCompNullSpace->getDataNonConst(1); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
-      nsValues = handCompNullSpace->getDataNonConst(2); for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
+      nsValues = handCompNullSpace->getDataNonConst(0); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = 1.;
+      nsValues = handCompNullSpace->getDataNonConst(1); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = 1.;
+      nsValues = handCompNullSpace->getDataNonConst(2); for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] = 1.;
       nsValues = handCompNullSpace->getDataNonConst(3); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = -(yvals[j/3]-.5);
                                                         for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] =  (xvals[j/3]-.5);
       nsValues = handCompNullSpace->getDataNonConst(4); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = -(zvals[j/3]-.5);
@@ -145,7 +145,7 @@ namespace MueLuTests {
   } // NullSpace test
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NullspaceFactory,3DElasticity,Scalar,LO,GO,Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(NullspaceFactory,3DElasticity,Scalar,LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

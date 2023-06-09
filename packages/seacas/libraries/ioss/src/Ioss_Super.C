@@ -34,7 +34,8 @@ void Ioss::Super::factory() {}
 // argument to the ElementTopology constructor
 Ioss::Super::Super(const std::string &my_name, int node_count)
     : Ioss::ElementTopology(my_name, "Unknown", true), nodeCount(node_count),
-      storageType(new St_Super(my_name, node_count))
+      storageType(new St_Super(my_name, node_count)),
+      baseTopologyName(Ioss::Utils::lowercase(my_name))
 {
 }
 
@@ -44,10 +45,9 @@ void Ioss::Super::make_super(const std::string &type)
 {
   // Decode name to determine number of nodes...
   // Assume that digits at end specify number of nodes.
-  size_t digits = type.find_last_not_of("0123456789");
-  if (digits != std::string::npos) {
-    std::string node_count_str = type.substr(digits + 1);
-    int         node_count     = std::stoi(node_count_str);
+  std::string node_count_str = Ioss::Utils::get_trailing_digits(type);
+  if (!node_count_str.empty()) {
+    int node_count = std::stoi(node_count_str);
     new Ioss::Super(type, node_count);
   }
 }

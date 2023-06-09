@@ -100,13 +100,17 @@ public:
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
-  typedef TypeMap<Amesos2::MUMPS,scalar_type>                    type_map;
+  typedef TypeMap<Amesos2::MUMPS,scalar_type>                      type_map;
 
-  typedef typename type_map::type                                  slu_type;
+  typedef typename type_map::type                                mumps_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
   typedef typename type_map::MUMPS_STRUC_C                    MUMPS_STRUC_C;
 
-  typedef FunctionMap<Amesos2::MUMPS,slu_type>               function_map;
+  typedef Kokkos::DefaultHostExecutionSpace                     HostExecSpaceType;
+  typedef typename HostExecSpaceType::memory_space              HostMemSpaceType;
+
+  typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType>  host_ordinal_type_view;
+  typedef Kokkos::View<mumps_type*, HostExecSpaceType>          host_value_type_view;
 
   MUMPS(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
@@ -209,16 +213,16 @@ private:
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for MUMPS
-  Teuchos::Array<slu_type> nzvals_;
+  host_value_type_view host_nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<local_ordinal_type> rowind_;
+  host_ordinal_type_view host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<local_ordinal_type> colptr_;
+  host_ordinal_type_view host_col_ptr_view_;
 
   /// Persisting 1D store for X
-  mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
+  mutable Teuchos::Array<mumps_type> xvals_;  local_ordinal_type ldx_;
   /// Persisting 1D store for B
-  mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
+  mutable Teuchos::Array<mumps_type> bvals_;  local_ordinal_type ldb_;
 
   mutable MUMPS_STRUC_C mumps_par;
 

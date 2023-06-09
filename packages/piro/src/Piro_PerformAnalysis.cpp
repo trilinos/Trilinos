@@ -49,11 +49,6 @@
 #include <string>
 #include "Thyra_DetachedVectorView.hpp"
 
-#ifdef HAVE_PIRO_TRIKOTA
-#include "TriKota_Driver.hpp"
-#include "TriKota_ThyraDirectApplicInterface.hpp"
-#endif
-
 #include "Piro_SteadyStateSolver.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -64,83 +59,88 @@
 #include "ROL_ThyraVector.hpp"
 #include "ROL_ScaledThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
-#include "ROL_ThyraME_Objective.hpp"
-#include "ROL_ThyraProductME_Objective.hpp"
 #include "Piro_ThyraProductME_Objective_SimOpt.hpp"
 #include "Piro_ThyraProductME_Constraint_SimOpt.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TypeB_AlgorithmFactory.hpp"
+#include "ROL_TypeU_AlgorithmFactory.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
-#include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Piro_CustomLBFGSSecant.hpp"
+#include "ROL_LinearOpScaledThyraVector.hpp"
 #endif
 
 #ifdef HAVE_PIRO_TEKO
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_PreconditionerFactory.hpp"
-#ifdef HAVE_PIRO_ROL
-#include "ROL_HessianScaledThyraVector.hpp"
-#endif
+#include "Teko_BlockUpperTriInverseOp.hpp"
+#include "Teko_SolveInverseFactory.hpp"
 #endif
 
 using std::cout; using std::endl; using std::string;
 using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
 using Teuchos::null; using Teuchos::outArg;
 
+template<class CharT, class Traits>
+const std::stringstream& 
+Piro::RolOutputBuffer<CharT,Traits>::getStringStream() const {
+   return ss; 
+}
+
+template<class CharT, class Traits>
+int
+Piro::RolOutputBuffer<CharT,Traits>::overflow(int c) {
+  if (c != Traits::eof())          ss << static_cast<CharT>(c);
+  if (putchar(c) == Traits::eof()) return Traits::eof();
+  return c;
+}
+
 int
 Piro::PerformAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& appParams,
+    Teuchos::ParameterList& piroParams,
     RCP< Thyra::VectorBase<double> >& result,
     RCP< Piro::ROL_ObserverBase<double> > observer)
 {
 
-  auto analysisParams = appParams.sublist("Analysis");
+  auto analysisParams = piroParams.sublist("Analysis");
   analysisParams.validateParameters(*Piro::getValidPiroAnalysisParameters(),0);
 
-  int status;
-  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  int analysisVerbosity = analysisParams.get<int>("Output Level",2);
+  RCP<std::ostream> out;
+  if(analysisVerbosity > 0)
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  else // no output
+    out = Teuchos::rcp(new Teuchos::oblackholestream());
 
   string analysis = analysisParams.get<string>("Analysis Package");
-  *out << "\n\nPiro::PerformAnalysis() requests: " << analysis << endl;
 
+  int status;
   if (analysis=="Solve") {
-    *out << "Piro PerformAnalysis: Model Solve Being Performed " << endl;
+    *out << "Piro::PerformAnalysis: Model Solve Being Performed " << endl;
     Piro::PerformSolveBase(piroModel, analysisParams.sublist("Solve"), result);
     status = 0; // Succeeds or throws
   }
-#ifdef HAVE_PIRO_TRIKOTA
-  else if (analysis=="Dakota") {
-    *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
-
-    status = Piro::PerformDakotaAnalysis(piroModel,
-                         analysisParams.sublist("Dakota"), result);
-
-  }
-#endif
 
 #ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
-    *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
+    *out << "Piro::PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          appParams, result, observer);
+                          piroParams, result, observer);
 
   }
 #endif
   else {
-    if (analysis == "Dakota" || 
-        analysis == "ROL")
+    if (analysis == "ROL")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Solve, Dakota, ROL\n" << endl;
+           << "       Valid analysis types are: Solve and ROL\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -158,137 +158,93 @@ Piro::PerformAnalysis(
 }
 
 int
-Piro::PerformDakotaAnalysis(
-    Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& dakotaParams,
-    RCP< Thyra::VectorBase<double> >& p)
-{
-#ifdef HAVE_PIRO_TRIKOTA
-  dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
-  using std::string;
-
-  string dakotaIn  = dakotaParams.get("Input File","dakota.in");
-  string dakotaOut = dakotaParams.get("Output File","dakota.out");
-  string dakotaErr = dakotaParams.get("Error File","dakota.err");
-  string dakotaRes = dakotaParams.get("Restart File","dakota_restart.out");
-  string dakotaRestartIn;
-  if (dakotaParams.isParameter("Restart File To Read"))
-    dakotaRestartIn = dakotaParams.get<string>("Restart File To Read");
-
-  int dakotaRestartEvals= dakotaParams.get("Restart Evals To Read", 0);
-
-  int p_index = dakotaParams.get("Parameter Vector Index", 0);
-  int g_index = dakotaParams.get("Response Vector Index", 0);
-
-  TriKota::Driver dakota(dakotaIn, dakotaOut, dakotaErr, dakotaRes,
-                         dakotaRestartIn, dakotaRestartEvals);
-
-  RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
-    rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
-	false);
-
-  dakota.run(trikota_interface.get());
-
-  Dakota::RealVector finalValues;
-  if (dakota.rankZero())
-    finalValues = dakota.getFinalSolution().all_continuous_variables();
-
-  // Copy Dakota parameters into Thyra
-  p = Thyra::createMember(piroModel.get_p_space(p_index));
-  {
-      Thyra::DetachedVectorView<double> global_p(p);
-      for (int i = 0; i < finalValues.length(); ++i)
-        global_p[i] = finalValues[i];
-  }
-
-  return 0;
-#else
-  (void)piroModel;
-  (void)dakotaParams;
-  (void)p;
- RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
- *out << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
-      << "\nYou must enable TriKota." << endl;
- return 0;  // should not fail tests
-#endif
-}
-
-int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& appParams,
+    Teuchos::ParameterList& piroParams,
     RCP< Thyra::VectorBase<double> >& p,
     RCP< Piro::ROL_ObserverBase<double> > observer)
 {
-  auto analysisParams = appParams.sublist("Analysis");
-  auto rolParams = analysisParams.sublist("ROL");
+  auto analysisParams = piroParams.sublist("Analysis");
+  int analysisVerbosity = analysisParams.get<int>("Output Level",2);
+
+  RCP<std::ostream> out;
+  if(analysisVerbosity > 0)
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  else // no output
+    out = Teuchos::rcp(new Teuchos::oblackholestream());
+
 
 #ifdef HAVE_PIRO_ROL
 
-  int verbose = rolParams.get<int>("Verbosity Level", 3);
-  Teuchos::EVerbosityLevel verbosityLevel;
-  switch(verbose) {
-    case 1: verbosityLevel= Teuchos::VERB_LOW; break;
-    case 2: verbosityLevel= Teuchos::VERB_MEDIUM; break;
-    case 3: verbosityLevel= Teuchos::VERB_HIGH; break;
-    case 4: verbosityLevel= Teuchos::VERB_EXTREME; break;
-    default: verbosityLevel= Teuchos::VERB_NONE;
-  }
-
   using std::string;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model, adjointModel;
   Teuchos::RCP<Piro::SteadyStateSolver<double>> piroSSSolver;
+
+  auto rolParams = analysisParams.sublist("ROL");  
+  int num_parameters = rolParams.get<int>("Number Of Parameters", 1);
+  
 #ifdef HAVE_PIRO_NOX
   auto piroNOXSolver = Teuchos::rcp_dynamic_cast<Piro::NOXSolver<double>>(Teuchos::rcpFromRef(piroModel));
   if(Teuchos::nonnull(piroNOXSolver)) {
     piroSSSolver = Teuchos::rcp_dynamic_cast<Piro::SteadyStateSolver<double>>(piroNOXSolver);
-    model = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getSubModel());
+
+    std::vector<int> p_indices(num_parameters);
+
+    for(int i=0; i<num_parameters; ++i) {
+      std::ostringstream ss; ss << "Parameter Vector Index " << i;
+      p_indices[i] = rolParams.get<int>(ss.str(), i);
+    }
+
+
+    Teuchos::RCP<const Thyra::ProductVectorBase<double> > prodvec_p 
+      = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<double>>(piroNOXSolver->getSubModel()->getNominalValues().get_p(0));
+
+    if ( prodvec_p.is_null()) {
+      model = Teuchos::rcp(new Piro::ProductModelEvaluator<double>(
+        Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getSubModel()),
+        p_indices));
+
+      if (!piroNOXSolver->getAdjointSubModel().is_null()) {
+        adjointModel = Teuchos::rcp(new Piro::ProductModelEvaluator<double>(
+          Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getAdjointSubModel()),
+          p_indices));
+      }
+    }
+    else {
+      model = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getSubModel());
+      adjointModel = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getAdjointSubModel());
+    }
   } else
 #endif
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-        std::endl << "Error in Piro::PerformROLAnalysis: " <<
+        std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
         "only Piro::NOXSolver is currently supported for piroModel"<<std::endl);
   }
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  int g_index = rolParams.get<int>("Response Vector Index", 0);
+  rolParams.validateParameters(*Piro::getValidPiroAnalysisROLParameters(num_parameters),0);
 
-  int num_parameters = rolParams.get<int>("Number Of Parameters", 1);
-  std::vector<int> p_indices(num_parameters);
+  int g_index = rolParams.get<int>("Response Vector Index", 0);  
   std::vector<std::string> p_names;
 
   for(int i=0; i<num_parameters; ++i) {
     std::ostringstream ss; ss << "Parameter Vector Index " << i;
-    p_indices[i] = rolParams.get<int>(ss.str(), i);
-    const auto names_array = *piroSSSolver->getModel().get_p_names(p_indices[i]);
+    const auto names_array = *piroSSSolver->getModel().get_p_names(0);
     for (int k=0; k<names_array.size(); k++) {
       p_names.push_back(names_array[k]);
     }
   }
 
   //set names of parameters in the "Optimization Status" sublist
-  appParams.sublist("Optimization Status").set("Parameter Names", Teuchos::rcpFromRef(p_names));
+  piroParams.sublist("Optimization Status").set("Parameter Names", Teuchos::rcpFromRef(p_names));
 
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<double> const>> p_spaces(num_parameters);
-  Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<double>>> p_vecs(num_parameters);
-  for (auto i = 0; i < num_parameters; ++i) {
-    p_spaces[i] = model->get_p_space(p_indices[i]);
-    p_vecs[i] = Thyra::createMember(p_spaces[i]);
-  }
-  Teuchos::RCP<Thyra::DefaultProductVectorSpace<double> const> p_space = Thyra::productVectorSpace<double>(p_spaces);
-  Teuchos::RCP<Thyra::DefaultProductVector<double>> p_prod = Thyra::defaultProductVector<double>(p_space, p_vecs());
-  p = p_prod;
+  if(rolParams.isParameter("Objective Recovery Value"))
+    piroParams.sublist("Optimization Status").set("Objective Recovery Value", rolParams.get<double>("Objective Recovery Value"));
 
-  //  p = Thyra::createMember(piroModel.get_p_space(p_index));
+  Teuchos::RCP<Thyra::VectorSpaceBase<double> const> p_space = model->get_p_space(0);
+  p = model->getNominalValues().get_p(0)->clone_v();
 
-  for (auto i = 0; i < num_parameters; ++i) {
-    RCP<const Thyra::VectorBase<double> > p_init = model->getNominalValues().get_p(p_indices[i]);
-    Thyra::copy(*p_init, p_prod->getNonconstVectorBlock(i).ptr());
-  }
-
-  ROL::ThyraVector<double> rol_p(p_prod);
+  ROL::ThyraVector<double> rol_p(p);
   //Teuchos::RCP<Thyra::VectorSpaceBase<double> const> p_space;
   Teuchos::RCP<Thyra::VectorSpaceBase<double> const> x_space = model->get_x_space();
 
@@ -299,8 +255,16 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, appParams, verbosityLevel, observer);
-  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, appParams, verbosityLevel, observer);
+  Teuchos::EVerbosityLevel analysisVerbosityLevel;
+  switch(analysisVerbosity) {
+    case 1: analysisVerbosityLevel= Teuchos::VERB_LOW; break;
+    case 2: analysisVerbosityLevel= Teuchos::VERB_MEDIUM; break;
+    case 3: analysisVerbosityLevel= Teuchos::VERB_HIGH; break;
+    case 4: analysisVerbosityLevel= Teuchos::VERB_EXTREME; break;
+    default: analysisVerbosityLevel= Teuchos::VERB_NONE;
+  }  
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(model, g_index, piroParams, analysisVerbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(model, adjointModel, piroParams, analysisVerbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
@@ -317,8 +281,6 @@ Piro::PerformROLAnalysis(
   ROL::Ptr<ROL::Vector<double> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
   ROL::Reduced_Objective_SimOpt<double> reduced_obj(obj_ptr,constr_ptr,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
 
-  bool print = rolParams.get<bool>("Print Output", false);
-
   int seed = rolParams.get<int>("Seed For Thyra Randomize", 42);
 
   //! set initial guess (or use the one provided by the Model Evaluator)
@@ -332,7 +294,7 @@ Piro::PerformROLAnalysis(
   }
   else if(init_guess_type != "From Model Evaluator") {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-              std::endl << "Error in Piro::PerformROLAnalysis: " <<
+              std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
               "Parameter Initial Guess Type \"" << init_guess_type << "\" is not Known.\nValid options are: \"Parameter Scalar Guess\", \"Uniform Vector\" and \"Random Vector\""<<std::endl);
   }
 
@@ -347,26 +309,22 @@ Piro::PerformROLAnalysis(
 
     for(int i=0; i< num_tests; i++) {
 
-      *out << "\nROL performing vector test " << i+1 << " of " << num_tests << std::endl;
+      *out << "\nPiro::PerformROLAnalysis: Performing vector test " << i+1 << " of " << num_tests << std::endl;
 
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_x.ptr());
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_y.ptr());
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_z.ptr());
 
-      ROL::ThyraVector<double> rol_x(rand_vec_x);
-      ROL::ThyraVector<double> rol_y(rand_vec_y);
-      ROL::ThyraVector<double> rol_z(rand_vec_z);
+      ROL::ThyraVector<double> rol_vec_x(rand_vec_x);
+      ROL::ThyraVector<double> rol_vec_y(rand_vec_y);
+      ROL::ThyraVector<double> rol_vec_z(rand_vec_z);
 
-      rol_x.checkVector(rol_y, rol_z,print, *out);
+      rol_vec_x.checkVector(rol_vec_y, rol_vec_z, true, *out);
     }
   }
 
-
-
-
-
   //! check correctness of Gradient prvided by Model Evaluator
-  if(rolParams.get<bool>("Check Gradient", false)) {
+  if(rolParams.get<bool>("Check Derivatives", false)) {
     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
     Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x->clone_v();
     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
@@ -377,7 +335,7 @@ Piro::PerformROLAnalysis(
     auto rol_x_zero = rol_x.clone(); rol_x_zero->zero();
     auto rol_p_zero = rol_p.clone(); rol_p_zero->zero();
 
-    int num_checks = rolParams.get<int>("Number Of Gradient Checks", 1);
+    int num_checks = rolParams.sublist("Derivative Checks").get<int>("Number Of Derivative Checks", 1);
     double norm_p = rol_p.norm();
     double norm_x = rol_x.norm();
 
@@ -385,7 +343,7 @@ Piro::PerformROLAnalysis(
 
     for(int i=0; i< num_checks; i++) {
 
-      *out << "\nROL performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
+      *out << "\nPiro::PerformROLAnalysis: Performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
 
       // compute direction 1
       ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec1.ptr());
@@ -427,53 +385,53 @@ Piro::PerformROLAnalysis(
       int num_steps = 10;
       int order = 2;
 
-      if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
-        *out << "Checking Reduced Gradient Accuracy" << std::endl;
-        reduced_obj.checkGradient(rol_p, rol_p, rol_p_direction1, print, *out);
+      if(rolParams.sublist("Derivative Checks").get<bool>("Perform Reduced Derivative Checks", false)) {
+        *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+        reduced_obj.checkGradient(rol_p, rol_p_direction1, true, *out);
       }
       // Check derivatives.
 
-      *out << "Checking Accuracy of Objective Gradient " << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Objective Gradient " << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Objective Gradient in x direction" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Objective Gradient in x direction" << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1_x,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Objective Gradient in p direction" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Objective Gradient in p direction" << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1_p,true,*out,num_steps,order);
 
 
-      *out << "Checking Accuracy of Constraint Gradient " << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Constraint Gradient " << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1,rol_x_direction1, true,*out,num_steps,order);
-      *out << "Checking Accuracy of Constraint Gradient in x direction (Jacobian) " << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Constraint Gradient in x direction (Jacobian) " << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_x,rol_x_direction1,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Constraint Gradient in p direction" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of Constraint Gradient in p direction" << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_p,rol_x_direction1,true,*out,num_steps,order);
 
-      if(rolParams.get<bool>("Expensive Derivative Checks", false))
+      if(rolParams.sublist("Derivative Checks").get<bool>("Perform Expensive Derivative Checks", false))
         constr.checkApplyAdjointJacobian(sopt_vec,rol_x_direction1,rol_x_direction1,sopt_vec,true,*out,num_steps);
 
-      *out << "Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
       constr.checkAdjointConsistencyJacobian(rol_x_direction1, sopt_vec_direction2, sopt_vec,true,*out);
 
-      obj.update(rol_x,rol_p);
-      constr.update(rol_x,rol_p);
-      *out << "Checking Symmetry of objective Hessian" << std::endl;
+      obj.update(rol_x,rol_p,ROL::UpdateType::Temp);
+      constr.update(rol_x,rol_p,ROL::UpdateType::Temp);
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of objective Hessian" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1, sopt_vec_direction2, true,*out);
 
-      *out << "Checking Symmetry of objective Hessian (H_xx = H_xx^T)" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of objective Hessian (H_xx = H_xx^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_x, true,*out);
-      *out << "Checking Symmetry of objective Hessian (H_xp = H_px^T)" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of objective Hessian (H_xp = H_px^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_p, true,*out);
-      *out << "Checking Symmetry of objective Hessian (H_pp = H_pp^T)" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of objective Hessian (H_pp = H_pp^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_p, sopt_vec_direction2_p, true,*out);
 
-      *out << "Checking Accuracy of objective Hessian" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of objective Hessian" << std::endl;
       obj.checkHessVec(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
 
-      if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
-        *out << "Checking Symmetry of reduced objective Hessian" << std::endl;
-        reduced_obj.update(rol_p);
-        auto hsymCheck = reduced_obj.checkHessSym(rol_p, rol_p, rol_p_direction1, true,*out);
-        *out << "Checking Symmetry of reduced objective Hessian - output:" << std::endl;
+      if(rolParams.sublist("Derivative Checks").get<bool>("Perform Reduced Derivative Checks", false)) {
+        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
+        reduced_obj.update(rol_p,ROL::UpdateType::Temp);
+        auto hsymCheck = reduced_obj.checkHessSym(rol_p, rol_p_direction1, rol_p_direction2, false,*out);
+        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
         *out << std::right
                 << std::setw(20) << "<w, H(x)v>"
                 << std::setw(20) << "<v, H(x)w>"
@@ -484,9 +442,11 @@ Piro::PerformROLAnalysis(
                 << std::setw(20) << hsymCheck[1]
                 << std::setw(20) << hsymCheck[2]
                 << "\n";
+        *out << "Piro::PerformROLAnalysis: Checking Accuracy of reduced objective Hessian" << std::endl;
+        reduced_obj.checkHessVec(rol_p, rol_p_direction1,true,*out,num_steps,order);
       }
 
-      *out << "Checking Accuracy of constraint Hessian" << std::endl;
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of constraint Hessian" << std::endl;
       constr.checkApplyAdjointHessian(sopt_vec, rol_x_direction1, sopt_vec_direction2, sopt_vec_direction2, true,*out,num_steps,order);
 
     }
@@ -494,119 +454,230 @@ Piro::PerformROLAnalysis(
 
   bool useFullSpace = rolParams.get("Full Space",false);
 
-  *out << "\nROL options:" << std::endl;
-  rolParams.sublist("ROL Options").print(*out);
-  *out << std::endl;
+  if(analysisVerbosity >= 3) {
+    *out << "\nPiro PerformAnalysis: ROL options:" << std::endl;
+    rolParams.sublist("ROL Options").print(*out);
+    *out << std::endl;
+  }
 
-
-  ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(rolParams.sublist("ROL Options"));
-  ROL::Ptr<ROL::Step<double>> step;
-  if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search")
-    step = ROL::makePtr<ROL::LineSearchStep<double>>(rolParams.sublist("ROL Options"));
-  else
-    step = ROL::makePtr<ROL::TrustRegionStep<double>>(rolParams.sublist("ROL Options"));
-  ROL::Ptr<ROL::Algorithm<double> > algo;
-  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status, true);
-
-  bool useHessianDotProduct = false;
-  Teuchos::ParameterList hessianDotProductList;
+  bool useCustomDotProduct = false;
+  bool lumpHessianMatrix = false;
+  int reponse_index_dotProd = -1;
   if(rolParams.isSublist("Matrix Based Dot Product")) {
     const Teuchos::ParameterList& matrixDotProductList = rolParams.sublist("Matrix Based Dot Product");
     auto matrixType = matrixDotProductList.get<std::string>("Matrix Type");
     if(matrixType == "Hessian Of Response") {
-      useHessianDotProduct = true;
-      hessianDotProductList = matrixDotProductList.sublist("Matrix Types").sublist("Hessian Of Response");
+      useCustomDotProduct = true;
+      reponse_index_dotProd = matrixDotProductList.sublist("Matrix Types").sublist("Hessian Of Response").get<int>("Response Index");
+      lumpHessianMatrix = matrixDotProductList.sublist("Matrix Types").sublist("Hessian Of Response").get<bool>("Lump Matrix");
     }
     else if (matrixType == "Identity")
-      useHessianDotProduct = false;
+      useCustomDotProduct = false;
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-          std::endl << "Error in Piro::PerformROLAnalysis: " <<
+          std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
           "Matrix Type not recognized. Available options are: \n" <<
           "\"Identity\" and \"Hessian Of Response\""<<std::endl);
     }
   }
 
+  bool useCustomSecant = false;
+  int secantMaxStorage = -1;
+  double secantScaling(1.0);
+  int reponse_index_secant = -1;
+  if(rolParams.isSublist("Custom Secant")) {
+    Teuchos::ParameterList customSecantList = rolParams.sublist("Custom Secant");
+    secantMaxStorage = customSecantList.get<int>("Maximum Storage");
+    secantScaling = customSecantList.get<double>("Scaling",1.0);
+    useCustomSecant = true;
+    auto type = customSecantList.get<std::string>("Type", "Limited-Memory BFGS");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(type != "Limited-Memory BFGS", Teuchos::Exceptions::InvalidParameter,
+          std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
+          "Type of Custom Secant not recognized. Available options are: \n" <<
+          "\"Limited-Memory BFGS\""<<std::endl);
+
+    auto initializationType = customSecantList.get<std::string>("Initialization Type");
+
+    if(initializationType == "Hessian Of Response") {
+      reponse_index_secant = customSecantList.sublist("Initialization Types").sublist("Hessian Of Response").get<int>("Response Index");
+    }
+    else if(initializationType == "Identity") {
+      reponse_index_secant = -1;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+          std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
+          "Approximate Hessian not recognized. Available options are: \n" <<
+          "\"Identity\",\"Hessian Of Response\""<<std::endl);
+    }
+  }
+
+
+  
+  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = Teuchos::null;
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > H_dotP(Teuchos::null), invH_dotP(Teuchos::null), H_sec(Teuchos::null), invH_sec(Teuchos::null);
+
   #ifdef HAVE_PIRO_TEKO
-  Teko::LinearOp H, invH;
-  if (useHessianDotProduct) {
-    int hessianResponseIndex = hessianDotProductList.get<int>("Response Index");
-    *out << "\nStart the computation of H_pp" << std::endl;
-    Teko::BlockedLinearOp bH = Teko::createBlockedOp();
-    obj.hessian_22(bH, rol_x, rol_p, hessianResponseIndex);
-    *out << "End of the computation of H_pp" << std::endl;
+  {
+    if(analysisVerbosity > 2)
+      *out << "\nPiro::PerformROLAnalysis: Start the computation of H_pp" << std::endl;
 
-    int numBlocks = bH->productRange()->numBlocks();
-
-    /* Not using defaults to increase user awareness
-    Teuchos::ParameterList defaultParamList;
-    string defaultSolverType = "Belos";
-    defaultParamList.set("Linear Solver Type", "Belos");
-    Teuchos::ParameterList& belosList = defaultParamList.sublist("Linear Solver Types").sublist("Belos");
-    belosList.set("Solver Type", "Pseudo Block CG");
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Maximum Iterations", 1000);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<double>("Convergence Tolerance", 1e-4);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Num Blocks", 1000);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity", 0x7f);
-    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency", 100);
-    belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
-    defaultParamList.set("Preconditioner Type", "None");
-    */
-
-    Teuchos::ParameterList dHess = hessianDotProductList.sublist("Block Diagonal Solver");
-    std::vector<Teko::LinearOp> diag(numBlocks);
-    for (int i=0; i<numBlocks; ++i) {
-      string blockName = "Block "+std::to_string(i);
-      Teuchos::ParameterList pl = dHess.sublist(blockName);
-      std::string solverType = pl.get<string>("Linear Solver Type");
-      diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, bH));
+    Teuchos::RCP<Piro::ProductModelEvaluator<double>> model_PME = Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<double>>(model);
+    if (model_PME.is_null()) {
+      Teuchos::RCP<Thyra::ModelEvaluatorDelegatorBase<double>> model_MEDB = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDelegatorBase<double>>(model);
+      if (!model_MEDB.is_null()) {
+        model_PME = Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<double>>(model_MEDB->getNonconstUnderlyingModel());
+      }
     }
 
-    H = Teko::toLinearOp(bH);
-    invH = Teko::createBlockUpperTriInverseOp(bH, diag);
+    Teko::BlockedLinearOp bH_dotP, bH_sec;
+
+    if (useCustomDotProduct && !model_PME.is_null()) {
+      bH_dotP = Teko::createBlockedOp();
+      model_PME->block_diagonal_hessian_22(bH_dotP, rol_x, rol_p, reponse_index_dotProd);
+    }
+    if(useCustomSecant && (reponse_index_secant != -1 ) && !model_PME.is_null()) {
+
+      if (reponse_index_dotProd == reponse_index_secant)
+        bH_sec = bH_dotP;
+      else {
+        bH_sec = Teko::createBlockedOp();
+        model_PME->block_diagonal_hessian_22(bH_sec, rol_x, rol_p, reponse_index_secant);
+      }
+    }
+    
+    if(analysisVerbosity > 2)
+      *out << "Piro::PerformROLAnalysis: End of the computation of H_pp" << std::endl;
+
+    if (useCustomDotProduct) {
+      if(lumpHessianMatrix) {
+        auto ones_vector_p = p->clone_v();
+        ::Thyra::put_scalar<double>( 1.0, ones_vector_p.ptr());
+        auto ones_vector_p_prod = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(ones_vector_p);
+
+        scaling_vector_p = p->clone_v();
+        auto scaling_vector_p_prod = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(scaling_vector_p);
+        Teko::applyOp(bH_dotP, ones_vector_p_prod, scaling_vector_p_prod);
+      } else {
+        int numBlocks = bH_dotP->productRange()->numBlocks();
+        std::vector<Teko::LinearOp> diag(numBlocks);
+        for (int i=0; i<numBlocks; ++i) {
+          auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
+          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH_dotP)));
+          diag[i] = Thyra::nonconstInverse(linOp);
+        }
+        H_dotP = Teko::toLinearOp(bH_dotP);
+        invH_dotP = Teko::createBlockUpperTriInverseOp(bH_dotP, diag);
+      }
+    }
+
+    if(useCustomSecant) {
+      if(reponse_index_secant == -1 ) {// identity initialization 
+        invH_sec = H_sec = Teuchos::rcp(new Thyra::DefaultIdentityLinearOp<double>(p_space));
+      } else if ((reponse_index_dotProd == reponse_index_secant) && Teuchos::nonnull(H_dotP) && Teuchos::nonnull(invH_dotP)) {
+        H_sec = H_dotP;
+        invH_sec = invH_dotP;
+      } else {
+        int numBlocks = bH_sec->productRange()->numBlocks();
+        std::vector<Teko::LinearOp> diag(numBlocks);
+        for (int i=0; i<numBlocks; ++i) {
+          auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
+          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH_sec)));
+          diag[i] = Thyra::nonconstInverse(linOp);
+        }
+        H_sec = Teko::toLinearOp(bH_sec);
+        invH_sec = Teko::createBlockUpperTriInverseOp(bH_sec, diag);
+      }
+    }
   }
-  else {
-    H = Teuchos::null;
-    invH = Teuchos::null;
-  }
+
 #else
-  TEUCHOS_TEST_FOR_EXCEPTION(useHessianDotProduct, Teuchos::Exceptions::InvalidParameter,
-      std::endl << "Error in Piro::PerformROLAnalysis: " <<
-      "Teko is required for computing the Hessian based dot Product"<<std::endl);
+  (void)reponse_index_dotProd;
+  (void)reponse_index_secant;
+  TEUCHOS_TEST_FOR_EXCEPTION(useCustomDotProduct||useCustomSecant, Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Piro::PerformROLAnalysis, ERROR: " <<
+      "Teko is required for computing custom dot product or secant"<<std::endl);
 #endif
 
+Teuchos::RCP<ROL::ThyraVector<double>> rol_p_primal = Teuchos::rcp(new ROL::ThyraVector<double>(p));
+if(useCustomDotProduct) {
+  if(lumpHessianMatrix)
+    rol_p_primal = Teuchos::rcp(new ROL::PrimalScaledThyraVector<double>(p, scaling_vector_p));
+  else
+    rol_p_primal = Teuchos::rcp(new ROL::PrimalLinearOpScaledThyraVector<double>(p, H_dotP, invH_dotP));
+}
 
-  //this is for testing the PrimalScaledThyraVector. At the moment the scaling is set to 1, so it is not changing the dot product
-  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_x = x->clone_v();
-  ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
-  //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
-  ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
-#ifdef HAVE_PIRO_TEKO
-  bool removeMeanOfTheRHS = hessianDotProductList.get("Remove Mean Of The Right-hand Side",false);
-  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
-#else
-  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
-  ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
-  ROL::PrimalScaledThyraVector<double> rol_p_primal(p, scaling_vector_p);
-#endif
+  //! check correctness of Derivatives prvided by Model Evaluator
+  if(rolParams.get<bool>("Check Derivatives", false) && useCustomDotProduct) {
+    Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
+
+    ::Thyra::seed_randomize<double>( seed );
+
+    int num_checks = rolParams.sublist("Derivative Checks").get<int>("Number Of Derivative Checks", 1);
+    double norm_p = rol_p_primal->norm();
+
+    for(int i=0; i< num_checks; i++) {
+
+      *out << "\nPiro::PerformROLAnalysis: Performing gradient check with user defined dot-product" << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
+
+      // compute direction 1
+      ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec1.ptr());
+      
+
+      auto rol_p_direction1 = rol_p_primal->clone();
+      rol_p_direction1->set(ROL::ThyraVector<double>(p_rand_vec1));
+
+      double norm_d = rol_p_direction1->norm();
+      if(norm_d*norm_p > 0.0)
+        rol_p_direction1->scale(norm_p/norm_d);
+
+      // compute direction 2
+      ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec2.ptr());
+
+
+      auto rol_p_direction2 = rol_p_primal->clone();
+      rol_p_direction2->set(ROL::ThyraVector<double>(p_rand_vec2));
+
+      norm_d = rol_p_direction2->norm();
+      if(norm_d*norm_p > 0.0)
+        rol_p_direction2->scale(norm_p/norm_d);
+
+      int num_steps = 10;
+      int order = 2;
+
+      if(rolParams.sublist("Derivative Checks").get<bool>("Perform Reduced Derivative Checks", false)) {
+        *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+        reduced_obj.checkGradient(*rol_p_primal, *rol_p_direction1, true, *out);
+
+        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
+        reduced_obj.update(*rol_p_primal,ROL::UpdateType::Temp);
+        auto hsymCheck = reduced_obj.checkHessSym(*rol_p_primal, *rol_p_direction1, *rol_p_direction2, false,*out);
+        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
+        *out << std::right
+                << std::setw(20) << "<w, H(x)v>"
+                << std::setw(20) << "<v, H(x)w>"
+                << std::setw(20) << "abs error"
+                << "\n";
+        *out << std::scientific << std::setprecision(11) << std::right
+                << std::setw(20) << hsymCheck[0]
+                << std::setw(20) << hsymCheck[1]
+                << std::setw(20) << hsymCheck[2]
+                << "\n";
+        *out << "Piro::PerformROLAnalysis: Checking Accuracy of reduced objective Hessian" << std::endl;
+        reduced_obj.checkHessVec(*rol_p_primal, *rol_p_direction1,true,*out,num_steps,order);
+      }
+    }
+  }
+
   // Run Algorithm
-  std::vector<std::string> output;
   Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
   bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
   if(boundConstrained) {
-    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_lo_vecs(num_parameters);
-    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double>>> p_up_vecs(num_parameters);
-    //double eps_bound = rolParams.get<double>("epsilon bound", 1e-6);
-    for (auto i = 0; i < num_parameters; ++i) {
-      p_lo_vecs[i] = piroModel.getLowerBounds().get_p(p_indices[i]);
-      p_up_vecs[i] = piroModel.getUpperBounds().get_p(p_indices[i]);
-      TEUCHOS_TEST_FOR_EXCEPTION((p_lo_vecs[i] == Teuchos::null) || (p_up_vecs[i] == Teuchos::null), Teuchos::Exceptions::InvalidParameter,
-          std::endl << "Error in Piro::PerformROLAnalysis: " <<
-          "Lower and/or Upper bounds pointers are null, cannot perform bound constrained optimization"<<std::endl);
-    }
-    Teuchos::RCP<Thyra::VectorBase<double>> p_lo = Thyra::defaultProductVector<double>(p_space, p_lo_vecs());
-    Teuchos::RCP<Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
+    Teuchos::RCP<Thyra::VectorBase<double>> p_lo = model->getLowerBounds().get_p(0)->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double>> p_up = model->getUpperBounds().get_p(0)->clone_v();
 
     //ROL::Thyra_BoundConstraint<double> boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
     boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
@@ -614,42 +685,63 @@ Piro::PerformROLAnalysis(
 
     int return_status = 0;
 
+    RolOutputBuffer<char> rolOutputBuffer;
+    std::ostream rolOutputStream(&rolOutputBuffer);
+    Teuchos::RCP<Teuchos::FancyOStream> rolOutput = Teuchos::getFancyOStream(Teuchos::rcpFromRef(rolOutputStream));
+    rolOutput->setOutputToRootOnly(0);
+
+    
+
     if ( useFullSpace ) {
-      //ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
-      ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x_primal),ROL::makePtrFromRef(rol_p_primal));
+      //using default dot product for x
+      ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),rol_p_primal);
       auto r_ptr = rol_x.clone();
       double tol = 1e-5;
       constr.solve(*r_ptr,rol_x,rol_p,tol);
       if(boundConstrained) {
+        *out << "Piro::PerformROLAnalysis: Solving Full Space Bound Constrained Optimization Problem" << std::endl;
         ROL::BoundConstraint<double> u_bnd(rol_x);
         ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
-        ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), bnd, ROL::makePtrFromRef(constr), r_ptr);
-        ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));
+        prob.addBoundConstraint(bnd);
+        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+        bool lumpConstraints(false), printToStream(true);
+        prob.finalize(lumpConstraints, printToStream, *rolOutput);
+        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
         return_status = optSolver.getAlgorithmState()->statusFlag;
       } else {
-        ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
-        ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+        *out << "Piro::PerformROLAnalysis: Solving Full Space Unconstrained Optimization Problem" << std::endl;
+        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));//, ROL::makePtrFromRef(constr), r_ptr);
+        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+        bool lumpConstraints(false), printToStream(true);
+        prob.finalize(lumpConstraints, printToStream, *rolOutput);
+        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
         return_status = optSolver.getAlgorithmState()->statusFlag;
       }
     } else {
-      if(boundConstrained)
-        output = algo->run(rol_p_primal, reduced_obj, *boundConstraint, print, *out);
-      else
-        output = algo->run(rol_p_primal, reduced_obj, print, *out);
-      return_status = algo->getState()->statusFlag;
+      Teuchos::RCP<CustomLBFGSSecant<double>> customSecant = useCustomSecant ? Teuchos::rcp(new CustomLBFGSSecant<double> (H_sec, invH_sec, secantMaxStorage, secantScaling)) : Teuchos::null;
+      if(boundConstrained) {
+        *out << "Piro::PerformROLAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
+        auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
+        algo->run(*rol_p_primal, reduced_obj, *boundConstraint, *rolOutput); 
+        return_status = algo->getState()->statusFlag;
+      }  else {
+        *out << "Piro::PerformROLAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
+        auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
+        algo->run(*rol_p_primal, reduced_obj, *rolOutput);
+        return_status = algo->getState()->statusFlag;
+      }
     }
-
-  for ( unsigned i = 0; i < output.size(); i++ ) {
-    *out << output[i];
-  }
+    if(analysisVerbosity > 1)  //write recap of optimization convergence
+      *out << rolOutputBuffer.getStringStream().str();
 
   return return_status;
 #else
   (void)piroModel;
   (void)p;
-  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  out = Teuchos::VerboseObjectBase::getDefaultOStream();
   *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
        << "\nYou must enable ROL." << endl;
   return 0;  // should not fail tests
@@ -663,11 +755,11 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: Solve, ROL or Dakota.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve or ROL.");
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
-  validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
+  validPL->set<int>("Output Level", 2, "Verbosity level, ranges from 0 (no output) to 4 (extreme output)");
   validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
 
   return validPL;
@@ -675,20 +767,39 @@ Piro::getValidPiroAnalysisParameters()
 
 
 RCP<const Teuchos::ParameterList>
-Piro::getValidPiroAnalysisDakotaParameters()
+Piro::getValidPiroAnalysisROLParameters(int num_parameters)
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     rcp(new Teuchos::ParameterList("Valid Piro Analysis Dakota Params"));;
+     rcp(new Teuchos::ParameterList("Valid Piro Analysis ROL Params"));
 
-  validPL->set<std::string>("Input File", "","Defaults to dakota.in");
-  validPL->set<std::string>("Output File", "","Defaults to dakota.out");
-  validPL->set<std::string>("Error File", "","Defaults to dakota.err");
-  validPL->set<std::string>("Restart File", "","Defaults to dakota_restart.out");
-  validPL->set<std::string>("Restart File To Read", "","Defaults to NULL (no restart file read)");
-  validPL->set<int>("Restart Evals To Read", 0,
-                    "Number of evaluations to read from restart. Defaults to 0 (all)");
-  validPL->set<int>("Parameter Vector Index", 0,"");
-  validPL->set<int>("Response Vector Index", 0,"");
+  validPL->set<int>("Response Vector Index", 0, "Index of the response to be used as objective for ROL optimization");
+  validPL->set<int>("Number Of Parameters", 1, "Number of the parameters to use as control for ROL optimization");
+  
+  for(int i=0; i<num_parameters; ++i) {
+    std::ostringstream ss; ss << "Parameter Vector Index " << i;
+    validPL->set<int>(ss.str(), 0, "Index Of the Parameter Vector to be used as control for ROL optimization");
+  }
+
+  validPL->set<std::string>("Parameter Initial Guess Type", "From Model Evaluator", "How to initialize parameters, options: \"Uniform Vector\", \"Random Vector\", \"From Model Evaluator\" (use the value stored in model evaluator)");
+  validPL->set<double>("Uniform Parameter Guess", 2.0, "Value to use to uniformly intialize the parameter");
+  Teuchos::Array<double> range = Teuchos::tuple(1.0,3.0);
+  validPL->set<Teuchos::Array<double>>("Min And Max Of Random Parameter Guess", range, "Array providing the range of values of values to randomply intialize the parameter");  
+  validPL->set<int>("Seed For Thyra Randomize", 42, "Seed of Thyra random generator");
+
+  validPL->set<bool>("Check Derivatives", false, "Whether to perform derivatives check");
+  validPL->set<bool>("Test Vector", false, "Whether to check the implmentation of ROL Thyra Vector");
+  validPL->set<int>("Number Of Vector Tests", 1, "Number of vectors to use when testing the implmentation of ROL Thyra Vector");
+
+  validPL->set<bool>("Bound Constrained", true, "Whether to enforce bounds to the parameters during the optimization");
+  validPL->set<bool>("Full Space", true, "Whether to use a full-space or a reduced-space optimization approach");
+  validPL->set<bool>("Use NOX Solver", true, "Whether to use NOX for solving the state equation or the native ROL solver");
+
+  validPL->set<double>("Objective Recovery Value", 1.0e10, "Objective value used when the state solver does not converge. If not defined, the objective will be computed using the unconverged state");
+
+  validPL->sublist("Derivative Checks",  false, "Options for derivative checks");
+  validPL->sublist("ROL Options",  false, "Options to pass to ROL");
+  validPL->sublist("Matrix Based Dot Product",  false, "Sublist to define a Matrix based dot product (instead of the l2 one) to define gradient in ROL");
+  validPL->sublist("Custom Secant", false, "Sublist to define a custom secant");
 
   return validPL;
 }

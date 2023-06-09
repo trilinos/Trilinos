@@ -58,7 +58,6 @@
 //#include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
@@ -67,7 +66,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_RepartitionHeuristicFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory_decl.hpp"
 
 namespace MueLu {
 
@@ -132,7 +131,7 @@ namespace MueLu {
 #if defined(KOKKOS_ENABLE_OPENMP)
     using execution_space = typename Node::device_type::execution_space;
     if (std::is_same<execution_space, Kokkos::OpenMP>::value)
-      thread_per_mpi_rank = execution_space::concurrency();
+      thread_per_mpi_rank = execution_space().concurrency();
 #endif
 
     if (minRowsPerThread > 0)
@@ -184,7 +183,7 @@ namespace MueLu {
     // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
 
-    // Test0: Should we do node repartitioning? 
+    // Test0: Should we do node repartitioning?
     if (currentLevel.GetLevelID() == nodeRepartLevel && map->getComm()->getSize() > 1) {
       RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
@@ -201,9 +200,9 @@ namespace MueLu {
         Set(currentLevel, "number of partitions", numNodes);
         return;
       }
-    }  
+    }
 
-    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning     
+    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
       GetOStream(Statistics1) << "Repartitioning?  NO:" <<
           "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<

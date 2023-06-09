@@ -181,23 +181,23 @@ int tBlockLowerTriInverseOp_tpetra::runTest(int verbosity,std::ostream & stdstrm
    failstrm << "tLowerTriInverseOp";
 
    status = test_apply(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_alphabeta(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLowerTriInverseOp...PASSED","tLowerTriInverseOp...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLowerTriInverseOp...PASSED","tLowerTriInverseOp...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLowerTriInverseOp...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLowerTriInverseOp...FAILED");
    }
 
    return failcount;

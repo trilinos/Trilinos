@@ -69,9 +69,9 @@ TEST(ModificationSummary, testString)
 
     const stk::mesh::Ghosting &aura = *stkMeshBulkData.ghostings()[1];
 
-    std::vector<stk::mesh::EntityKey> remove_receive;
-    remove_receive.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
-    remove_receive.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
+    std::vector<stk::mesh::Entity> remove_receive;
+    remove_receive.push_back(stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1));
+    remove_receive.push_back(stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1));
 
     writer.track_change_ghosting(aura, changes , remove_receive);
 

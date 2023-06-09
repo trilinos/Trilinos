@@ -45,7 +45,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -104,7 +103,7 @@ public:
   {
     if ( this->in_synchronized_state() ) { return false ; }
 
-    ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+    STK_ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
     if (parallel_size() > 1)
     {

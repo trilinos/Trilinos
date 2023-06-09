@@ -36,6 +36,7 @@
 #define STK_IO_Inputfile
 
 #include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
 #include <stk_io/MeshField.hpp>
@@ -43,18 +44,18 @@
 #include "Ioss_EntityType.h"
 
 namespace Ioss {
-  class PropertyManager;
-  class GroupingEntity;
-  class Region;
-  class DatabaseIO;
+class PropertyManager;
+class GroupingEntity;
+class Region;
+class DatabaseIO;
 }
 
 namespace stk {
-  namespace mesh {
-    class MetaData;
-    class BulkData;
-    class Part;
-  }
+namespace mesh {
+class MetaData;
+class BulkData;
+class Part;
+}
 
   namespace io {
     class InputFile
@@ -70,7 +71,10 @@ namespace stk {
                 const std::string &type,
                 DatabasePurpose purpose,
                 Ioss::PropertyManager& property_manager);
-      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023                
+      STK_DEPRECATED_MSG("This constructor has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
+#endif
+      InputFile(std::shared_ptr<Ioss::Region> ioss_input_region);
 
       ~InputFile()
       {delete m_multiStateSuffixes;}
@@ -85,19 +89,29 @@ namespace stk {
       double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missingFields,
 				       stk::mesh::BulkData &bulk);
       double read_defined_input_fields_at_step(int step, std::vector<stk::io::MeshField> *missingFields,
-                                       stk::mesh::BulkData &bulk);
+                                               stk::mesh::BulkData &bulk, bool useEntityListCache = false);
       void get_global_variable_names(std::vector<std::string> &names);
 
       void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
 
       void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
 
-      Teuchos::RCP<Ioss::Region> get_input_io_region()
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
+      STK_DEPRECATED_MSG("This function has been renamed get_input_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_input_io_region()
       {
-	if (Teuchos::is_null(m_region) && !Teuchos::is_null(m_database)) {
-	  create_ioss_region();
-	}
-	return m_region;
+	      if (m_region.get() == nullptr && m_database.get() != nullptr) {
+	        create_ioss_region();
+	      }
+	      return Teuchos::rcp(m_region);
+      }
+#endif
+
+      std::shared_ptr<Ioss::Region> get_input_ioss_region()
+      {
+	      if (m_region.get() == nullptr && m_database.get() != nullptr) {
+	        create_ioss_region();
+	      }
+	      return m_region;
       }
 
       InputFile& set_offset_time(double offset_time);
@@ -111,21 +125,28 @@ namespace stk {
       double map_analysis_to_db_time(double time) const;
 
       void set_surface_split_type(Ioss::SurfaceSplitType split_type) {
-          if(!Teuchos::is_null(m_database)) {
+          if(m_database.get() != nullptr) {
               m_database->set_surface_split_type(split_type);
           }
       }
       Ioss::SurfaceSplitType get_surface_split_type() const {
-          if(!Teuchos::is_null(m_database)) {
+          if(m_database.get() != nullptr) {
               return m_database->get_surface_split_type();
           }
 
           return Ioss::SPLIT_INVALID;
       }
 
-      Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
+#ifndef STK_HIDE_DEPRECATED_CODE
+      STK_DEPRECATED_MSG("This function has been renamed get_ioss_input_database() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
       {
-	return m_database;
+	      return Teuchos::rcp(m_database);
+      }
+#endif
+
+      std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database()
+      {
+	      return m_database;
       }
 
       bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
@@ -157,8 +178,8 @@ namespace stk {
                                                   stk::io::MeshField &mf);
 
       DatabasePurpose m_db_purpose;
-      Teuchos::RCP<Ioss::DatabaseIO> m_database;
-      Teuchos::RCP<Ioss::Region> m_region;
+      std::shared_ptr<Ioss::DatabaseIO> m_database;
+      std::shared_ptr<Ioss::Region> m_region;
       std::vector<stk::io::MeshField> m_fields;
 
       /*@{*/
@@ -189,42 +210,43 @@ namespace stk {
        *      tpm = mod(t_app-t_startup, 2*period_length)
        *      if (tpm <= period_length)
        *         t_db = t_startup + tpm
-       *      else 
+       *      else
        *         t_db = t_startup + (2*period_length - tpm)
        *    \endcode
        *
        * \code
        *  t_db = t_db * t_scale + t_offset
        * \endcode
-       *  
+       *
        */
-      double m_startupTime;
+  double m_startupTime;
 
-      /** See InputFile::startupTime */
-      double m_periodLength;
-      /** See InputFile::startupTime */
-      double m_scaleTime;
-      /** See InputFile::startupTime */
-      double m_offsetTime;
-      /** See InputFile::startupTime */
-      double m_startTime;
-      /** See InputFile::startupTime */
-      double m_stopTime;
-      /** See InputFile::startupTime */
-      PeriodType m_periodType;
-      
-      /*@}*/
+  /** See InputFile::startupTime */
+  double m_periodLength;
+  /** See InputFile::startupTime */
+  double m_scaleTime;
+  /** See InputFile::startupTime */
+  double m_offsetTime;
+  /** See InputFile::startupTime */
+  double m_startTime;
+  /** See InputFile::startupTime */
+  double m_stopTime;
+  /** See InputFile::startupTime */
+  PeriodType m_periodType;
 
-    public:
-      bool m_fieldsInitialized;
-      
-    private:
-      std::vector<std::string>* m_multiStateSuffixes = nullptr;
+  /*@}*/
 
-    private:
-      InputFile(const InputFile &);
-      const InputFile & operator=(const InputFile &);
-    };
-  } // namespace io
+public:
+  bool m_fieldsInitialized;
+
+private:
+  bool m_haveCachedEntityList = false;
+  std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
+private:
+  InputFile(const InputFile &);
+  const InputFile & operator=(const InputFile &);
+};
+} // namespace io
 } // namespace stk
 #endif

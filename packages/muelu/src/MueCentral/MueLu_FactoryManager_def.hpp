@@ -54,7 +54,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
-#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -73,36 +72,25 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_StructuredAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
 #include "MueLu_InverseApproximationFactory.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#endif
 
 #include "MueLu_FactoryManager_decl.hpp"
 
 
 namespace MueLu {
 
-#ifndef HAVE_MUELU_KOKKOS_REFACTOR
-#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
-  SetAndReturnDefaultFactory(varName, rcp(new oldFactory()));
-#else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
   (!useKokkos_) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
                   SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
@@ -147,11 +135,9 @@ namespace MueLu {
       if (varName == "P") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_)
           factory = rcp(new SaPFactory_kokkos());
         else
-#endif
           factory = rcp(new SaPFactory());
         factory->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
@@ -159,11 +145,9 @@ namespace MueLu {
       if (varName == "Nullspace") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
         if (useKokkos_)
           factory = rcp(new NullspaceFactory_kokkos());
         else
-#endif
           factory = rcp(new NullspaceFactory());
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
@@ -196,10 +180,10 @@ namespace MueLu {
       if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
-      if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
+      if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory()));
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
       if (varName == "AggregateQualities")              return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
-      if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
+      if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
       if (varName == "BlockNumber")                     return SetAndReturnDefaultFactory(varName, rcp(new InitialBlockNumberFactory()));
@@ -251,7 +235,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-    GetOStream(Runtime1) << "Using default factory (" << factory->ShortClassName() <<"["<<factory->GetID()<<"] "<< ") for building '" << varName << "'." << std::endl;
+    GetOStream(Runtime1) << "Using default factory (" << factory->ShortClassName() <<"["<<factory->GetID()<<"]) for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 

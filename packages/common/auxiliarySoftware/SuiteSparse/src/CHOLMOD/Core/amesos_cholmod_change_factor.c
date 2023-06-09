@@ -178,8 +178,8 @@ static void natural_list (cholmod_factor *L)
     head = n+1 ;
     tail = n ;
     Lnext [head] = 0 ;
-    Lprev [head] = EMPTY ;
-    Lnext [tail] = EMPTY ;
+    Lprev [head] = TRILINOS_CHOLMOD_EMPTY ;
+    Lnext [tail] = TRILINOS_CHOLMOD_EMPTY ;
     Lprev [tail] = n-1 ;
     for (j = 0 ; j < n ; j++)
     {
@@ -305,7 +305,7 @@ static int simplicial_symbolic_to_super_symbolic
     L->pi = Lpi ;
     L->px = Lpx ;
     L->s  = Ls ;
-    Ls [0] = EMPTY ;	    /* supernodal pattern undefined */
+    Ls [0] = TRILINOS_CHOLMOD_EMPTY ;	    /* supernodal pattern undefined */
 
     L->is_super = TRUE ;
     L->is_ll = TRUE ;	    /* supernodal LDL' not supported */

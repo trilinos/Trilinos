@@ -39,36 +39,21 @@
 namespace stk {
 namespace ngp {
 
-#ifdef KOKKOS_ENABLE_CUDA
-using ExecSpace = Kokkos::Cuda;
-#elif defined(KOKKOS_ENABLE_HIP)
-using ExecSpace = Kokkos::Experimental::HIP;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using ExecSpace = Kokkos::OpenMP;
-#else
-using ExecSpace = Kokkos::Serial;
-#endif
+using ExecSpace = Kokkos::DefaultExecutionSpace;
 
-#ifdef KOKKOS_ENABLE_CUDA
-using HostExecSpace = Kokkos::Serial;
-#elif defined(KOKKOS_ENABLE_HIP)
-using HostExecSpace = Kokkos::Serial;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using HostExecSpace = Kokkos::OpenMP;
-#else
-using HostExecSpace = Kokkos::Serial;
-#endif
+using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
 
 #ifdef KOKKOS_ENABLE_CUDA
 using MemSpace = Kokkos::CudaSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
-using MemSpace = Kokkos::Experimental::HIPSpace;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using MemSpace = Kokkos::OpenMP;
+using MemSpace = Kokkos::HIPSpace;
 #else
-using MemSpace = Kokkos::HostSpace;
+using MemSpace = ExecSpace::memory_space;
 #endif
 
+#ifdef KOKKOS_HAS_SHARED_SPACE
+using UVMMemSpace = Kokkos::SharedSpace;
+#else
 #ifdef KOKKOS_ENABLE_CUDA
 #ifdef KOKKOS_ENABLE_CUDA_UVM
 using UVMMemSpace = Kokkos::CudaUVMSpace;
@@ -82,13 +67,44 @@ using UVMMemSpace = Kokkos::OpenMP;
 #else
 using UVMMemSpace = Kokkos::HostSpace;
 #endif
+#endif
 
+#ifdef KOKKOS_HAS_SHARED_SPACE
+using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
+#else
 #ifdef KOKKOS_ENABLE_CUDA
 using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
 using HostPinnedSpace = Kokkos::Experimental::HIPHostPinnedSpace;
 #else
 using HostPinnedSpace = MemSpace;
+#endif
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <typename ExecutionSpace>
+using RangePolicy = Kokkos::RangePolicy<ExecutionSpace, Kokkos::LaunchBounds<128, 1>>;
+
+using HostRangePolicy = Kokkos::RangePolicy<HostExecSpace, Kokkos::LaunchBounds<128, 1>>;
+using DeviceRangePolicy = Kokkos::RangePolicy<ExecSpace, Kokkos::LaunchBounds<128, 1>>;
+
+template <typename ExecutionSpace>
+using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace, Kokkos::LaunchBounds<128, 1>>;
+
+using HostTeamPolicy = Kokkos::TeamPolicy<HostExecSpace, Kokkos::LaunchBounds<128, 1>>;
+using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace, Kokkos::LaunchBounds<128, 1>>;
+#else
+template <typename ExecutionSpace>
+using RangePolicy = Kokkos::RangePolicy<ExecutionSpace>;
+
+using HostRangePolicy = Kokkos::RangePolicy<HostExecSpace>;
+using DeviceRangePolicy = Kokkos::RangePolicy<ExecSpace>;
+
+template <typename ExecutionSpace>
+using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+
+using HostTeamPolicy = Kokkos::TeamPolicy<HostExecSpace>;
+using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
 #endif
 
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;

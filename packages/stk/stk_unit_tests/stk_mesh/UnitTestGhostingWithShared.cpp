@@ -93,9 +93,9 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
 
-  stk::mesh::EntityLess my_less(bulk);
-  std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> entitiesWithClosure(my_less);
+  stk::mesh::EntityProcVec entitiesWithClosure;
   bulk.my_add_closure_entities(custom_shared_ghosting, ownedEntitiesToGhost, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId == 1)
   {
@@ -113,14 +113,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -130,6 +128,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
   stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(bulk, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId==0)
   {
@@ -141,14 +140,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -163,14 +160,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -182,7 +177,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   bulk.modification_begin();
 
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting("custom ghost unit test");
-  bulk.my_ghost_entities_and_fields(ghosting, entitiesWithClosure);
+  bulk.my_ghost_entities_and_fields(ghosting, std::move(entitiesWithClosure));
   bulk.my_internal_modification_end_for_change_ghosting();
 
   if (procId == 0)
@@ -298,7 +293,7 @@ TEST(UnitTestGhosting, WithShared)
 
   int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 3) {
-    return;
+    GTEST_SKIP();
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
@@ -348,6 +343,17 @@ TEST(UnitTestGhosting, WithShared)
   }
 
   stkMeshBulkData.change_ghosting(custom_shared_ghosting, send_shared);
+
+  if (myProc == otherProc) {
+    stk::mesh::Entity node9 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,9);
+    stk::mesh::Entity node10 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,10);
+    stk::mesh::Entity node11 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,11);
+    stk::mesh::Entity node12 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,12);
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node9));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node10));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node11));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node12));
+  }
 
   stkMeshBulkData.modification_end();
 

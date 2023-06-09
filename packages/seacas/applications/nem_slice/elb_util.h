@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _ELB_UTIL_CONST_H_
-#define _ELB_UTIL_CONST_H_
+#pragma once
 
 #include <cstddef> // for size_t
 #include <cstdint>
@@ -113,5 +111,3 @@ size_t find_inter(const INT set1[],     /* the first set of integers */
 );
 
 template <typename INT> int64_t bin_search2(INT value, size_t num, INT List[]);
-
-#endif /* _ELB_UTIL_CONST_H_ */

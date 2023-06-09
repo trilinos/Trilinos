@@ -56,7 +56,7 @@
 #include <ctime> // for timestamp support
 #include <iostream>
 
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 namespace Kokkos {
 namespace Profiling {
 extern void pushRegion (const std::string&);
@@ -495,7 +495,7 @@ public:
    */
   void startBaseTimer() {
     timer_.BaseTimer::start();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::pushRegion(timer_.get_full_name());
 #endif
   }
@@ -505,7 +505,7 @@ public:
    */
   void stopBaseTimer() {
     timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::popRegion();
 #endif
   }
@@ -522,7 +522,7 @@ public:
         top_ = timer_.start(name.c_str());
       else
         top_ = top_->start(name.c_str());
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (push_kokkos_profiling_region) {
         ::Kokkos::Profiling::pushRegion(name);
       }
@@ -561,7 +561,7 @@ public:
         top_ = top_->stop(name);
       else
         timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (pop_kokkos_profiling_region) {
         ::Kokkos::Profiling::popRegion();
       }
@@ -728,7 +728,12 @@ public:
    * so that Watchr knows it is a different data series than runs of the same test from other builds.
    *
    * If \c $WATCHR_BUILD_NAME is not set or is empty, the filename is just \c name_$DATESTAMP.xml .
-   * DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   * DATESTAMP is normally calculated from the current UTC time, in the format YYYY_MM_DD. DATESTAMP
+   * can be overridden by setting $WATCHR_BUILD_DATE to a date (also in YYYY_MM_DD format).
+   *
+   * Optionally, the environment variable \c $TRILINOS_GIT_SHA can be set to the Git revision hash. This
+   * is added to the performance report as metadata, and will appear in Watchr when mousing over a data point.
+   * Only the first 10 characters are output.
    *
    * In the filename, all spaces in will be replaced by underscores.
    *

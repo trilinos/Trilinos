@@ -35,7 +35,7 @@ CDFEM_Support &
 CDFEM_Support::get(const stk::mesh::MetaData & meta)
 {
   CDFEM_Support * support = const_cast<CDFEM_Support *>(meta.get_attribute<CDFEM_Support>());
-  ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Support attribute on MetaData.");
+  STK_ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Support attribute on MetaData.");
   return *support;
 }
 
@@ -51,11 +51,7 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     my_fully_coupled_cdfem(false),
     my_num_initial_decomposition_cycles(1),
     myGlobalIDsAreParallelConsistent(true),
-    my_interface_minimum_refinement_level(0),
-    my_interface_maximum_refinement_level(0),
-    my_post_adapt_uniform_refinement_levels(0),
     my_post_cdfem_refinement_levels(0),
-    my_nonconformal_adapt_target_element_count(0),
     my_cdfem_edge_degeneracy_handling(SNAP_TO_NODE),
     my_cdfem_snapper(),
     my_cdfem_dof_edge_tol(0.0),
@@ -66,10 +62,8 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     my_flag_use_hierarchical_dofs(false),
     my_flag_constrain_CDFEM_to_XFEM_space(false),
     my_flag_use_nonconformal_element_size(true),
-    myFlagDoNearbyRefinementBeforeInterfaceRefinement(false),
     myFlagUseVelocityToEvaluateInterfaceCFL(false),
-    my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer()),
-    my_timer_adapt("Nonconformal Adapt", my_timer_cdfem)
+    my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer())
 {
   my_prolongation_model = ALE_NEAREST_POINT;
 
@@ -99,7 +93,7 @@ void CDFEM_Support::create_parts()
 
 void CDFEM_Support::register_cdfem_mesh_displacements_field()
 {
-  ThrowRequireMsg(my_meta.spatial_dimension() > 1, "Spatial dimension must be set and equal to 2 or 3.");
+  STK_ThrowRequireMsg(my_meta.spatial_dimension() > 1, "Spatial dimension must be set and equal to 2 or 3.");
 
   const FieldType & vec_type = (my_meta.spatial_dimension() == 3) ? FieldType::VECTOR_3D : FieldType::VECTOR_2D;
   FieldRef cdfem_disp_field = my_aux_meta.register_field(cdfem_mesh_displacements_field_name(), vec_type, stk::topology::NODE_RANK, 2, 1, get_universal_part());
@@ -156,8 +150,8 @@ CDFEM_Support::setup_fields()
 void
 CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 {
-  ThrowAssert(field.valid());
-  ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -168,8 +162,8 @@ CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 void
 CDFEM_Support::add_interpolation_field(const FieldRef field)
 {
-  ThrowAssert(field.valid());
-  ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -191,13 +185,16 @@ CDFEM_Support::set_snap_fields()
       mySnapFields.erase(cdfemSnapField.field_state(state));
     }
 
-    for (auto && lsField : get_levelset_fields())
+    if (!get_use_interpolation_to_unsnap_mesh())
     {
-      for ( unsigned is = 0; is < lsField.number_of_states(); ++is )
+      for (auto && lsField : get_levelset_fields())
       {
-        const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
-        if (state != stk::mesh::StateNew)
-          mySnapFields.erase(lsField.field_state(state));
+        for ( unsigned is = 0; is < lsField.number_of_states(); ++is )
+        {
+          const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+          if (state != stk::mesh::StateNew)
+            mySnapFields.erase(lsField.field_state(state));
+        }
       }
     }
   }
@@ -226,7 +223,7 @@ CDFEM_Support::finalize_fields()
     if (initial_prolong_field_name_entry != my_initial_prolongation_field_name_map.end())
     {
       const std::string & src_field_name = initial_prolong_field_name_entry->second;
-      ThrowErrorMsgIf(!my_aux_meta.has_field(stk::topology::NODE_RANK, src_field_name),
+      STK_ThrowErrorMsgIf(!my_aux_meta.has_field(stk::topology::NODE_RANK, src_field_name),
           "Error: Could not find initial prolongation field with name " << src_field_name);
 
       // If the src field does not have the desired state, use StateNone (which is the same as StateNew).
@@ -299,76 +296,9 @@ CDFEM_Support::get_initial_prolongation_field(const FieldRef field) const
 void
 CDFEM_Support::set_simplex_generation_method(const Simplex_Generation_Method & method)
 {
-  ThrowAssert(method < MAX_SIMPLEX_GENERATION_METHOD);
-  ThrowRequireMsg(3 == my_meta.spatial_dimension() || method != CUT_QUADS_BY_NEAREST_EDGE_CUT, "Simplex generation method CUT_QUADS_BY_NEAREST_EDGE_CUT only supported in 3d.");
+  STK_ThrowAssert(method < MAX_SIMPLEX_GENERATION_METHOD);
+  STK_ThrowRequireMsg(3 == my_meta.spatial_dimension() || method != CUT_QUADS_BY_NEAREST_EDGE_CUT, "Simplex generation method CUT_QUADS_BY_NEAREST_EDGE_CUT only supported in 3d.");
   my_simplex_generation_method = method;
-}
-
-void
-CDFEM_Support::activate_interface_refinement(int minimumLevel, int maximumLevel)
-{
-  /* %TRACE% */ Traceback trace__("krino::CDFEM_Support::activate_interface_refinement(int minimum_level, int maximum_level)"); /* %TRACE% */
-
-  ThrowRequireMsg(my_interface_minimum_refinement_level == 0 && my_interface_maximum_refinement_level == 0,
-      "Interface refinement levels should only be specified once.");
-  ThrowRequireMsg(maximumLevel >= minimumLevel || maximumLevel == 0,
-      "Maximum interface refinement level must be greater than or equal to the minimum interface refinement level or left unspecified.");
-  if (maximumLevel == 0) maximumLevel = minimumLevel;
-
-  my_interface_minimum_refinement_level = minimumLevel;
-  my_interface_maximum_refinement_level = maximumLevel;
-
-  setup_refinement_marker();
-
-  if (maximumLevel > 0)
-    set_global_ids_are_NOT_parallel_consistent();
-}
-
-void
-CDFEM_Support::activate_nonconformal_adaptivity(const int numLevels)
-{
-  /* %TRACE% */ Traceback trace__("krino::CDFEM_Support::activate_nonconformal_adaptivity(const int num_levels)"); /* %TRACE% */
-
-  if (numLevels < my_interface_maximum_refinement_level)
-  {
-    krinolog << "Ignoring request to activate " << numLevels << " of CDFEM nonconformal adaptivity because a maximum of " << my_interface_maximum_refinement_level << " have already been activated." << stk::diag::dendl;
-    return;
-  }
-
-  my_interface_minimum_refinement_level = numLevels;
-  my_interface_maximum_refinement_level = numLevels;
-
-  setup_refinement_marker();
-
-  if (numLevels > 0)
-    set_global_ids_are_NOT_parallel_consistent();
-}
-
-void
-CDFEM_Support::setup_refinement_marker()
-{
-  /* %TRACE% */ Traceback trace__("krino::CDFEM_Support::activate_nonconformal_adaptivity(const int num_levels)"); /* %TRACE% */
-
-  my_nonconformal_adapt_marker_name = "CDFEM_NONCONFORMAL_MARKER";
-
-  my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::ELEMENT_RANK, 1, 1, get_universal_part());
-  my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::NODE_RANK, 1, 1, get_universal_part());
-}
-
-void
-CDFEM_Support::activate_nonconformal_adapt_target_count(const uint64_t target_count)
-{
-  /* %TRACE% */ Traceback trace__("CDFEM_Support::activate_nonconformal_adapt_target_count(const uint64_t target_count)"); /* %TRACE% */
-
-  my_nonconformal_adapt_target_element_count = target_count;
-  my_nonconformal_adapt_indicator_name = "CDFEM_ADAPTIVITY_ERROR_INDICATOR";
-
-  my_aux_meta.register_field(my_nonconformal_adapt_indicator_name,
-      FieldType::REAL,
-      stk::topology::ELEMENT_RANK,
-      1,
-      1,
-      get_universal_part());
 }
 
 } // namespace krino

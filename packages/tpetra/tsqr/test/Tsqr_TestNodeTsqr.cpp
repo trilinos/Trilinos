@@ -898,10 +898,16 @@ namespace TSQR {
       if(verbose) {
         cerr << "-- Do LAPACK lwork query" << endl;
       }
+      std::vector<Scalar> tau(ncols);
+      Kokkos::View<IST*> tau_d;
+      if(lapack.wants_device_memory())
+        tau_d = Kokkos::View<IST*>("tau_d", ncols);
       const int lwork = [&]() {
         if(lapack.wants_device_memory()) {
           Scalar* A_copy_d_raw =
             reinterpret_cast<Scalar*>(A_copy_d.data());
+          Scalar* tau_raw=
+            reinterpret_cast<Scalar*>(tau_d.data());
           const int A_copy_d_lda(A_copy_d.stride(1));
           TEUCHOS_ASSERT( nrows == 0 || ncols == 0 ||
                           A_copy_d_raw != nullptr );
@@ -909,28 +915,25 @@ namespace TSQR {
                           size_t(nrows) );
           TEUCHOS_ASSERT( size_t(A_copy_d.extent(1)) ==
                           size_t(ncols) );
-          return lapack.compute_QR_lwork(nrows, ncols, A_copy_d_raw,
-                                         A_copy_d_lda);
+          return std::max(
+              lapack.compute_QR_lwork(nrows, ncols, A_copy_d_raw, A_copy_d_lda),
+              lapack.compute_explicit_Q_lwork(nrows, ncols, ncols, A_copy_d_raw, A_copy_d_lda, tau_raw));
         }
         else {
           Scalar* A_copy_raw = A_copy.data();
           const int A_copy_lda(A_copy.stride(1));
-          return lapack.compute_QR_lwork(nrows, ncols, A_copy_raw,
-                                         A_copy_lda);
+          return std::max(
+              lapack.compute_QR_lwork(nrows, ncols, A_copy_raw, A_copy_lda),
+              lapack.compute_explicit_Q_lwork(nrows, ncols, ncols, A_copy_raw, A_copy_lda, tau.data()));
         }
       }();
       if(verbose) {
         cerr << "-- lwork=" << lwork << endl;
       }
       std::vector<Scalar> work(lwork);
-      std::vector<Scalar> tau(ncols);
-
       Kokkos::View<IST*> work_d;
-      Kokkos::View<IST*> tau_d;
-      if(lapack.wants_device_memory()) {
+      if(lapack.wants_device_memory())
         work_d = Kokkos::View<IST*>("work_d", lwork);
-        tau_d = Kokkos::View<IST*>("tau_d", ncols);
-      }
 
       if(verbose) {
         cerr << "-- Call compute_QR" << endl;

@@ -168,14 +168,27 @@ private:
   bool _is_cublas_created, _is_cusolver_dn_created;
   cublasHandle_t _handle_blas;
   cusolverDnHandle_t _handle_lapack;
+  using blas_handle_type = cublasHandle_t;
+  using lapack_handle_type = cusolverDnHandle_t;
   using stream_array_host = std::vector<cudaStream_t>;
+  #define getBlasHandle(id)   _handle_blas
+  #define getLapackHandle(id) _handle_lapack
 #elif defined(KOKKOS_ENABLE_HIP)
   bool _is_rocblas_created;
   rocblas_handle _handle_blas;
   rocblas_handle _handle_lapack;
+  std::vector<rocblas_handle> _handles;
+  using blas_handle_type = rocblas_handle;
+  using lapack_handle_type = rocblas_handle;
   using stream_array_host = std::vector<hipStream_t>;
+  #define getBlasHandle(id)   _handles[id]
+  #define getLapackHandle(id) _handles[id]
 #else
   int _handle_blas, _handle_lapack; // dummy handle for convenience
+  using blas_handle_type = int;
+  using lapack_handle_type = int;
+  #define getBlasHandle(id)   _handle_blas
+  #define getLapackHandle(id) _handle_lapack
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -655,6 +668,11 @@ public:
       _status = rocblas_destroy_handle(_handle_blas);
       checkDeviceLapackStatus("rocblasDestroy");
     }
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = rocblas_destroy_handle(_handles[i]);
+      checkDeviceLapackStatus("rocblasDestroy(handles[i])");
+    }
+    _handles.clear();
 
     for (ordinal_type i = 0; i < _nstreams; ++i) {
       _status = hipStreamDestroy(_streams[i]);
@@ -683,6 +701,9 @@ public:
 #if defined(KOKKOS_ENABLE_HIP)
     // destroy previously created streams
     for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = rocblas_destroy_handle(_handles[i]);
+      checkDeviceLapackStatus("rocblasDestroy");
+
       _status = hipStreamDestroy(_streams[i]);
       checkDeviceStatus("hipStreamDestroy");
     }
@@ -690,7 +711,10 @@ public:
     _nstreams = nstreams;
     _streams.clear();
     _streams.resize(_nstreams);
+    _handles.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = rocblas_create_handle(&_handles[i]);
+      checkDeviceStatus("rocblas_create_handle");
       _status = hipStreamCreateWithFlags(&_streams[i], hipStreamNonBlocking);
       checkDeviceStatus("hipStreamCreate");
     }
@@ -722,7 +746,9 @@ public:
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     _status = rocblas_set_stream(_handle_blas, mystream);
-    checkDeviceBlasStatus("rocblasSetStream");
+    checkDeviceBlasStatus("rocblasSetStream(handle_blas)");
+    _status = rocblas_set_stream(_handles[qid], mystream);
+    checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
 #endif
 #endif
   }
@@ -750,8 +776,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -759,17 +789,17 @@ public:
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
-            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, ATL, W);
+            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ATR);
+                  handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
-              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
+              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
             }
           }
@@ -798,8 +828,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -807,7 +841,7 @@ public:
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
-            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, ATL, W);
+            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -816,20 +850,20 @@ public:
             checkDeviceBlasStatus("SetIdentity");
 
             _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                _handle_blas, Diag::NonUnit(), one, ATL, T);
+                handle_blas, Diag::NonUnit(), one, ATL, T);
             checkDeviceBlasStatus("trsm");
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ATR);
+                  handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
 
-              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
+              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
             } else {
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
@@ -861,8 +895,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -870,7 +908,7 @@ public:
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
-            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, ATL, W);
+            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -880,10 +918,10 @@ public:
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ATR);
+                  handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
-              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
+              _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
 
               /// additional things
@@ -896,7 +934,7 @@ public:
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), minus_one, T, AT);
+                  handle_blas, Diag::NonUnit(), minus_one, T, AT);
               checkDeviceBlasStatus("trsm");
             } else {
               /// additional things
@@ -908,7 +946,7 @@ public:
               checkDeviceBlasStatus("SetIdentity");
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, T, ATL);
+                  handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
             }
           }
@@ -950,8 +988,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -964,7 +1006,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
 
             value_type *dptr = _diag.data() + 2 * offs;
@@ -982,7 +1024,7 @@ public:
                   exec_instance, fpiv, ATR);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, ATL, ATR);
+                  handle_blas, Diag::Unit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
@@ -990,7 +1032,7 @@ public:
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
-                  _handle_blas, minus_one, ATR, STR, zero, ABR);
+                  handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             }
           }
@@ -1018,8 +1060,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -1032,7 +1078,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
 
             value_type *dptr = _diag.data() + 2 * offs;
@@ -1047,7 +1093,7 @@ public:
             checkDeviceBlasStatus("SetIdentity");
 
             _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                _handle_blas, Diag::Unit(), one, ATL, T);
+                handle_blas, Diag::Unit(), one, ATL, T);
             checkDeviceBlasStatus("trsm");
 
             if (n_m > 0) {
@@ -1062,7 +1108,7 @@ public:
                                                                                                  perm, STR);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, ATL, STR);
+                  handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
@@ -1071,7 +1117,7 @@ public:
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
-                  _handle_blas, minus_one, ATR, STR, zero, ABR);
+                  handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             } else {
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
@@ -1101,8 +1147,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -1115,7 +1165,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
 
             value_type *dptr = _diag.data() + 2 * offs;
@@ -1138,7 +1188,7 @@ public:
                                                                                                  perm, STR);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, ATL, STR);
+                  handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
@@ -1149,12 +1199,12 @@ public:
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
-                  _handle_blas, minus_one, ATR, STR, zero, ABR);
+                  handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), minus_one, T, AT);
+                  handle_blas, Diag::Unit(), minus_one, T, AT);
             } else {
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
@@ -1162,7 +1212,7 @@ public:
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, T, ATL);
+                  handle_blas, Diag::Unit(), one, T, ATL);
             }
           }
         }
@@ -1203,8 +1253,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -1214,7 +1268,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
+            _status = LU<Algo::OnDevice>::invoke(handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
@@ -1230,10 +1284,10 @@ public:
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
 
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ABL);
+                  handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
 
-              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
+              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             }
@@ -1262,8 +1316,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -1272,7 +1330,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
+            _status = LU<Algo::OnDevice>::invoke(handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
@@ -1293,20 +1351,20 @@ public:
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ABL);
+                  handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, T, ATL);
+                  handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, T, ATL2);
+                  handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
 
-              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
+              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             } else {
@@ -1319,10 +1377,10 @@ public:
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, T, ATL);
+                  handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, T, ATL2);
+                  handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
             }
           }
@@ -1350,8 +1408,12 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
+        const ordinal_type qid = 0;
         value_type_array W = work;
 #endif
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
@@ -1360,7 +1422,7 @@ public:
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
-            _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
+            _status = LU<Algo::OnDevice>::invoke(handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
@@ -1382,21 +1444,21 @@ public:
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, ATL, ABL);
+                  handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, minus_one);
 
-              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
+              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
               checkDeviceBlasStatus("gemm");
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), minus_one, T, AT);
+                  handle_blas, Diag::NonUnit(), minus_one, T, AT);
               checkDeviceBlasStatus("trsm");
               _status = Trsm<Side::Right, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), minus_one, T, AL);
+                  handle_blas, Diag::Unit(), minus_one, T, AL);
               checkDeviceBlasStatus("trsm");
 
             } else {
@@ -1410,10 +1472,10 @@ public:
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::NonUnit(), one, T, ATL);
+                  handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, T, ATL2);
+                  handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
             }
           }
@@ -1465,6 +1527,9 @@ public:
       constexpr bool copy_to_l_buf(false);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
     }
+    if (_nstreams > 1) {
+      exec_space().fence(); // wait for copy
+    }
     stat.t_copy = timer.seconds();
 
     stat_level.n_kernel_launching = 0;
@@ -1491,11 +1556,13 @@ public:
             team_policy_update;
 #endif
 
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf);
-
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf, &rval);
 
+        // get max vector size
+        const ordinal_type vmax = policy_factor.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -1510,8 +1577,15 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm size
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
+
+              // create policies
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -1524,6 +1598,9 @@ public:
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;
@@ -1565,7 +1642,11 @@ public:
         const ordinal_type qid = q % _nstreams;
         setStreamOnHandle(qid);
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -1577,7 +1658,7 @@ public:
             const ordinal_type offm = s.row_begin;
             auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
             _status =
-                Trsv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
+                Trsv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (n_m > 0) {
@@ -1585,7 +1666,7 @@ public:
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
+              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1608,7 +1689,11 @@ public:
         const ordinal_type qid = q % _nstreams;
         setStreamOnHandle(qid);
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -1624,7 +1709,7 @@ public:
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
+            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
@@ -1632,7 +1717,7 @@ public:
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bT, zero, bB);
+              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1655,7 +1740,11 @@ public:
         const ordinal_type qid = q % _nstreams;
         setStreamOnHandle(qid);
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -1669,7 +1758,7 @@ public:
             const ordinal_type offm = s.row_begin;
             auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
+            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -1706,7 +1795,11 @@ public:
         const ordinal_type qid = q % _nstreams;
         setStreamOnHandle(qid);
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -1722,11 +1815,11 @@ public:
 
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }
@@ -1797,7 +1890,11 @@ public:
         const ordinal_type qid = q % _nstreams;
         setStreamOnHandle(qid);
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -1810,7 +1907,7 @@ public:
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, b, zero, tT);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -1848,7 +1945,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -1867,13 +1968,13 @@ public:
             }
 
             _status =
-                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // ptr += m*n_m;
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1898,7 +1999,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -1923,14 +2028,14 @@ public:
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1955,7 +2060,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -1976,7 +2085,7 @@ public:
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             }
 
-            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -2014,7 +2123,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2034,10 +2147,10 @@ public:
 
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
             }
-            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
+            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (!s.do_not_apply_pivots) {
@@ -2067,7 +2180,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2089,11 +2206,11 @@ public:
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
             }
 
-            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
 
             if (s.do_not_apply_pivots) {
@@ -2125,7 +2242,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -2145,7 +2266,7 @@ public:
             _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
                 ::invoke(exec_instance, P, D, bT);
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, b, zero, tT);
 
             if (!s.do_not_apply_pivots) {
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
@@ -2190,7 +2311,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2205,7 +2330,7 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
 
             _status =
-                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (n_m > 0) {
@@ -2213,7 +2338,7 @@ public:
               UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
               const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -2238,7 +2363,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2261,13 +2390,13 @@ public:
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
               const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr + bT.span(), n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -2292,7 +2421,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -2314,7 +2447,7 @@ public:
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, b);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AL, tT, zero, b);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -2352,7 +2485,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2365,14 +2502,13 @@ public:
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }
@@ -2395,7 +2531,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -2413,11 +2553,11 @@ public:
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
               const UnmanagedViewType<value_type_matrix> bB(bptr + bT.span(), n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, bT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, bT);
               checkDeviceBlasStatus("gemv");
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -2441,7 +2581,11 @@ public:
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        const ordinal_type qid = 0;
 #endif
+        blas_handle_type handle_blas = getBlasHandle(qid);
+
         const auto &s = _h_supernodes(sid);
         {
           const ordinal_type m = s.m, n = s.n;
@@ -2453,8 +2597,7 @@ public:
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, b, zero, tT);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -2706,6 +2849,9 @@ public:
       constexpr bool copy_to_l_buf(false);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
     }
+    if (_nstreams > 1) {
+      exec_space().fence(); // wait for copy
+    }
     stat.t_copy = timer.seconds();
 
     stat_level.n_kernel_launching = 0;
@@ -2713,8 +2859,6 @@ public:
     {
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      // const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-      // const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
 #if defined(CUDA_VERSION)
 #if (11000 > CUDA_VERSION)
       /// cuda 11.1 below
@@ -2727,7 +2871,7 @@ public:
       /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
-      const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       {
         typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
@@ -2742,11 +2886,13 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf);
-
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf, &rval);
 
+        // get max vector length
+        const ordinal_type vmax = policy_factor.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -2761,8 +2907,14 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -2776,6 +2928,9 @@ public:
 
             factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "SYTRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;
@@ -3008,8 +3163,9 @@ public:
       track_alloc(_buf.span() * sizeof(value_type));
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
-      ordinal_type_array P(NULL, _info.max_supernode_size);
+      // NOTE : move this to symbolic with the actual max worksize?
+      value_type_matrix T(NULL, _info.max_supernode_size, _info.max_num_cols);
+      ordinal_type_array P(NULL, std::min(_info.max_supernode_size, _info.max_num_cols));
       const size_type worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
 
       work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));
@@ -3025,6 +3181,9 @@ public:
       constexpr bool copy_to_l_buf(true);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
     }
+    if (_nstreams > 1) {
+      exec_space().fence(); // wait for copy
+    }
     stat.t_copy = timer.seconds();
 
     stat_level.n_kernel_launching = 0;
@@ -3032,8 +3191,6 @@ public:
     {
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      // const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-      // const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
 #if defined(CUDA_VERSION)
 #if (11000 > CUDA_VERSION)
       /// cuda 11.1 below
@@ -3046,7 +3203,7 @@ public:
       /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
-      const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       {
         typedef TeamFunctor_FactorizeLU<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
@@ -3061,11 +3218,13 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf);
-
+        int rval = 0;
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf, &rval);
 
+        // get max vector length
+        const ordinal_type vmax = policy_factor.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -3080,8 +3239,15 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+
+              // create policies
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -3095,6 +3261,9 @@ public:
 
             factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
             Kokkos::fence();
+            if (rval != 0) {
+              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
+            }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             ++stat_level.n_kernel_launching;
@@ -3149,6 +3318,7 @@ public:
     // 0. permute and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
+    exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -3307,6 +3477,7 @@ public:
     // permute and copy t -> x
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
+    exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {

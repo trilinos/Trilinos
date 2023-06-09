@@ -46,8 +46,6 @@
 #ifndef MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -68,7 +66,6 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include "MueLu_Utilities_kokkos.hpp"
 
 namespace MueLu {
 
@@ -206,7 +203,7 @@ namespace MueLu {
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(orderingVector);
     else if (ordering == O_CUTHILL_MCKEE) {
-      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+      RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities<SC,LO,GO,NO>::CuthillMcKee(*A);
       auto localVector = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         orderingVector[i] = localVector[i];
@@ -246,7 +243,7 @@ namespace MueLu {
         std::vector<std::vector<LO> > agg2vertex(numLocalAggregates);
         auto vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
         for(LO i=0; i<(LO)numRows; i++) {
-          if(aggStat[i] != AGGREGATED) 
+          if(aggStat[i] != AGGREGATED)
             continue;
           LO agg=vertex2AggId[i];
           agg2vertex[agg].push_back(i);
@@ -269,8 +266,8 @@ namespace MueLu {
           for (LO colidx = 0; colidx < static_cast<LO>(nnz); colidx++) {
             bool found = false;
             if(indices[colidx] < numRows) {
-              for(LO j=0; j<(LO)myagg.size(); j++) 
-                if (vertex2AggId[indices[colidx]] == agg) 
+              for(LO j=0; j<(LO)myagg.size(); j++)
+                if (vertex2AggId[indices[colidx]] == agg)
                   found=true;
             }
             if(!found) {
@@ -294,7 +291,7 @@ namespace MueLu {
       if (ordering == O_RANDOM)
         MueLu::NotayUtils::RandomReorder(localOrderingVector);
       else if (ordering == O_CUTHILL_MCKEE) {
-        RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
+        RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities<SC,LO,GO,NO>::CuthillMcKee(*A);
         auto localVector = rcmVector->getData(0);
         for (LO i = 0; i < numRows; i++)
           localOrderingVector[i] = localVector[i];
@@ -441,40 +438,40 @@ namespace MueLu {
         if(current_idx == col || col >= numRows || aggStat[col] != READY  || val == SC_ZERO)
           continue;
 
-	MT aij = STS::real(val);
-	MT ajj = STS::real(D[col]);
-	MT sj  =  - STS::real(S[col]);  // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
-	if(aii - si + ajj - sj >= MT_ZERO) {
+        MT aij = STS::real(val);
+        MT ajj = STS::real(D[col]);
+        MT sj  =  - STS::real(S[col]);  // NOTE: The ghostedRowSum vector here has has the sign flipped from Notay's S
+        if(aii - si + ajj - sj >= MT_ZERO) {
           // Modification: We assume symmetry here aij = aji
-	  MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
-	  MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - si) + MT_ONE / (ajj - sj) );
-	  MT mu = mu_top / mu_bottom;
+          MT mu_top    = MT_TWO / ( MT_ONE / aii + MT_ONE / ajj);
+          MT mu_bottom =  - aij + MT_ONE / ( MT_ONE / (aii - si) + MT_ONE / (ajj - sj) );
+          MT mu = mu_top / mu_bottom;
 
           // Modification: Explicitly check the tie criterion here
-	  if (mu > MT_ZERO && (best_idx == LO_INVALID || mu < best_mu * tie_less ||
+          if (mu > MT_ZERO && (best_idx == LO_INVALID || mu < best_mu * tie_less ||
                                     (mu < best_mu*tie_more && orderingVector[col] < orderingVector[best_idx]))) {
-	    best_mu  = mu;
-	    best_idx = col;
+            best_mu  = mu;
+            best_idx = col;
             *out << "[" << current_idx << "] Column     UPDATED " << col << ": "
                  << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;            
-	  }
+                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;
+          }
           else {
           *out << "[" << current_idx << "] Column NOT UPDATED " << col << ": "
-              << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
                << " = " << aii - si + ajj - sj << ", aij = "<<aij<< ", mu = " << mu << std::endl;
           }
         }
         else {
           *out << "[" << current_idx << "] Column     FAILED " << col << ": "
-              << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-              << " = " << aii - si + ajj - sj << std::endl;
+               << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
+               << " = " << aii - si + ajj - sj << std::endl;
         }
       }// end column for loop
 
       if(best_idx == LO_INVALID) {
         *out << "No node buddy found for index " << current_idx
-            << " [agg " << aggIndex << "]\n" << std::endl;
+             << " [agg " << aggIndex << "]\n" << std::endl;
         // We found no potential node-buddy, so let's just make this a singleton
         // NOTE: The behavior of what to do if you have no un-aggregated neighbors is not specified in
         // the paper
@@ -482,7 +479,7 @@ namespace MueLu {
         aggStat[current_idx] = ONEPT;
         vertex2AggId[current_idx] = aggIndex;
         procWinner[current_idx]   = myRank;
-	numNonAggregatedNodes--;
+        numNonAggregatedNodes--;
         aggIndex++;
 
       } else {
@@ -945,5 +942,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_ */

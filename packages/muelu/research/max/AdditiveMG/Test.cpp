@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     
     Solve(Problem);
 
-    // and we compute the norm of the true residual. 
+    // and we compute the norm of the true residual.
     double ResidualNorm = ComputeNorm(Matrix, &LHS, &RHS);
 
     if (Comm.MyPID() == 0)

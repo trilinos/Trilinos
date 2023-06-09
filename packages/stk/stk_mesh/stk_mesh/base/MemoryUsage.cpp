@@ -52,7 +52,8 @@
 namespace stk {
 namespace mesh {
 
-void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2023
+STK_DEPRECATED void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
 {
   const MetaData& meta = bulk.mesh_meta_data();
   mem_usage.entity_rank_names = meta.entity_rank_names();
@@ -102,12 +103,12 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
       for(EntityRank r=stk::topology::NODE_RANK; r<rank_i; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.downward_relation_counts[r] += num_rels;
-        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
+        STK_ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
       for(EntityRank r=static_cast<EntityRank>(rank_i+1); r<nranks; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.upward_relation_counts[r] += num_rels;
-        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
+        STK_ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
     }
 
@@ -123,7 +124,7 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
   mem_usage.total_bytes = total_bytes;
 }
 
-void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
+STK_DEPRECATED void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
 {
   os << "----- stk_mesh Memory Usage: ------"<<std::endl;
   os << "Fields:"<<std::endl;
@@ -172,8 +173,8 @@ void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
   }
   os << "Total bytes: "<<mem_usage.total_bytes<<" ("<<(static_cast<double>(mem_usage.total_bytes))/(1024*1024)<<"MB)"<<std::endl;
 }
+#endif
 
 }//namespace mesh
 }//namespace stk
-
 

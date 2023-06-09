@@ -46,26 +46,18 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
-//#include "Rythmos_DefaultIntegrator.hpp"
-//#include "Rythmos_IntegrationObserverBase.hpp"
-//#include "Rythmos_TimeStepNonlinearSolver.hpp"
-
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_IntegratorObserver.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
-//#include "Piro_RythmosStepperFactory.hpp"
-//#include "Piro_RythmosStepControlFactory.hpp"
-
 #include <map>
 #include <string>
 
 namespace Piro {
 
-/** \brief Thyra-based Model Evaluator for Tempus solves
- *  that mimics forward only in Piro_RythmosSolver.hpp.
+/** \brief Thyra-based Model Evaluator for Tempus solves.
  */
 template <typename Scalar>
 class TempusSolverForwardOnly

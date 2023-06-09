@@ -223,28 +223,28 @@ public:
   std::string &getProductAttribute(const std::string &name, const std::string &attribute);
 
 public:
-  static const std::string	NAME;				///< Product's name attribute
-  static const std::string	TITLE;				///< Product's title attribute
-  static const std::string      VERSION;                        ///< TPL's version attribute
-  static const std::string      QUALIFIER;                      ///< TPL's qualifier attribute
-  static const std::string	CONTACT;			///< Product's contact attribute
-  static const std::string	ERROR;				///< Product's error attribute
-  static const std::string	PRODUCT_TYPE;			///< Product's product_type attribute
+  static const std::string	NAME;
+  static const std::string	TITLE;
+  static const std::string  VERSION;
+  static const std::string  QUALIFIER;
+  static const std::string	CONTACT;
+  static const std::string	ERROR;
+  static const std::string	PRODUCT_TYPE;
 
-  static const std::string	EXECUTABLE;			///< Product's executable attribute
-  static const std::string	BUILD_TIME;			///< Product's build_time attribute
+  static const std::string	EXECUTABLE;
+  static const std::string	BUILD_TIME;
 
-  static const std::string	BANNER_DETAIL;			///< Product's additional banner info attribute
-  static const std::string	COPYRIGHT;			///< Product's copyright information
+  static const std::string	BANNER_DETAIL;
+  static const std::string	COPYRIGHT;
 
-  static const std::string	REGION_TITLE;			///< Product's region_title attribute
+  static const std::string	REGION_TITLE;
 
-  static const std::string	PRODUCT_TYPE_REGION;		///< Region product_type value
+  static const std::string	PRODUCT_TYPE_REGION;
 
 private:
-  mutable ProductMap		m_productMap;			///< Product map
-  std::string                   m_productName;                  ///< Name of main product
-  bool				m_registryOK;			///< Registry is OK
+  mutable ProductMap m_productMap;
+  std::string        m_productName;
+  bool				 m_registryOK;
 };
 
 std::string get_version(const std::string& executableName);

@@ -101,23 +101,8 @@ set(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 ## Base install location (if not in the build tree)
 set(${EXPORT_FILE_VAR_PREFIX}_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@")
 
-## List of package include dirs
-set(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "")
-
-## List of package library paths
-set(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "")
-
 ## List of package libraries
-set(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES "${FULL_LIBRARY_SET}")
-
-## Specification of directories for TPL headers
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "")
-
-## Specification of directories for TPL libraries
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "")
-
-## List of required TPLs
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
+set(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES ${PACKAGE_NAME}::all_libs)
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -135,12 +120,6 @@ set(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}"
 ## ---------------------------------------------------------------------------
 ## Set useful general variables
 ## ---------------------------------------------------------------------------
-
-## The packages enabled for this project
-set(${EXPORT_FILE_VAR_PREFIX}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
-
-## The TPLs enabled for this project
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIST "${ORDERED_FULL_TPL_SET}")
 
 ${PACKAGE_CONFIG_CODE}
 

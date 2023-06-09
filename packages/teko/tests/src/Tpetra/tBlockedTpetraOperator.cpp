@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -67,10 +67,9 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
 #include "tBlockedTpetraOperator.hpp"
+
+#include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
@@ -92,7 +91,7 @@ void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO> > & gids
 {
    LO numLocal = map.getLocalNumElements();
    LO numHalf = numLocal/2;
-   numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
+   numHalf += ((numHalf % 2 == 0) ? 0 : 1);
 
    gids.clear();
    gids.resize(3);
@@ -100,7 +99,7 @@ void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO> > & gids
    std::vector<GO> & blk0 = gids[0];
    std::vector<GO> & blk1 = gids[1];
    std::vector<GO> & blk2 = gids[2];
-   
+
    // loop over global IDs: treat first block as strided
    GO gid = -1;
    for(LO i=0;i<numHalf;i+=2) {
@@ -120,7 +119,7 @@ void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO> > & gids
    TEUCHOS_ASSERT(LO(blk0.size()+blk1.size()+blk2.size())==numLocal);
 }
 
-void tBlockedTpetraOperator::initializeTest() 
+void tBlockedTpetraOperator::initializeTest()
 {
    tolerance_ = 1e-14;
 }
@@ -137,7 +136,7 @@ int tBlockedTpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    Teko_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
-   totalrun++; 
+   totalrun++;
 
    status = test_reorder(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
@@ -146,14 +145,14 @@ int tBlockedTpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,1);
-   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,2);
-   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
@@ -176,11 +175,12 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    TEST_MSG("\n   tBlockedTpetraOperator::test_vector_constr: "
          << "Running on " << comm_epetra.NumProc() << " processors");
 
-   // pick 
+   // pick
    int nx = 5;// * comm_epetra.NumProc();
    int ny = 5;// * comm_epetra.NumProc();
 
@@ -285,13 +285,14 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
 
    TEST_MSG("\n   tBlockedTpetraOperator::test_reorder" << tstr << ": "
          << "Running on " << comm_epetra.NumProc() << " processors");
 
-   // pick 
+   // pick
    int nx = 5;//3 * 25 * comm_epetra.NumProc();
    int ny = 5;//3 * 50 * comm_epetra.NumProc();
 
@@ -315,7 +316,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
 
    Teko::TpetraHelpers::BlockedTpetraOperator flatShell(vars,A,"Af");
    Teko::TpetraHelpers::BlockedTpetraOperator reorderShell(vars,A,"Ar");
- 
+
    Teko::BlockReorderManager brm;
    switch (total) {
    case 0:

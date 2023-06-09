@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _PE_STR_UTIL_CONST_H_
-#define _PE_STR_UTIL_CONST_H_
+#pragma once
 /* Function prototypes */
 extern int token_compare(char       *token, /* The input character string */
                          const char *key    /* The key to compare with token */
@@ -25,5 +23,3 @@ extern void clean_string(char        inp_str[], /* The string to clean */
 extern void string_to_lower(char inp_str[], /* The string to convert to lower case */
                             char cstop      /* Character where to stop */
 );
-
-#endif /* _PE_STR_UTIL_CONST_H_ */

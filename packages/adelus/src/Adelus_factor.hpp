@@ -48,6 +48,7 @@
 #define __ADELUS_FACTOR_HPP__
 
 #include <math.h>
+#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -103,7 +104,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
 #if defined(KOKKOS_ENABLE_CUDA)
   using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -358,7 +359,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
         //return; 
         std::ostringstream os;
         os << "Adelus::factor: rank " << me << " error -- zero pivot found in column "<< j;
-        Kokkos::Impl::throw_runtime_exception (os.str ());
+        throw std::runtime_error (os.str ());
       }
 
       // divide everything including the diagonal by the pivot entry

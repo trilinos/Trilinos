@@ -40,8 +40,6 @@
 #include "stk_io/StkIoUtils.hpp"
 #include "Ioss_Region.h"
 #include "stk_io/IOHelpers.hpp"
-#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
-#include "Teuchos_RCPDecl.hpp"                     // for RCP
 
 namespace stk {
 namespace transfer_utils {

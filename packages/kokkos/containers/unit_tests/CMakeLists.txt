@@ -43,6 +43,16 @@ foreach(Tag Threads;Serial;OpenMP;HPX;Cuda;HIP;SYCL)
      LIST(REMOVE_ITEM UnitTestSources ${dir}/TestCuda_DynViewAPI_generic.cpp)
     endif()
 
-    KOKKOS_ADD_EXECUTABLE_AND_TEST(UnitTest_${Tag} SOURCES ${UnitTestSources})
+    KOKKOS_ADD_EXECUTABLE_AND_TEST(ContainersUnitTest_${Tag} SOURCES ${UnitTestSources})
   endif()
 endforeach()
+
+SET(COMPILE_ONLY_SOURCES
+  TestCreateMirror.cpp
+)
+KOKKOS_ADD_EXECUTABLE(
+  ContainersTestCompileOnly
+  SOURCES
+  TestCompileMain.cpp
+  ${COMPILE_ONLY_SOURCES}
+)

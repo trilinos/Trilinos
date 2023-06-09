@@ -55,8 +55,8 @@
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -112,6 +112,8 @@ namespace MueLu {
     std::string description() const { return "AmalgamationInfo"; }
 
     //! Print the object with some verbosity level to an FancyOStream object.
+    //using MueLu::Describable::describe; // overloading, not hiding
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     RCP<const Map> getNodeRowMap() const { return nodeRowMap_; } //! < returns the node row map for the graph
@@ -139,6 +141,26 @@ namespace MueLu {
      * build overlapping dof row map from aggregates needed for overlapping null space
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
+
+  private:
+
+    void UnamalgamateAggregates(const Teuchos::RCP<const Map> &nodeMap,
+                                const RCP<LOVector> &procWinnerVec,
+                                const RCP<LOMultiVector> &vertex2AggIdVec,
+                                const GO numAggregates,
+                                Teuchos::ArrayRCP<LocalOrdinal>& aggStart,
+                                Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
+
+    void UnamalgamateAggregatesLO(const Teuchos::RCP<const Map> &nodeMap,
+                                  const RCP<LOVector> &procWinnerVec,
+                                  const RCP<LOMultiVector> &vertex2AggIdVec,
+                                  const GO numAggregates,
+                                  Teuchos::ArrayRCP<LocalOrdinal>& aggStart,
+                                  Teuchos::ArrayRCP<LO>& aggToRowMap) const;
+
+    Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Teuchos::RCP<const Map> &nodeMap) const;
+
+  public:
 
     /*! @brief ComputeGlobalDOF
      *

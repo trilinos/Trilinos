@@ -52,9 +52,9 @@
 
 #include "MueLu_Level.hpp"
 
-#include <MueLu_AmalgamationInfo_kokkos.hpp>
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include <MueLu_AmalgamationInfo.hpp>
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 
 namespace MueLuTests {
@@ -75,11 +75,11 @@ namespace MueLuTests {
     using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
 
-    RCP<AmalgamationInfo_kokkos> amalgamationData;
+    RCP<AmalgamationInfo> amalgamationData;
     RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
     RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
 
-    RCP<AmalgamationInfo_kokkos> amalgamationInfo_kokkos = rcp(new AmalgamationInfo_kokkos(theRowTranslation,
+    RCP<AmalgamationInfo> amalgamationInfo_kokkos = rcp(new AmalgamationInfo(theRowTranslation,
                                                                       theColTranslation,
                                                                       A->getRowMap(),
                                                                       A->getColMap(),
@@ -128,11 +128,11 @@ namespace MueLuTests {
     using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
 
-    RCP<AmalgamationInfo_kokkos> amalgamationData;
+    RCP<AmalgamationInfo> amalgamationData;
     RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
     RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
 
-    RCP<AmalgamationInfo_kokkos> amalgamationInfo_kokkos = rcp(new AmalgamationInfo_kokkos(theRowTranslation,
+    RCP<AmalgamationInfo> amalgamationInfo_kokkos = rcp(new AmalgamationInfo(theRowTranslation,
                                                                       theColTranslation,
                                                                       A->getRowMap(),
                                                                       A->getColMap(),
@@ -143,7 +143,7 @@ namespace MueLuTests {
                                                                       nStridedOffset,
                                                                       stridedblocksize) );
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -155,7 +155,7 @@ namespace MueLuTests {
     level.Request(*dropFact);
     dropFact->Build(level);
     graph = level.Get<RCP<LWGraph_kokkos> >("Graph", dropFact.get());
-    RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     GO numAggs = aggregates->GetNumAggregates();
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
     ArrayRCP<LO> aggStart;

@@ -200,7 +200,7 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 inline
 void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
 {
-  ThrowRequire(bulk.parallel_size() == 3);
+  STK_ThrowRequire(bulk.parallel_size() == 3);
   stk::io::fill_mesh("generated:3x1x3", bulk);
 
   stk::mesh::EntityProcVec elementProcChanges;
@@ -230,7 +230,7 @@ void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
 inline
 void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
 {
-  ThrowRequire(bulk.parallel_size() == 3);
+  STK_ThrowRequire(bulk.parallel_size() == 3);
   stk::io::fill_mesh("generated:3x1x3", bulk);
 
   stk::mesh::EntityProcVec elementProcChanges;
@@ -243,7 +243,7 @@ void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
   if (bulk.parallel_rank() == 1) {
     stk::mesh::Entity local_element5 = bulk.get_entity(stk::topology::ELEM_RANK,5);
     const bool delete_success = bulk.destroy_entity(local_element5);
-    ThrowRequire(delete_success);
+    STK_ThrowRequire(delete_success);
   }
   bulk.modification_end();
 }

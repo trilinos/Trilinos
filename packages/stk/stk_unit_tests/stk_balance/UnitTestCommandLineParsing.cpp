@@ -23,7 +23,7 @@ protected:
   {
     setup_mesh("generated:1x1x4|sideset:x", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().universal_part(), m_faces);
-    ThrowRequire(m_faces.size() > 0);
+    STK_ThrowRequire(m_faces.size() > 0);
   }
 
   void use_full_infile_output_dir_options()
@@ -1069,6 +1069,84 @@ TEST_F(BalanceCommandLine, vertexWeightMethodConnectivity)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(),                DefaultSettings::faceSearchEdgeWeight);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightMultiplier(),               10.);
+  check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
+}
+
+TEST_F(BalanceCommandLine, vertexWeightMethodField)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--vertex-weight-method=field"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(),                                   DefaultSettings::decompMethod);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(),                             false);
+  EXPECT_EQ(balanceSettings.includeSearchResultsInGraph(),                       DefaultSettings::useContactSearch);
+  EXPECT_EQ(balanceSettings.shouldFixSpiders(),                                  DefaultSettings::fixSpiders);
+  EXPECT_EQ(balanceSettings.shouldFixMechanisms(),                               false);
+  EXPECT_EQ(balanceSettings.shouldPrintDiagnostics(),                            false);
+  EXPECT_EQ(balanceSettings.getVertexWeightMethod(),                             VertexWeightMethod::FIELD);
+  EXPECT_EQ(balanceSettings.getVertexWeightFieldName(),                          "");  // Not set.  Will throw on access.
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(),                DefaultSettings::faceSearchEdgeWeight);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightMultiplier(),               1.);
+  check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
+}
+
+TEST_F(BalanceCommandLine, vertexWeightMethodFieldAndFieldName)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--vertex-weight-method=field",
+                                                                                   "--vertex-weight-field-name=JunkField"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(),                                   DefaultSettings::decompMethod);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(),                             false);
+  EXPECT_EQ(balanceSettings.includeSearchResultsInGraph(),                       DefaultSettings::useContactSearch);
+  EXPECT_EQ(balanceSettings.shouldFixSpiders(),                                  DefaultSettings::fixSpiders);
+  EXPECT_EQ(balanceSettings.shouldFixMechanisms(),                               false);
+  EXPECT_EQ(balanceSettings.shouldPrintDiagnostics(),                            false);
+  EXPECT_EQ(balanceSettings.getVertexWeightMethod(),                             VertexWeightMethod::FIELD);
+  EXPECT_EQ(balanceSettings.getVertexWeightFieldName(),                          "JunkField");
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(),                DefaultSettings::faceSearchEdgeWeight);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightMultiplier(),               1.);
+  check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
+}
+
+TEST_F(BalanceCommandLine, vertexWeightFieldName)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--vertex-weight-field-name=JunkField"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(),                                   DefaultSettings::decompMethod);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(),                             false);
+  EXPECT_EQ(balanceSettings.includeSearchResultsInGraph(),                       DefaultSettings::useContactSearch);
+  EXPECT_EQ(balanceSettings.shouldFixSpiders(),                                  DefaultSettings::fixSpiders);
+  EXPECT_EQ(balanceSettings.shouldFixMechanisms(),                               false);
+  EXPECT_EQ(balanceSettings.shouldPrintDiagnostics(),                            false);
+  EXPECT_EQ(balanceSettings.getVertexWeightMethod(),                             VertexWeightMethod::FIELD);  // Auto-set
+  EXPECT_EQ(balanceSettings.getVertexWeightFieldName(),                          "JunkField");
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(),                DefaultSettings::faceSearchEdgeWeight);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightMultiplier(),               1.);
+  check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
+}
+
+TEST_F(BalanceCommandLine, vertexWeightFieldName_conflictingVertexWeightMethod)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--vertex-weight-method=connectivity",
+                                                                                   "--vertex-weight-field-name=JunkField"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(),                                   DefaultSettings::decompMethod);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(),                             false);
+  EXPECT_EQ(balanceSettings.includeSearchResultsInGraph(),                       DefaultSettings::useContactSearch);
+  EXPECT_EQ(balanceSettings.shouldFixSpiders(),                                  DefaultSettings::fixSpiders);
+  EXPECT_EQ(balanceSettings.shouldFixMechanisms(),                               false);
+  EXPECT_EQ(balanceSettings.shouldPrintDiagnostics(),                            false);
+  EXPECT_EQ(balanceSettings.getVertexWeightMethod(),                             VertexWeightMethod::FIELD);  // Overridden
+  EXPECT_EQ(balanceSettings.getVertexWeightFieldName(),                          "JunkField");
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(),                DefaultSettings::faceSearchEdgeWeight);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightMultiplier(),               1.);
   check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
   check_vertex_weight_block_multiplier(balanceSettings, {});
 }

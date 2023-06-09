@@ -289,6 +289,9 @@ public:
   //! Returns the local number of entries in this matrix.
   virtual size_t getLocalNumEntries() const;
 
+  //! The number of degrees of freedom per mesh point.
+  virtual local_ordinal_type getBlockSize () const;
+
   /// \brief The current number of entries on this node in the specified global row.
   ///
   /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if

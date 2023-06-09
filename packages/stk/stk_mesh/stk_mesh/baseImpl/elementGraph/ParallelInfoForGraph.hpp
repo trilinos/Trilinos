@@ -49,7 +49,7 @@ namespace impl
 {
 
 void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
-void populate_selected_value_for_remote_elements(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, stk::mesh::Selector selector, ParallelSelectedInfo &selInfo);
+void populate_selected_value_for_remote_elements(const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, const stk::mesh::Selector& selector, ParallelSelectedInfo &selInfo);
 
 }
 }

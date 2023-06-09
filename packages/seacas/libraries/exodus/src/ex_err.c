@@ -312,13 +312,14 @@ const char *ex_strerror(int err_num)
   case EX_WRONGFILETYPE: return "Integer sizes must match for input and output file in ex_copy.";
   case EX_LOOKUPFAIL:
     return "Id lookup failed for specified entity type. Could not find entity with specified id.";
+  case EX_BADFILENAME: return "Empty or null filename specified.";
+  case EX_DUPLICATEID: return "Duplicate entity id found.";
+  case EX_DUPLICATEOPEN: return "File is open multiple times for both read and write.";
   case EX_BADPARAM: return "Bad parameter.";
   case -EX_BADPARAM: return "Bad parameter.";
   case EX_INTERNAL: return "Internal logic error in exodus library.";
   case EX_NOTROOTID: return "File id is not the root id; it is a subgroup id.";
   case EX_NULLENTITY: return "Null entity found.";
-  case EX_DUPLICATEID: return "Duplicate entity id found.";
-  case EX_DUPLICATEOPEN: return "File is open multiple times for both read and write.";
   case EX_MSG: return "Message printed; no error implied.";
   default: return nc_strerror(err_num);
   }

@@ -1,14 +1,17 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(SOURCES ${DIR}/*.C)
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/../"
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
+
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/io_info_lib_export.h")
 
 TRIBITS_ADD_LIBRARY(
   io_info_lib
@@ -16,6 +19,11 @@ TRIBITS_ADD_LIBRARY(
   SOURCES io_info.C volume.C info_interface.C
   DEPLIBS Ioss
   )
+
+generate_export_header(io_info_lib)
+target_include_directories(io_info_lib
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 ASSERT_DEFINED(TPL_ENABLE_CGNS)
 IF (TPL_ENABLE_CGNS)
@@ -269,6 +277,38 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   COMM mpi serial
   )
 endif()
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+if (TPL_ENABLE_MPI)
+  set(EXTERNAL "--compose=external")
+endif()
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus

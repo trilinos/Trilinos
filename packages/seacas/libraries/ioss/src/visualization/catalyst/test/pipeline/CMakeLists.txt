@@ -33,6 +33,16 @@ ADD_EXECUTABLE(CatalystV2ScriptFromParaViewGuiTest1
 TARGET_LINK_LIBRARIES(CatalystV2ScriptFromParaViewGuiTest1
                       catalystiosstest)
 
+ADD_EXECUTABLE(CatalystPartitionedDataSetCollectionTests
+               CatalystPartitionedDataSetCollectionTests.cxx)
+TARGET_LINK_LIBRARIES(CatalystPartitionedDataSetCollectionTests
+                      catalystiosstest)
+
+ADD_EXECUTABLE(TwoGridsTwoPipelinesTests
+               TwoGridsTwoPipelinesTests.cxx)
+TARGET_LINK_LIBRARIES(TwoGridsTwoPipelinesTests
+                      catalystiosstest)
+
 addCatalystTest("Catalyst_Logging_Pipeline" "1;4"
     ${CMAKE_CURRENT_BINARY_DIR}/CatalystLoggingPipelineTests "")
 
@@ -53,3 +63,10 @@ addCatalystTest("Two_Grids_Catalyst_Script3" "1;4"
 
 addCatalystTest("CatalystV2ScriptFromParaViewGuiTest1" "1;4"
     ${CMAKE_CURRENT_BINARY_DIR}/CatalystV2ScriptFromParaViewGuiTest1 "")
+
+addCatalystTest("CatalystPartitionedDataSetCollectionTests" "1;4"
+    ${CMAKE_CURRENT_BINARY_DIR}/CatalystPartitionedDataSetCollectionTests "")
+
+addCatalystTest("TwoGridsTwoPipelinesTests" "1;4"
+    ${CMAKE_CURRENT_BINARY_DIR}/TwoGridsTwoPipelinesTests "")
+

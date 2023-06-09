@@ -297,6 +297,7 @@ extern int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans );
 
 extern int ML_Operator_Check_Getrow(ML_Operator *, int, char*);
 extern double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag);
+extern double ML_Operator_FroNorm(ML_Operator *matrix, int divide_diag);
 extern int ML_Operator_Print(ML_Operator *matrix, const char label[]);
 extern int ML_Operator_ComputeNumNzs(ML_Operator *matrix);
 /* Operator Scaling */

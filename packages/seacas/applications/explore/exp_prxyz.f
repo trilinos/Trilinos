@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -75,6 +75,6 @@ C   --   CORD - IN - the nodal coordinates
  30   FORMAT('(1X, ''Node'', I12, 5 (2X, ',A,'), :, /,',
      $     '(15X, 5 (2X, ',A,')))')
 
-10010  FORMAT (/, 1X, 4X, 5X, 4X, 5 (2X, A8, :, 7X), :, /,
+10010  FORMAT (/, 1X, 8X, 5X, 4X, 5 (2X, A8, :, 3X), :, /,
      &   (1X, 6 (7X, A8, :, 9X)))
       END

@@ -52,6 +52,7 @@
 #include "stk_unit_test_utils/getOption.h"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
+#include <stk_util/util/string_utils.hpp>
 #include "stk_util/util/GraphCycleDetector.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
@@ -770,6 +771,7 @@ TEST(DetectHinge3D, inputFile)
   stk::mesh::BulkData& bulk = *bulkPtr;
   std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
   bool nodesOnly = stk::unit_test_util::simple_fields::has_option("--nodesOnly");
+
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);
@@ -777,10 +779,18 @@ TEST(DetectHinge3D, inputFile)
     stk::tools::impl::HingeNodeVector hingeNodes;
     stk::tools::impl::HingeEdgeVector hingeEdges;
 
+    std::string blockList = "";
+    std::string inputBlockList = stk::unit_test_util::simple_fields::get_command_line_option("--blockList", blockList);
+
+    std::vector<std::string> blocksToDetect = stk::split_csv_string(inputBlockList);
+    for (std::string & blockToDetect : blocksToDetect) {
+      blockToDetect = stk::trim_string(blockToDetect);
+    }
+
     if(nodesOnly) {
-      fill_mesh_hinges(bulk, hingeNodes);
+      fill_mesh_hinges(bulk, blocksToDetect, hingeNodes);
     } else {
-      fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
+      fill_mesh_hinges(bulk, blocksToDetect, hingeNodes, hingeEdges);
     }
     double detectTime = stk::wall_time();
     print_hinge_info(bulk, hingeNodes, hingeEdges);

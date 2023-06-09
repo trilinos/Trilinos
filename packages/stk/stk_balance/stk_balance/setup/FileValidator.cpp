@@ -50,7 +50,7 @@ FileValidator::FileValidator(MPI_Comm comm)
 
 void FileValidator::require_file_exists(const std::string& filename, unsigned numProcs) const
 {
-  ThrowRequireMsg(does_file_exist(filename, numProcs), "Input file '" +
+  STK_ThrowRequireMsg(does_file_exist(filename, numProcs), "Input file '" +
                   construct_generic_parallel_file_name(filename, numProcs) + "' does not exist.\n");
 }
 

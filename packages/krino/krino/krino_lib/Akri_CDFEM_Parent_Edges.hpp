@@ -34,8 +34,7 @@ build_parent_edges_using_elements(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
     const bool shouldLinearizeEdges,
     const std::vector<stk::mesh::Entity> & elements,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
+    const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
@@ -43,8 +42,7 @@ ParentEdgeMap
 build_parent_edges(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
     const bool shouldLinearizeEdges,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
+    const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
@@ -63,19 +61,14 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
     std::vector<const CDFEM_Parent_Edge *> & faceParentEdges,
     std::vector<bool> & areParentEdgesOrientedSameAsFaceEdges);
 
-stk::mesh::Selector get_parent_element_selector(const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport);
+bool is_cdfem_use_case(const Phase_Support & phaseSupport);
 
-stk::mesh::Selector get_owned_parent_element_selector(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Part & activePart,
+stk::mesh::Selector get_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport);
 
 std::vector<stk::mesh::Entity> get_owned_parent_elements(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport);
+    const stk::mesh::Selector & parentElementSelector);
 
 }
 

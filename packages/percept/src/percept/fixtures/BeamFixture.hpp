@@ -20,8 +20,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 
@@ -29,7 +27,6 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <percept/fixtures/BeamFixture.hpp>
 #include <percept/FieldTypes.hpp>
@@ -66,10 +63,10 @@
 
       stk::mesh::Part & m_block_beam;
 
-      CoordinatesFieldType & m_coordinates_field;
-      CoordinatesFieldType & m_centroid_field;
-      ScalarFieldType & m_temperature_field;
-      ScalarFieldType & m_volume_field;
+      CoordinatesFieldType * m_coordinates_field;
+      CoordinatesFieldType * m_centroid_field;
+      ScalarFieldType * m_temperature_field;
+      ScalarFieldType * m_volume_field;
     };
 
     bool verifyMesh( const BeamFixture & mesh );

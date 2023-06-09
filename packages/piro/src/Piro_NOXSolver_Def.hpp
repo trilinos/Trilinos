@@ -71,13 +71,15 @@ template <typename Scalar>
 Piro::NOXSolver<Scalar>::
 NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model_,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_adjointModel_,
     const Teuchos::RCP<ObserverBase<Scalar> > &observer_) :
-    SteadyStateSolver<Scalar>(in_model_),
+    SteadyStateSolver<Scalar>(in_model_, in_adjointModel_),
     appParams(appParams_),
     observer(observer_),
     solver(new Thyra::NOXNonlinearSolver),
     out(Teuchos::VerboseObjectBase::getDefaultOStream()),
     model(in_model_),
+    adjointModel(in_adjointModel_),
     writeOnlyConvergedSol(appParams_->get("Write Only Converged Solution", true)),
     solveState(true),
     current_iteration(-1)
@@ -158,19 +160,24 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
 
     RCP<Thyra::VectorBase<Scalar> > initial_guess;
-    if(Teuchos::nonnull(inArgs.get_x())) { //used in optimization
-      initial_guess = inArgs.get_x()->clone_v();
-    } else {
+    
+    //use nominal initial guess only if inArgs.get_x() is not defined
+    bool nominalInitialGuess = Teuchos::is_null(inArgs.get_x());
+    if(nominalInitialGuess) {
       initial_guess = modelNominalState->clone_v();
+    } else {
+      initial_guess = inArgs.get_x()->clone_v();
     }
 
     solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
-    if((solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED) && reComputeWithZeroInitialGuess && (initial_guess->norm_1()!=0.0)) {
-      *out << "Piro::NOXSolver, Trying to solve the nonlinear problem again with a zero initial guess" << std::endl;
-      initial_guess->assign(0.0);
-      solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
+    if((solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED) && reComputeWithZeroInitialGuess) {
+      auto norm_prev_init_guess = nominalInitialGuess ? initial_guess->norm_1() : inArgs.get_x()->norm_1();
+      if(norm_prev_init_guess != 0.0) { //recompute only if the previous initial guess was not already zero
+        *out << "Piro::NOXSolver, Trying to solve the nonlinear problem again with a zero initial guess" << std::endl;
+        initial_guess->assign(0.0);
+        solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
+      }
     }
-
 
     //  MPerego: I think it is better not to throw an error when the solver does not converge.
     //  One can look at the solver status to check whether the solution is converged.

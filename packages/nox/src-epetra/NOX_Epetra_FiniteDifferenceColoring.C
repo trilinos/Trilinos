@@ -173,7 +173,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     std::cout << "ERROR: NOX::Epetra::FiniteDifferenceColoring::computeJacobian() - "
      << "Jacobian to evaluate is not a FiniteDifferenceColoring object!"
          << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   const Epetra_BlockMap& map = fo.Map();

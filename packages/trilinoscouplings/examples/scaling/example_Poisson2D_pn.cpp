@@ -136,7 +136,7 @@
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes
@@ -146,7 +146,9 @@
 #include <sstream>
 
 
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
 
 using namespace std;
 using namespace Intrepid;

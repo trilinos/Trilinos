@@ -39,7 +39,7 @@ C           IS LARGE ENOUGH.
          END IF
   100 CONTINUE
       IF (VROW .NE. 0) THEN
-         LASTER = SUCESS
+         LASTER = SUCCESS
       ELSE
          LASTER = NOGET
       END IF

@@ -44,7 +44,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshCommImplUtils.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/MeshPrintUtils.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 #include <vector>
 
@@ -77,7 +77,7 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &    mesh
         Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
 
-        ThrowAssertMsg((rels_itr != rels_end && ords_itr == nullptr) == false, "Relations found without ordinals");      
+        STK_ThrowAssertMsg((rels_itr != rels_end && ords_itr == nullptr) == false, "Relations found without ordinals");      
 
 
         for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
@@ -292,6 +292,7 @@ static void put_tag(CommBuffer& buf, PackTags tag)
 }
 
 void pack_owned_verify(const BulkData& mesh,
+                       const EntityCommDatabase& commDB,
                        const EntityCommListInfoVector& commList,
                        CommSparse& commSparse)
 {
@@ -304,7 +305,9 @@ void pack_owned_verify(const BulkData& mesh,
       std::vector<int> share_procs ;
       std::vector<int> ghost_procs ;
 
-      const PairIterEntityComm comm = impl::get_entity_comm_range(info);
+      STK_ThrowAssert(info.entity_comm != -1);
+      STK_ThrowAssert(info.entity_comm == commDB.entity_comm(mesh.entity_key(info.entity)));
+      const PairIterEntityComm comm = commDB.comm(info.entity_comm);
 
       for ( size_t j = 0 ; j < comm.size() ; ++j ) {
         if ( comm[j].ghost_id == BulkData::SHARED ) {
@@ -618,7 +621,7 @@ bool unpack_not_owned_verify(const BulkData& mesh,
 
     EntityKey key = i->key;
     Entity entity = i->entity;
-    ThrowRequire( mesh.entity_key(entity) == key );
+    STK_ThrowRequire( mesh.entity_key(entity) == key );
 
 
     if ( mesh.parallel_owner_rank(i->entity) != p_rank ) {
@@ -733,11 +736,11 @@ void check_matching_parts_count(unsigned partsCount, int rank, int commSize, MPI
   for(auto count : partsCounts) {
     bool hasEqualPartCounts = count == partsCount;
     if(rank == 0) {
-      ThrowRequireMsg(hasEqualPartCounts,
+      STK_ThrowRequireMsg(hasEqualPartCounts,
                       "Rank: " + std::to_string(rank) +
                       " found unmatching part ordinal counts across procs in calls to change_entity_parts with selector");
     } else {
-      ThrowRequire(hasEqualPartCounts);
+      STK_ThrowRequire(hasEqualPartCounts);
     }
   }
 }
@@ -763,11 +766,11 @@ void check_matching_parts(const PartVector& parts, unsigned partsCount, int rank
   for(unsigned i = 0; i < recvPartOrds.size(); i++) {
     bool hasEqualPartOrds = recvPartOrds[i] == partOrds[i % partsCount];
     if(rank == 0) {
-      ThrowRequireMsg(hasEqualPartOrds,
+      STK_ThrowRequireMsg(hasEqualPartOrds,
                       "Rank: " + std::to_string(rank) +
                       " found unmatching part ordinals in change_entity_parts with selector");
     } else {
-      ThrowRequire(hasEqualPartOrds);
+      STK_ThrowRequire(hasEqualPartOrds);
     }
   }
 }

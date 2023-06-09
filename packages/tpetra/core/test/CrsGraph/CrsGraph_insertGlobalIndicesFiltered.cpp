@@ -67,7 +67,7 @@ namespace { // (anonymous)
                    "GO must be a built-in integer type.");
     // It's harder to test NODE_TYPE; without a "this is a valid node
     // type" compile-time query function, that would call for "is
-    // Kokkos::Compat::KokkosDeviceWrapperNode<E, M> for some E which
+    // Tpetra::KokkosCompat::KokkosDeviceWrapperNode<E, M> for some E which
     // is a valid Kokkos execution space, and some M which is a valid
     // Kokkos memory space."
 

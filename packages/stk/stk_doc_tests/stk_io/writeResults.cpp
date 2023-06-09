@@ -46,7 +46,6 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetEntities.hpp>  // for get_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -212,7 +211,7 @@ TEST(StkMeshIoBrokerHowTo, DISABLED_brokenWriteResults)
     stk::mesh::Field<double> &field =
         stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
     stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), 3, 2, nullptr);
-    stk::io::set_field_output_type(field, "Vector_3D");
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_3D);
 
     //+ commit the meta data and create the bulk data.
     //+ populate the bulk data with data from the mesh file.

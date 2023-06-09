@@ -20,13 +20,10 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <percept/fixtures/SingleTetFixture.hpp>
 #include <percept/FieldTypes.hpp>
@@ -67,7 +64,7 @@
 
       const stk::mesh::EntityRank m_elem_rank;
 
-      CoordinatesFieldType & m_coordinates_field;
+      CoordinatesFieldType * m_coordinates_field;
 
       unsigned m_npts;
       Point *m_points;

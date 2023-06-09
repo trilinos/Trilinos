@@ -117,14 +117,12 @@ checkLocalViewValidity
 ///
 /// A DualView is valid if both of its constituent Views are valid.
 template<class DataType ,
-         class Arg1Type = void ,
-         class Arg2Type = void ,
-         class Arg3Type = void>
+         class... Args>
 bool
 checkLocalDualViewValidity
   (std::ostream* const lclErrStrm,
    const int myMpiProcessRank,
-   const Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type>& dv)
+   const Kokkos::DualView<DataType, Args...>& dv)
 {
   const bool dev_good =
     checkLocalViewValidity (lclErrStrm, myMpiProcessRank,
@@ -137,7 +135,7 @@ checkLocalDualViewValidity
     using Teuchos::TypeNameTraits;
     using std::endl;
     using dv_type =
-      Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type>;
+      Kokkos::DualView<DataType, Args...>;
 
     const std::string dvName = TypeNameTraits<dv_type>::name ();
     *lclErrStrm << "Proc " << myMpiProcessRank << ": Kokkos::DualView "
@@ -148,13 +146,11 @@ checkLocalDualViewValidity
 }
 
 template<class DataType ,
-         class Arg1Type = void ,
-         class Arg2Type = void ,
-         class Arg3Type = void>
+         class... Args>
 bool
 checkGlobalDualViewValidity
 (std::ostream* const gblErrStrm,
- const Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type>& dv,
+ const Kokkos::DualView<DataType, Args...>& dv,
  const bool verbose,
  const Teuchos::Comm<int>* const comm)
 {
@@ -218,14 +214,12 @@ checkGlobalDualViewValidity
 ///
 /// A WrappedDualView is valid if both of its constituent Views are valid.
 template<class DataType ,
-         class Arg1Type = void ,
-         class Arg2Type = void ,
-         class Arg3Type = void>
+         class... Args>
 bool
 checkLocalWrappedDualViewValidity
   (std::ostream* const lclErrStrm,
    const int myMpiProcessRank,
-   const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >& dv)
+   const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv)
 {
   const bool dev_good  = dv.is_valid_device();
   const bool host_good = dv. is_valid_host();
@@ -234,7 +228,7 @@ checkLocalWrappedDualViewValidity
     using Teuchos::TypeNameTraits;
     using std::endl;
     using dv_type =
-      Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >;
+      Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >;
 
     const std::string dvName = TypeNameTraits<dv_type>::name ();
     *lclErrStrm << "Proc " << myMpiProcessRank << ": Tpetra::WrappedDualView "
@@ -245,13 +239,11 @@ checkLocalWrappedDualViewValidity
 }
 
 template<class DataType ,
-         class Arg1Type = void ,
-         class Arg2Type = void ,
-         class Arg3Type = void>
+         class... Args>
 bool
 checkGlobalWrappedDualViewValidity
 (std::ostream* const gblErrStrm,
- const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >& dv,
+ const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv,
  const bool verbose,
  const Teuchos::Comm<int>* const comm)
 {

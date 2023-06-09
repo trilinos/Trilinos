@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES TeuchosCore TeuchosParameterList TeuchosComm KokkosCore KokkosContainers Sacado)
+SET(LIB_REQUIRED_DEP_PACKAGES TeuchosCore TeuchosParameterList TeuchosComm Kokkos Sacado)
 SET(LIB_OPTIONAL_DEP_PACKAGES )
 SET(TEST_REQUIRED_DEP_PACKAGES KokkosKernels)
 SET(TEST_OPTIONAL_DEP_PACKAGES )

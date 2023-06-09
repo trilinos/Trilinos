@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -311,6 +311,7 @@
  */
 
 #include "svdi.h"
+
 /******************************************************************************/
 /*                                                                            */
 /*      type and constant declarations                                        */
@@ -334,6 +335,7 @@
 
 /* end cgix11.h */
 #include "data_def.h"
+#include <assert.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -2375,13 +2377,6 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster space */
       vdstrs(&nx1, &ny1);
 
-      /* set mapping to virtual and freeform */
-      /*
-      sprintf(map,"%s","VIRTUAL");
-      vdstmp(map,7L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,8L);
-      */
       imap = 3;
       vbstmp(&imap);
       imap = 5;
@@ -2467,6 +2462,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the cell colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = cells[index--];
             }
 
@@ -2512,6 +2508,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index++] / 255.0f;
               garray[count] = (float)cells[index++] / 255.0f;
               barray[count] = (float)cells[index++] / 255.0f;
@@ -2547,6 +2544,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index] / 255.0f;
               garray[count] = (float)cells[index + 1] / 255.0f;
               barray[count] = (float)cells[index + 2] / 255.0f;
@@ -2761,13 +2759,6 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster viewport */
       vdstrv(&xmin, &xmax, &ymin, &ymax);
 
-      /* set mapping to replicate and freeform */
-      /*
-      sprintf(map,"%s","REPLICATE");
-      vdstmp(map,8L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,9L);
-      */
       imap = 2;
       vbstmp(&imap);
       imap = 5;
@@ -2854,6 +2845,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the pixel colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = pxclrs[index--];
             }
 
@@ -2898,6 +2890,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index++] / 255.0f;
               garray[count] = (float)pxclrs[index++] / 255.0f;
               barray[count] = (float)pxclrs[index++] / 255.0f;
@@ -2933,6 +2926,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index] / 255.0f;
               garray[count] = (float)pxclrs[index + 1] / 255.0f;
               barray[count] = (float)pxclrs[index + 2] / 255.0f;
@@ -5158,8 +5152,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
     else { /* after 1st time through, use new vertex list */
       curlen  = *lenout;
       *lenout = 0;
-      s.x     = xout[curlen - 1];
-      s.y     = yout[curlen - 1];
+      if (curlen > 0) {
+        s.x = xout[curlen - 1];
+        s.y = yout[curlen - 1];
+      }
     }
 
     for (i = 0; i < curlen; i++) { /* loop through all vertices */
@@ -5236,11 +5232,11 @@ static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num)
 {
   /* this routine assumes a rectangular boundary */
   switch (bound_num) {
-  case 0: return (v->y <= bmax->y); break; /* top */
-  case 1: return (v->x <= bmax->x); break; /* right */
-  case 2: return (v->y >= bmin->y); break; /* bottom */
-  case 3: return (v->x >= bmin->x); break; /* left */
-  default: return (FALSE); break;
+  case 0: return (v->y <= bmax->y); /* top */
+  case 1: return (v->x <= bmax->x); /* right */
+  case 2: return (v->y >= bmin->y); /* bottom */
+  case 3: return (v->x >= bmin->x); /* left */
+  default: return (FALSE);
   } /* end switch */
 } /* end inside_bnd */
 
@@ -5297,7 +5293,6 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
 {
   int        errnum, errsev;
   char       symbol[1024];
-  char       err[50];
   int        qdc_index;
   float      value;
   char      *devid;
@@ -5311,10 +5306,10 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
     vdiqdc(&qdc_index, &value);
     devid = get_devid_char(value);
     if (devid != NULL) {
-      sprintf(cur_state->filename, "cgi%s%d", devid, file_cnt++);
+      snprintf(cur_state->filename, 100, "cgi%s%d", devid, file_cnt++);
     }
     else {
-      sprintf(cur_state->filename, "cgiout%d", file_cnt++);
+      snprintf(cur_state->filename, 100, "cgiout%d", file_cnt++);
     }
   }
 
@@ -5324,7 +5319,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
   if (env != 0 && strlen(env) < 1024) {
-    sprintf(symbol, "%s", env);
+    snprintf(symbol, 1024, "%s", env);
   }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
@@ -5333,7 +5328,8 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   if ((cur_state->file_d = open(symbol, (O_CREAT | O_TRUNC | O_RDWR), 0664)) == -1) {
     errnum = 722;
     errsev = 10;
-    sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
+    char err[50];
+    snprintf(err, 50, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
 }
@@ -5406,7 +5402,7 @@ void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
   if (*eof == 1) {
     *buf = EOF;
     if ((istat = write(cur_state->file_d, buf, 4)) == -1) {
-      sprintf(err, "%s", "CDRCFS error");
+      snprintf(err, 50, "%s", "CDRCFS error");
       perror(err);
     }
   }
@@ -5431,7 +5427,7 @@ int *frame;
   ic[4] = '\0';
 
   /* set the file name in the state list */
-  sprintf(cur_state->filename, "%s.RGB", ic);
+  snprintf(cur_state->filename, 100, "%s.RGB", ic);
 
   cdrofs(ifilcd);
 }

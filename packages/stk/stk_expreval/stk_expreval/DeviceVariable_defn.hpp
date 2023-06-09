@@ -93,23 +93,23 @@ KOKKOS_INLINE_FUNCTION
 double &
 DeviceVariable::getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const
 {
-  NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
-  NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound array variable.");
+  STK_NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
+  STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Invalid array variable.");
 
   if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
-    NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
-    NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+    STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+    STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
 
     return m_doublePtr[index*m_stride];
   }
   else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
-    NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
-    NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+    STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+    STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
 
     return m_doublePtr[(index-1)*m_stride];
   }
   else {
-    NGP_ThrowErrorMsg("Invalid ArrayOffsetType.")
+    STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.")
     return m_doublePtr[0];
   }
 }
@@ -118,20 +118,20 @@ KOKKOS_INLINE_FUNCTION
 double
 DeviceVariable::getValue() const
 {
-  NGP_ThrowRequireMsg(m_size == 1, "getValue Cannot access vector variable as a scalar.");
+  STK_NGP_ThrowRequireMsg(m_size == 1, "getValue Cannot access vector variable as a scalar.");
 
   switch (m_type) {
   case Variable::DOUBLE: {
-    NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound double variable.");
+    STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Double variable does not have a valid value.");
     return *m_doublePtr;
   }
   case Variable::INTEGER: {
-    NGP_ThrowRequireMsg(m_intPtr != nullptr, "Unbound integer variable.");
+    STK_NGP_ThrowRequireMsg(m_intPtr != nullptr, "Integer variable does not have a valid value.");
     return *m_intPtr;
   }
   }
 
-  NGP_ThrowErrorMsg("Invalid variable type.");
+  STK_NGP_ThrowErrorMsg("Invalid variable type.");
   return *m_doublePtr;
 }
 
@@ -159,7 +159,7 @@ KOKKOS_INLINE_FUNCTION
 DeviceVariable &
 DeviceVariable::operator=(const double& value)
 {
-  NGP_ThrowRequireMsg(m_size == 1, "double = Cannot access vector variable as a scalar.");
+  STK_NGP_ThrowRequireMsg(m_size == 1, "double = Cannot access vector variable as a scalar.");
 
   if (m_type == Variable::INTEGER) {
     *m_intPtr = static_cast<int>(value);
@@ -174,7 +174,7 @@ KOKKOS_INLINE_FUNCTION
 DeviceVariable&
 DeviceVariable::operator=(const int& value)
 {
-  NGP_ThrowRequireMsg(m_size == 1, "int = Cannot access vector variable as a scalar.");
+  STK_NGP_ThrowRequireMsg(m_size == 1, "int = Cannot access vector variable as a scalar.");
 
   if (m_type == Variable::INTEGER) {
     *m_intPtr = value;

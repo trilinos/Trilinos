@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -6,7 +6,7 @@ C    See packages/seacas/LICENSE for details
       SUBROUTINE FREFLD( KIN,KOUT,PROMPT,MFIELD,IOSTAT,NFIELD,KVALUE,
      *                   CVALUE,IVALUE,RVALUE )
       CHARACTER*(*) PROMPT,CVALUE(MFIELD)
-      CHARACTER*132 LINE
+      CHARACTER*1024 LINE
       CHARACTER*132 PREFIX
       INTEGER KVALUE(MFIELD),IVALUE(MFIELD)
       REAL RVALUE(MFIELD)

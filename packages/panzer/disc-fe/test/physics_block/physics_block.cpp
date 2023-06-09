@@ -52,7 +52,7 @@
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 
@@ -208,7 +208,7 @@ namespace panzer {
     TEST_EQUALITY(physics_block->cellData().isSide(), false);
   }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
   {
 
@@ -249,7 +249,7 @@ namespace panzer {
     TEST_EQUALITY(physics_block->elementBlockID(),"eblock_id");
   }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
   {
 

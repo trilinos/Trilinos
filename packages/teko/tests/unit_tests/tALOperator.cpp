@@ -11,6 +11,10 @@
  * and test Teko_ALOperator.
  */
 
+#include "Teko_Config.h"
+
+#ifdef TEKO_HAVE_EPETRA
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -147,3 +151,5 @@ TEUCHOS_UNIT_TEST(tALOperator, test)
 
    TEST_ASSERT(errCode==0);
 }
+
+#endif // TEKO_HAVE_EPETRA

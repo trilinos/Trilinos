@@ -49,17 +49,15 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DistObject.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 #include "Xpetra_Map.hpp"
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
-#endif
 #endif
 
 namespace Xpetra {
@@ -80,7 +78,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsGraph
     : /*public RowGraph<>,*/ public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -231,7 +229,6 @@ namespace Xpetra {
 
     //! @name Tpetra-specific routines
     //@{
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename node_type::execution_space execution_space;
     typedef typename node_type::device_type device_type;
@@ -250,7 +247,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

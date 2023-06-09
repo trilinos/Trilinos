@@ -46,8 +46,7 @@ namespace mesh {
 namespace impl {
 
 AuraGhosting::AuraGhosting()
-: m_entitySharing(),
-  m_sendAura(),
+: m_sendAura(),
   m_scratchSpace()
 {
 }
@@ -58,29 +57,10 @@ AuraGhosting::~AuraGhosting()
 
 void AuraGhosting::generate_aura(BulkData& bulkData)
 {
-  m_entitySharing.reset(bulkData.get_size_of_entity_index_space());
-  std::vector<EntityRank> ranks = {stk::topology::NODE_RANK, stk::topology::EDGE_RANK};
-  const MetaData& meta = bulkData.mesh_meta_data();
-  if (meta.side_rank() > stk::topology::EDGE_RANK) {
-    ranks.push_back(meta.side_rank());
-  }
-  EntityProcMapping& entitySharing = m_entitySharing;
-  std::vector<int> sharingProcs;
-  for(EntityRank rank : ranks) {
-    impl::for_each_selected_entity_run_no_threads(bulkData, rank, meta.globally_shared_part(),
-      [&entitySharing, &sharingProcs](const BulkData& bulk, const MeshIndex& meshIndex) {
-        Entity entity = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
-        bulk.comm_shared_procs(entity, sharingProcs);
-        for(int p : sharingProcs) {
-          entitySharing.addEntityProc(entity, p);
-        }
-      });  
-  }
-
   m_sendAura.reset(bulkData.get_size_of_entity_index_space());
-  fill_send_aura_entities(bulkData, m_sendAura, m_entitySharing);
+  fill_send_aura_entities(bulkData, m_sendAura);
 
-  change_ghosting(bulkData, m_sendAura, m_entitySharing);
+  change_ghosting(bulkData, m_sendAura);
 }
 
 void AuraGhosting::remove_aura(BulkData& bulkData)
@@ -91,8 +71,7 @@ void AuraGhosting::remove_aura(BulkData& bulkData)
 }
 
 void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
-                                           EntityProcMapping& sendAuraEntityProcs,
-                                           const EntityProcMapping& entitySharing)
+                                           EntityProcMapping& sendAuraEntityProcs)
 {
   const EntityRank endRank = static_cast<EntityRank>(bulkData.mesh_meta_data().entity_rank_count());
   const EntityRank maxRank = static_cast<EntityRank>(endRank-1);
@@ -103,7 +82,7 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
 
   std::vector<int> sharingProcs;
   impl::for_each_selected_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, shared,
-    [&sendAuraEntityProcs, &entitySharing, &sharingProcs, &endRank, &maxRank]
+    [&sendAuraEntityProcs, &sharingProcs, &endRank, &maxRank]
     (const BulkData& bulk, const MeshIndex& meshIndex) {
       const Bucket& bucket = *meshIndex.bucket;
       const unsigned bucketOrd = meshIndex.bucket_ordinal;
@@ -116,7 +95,9 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
         const Entity* rels     = bucket.begin(bucketOrd, higherRank);
 
         for (unsigned r = 0; r < num_rels; ++r) {
-          stk::mesh::impl::insert_upward_relations(bulk, entitySharing, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+          if (bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
+            stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+          }
         }
       }
     }    
@@ -124,8 +105,7 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
 }
 
 void AuraGhosting::change_ghosting(BulkData& bulkData,
-                                   EntityProcMapping& sendAuraEntityProcs,
-                                   const EntityProcMapping& entitySharing)
+                                   EntityProcMapping& sendAuraEntityProcs)
 {
   std::vector<EntityProc>& sendAuraGhosts = m_scratchSpace;
   sendAuraEntityProcs.fill_vec(sendAuraGhosts);
@@ -134,7 +114,7 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   // Add the specified entities and their closure to sendAuraEntityProcs
 
   impl::StoreInEntityProcMapping storeEntity(bulkData, sendAuraEntityProcs);
-  impl::NotAlreadyShared entityBelongsInAura(bulkData, entitySharing);
+  impl::NotAlreadyShared entityBelongsInAura(bulkData);
   for ( const EntityProc& entityProc : sendAuraGhosts ) {
     entityBelongsInAura.proc = entityProc.second;
     storeEntity.proc = entityProc.second;
@@ -162,24 +142,21 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   //------------------------------------
   // Remove send-ghost entities from the comm-list that no longer need to be sent.
 
-  OrdinalVector addParts;
-  OrdinalVector removeParts(1, bulkData.m_ghost_parts[BulkData::AURA]->mesh_meta_data_ordinal());
-  OrdinalVector scratchOrdinalVec, scratchSpace;
   bool removed = false ;
-
-  std::vector<EntityProc> removedSendGhosts;
   const unsigned auraGhostingOrdinal = bulkData.aura_ghosting().ordinal();
 
-  std::vector<EntityCommInfo> comm_ghost ;
+  const EntityCommDatabase& commDB = bulkData.internal_comm_db();
+  EntityCommInfoVector comm_ghost ;
   for ( EntityCommListInfoVector::reverse_iterator
         i = bulkData.m_entity_comm_list.rbegin() ; i != bulkData.m_entity_comm_list.rend() ; ++i) {
 
-    if (!i->entity_comm) {
+    if (i->entity_comm == -1) {
       continue;
     }
 
     EntityCommListInfo& entityComm = *i;
-    if (!entityComm.entity_comm->isGhost) {
+    PairIterEntityComm commInfo = ghost_info_range(commDB.comm(entityComm.entity_comm), auraGhostingOrdinal);
+    if (commInfo.empty()) {
       continue;
     }
 
@@ -188,18 +165,29 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
       // Is owner, potentially removing ghost-sends
       // Have to make a copy
 
-      const PairIterEntityComm ec = ghost_info_range(entityComm.entity_comm->comm_map, auraGhostingOrdinal);
-      comm_ghost.assign( ec.first , ec.second );
-
-      for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
-        const EntityCommInfo tmp = comm_ghost.back();
-
-        if (!sendAuraEntityProcs.find(entityComm.entity, tmp.proc) ) {
-          bulkData.entity_comm_map_erase(entityComm.key, tmp);
-          removedSendGhosts.push_back(EntityProc(entityComm.entity, tmp.proc));
+      comm_ghost.clear();
+      for(; !commInfo.empty(); ++commInfo) {
+        if (commInfo->ghost_id == auraGhostingOrdinal) {
+          comm_ghost.push_back(*commInfo);
         }
-        else {
-          sendAuraEntityProcs.eraseEntityProc(entityComm.entity, tmp.proc);
+      }
+
+      if (sendAuraEntityProcs.get_num_procs(entityComm.entity) == 0) {
+        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+          const EntityCommInfo tmp = comm_ghost.back();
+          bulkData.entity_comm_map_erase(entityComm.key, tmp);
+        }
+      }
+      else {
+        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+          const EntityCommInfo tmp = comm_ghost.back();
+
+          if (!sendAuraEntityProcs.find(entityComm.entity, tmp.proc) ) {
+            bulkData.entity_comm_map_erase(entityComm.key, tmp);
+          }
+          else {
+            sendAuraEntityProcs.eraseEntityProc(entityComm.entity, tmp.proc);
+          }
         }
       }
     }
@@ -218,6 +206,8 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   }
 
   const std::vector<std::pair<EntityKey,EntityCommInfo>>& allRemovedGhosts = bulkData.m_removedGhosts;
+  std::vector<EntityProc> removedSendGhosts;
+  removedSendGhosts.reserve(allRemovedGhosts.size());
   for(const std::pair<EntityKey,EntityCommInfo>& rmGhost : allRemovedGhosts) {
     Entity rmEnt = bulkData.get_entity(rmGhost.first);
     if (bulkData.is_valid(rmEnt) &&
@@ -228,11 +218,15 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
     }
   }
   EntityLess entityLess(bulkData);
-  std::set<EntityProc , EntityLess> finalSendGhosts(entityLess);
-  sendAuraEntityProcs.fill_set(finalSendGhosts);
+  {
+    EntityProcVec().swap(sendAuraGhosts);
+  }
+  sendAuraEntityProcs.swap_vec(sendAuraGhosts);
+  sendAuraEntityProcs.deallocate();
+  stk::util::sort_and_unique(sendAuraGhosts, entityLess);
 
   const bool isFullRegen = true;
-  bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), finalSendGhosts, isFullRegen, removedSendGhosts);
+  bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), std::move(sendAuraGhosts), isFullRegen, removedSendGhosts);
 }
 
 }}} // end namepsace stk mesh impl

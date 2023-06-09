@@ -49,12 +49,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
-#include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_CrsGraph_fwd.hpp"
 
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -102,7 +99,7 @@ namespace MueLu {
 #undef MUELU_LOCALORDINALTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:    
+  public:
     //! @name Constructors/Destructors.
     //@{
 
@@ -117,7 +114,7 @@ namespace MueLu {
        The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
        <tt>vectorName</tt>.
     */
-    LocalOrdinalTransferFactory(const std::string & TransferVecName, const std::string & mode): TransferVecName_(TransferVecName) { 
+    LocalOrdinalTransferFactory(const std::string & TransferVecName, const std::string & mode): TransferVecName_(TransferVecName) {
       if(mode == "classical") useAggregatesMode_ = false;
       else useAggregatesMode_ = true;
     }

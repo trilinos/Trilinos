@@ -46,17 +46,15 @@
 #ifndef MUELU_ONEPTAGGREGATIONALGORITHM_DEF_HPP
 #define MUELU_ONEPTAGGREGATIONALGORITHM_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_OnePtAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_OnePtAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -71,7 +69,7 @@ namespace MueLu {
   void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(Teuchos::ParameterList const & /* params */,
                   LWGraph_kokkos const & graph,
-                  Aggregates_kokkos & aggregates,
+                  Aggregates & aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -129,5 +127,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

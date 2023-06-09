@@ -48,7 +48,7 @@
 #define MUELU_MATLABSMOOTHER_DEF_HPP
 #include "MueLu_MatlabUtils_decl.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
+#if defined(HAVE_MUELU_MATLAB)
 #include "MueLu_Monitor.hpp"
 
 
@@ -193,5 +193,5 @@ void MatlabSmoother<std::complex<double>,int,long long>::Apply(MultiVector& X, c
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_MATLAB
+#endif // HAVE_MUELU_MATLAB
 #endif // MUELU_MATLABSMOOTHER_DEF_HPP

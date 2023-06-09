@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,6 +7,7 @@
 #include "io_info.h"
 #include <Ioss_Hex8.h>
 #include <Ioss_Sort.h>
+#include <tokenize.h>
 #define FMT_DEPRECATED_OSTREAM
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -17,6 +18,7 @@
 // ========================================================================
 
 namespace {
+  void info_timesteps(Ioss::Region &region);
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace);
   void info_edgeblock(Ioss::Region &region);
   void info_faceblock(Ioss::Region &region);
@@ -108,9 +110,9 @@ namespace {
     }
   }
 
+#if defined(SEACAS_HAVE_EXODUS)
   int print_groups(int exoid, std::string prefix)
   {
-#if defined(SEACAS_HAVE_EXODUS)
     int   idum;
     float rdum;
     char  group_name[33];
@@ -125,9 +127,9 @@ namespace {
     for (int i = 0; i < num_children; i++) {
       print_groups(children[i], prefix);
     }
-#endif
     return 0;
   }
+#endif
 
   void group_info(Info::Interface &interFace)
   {
@@ -149,20 +151,34 @@ namespace {
     std::string inpfile    = interFace.filename();
     std::string input_type = interFace.type();
 
+    Ioss::PropertyManager properties = set_properties(interFace);
+
+    const auto custom_field = interFace.custom_field();
+    if (!custom_field.empty()) {
+      auto suffices = Ioss::tokenize(custom_field, ",");
+      if (suffices.size() > 1) {
+        Ioss::VariableType::create_named_suffix_field_type("UserDefined", suffices);
+      }
+    }
+
     //========================================================================
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::PropertyManager properties = set_properties(interFace);
-
-    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
+    auto mode = interFace.query_timesteps_only() ? Ioss::QUERY_TIMESTEPS_ONLY : Ioss::READ_RESTART;
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, mode,
                                                     Ioss::ParallelUtils::comm_world(), properties);
 
     Ioss::io_info_set_db_properties(interFace, dbi);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-    Ioss::io_info_file_info(interFace, region);
+    if (interFace.query_timesteps_only()) {
+      info_timesteps(region);
+    }
+    else {
+      Ioss::io_info_file_info(interFace, region);
+    }
   }
 
   void info_nodeblock(Ioss::Region &region, const Ioss::NodeBlock &nb,
@@ -196,8 +212,11 @@ namespace {
     if (!nb.is_nonglobal_nodeblock()) {
       info_aliases(region, &nb, false, true);
     }
-    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
-    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::MAP, prefix + "\tMap Fields: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE,
+                             prefix + "\tAttributes: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT,
+                             prefix + "\tTransient:  ", "\n\t\t" + prefix);
 
     if (interFace.compute_bbox()) {
       print_bbox(nb);
@@ -207,7 +226,7 @@ namespace {
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
-    for (auto &nb : nbs) {
+    for (const auto &nb : nbs) {
       info_nodeblock(region, *nb, interFace, "");
     }
   }
@@ -316,6 +335,7 @@ namespace {
 
       info_aliases(region, eb, true, false);
       fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::MAP, "\n\tMap Fields: ");
       Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
@@ -422,8 +442,9 @@ namespace {
         fmt::print("\t{}, {:8} sides, {:3d} attributes, {:8} distribution factors.\n", name(fb),
                    fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
         info_df(fb, "\t\t");
-        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
-        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ", "\n\t\t");
+        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION,
+                                 "\t\tTransient (Reduction):  ", "\n\t\t");
       }
     }
   }
@@ -530,6 +551,23 @@ namespace {
         fmt::print("\n");
       }
     }
+  }
+
+  void info_timesteps(Ioss::Region &region)
+  {
+    int                 step_count = (int)region.get_property("state_count").get_int();
+    std::vector<double> steps(step_count);
+
+    for (int step = 0; step < step_count; step++) {
+      double db_time = region.get_state_time(step + 1);
+      steps[step]    = db_time;
+    }
+    auto mm = std::minmax_element(steps.begin(), steps.end());
+
+    fmt::print("\nThere are {} time steps on the database.\n", step_count);
+    fmt::print("\tMinimum Time = {:12.6e}, Maximum Time = {:12.6e}\n\n", *mm.first, *mm.second);
+
+    fmt::print("\tStep Times: {:12.6e}\n", fmt::join(steps, ", "));
   }
 
 } // namespace

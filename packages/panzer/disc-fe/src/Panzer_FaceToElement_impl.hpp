@@ -189,108 +189,124 @@ initialize(panzer::ConnManager & conn,
   // (note lidx is the local index associted with a face on each cell)
   Teuchos::RCP<GOMultiVector>  owned_face2elem_mv = Teuchos::RCP<GOMultiVector>(new GOMultiVector(owned_face_map, 8));
   Teuchos::RCP<GOMultiVector>  face2elem_mv = Teuchos::RCP<GOMultiVector>(new GOMultiVector(face_map, 8));
- // set a flag of -1-shift to identify unmodified data
+  // set a flag of -1-shift to identify unmodified data
   face2elem_mv->putScalar(-1-shift);
-  auto b1 = face2elem_mv->getDataNonConst(0);
-  auto e1 = face2elem_mv->getDataNonConst(1);
-  auto p1 = face2elem_mv->getDataNonConst(2);
-  auto l1 = face2elem_mv->getDataNonConst(3);
-  auto b2 = face2elem_mv->getDataNonConst(4);
-  auto e2 = face2elem_mv->getDataNonConst(5);
-  auto p2 = face2elem_mv->getDataNonConst(6);
-  auto l2 = face2elem_mv->getDataNonConst(7);
-  // Now loop once again over the blocks
-  GlobalOrdinal my_elem = 0;
-  for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
-    // The connectivity takes in a shards class, therefore, it has to be build block by block?
-    // This seems odd, but o.k, moving forward.
-    if ( dimension == 1 ) {
-      panzer::NodalFieldPattern edge_pattern(ebt[iblk]);
-      conn.buildConnectivity(edge_pattern);
-    } else if ( dimension == 2 ){
-      panzer::EdgeFieldPattern face_pattern(ebt[iblk]);
-      conn.buildConnectivity(face_pattern);
-    } else {
-      panzer::FaceFieldPattern elem_pattern(ebt[iblk]);
-      conn.buildConnectivity(elem_pattern);
-    }
-    //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
-    const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
-    for (size_t i=0; i<block_elems.size(); ++i) {
-      int n_conn = conn.getConnectivitySize(block_elems[i]);
-      const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
-      for (int iface=0; iface<n_conn; ++iface) {
-        LocalOrdinal f = face_map->getLocalElement(connectivity[iface]);
-
-        // Fun fact: this method breaks if we have cell 0 found in block 0 on process 0 for local index 0
-        // Fix = add 'shift' to everything
-        if (b1[f] < 0 ) {
-          b1[f] = iblk+shift;
-          e1[f] = elem_map->getGlobalElement(my_elem)+shift;
-          p1[f] = my_rank+shift;
-          l1[f] = iface+shift;
-        } else if (b2[f] < 0){
-          b2[f] = iblk+shift;
-          e2[f] = elem_map->getGlobalElement(my_elem)+shift;
-          p2[f] = my_rank+shift;
-          l2[f] = iface+shift;
-        } else
-          assert(false);
+  {
+    auto f2e = face2elem_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto b1 = Kokkos::subview(f2e,Kokkos::ALL(),0);
+    auto e1 = Kokkos::subview(f2e,Kokkos::ALL(),1);
+    auto p1 = Kokkos::subview(f2e,Kokkos::ALL(),2);
+    auto l1 = Kokkos::subview(f2e,Kokkos::ALL(),3);
+    auto b2 = Kokkos::subview(f2e,Kokkos::ALL(),4);
+    auto e2 = Kokkos::subview(f2e,Kokkos::ALL(),5);
+    auto p2 = Kokkos::subview(f2e,Kokkos::ALL(),6);
+    auto l2 = Kokkos::subview(f2e,Kokkos::ALL(),7);
+    // Now loop once again over the blocks
+    GlobalOrdinal my_elem = 0;
+    for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
+      // The connectivity takes in a shards class, therefore, it has to be build block by block?
+      // This seems odd, but o.k, moving forward.
+      if ( dimension == 1 ) {
+        panzer::NodalFieldPattern edge_pattern(ebt[iblk]);
+        conn.buildConnectivity(edge_pattern);
+      } else if ( dimension == 2 ){
+        panzer::EdgeFieldPattern face_pattern(ebt[iblk]);
+        conn.buildConnectivity(face_pattern);
+      } else {
+        panzer::FaceFieldPattern elem_pattern(ebt[iblk]);
+        conn.buildConnectivity(elem_pattern);
       }
-      ++my_elem;
+      //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
+      const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
+      for (size_t i=0; i<block_elems.size(); ++i) {
+        int n_conn = conn.getConnectivitySize(block_elems[i]);
+        const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
+        for (int iface=0; iface<n_conn; ++iface) {
+          LocalOrdinal f = face_map->getLocalElement(connectivity[iface]);
+          
+          // Fun fact: this method breaks if we have cell 0 found in block 0 on process 0 for local index 0
+          // Fix = add 'shift' to everything
+          if (b1[f] < 0 ) {
+            b1[f] = iblk+shift;
+            e1[f] = elem_map->getGlobalElement(my_elem)+shift;
+            p1[f] = my_rank+shift;
+            l1[f] = iface+shift;
+          } else if (b2[f] < 0){
+            b2[f] = iblk+shift;
+            e2[f] = elem_map->getGlobalElement(my_elem)+shift;
+            p2[f] = my_rank+shift;
+            l2[f] = iface+shift;
+          } else
+            assert(false);
+        }
+        ++my_elem;
+      }
     }
   }
-
+  
   // So, now we can export our owned things to our owned one.
   Import imp(owned_face_map, face_map);
   Export exp(face_map, owned_face_map);
   owned_face2elem_mv->doExport(*face2elem_mv, exp, Tpetra::ADD);
+  
+  {
+    auto f2e = face2elem_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto b1 = Kokkos::subview(f2e,Kokkos::ALL(),0);
+    auto e1 = Kokkos::subview(f2e,Kokkos::ALL(),1);
+    auto p1 = Kokkos::subview(f2e,Kokkos::ALL(),2);
+    auto l1 = Kokkos::subview(f2e,Kokkos::ALL(),3);
+    auto b2 = Kokkos::subview(f2e,Kokkos::ALL(),4);
+    auto e2 = Kokkos::subview(f2e,Kokkos::ALL(),5);
+    auto p2 = Kokkos::subview(f2e,Kokkos::ALL(),6);
+    auto l2 = Kokkos::subview(f2e,Kokkos::ALL(),7);
 
-  auto ob1 = owned_face2elem_mv->getDataNonConst(0);
-  auto oe1 = owned_face2elem_mv->getDataNonConst(1);
-  auto op1 = owned_face2elem_mv->getDataNonConst(2);
-  auto ol1 = owned_face2elem_mv->getDataNonConst(3);
-  auto ob2 = owned_face2elem_mv->getDataNonConst(4);
-  auto oe2 = owned_face2elem_mv->getDataNonConst(5);
-  auto op2 = owned_face2elem_mv->getDataNonConst(6);
-  auto ol2 = owned_face2elem_mv->getDataNonConst(7);
+    auto of2e = owned_face2elem_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto ob1 = Kokkos::subview(of2e,Kokkos::ALL(),0);
+    auto oe1 = Kokkos::subview(of2e,Kokkos::ALL(),1);
+    auto op1 = Kokkos::subview(of2e,Kokkos::ALL(),2);
+    auto ol1 = Kokkos::subview(of2e,Kokkos::ALL(),3);
+    auto ob2 = Kokkos::subview(of2e,Kokkos::ALL(),4);
+    auto oe2 = Kokkos::subview(of2e,Kokkos::ALL(),5);
+    auto op2 = Kokkos::subview(of2e,Kokkos::ALL(),6);
+    auto ol2 = Kokkos::subview(of2e,Kokkos::ALL(),7);
 
-  // Since we added all of the arrays together, they're going to be broken
-  // We need to fix all of the broken faces
-  int num_boundary=0;
-  for (int i=0; i<ob1.size();++i){
-
-    // Make sure side 1 of face was set (either by this process or by multiple processes
-    assert(b1[i] >= shift);
-
-    LocalOrdinal shared_local_id = face_map->getLocalElement(owned_face_map->getGlobalElement(i));
-    // handle purely internal faces
-    if (ob1[i] == b1[shared_local_id] && ob2[i] == b2[shared_local_id] &&
-        oe1[i] == e1[shared_local_id] && oe2[i] == e2[shared_local_id]) {
-      if (ob2[i] < 0 )
-        num_boundary++;
-      continue;
-    }
-
-    // Handle shared nodes on a boundary, this shouldn't happen
-    if (ob1[i] < b1[shared_local_id] || oe1[i] < e1[shared_local_id]) {
-      assert(false);
-    }
-
-    if ( ob1[i] > b1[shared_local_id] || oe1[i] > e1[shared_local_id]) {
-      // This case both wrote to a face, we need to detangle
-      assert(ob2[i] < 0 && oe2[i] < 0);
-      ob2[i] = ob1[i] - b1[shared_local_id];
-      oe2[i] = oe1[i] - e1[shared_local_id];
-      op2[i] = op1[i] - p1[shared_local_id];
-      ol2[i] = ol1[i] - l1[shared_local_id];
-
-      ob1[i] = b1[shared_local_id];
-      oe1[i] = e1[shared_local_id];
-      op1[i] = p1[shared_local_id];
-      ol1[i] = l1[shared_local_id];
-
-      assert(op1[i] >=0 && op2[i] >= 0 && op1[i] < nprocs+shift && op2[i] < nprocs+shift);
+    // Since we added all of the arrays together, they're going to be broken
+    // We need to fix all of the broken faces
+    int num_boundary=0;
+    for (size_t i=0; i<ob1.size();++i){
+      
+      // Make sure side 1 of face was set (either by this process or by multiple processes
+      assert(b1[i] >= shift);
+      
+      LocalOrdinal shared_local_id = face_map->getLocalElement(owned_face_map->getGlobalElement(i));
+      // handle purely internal faces
+      if (ob1[i] == b1[shared_local_id] && ob2[i] == b2[shared_local_id] &&
+          oe1[i] == e1[shared_local_id] && oe2[i] == e2[shared_local_id]) {
+        if (ob2[i] < 0 )
+          num_boundary++;
+        continue;
+      }
+      
+      // Handle shared nodes on a boundary, this shouldn't happen
+      if (ob1[i] < b1[shared_local_id] || oe1[i] < e1[shared_local_id]) {
+        assert(false);
+      }
+      
+      if ( ob1[i] > b1[shared_local_id] || oe1[i] > e1[shared_local_id]) {
+        // This case both wrote to a face, we need to detangle
+        assert(ob2[i] < 0 && oe2[i] < 0);
+        ob2[i] = ob1[i] - b1[shared_local_id];
+        oe2[i] = oe1[i] - e1[shared_local_id];
+        op2[i] = op1[i] - p1[shared_local_id];
+        ol2[i] = ol1[i] - l1[shared_local_id];
+        
+        ob1[i] = b1[shared_local_id];
+        oe1[i] = e1[shared_local_id];
+        op1[i] = p1[shared_local_id];
+        ol1[i] = l1[shared_local_id];
+        
+        assert(op1[i] >=0 && op2[i] >= 0 && op1[i] < nprocs+shift && op2[i] < nprocs+shift);
+      }
     }
   }
   face2elem_mv->doImport(*owned_face2elem_mv, imp, Tpetra::REPLACE);
@@ -308,6 +324,16 @@ initialize(panzer::ConnManager & conn,
   auto blocks_by_face_h = Kokkos::create_mirror_view(blocks_by_face_);
   auto procs_by_face_h = Kokkos::create_mirror_view(procs_by_face_);
   auto lidx_by_face_h = Kokkos::create_mirror_view(lidx_by_face_);
+  
+  auto f2e = face2elem_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
+  auto b1 = Kokkos::subview(f2e,Kokkos::ALL(),0);
+  auto e1 = Kokkos::subview(f2e,Kokkos::ALL(),1);
+  auto p1 = Kokkos::subview(f2e,Kokkos::ALL(),2);
+  auto l1 = Kokkos::subview(f2e,Kokkos::ALL(),3);
+  auto b2 = Kokkos::subview(f2e,Kokkos::ALL(),4);
+  auto e2 = Kokkos::subview(f2e,Kokkos::ALL(),5);
+  auto p2 = Kokkos::subview(f2e,Kokkos::ALL(),6);
+  auto l2 = Kokkos::subview(f2e,Kokkos::ALL(),7);
 
   for (LocalOrdinal i=0; i< nfaces; ++i) {
     elems_by_face_h (i,0) = e1[i]-shift;

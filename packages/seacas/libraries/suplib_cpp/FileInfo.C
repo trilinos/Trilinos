@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,10 +18,10 @@
 #include <direct.h>
 #include <io.h>
 #define access _access
-#define R_OK 4 /* Test for read permission.  */
-#define W_OK 2 /* Test for write permission.  */
-#define X_OK 1 /* execute permission - unsupported in windows*/
-#define F_OK 0 /* Test for existence.  */
+#define R_OK   4 /* Test for read permission.  */
+#define W_OK   2 /* Test for write permission.  */
+#define X_OK   1 /* execute permission - unsupported in windows*/
+#define F_OK   0 /* Test for existence.  */
 #ifndef S_ISREG
 #define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
@@ -57,11 +57,10 @@ FileInfo::FileInfo(const FileInfo &copy_from) = default;
 
 FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
 {
-  static std::string SLASH("/");
-
   if (!dirpath.empty()) {
     filename_ = dirpath;
     if (filename_.at(filename_.size() - 1) != '/') {
+      static std::string SLASH("/");
       filename_ += SLASH;
     }
   }

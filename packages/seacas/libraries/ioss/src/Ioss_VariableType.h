@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <cstring>    // for strncmp
@@ -22,7 +24,7 @@ namespace Ioss {
   using VariableTypeMap = std::map<std::string, VariableType *, std::less<std::string>>;
   using VTM_ValuePair   = VariableTypeMap::value_type;
 
-  class Registry
+  class IOSS_EXPORT Registry
   {
   public:
     void                      insert(const Ioss::VTM_ValuePair &value, bool delete_me);
@@ -38,7 +40,7 @@ namespace Ioss {
     std::vector<Ioss::VariableType *> m_deleteThese;
   };
 
-  struct Suffix
+  struct IOSS_EXPORT Suffix
   {
     explicit Suffix(const char *new_data) : m_data(new_data) {}
     explicit Suffix(const std::string &new_data) : m_data(new_data) {}
@@ -51,7 +53,7 @@ namespace Ioss {
 
   /** \brief A generic variable type
    */
-  class VariableType
+  class IOSS_EXPORT VariableType
   {
   public:
     static void     alias(const std::string &base, const std::string &syn);
@@ -62,7 +64,7 @@ namespace Ioss {
     static bool     get_field_type_mapping(const std::string &field, std::string *type);
     static bool add_field_type_mapping(const std::string &raw_field, const std::string &raw_type);
 
-    VariableType(const VariableType &) = delete;
+    VariableType(const VariableType &)            = delete;
     VariableType &operator=(const VariableType &) = delete;
     virtual ~VariableType();
 

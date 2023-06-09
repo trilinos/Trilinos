@@ -11,18 +11,9 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 //#include "MueLu_HierarchyUtils_fwd.hpp"
-#include "MueLu_TopRAPFactory.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_SmootherPrototype_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Hierarchy_fwd.hpp"
-#include "MueLu_HierarchyManager_fwd.hpp"
+#include "MueLu_TopRAPFactory_decl.hpp"
 
 
 namespace MueLu {
@@ -55,6 +46,9 @@ namespace MueLu {
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* fineLevel */, Level & coarseLevel) const {
     if ((PFact_ != Teuchos::null) && (PFact_ != NoFactory::getRCP())) {
       RCP<Operator> oP = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
+      // Don't have a valid operator (e.g., # global aggregates is 0) so we just bail out
+      // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()j
+      if (oP == Teuchos::null) return;
       RCP<Matrix>    P = rcp_dynamic_cast<Matrix>(oP);
       if (!P.is_null()) coarseLevel.Set("P",  P, NoFactory::get());
       else              coarseLevel.Set("P", oP, NoFactory::get());

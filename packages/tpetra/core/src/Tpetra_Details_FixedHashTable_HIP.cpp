@@ -53,7 +53,7 @@ namespace Details {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  using hip_device_type = typename Kokkos::Compat::KokkosHIPWrapperNode::device_type;
+  using hip_device_type = typename Tpetra::KokkosCompat::KokkosHIPWrapperNode::device_type;
 
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_HIP( LO, GO ) \
   TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT( LO, GO, hip_device_type )

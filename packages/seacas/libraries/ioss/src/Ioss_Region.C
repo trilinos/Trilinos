@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -287,6 +287,14 @@ namespace {
     return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND ||
            iodatabase->open_create_behavior() == Ioss::DB_MODIFY;
   }
+
+  template <typename T>
+  void internal_erase_fields(const std::vector<T> &entities, Ioss::Field::RoleType role)
+  {
+    for (const auto &entity : entities) {
+      entity->field_erase(role);
+    }
+  }
 } // namespace
 
 namespace Ioss {
@@ -354,55 +362,55 @@ namespace Ioss {
     // Region owns all sub-grouping entities it contains...
     try {
       IOSS_FUNC_ENTER(m_);
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         delete (nb);
       }
 
-      for (auto &eb : edgeBlocks) {
+      for (const auto &eb : edgeBlocks) {
         delete (eb);
       }
 
-      for (auto &fb : faceBlocks) {
+      for (const auto &fb : faceBlocks) {
         delete (fb);
       }
 
-      for (auto &eb : elementBlocks) {
+      for (const auto &eb : elementBlocks) {
         delete (eb);
       }
 
-      for (auto &sb : structuredBlocks) {
+      for (const auto &sb : structuredBlocks) {
         delete (sb);
       }
 
-      for (auto &ss : sideSets) {
+      for (const auto &ss : sideSets) {
         delete (ss);
       }
 
-      for (auto &ns : nodeSets) {
+      for (const auto &ns : nodeSets) {
         delete (ns);
       }
 
-      for (auto &es : edgeSets) {
+      for (const auto &es : edgeSets) {
         delete (es);
       }
 
-      for (auto &fs : faceSets) {
+      for (const auto &fs : faceSets) {
         delete (fs);
       }
 
-      for (auto &es : elementSets) {
+      for (const auto &es : elementSets) {
         delete (es);
       }
 
-      for (auto &cs : commSets) {
+      for (const auto &cs : commSets) {
         delete (cs);
       }
 
-      for (auto &as : assemblies) {
+      for (const auto &as : assemblies) {
         delete (as);
       }
 
-      for (auto &bl : blobs) {
+      for (const auto &bl : blobs) {
         delete (bl);
       }
 
@@ -457,26 +465,28 @@ namespace Ioss {
     int64_t total_es_edges    = get_entity_count(get_edgesets());
     int64_t total_es_elements = get_entity_count(get_elementsets());
 
-    int64_t                       total_sides = 0;
-    const Ioss::SideSetContainer &sss         = get_sidesets();
-    for (auto &fs : sss) {
-      total_sides += get_entity_count(fs->get_side_blocks());
+    int64_t total_sides = 0;
+    {
+      const Ioss::SideSetContainer &sss = get_sidesets();
+      for (const auto &fs : sss) {
+        total_sides += get_entity_count(fs->get_side_blocks());
+      }
     }
 
     int64_t total_nodes    = get_property("node_count").get_int();
     int64_t total_elements = get_property("element_count").get_int();
     auto    max_entity = std::max({total_sides, total_es_elements, total_fs_faces, total_es_edges,
-                                total_ns_nodes, total_cells, total_nodes, total_elements});
+                                   total_ns_nodes, total_cells, total_nodes, total_elements});
 
     int64_t num_ts = get_property("state_count").get_int();
     auto    max_sb = std::max(
-           {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
-         get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
-         get_property("element_block_count").get_int(),
-         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
-         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
-         get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
-         get_property("assembly_count").get_int(), get_property("blob_count").get_int(), num_ts});
+        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
+            get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
+            get_property("element_block_count").get_int(),
+            get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
+            get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
+            get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
+            get_property("assembly_count").get_int(), get_property("blob_count").get_int(), num_ts});
 
     // Global variables transitioning from TRANSIENT to REDUCTION..
     size_t num_glo_vars  = field_count(Ioss::Field::TRANSIENT);
@@ -505,19 +515,25 @@ namespace Ioss {
     size_t num_asm_red_vars  = get_reduction_variable_count(get_assemblies());
     size_t num_blob_red_vars = get_reduction_variable_count(get_blobs());
 
-    size_t                       num_ss_vars = 0;
-    const Ioss::SideSetContainer fss         = get_sidesets();
-    for (auto &fs : fss) {
-      num_ss_vars += get_variable_count(fs->get_side_blocks());
+    size_t                        num_ss_vars = 0;
+    Ioss::NameList                names;
+    const Ioss::SideSetContainer &sss = get_sidesets();
+    for (auto &ss : sss) {
+      const auto &sbs = ss->get_side_blocks();
+      for (const auto &sb : sbs) {
+        sb->field_describe(Ioss::Field::TRANSIENT, &names);
+      }
     }
+    Ioss::Utils::uniquify(names);
+    num_ss_vars = names.size();
 
     auto max_vr    = std::max({num_glo_vars,     num_nod_vars,     num_ele_vars,     num_str_vars,
-                            num_ns_vars,      num_ss_vars,      num_edg_vars,     num_fac_vars,
-                            num_es_vars,      num_fs_vars,      num_els_vars,     num_blob_vars,
-                            num_asm_vars,     num_glo_red_vars, num_nod_red_vars, num_edg_red_vars,
-                            num_fac_red_vars, num_ele_red_vars, num_str_red_vars, num_ns_red_vars,
-                            num_es_red_vars,  num_fs_red_vars,  num_els_red_vars, num_asm_red_vars,
-                            num_blob_red_vars});
+                               num_ns_vars,      num_ss_vars,      num_edg_vars,     num_fac_vars,
+                               num_es_vars,      num_fs_vars,      num_els_vars,     num_blob_vars,
+                               num_asm_vars,     num_glo_red_vars, num_nod_red_vars, num_edg_red_vars,
+                               num_fac_red_vars, num_ele_red_vars, num_str_red_vars, num_ns_red_vars,
+                               num_es_red_vars,  num_fs_red_vars,  num_els_red_vars, num_asm_red_vars,
+                               num_blob_red_vars});
     int  vr_width  = Ioss::Utils::number_width(max_vr, true) + 2;
     int  num_width = Ioss::Utils::number_width(max_entity, true) + 2;
     int  sb_width  = Ioss::Utils::number_width(max_sb, true) + 2;
@@ -543,57 +559,57 @@ namespace Ioss {
         " Blobs              = {42:{24}}\t                 {38:{23}s}\t Blob       = {43:{25}}\t{55:{25}}\n\n"
         " Time steps         = {32:{24}}\n",
         get_database()->get_filename(), mesh_type_string(),
-        fmt::group_digits(get_property("spatial_dimension").get_int()), 
+        fmt::group_digits(get_property("spatial_dimension").get_int()),
 	fmt::group_digits(get_property("node_count").get_int()),
-        fmt::group_digits(get_property("edge_count").get_int()), 
+        fmt::group_digits(get_property("edge_count").get_int()),
 	fmt::group_digits(get_property("face_count").get_int()),
-        fmt::group_digits(get_property("element_count").get_int()), 
+        fmt::group_digits(get_property("element_count").get_int()),
 	fmt::group_digits(get_property("node_block_count").get_int()),
-        fmt::group_digits(get_property("edge_block_count").get_int()), 
+        fmt::group_digits(get_property("edge_block_count").get_int()),
 	fmt::group_digits(get_property("face_block_count").get_int()),
         fmt::group_digits(get_property("element_block_count").get_int()),
-        fmt::group_digits(get_property("structured_block_count").get_int()), 
+        fmt::group_digits(get_property("structured_block_count").get_int()),
 	fmt::group_digits(get_property("node_set_count").get_int()),
-        fmt::group_digits(get_property("edge_set_count").get_int()), 
+        fmt::group_digits(get_property("edge_set_count").get_int()),
 	fmt::group_digits(get_property("face_set_count").get_int()),
-        fmt::group_digits(get_property("element_set_count").get_int()), 
+        fmt::group_digits(get_property("element_set_count").get_int()),
 	fmt::group_digits(get_property("side_set_count").get_int()),
-        fmt::group_digits(total_cells), 
-	fmt::group_digits(total_ns_nodes), 
-	fmt::group_digits(total_es_edges), 
-	fmt::group_digits(total_fs_faces), 
-	fmt::group_digits(total_es_elements), 
+        fmt::group_digits(total_cells),
+	fmt::group_digits(total_ns_nodes),
+	fmt::group_digits(total_es_edges),
+	fmt::group_digits(total_fs_faces),
+	fmt::group_digits(total_es_elements),
 	fmt::group_digits(total_sides),
-        num_width, 
-	sb_width, 
-	vr_width, 
-	fmt::group_digits(num_glo_vars), 
-	fmt::group_digits(num_nod_vars), 
-	fmt::group_digits(num_ele_vars), 
+        num_width,
+	sb_width,
+	vr_width,
+	fmt::group_digits(num_glo_vars),
+	fmt::group_digits(num_nod_vars),
+	fmt::group_digits(num_ele_vars),
 	fmt::group_digits(num_str_vars),
-        fmt::group_digits(num_ns_vars), 
-	fmt::group_digits(num_ss_vars), 
-	fmt::group_digits(num_ts), 
-	fmt::group_digits(num_edg_vars), 
-	fmt::group_digits(num_fac_vars), 
-	fmt::group_digits(num_es_vars), 
+        fmt::group_digits(num_ns_vars),
+	fmt::group_digits(num_ss_vars),
+	fmt::group_digits(num_ts),
+	fmt::group_digits(num_edg_vars),
+	fmt::group_digits(num_fac_vars),
+	fmt::group_digits(num_es_vars),
 	fmt::group_digits(num_fs_vars),
-        fmt::group_digits(num_els_vars), 
-	" ", 
-	get_database()->get_format(), 
+        fmt::group_digits(num_els_vars),
+	" ",
+	get_database()->get_format(),
 	fmt::group_digits(get_property("assembly_count").get_int()),
         fmt::group_digits(num_asm_vars) ,
 	fmt::group_digits(get_property("blob_count").get_int()),
 	fmt::group_digits(num_blob_vars),
 	fmt::group_digits(num_glo_red_vars),
-        fmt::group_digits(num_nod_red_vars), 
-	fmt::group_digits(num_edg_red_vars), 
-	fmt::group_digits(num_fac_red_vars), 
+        fmt::group_digits(num_nod_red_vars),
+	fmt::group_digits(num_edg_red_vars),
+	fmt::group_digits(num_fac_red_vars),
 	fmt::group_digits(num_ele_red_vars),
 	fmt::group_digits(num_str_red_vars),
         fmt::group_digits(num_ns_red_vars),
-	fmt::group_digits(num_es_red_vars), 
-	fmt::group_digits(num_fs_red_vars), 
+	fmt::group_digits(num_es_red_vars),
+	fmt::group_digits(num_fs_red_vars),
 	fmt::group_digits(num_els_red_vars),
 	fmt::group_digits(num_asm_red_vars),
         fmt::group_digits(num_blob_red_vars));
@@ -655,7 +671,6 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
 
-      break;
       default: {
         std::ostringstream errmsg;
         fmt::print(errmsg, "Invalid nesting of begin/end pairs in {}",
@@ -794,7 +809,7 @@ namespace Ioss {
       // Check that time is increasing...
       static bool warning_output = false;
       if (!warning_output) {
-        fmt::print(Ioss::WARNING(),
+        fmt::print(Ioss::WarnOut(),
                    "Current time {} is not greater than previous time {} in\n\t{}.\n"
                    "This may cause problems in applications that assume monotonically increasing "
                    "time values.\n",
@@ -899,9 +914,9 @@ namespace Ioss {
     DatabaseIO *db = get_database();
     db->get_step_times();
 
-    int    step     = -1;
-    double max_time = -1.0;
-    for (int i = 0; i < static_cast<int>(stateTimes.size()); i++) {
+    int    step     = stateTimes.empty() ? -1 : 0;
+    double max_time = stateTimes.empty() ? -1 : stateTimes[0];
+    for (int i = 1; i < static_cast<int>(stateTimes.size()); i++) {
       if (stateTimes[i] > max_time) {
         step     = i;
         max_time = stateTimes[i];
@@ -1027,6 +1042,24 @@ namespace Ioss {
     db->end_state(state, time);
     currentState = -1;
     return time;
+  }
+
+  void Region::erase_fields(Field::RoleType role)
+  {
+    field_erase(role);
+    internal_erase_fields(get_node_blocks(), role);
+    internal_erase_fields(get_edge_blocks(), role);
+    internal_erase_fields(get_face_blocks(), role);
+    internal_erase_fields(get_element_blocks(), role);
+    internal_erase_fields(get_nodesets(), role);
+    internal_erase_fields(get_edgesets(), role);
+    internal_erase_fields(get_facesets(), role);
+    internal_erase_fields(get_elementsets(), role);
+    internal_erase_fields(get_sidesets(), role);
+    internal_erase_fields(get_commsets(), role);
+    internal_erase_fields(get_structured_blocks(), role);
+    internal_erase_fields(get_assemblies(), role);
+    internal_erase_fields(get_blobs(), role);
   }
 
   /** \brief Add a structured block to the region.
@@ -1344,6 +1377,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(sideset);
+
+      // Also add "sideset_{id}" as an alias.
+      auto id = sideset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ss_alias = fmt::format("sideset_{}", id);
+        add_alias__(sideset->name(), ss_alias, sideset->type());
+      }
       sideSets.push_back(sideset);
       return true;
     }
@@ -1364,6 +1404,13 @@ namespace Ioss {
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
       add_alias__(nodeset);
+
+      // Also add "nodeset_{id}" as an alias.
+      auto id = nodeset->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string ns_alias = fmt::format("nodeset_{}", id);
+        add_alias__(nodeset->name(), ns_alias, nodeset->type());
+      }
       nodeSets.push_back(nodeset);
       return true;
     }
@@ -1621,7 +1668,7 @@ namespace Ioss {
                "\n\nERROR: The entity named '{}' of type {} which is being aliased to '{}' does "
                "not exist in "
                "region '{}'.\n",
-               db_name, type, alias, name());
+               db_name, static_cast<int>(type), alias, name());
     IOSS_ERROR(errmsg);
   }
 
@@ -1842,7 +1889,6 @@ namespace Ioss {
           "that does not support duplicate names.",
           nfound, my_name, filename);
       IOSS_ERROR(errmsg);
-      return nullptr;
     }
     return entity;
   }
@@ -1952,7 +1998,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeBlock *ge = nullptr;
-    for (auto &nb : nodeBlocks) {
+    for (const auto &nb : nodeBlocks) {
       if (db_hash == nb->hash() && nb->name() == db_name) {
         ge = nb;
         break;
@@ -2468,7 +2514,7 @@ namespace Ioss {
 
     if (my_name == "node_count") {
       int64_t count = 0;
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         count += nb->entity_count();
       }
       return Property(my_name, count);

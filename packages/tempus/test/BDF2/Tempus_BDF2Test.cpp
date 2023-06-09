@@ -72,9 +72,9 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
       integrator->getStepper()->getValidParameters();
     bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
-      std::cout << std::endl;
-      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      out << std::endl;
+      out << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      out << "defaultPL -------------- \n" << *defaultPL << std::endl;
     }
     TEST_ASSERT(pass)
   }
@@ -90,9 +90,9 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
 
     bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
-      std::cout << std::endl;
-      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      out << std::endl;
+      out << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      out << "defaultPL -------------- \n" << *defaultPL << std::endl;
     }
     TEST_ASSERT(pass)
   }
@@ -190,16 +190,16 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << option << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
-                                         << get_ele(*(x_exact), 1) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                         << get_ele(*(x      ), 1) << std::endl;
-    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
-                                         << get_ele(*(xdiff  ), 1) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                   << get_ele(*(x_exact), 1) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                   << get_ele(*(x      ), 1) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                   << get_ele(*(xdiff  ), 1) << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.839732, 1.0e-4 );
     TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.542663, 1.0e-4 );
   }
@@ -728,11 +728,11 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
   if (nTimeStepSizes > 2) {
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-    std::cout << "  Stepper = BDF2" << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Expected order: " << order << std::endl;
-    std::cout << "  Observed order: " << slope << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = BDF2" << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Expected order: " << order << std::endl;
+    out << "  Observed order: " << slope << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY( slope, order, 0.10 );
     out << "\n\n ** Slope on BDF2 Method = " << slope
         << "\n" << std::endl;

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iofaodel_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>      // for DatabaseUsage
 #include <Ioss_DatabaseIO.h>   // for DatabaseIO
@@ -47,7 +49,7 @@ namespace Ioss {
  */
 namespace Iofaodel {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOFAODEL_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -58,7 +60,7 @@ namespace Iofaodel {
                               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOFAODEL_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

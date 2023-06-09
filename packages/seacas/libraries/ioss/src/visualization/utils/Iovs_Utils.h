@@ -7,6 +7,8 @@
 #ifndef IOSS_IOVS_UTILS_H
 #define IOSS_IOVS_UTILS_H
 
+#include "iovs_export.h"
+
 #include "CatalystManagerBase.h"
 #include <Ioss_DBUsage.h>
 #include <Ioss_ParallelUtils.h>
@@ -15,7 +17,7 @@
 
 namespace Iovs {
 
-  class Utils
+  class IOVS_EXPORT Utils
   {
 
   public:
@@ -65,6 +67,7 @@ namespace Iovs {
     CatalystManagerBase *catalystManager = nullptr;
 
     CatalystManagerBase *createCatalystManagerInstance();
+    void checkCatalystInterfaceAndPluginVersions();
 
     void initMeshFromIOSSProps(CatalystManagerBase::CatalystMeshInit &cmInit,
                                const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);

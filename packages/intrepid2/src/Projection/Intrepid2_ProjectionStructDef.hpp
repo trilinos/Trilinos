@@ -471,6 +471,8 @@ void ProjectionStruct<DeviceType,ValueType>::createHDivProjectionStruct(const Ba
     hcurlBasis = new Basis_HCURL_HEX_In_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
     hcurlBasis = new Basis_HCURL_TET_In_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
+  else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key)
+    hcurlBasis = new typename DerivedNodalBasisFamily<HostDeviceType,ValueType,ValueType>::HCURL_WEDGE(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
     hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)

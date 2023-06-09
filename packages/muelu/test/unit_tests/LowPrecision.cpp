@@ -57,9 +57,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_LowPrecisionFactory.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
-# include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#endif
+#include <Tpetra_CrsMatrixMultiplyOp.hpp>
 
 namespace MueLuTests {
 
@@ -120,12 +118,8 @@ namespace MueLuTests {
                        || std::is_same<Scalar, std::complex<double> >::value
 #endif
                        )) {
-#ifdef HAVE_MUELU_TPETRA
         auto tpCrsMultOp = rcp_dynamic_cast<Tpetra::CrsMatrixMultiplyOp<Scalar,HalfScalar,LocalOrdinal,GlobalOrdinal,Node> >(rcp_dynamic_cast<TpetraOperator>(lowA)->getOperator());
         TEST_ASSERT(!tpCrsMultOp.is_null());                     // Actually converted
-#else
-        TEST_ASSERT(false);                                      // We should never get here.
-#endif
       } else {
         TEST_ASSERT(!rcp_dynamic_cast<Matrix>(lowA).is_null());  // Just a regular old matrix
         TEST_EQUALITY(A, lowA);

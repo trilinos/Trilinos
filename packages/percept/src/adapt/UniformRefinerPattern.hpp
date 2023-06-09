@@ -84,7 +84,7 @@
     typedef Elem::StdMeshObjTopologies::RefinementTopologyExtraEntry *RefTopoX_arr;
 
     // useful tools
-#define NODE_COORD(node) stk::mesh::field_data( *eMesh.get_coordinates_field() , node )
+#define NODE_COORD(node) static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , node ))
 #define VERT_COORD(ivert) NODE_COORD(elem_nodes[ivert].entity())
 #define EDGE_COORD(iedge,inode) NODE_COORD(elem_nodes[cell_topo_data->edge[iedge].node[inode]].entity())
 #define FACE_COORD(iface,inode) NODE_COORD(elem_nodes[cell_topo_data->side[iface].node[inode]].entity())

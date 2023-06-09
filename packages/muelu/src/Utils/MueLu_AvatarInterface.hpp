@@ -63,7 +63,7 @@ typedef struct Avatar_struct Avatar_handle;
 
 namespace MueLu {
 
-  /*! @class 
+  /*! @class
     Manages the interface to the Avatar machine learning library.
 
     Note only proc 0 (as defined by comm) will actually have avatar instantiated.  The options determined
@@ -93,17 +93,17 @@ namespace MueLu {
     // Clean up the handle
     void Cleanup();
 
-    // Returns 1 if the given parameters are within same 
+    // Returns 1 if the given parameters are within same
     // same domain as training data, 0 otherwise
     int checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const;
 
-    int hybrid(float * probabilities, std::vector<int> acceptableCombos) const; 
+    int hybrid(float * probabilities, std::vector<int> acceptableCombos) const;
 
-    int highProb(float * probabilities, std::vector<int> acceptableCombos) const; 
+    int highProb(float * probabilities, std::vector<int> acceptableCombos) const;
  
-    int lowCrash(float * probabilities, std::vector<int> acceptableCombos) const; 
+    int lowCrash(float * probabilities, std::vector<int> acceptableCombos) const;
 
-    int weighted(float * probabilities, std::vector<int> acceptableCombos) const; 
+    int weighted(float * probabilities, std::vector<int> acceptableCombos) const;
 
   private:
     // Utility functions

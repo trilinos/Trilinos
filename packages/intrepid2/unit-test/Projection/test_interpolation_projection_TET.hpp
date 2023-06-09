@@ -48,7 +48,7 @@
     In order to test significant configurations, we consider 4 mappings of the reference tetrahedron
     to the first (physical) tetrahedron, so that the common face is mapped from all the 4 faces
     of the reference tetrahedron.
-    Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common face are permuted (6 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -73,6 +73,7 @@
 #include "Intrepid2_ProjectionTools.hpp"
 #include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 #include "Intrepid2_HVOL_TET_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
@@ -144,7 +145,7 @@ int InterpolationProjectionTet(const bool verbose) {
   pickTest = true;
   /* initialize random seed: */
   std::srand (std::time(NULL));
-  int configuration = std::rand() % 12;
+  int configuration = std::rand() % 24;
   elemPermutation = configuration % 4;
   sharedSidePermutation = configuration/4;
   *outStream << "Randomly picked configuration (tet premutation, shared face permutation): (" << elemPermutation << ", " <<sharedSidePermutation << ")" << std::endl;
@@ -332,6 +333,8 @@ int InterpolationProjectionTet(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType>());
+          if(degree==2)
+            basis_set.push_back(new Basis_HGRAD_TET_C2_FEM<DeviceType,ValueType,ValueType>());
           //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(degree));
           basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(degree,POINTTYPE_WARPBLEND));
 

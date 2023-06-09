@@ -8,12 +8,14 @@
 
 namespace krino {
 
+struct Edge;
+
 class SharpFeatureConstraint
 {
 public:
   bool is_pinned() const { return myConstrainedEdgeNeighbors[0] == invalid_entity() && myConstrainedEdgeNeighbors[1] == invalid_entity(); }
   bool is_constrained_on_edge() const { return myConstrainedEdgeNeighbors[0] != invalid_entity() && myConstrainedEdgeNeighbors[1] != invalid_entity(); }
-  const std::array<stk::mesh::Entity,2> & get_sharp_edge_nodes() const { ThrowAssert(is_constrained_on_edge()); return myConstrainedEdgeNeighbors; }
+  const std::array<stk::mesh::Entity,2> & get_sharp_edge_nodes() const { STK_ThrowAssert(is_constrained_on_edge()); return myConstrainedEdgeNeighbors; }
   static SharpFeatureConstraint edge_constraint(const stk::mesh::Entity entity0, const stk::mesh::Entity entity1) { return SharpFeatureConstraint{entity0, entity1}; }
   static SharpFeatureConstraint pinned_constraint() { return SharpFeatureConstraint(invalid_entity(),invalid_entity()); }
 private:
@@ -30,7 +32,7 @@ public:
 private:
   void find_sharp_features_2D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle);
   void find_sharp_features_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle);
-  static bool edge_has_sharp_feature_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle, const uint64_t edge);
+  static bool edge_has_sharp_feature_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle, const Edge edge);
   static bool node_has_sharp_feature_2D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle, const stk::mesh::Entity node );
   static bool angle_is_sharp_between_any_two_sides_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const double cosFeatureAngle, const std::array<stk::mesh::Entity,2> & edgeNodes, const std::vector<stk::mesh::Entity> & sidesOfEdge);
   static bool angle_is_sharp_between_any_two_sides_2D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const double cosFeatureAngle, const stk::mesh::Entity node, const std::vector<stk::mesh::Entity> & sidesOfEdge);

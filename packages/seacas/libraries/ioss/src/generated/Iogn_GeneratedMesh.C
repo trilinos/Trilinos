@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -411,7 +411,7 @@ namespace Iogn {
 
       if (doRotation) {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
-        for (auto &elem : rotmat) {
+        for (const auto &elem : rotmat) {
           for (double jj : elem) {
             fmt::print(Ioss::OUTPUT(), "{:14.e}\t", jj);
           }
@@ -1298,7 +1298,7 @@ namespace Iogn {
       }
       else if (createPyramids) {
         INT     pyr_vert[][5] = {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6},
-                             {0, 4, 7, 3}, {0, 3, 2, 1}, {4, 5, 6, 7}};
+                                 {0, 4, 7, 3}, {0, 3, 2, 1}, {4, 5, 6, 7}};
         INT     hex_vert[8];
         int64_t cnt    = 0;
         INT     offset = (numX + 1) * (numY + 1) * (myNumZ + 1);
@@ -1723,7 +1723,7 @@ namespace Iogn {
       n3 = 2;
     }
     else {
-      fmt::print(Ioss::WARNING(),
+      fmt::print(Ioss::WarnOut(),
                  "\nInvalid axis specification '{}'. Valid options are 'x', 'y', or 'z'\n", axis);
       return;
     }

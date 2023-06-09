@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_GroupingEntity.h>
 #include <string>
@@ -13,10 +15,11 @@
 namespace Ioss {
   class DatabaseIO;
 
-  class NullEntity : public GroupingEntity
+  class IOSS_EXPORT NullEntity : public GroupingEntity
   {
   public:
     NullEntity() : Ioss::GroupingEntity(nullptr, "null_entity", 0) {}
+    ~NullEntity();
 
     std::string type_string() const override { return "NullEntity"; }
     std::string short_type_string() const override { return "null"; }

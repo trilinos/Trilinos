@@ -81,7 +81,7 @@ TEST(StkMeshIoBrokerHowTo, singleStepOnRestart)
       //+ Set the cycle count to 1.  This will result in a maximum
       //+ of one step on the output database -- when a new step is
       //+ added, it will overwrite the existing step.
-      stkIo.get_output_io_region(fh)->get_database()->set_cycle_count(1); /*@\label{io:cycle}*/
+      stkIo.get_output_ioss_region(fh)->get_database()->set_cycle_count(1); /*@\label{io:cycle}*/
 
       // Write multiple steps to the restart file.
       for (size_t step=0; step < 3; step++) {

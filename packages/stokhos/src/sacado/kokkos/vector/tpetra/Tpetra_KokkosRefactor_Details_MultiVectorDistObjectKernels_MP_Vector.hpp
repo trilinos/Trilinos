@@ -92,10 +92,11 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t col) {
+                     size_t col,
+                     const execution_space &space) {
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>(
-          idx.size(), Kokkos::dimension_scalar(dst) ),
+          space, idx.size(), Kokkos::dimension_scalar(dst) ),
         PackArraySingleColumn(dst,src,idx,col) );
     }
   };
@@ -140,9 +141,10 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), Kokkos::dimension_scalar(dst) ),
+        Kokkos::MPVectorWorkConfig<execution_space>(space, idx.size(), Kokkos::dimension_scalar(dst) ),
         PackArrayMultiColumn(dst,src,idx,numCols) );
     }
   };
@@ -191,10 +193,11 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      const ColView& col,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>(
-          idx.size(), Kokkos::dimension_scalar(dst) ),
+          space, idx.size(), Kokkos::dimension_scalar(dst) ),
         PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
     }
   };
@@ -410,7 +413,9 @@ namespace Details {
            src(fromRow, j).fastAccessCoeff(tidx));
     }
 
-    static void permute(const DstView& dst,
+    template <typename ExecutionSpace>
+    static void permute(const ExecutionSpace &space,
+                        const DstView& dst,
                         const SrcView& src,
                         const DstIdxView& dst_idx,
                         const SrcIdxView& src_idx,
@@ -419,7 +424,7 @@ namespace Details {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>(
-          n,  Kokkos::dimension_scalar(dst) ),
+          space, n,  Kokkos::dimension_scalar(dst) ),
         PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols,op) );
     }
   };
@@ -475,7 +480,9 @@ namespace Details {
            src(fromRow, src_col(j)).fastAccessCoeff(tidx));
     }
 
-    static void permute(const DstView& dst,
+    template <typename ExecutionSpace>
+    static void permute(const ExecutionSpace &space,
+                        const DstView& dst,
                         const SrcView& src,
                         const DstIdxView& dst_idx,
                         const SrcIdxView& src_idx,
@@ -486,7 +493,7 @@ namespace Details {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>(
-          n, Kokkos::dimension_scalar(dst) ),
+          space, n, Kokkos::dimension_scalar(dst) ),
         PermuteArrayMultiColumnVariableStride(
           dst,src,dst_idx,src_idx,dst_col,src_col,numCols,op) );
     }

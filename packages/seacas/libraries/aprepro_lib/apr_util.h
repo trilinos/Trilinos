@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef SEAMS_UTIL_H
-#define SEAMS_UTIL_H
+#pragma once
 
 #include "apr_symrec.h"
 #include "aprepro.h"
@@ -31,4 +30,3 @@ namespace SEAMS {
   bool        is_directory(const std::string &filepath);
   bool        check_valid_var(const char *s);
 } // namespace SEAMS
-#endif

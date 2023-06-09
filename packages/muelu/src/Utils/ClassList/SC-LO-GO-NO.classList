@@ -1,8 +1,7 @@
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
-AmalgamationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+Amesos2Smoother - #if defined(HAVE_MUELU_AMESOS2)
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
 BelosSmoother - #if defined(HAVE_MUELU_BELOS)
@@ -21,14 +20,12 @@ ClassicalMapFactory
 ClassicalPFactory
 CloneRepartitionInterface
 CoalesceDropFactory
-CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+CoalesceDropFactory_kokkos
 CoarseMapFactory
-CoarseMapFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
-CoordinatesTransferFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoupledRBMFactory
 DemoFactory
 DirectSolver
@@ -42,14 +39,14 @@ FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
-GeometricInterpolationPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+GeometricInterpolationPFactory_kokkos
 GMRESSolver
 Hierarchy
 HierarchyManager
 HierarchyFactory
 HierarchyUtils
 InterfaceAggregationFactory
-Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+Ifpack2Smoother - #if defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother
 InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
@@ -62,12 +59,13 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
-NotayAggregationFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+NullspaceFactory_kokkos
 NullspacePresmoothFactory
 PatternFactory
 PerfUtils
+PerfModels
 PermutationFactory
 PermutingSmoother
 PgPFactory
@@ -81,21 +79,23 @@ RebalanceBlockAcFactory
 RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
-RegionRFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-RegionRFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+RefMaxwellSmoother
+RegionRFactory
+RegionRFactory_kokkos
 ReitzingerPFactory
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RepartitionBlockDiagonalFactory - #ifdef HAVE_MPI
 RepartitionHeuristicFactory - #ifdef HAVE_MPI
+ReplicatePFactory
 RigidBodyModeFactory
 SaPFactory
-SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+SaPFactory_kokkos
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
-ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
-ShiftedLaplacianOperator - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacian - #if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacianOperator - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 SimpleSmoother
 Smoother
 SmootherBase
@@ -104,15 +104,15 @@ SmootherPrototype
 SmooVecCoalesceDropFactory
 SolverBase
 SteepestDescentSolver
-StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
+StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
-TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-MatrixFreeTentativeP_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-MatrixFreeTentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+TentativePFactory_kokkos
+MatrixFreeTentativeP
+MatrixFreeTentativePFactory
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
@@ -126,13 +126,16 @@ UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase
-Utilities_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
-SemiCoarsenPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+SemiCoarsenPFactory_kokkos
 UzawaSmoother
 VisualizationHelpers
 ZeroSubBlockAFactory
 ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 NodePartitionInterface - #if defined(HAVE_MPI)
+XpetraOperator
+RefMaxwell
+Maxwell1
+Maxwell_Utils

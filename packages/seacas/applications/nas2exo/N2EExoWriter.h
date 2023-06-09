@@ -6,9 +6,7 @@
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
  *  Copyright: Sandia National Labs, OCT-2022
  */
-
-#ifndef _EXOWRITER_H_
-#define _EXOWRITER_H_
+#pragma once
 
 #include "N2EDataTypes.h"
 #include <string>
@@ -69,5 +67,3 @@ namespace ExoModules {
   };
 
 } // namespace ExoModules
-
-#endif /* INCLUDE_N2EEXOWRITER_H_ */

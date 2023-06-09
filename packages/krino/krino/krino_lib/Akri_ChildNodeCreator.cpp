@@ -36,7 +36,7 @@ struct ActiveChildNodeRequest
 
     void calculate_sharing_procs(stk::mesh::BulkData& mesh)
     {
-      ThrowRequire(!m_parents.empty());
+      STK_ThrowRequire(!m_parents.empty());
 
       stk::mesh::EntityKey key0(stk::topology::NODE_RANK, m_parents[0]);
       mesh.comm_shared_procs(key0, m_sharing_procs);
@@ -67,7 +67,7 @@ struct ActiveChildNodeRequest
 
     stk::mesh::EntityId suggested_node_id() const
     {
-        ThrowRequireMsg(!m_id_procs_pairs_have_been_sorted, "Invalid use of child node calculation. Contact sierra-help");
+        STK_ThrowRequireMsg(!m_id_procs_pairs_have_been_sorted, "Invalid use of child node calculation. Contact sierra-help");
         return m_id_proc_pairs_from_all_procs[0].second;
     }
 
@@ -79,11 +79,11 @@ struct ActiveChildNodeRequest
 
     stk::mesh::EntityId get_id_for_child() const
     {
-        ThrowRequireMsg(m_id_procs_pairs_have_been_sorted, "Invalid use of child node calculation. Contact sierra-help");
+        STK_ThrowRequireMsg(m_id_procs_pairs_have_been_sorted, "Invalid use of child node calculation. Contact sierra-help");
         return m_id_proc_pairs_from_all_procs[0].second;
     }
 
-    void set_node_entity_for_request(stk::mesh::BulkData& mesh, const stk::mesh::PartVector & node_parts)
+    void set_node_entity_for_request(stk::mesh::BulkData& mesh, const stk::mesh::PartVector & node_parts, std::vector<stk::mesh::EntityProc> & nodeSharing)
     {
         this->sort_id_proc_pairs();
         stk::mesh::EntityId id_for_child = get_id_for_child();
@@ -92,7 +92,7 @@ struct ActiveChildNodeRequest
         {
             if ( m_id_proc_pairs_from_all_procs[i].first != mesh.parallel_rank() )
             {
-                mesh.add_node_sharing(*m_node_entity, m_id_proc_pairs_from_all_procs[i].first);
+                nodeSharing.emplace_back(*m_node_entity, m_id_proc_pairs_from_all_procs[i].first);
             }
         }
     }
@@ -118,6 +118,12 @@ struct ActiveChildNodeRequest
       return out.str();
     }
 };
+
+void batch_add_node_sharing(stk::mesh::BulkData& mesh, const std::vector<stk::mesh::EntityProc> & nodeSharing)
+{
+  for (auto && nodeAndProc : nodeSharing)
+    mesh.add_node_sharing(nodeAndProc.first, nodeAndProc.second);
+}
 
 void batch_create_child_nodes(stk::mesh::BulkData & mesh, const std::vector< ChildNodeRequest > & child_node_requests, const stk::mesh::PartVector & node_parts, const GenerateNewEntityIdsFunction & generate_new_ids)
 {
@@ -241,14 +247,16 @@ void batch_create_child_nodes(stk::mesh::BulkData & mesh, const std::vector< Chi
             }
         }
 
+        std::vector<stk::mesh::EntityProc> nodeSharing;
         for (size_t request_index=0;request_index<active_child_node_requests.size();++request_index)
         {
-            active_child_node_requests[request_index].set_node_entity_for_request(mesh, node_parts);
+            active_child_node_requests[request_index].set_node_entity_for_request(mesh, node_parts, nodeSharing);
         }
+        batch_add_node_sharing(mesh, nodeSharing);
     }
 
     std::vector<bool>::iterator iter = std::find(communicate_request.begin(), communicate_request.end(), false);
-    ThrowRequireMsg(iter == communicate_request.end(), "Invalid child node request. Contact sierra-help.");
+    STK_ThrowRequireMsg(iter == communicate_request.end(), "Invalid child node request. Contact sierra-help.");
 }
 
 }

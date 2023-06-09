@@ -52,13 +52,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Teuchos_AbstractFactoryStd.hpp"
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
+#include "Teuchos_AbstractFactoryStd.hpp"
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
@@ -94,11 +89,6 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
 
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-#ifdef HAVE_PIRO_IFPACK2
-  typedef Thyra::PreconditionerFactoryBase<double> Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 #ifdef HAVE_PIRO_MUELU
   Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
@@ -347,8 +337,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
         //IKT, 5/31/17: adding the following logic which checks invDiag vector for nans
         //and throws an exception if nans are found.
-        typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType ScalarMag;
-        typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+        typedef Teuchos::ScalarTraits<typename Thyra::ModelEvaluator<Scalar>::ScalarMag> SMT;
         const Scalar sumInvDiag = sum(*invDiag);
         bool isNanInvDiag = SMT::isnaninf(sumInvDiag);
         if (isNanInvDiag) {

@@ -65,7 +65,7 @@ namespace Xpetra {
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+         class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockedVector
     : public virtual Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     , public virtual Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>

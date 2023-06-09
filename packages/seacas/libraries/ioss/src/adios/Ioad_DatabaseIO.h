@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioad_export.h"
+
 #include "Ioss_EntitySet.h"
 #include "Ioss_Region.h"  // for Region, SideSetContainer, etc
 #include "Ioss_SideSet.h" // for SideBlockContainer, SideSet
@@ -33,7 +35,7 @@ namespace Ioss {
  */
 namespace Ioad {
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOAD_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

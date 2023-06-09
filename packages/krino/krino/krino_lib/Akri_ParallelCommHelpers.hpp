@@ -38,7 +38,7 @@ void communicate_with_shared_procs(const stk::mesh::BulkData& mesh,
   {
     for (auto&& local_entity : local_entities)
     {
-      ThrowAssert(mesh.bucket(local_entity).owned() || mesh.bucket(local_entity).shared());
+      STK_ThrowAssert(mesh.bucket(local_entity).owned() || mesh.bucket(local_entity).shared());
       mesh.comm_shared_procs(local_entity, sharing_procs);
       for (auto&& sharing_proc : sharing_procs)
       {

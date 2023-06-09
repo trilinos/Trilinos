@@ -17,7 +17,6 @@
 
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Panzer_NodeType.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
@@ -83,8 +82,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory_Augmentation::buildPreconditione
    Teko::LinearOp S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
-     S_E = Teko::explicitAdd(Q_E, CurlCurl);
+     S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
    }
 
    /////////////////////////////////////////////////

@@ -48,12 +48,13 @@
 #ifndef Intrepid2_HierarchicalBasis_HCURL_TET_h
 #define Intrepid2_HierarchicalBasis_HCURL_TET_h
 
-#include <Kokkos_DynRankView.hpp>
-
 #include <Intrepid2_config.h>
+
+#include <Kokkos_DynRankView.hpp>
 
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HierarchicalBasis_HCURL_TRI.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -85,15 +86,15 @@ namespace Intrepid2
     ordinal_type numFields_, numPoints_;
     
     size_t fad_size_output_;
-        
-    static const ordinal_type numVertices         = 4;
-    static const ordinal_type numEdges            = 6;
-    static const ordinal_type numEdgesPerFace     = 3;
-    static const ordinal_type numFaceFamilies     = 2;
-    static const ordinal_type numFaces            = 4;
-    static const ordinal_type numVerticesPerFace  = 3;
-    static const ordinal_type numInteriorFamilies = 3;
-    
+
+    static constexpr ordinal_type numVertices = 4;
+    static constexpr ordinal_type numEdges = 6;
+    static constexpr ordinal_type numEdgesPerFace = 3;
+    static constexpr ordinal_type numFaceFamilies = 2;
+    static constexpr ordinal_type numFaces = 4;
+    static constexpr ordinal_type numVerticesPerFace = 3;
+    static constexpr ordinal_type numInteriorFamilies = 3;
+
     // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
     const ordinal_type face_vertices[numFaces*numVerticesPerFace] = {0,1,2, // face 0
                                                                      0,1,3, // face 1
@@ -272,8 +273,7 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
-      const ordinal_type numFunctionsPerFace = polyOrder_ * (polyOrder_-1);
-      const ordinal_type numFaces            = 4;
+      const ordinal_type numFunctionsPerFace = polyOrder_ * (polyOrder_ - 1);
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView edge_field_values_at_point, jacobi_values_at_point, other_values_at_point, other_values2_at_point;
       if (fad_size_output_ > 0) {
@@ -338,9 +338,7 @@ namespace Intrepid2
             
             // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
             int faceFieldOrdinalOffset = fieldOrdinalOffset;
-            for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
-            {
-              const int numFaceFamilies = 2;
+            for (int faceOrdinal = 0; faceOrdinal < numFaces; faceOrdinal++) {
               for (int familyOrdinal=1; familyOrdinal<=numFaceFamilies; familyOrdinal++)
               {
                 int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
@@ -372,12 +370,11 @@ namespace Intrepid2
                 fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
               } // familyOrdinal
               faceFieldOrdinalOffset += numFunctionsPerFace;
-            } // faceOrdinal
+            }  // faceOrdinal
           } // face functions block
           
           // interior functions
           {
-            const int numInteriorFamilies = 3;
             const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
             const int min_ijk_sum = 2;
             const int max_ijk_sum = polyOrder_-1;
@@ -423,8 +420,8 @@ namespace Intrepid2
               }
               fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set offset to be one past.
             }
-          } // interior functions block
-          
+          }  // interior functions block
+
         } // end OPERATOR_VALUE
           break;
         case OPERATOR_CURL:
@@ -489,7 +486,6 @@ namespace Intrepid2
           
           // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
           int faceFieldOrdinalOffset = fieldOrdinalOffset;
-          const int numFaceFamilies = 2;
           for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
           {
             for (int familyOrdinal=1; familyOrdinal<=numFaceFamilies; familyOrdinal++)
@@ -588,8 +584,7 @@ namespace Intrepid2
             auto & P_2ipj = other_values_at_point;
             auto & L_2ip1 = edge_field_values_at_point;
             auto & P      = other_values2_at_point;
-            
-            const int numInteriorFamilies = 3;
+
             const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
             const int min_ijk_sum = 2;
             const int max_ijk_sum = polyOrder_-1;

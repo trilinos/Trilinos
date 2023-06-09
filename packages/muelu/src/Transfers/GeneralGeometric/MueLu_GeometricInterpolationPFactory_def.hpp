@@ -52,9 +52,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
-#ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
 
 // Including this one last ensure that the short names of the above headers are defined properly
 #include "MueLu_GeometricInterpolationPFactory_decl.hpp"
@@ -87,7 +85,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("numDimensions",                Teuchos::null,
                                                  "Number of spacial dimensions in the problem.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
-                                                 "Number of nodes per spatial dimension on the coarse grid.");                              
+                                                 "Number of nodes per spatial dimension on the coarse grid.");
     validParamList->set<RCP<const FactoryBase> >("structuredInterpolationOrder", Teuchos::null,
     						 "Interpolation order for constructing the prolongator.");
     validParamList->set<bool>                   ("keep coarse coords",           false, "Flag to keep coordinates for special coarse grid solve");
@@ -113,7 +111,7 @@ namespace MueLu {
       Input(fineLevel, "Coordinates");
       Input(fineLevel, "coarseCoordinatesFineMap");
       Input(fineLevel, "coarseCoordinatesMap");
-    }     
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -274,7 +272,6 @@ namespace MueLu {
 
     using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     if(helpers::isTpetraBlockCrs(A)) {
-#ifdef HAVE_MUELU_TPETRA
       SC one  = Teuchos::ScalarTraits<SC>::one();
       SC zero = Teuchos::ScalarTraits<SC>::zero();
       LO NSDim = A->GetStorageBlockSize();
@@ -324,11 +321,6 @@ namespace MueLu {
       else {
         P->CreateView("stridedMaps", P->getRangeMap(),   PointMap);
       }
-
-#else
-      throw std::runtime_error("GeometricInteroplationFactory::Build(): BlockCrs requires Tpetra");
-#endif
-
     }
     else {
       // Create the prolongator matrix and its associated objects
@@ -336,14 +328,14 @@ namespace MueLu {
       P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
       RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
       PCrs->setAllToScalar(1.0);
-      PCrs->fillComplete();          
+      PCrs->fillComplete();
 
-      // set StridingInformation of P    
+      // set StridingInformation of P
       if (A->IsView("stridedMaps") == true)
         P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedDomainMap);
-      else 
+      else
         P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMap);
-    }      
+    }
 
   } // BuildConstantP
 

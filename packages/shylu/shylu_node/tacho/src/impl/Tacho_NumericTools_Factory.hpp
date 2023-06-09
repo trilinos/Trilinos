@@ -268,7 +268,6 @@ public:
     }
     default: {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
-      break;
     }
     }
   }

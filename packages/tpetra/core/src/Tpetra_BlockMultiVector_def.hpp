@@ -249,8 +249,8 @@ replaceLocalValuesImpl (const LO localRowIndex,
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
-  using execution_space = typename device_type::execution_space;
-  Kokkos::deep_copy (execution_space(), X_dst, X_src);
+  using exec_space = typename device_type::execution_space;
+  Kokkos::deep_copy (exec_space(), X_dst, X_src);
 }
 
 
@@ -399,8 +399,8 @@ getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   // BlockMultiVector or MultiVector (a Vector is a MultiVector).  Try
   // them in that order; one must succeed.  Note that the target of
   // the Import or Export calls checkSizes in DistObject's doTransfer.
-  typedef BlockMultiVector<Scalar, LO, GO, Node> this_type;
-  const this_type* srcBlkVec = dynamic_cast<const this_type*> (&src);
+  typedef BlockMultiVector<Scalar, LO, GO, Node> this_BMV_type;
+  const this_BMV_type* srcBlkVec = dynamic_cast<const this_BMV_type*> (&src);
   if (srcBlkVec == nullptr) {
     const mv_type* srcMultiVec = dynamic_cast<const mv_type*> (&src);
     if (srcMultiVec == nullptr) {
@@ -699,7 +699,7 @@ blockWiseMultiply (const Scalar& alpha,
                    const BlockMultiVector<Scalar, LO, GO, Node>& X)
 {
   using Kokkos::ALL;
-  typedef typename device_type::execution_space execution_space;
+  typedef typename device_type::execution_space exec_space;
   const LO lclNumMeshRows = meshMap_.getLocalNumElements ();
 
   if (alpha == STS::zero ()) {
@@ -717,7 +717,7 @@ blockWiseMultiply (const Scalar& alpha,
     // execution space.  For example, if the default execution space
     // is Cuda but the current execution space is Serial, using just a
     // number would incorrectly run with Cuda.
-    Kokkos::RangePolicy<execution_space, LO> range (0, lclNumMeshRows);
+    Kokkos::RangePolicy<exec_space, LO> range (0, lclNumMeshRows);
     Kokkos::parallel_for (range, bwm);
   }
 }

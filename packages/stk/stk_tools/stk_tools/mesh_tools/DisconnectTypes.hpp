@@ -46,7 +46,7 @@ namespace tools {
 struct BlockPairIdGetter {
 
   unsigned operator()(const stk::mesh::Part* part) {
-    ThrowRequire(part != nullptr);
+    STK_ThrowRequire(part != nullptr);
     return part->mesh_meta_data_ordinal();
   }
 };

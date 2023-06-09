@@ -1,0 +1,27 @@
+<ParameterList>
+  <Parameter name="Matrix File" type="string" value="bcsstk12.mtx"/> 
+  <ParameterList name="Linear Solver Builder">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <Parameter name="Preconditioner Type" type="string" value="None"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="TPETRA GMRES SINGLE REDUCE"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="TPETRA GMRES SINGLE REDUCE">
+            <Parameter name="Block Size" type="int" value="1"/>
+            <Parameter name="Convergence Tolerance" type="double" value="1e-04"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Maximum Restarts" type="int" value="20"/>
+            <Parameter name="Num Blocks" type="int" value="50"/>
+            <Parameter name="Output Frequency" type="int" value="25"/>
+            <Parameter name="Output Style" type="int" value="1"/>
+            <Parameter name="Verbosity" type="int" value="33"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

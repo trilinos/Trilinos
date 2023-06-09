@@ -38,6 +38,7 @@ SET(SOURCES "")
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
+
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Zoltan)
 IF (NOT ${PROJECT_NAME}_ENABLE_Zoltan)
   ADD_DEFINITIONS(-DNO_ZOLTAN_SUPPORT)
@@ -47,8 +48,10 @@ IF (NOT TPL_ENABLE_ParMETIS)
   ADD_DEFINITIONS(-DNO_PARMETIS_SUPPORT)
 ENDIF()
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/Ioss_*.h)
+APPEND_GLOB(HEADERS ${DIR}/tokenize.h)
+APPEND_GLOB(HEADERS ${DIR}/io_info.h)
 APPEND_GLOB(HEADERS ${DIR}/*hopscotch*.h)
 APPEND_GLOB(HEADERS ${DIR}/robin*.h)
 APPEND_GLOB(HEADERS ${DIR}/pdq*.h)
@@ -60,28 +63,38 @@ IF (NOT TPL_ENABLE_MPI)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Ioss_Decomposition.h)
 ENDIF()
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_BINARY_DIR}"
   "${Zoltan_INCLUDE_DIRS}"
   )
 
 IF (NOT TPL_ENABLE_fmt)
-  INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/private_copy_fmt")
+  TRIBITS_INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/private_copy_fmt")
 ENDIF()
+
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/ioss_export.h")
 
 TRIBITS_ADD_LIBRARY(
   Ioss
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+include(GenerateExportHeader)
+generate_export_header(Ioss)
+target_include_directories(Ioss
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
+
 IF (MINGW)
-  target_link_libraries(Ioss psapi)
+  target_link_libraries(Ioss PUBLIC psapi)
 ENDIF ()
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
    # add a target to generate API documentation with Doxygen
-   if(SEACASProj_ENABLE_DOXYGEN)
+   if(Seacas_ENABLE_DOXYGEN)
      find_package(Doxygen)
      if(DOXYGEN_FOUND)
        add_custom_command(TARGET Ioss
@@ -95,6 +108,7 @@ endif()
 
 IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
   ADD_SUBDIRECTORY(exodus)
+  ADD_SUBDIRECTORY(exonull)
 ENDIF()
 
 IF (${PROJECT_NAME}_ENABLE_Pamgen)
@@ -117,6 +131,7 @@ IF (TPL_ENABLE_Catalyst2)
   ADD_SUBDIRECTORY(catalyst)
 ENDIF()
 
+ADD_SUBDIRECTORY(null)
 ADD_SUBDIRECTORY(visualization)
 ADD_SUBDIRECTORY(generated)
 ADD_SUBDIRECTORY(text_mesh)

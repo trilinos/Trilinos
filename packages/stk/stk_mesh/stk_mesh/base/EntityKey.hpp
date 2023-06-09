@@ -74,9 +74,9 @@ struct EntityKey
   EntityKey( EntityRank arg_rank, EntityId arg_id )
     : m_value( static_cast<entity_key_t>( static_cast<uint64_t>(arg_rank) << RANK_SHIFT | arg_id) )
   {
-    NGP_ThrowAssertMsg((arg_rank >= stk::topology::BEGIN_RANK) && (arg_rank < stk::topology::INVALID_RANK),
+    STK_NGP_ThrowAssertMsg((arg_rank >= stk::topology::BEGIN_RANK) && (arg_rank < stk::topology::INVALID_RANK),
                        "Error: given an out of range entity rank");
-    NGP_ThrowAssertMsg(arg_id <= MAX_ID, "Error: given an out of range entity id");
+    STK_NGP_ThrowAssertMsg(arg_id <= MAX_ID, "Error: given an out of range entity id");
   }
 
   KOKKOS_FUNCTION
@@ -96,7 +96,8 @@ struct EntityKey
 
 std::ostream & operator << ( std::ostream & out, EntityKey  key);
 
-struct HashValueForEntityKey
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 2023
+struct STK_DEPRECATED HashValueForEntityKey
 {
     KOKKOS_FUNCTION
     size_t operator()(EntityKey k) const
@@ -104,7 +105,7 @@ struct HashValueForEntityKey
       return static_cast<size_t>(k.m_value);
     }
 };
-
+#endif
 }} // namespace stk::mesh
 
 #endif /* STK_MESH_ENTITYKEY_HPP */

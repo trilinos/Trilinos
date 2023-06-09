@@ -107,8 +107,8 @@ public:
   struct MeshInfo {
     stk::mesh::BulkData * m_bulk;
     std::vector<mesh::Entity >      mesh_entities;
-    const VectorField              * nodal_coord_ref ;
-    const ScalarField              * elem_weight_ref;
+    const stk::mesh::FieldBase     * nodal_coord_ref ;
+    const stk::mesh::FieldBase     * elem_weight_ref;
     std::vector<unsigned>            dest_proc_ids ;
 
     /** \brief Default Constructor. */
@@ -134,8 +134,8 @@ public:
    */
 
   virtual void set_mesh_info ( const std::vector<mesh::Entity > &mesh_entities,
-                               const VectorField   * nodal_coord_ref,
-                               const ScalarField   * elem_weight_ref=NULL);
+                               const stk::mesh::FieldBase   * nodal_coord_ref,
+                               const stk::mesh::FieldBase   * elem_weight_ref=NULL);
 
   /** \brief Reset owning processor.
    *
@@ -209,10 +209,10 @@ public:
   mesh::Entity mesh_entity(const unsigned moid ) const;
 
   /** \brief Return the Field points to the entity coordinates.*/
-  const VectorField * entity_coord_ref () const;
+  const stk::mesh::FieldBase * entity_coord_ref () const;
 
   /** \brief Return the Field points to the entity coordinates.*/
-  const ScalarField * entity_weight_ref () const;
+  const stk::mesh::FieldBase * entity_weight_ref () const;
 
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////

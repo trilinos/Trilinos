@@ -15,7 +15,6 @@
 #include <iostream>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -80,10 +79,10 @@ namespace stk
       std::vector<int> num_time_steps_all;
       std::vector<std::vector<double> > time_steps_all;
 
-      std::vector<stk::mesh::Field<double, stk::mesh::Cartesian> *> inputField;
-      stk::mesh::Field<double, stk::mesh::Cartesian> * errorField;
-      std::vector<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> *> fieldAll;
-      std::vector<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> *> xferFieldAll;
+      std::vector<stk::mesh::Field<double> *> inputField;
+      stk::mesh::Field<double> * errorField;
+      std::vector<stk::mesh::Field<double> *> fieldAll;
+      std::vector<stk::mesh::Field<double> *> xferFieldAll;
     };
 
       

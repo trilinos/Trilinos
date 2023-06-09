@@ -64,7 +64,7 @@
 #include <MueLu_GenericRFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_Utilities.hpp>
@@ -150,11 +150,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
     RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
@@ -179,7 +178,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", Ptentfact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -375,11 +374,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
     RCP<PgPFactory> Pfact = rcp(new PgPFactory());
@@ -402,7 +400,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", Ptentfact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
 
     H->Setup(M, 0, maxLevels);
@@ -528,13 +526,12 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
-    RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(CoupledAggFact));
+    RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UncoupledAggFact));
     RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
     RCP<Factory>          Rfact = rcp( new GenericRFactory(Pfact) );
     RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
@@ -706,11 +703,10 @@ namespace MueLuTests {
     Finest->Set("Coordinates", coordinates);   // set coordinates for finest level
 
     // define transfer operators
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
     RCP<PgPFactory>        Pfact     = rcp(new PgPFactory());
@@ -738,7 +734,7 @@ namespace MueLuTests {
     M.SetFactory("R",             Rfact);
     M.SetFactory("A",             Acfact);
     M.SetFactory("Ptent",         Ptentfact);
-    M.SetFactory("Aggregates",    CoupledAggFact);
+    M.SetFactory("Aggregates",    UncoupledAggFact);
     M.SetFactory("Smoother",      SmooFact);
     M.SetFactory("CoarseSolver",  coarseSolveFact);
 
@@ -899,11 +895,10 @@ namespace MueLuTests {
       Finest->Set("Coordinates", coordinates);   // set coordinates for finest level
 
       // define transfer operators
-      RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-      CoupledAggFact->SetMinNodesPerAggregate(3);
-      CoupledAggFact->SetMaxNeighAlreadySelected(0);
-      CoupledAggFact->SetOrdering("natural");
-      CoupledAggFact->SetPhase3AggCreation(0.5);
+      RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+      UncoupledAggFact->SetMinNodesPerAggregate(3);
+      UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+      UncoupledAggFact->SetOrdering("natural");
 
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
       RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
@@ -931,7 +926,7 @@ namespace MueLuTests {
       M.SetFactory("R", Rfact);
       M.SetFactory("A", Acfact);
       M.SetFactory("Ptent", Ptentfact);
-      M.SetFactory("Aggregates", CoupledAggFact);
+      M.SetFactory("Aggregates", UncoupledAggFact);
       M.SetFactory("Smoother", SmooFact);
       M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -1036,7 +1031,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#   if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
+#   if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
@@ -1100,11 +1095,10 @@ namespace MueLuTests {
         // Finest->Set("Coordinates", coordinates);  // set coordinates for finest level
 
         // define transfer operators
-        RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-        CoupledAggFact->SetMinNodesPerAggregate(3);
-        CoupledAggFact->SetMaxNeighAlreadySelected(0);
-        CoupledAggFact->SetOrdering("natural");
-        CoupledAggFact->SetPhase3AggCreation(0.5);
+        RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+        UncoupledAggFact->SetMinNodesPerAggregate(3);
+        UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+        UncoupledAggFact->SetOrdering("natural");
 
         RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
         RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
@@ -1129,7 +1123,7 @@ namespace MueLuTests {
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
         M.SetFactory("Ptent", Ptentfact);
-        M.SetFactory("Aggregates", CoupledAggFact);
+        M.SetFactory("Aggregates", UncoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
 

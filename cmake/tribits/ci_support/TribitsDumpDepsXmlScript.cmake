@@ -50,7 +50,7 @@
 #       -P <tribitsDir>/ci_support/TribitsDumpDepsXmlScript.cmake
 #
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 # A) Echo input options (must be specified with -D arguments to CMake command)
 
@@ -116,8 +116,8 @@ include(TribitsWriteXmlDependenciesFiles)
 
 # Generate the dependencies file
 
-set(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  OFF)
+set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES  FALSE)
 if (NOT ${PROJECT_NAME}_PRE_REPOSITORIES) # Make sure is defined!
   set(${PROJECT_NAME}_PRE_REPOSITORIES "")
 endif()

@@ -86,7 +86,7 @@ void check_particle_on_device()
 {
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::PARTICLE;
 

@@ -1,4 +1,4 @@
- /*@HEADER
+/*@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -428,7 +428,6 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::Params(const Teuchos::ParameterList& pL, std::string precType)
 {
   *this = getDefaults();
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
   //For each parameter, check that if the parameter exists, it has the right type
   //Then get the value and sanity check it 
   //If the parameter doesn't exist, leave it as default (from Params::getDefaults())
@@ -499,27 +498,19 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     }
     CHECK_VALUE("level", level, level < 0, "must be nonnegative");
   }
-  //"damping factor" aka omega -- try both double and magnitude as type
   if(pL.isParameter("damping factor"))
   {
     if(pL.isType<double>("damping factor"))
       omega = pL.get<double>("damping factor");
-    else if(pL.isType<magnitude>("damping factor"))
-      omega = pL.get<magnitude>("damping factor");
     else
-      TYPE_ERROR("damping factor", "double or magnitude_type");
-    CHECK_VALUE("damping factor", omega, omega <= 0 || omega > 1, "must be in the range (0, 1]");
+      TYPE_ERROR("damping factor", "double");
   }
-  //"shift" -- also try both double and magnitude
   if(pL.isParameter("shift"))
   {
     if(pL.isType<double>("shift"))
       shift = pL.get<double>("shift");
-    else if(pL.isType<magnitude>("shift"))
-      shift = pL.get<magnitude>("shift");
     else
-      TYPE_ERROR("shift", "double or magnitude_type");
-    //no hard requirements for shift value so don't
+      TYPE_ERROR("shift", "double");
   }
   //"guess" aka guessFlag
   if(pL.isParameter("guess"))

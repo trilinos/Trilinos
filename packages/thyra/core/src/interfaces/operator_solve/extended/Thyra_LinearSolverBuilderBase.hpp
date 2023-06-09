@@ -64,11 +64,10 @@ public:
   /** \brief Create a new <tt>LinearOpWithSolveFactoryBase</tt> object purely
    * specified by the parameter list.
    *
-   * \param  linearSolveStrategyName
-   *           [in] The optional name of the linear solve strategy to create.
-   *           The most typical use case will pass in an empty string but
-   *           there will be cases where I client will want to try to select
-   *           a specific linear solver strategy, even for just testing purposes.
+   * \param linearSolveStrategyName [in] The optional name of the linear solve
+   * strategy to create.  The most typical use case will pass in an empty
+   * string but there will be cases where a client will want to try to select
+   * a specific linear solver strategy, even for just testing purposes.
    *
    * This function is given no information about the nature of the linear
    * operators to be used.

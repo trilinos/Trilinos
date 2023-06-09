@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,9 +50,9 @@
 #define isatty _isatty
 #else
 #include <sys/utsname.h>
-#include <unistd.h> /* isatty  */
+#include <unistd.h>
 #endif
-#include <stdio.h> /* sprintf */
+#include <stdio.h>
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -87,8 +87,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "SGI-%.4s", SysInfo.machine);
-  sprintf(softname, "%.8s", SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "SGI-%.4s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "%.8s", SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -107,8 +107,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "IBM %.4s", SysInfo.machine);
-  sprintf(softname, "%03s %.4s", SysInfo.sysname, SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "IBM %.4s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "%03s %.4s", SysInfo.sysname, SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -127,8 +127,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "HP  %.4s", SysInfo.machine);
-  sprintf(softname, "HP-UX%.3s", SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "HP  %.4s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "HP-UX%.3s", SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -147,8 +147,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "%.8s", SysInfo.machine);
-  sprintf(softname, "%.4s%.4s", SysInfo.sysname, SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "%.8s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "%.4s%.4s", SysInfo.sysname, SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -168,18 +168,24 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   GetSystemInfo(&SysInfo);
 
-  sprintf(hardname, "%-8d", SysInfo.dwProcessorType);
+  snprintf(hardname, SUPES_MAXCHAR, "%-8d", SysInfo.dwProcessorType);
 
   OSInfo.dwOSVersionInfoSize = sizeof(OSInfo);
   if (GetVersionEx(&OSInfo) > 0) {
     switch (OSInfo.dwPlatformId) {
-    case 1: sprintf(softname, "Win98%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion); break;
-    case 2: sprintf(softname, "WinNT%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion); break;
-    default: sprintf(softname, "WinOS%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion); break;
+    case 1:
+      snprintf(softname, SUPES_MAXCHAR, "Win98%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion);
+      break;
+    case 2:
+      snprintf(softname, SUPES_MAXCHAR, "WinNT%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion);
+      break;
+    default:
+      snprintf(softname, SUPES_MAXCHAR, "WinOS%d.%d", OSInfo.dwMajorVersion, OSInfo.dwMinorVersion);
+      break;
     }
   }
   else {
-    sprintf(softname, "Unknown OS");
+    snprintf(softname, SUPES_MAXCHAR, "Unknown OS");
   }
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -197,8 +203,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "%.8s", SysInfo.machine);
-  sprintf(softname, "CW%.6s", SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "%.8s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "CW%.6s", SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -216,8 +222,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "%.8s", SysInfo.machine);
-  sprintf(softname, "OSX%.5s", SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "%.8s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "OSX%.5s", SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);
@@ -236,8 +242,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
   uname(&SysInfo);
 
-  sprintf(hardname, "%.8s", SysInfo.machine);
-  sprintf(softname, "Lx%.6s", SysInfo.release);
+  snprintf(hardname, SUPES_MAXCHAR, "%.8s", SysInfo.machine);
+  snprintf(softname, SUPES_MAXCHAR, "Lx%.6s", SysInfo.release);
 
   copy_string(hard, hardname, WORDLEN);
   copy_string(soft, softname, WORDLEN);

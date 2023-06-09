@@ -41,9 +41,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <string>                       // for string, operator==
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
-#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -52,8 +49,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
+#include <stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include "stk_io/FillMesh.hpp"
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -276,18 +273,15 @@ TEST(UnitTestMetaData, set_mesh_bulk_data )
   ASSERT_TRUE(&meta->mesh_bulk_data() == bulk2.get());
 }
 
-TEST(UnitTestMetaData, superset_of_shared_part)
+class TestHexMeta : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
+
+TEST_F(TestHexMeta, superset_of_shared_part)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
     if(numProcs == 2)
     {
-        stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-        stkMeshIoBroker.use_simple_fields();
-        const std::string generatedMeshSpecification = "generated:1x1x2";
-        stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stk::mesh::MetaData &meta = stkMeshIoBroker.meta_data();
+        stk::mesh::MetaData &meta = get_meta();
 
         stk::mesh::Part & mysupername = meta.declare_part("my_superset_part_shared");
         meta.declare_part_subset(mysupername, meta.globally_shared_part());
@@ -301,8 +295,8 @@ TEST(UnitTestMetaData, superset_of_shared_part)
         stk::mesh::Part & usersuper = meta.declare_part("usersuperset");
         meta.declare_part_subset(usersuper, userpart);
 
-        stkMeshIoBroker.populate_bulk_data();
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+        setup_mesh(1, 1, 2);
+        stk::mesh::BulkData &mesh = get_bulk();
 
         bool expect_supersets_to_work_with_shared_part = false;
 

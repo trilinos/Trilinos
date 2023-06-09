@@ -424,7 +424,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       std::stringstream ss;
       ss << "Error: the solution method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str().c_str());
-      break;
     }
     }
     t_factor = timer.seconds();
@@ -544,6 +543,14 @@ double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
   return Tacho::computeRelativeResidual(A, x, b);
+}
+
+template <typename VT, typename DT>
+void Driver<VT, DT>::computeSpMV(const value_type_array &ax, const value_type_matrix &x, value_type_matrix &b) {
+  CrsMatrixBase<value_type, device_type> A;
+  A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
+
+  return Tacho::computeSpMV(A, x, b);
 }
 
 template <typename VT, typename DT> int Driver<VT, DT>::exportFactorsToCrsMatrix(crs_matrix_type &A) {

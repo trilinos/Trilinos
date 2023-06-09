@@ -49,7 +49,7 @@
 #include <Teuchos_RCP.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // forward declaration for (fake) KokkosSerialWrapperNode
 // This is the node definition used if Epetra is enabled only
@@ -68,9 +68,9 @@ namespace KokkosClassic {
   class DefaultNode {
     public:
 # ifdef EPETRA_HAVE_OMP
-    typedef Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+    typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode DefaultNodeType;
 # else
-    typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DefaultNodeType;
 # endif
   };
 

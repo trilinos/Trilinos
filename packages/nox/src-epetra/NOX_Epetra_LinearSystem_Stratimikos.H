@@ -50,7 +50,7 @@
 
 #include "NOX_Common.H"
 
-#ifdef HAVE_NOX_STRATIMIKOS
+#ifdef NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
 
 #include "NOX_Epetra_LinearSystem.H"    // base class
 #include "NOX_Epetra_Vector.H"    // class data element
@@ -449,5 +449,5 @@ protected:
 
 } // namespace Epetra
 } // namespace NOX
-#endif //HAVE_NOX_STRATIMIKOS
+#endif // NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
 #endif

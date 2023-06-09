@@ -54,7 +54,6 @@
 
 #include <MueLu_SaPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_ScaledNullspaceFactory.hpp>
 #include <MueLu_NullspaceFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
@@ -72,7 +71,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
-#if defined(HAVE_MUELU_TPETRA)
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -184,11 +182,7 @@ namespace MueLuTests {
     TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
     TEST_EQUALITY(coarseLevel->GetKeepFlag("A",Acfact.get()), 0);
 
-#   else
-    out << "Skipping test because some required packages are not enabled (Tpetra)." << std::endl;
-#   endif
-
-  } 
+  }
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ScaledNullspaceFactory, Test0, SC, LO, GO, Node)

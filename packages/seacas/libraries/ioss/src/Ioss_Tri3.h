@@ -6,13 +6,15 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
 
 // STL Includes
 
 namespace Ioss {
-  class Tri3 : public Ioss::ElementTopology
+  class IOSS_EXPORT Tri3 : public Ioss::ElementTopology
   {
 
   public:
@@ -25,6 +27,7 @@ namespace Ioss {
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -47,8 +50,6 @@ namespace Ioss {
     Tri3();
 
   private:
-    static Tri3 instance_;
-
     Tri3(const Tri3 &) = delete;
   };
 } // namespace Ioss

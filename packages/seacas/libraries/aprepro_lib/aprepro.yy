@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -130,7 +130,7 @@ line:     '\n'                  { if (echo) aprepro.lexer->LexerOutput("\n", 1);
         | LBRACE exp RBRACE     { if (echo) {
                                      static char tmpstr[512];
                                      SEAMS::symrec *format = aprepro.getsym("_FORMAT");
-                                     int len = sprintf(tmpstr, format->value.svar.c_str(), $2);
+                                     int len = snprintf(tmpstr, 512, format->value.svar.c_str(), $2);
                                      aprepro.lexer->LexerOutput(tmpstr, len);
                                    }
                                 }
@@ -154,6 +154,10 @@ bool:     exp LT exp            { $$ = $1 < $3;                         }
         | exp LAND exp          { $$ = $1 && $3;                        }
         | bool LOR bool         { $$ = $1 || $3;                        }
         | bool LAND bool        { $$ = $1 && $3;                        }
+        | bool LOR exp          { $$ = $1 || $3;                        }
+        | bool LAND exp         { $$ = $1 && $3;                        }
+        | exp LOR bool          { $$ = $1 || $3;                        }
+        | exp LAND bool         { $$ = $1 && $3;                        }
         | LPAR bool RPAR        { $$ = $2;                              }
 ;
 
@@ -164,7 +168,7 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
 
-aexp:   AVAR                    { $$ = aprepro->make_array(*($1->value.avar)); }
+aexp:   AVAR                    { $$ = aprepro.make_array(*($1->value.avar)); }
         | AFNCT LPAR sexp RPAR  {
           if (arg_check($1, $1->value.arrfnct_c == NULL))
             $$ = (*($1->value.arrfnct_c))($3);
@@ -580,4 +584,3 @@ void SEAMS::Parser::error(const std::string& m)
 {
     aprepro.error(m);
 }
-

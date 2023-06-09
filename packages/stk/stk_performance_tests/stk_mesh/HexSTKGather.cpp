@@ -49,7 +49,6 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MemoryUsage.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk {
 namespace performance_tests {
@@ -71,7 +70,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
   std::vector<double> elem_centroid(spatial_dim, 0);
 
   const VectorField * coord_field = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
-  ThrowAssert(coord_field != nullptr);
+  STK_ThrowAssert(coord_field != nullptr);
 
   Selector local = meta.locally_owned_part();
 
@@ -79,10 +78,8 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
   std::vector<double> elem_node_coords;
 
-  size_t num_elems = 0;
   for(size_t ib=0; ib<buckets.size(); ++ib) {
     const Bucket& b = *buckets[ib];
-    num_elems += b.size();
     const size_t num_nodes = b.topology().num_nodes();
     const size_t len = num_nodes*spatial_dim;
     if (elem_node_coords.size() != len) elem_node_coords.resize(len);

@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -222,11 +222,11 @@ C     Was MDINIT previously called?
          IF (EUNIT .GT. 0) WRITE (EUNIT, *)'SECOND CALL TO MDINIT NOT ',
      *      'ALLOWED.'
       ELSE
-         LASTER = SUCESS
+         LASTER = SUCCESS
       END IF
       INIT = .TRUE.
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) LERROR = LASTER
+      IF (LASTER .NE. SUCCESS) LERROR = LASTER
       RETURN
 
 C***********************************************************************
@@ -268,12 +268,12 @@ C        Split mode - character and numeric data separate.
          ELSE
             LDICT = LPDICT
             LVOID = LPVOID
-            LASTER = SUCESS
+            LASTER = SUCCESS
          END IF
       END IF
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -325,14 +325,14 @@ C ... Using malloc/free -- ignore MCCOMP/MDDOMP Calls
 c      CALL MXCOMP (MYV, VOID, LVOID,
 c     *   NVOIDS, DPOINT, LDICT, NNAMES, CHRCOL, LASTER)
 
-c      IF (LASTER .EQ. SUCESS .AND. CHRCOL .EQ. 2) THEN
+c      IF (LASTER .EQ. SUCCESS .AND. CHRCOL .EQ. 2) THEN
 c         CALL MYCOMP (MYCHAR, VOID, LVOID,
 c     *      NVOIDS, DPOINT, LDICT, NNAMES, CHRCOL, LASTER)
 c      END IF
 
-      laster = SUCESS
+      laster = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -395,7 +395,7 @@ C     Was MDINIT previously called?
          write (eunit,*) 'MDDEL: ', NAME1
       end if
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -443,7 +443,7 @@ C     Was MCINIT previously called?
          write (eunit,*) 'MCDEL: ', NAME1
       end if
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -465,13 +465,13 @@ C     is flagged.
 
       IF (ENUM .GE. 1 .AND. ENUM .LE. NERVEC) THEN
          ERRVEC(ENUM) = COUNT
-         LASTER = SUCESS
+         LASTER = SUCCESS
       ELSE
          IF (EUNIT .GT. 0) WRITE (EUNIT, *) 'ILLEGAL ERROR FLAG NUMBER',
      *      ' SPECIFIED IN MDEFIX.'
          LASTER = BADCOD
       END IF
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -485,7 +485,7 @@ C***********************************************************************
 C     This section prints the error codes.
 
       CALL MXEROR (UNIT, LASTER, ERRVEC)
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -505,7 +505,7 @@ C     is returned.
       ELSE
          COUNT = -1
       END IF
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -548,9 +548,9 @@ c     *   OFFSET, DPOINT, LDICT, NNAMES,
 c     *   VOID, LVOID, NVOIDS, FILL, FDATA, CFILL, CFDATA, CHRNUM,
 c     *   CHRCOL, LASTER)
 c      DEFER = .FALSE.
-      laster = SUCESS
+      laster = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -577,7 +577,7 @@ C     Was MDINIT previously called?
 
       FDATA = TFILL
       FILL = .TRUE.
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       RETURN
 
 C***********************************************************************
@@ -606,7 +606,7 @@ C     Was MCINIT previously called?
       END IF
       CFDATA = TNAME1(1:1)
       CFILL = .TRUE.
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       RETURN
 
 C***********************************************************************
@@ -645,7 +645,7 @@ C     Find the name in the dictionary.
       CALL MXFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
 
-      IF (LASTER .EQ. SUCESS) THEN
+      IF (LASTER .EQ. SUCCESS) THEN
 
 C        Entry was found in dictionary.
 
@@ -659,7 +659,7 @@ C        Entry was found in dictionary.
       END IF
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -704,7 +704,7 @@ C     Find the name in the dictionary.
       CALL MYFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
 
-      IF (LASTER .EQ. SUCESS) THEN
+      IF (LASTER .EQ. SUCCESS) THEN
 
 C        Entry was found in dictionary.
 
@@ -720,7 +720,7 @@ C        Entry was found in dictionary.
       END IF
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -746,7 +746,7 @@ C     Was MDINIT previously called?
       END IF
 
       FILL = .FALSE.
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       RETURN
 
 C***********************************************************************
@@ -766,7 +766,7 @@ C     Was MCINIT previously called?
       END IF
 
       CFILL = .FALSE.
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       RETURN
 
 C***********************************************************************
@@ -934,7 +934,7 @@ C     Was MDINIT previously called?
      *        VOID, LVOID, NVOIDS, CHRCOL)
       end if
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -959,7 +959,7 @@ C     Was MDINIT previously called?
 
       CALL MXFREE (OFFSET, DICT, DPOINT, LDICT, NNAMES, CHRCOL, MYLOC)
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -1031,7 +1031,7 @@ C  (this is only a quick fix for the HP750 --- jrr 10/25/91)
          write (eunit,*) 'MDLONG: ', NAME1, INUM, newloc
       end if
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1109,7 +1109,7 @@ C  (this is only a quick fix for the HP750 --- jrr 10/25/91)
       end if
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1157,7 +1157,7 @@ C     Was MDINIT previously called?
          NSUV = NSUV + VOID(I,1,2)
          NSULV = MAX ( NSULV, VOID(I,1,2) )
   110 CONTINUE
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -1205,7 +1205,7 @@ C     Was MDINIT previously called?
   130 CONTINUE
       NSUV = NSUV * CHRNUM
       NSULV = NSULV * CHRNUM
-      LASTER = SUCESS
+      LASTER = SUCCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN
 
@@ -1255,7 +1255,7 @@ C     Find NAME1 in dictionary.
 
       CALL MXFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
-      IF (LASTER .EQ. SUCESS) THEN
+      IF (LASTER .EQ. SUCCESS) THEN
 
          LOC = DPOINT(ROW,1,1)
          LEN1 = DPOINT(ROW,1,2)
@@ -1270,7 +1270,7 @@ C        insert NAME2 with old pointer and length.
 
          CALL MXNSRT (NAME2, LOC, LEN1, DICT, DPOINT, LDICT,
      *      NNAMES, CHRCOL, LASTER)
-         IF (LASTER .NE. SUCESS) THEN
+         IF (LASTER .NE. SUCCESS) THEN
             CALL MXNSRT (NAME1, LOC, LEN1, DICT, DPOINT, LDICT,
      *         NNAMES, CHRCOL, TMP)
          END IF
@@ -1278,7 +1278,7 @@ C        insert NAME2 with old pointer and length.
       END IF
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1334,7 +1334,7 @@ C     Find NAME1 in dictionary.
 
       CALL MYFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
-      IF (LASTER .EQ. SUCESS) THEN
+      IF (LASTER .EQ. SUCCESS) THEN
 
          LOC = DPOINT(ROW,CHRCOL,1)
          LEN1 = DPOINT(ROW,CHRCOL,2)
@@ -1352,7 +1352,7 @@ C        insert NAME2 with old pointer and length.
 
          CALL MYNSRT (NAME2, LOC, LEN1, LEN2, DICT, DPOINT, LDICT,
      *      NNAMES, CHRCOL, LASTER)
-         IF (LASTER .NE. SUCESS) THEN
+         IF (LASTER .NE. SUCCESS) THEN
             CALL MYNSRT (NAME1, LOC, LEN1, LEN2, DICT, DPOINT, LDICT,
      *         NNAMES, CHRCOL, TMP)
          END IF
@@ -1360,7 +1360,7 @@ C        insert NAME2 with old pointer and length.
       END IF
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1417,7 +1417,7 @@ C     Was MDINIT previously called?
      *   DICT, DPOINT, LDICT, NNAMES, CHRCOL, NCOLP, LASTER)
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1463,7 +1463,7 @@ C     Was MCINIT previously called?
      *   CHRCOL, NCOLP, NEWLEN, LASTER)
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1543,7 +1543,7 @@ C  (this is only a quick fix for the HP750 --- jrr 10/25/91)
       end if
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1625,7 +1625,7 @@ C  (this is only a quick fix for the HP750 --- jrr 10/25/91)
       end if
 
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
-      IF (LASTER .NE. SUCESS) THEN
+      IF (LASTER .NE. SUCCESS) THEN
          LERROR = LASTER
          IF (EUNIT .GT. 0) THEN
             CALL MXEROR (EUNIT, LASTER, ERRVEC)
@@ -1644,7 +1644,7 @@ C***********************************************************************
 C     This section returns the total number of errors and the total
 C     amount of numeric storage assigned to arrays.
 
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       MNERRS = 0
       DO 140 I = 2, NERVEC
          MNERRS = MNERRS + ERRVEC(I)
@@ -1669,7 +1669,7 @@ C***********************************************************************
 C     This section returns the total number of errors and the total
 C     amount of character storage assigned to arrays.
 
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       MNERRS = 0
       DO 160 I = 2, NERVEC
          MNERRS = MNERRS + ERRVEC(I)
@@ -1713,7 +1713,7 @@ C     Was MDINIT previously called?
       END IF
 
       IF (DEFROK) DEFER = .TRUE.
-      ERRVEC(SUCESS) = ERRVEC(SUCESS) + 1
+      ERRVEC(SUCCESS) = ERRVEC(SUCCESS) + 1
       RETURN
 
       END

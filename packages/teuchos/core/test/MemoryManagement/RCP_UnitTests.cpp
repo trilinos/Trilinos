@@ -1116,6 +1116,23 @@ TEUCHOS_UNIT_TEST( RCP, Fix_createRCPWithBadDealloc )
 }
 
 
+/**
+ * @test Test the aliasing constructor.
+ */
+TEUCHOS_UNIT_TEST( RCP, aliasing_constructor )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>(1,2);
+  Teuchos::RCP<A> b_rcp = Teuchos::make_rcp<A>(2,3);
+  Teuchos::RCP<A> c_rcp(a_rcp, b_rcp.get());
+
+  TEST_ASSERT(Teuchos::nonnull(c_rcp));
+  TEST_EQUALITY_CONST(c_rcp.get(), b_rcp.get());
+  TEST_EQUALITY(c_rcp->A_g(), b_rcp->A_g());
+  TEST_EQUALITY(c_rcp->A_f(), b_rcp->A_f());
+  TEST_ASSERT( c_rcp.shares_resource(a_rcp) );
+}
+
+
 //
 // Test RCP/boost::shared_ptr covnersions
 //

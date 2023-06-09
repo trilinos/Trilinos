@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <functional>
+#include <algorithm>
 
 namespace independent_set
 {
@@ -14,43 +15,65 @@ template <class INFO_TYPE>
 class IndependentSetInfoToInfoGraph
 {
 public:
-    IndependentSetInfoToInfoGraph(const std::vector<INFO_TYPE> &infos, const typename INFO_TYPE::ConflictFinder &conflictFinder)
-    : mInfos(infos),
-      mConflictFinder(conflictFinder)
+    IndependentSetInfoToInfoGraph(const std::vector<INFO_TYPE> &infos)
+    : mInfos(infos)
     {
         build_overlapping_infos(infos, mConflictingIdsToContainingInfos);
     }
 
-    std::set<size_t> get_conflicting_infos_for(size_t iInfo) const
+    const std::vector<size_t> &get_infos_with_conflicting_id(typename INFO_TYPE::ExclusionIdentifierType id) const
     {
-      const auto & info = mInfos[iInfo];
-      std::set<size_t> conflictingInfos;
-
-      for(const size_t iInfoNbr : mConflictFinder.get_other_conflicting_infos(info))
-          conflictingInfos.insert(iInfoNbr);
-
-      for(const typename INFO_TYPE::ExclusionIdentifierType &conflictingId : info.get_conflicting_ids())
-          for(size_t iInfoNbr : mConflictingIdsToContainingInfos.at(conflictingId))
-              if(iInfo != iInfoNbr)
-                  conflictingInfos.insert(iInfoNbr);
-
-      return conflictingInfos;
+        return mConflictingIdsToContainingInfos.at(id);
     }
 
-    bool is_info_higher_priority_than_conflicting_neighbors(size_t iInfo, const std::function<bool(size_t, size_t)> & is_neighbor_higher_priority_than_info) const
+    template <typename FUNC_TO_CALL>
+    void for_each_conflicting_info(
+                            const size_t iInfo,
+                            const FUNC_TO_CALL &func) const
     {
-      const auto & info = mInfos[iInfo];
+        for(const typename INFO_TYPE::ExclusionIdentifierType &conflictingId : mInfos[iInfo].get_conflicting_ids())
+            for(size_t iInfoNbr : mConflictingIdsToContainingInfos.at(conflictingId))
+                if(iInfo != iInfoNbr)
+                    func(iInfoNbr);
+    }
 
-      for(const size_t iInfoNbr : mConflictFinder.get_other_conflicting_infos(info))
-         if (is_neighbor_higher_priority_than_info(iInfoNbr, iInfo))
-           return false;
+    template <typename FUNC_TO_CALL>
+    bool is_true_for_any_conflicting_info(
+                            const size_t iInfo,
+                            const FUNC_TO_CALL &func) const
+    {
+        for(const typename INFO_TYPE::ExclusionIdentifierType &conflictingId : mInfos[iInfo].get_conflicting_ids())
+            for(size_t iInfoNbr : mConflictingIdsToContainingInfos.at(conflictingId))
+                if(iInfo != iInfoNbr)
+                    if(func(iInfoNbr))
+                        return true;
+        return false;
+    }
 
-      for(const typename INFO_TYPE::ExclusionIdentifierType &conflictingId : info.get_conflicting_ids())
-          for(size_t iInfoNbr : mConflictingIdsToContainingInfos.at(conflictingId))
-              if(iInfo != iInfoNbr && is_neighbor_higher_priority_than_info(iInfoNbr, iInfo))
-                return false;
+    bool is_info_higher_priority_than_all_conflicting_neighbors(
+                            size_t iInfo,
+                            const typename INFO_TYPE::Comparator &infoComparator) const
+    {
+        if(is_true_for_any_conflicting_info(
+                                iInfo,
+                                [&](const size_t iAdjInfo)
+                                {
+                                    return !infoComparator.is_first_higher_priority_than_second(mInfos[iInfo], mInfos[iAdjInfo]);
+                                }))
+            return false;
+        return true;
+    }
 
-      return true;
+    bool is_lower_priority_than_any_neighbor(
+                            const size_t iInfo,
+                            const typename INFO_TYPE::Comparator &infoComparator) const
+    {
+        return is_true_for_any_conflicting_info(
+                                iInfo,
+                                [&](const size_t iAdjInfo)
+                                {
+                                    return infoComparator.is_first_higher_priority_than_second(mInfos[iAdjInfo], mInfos[iInfo]);
+                                });
     }
 
 private:
@@ -71,7 +94,6 @@ private:
     }
 
     const std::vector<INFO_TYPE> & mInfos;
-    const typename INFO_TYPE::ConflictFinder & mConflictFinder;
     std::unordered_map<typename INFO_TYPE::ExclusionIdentifierType, std::vector<size_t> >  mConflictingIdsToContainingInfos;
 };
 

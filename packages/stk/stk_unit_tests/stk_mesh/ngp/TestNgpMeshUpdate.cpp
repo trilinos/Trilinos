@@ -99,13 +99,13 @@ class BucketLayoutModification : public stk::unit_test_util::simple_fields::Mesh
 public:
   void setup_mesh_3hex_3block(unsigned bucketCapacity)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     ngp_unit_test_utils::setup_mesh_3hex_3block(get_bulk(), bucketCapacity);
   }
 
   void setup_mesh_3hex_2block(unsigned bucketCapacity)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     ngp_unit_test_utils::setup_mesh_3hex_2block(get_bulk(), bucketCapacity);
   }
 };

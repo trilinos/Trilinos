@@ -36,7 +36,7 @@ void parse_command_line(int argc,
         std::string usage = quickExample + commandLine.get_usage() + longExample;
         stk::parallel::print_and_exit(usage, comm);
     }
-    ThrowRequireMsg(state == stk::CommandLineParser::ParseComplete, stk::get_quick_error(execName, quickExample));
+    STK_ThrowRequireMsg(state == stk::CommandLineParser::ParseComplete, stk::get_quick_error(execName, quickExample));
 }
 
 namespace parallel {

@@ -74,19 +74,19 @@ protected:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    using device_type = typename MV::device_type;
+    using dev_type = typename MV::device_type;
     using val_type = typename MV::dot_type;
-    using STS = Kokkos::ArithTraits<val_type>;
-    using mag_type = typename STS::mag_type;
-    using STM = Kokkos::ArithTraits<mag_type>;
+    using ATS = Kokkos::ArithTraits<val_type>;
+    using magnitude_type = typename ATS::mag_type;
+    using ATM = Kokkos::ArithTraits<magnitude_type>;
 
-    const auto ONE  = STS::one ();
+    const auto ONE  = ATS::one ();
 
     SolverOutput<SC> output {};
 
     // scalars
-    mag_type PAP;
-    mag_type alpha;
+    magnitude_type PAP;
+    magnitude_type alpha;
 
     vec_type P  (B.getMap ());
     vec_type AP (B.getMap ());
@@ -95,17 +95,17 @@ protected:
     vec_type MR = * (R_MR.getVectorNonConst (1));
 
     // compute initial residual
-    Kokkos::View<val_type*, device_type> r_beta ("results[numVecs]", 2);
-    mag_type beta_old = STM::zero ();
-    mag_type r_norm = STM::zero ();
-    mag_type r_norm_orig = STM::zero ();
+    Kokkos::View<val_type*, dev_type> r_beta ("results[numVecs]", 2);
+    magnitude_type beta_old = ATM::zero ();
+    magnitude_type r_norm = ATM::zero ();
+    magnitude_type r_norm_orig = ATM::zero ();
 
     A.apply (X, R);
     R.update (ONE, B, -ONE);
 
     if (input.precoSide == "none") { // no preconditioner
       Tpetra::deep_copy (P, R);
-      beta_old = STS::real (R.dot (R));
+      beta_old = ATS::real (R.dot (R));
       r_norm = beta_old;
     }
     else {
@@ -117,14 +117,14 @@ protected:
       //TODO: idot is used for now.
       auto req = Tpetra::idot (r_beta, R_MR, R);
       req->wait ();
-      r_norm = STS::real (r_beta(0));
-      beta_old = STS::real (r_beta(1));
+      r_norm = ATS::real (r_beta(0));
+      beta_old = ATS::real (r_beta(1));
     }
     r_norm = std::sqrt (r_norm);
     r_norm_orig = r_norm;
 
     // quick-return
-    mag_type metric =
+    magnitude_type metric =
       this->getConvergenceMetric (r_norm, r_norm_orig, input);
     if (metric <= input.tol) {
       if (outPtr != nullptr) {
@@ -132,14 +132,14 @@ protected:
                 << " meets tolerance " << input.tol << endl;
       }
       output.absResid = r_norm;
-      output.relResid = STM::one ();
+      output.relResid = ATM::one ();
       output.numIters = 0;
       output.converged = true;
       return output;
     }
 
     // main loop
-    mag_type beta_new = STM::zero ();
+    magnitude_type beta_new = ATM::zero ();
     for (int iter = 0; iter < input.maxNumIters; ++iter) {
       if (outPtr != nullptr) {
         *outPtr << "Iteration " << (iter+1) << " of " << input.maxNumIters << ":" << endl;
@@ -148,13 +148,13 @@ protected:
       }
 
       A.apply (P, AP); // AP = A*P
-      PAP = STS::real (P.dot (AP));
+      PAP = ATS::real (P.dot (AP));
 
       if (outPtr != nullptr) {
         *outPtr << "PAP: " << PAP << endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION
-        (STS::real (PAP) <= STM::zero (), std::runtime_error,
+        (ATS::real (PAP) <= ATM::zero (), std::runtime_error,
 	 "At iteration " << (iter+1) << " out of " << input.maxNumIters
          << ", P.dot(AP) = " << PAP << " <= 0.  This usually means that "
 	 "the matrix A is not symmetric (Hermitian) positive definite.");
@@ -168,7 +168,7 @@ protected:
       R.update (static_cast<SC> (-alpha), AP, ONE); // R = R - alpha*AP
 
       if (input.precoSide == "none") { // no preconditioner
-        beta_new = STS::real (R.dot (R));
+        beta_new = ATS::real (R.dot (R));
         r_norm = beta_new;
       }
       else {
@@ -176,8 +176,8 @@ protected:
         //TODO: idot is used to compute [MR, R]'*[R] for now.
         auto req = Tpetra::idot (r_beta, R_MR, R);
         req->wait ();
-        r_norm = STS::real (r_beta(0));
-        beta_new = STS::real (r_beta(1));
+        r_norm = ATS::real (r_beta(0));
+        beta_new = ATS::real (r_beta(1));
       }
       r_norm = std::sqrt (r_norm);
       metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
@@ -195,7 +195,7 @@ protected:
         return output;
       }
       else if (iter + 1 < input.maxNumIters) { // not last iteration
-        const mag_type beta = beta_new / beta_old;
+        const magnitude_type beta = beta_new / beta_old;
         if (input.precoSide == "none") {
           P.update (ONE, R, static_cast<SC> (beta)); // P += beta*R
         }

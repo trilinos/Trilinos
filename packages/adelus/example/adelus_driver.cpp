@@ -238,7 +238,7 @@ int main( int argc, char* argv[] )
     ViewVectorType_Host h_X0( "h_X0", N );                                 //store the referencen solution vector on host for error checking
 
     //2. Randomly generate the assigned matrix on each MPI process and the reference solution vector
-    uint64_t seed = Kokkos::Impl::clock_tic() + rank;
+    uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count() + rank;
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
     // Reference solution (assumming one solution vector)

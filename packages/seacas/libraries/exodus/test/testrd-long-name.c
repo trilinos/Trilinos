@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -394,7 +394,7 @@ int main(int argc, char **argv)
       printf("name = '%s'\n", nset_names[i]);
       free(nset_names[i]);
       node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
-      dist_fact = (float *)calloc(num_nodes_in_set, sizeof(float));
+      dist_fact = (float *)calloc(num_df_in_set, sizeof(float));
 
       error = ex_get_set(exoid, EX_NODE_SET, ids[i], node_list, NULL);
       printf("\nafter ex_get_node_set, error = %3d\n", error);
@@ -685,15 +685,12 @@ int main(int argc, char **argv)
 
       error = ex_inquire(exoid, EX_INQ_SS_DF_LEN, &df_list_len, &fdum, cdum);
       printf("\nafter ex_inquire: EX_INQ_SS_DF_LEN = %d,  error = %d\n", df_list_len, error);
-    }
 
-    /* read concatenated side sets; this produces the same information as
-     * the above code which reads individual side sets
-     */
+      /* read concatenated side sets; this produces the same information as
+       * the above code which reads individual side sets
+       */
 
-    /* concatenated side set read */
-
-    if (num_side_sets > 0) {
+      /* concatenated side set read */
       struct ex_set_specs set_specs;
 
       ids              = (int *)calloc(num_side_sets, sizeof(int));

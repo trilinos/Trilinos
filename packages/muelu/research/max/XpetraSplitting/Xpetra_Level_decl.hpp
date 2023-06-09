@@ -65,7 +65,7 @@ namespace Xpetra{
 		typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> multivector_type;
 		typedef Matrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > matrix_type;
 
-		public: 
+		public:
 
 			//! Constructors/destructors
 			//@{	
@@ -80,10 +80,10 @@ namespace Xpetra{
 			//! Public methods
 			//@{
 			virtual void
-				apply (const multivector_type& X, multivector_type& Y, 
-				Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-				Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), 
-				Scalar beta = Teuchos::ScalarTraits<Scalar>::zero())const{}; 
+				apply (const multivector_type& X, multivector_type& Y,
+				Teuchos::ETransp mode = Teuchos::NO_TRANS,
+				Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+				Scalar beta = Teuchos::ScalarTraits<Scalar>::zero())const{};
 
 			virtual bool hasTransposeApply() const { return false; }
 
@@ -100,7 +100,7 @@ namespace Xpetra{
 			//! Extract regionToAll from the level
 			Array<Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > GetRegionToAll() const;
 
-			// Extract the level ID 
+			// Extract the level ID
 			GlobalOrdinal GetLevelID() const {return levelID_;}
 
 			//! Take a region index and returns the composite index for a given mesh node
@@ -150,7 +150,7 @@ namespace Xpetra{
 			//! Region operators
 			Array<RCP<matrix_type> > regionA_;
 
-			//! Region grid transfers 
+			//! Region grid transfers
 			Array<RCP<matrix_type> > regionP_;
 			Array<RCP<matrix_type> > regionR_;
 

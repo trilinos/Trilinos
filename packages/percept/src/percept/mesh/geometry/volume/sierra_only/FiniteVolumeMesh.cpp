@@ -56,8 +56,8 @@ namespace percept {
     // const stk::mesh::MetaData & meta_data = bulkData_.mesh_meta_data();
     // //STK Fields
     // coordinatesField_ = &bulkData_.current_stk_coordinates();
-    // controlVolumeField_ = meta_data.get_field<GeneralField>(stk::topology::NODE_RANK, sName.control_volume);
-    // scVolumeField_ = meta_data.get_field<GeneralField>(stk::topology::ELEMENT_RANK, sName.subcontrol_volume);
+    // controlVolumeField_ = meta_data.get_field<GeneralField_type>(stk::topology::NODE_RANK, sName.control_volume);
+    // scVolumeField_ = meta_data.get_field<GeneralField_type>(stk::topology::ELEMENT_RANK, sName.subcontrol_volume);
 
   }
 
@@ -345,7 +345,7 @@ namespace percept {
       {
         nodeList.insert(nodes[n]);
       }
-    ThrowRequire((int)nodeList.size() == numNodes);
+    STK_ThrowRequire((int)nodeList.size() == numNodes);
 
     if (top.value() == stk::topology::HEX_8) {
 
@@ -393,7 +393,7 @@ namespace percept {
 
     } else if (top.value() == stk::topology::WEDGE_6) {
 
-      ThrowRequire(6 == numNodes);
+      STK_ThrowRequire(6 == numNodes);
       wedgeSubcontrolCoords(centroid, subcontrol_elem_coords);
 
       for (int n = 0; n < numNodes; ++n) {
@@ -415,7 +415,7 @@ namespace percept {
 
     } else if (top.value() == stk::topology::PYRAMID_5) {
 
-      ThrowRequire(5 == numNodes);
+      STK_ThrowRequire(5 == numNodes);
       pyramidSubcontrolCoords(centroid, subcontrol_elem_coords);
 
       for (int n = 0; n < numNodes - 1; ++n) //skip apex since it is an octohedron not a hex

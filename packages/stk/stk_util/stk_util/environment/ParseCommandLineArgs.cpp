@@ -58,7 +58,7 @@ void make_sure_all_required_were_found(const OptionsSpecification& optionsDesc,
                                        const ParsedOptions& parsedOptions)
 {
   for(const auto& option : optionsDesc.get_options_plus_sub_options()) {
-    ThrowRequireMsg(!option->isRequired || parsedOptions.count(option->name) == 1,
+    STK_ThrowRequireMsg(!option->isRequired || parsedOptions.count(option->name) == 1,
                     "Error in stk::parse_command_line_args: "
                     << "Required option '"<<dash_it(option->name)<<"' not found");
   }
@@ -95,7 +95,7 @@ void parse_command_line_args(int argc, const char** argv,
       argContainedEquals = true;
       value = optionKey.substr(posOfEqualSign+1);
       optionKey = optionKey.substr(0, posOfEqualSign);
-      ThrowRequireMsg(!value.empty(), "stk::parse_command_line_args: Missing value for option " << dash_it(optionKey));
+      STK_ThrowRequireMsg(!value.empty(), "stk::parse_command_line_args: Missing value for option " << dash_it(optionKey));
     }
 
     const Option& option = optionsDesc.find_option(optionKey);
@@ -115,7 +115,7 @@ void parse_command_line_args(int argc, const char** argv,
         ++i;
       }
       else {
-        ThrowRequireMsg(option.isImplicit, "stk::parse_command_line_args: Missing value for option " << dash_it(option.name));
+        STK_ThrowRequireMsg(option.isImplicit, "stk::parse_command_line_args: Missing value for option " << dash_it(option.name));
         value = option.defaultValue;
       }
     }

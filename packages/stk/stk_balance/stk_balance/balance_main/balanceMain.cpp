@@ -44,7 +44,7 @@ int main(int argc, const char** argv)
   stk::balance::LifeCycle balance(MPI_COMM_WORLD, argc, argv);
   balance.run();
 
-  Kokkos::finalize_all();
+  Kokkos::finalize();
   MPI_Finalize();
 
   return balance.exit_code();

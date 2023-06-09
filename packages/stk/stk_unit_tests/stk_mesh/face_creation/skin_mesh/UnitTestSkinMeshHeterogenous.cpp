@@ -11,7 +11,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -64,7 +63,7 @@ TEST(ElementGraph, heterogeneous_mesh)
       stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
           meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
       stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3, nullptr);
-      stk::io::set_field_output_type(node_coord, "Vector_3D");
+      stk::io::set_field_output_type(node_coord, stk::io::FieldOutputType::VECTOR_3D);
 
       stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta_data , node_coord );
       meta_data.commit();
@@ -75,6 +74,9 @@ TEST(ElementGraph, heterogeneous_mesh)
         stk::io::write_mesh(fileName, bulk_data);
       }
     }
+
+    stk::parallel_machine_barrier(comm);
+
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, comm, stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
     stk::mesh::BulkData& bulk_data = *bulkPtr;

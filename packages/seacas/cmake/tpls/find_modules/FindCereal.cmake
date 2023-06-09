@@ -59,7 +59,7 @@
 #    Control the search through Cereal_DIR or setting environment variable
 #    Cereal_ROOT to the Cereal installation prefix.
 #
-#    This module does not search default paths! 
+#    This module does not search default paths!
 #
 #    Following variables are set:
 #    Cereal_FOUND            (BOOL)       Flag indicating if Cereal was found
@@ -85,11 +85,11 @@ if (NOT Cereal_ROOT AND Cereal_DIR )
   message(WARNING "The configuration parameter Cereal_DIR is deprecated."
     " Please use Cereal_ROOT instead to define the Cereal installation")
   set(Cereal_ROOT ${Cereal_DIR})
-endif()  
+endif()
 
 # Add the usual paths for searching using the Cereal_ROOT variable
 if (Cereal_ROOT)
-  list(APPEND _cereal_INCLUDE_SEARCH_DIRS 
+  list(APPEND _cereal_INCLUDE_SEARCH_DIRS
     ${Cereal_ROOT}/include
     ${Cereal_ROOT})
 endif()
@@ -134,7 +134,7 @@ else( Cereal_INCLUDE_DIRS )
       set(Cereal_INCLUDE_DIR "Cereal_INCLUDE_DIR-NOTFOUND")
     endif()
 
-  else() 
+  else()
 
     set(cereal_inc_suffixes "include")
     if(Cereal_ROOT)
@@ -150,7 +150,7 @@ else( Cereal_INCLUDE_DIRS )
       else()
         message(SEND_ERROR "Cereal_ROOT=${Cereal_ROOT} does not exist")
         set(Cereal_INCLUDE_DIR "Cereal_INCLUDE_DIR-NOTFOUND")
-      endif()    
+      endif()
 
 
     else()
@@ -171,7 +171,7 @@ else( Cereal_INCLUDE_DIRS )
   # Define the INCLUDE_DIRS
   set(Cereal_INCLUDE_DIRS ${Cereal_INCLUDE_DIR})
 
-endif( Cereal_INCLUDE_DIRS )    
+endif( Cereal_INCLUDE_DIRS )
 
 
 # Send useful message if everything is found

@@ -73,7 +73,7 @@ namespace MueLu {
     | visualization: output filename           | string  | viz%LEVELID  |  | * |   | filename for VTK-style visualization output |
     | visualization: output file: time step    | int     | 0 |  | * |   | time step (overwrites '%TIMESTEP' in output file name) |
     | visualization: output file: iter         | int     | 0 |  | * |   | nonlinear iteration (overwrites '%ITER' in output file name) |
-    | visualization: style                     | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", "Convex Hulls" or "Alpha Hulls" |
+    | visualization: style                     | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", or "Convex Hulls" |
     | visualization: fine graph edges | bool | false  |   | * |  | Draw fine node connections in VTK output (only works for 1 dofs per node!) |
     | visualization: build colormap | bool | false  |   | * |  | Output a random color map for paraView in a separate xml file. |
     | P | Factory | Teuchos::null  |   | * | * | Prolongator factory. The user has to declare either P or Ptent but not both at the same time. |

@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/String.hpp"       // for String, operator<<
 #include "stk_util/util/FeatureTest.hpp"  // for SIERRA_USE_PLATFORM_DEMANGLER
 #include <cstddef>                        // for size_t
@@ -516,7 +517,7 @@ std::istream &getline(std::istream &is, sierra::String &s, char eol = '\n');
  * @brief Class <b>less_nocase</b> implements a case insensitive compare functor.
  */
 template <class T>
-struct less_nocase : public std::binary_function<T, T, bool>
+struct less_nocase
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -549,7 +550,7 @@ struct less_nocase : public std::binary_function<T, T, bool>
  * @brief Class specialization <b>less_nocase</b> for <b>String</b>.
  */
 template <>
-struct less_nocase<String> : public std::binary_function<String, String, bool>
+struct less_nocase<String>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -582,7 +583,7 @@ struct less_nocase<String> : public std::binary_function<String, String, bool>
  * @brief Class specialization <b>less_nocase</b> for <b>std::string</b>.
  */
 template <>
-struct less_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
+struct less_nocase<std::string>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -615,7 +616,7 @@ struct less_nocase<std::string> : public std::binary_function<std::string, std::
  * @brief Class specialization <b>less_nocase</b> for <b>char const pointer</b>.
  */
 template<>
-struct less_nocase<const char *> : public std::binary_function<const char *, const char *, bool>
+struct less_nocase<const char *>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -636,128 +637,6 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
       for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs); ++lhs, ++rhs)
 	;
       result = std::tolower(*lhs) < std::tolower(*rhs);
-    }
-    return result ;
-  }
-};
-
-/**
- * @brief Class <b>equal_nocase</b> implements a case insensitive compare functor.
- */
-template <class T>
-struct equal_nocase : public std::binary_function<T, T, bool>
-{
-  /**
-   * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
-   * <b>rhs</b>.
-   *
-   * @param lhs		a <b>T</b> const reference to the left hand side value.
-   *
-   * @param rhs		a <b>T</b> cosnt reference to the right hand side value.
-   *
-   * @return		a <b>bool</b> value of true if the <b>lhs</b> is less than
-   *			<b>rhs</b>
-   */
-  bool operator()(const T &lhs, const T &rhs) const {
-    typename T::const_iterator lhs_it = lhs.begin();
-    typename T::const_iterator rhs_it = rhs.begin();
-    typename T::const_iterator lhs_it_end = lhs.end();
-    typename T::const_iterator rhs_it_end = rhs.end();
-
-    for (; lhs_it != lhs_it_end && rhs_it != rhs_it_end; ++lhs_it, ++rhs_it) {
-      if (std::tolower(*lhs_it) != std::tolower(*rhs_it))
-	return false;
-    }
-
-    return lhs_it == lhs_it_end && rhs_it == rhs_it_end;
-  }
-};
-
-/**
- * @brief Class specialization <b>equal_nocase</b> for <b>String</b>.
- */
-template <>
-struct equal_nocase<String> : public std::binary_function<String, String, bool>
-{
-  /**
-   * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
-   * <b>rhs</b>.
-   *
-   * @param lhs		a <b>String</b> const reference to the left hand side value.
-   *
-   * @param rhs		a <b>String</b> cosnt reference to the right hand side value.
-   *
-   * @return		a <b>bool</b> value of true if the <b>lhs</b> is less than
-   *			<b>rhs</b>
-   */
-  bool operator()(const String &lhs, const String &rhs) const {
-    const char * lhs_it = lhs.c_str();
-    const char * rhs_it = rhs.c_str();
-    const char * lhs_it_end = lhs_it + lhs.length();
-    const char * rhs_it_end = rhs_it + rhs.length();
-
-    for (; lhs_it != lhs_it_end && rhs_it != rhs_it_end; ++lhs_it, ++rhs_it) {
-      if (std::tolower(*lhs_it) != std::tolower(*rhs_it))
-	return false;
-    }
-
-    return lhs_it == lhs_it_end && rhs_it == rhs_it_end;
-  }
-};
-
-/**
- * @brief Class specialization <b>equal_nocase</b> for <b>std::string</b>.
- */
-template <>
-struct equal_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
-{
-  /**
-   * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
-   * <b>rhs</b>.
-   *
-   * @param lhs		a <b>std::string</b> const reference to the left hand side value.
-   *
-   * @param rhs		a <b>std::string</b> cosnt reference to the right hand side value.
-   *
-   * @return		a <b>bool</b> value of true if the <b>lhs</b> is less than
-   *			<b>rhs</b>
-   */
-  bool operator()(const std::string &lhs, const std::string &rhs) const {
-    const char * lhs_it = lhs.c_str();
-    const char * rhs_it = rhs.c_str();
-    const char * lhs_it_end = lhs_it + lhs.length();
-    const char * rhs_it_end = rhs_it + rhs.length();
-
-    for (; lhs_it != lhs_it_end && rhs_it != rhs_it_end; ++lhs_it, ++rhs_it) {
-      if (std::tolower(*lhs_it) != std::tolower(*rhs_it))
-	return false;
-    }
-
-    return lhs_it == lhs_it_end && rhs_it == rhs_it_end;
-  }
-};
-
-/**
- * @brief Class specialization <b>equal_nocase</b> for <b>char const pointer</b>.
- */
-template <>
-struct equal_nocase<const char *> : public std::binary_function<const char *, const char *, bool> {
-  /**
-   * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
-   * <b>rhs</b>.
-   *
-   * @param lhs		a <b>char</b> const pointer to the left hand side value.
-   *
-   * @param rhs		a <b>char</b> cosnt pointer to the right hand side value.
-   *
-   * @return		a <b>bool</b> value of true if the <b>lhs</b> is less than
-   *			<b>rhs</b>
-   */
-  bool operator()(const char *lhs , const char *rhs) const {
-    bool result = lhs == rhs ;
-    if ( ! result && nullptr != lhs && nullptr != rhs ) {
-      for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs) ; ++lhs, ++rhs);
-      result = 0 == *lhs && 0 == *rhs ;
     }
     return result ;
   }

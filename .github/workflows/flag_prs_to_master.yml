@@ -1,0 +1,32 @@
+name: Flag PRs to master by adding the AT WIP keyword 
+# Unless you are the autotester, of course
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [master]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: read
+  pull-requests: write
+  
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Add label
+      uses: actions-ecosystem/action-add-labels@v1     
+      if: "!contains(github.event.sender.login,'trilinos-autotester')"
+      with:
+        labels: "AT: WIP"     
+    - name: Add comment
+      uses: mshick/add-pr-comment@v2
+      if: "!contains(github.event.sender.login,'trilinos-autotester')"
+      with:
+         message: |
+            You seem to have created a PR on master.  This is not allowed behavior, so we've blocked your PR.  Please switch your PR to target the develop branch and remove the AT: WIP label.
+      

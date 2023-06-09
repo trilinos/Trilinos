@@ -125,7 +125,7 @@ bool is_interior_point(const Point& point, const std::vector<Point>& tri)
     Vec v2 = b - a;
 
     double denom = det(v1, v2);
-    ThrowRequireMsg(denom > 0, "denominator cannot be zero");
+    STK_ThrowRequireMsg(denom > 0, "denominator cannot be zero");
     double alpha =  (det(p, v2) - det(v0, v2)) / denom;
     double beta  = -(det(p, v1) - det(v0, v1)) / denom;
     return (alpha >= 0 && beta >= 0 && alpha + beta <= 1);

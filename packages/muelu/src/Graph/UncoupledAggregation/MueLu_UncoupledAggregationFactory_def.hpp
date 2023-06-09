@@ -58,7 +58,6 @@
 #include "MueLu_InterfaceAggregationAlgorithm.hpp"
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm.hpp"
@@ -70,8 +69,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -148,8 +145,8 @@ namespace MueLu {
       }
     }
 
-    // request special data necessary for InterfaceAggregation  
-    if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+    // request special data necessary for InterfaceAggregation
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true){
       if(currentLevel.GetLevelID() == 0) {
         if(currentLevel.IsAvailable("nodeOnInterface", NoFactory::get())) {
           currentLevel.DeclareInput("nodeOnInterface", NoFactory::get(), this);
@@ -224,8 +221,8 @@ namespace MueLu {
     // construct aggStat information
     std::vector<unsigned> aggStat(numRows, READY);
 
-    // interface 
-    if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+    // interface
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true){
       Teuchos::Array<LO> nodeOnInterface = Get<Array<LO>>(currentLevel,"nodeOnInterface");
       for (LO i = 0; i < numRows; i++) {
         if (nodeOnInterface[i])
@@ -303,8 +300,6 @@ namespace MueLu {
       RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>>>(currentLevel, "AggregateQualities");
     }
 
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

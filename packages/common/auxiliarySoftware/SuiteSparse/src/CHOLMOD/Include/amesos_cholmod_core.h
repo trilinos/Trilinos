@@ -832,7 +832,7 @@ typedef struct cholmod_common_struct
 			 * calls to cholmod rouines (Flag [i] < mark) */
 
     void *Head ;	/* size nrow+1, an integer array. Kept cleared between
-			 * calls to cholmod routines (Head [i] = EMPTY) */
+			 * calls to cholmod routines (Head [i] = TRILINOS_CHOLMOD_EMPTY) */
 
     void *Xwork ; 	/* a double array.  Its size varies.  It is nrow for
 			 * most routines (cholmod_rowfac, cholmod_add,
@@ -1014,7 +1014,7 @@ int amesos_cholmod_l_free_work (cholmod_common *) ;
     Common->mark++ ; \
     if (Common->mark <= 0) \
     { \
-        Common->mark = EMPTY ; \
+        Common->mark = TRILINOS_CHOLMOD_EMPTY ; \
         CHOLMOD (clear_flag) (Common) ; \
     } \
 }

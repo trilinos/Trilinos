@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,7 @@
 #include <exodusII.h>
 
 #include <Ionit_Initializer.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SmartAssert.h>
 #include <Ioss_Utils.h>
@@ -133,7 +134,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
   }
 
   double end = Ioss::Utils::timer();
-  double hwm = (double)Ioss::Utils::get_hwm_memory_info() / 1024.0 / 1024.0;
+  double hwm = (double)Ioss::MemoryUtils::get_hwm_memory_info() / 1024.0 / 1024.0;
   if (pu.parallel_rank() == 0) {
     fmt::print("\n Total Execution Time     = {:.5} seconds.\n", end - begin);
     fmt::print(" High-Water Memory Use    = {:.3} MiBytes.\n", hwm);

@@ -74,9 +74,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_CreateEpetraPreconditioner.hpp>
 #include <EpetraExt_MMHelpers.h>
