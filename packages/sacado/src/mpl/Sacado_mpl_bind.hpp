@@ -32,8 +32,9 @@
 #ifndef SACADO_MPL_BIND_HPP
 #define SACADO_MPL_BIND_HPP
 
+#include <type_traits>
+
 #include "Sacado_mpl_placeholders.hpp"
-#include "Sacado_mpl_is_same.hpp"
 #include "Sacado_mpl_apply_wrap.hpp"
 
 namespace Sacado {
@@ -60,7 +61,7 @@ namespace Sacado {
                 class U5=mpl::none> 
       struct apply : 
         apply_wrap1<F,
-                    typename hk<is_same<T1,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value,
                                 T1,
                                 U1,U2,U3,U4,U5>::type> {};
     };
@@ -74,11 +75,11 @@ namespace Sacado {
                 class U5=mpl::none> 
       struct apply : 
         apply_wrap2<F,
-                    typename hk<is_same<T1,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value,
                                 T1,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value,
                                 T2,
                                 U1,U2,U3,U4,U5>::type> {};
     };
@@ -92,16 +93,16 @@ namespace Sacado {
                 class U5=mpl::none> 
       struct apply : 
         apply_wrap3<F,
-                    typename hk<is_same<T1,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value,
                                 T1,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value,
                                 T2,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value,
                                 T3,
                                 U1,U2,U3,U4,U5>::type> {};
     };
@@ -115,22 +116,22 @@ namespace Sacado {
                 class U5=mpl::none> 
       struct apply : 
         apply_wrap4<F,
-                    typename hk<is_same<T1,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value,
                                 T1,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value,
                                 T2,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value,
                                 T3,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value+
-                                is_same<T4,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value+
+                                std::is_same<T4,placeholders::_>::value,
                                 T4,
                                 U1,U2,U3,U4,U5>::type> {};
     };
@@ -144,29 +145,29 @@ namespace Sacado {
                 class U5=mpl::none> 
       struct apply : 
         apply_wrap5<F,
-                    typename hk<is_same<T1,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value,
                                 T1,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value,
                                 T2,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value,
                                 T3,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value+
-                                is_same<T4,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value+
+                                std::is_same<T4,placeholders::_>::value,
                                 T4,
                                 U1,U2,U3,U4,U5>::type,
-                    typename hk<is_same<T1,placeholders::_>::value+
-                                is_same<T2,placeholders::_>::value+
-                                is_same<T3,placeholders::_>::value+
-                                is_same<T4,placeholders::_>::value+
-                                is_same<T5,placeholders::_>::value,
+                    typename hk<std::is_same<T1,placeholders::_>::value+
+                                std::is_same<T2,placeholders::_>::value+
+                                std::is_same<T3,placeholders::_>::value+
+                                std::is_same<T4,placeholders::_>::value+
+                                std::is_same<T5,placeholders::_>::value,
                                 T5,
                                 U1,U2,U3,U4,U5>::type> {};
     };

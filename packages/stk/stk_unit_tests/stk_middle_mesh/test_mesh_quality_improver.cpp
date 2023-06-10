@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 
-#include "boundary_fixture.hpp"
-#include "create_mesh.hpp"
-#include "create_mesh_quality_improver.hpp"
-#include "mesh_boundary_snapper.hpp"
-#include "mesh_quality_improver.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/boundary_fixture.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/create_mesh_quality_improver.hpp"
+#include "stk_middle_mesh/mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_quality_improver.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 #include "util/meshes.hpp"
 
-#include "mesh_io.hpp" //TODO: DEBUGGING
+#include "stk_middle_mesh/mesh_io.hpp" //TODO: DEBUGGING
 
 namespace stk {
 namespace middle_mesh {

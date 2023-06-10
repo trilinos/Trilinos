@@ -1350,8 +1350,10 @@ fourthKindApplyImpl (const op_type& A,
   MV& Z = *Z_ptr;
   
   // Store 4th-kind result (needed as temporary for bootstrapping opt. 4th-kind Chebyshev)
-  MV X4 (B.getMap (), B.getNumVectors (), false);
-  
+  // Fetch the second cached temporary (multi)vector.
+  Teuchos::RCP<MV> X4_ptr = makeSecondTempMultiVector (B);
+  MV& X4 = *X4_ptr;
+
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     
@@ -1652,6 +1654,23 @@ makeTempMultiVector (const MV& B)
   }
   return W_;
 }
+
+template<class ScalarType, class MV>
+Teuchos::RCP<MV>
+Chebyshev<ScalarType, MV>::
+makeSecondTempMultiVector (const MV& B)
+{
+  // ETP 02/08/17:  We must check not only if the temporary vectors are
+  // null, but also if the number of columns match, since some multi-RHS
+  // solvers (e.g., Belos) may call apply() with different numbers of columns.
+
+  const size_t B_numVecs = B.getNumVectors ();
+  if (W2_.is_null () || W2_->getNumVectors () != B_numVecs) {
+    W2_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, false));
+  }
+  return W2_;
+}
+
 
 template<class ScalarType, class MV>
 std::string

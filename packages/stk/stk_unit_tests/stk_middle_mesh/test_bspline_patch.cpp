@@ -1,4 +1,4 @@
-#include "bspline_patch.hpp"
+#include "stk_middle_mesh/bspline_patch.hpp"
 #include "gtest/gtest.h"
 #include <fstream>
 

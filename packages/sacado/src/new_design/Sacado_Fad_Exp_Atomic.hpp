@@ -314,7 +314,7 @@ namespace Sacado {
           desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
           return_type return_val = *dest;
           *dest                  = op.apply(return_val, val);
-          desul:atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
           if (threadIdx.x == 0)
             desul::Impl::unlock_address_hip((void*)dest_val, scope);
           return return_val;

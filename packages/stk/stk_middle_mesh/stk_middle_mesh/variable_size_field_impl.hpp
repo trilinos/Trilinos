@@ -10,6 +10,53 @@ namespace mesh {
 namespace impl {
 
 template <typename T>
+class IteratorRange
+{
+  public:
+    IteratorRange(T* begin, T* end) :
+      m_begin(begin),
+      m_end(end)
+    {}
+
+    T* begin() { return m_begin;}
+
+    const T* cbegin() const { return m_begin;}
+
+    T* end() { return m_end; }
+
+    const T* cend() {return m_end; }
+
+  private:
+    T* m_begin;
+    T* m_end;
+};
+
+template <typename T>
+class ConstIteratorRange
+{
+  public:
+    ConstIteratorRange(const T* begin, const T* end) :
+      m_begin(begin),
+      m_end(end)
+    {}
+    
+    const T* begin() const { return m_begin;}
+
+    const T* cbegin() const { return m_begin;}
+
+    const T* end() const {return m_end; }
+
+    const T* cend() const {return m_end; }
+
+
+  private:
+    const T* m_begin;
+    const T* m_end;
+}; 
+
+
+
+template <typename T>
 class VariableSizeFieldForDimension
 {
   public:
@@ -26,12 +73,26 @@ class VariableSizeFieldForDimension
       return m_values[idx];
     }
 
+    IteratorRange<T> operator()(MeshEntityPtr entity, int node)
+    {
+      assert(get_type_dimension(entity->get_type()) == m_entityDimension);
+      const Indices& idxs = m_indices[get_indices_idx(entity, node)];
+      return {&(m_values[0]) + idxs.start, &(m_values[0]) + idxs.onePastTheEnd};
+    }    
+
     const T& operator()(MeshEntityPtr entity, int node, int component) const
     {
       assert(get_type_dimension(entity->get_type()) == m_entityDimension);
       int idx = get_value_idx(entity, node, component);
       return m_values[idx];
     }
+
+    ConstIteratorRange<T> operator()(MeshEntityPtr entity, int node) const
+    {
+      assert(get_type_dimension(entity->get_type()) == m_entityDimension);
+      const Indices& idxs = m_indices[get_indices_idx(entity, node)];
+      return {&(m_values[0]) + idxs.start, &(m_values[0]) + idxs.onePastTheEnd};
+    } 
 
     void insert(MeshEntityPtr entity, int node, const T& val = T())
     {
@@ -60,6 +121,28 @@ class VariableSizeFieldForDimension
           m_freeIndices.push_back(false);
           idxs.onePastTheEnd++;
         }
+      }
+    }
+
+    void resize(MeshEntityPtr entity, int node, int newSize, const T& val=T())
+    {
+      assert(get_type_dimension(entity->get_type()) == m_entityDimension);
+      assert(newSize >= 0);
+
+      Indices& idxs = m_indices[get_indices_idx(entity, node)];
+      int currSize = get_num_comp(idxs);
+      if (newSize > currSize)
+      {
+        int numNewEntries = newSize - currSize;
+        for (int i=0; i < numNewEntries; ++i)
+          insert(entity, node, val);
+      } else
+      {
+        int newEnd = idxs.start + newSize;
+        for (int i=newEnd; i < idxs.onePastTheEnd; ++i)
+          m_freeIndices[i] = true;
+
+        idxs.onePastTheEnd = newEnd;
       }
     }
 

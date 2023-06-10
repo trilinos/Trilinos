@@ -48,7 +48,7 @@
     In order to test significant configurations, we consider 4 mappings of the reference tetrahedron
     to the first (physical) tetrahedron, so that the common face is mapped from all the 4 faces
     of the reference tetrahedron.
-    Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common face are permuted (6 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -145,7 +145,7 @@ int InterpolationProjectionTet(const bool verbose) {
   pickTest = true;
   /* initialize random seed: */
   std::srand (std::time(NULL));
-  int configuration = std::rand() % 12;
+  int configuration = std::rand() % 24;
   elemPermutation = configuration % 4;
   sharedSidePermutation = configuration/4;
   *outStream << "Randomly picked configuration (tet premutation, shared face permutation): (" << elemPermutation << ", " <<sharedSidePermutation << ")" << std::endl;

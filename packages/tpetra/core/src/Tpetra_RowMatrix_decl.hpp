@@ -230,6 +230,9 @@ namespace Tpetra {
     /// zeros count as "entries."
     virtual size_t getGlobalMaxNumRowEntries () const = 0;
 
+    //! The number of degrees of freedom per mesh point.
+    virtual local_ordinal_type getBlockSize () const = 0;
+
     /// \brief Maximum number of entries in any row of the matrix,
     ///   on this process.
     ///

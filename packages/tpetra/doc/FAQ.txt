@@ -122,8 +122,8 @@ variables that you would normally set:
 #+BEGIN_EXAMPLE
 -D TPL_ENABLE_MPI:BOOL=ON
 -D TPL_ENABLE_CUDA:BOOL=ON
--D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
--D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
+-D Kokkos_ENABLE_CUDA_UVM:BOOL=ON
+-D Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON
 #+END_EXAMPLE
 
 If you already define ~CMAKE_CXX_FLAGS~ yourself, just make sure that
@@ -198,8 +198,8 @@ do the following:
      that the CMake variable ~TPL_ENABLE_Pthread~ is ~ON~.  If not,
      you may need to tell Trilinos where to find the Pthreads library
      and header file.
-  2. Enable Kokkos' Pthreads support, by setting
-     ~Kokkos_ENABLE_Pthread:BOOL=OFF~.
+  2. Enable Kokkos' Threads support, by setting
+     ~Kokkos_ENABLE_THREADS:BOOL=OFF~.
   3. Enable Tpetra's Pthreads support, by setting 
      ~Tpetra_INST_PTHREAD:BOOL=OFF~.
   4. Make Tpetra use Pthreads by default, by setting

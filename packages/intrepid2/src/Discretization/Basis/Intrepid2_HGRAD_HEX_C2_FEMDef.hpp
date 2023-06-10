@@ -54,12 +54,13 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
     
+    template<bool serendipity>
     template<EOperator opType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_HEX_C2_FEM::Serial<opType>::
+    Basis_HGRAD_HEX_DEG2_FEM<serendipity>::Serial<opType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       switch (opType) {
@@ -89,13 +90,15 @@ namespace Intrepid2 {
         output.access(17) = 0.25*x*(1.+ x)*(1. - y)*(1. + y)*z*(1.+ z);
         output.access(18) = 0.25*(1. - x)*(1. + x)*y*(1.+ y)*z*(1.+ z);
         output.access(19) = 0.25*(-1. + x)*x*(1. - y)*(1. + y)*z*(1.+ z);
-        output.access(20) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(21) = 0.5*(1. - x)*(1. + x)*(1. - y)*(1. + y)*(-1. + z)*z;
-        output.access(22) = 0.5*(1. - x)*(1. + x)*(1. - y)*(1. + y)*z*(1.+ z);
-        output.access(23) = 0.5*(-1. + x)*x*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(24) = 0.5*x*(1.+ x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(25) = 0.5*(1. - x)*(1. + x)*(-1. + y)*y*(1. - z)*(1. + z);
-        output.access(26) = 0.5*(1. - x)*(1. + x)*y*(1.+ y)*(1. - z)*(1. + z);
+        if constexpr (!serendipity) {
+          output.access(20) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(21) = 0.5*(1. - x)*(1. + x)*(1. - y)*(1. + y)*(-1. + z)*z;
+          output.access(22) = 0.5*(1. - x)*(1. + x)*(1. - y)*(1. + y)*z*(1.+ z);
+          output.access(23) = 0.5*(-1. + x)*x*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(24) = 0.5*x*(1.+ x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(25) = 0.5*(1. - x)*(1. + x)*(-1. + y)*y*(1. - z)*(1. + z);
+          output.access(26) = 0.5*(1. - x)*(1. + x)*y*(1.+ y)*(1. - z)*(1. + z);
+        }
         break;
       }
       case OPERATOR_GRAD :
@@ -185,33 +188,35 @@ namespace Intrepid2 {
         output.access(19, 1) = (-1. + x)*x*(-0.5*y)*z*(1. + z);
         output.access(19, 2) = (-1. + x)*x*(1. - y)*(1. + y)*(0.25 + 0.5*z);
 
-        output.access(20, 0) = -2.*x*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(20, 1) = (1. - x)*(1. + x)*(-2.*y)*(1. - z)*(1. + z);
-        output.access(20, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(-2.*z);
+        if constexpr (!serendipity) {
+          output.access(20, 0) = -2.*x*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(20, 1) = (1. - x)*(1. + x)*(-2.*y)*(1. - z)*(1. + z);
+          output.access(20, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(-2.*z);
 
-        output.access(21, 0) = -x*(1. - y)*(1. + y)*(-1. + z)*z;
-        output.access(21, 1) = (1. - x)*(1. + x)*(-y)*(-1. + z)*z;
-        output.access(21, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(-0.5 + z);
+          output.access(21, 0) = -x*(1. - y)*(1. + y)*(-1. + z)*z;
+          output.access(21, 1) = (1. - x)*(1. + x)*(-y)*(-1. + z)*z;
+          output.access(21, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(-0.5 + z);
 
-        output.access(22, 0) = -x*(1. - y)*(1. + y)*z*(1. + z);
-        output.access(22, 1) = (1. - x)*(1. + x)*(-y)*z*(1. + z);
-        output.access(22, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(0.5 + z);
+          output.access(22, 0) = -x*(1. - y)*(1. + y)*z*(1. + z);
+          output.access(22, 1) = (1. - x)*(1. + x)*(-y)*z*(1. + z);
+          output.access(22, 2) = (1. - x)*(1. + x)*(1. - y)*(1. + y)*(0.5 + z);
 
-        output.access(23, 0) = (-0.5 + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(23, 1) = (-1. + x)*x*(-y)*(1. - z)*(1. + z);
-        output.access(23, 2) = (-1. + x)*x*(1. - y)*(1. + y)*(-z);
+          output.access(23, 0) = (-0.5 + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(23, 1) = (-1. + x)*x*(-y)*(1. - z)*(1. + z);
+          output.access(23, 2) = (-1. + x)*x*(1. - y)*(1. + y)*(-z);
 
-        output.access(24, 0) = (0.5 + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(24, 1) = x*(1. + x)*(-y)*(1. - z)*(1. + z);
-        output.access(24, 2) = x*(1. + x)*(1. - y)*(1. + y)*(-z);
+          output.access(24, 0) = (0.5 + x)*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(24, 1) = x*(1. + x)*(-y)*(1. - z)*(1. + z);
+          output.access(24, 2) = x*(1. + x)*(1. - y)*(1. + y)*(-z);
 
-        output.access(25, 0) = -x*(-1. + y)*y*(1. - z)*(1. + z);
-        output.access(25, 1) = (1. - x)*(1. + x)*(-0.5 + y)*(1. - z)*(1. + z);
-        output.access(25, 2) = (1. - x)*(1. + x)*(-1. + y)*y*(-z);
+          output.access(25, 0) = -x*(-1. + y)*y*(1. - z)*(1. + z);
+          output.access(25, 1) = (1. - x)*(1. + x)*(-0.5 + y)*(1. - z)*(1. + z);
+          output.access(25, 2) = (1. - x)*(1. + x)*(-1. + y)*y*(-z);
 
-        output.access(26, 0) = -x*y*(1. + y)*(1. - z)*(1. + z);
-        output.access(26, 1) = (1. - x)*(1. + x)*(0.5 + y)*(1. - z)*(1. + z);
-        output.access(26, 2) = (1. - x)*(1. + x)*y*(1. + y)*(-z);
+          output.access(26, 0) = -x*y*(1. + y)*(1. - z)*(1. + z);
+          output.access(26, 1) = (1. - x)*(1. + x)*(0.5 + y)*(1. - z)*(1. + z);
+          output.access(26, 2) = (1. - x)*(1. + x)*y*(1. + y)*(-z);
+        }
         break;
       }
       case OPERATOR_D2 : {
@@ -360,54 +365,56 @@ namespace Intrepid2 {
         output.access(19, 4) = (x*x)*(y*(-0.5 - z) ) + x*(y*(0.5 + z));
         output.access(19, 5) = 0.5*(-1. + x)*x*(1. - y)*(1. + y);
 
-        output.access(20, 0) = -2.*(1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(20, 1) = -4.*x*y*(-1. + z*z);
-        output.access(20, 2) = x*((y*y)*(-4.*z) + 4.*z);
-        output.access(20, 3) = -2.*(1. - x)*(1. + x)*(1. - z)*(1. + z);
-        output.access(20, 4) = (x*x)*(y*(-4.*z) ) + y*(4.*z);
-        output.access(20, 5) = -2.*(1. - x)*(1. + x)*(1. - y)*(1. + y);
+        if constexpr (!serendipity) {
+          output.access(20, 0) = -2.*(1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(20, 1) = -4.*x*y*(-1. + z*z);
+          output.access(20, 2) = x*((y*y)*(-4.*z) + 4.*z);
+          output.access(20, 3) = -2.*(1. - x)*(1. + x)*(1. - z)*(1. + z);
+          output.access(20, 4) = (x*x)*(y*(-4.*z) ) + y*(4.*z);
+          output.access(20, 5) = -2.*(1. - x)*(1. + x)*(1. - y)*(1. + y);
 
-        output.access(21, 0) = -(1. - y)*(1. + y)*(-1. + z)*z;
-        output.access(21, 1) = (x*(-2.*y) )*z + (0.  + x*(2.*y))*(z*z);
-        output.access(21, 2) =  x*(1. - 2.*z + (y*y)*(-1. + 2.*z));
-        output.access(21, 3) = -(1. - x)*(1. + x)*(-1. + z)*z;
-        output.access(21, 4) = y*(1. - 2.*z)  + (x*x)*(y*(-1. + 2.*z));
-        output.access(21, 5) = (1. - x)*(1. + x)*(1. - y)*(1. + y);
+          output.access(21, 0) = -(1. - y)*(1. + y)*(-1. + z)*z;
+          output.access(21, 1) = (x*(-2.*y) )*z + (0.  + x*(2.*y))*(z*z);
+          output.access(21, 2) =  x*(1. - 2.*z + (y*y)*(-1. + 2.*z));
+          output.access(21, 3) = -(1. - x)*(1. + x)*(-1. + z)*z;
+          output.access(21, 4) = y*(1. - 2.*z)  + (x*x)*(y*(-1. + 2.*z));
+          output.access(21, 5) = (1. - x)*(1. + x)*(1. - y)*(1. + y);
 
-        output.access(22, 0) = -(1. - y)*(1. + y)*z*(1 + z);
-        output.access(22, 1) = (0.  + x*(2.*y))*z + (0.  + x*(2.*y))*(z*z);
-        output.access(22, 2) = x*(-1. - 2.*z + (y*y)*(1. + 2.*z));
-        output.access(22, 3) = -(1. - x)*(1. + x)*z*(1 + z);
-        output.access(22, 4) = y*(-1. - 2.*z) + (x*x)*(y*(1. + 2.*z));
-        output.access(22, 5) = (1. - x)*(1. + x)*(1. - y)*(1. + y);
+          output.access(22, 0) = -(1. - y)*(1. + y)*z*(1 + z);
+          output.access(22, 1) = (0.  + x*(2.*y))*z + (0.  + x*(2.*y))*(z*z);
+          output.access(22, 2) = x*(-1. - 2.*z + (y*y)*(1. + 2.*z));
+          output.access(22, 3) = -(1. - x)*(1. + x)*z*(1 + z);
+          output.access(22, 4) = y*(-1. - 2.*z) + (x*x)*(y*(1. + 2.*z));
+          output.access(22, 5) = (1. - x)*(1. + x)*(1. - y)*(1. + y);
 
-        output.access(23, 0) = (1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(23, 1) = (-1. + 2.*x)*y*(-1. + z*z);
-        output.access(23, 2) = (-1. + 2.*x)*(-1. + y*y)*z;
-        output.access(23, 3) =-(-1. + x)*x*(1. - z)*(1. + z);
-        output.access(23, 4) =  2.*(-1. + x)*x*y*z;
-        output.access(23, 5) =-(-1. + x)*x*(1. - y)*(1. + y);
+          output.access(23, 0) = (1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(23, 1) = (-1. + 2.*x)*y*(-1. + z*z);
+          output.access(23, 2) = (-1. + 2.*x)*(-1. + y*y)*z;
+          output.access(23, 3) =-(-1. + x)*x*(1. - z)*(1. + z);
+          output.access(23, 4) =  2.*(-1. + x)*x*y*z;
+          output.access(23, 5) =-(-1. + x)*x*(1. - y)*(1. + y);
 
-        output.access(24, 0) = (1. - y)*(1. + y)*(1. - z)*(1. + z);
-        output.access(24, 1) = (1. + 2.*x)*y*(-1. + z*z);
-        output.access(24, 2) = (1. + 2.*x)*(-1. + y*y)*z;
-        output.access(24, 3) = x*(1. + x)*(-1. + z)*(1. + z);
-        output.access(24, 4) = 2.*x*(1. + x)*y*z;
-        output.access(24, 5) = x*(1. + x)*(-1. + y)*(1. + y);
+          output.access(24, 0) = (1. - y)*(1. + y)*(1. - z)*(1. + z);
+          output.access(24, 1) = (1. + 2.*x)*y*(-1. + z*z);
+          output.access(24, 2) = (1. + 2.*x)*(-1. + y*y)*z;
+          output.access(24, 3) = x*(1. + x)*(-1. + z)*(1. + z);
+          output.access(24, 4) = 2.*x*(1. + x)*y*z;
+          output.access(24, 5) = x*(1. + x)*(-1. + y)*(1. + y);
 
-        output.access(25, 0) = -(-1. + y)*y*(1. - z)*(1. + z);
-        output.access(25, 1) = x*(-1. + 2.*y)*(-1. + z*z);
-        output.access(25, 2) = 2.*x*(-1. + y)*y*z;
-        output.access(25, 3) = (1. - x)*(1. + x)*(1. - z)*(1. + z);
-        output.access(25, 4) = (-1. + x*x)*(-1. + 2.*y)*z;
-        output.access(25, 5) =-(1. - x)*(1. + x)*(-1. + y)*y;
+          output.access(25, 0) = -(-1. + y)*y*(1. - z)*(1. + z);
+          output.access(25, 1) = x*(-1. + 2.*y)*(-1. + z*z);
+          output.access(25, 2) = 2.*x*(-1. + y)*y*z;
+          output.access(25, 3) = (1. - x)*(1. + x)*(1. - z)*(1. + z);
+          output.access(25, 4) = (-1. + x*x)*(-1. + 2.*y)*z;
+          output.access(25, 5) =-(1. - x)*(1. + x)*(-1. + y)*y;
 
-        output.access(26, 0) =  y*(1. + y)*(-1. + z)*(1. + z);
-        output.access(26, 1) =  x*(1. + 2.*y)*(-1. + z*z);
-        output.access(26, 2) =  2.*x*y*(1. + y)*z;
-        output.access(26, 3) =  (-1. + x)*(1. + x)*(-1. + z)*(1. + z);
-        output.access(26, 4) =  (-1. + x*x)*(1. + 2.*y)*z;
-        output.access(26, 5) =  (-1. + x)*(1. + x)*y*(1. + y);
+          output.access(26, 0) =  y*(1. + y)*(-1. + z)*(1. + z);
+          output.access(26, 1) =  x*(1. + 2.*y)*(-1. + z*z);
+          output.access(26, 2) =  2.*x*y*(1. + y)*z;
+          output.access(26, 3) =  (-1. + x)*(1. + x)*(-1. + z)*(1. + z);
+          output.access(26, 4) =  (-1. + x*x)*(1. + 2.*y)*z;
+          output.access(26, 5) =  (-1. + x)*(1. + x)*y*(1. + y);
+        }
         break;
       }
       case OPERATOR_D3 : {
@@ -635,82 +642,84 @@ namespace Intrepid2 {
         output.access(19, 8) = -((-1.+ x)*x*y);
         output.access(19, 9) = 0.;
 
-        output.access(20, 0) = 0.;
-        output.access(20, 1) = -4*y*(-1.+ (z*z));
-        output.access(20, 2) = -4*(-1.+ (y*y))*z;
-        output.access(20, 3) = -4*x*(-1.+ (z*z));
-        output.access(20, 4) = -8*x*y*z;
-        output.access(20, 5) = -4*x*(-1.+ (y*y));
-        output.access(20, 6) = 0.;
-        output.access(20, 7) = -4*(-1.+ (x*x))*z;
-        output.access(20, 8) = -4*(-1.+ (x*x))*y;
-        output.access(20, 9) = 0.;
+        if constexpr(!serendipity) {
+          output.access(20, 0) = 0.;
+          output.access(20, 1) = -4*y*(-1.+ (z*z));
+          output.access(20, 2) = -4*(-1.+ (y*y))*z;
+          output.access(20, 3) = -4*x*(-1.+ (z*z));
+          output.access(20, 4) = -8*x*y*z;
+          output.access(20, 5) = -4*x*(-1.+ (y*y));
+          output.access(20, 6) = 0.;
+          output.access(20, 7) = -4*(-1.+ (x*x))*z;
+          output.access(20, 8) = -4*(-1.+ (x*x))*y;
+          output.access(20, 9) = 0.;
 
-        output.access(21, 0) = 0.;
-        output.access(21, 1) = 2.*y*(-1.+ z)*z;
-        output.access(21, 2) = (-1.+ (y*y))*(-1.+ 2.*z);
-        output.access(21, 3) = 2.*x*(-1.+ z)*z;
-        output.access(21, 4) = 2.*x*y*(-1.+ 2.*z);
-        output.access(21, 5) = 2.*x*(-1.+ (y*y));
-        output.access(21, 6) = 0.;
-        output.access(21, 7) = (-1.+ (x*x))*(-1.+ 2.*z);
-        output.access(21, 8) = 2.*(-1.+ (x*x))*y;
-        output.access(21, 9) = 0.;
+          output.access(21, 0) = 0.;
+          output.access(21, 1) = 2.*y*(-1.+ z)*z;
+          output.access(21, 2) = (-1.+ (y*y))*(-1.+ 2.*z);
+          output.access(21, 3) = 2.*x*(-1.+ z)*z;
+          output.access(21, 4) = 2.*x*y*(-1.+ 2.*z);
+          output.access(21, 5) = 2.*x*(-1.+ (y*y));
+          output.access(21, 6) = 0.;
+          output.access(21, 7) = (-1.+ (x*x))*(-1.+ 2.*z);
+          output.access(21, 8) = 2.*(-1.+ (x*x))*y;
+          output.access(21, 9) = 0.;
 
-        output.access(22, 0) = 0.;
-        output.access(22, 1) = 2.*y*z*(1.+ z);
-        output.access(22, 2) = (-1.+ (y*y))*(1.+ 2.*z);
-        output.access(22, 3) = 2.*x*z*(1.+ z);
-        output.access(22, 4) = 2.*x*y*(1.+ 2.*z);
-        output.access(22, 5) = 2.*x*(-1.+ (y*y));
-        output.access(22, 6) = 0.;
-        output.access(22, 7) = (-1.+ (x*x))*(1.+ 2.*z);
-        output.access(22, 8) = 2.*(-1.+ (x*x))*y;
-        output.access(22, 9) = 0.;
+          output.access(22, 0) = 0.;
+          output.access(22, 1) = 2.*y*z*(1.+ z);
+          output.access(22, 2) = (-1.+ (y*y))*(1.+ 2.*z);
+          output.access(22, 3) = 2.*x*z*(1.+ z);
+          output.access(22, 4) = 2.*x*y*(1.+ 2.*z);
+          output.access(22, 5) = 2.*x*(-1.+ (y*y));
+          output.access(22, 6) = 0.;
+          output.access(22, 7) = (-1.+ (x*x))*(1.+ 2.*z);
+          output.access(22, 8) = 2.*(-1.+ (x*x))*y;
+          output.access(22, 9) = 0.;
 
-        output.access(23, 0) = 0.;
-        output.access(23, 1) = 2.*y*(-1.+ (z*z));
-        output.access(23, 2) = 2.*(-1.+ (y*y))*z;
-        output.access(23, 3) = (-1.+ 2.*x)*(-1.+ (z*z));
-        output.access(23, 4) = 2.*(-1.+ 2.*x)*y*z;
-        output.access(23, 5) = (-1.+ 2.*x)*(-1.+ (y*y));
-        output.access(23, 6) = 0.;
-        output.access(23, 7) = 2.*(-1.+ x)*x*z;
-        output.access(23, 8) = 2.*(-1.+ x)*x*y;
-        output.access(23, 9) = 0.;
+          output.access(23, 0) = 0.;
+          output.access(23, 1) = 2.*y*(-1.+ (z*z));
+          output.access(23, 2) = 2.*(-1.+ (y*y))*z;
+          output.access(23, 3) = (-1.+ 2.*x)*(-1.+ (z*z));
+          output.access(23, 4) = 2.*(-1.+ 2.*x)*y*z;
+          output.access(23, 5) = (-1.+ 2.*x)*(-1.+ (y*y));
+          output.access(23, 6) = 0.;
+          output.access(23, 7) = 2.*(-1.+ x)*x*z;
+          output.access(23, 8) = 2.*(-1.+ x)*x*y;
+          output.access(23, 9) = 0.;
 
-        output.access(24, 0) = 0.;
-        output.access(24, 1) = 2.*y*(-1.+ (z*z));
-        output.access(24, 2) = 2.*(-1.+ (y*y))*z;
-        output.access(24, 3) = (1.+ 2.*x)*(-1.+ (z*z));
-        output.access(24, 4) = 2.*(1.+ 2.*x)*y*z;
-        output.access(24, 5) = (1.+ 2.*x)*(-1.+ (y*y));
-        output.access(24, 6) = 0.;
-        output.access(24, 7) = 2.*x*(1.+ x)*z;
-        output.access(24, 8) = 2.*x*(1.+ x)*y;
-        output.access(24, 9) = 0.;
+          output.access(24, 0) = 0.;
+          output.access(24, 1) = 2.*y*(-1.+ (z*z));
+          output.access(24, 2) = 2.*(-1.+ (y*y))*z;
+          output.access(24, 3) = (1.+ 2.*x)*(-1.+ (z*z));
+          output.access(24, 4) = 2.*(1.+ 2.*x)*y*z;
+          output.access(24, 5) = (1.+ 2.*x)*(-1.+ (y*y));
+          output.access(24, 6) = 0.;
+          output.access(24, 7) = 2.*x*(1.+ x)*z;
+          output.access(24, 8) = 2.*x*(1.+ x)*y;
+          output.access(24, 9) = 0.;
 
-        output.access(25, 0) = 0.;
-        output.access(25, 1) = (-1.+ 2.*y)*(-1.+ (z*z));
-        output.access(25, 2) = 2.*(-1.+ y)*y*z;
-        output.access(25, 3) = 2.*x*(-1.+ (z*z));
-        output.access(25, 4) = 2.*x*(-1.+ 2.*y)*z;
-        output.access(25, 5) = 2.*x*(-1.+ y)*y;
-        output.access(25, 6) = 0.;
-        output.access(25, 7) = 2.*(-1.+ (x*x))*z;
-        output.access(25, 8) = (-1.+ (x*x))*(-1.+ 2.*y);
-        output.access(25, 9) = 0.;
+          output.access(25, 0) = 0.;
+          output.access(25, 1) = (-1.+ 2.*y)*(-1.+ (z*z));
+          output.access(25, 2) = 2.*(-1.+ y)*y*z;
+          output.access(25, 3) = 2.*x*(-1.+ (z*z));
+          output.access(25, 4) = 2.*x*(-1.+ 2.*y)*z;
+          output.access(25, 5) = 2.*x*(-1.+ y)*y;
+          output.access(25, 6) = 0.;
+          output.access(25, 7) = 2.*(-1.+ (x*x))*z;
+          output.access(25, 8) = (-1.+ (x*x))*(-1.+ 2.*y);
+          output.access(25, 9) = 0.;
 
-        output.access(26, 0) = 0.;
-        output.access(26, 1) = (1.+ 2.*y)*(-1.+ (z*z));
-        output.access(26, 2) = 2.*y*(1.+ y)*z;
-        output.access(26, 3) = 2.*x*(-1.+ (z*z));
-        output.access(26, 4) = 2.*x*(1.+ 2.*y)*z;
-        output.access(26, 5) = 2.*x*y*(1.+ y);
-        output.access(26, 6) = 0.;
-        output.access(26, 7) = 2.*(-1.+ (x*x))*z;
-        output.access(26, 8) = (-1.+ (x*x))*(1.+ 2.*y);
-        output.access(26, 9) = 0.;
+          output.access(26, 0) = 0.;
+          output.access(26, 1) = (1.+ 2.*y)*(-1.+ (z*z));
+          output.access(26, 2) = 2.*y*(1.+ y)*z;
+          output.access(26, 3) = 2.*x*(-1.+ (z*z));
+          output.access(26, 4) = 2.*x*(1.+ 2.*y)*z;
+          output.access(26, 5) = 2.*x*y*(1.+ y);
+          output.access(26, 6) = 0.;
+          output.access(26, 7) = 2.*(-1.+ (x*x))*z;
+          output.access(26, 8) = (-1.+ (x*x))*(1.+ 2.*y);
+          output.access(26, 9) = 0.;
+        }
         break;
       }
       case OPERATOR_D4 : {
@@ -866,55 +875,56 @@ namespace Intrepid2 {
         output.access(19, 8) = y - 2.*x*y;
         output.access(19, 12)= -((-1.+ x)*x);
 
-        output.access(20, 3) = 4. - 4.*z*z;
-        output.access(20, 4) = -8.*y*z;
-        output.access(20, 5) = 4. - 4.*y*y;
-        output.access(20, 7) = -8.*x*z;
-        output.access(20, 8) = -8.*x*y;
-        output.access(20, 12)= 4. - 4.*x*x;
+        if constexpr (!serendipity) {
+          output.access(20, 3) = 4. - 4.*z*z;
+          output.access(20, 4) = -8.*y*z;
+          output.access(20, 5) = 4. - 4.*y*y;
+          output.access(20, 7) = -8.*x*z;
+          output.access(20, 8) = -8.*x*y;
+          output.access(20, 12)= 4. - 4.*x*x;
 
-        output.access(21, 3) = 2.*(-1.+ z)*z;
-        output.access(21, 4) = 2.*y*(-1.+ 2.*z);
-        output.access(21, 5) = 2.*(-1.+ y*y);
-        output.access(21, 7) = 2.*x*(-1.+ 2.*z);
-        output.access(21, 8) = 4.*x*y;
-        output.access(21, 12)= 2.*(-1.+ x*x);
+          output.access(21, 3) = 2.*(-1.+ z)*z;
+          output.access(21, 4) = 2.*y*(-1.+ 2.*z);
+          output.access(21, 5) = 2.*(-1.+ y*y);
+          output.access(21, 7) = 2.*x*(-1.+ 2.*z);
+          output.access(21, 8) = 4.*x*y;
+          output.access(21, 12)= 2.*(-1.+ x*x);
 
-        output.access(22, 3) = 2.*z*(1. + z);
-        output.access(22, 4) = 2.*(y + 2.*y*z);
-        output.access(22, 5) = 2.*(-1.+ y*y);
-        output.access(22, 7) = 2.*(x + 2.*x*z);
-        output.access(22, 8) = 4.*x*y;
-        output.access(22, 12)= 2.*(-1.+ x*x);
+          output.access(22, 3) = 2.*z*(1. + z);
+          output.access(22, 4) = 2.*(y + 2.*y*z);
+          output.access(22, 5) = 2.*(-1.+ y*y);
+          output.access(22, 7) = 2.*(x + 2.*x*z);
+          output.access(22, 8) = 4.*x*y;
+          output.access(22, 12)= 2.*(-1.+ x*x);
 
-        output.access(23, 3) = 2.*(-1.+ z*z);
-        output.access(23, 4) = 4.*y*z;
-        output.access(23, 5) = 2.*(-1.+ y*y);
-        output.access(23, 7) = 2.*(-1.+ 2.*x)*z;
-        output.access(23, 8) = 2.*(-1.+ 2.*x)*y;
-        output.access(23, 12)= 2.*(-1.+ x)*x;
+          output.access(23, 3) = 2.*(-1.+ z*z);
+          output.access(23, 4) = 4.*y*z;
+          output.access(23, 5) = 2.*(-1.+ y*y);
+          output.access(23, 7) = 2.*(-1.+ 2.*x)*z;
+          output.access(23, 8) = 2.*(-1.+ 2.*x)*y;
+          output.access(23, 12)= 2.*(-1.+ x)*x;
 
-        output.access(24, 3) = 2.*(-1.+ z*z);
-        output.access(24, 4) = 4.*y*z;
-        output.access(24, 5) = 2.*(-1.+ y*y);
-        output.access(24, 7) = 2.*(z + 2.*x*z);
-        output.access(24, 8) = 2.*(y + 2.*x*y);
-        output.access(24, 12)= 2.*x*(1. + x);
+          output.access(24, 3) = 2.*(-1.+ z*z);
+          output.access(24, 4) = 4.*y*z;
+          output.access(24, 5) = 2.*(-1.+ y*y);
+          output.access(24, 7) = 2.*(z + 2.*x*z);
+          output.access(24, 8) = 2.*(y + 2.*x*y);
+          output.access(24, 12)= 2.*x*(1. + x);
 
-        output.access(25, 3) =  2.*(-1.+ z*z);
-        output.access(25, 4) = 2.*(-1.+ 2.*y)*z;
-        output.access(25, 5) = 2.*(-1.+ y)*y;
-        output.access(25, 7) = 4.*x*z;
-        output.access(25, 8) = 2.*x*(-1.+ 2.*y);
-        output.access(25, 12)= 2.*(-1.+ x*x);
+          output.access(25, 3) =  2.*(-1.+ z*z);
+          output.access(25, 4) = 2.*(-1.+ 2.*y)*z;
+          output.access(25, 5) = 2.*(-1.+ y)*y;
+          output.access(25, 7) = 4.*x*z;
+          output.access(25, 8) = 2.*x*(-1.+ 2.*y);
+          output.access(25, 12)= 2.*(-1.+ x*x);
 
-        output.access(26, 3) = 2.*(-1.+ z*z);
-        output.access(26, 4) = 2.*(z + 2.*y*z);
-        output.access(26, 5) = 2.*y*(1. + y);
-        output.access(26, 7) =  4.*x*z;
-        output.access(26, 8) = 2.*(x + 2.*x*y);
-        output.access(26, 12)= 2.*(-1.+ x*x);
-
+          output.access(26, 3) = 2.*(-1.+ z*z);
+          output.access(26, 4) = 2.*(z + 2.*y*z);
+          output.access(26, 5) = 2.*y*(1. + y);
+          output.access(26, 7) =  4.*x*z;
+          output.access(26, 8) = 2.*(x + 2.*x*y);
+          output.access(26, 12)= 2.*(-1.+ x*x);
+        }
         break;
       }
       case OPERATOR_MAX : {
@@ -935,17 +945,18 @@ namespace Intrepid2 {
                                   opType != OPERATOR_D3 &&
                                   opType != OPERATOR_D4 &&
                                   opType != OPERATOR_MAX,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C2_FEM::Serial::getValues) operator is not supported");
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_DEG2_FEM::Serial::getValues) operator is not supported");
 
       }
       }
     }
 
+    template<bool serendipity>
     template<typename DT, 
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
-    Basis_HGRAD_HEX_C2_FEM::
+    Basis_HGRAD_HEX_DEG2_FEM<serendipity>::
     getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
@@ -972,12 +983,12 @@ namespace Intrepid2 {
       }
       case OPERATOR_CURL:
         INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
+                                      ">>> ERROR (Basis_HGRAD_HEX_DEG2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
         break;
 
       case OPERATOR_DIV:
         INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
+                                      ">>> ERROR (Basis_HGRAD_HEX_DEG2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
         break;
 
       case OPERATOR_D2: {
@@ -998,7 +1009,7 @@ namespace Intrepid2 {
       case OPERATOR_D5:
       case OPERATOR_D6: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): operator not supported");
+                                      ">>> ERROR (Basis_HGRAD_HEX_DEG2_FEM): operator not supported");
         // break; commented out becuase this always throws
       }
       case OPERATOR_D7:
@@ -1011,7 +1022,7 @@ namespace Intrepid2 {
       }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): Invalid operator type");
+                                      ">>> ERROR (Basis_HGRAD_HEX_DEG2_FEM): Invalid operator type");
       }
       }
     }
@@ -1020,10 +1031,10 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
 
-  template<typename DT, typename OT, typename PT>
-  Basis_HGRAD_HEX_C2_FEM<DT,OT,PT>::
-  Basis_HGRAD_HEX_C2_FEM() {
-    this -> basisCardinality_  = 27;
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  Basis_HGRAD_HEX_DEG2_FEM<serendipity, DT,OT,PT>::
+  Basis_HGRAD_HEX_DEG2_FEM() {
+    this -> basisCardinality_  = serendipity ? 20 : 27;
     this -> basisDegree_       = 2;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
@@ -1059,6 +1070,8 @@ namespace Intrepid2 {
                                   1, 5, 0, 1,      // Node 17 -> edge 5
                                   1, 6, 0, 1,      // Node 18 -> edge 6
                                   1, 7, 0, 1,      // Node 19 -> edge 7
+                                  
+                                  // following entries not used for serendipity elements
                                   3, 0, 0, 1,      // Node 20 -> Hexahedron
                                   2, 4, 0, 1,      // Node 21 -> face 4
                                   2, 5, 0, 1,      // Node 22 -> face 5
@@ -1069,7 +1082,7 @@ namespace Intrepid2 {
       };
 
       // host tags
-      OrdinalTypeArray1DHost tagView(&tags[0], 108);
+      OrdinalTypeArray1DHost tagView(&tags[0], serendipity ? 80 : 108);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this -> tagToOrdinal_,
@@ -1107,14 +1120,16 @@ namespace Intrepid2 {
     dofCoords(18,0) =  0.0;   dofCoords(18,1) =  1.0; dofCoords(18,2) =  1.0;
     dofCoords(19,0) = -1.0;   dofCoords(19,1) =  0.0; dofCoords(19,2) =  1.0;
 
-    dofCoords(20,0) =  0.0;   dofCoords(20,1) =  0.0; dofCoords(20,2) =  0.0;
+    if constexpr (!serendipity) {
+      dofCoords(20,0) =  0.0;   dofCoords(20,1) =  0.0; dofCoords(20,2) =  0.0;
 
-    dofCoords(21,0) =  0.0;   dofCoords(21,1) =  0.0; dofCoords(21,2) = -1.0;
-    dofCoords(22,0) =  0.0;   dofCoords(22,1) =  0.0; dofCoords(22,2) =  1.0;
-    dofCoords(23,0) = -1.0;   dofCoords(23,1) =  0.0; dofCoords(23,2) =  0.0;
-    dofCoords(24,0) =  1.0;   dofCoords(24,1) =  0.0; dofCoords(24,2) =  0.0;
-    dofCoords(25,0) =  0.0;   dofCoords(25,1) = -1.0; dofCoords(25,2) =  0.0;
-    dofCoords(26,0) =  0.0;   dofCoords(26,1) =  1.0; dofCoords(26,2) =  0.0;
+      dofCoords(21,0) =  0.0;   dofCoords(21,1) =  0.0; dofCoords(21,2) = -1.0;
+      dofCoords(22,0) =  0.0;   dofCoords(22,1) =  0.0; dofCoords(22,2) =  1.0;
+      dofCoords(23,0) = -1.0;   dofCoords(23,1) =  0.0; dofCoords(23,2) =  0.0;
+      dofCoords(24,0) =  1.0;   dofCoords(24,1) =  0.0; dofCoords(24,2) =  0.0;
+      dofCoords(25,0) =  0.0;   dofCoords(25,1) = -1.0; dofCoords(25,2) =  0.0;
+      dofCoords(26,0) =  0.0;   dofCoords(26,1) =  1.0; dofCoords(26,2) =  0.0;
+    }
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);

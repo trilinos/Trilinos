@@ -888,7 +888,7 @@ namespace Zoltan2 {
     Teuchos::RCP<lproblem_t> innerPolyProblem(new lproblem_t());
     innerPolyProblem->setOperator(laplacian_);
 
-    using btop_t = Belos::TpetraOperator<scalar_t>;
+    using btop_t = Belos::TpetraOperator<scalar_t, lno_t, gno_t, node_t>;
     Teuchos::RCP<btop_t> polySolver(new btop_t(innerPolyProblem,
           Teuchos::rcpFromRef(paramList),
           "GmresPoly", true));

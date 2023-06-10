@@ -409,12 +409,14 @@ int main(int narg, char *arg[])
       std::cout << "init = " << init << std::endl;
     }
 
-    using scalar_type = double;
-    using local_ordinal_type = int;
-    using global_ordinal_type = long long;
+    using scalar_type = Tpetra::Details::DefaultTypes::scalar_type;
+    using local_ordinal_type = Tpetra::Details::DefaultTypes::local_ordinal_type;
+    using global_ordinal_type = Tpetra::Details::DefaultTypes::global_ordinal_type;
     using node_type = Tpetra::Details::DefaultTypes::node_type;
     
     using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;  
+    using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+    using mv_type = Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
     using solution_type = Zoltan2::PartitioningSolution<adapter_type>;  
 
@@ -457,14 +459,11 @@ int main(int narg, char *arg[])
       std::cout << "Done with reading/creating the matrix." << std::endl;
     }
 
-    Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
+    Teuchos::RCP<const map_type> map = tmatrix->getMap();
 
-    using ST = double;
-    using MultiVector  = Tpetra::MultiVector<ST>;
-
-    Teuchos::RCP<MultiVector > V;
+    Teuchos::RCP<mv_type> V;
     if (vector_file !=""){
-      V = Tpetra::MatrixMarket::Reader<MultiVector >::readDenseFile(vector_file,pComm,map);
+      V = Tpetra::MatrixMarket::Reader<mv_type >::readDenseFile(vector_file,pComm,map);
       if(me == 0){
         std::cout << "Done with reading user-provided eigenvectors." << std::endl;
       }

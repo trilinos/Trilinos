@@ -451,32 +451,30 @@ class FastILUPrec
             using std::sort;
             OrdinalArrayMirror ia = aRowMapHost;
             OrdinalArrayMirror ja = aColIdxHost;
-            int *nzu;
-            int *nzl;
-            nzu = new int[1];
-            nzl = new int[1];
+            int nzu;
+            int nzl;
             Ordinal i;
 
             //Compute sparsity structure of ILU
-            *nzl = aRowMapHost[nRows];
-            *nzu = aRowMapHost[nRows];
+            nzl = aRowMapHost[nRows];
+            nzu = aRowMapHost[nRows];
 
-            *nzl *= (level + 2);
-            *nzu *= (level + 2);
+            nzl *= (level + 2);
+            nzu *= (level + 2);
             vector<int> ial(nRows+1);
-            vector<int> jal(*nzl);
-            vector<int> levell(*nzl);
+            vector<int> jal(nzl);
+            vector<int> levell(nzl);
             vector<int> iau(nRows+1);
-            vector<int> jau(*nzu);
-            vector<int> levelu(*nzu);
+            vector<int> jau(nzu);
+            vector<int> levelu(nzu);
 
             // TODO: if (initGuess & level > 0), call this with (aRowMap_, aColIdx_) and level = 1
             findFills(level, aRowMapHost, aColIdxHost, // input
-                      nzl, ial, jal, levell, // output L in CSR
-                      nzu, iau, jau, levelu  // output U in CSR
+                      &nzl, ial, jal, levell, // output L in CSR
+                      &nzu, iau, jau, levelu  // output U in CSR
                      );
-            int knzl = *nzl;
-            int knzu = *nzu;
+            int knzl = nzl;
+            int knzu = nzu;
             #ifdef FASTILU_INIT_TIMER
             std::cout << " findFills time : " << timer.seconds() << std::endl;
             timer.reset();

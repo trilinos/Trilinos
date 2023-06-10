@@ -47,9 +47,15 @@ include(TribitsGeneralMacros)
 # Standard TriBITS utilities includes
 include(AppendStringVar)
 include(TribitsStandardizePaths)
+include(TribitsCreateReverseList)
 
 
-# Gather information from enabled TPLs
+# @MACRO: tribits_process_enabled_tpls()
+#
+# Gather information and targets from enabled TPLs
+#
+# For more info, see `Processing of external packages/TPLs and
+# TriBITS-compliant external packages`_.
 #
 macro(tribits_process_enabled_tpls)
 
@@ -65,10 +71,13 @@ macro(tribits_process_enabled_tpls)
   if (projectHasTribitsCompliantExternalPackages)
     message("")
     message("Getting information for all enabled TriBITS-compliant"
-      " or upstream external packages/TPLs ...")
+      " or upstream external packages/TPLs in reverse order ...")
     message("")
 
-    foreach(TPL_NAME  IN LISTS  ${PROJECT_NAME}_enabledExternalTopLevelPackages)
+    tribits_create_reverse_list(${PROJECT_NAME}_enabledExternalTopLevelPackages
+      ${PROJECT_NAME}_reverseEnabledExternalTopLevelPackages)
+
+    foreach(TPL_NAME  IN LISTS  ${PROJECT_NAME}_reverseEnabledExternalTopLevelPackages)
       if (${TPL_NAME}_IS_TRIBITS_COMPLIANT
           OR ${TPL_NAME}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE
         )
@@ -108,16 +117,37 @@ macro(tribits_process_enabled_tribits_compliant_or_upstream_tpl  TPL_NAME)
   message("${tplProcessingString}")
 
   if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    if (NOT ${TPL_NAME}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE)
+    if ( (NOT TARGET ${TPL_NAME}::all_libs)  AND  ${TPL_NAME}_IS_TRIBITS_COMPLIANT )
       tribits_process_enabled_tribits_compliant_tpl(${TPL_NAME})
-    else()
+      set(${TPL_NAME}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE  FALSE)
+    elseif (TARGET ${TPL_NAME}::all_libs)
       message("-- "
-        "The external package/TPL ${TPL_NAME} will be read in by a downstream"
-        " TriBITS-compliant external package")
+        "The external package/TPL ${TPL_NAME} was defined by a downstream"
+        " TriBITS-compliant external package already processed")
+    elseif (${TPL_NAME}_FINDMOD AND (NOT ${TPL_NAME}_FINDMOD STREQUAL "TRIBITS_PKG"))
+      message("-- "
+        "The external package/TPL ${TPL_NAME} was *NOT* defined by a downstream"
+        " TriBITS-compliant external package and must be found again in below loop")
+      set(${TPL_NAME}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE  FALSE)
+    else()
+      message(FATAL_ERROR
+        "Error, the external package/TPL ${TPL_NAME} was *NOT* defined by a downstream"
+        " TriBITS-compliant external package and has not find module!")
     endif()
   endif()
 
 endmacro()
+# NOTE: Above, handles the case where an upstream external package/TPL should
+# have been defined a downstream external package that was already processed
+# but it was not defined (because the downstream packages was not a fully
+# TriBITS-compliant external package).  For a TriBITS-compliant external
+# package/TPL that should have been defined by a downstream TriBITS-compliant
+# an external package/TPL, the first if-statement above takes care of that
+# case by calling find_package(${TPL_NAME}) (because ${TPL_NAME}::all_libs
+# will not be defined).  However, if the upstream external package/TPL is
+# *NOT* TriBITS-compliant, then it may be a legacy TriBITS TPL which means
+# that it must be processed in ascending order in order to build the
+# downstream TriBITS TPLs correctly.
 
 
 # @MACRO: tribits_process_enabled_standard_tpl()

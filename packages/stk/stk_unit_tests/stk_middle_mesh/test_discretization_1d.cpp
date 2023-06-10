@@ -1,4 +1,4 @@
-#include "discretization_1d.hpp"
+#include "stk_middle_mesh/discretization_1d.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

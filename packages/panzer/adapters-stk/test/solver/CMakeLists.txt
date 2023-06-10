@@ -10,12 +10,12 @@ SET(UNIT_TEST_DRIVER
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   solver
-  SOURCES solver.cpp ${UNIT_TEST_DRIVER} user_app_RythmosObserver_Epetra.hpp
+  SOURCES solver.cpp ${UNIT_TEST_DRIVER} 
   COMM serial mpi
   NUM_MPI_PROCS 4
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(solver_test
-  SOURCE_FILES solver_nox.xml solver_rythmos.xml clean.sh
+  SOURCE_FILES solver_nox.xml clean.sh
   EXEDEPS solver
   )

@@ -224,7 +224,7 @@ void ApplicationInterfaceFakeParallelImpl::do_boundary_snap()
         mesh::impl::make_standard_improver(m_mesh2Serial, fixture2, m_boundarySnapOpts.snapThenQualityOpts);
 
     mesh::impl::MeshBoundarySnapper snapper;
-    snapper.snap(m_mesh1Serial, m_mesh2Serial);
+    snapper.snap(m_mesh1Serial, m_mesh2Serial, MPI_COMM_SELF);
 
     qualityImprover1->run();
     qualityImprover2->run();

@@ -39,20 +39,18 @@ import path ;
 
 local stk_middle_mesh-root-inc ;
 if $(RTenv-arg) = "user" {
-  stk_middle_mesh-root-inc = $(stk_middle_mesh-root)/stk_middle_mesh ;
+  stk_middle_mesh-root-inc = $(stk_middle_mesh-root) ;
 } else {
-  stk_middle_mesh-root-inc = $(stk_middle_mesh-root)/stk_middle_mesh ;
+  stk_middle_mesh-root-inc = $(stk_middle_mesh-root) ;
 }
 
 project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
-    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
   : usage-requirements
     <define>STK_BUILT_IN_SIERRA
-    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
   : build-dir $(stk_middle_mesh-builddir)
   ;
@@ -202,6 +200,7 @@ lib stk_middle_mesh
     ]
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
+    /sierra/stk_search//stk_search
     /mpi//mpi
     /tpl/cdt//cdt_header_only_libs
   :

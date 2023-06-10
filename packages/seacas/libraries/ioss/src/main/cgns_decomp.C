@@ -223,7 +223,7 @@ namespace {
 } // namespace
 namespace {
   std::string codename;
-  std::string version = "0.97";
+  //  std::string version = "0.97";
 
   void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones)
   {

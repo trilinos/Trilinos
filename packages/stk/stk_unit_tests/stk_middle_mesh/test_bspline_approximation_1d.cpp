@@ -1,4 +1,4 @@
-#include "bspline_approximation_1d.hpp"
+#include "stk_middle_mesh/bspline_approximation_1d.hpp"
 #include "gtest/gtest.h"
 #include <fstream>
 

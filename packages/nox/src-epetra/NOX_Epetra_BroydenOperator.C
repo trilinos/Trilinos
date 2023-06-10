@@ -523,7 +523,7 @@ BroydenOperator::computeSparseBroydenUpdate()
     {
       std::cout << "ERROR: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
            << "- crsMatrix->Multiply() failed!!!" << std::endl;
-      throw "NOX Error: Broyden Update Failed";
+      throw std::runtime_error("NOX Error: Broyden Update Failed");
     }
 
     int      numEntries  = crsMatrix->NumMyCols();
@@ -537,7 +537,7 @@ BroydenOperator::computeSparseBroydenUpdate()
       {
         std::cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() "
              << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << std::endl;
-        throw "NOX Error: Broyden Update Failed";
+        throw std::runtime_error("NOX Error: Broyden Update Failed");
       }
 
       double diffVal = yieldVec->getEpetraVector()[row] - workVec->getEpetraVector()[row];
@@ -612,7 +612,7 @@ BroydenOperator::computeSparseBroydenUpdate()
       std::cout << "Error: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() - "
        << "Could not get a valid crsMatrix!\n"
        << "Please set the \"Write Linear System\" parameter to false." << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(),
@@ -685,7 +685,7 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       std::cout << "ERROR (" << ierr << ") : "
            << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
            << " - Extract indices error for row --> " << row << std::endl;
-      throw "NOX Broyden Operator Error";
+      throw std::runtime_error("NOX Broyden Operator Error");
     }
 
     if( 0 != numRemoveIndices )
@@ -709,7 +709,7 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
         std::cout << "ERROR (" << ierr << ") : "
              << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
              << " - Extract indices error for row --> " << row << std::endl;
-        throw "NOX Broyden Operator Error";
+        throw std::runtime_error("NOX Broyden Operator Error");
       }
 
       // Remove appropriate active entities
@@ -781,7 +781,7 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
         << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
         << " - Extract or Replace values error for row --> "
         << row << std::endl;
-      throw "NOX Broyden Operator Error";
+      throw std::runtime_error("NOX Broyden Operator Error");
     }
   }
 }

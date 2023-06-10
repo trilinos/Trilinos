@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
       std::cout << "numGlobalBlocks = " << NumGlobalElements
         << " cannot be < number of processors = " << NumProc << std::endl;
       std::cout << "Test failed!" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Create the interface between NOX and the application

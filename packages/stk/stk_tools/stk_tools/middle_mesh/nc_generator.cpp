@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "mpi.h"
-#include "parser.hpp"
+#include "stk_middle_mesh/parser.hpp"
 #include "stk_middle_mesh_util/stk_interface.hpp"
 
 int main(int argc, char* argv[])

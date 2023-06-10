@@ -129,7 +129,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
 
     // ============================================================
     //+ VERIFICATION
-    Ioss::Region *io_region = stkIo.get_output_io_region(fh).get();
+    Ioss::Region *io_region = stkIo.get_output_ioss_region(fh).get();
     Ioss::NodeBlock *nb = io_region->get_node_blocks()[0];
     ASSERT_TRUE(nb->field_exists(alternateFieldName));
     ASSERT_FALSE(nb->field_exists(fieldName));

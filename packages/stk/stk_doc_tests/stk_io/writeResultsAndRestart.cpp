@@ -193,12 +193,12 @@ TEST(StkMeshIoBrokerHowTo, writeResultsAndRestart)
     stk::io::MeshField meshfieldFoo(&foo, "FOO");
     meshfieldFoo.set_single_state(false);
     meshfieldFoo.add_part(stk::topology::NODE_RANK, stkIo.meta_data().universal_part(),
-                          stkIo.get_input_io_region().get()->get_node_blocks()[0]);
+                          stkIo.get_input_ioss_region().get()->get_node_blocks()[0]);
     stkIo.add_input_field(meshfieldFoo);
 
     stk::io::MeshField meshfieldFooSubset(&fooSubset, "FOOSUBSET");
     meshfieldFooSubset.set_single_state(false);
-    const Ioss::ElementBlock& elem_block = *stkIo.get_input_io_region().get()->get_element_blocks()[0];
+    const Ioss::ElementBlock& elem_block = *stkIo.get_input_ioss_region().get()->get_element_blocks()[0];
     Ioss::ElementBlock& nonconst_elem_block = const_cast<Ioss::ElementBlock&>(elem_block);
     meshfieldFooSubset.add_part(stk::topology::NODE_RANK, block_1, &nonconst_elem_block);
     meshfieldFooSubset.add_subset(block_1);

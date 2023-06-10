@@ -473,7 +473,7 @@ outputs a table like:
   |:-------------- |:-------:|:------------------- |:---------------------- |:---------------------------------------------- |
   | MockProjectDir | e2dc488 | 2019-10-23 10:16:07 | user@domain.com        | Merge Pull Request #1234 from user/repo/branch |
   | ExtraRepo1     | f671414 | 2019-10-22 11:18:47 | wile.e.coyote@acme.com | Fixed a Bug                                    |
-  | ExtraRepo2     | 50bbf3e | 2019-10-17 16:32:15 | someone@somwhere.com   | Did Some Work                                  |
+  | ExtraRepo2     | 50bbf3e | 2019-10-17 16:32:15 | someone@somewhere.com   | Did Some Work                                  |
 
 If the option --dist-short is also passed in, the output will be limited to:
 
@@ -1039,7 +1039,6 @@ def getDistHelpTopicStr(helpTopicVal):
 
 
 def getUsageHelpStr(helpTopicArg):
-  #print("helpTopicArg = " + helpTopicArg)
   usageHelpStr = helpUsageHeader
   if helpTopicArg == "":
     # No help topic option so just use the standard help header
@@ -1050,8 +1049,6 @@ def getUsageHelpStr(helpTopicArg):
       # Option not formatted correctly, set let error handler get it."
       return ""
     (helpTopicArgName, helpTopicVal) = helpTopicArg.split("=")
-    #print("helpTopicArgName = " + helpTopicArgName)
-    #print("helpTopicVal = " + helpTopicVal)
     usageHelpStr += getDistHelpTopicStr(helpTopicVal)
   return usageHelpStr
 
@@ -1094,7 +1091,6 @@ def runCmnd(options, cmnd):
 # Determine if a command exists:
 def commandExists(cmnd):
   whichCmnd = getCmndOutput("which "+cmnd).strip()
-  #print("whichCmnd = %s" % whichCmnd)
   if os.path.exists(whichCmnd):
     return True
   return False
@@ -1188,14 +1184,10 @@ def getCommandlineOps():
   helpTopicArg = "" 
 
   for arg in argv:
-    #print("\narg = '" + arg + "'")
     matchedNativeArg = False
     for nativeArgName in nativeArgNames:
-      #print("\nnativeArgName ='" + nativeArgName + "'")
       currentArgName = arg[0:len(nativeArgName)]
-      #print("currentArgName = '" + currentArgName + "'")
       if currentArgName == nativeArgName:
-        #print("\nMatches native arg!")
         nativeArgs.append(arg)
         matchedNativeArg = True
         if currentArgName == distHelpArgName:
@@ -1204,19 +1196,11 @@ def getCommandlineOps():
     matchedNativeCmnd = False
     for nativeCmndName in nativeCmndNames:
       if arg == nativeCmndName:
-        #print("\nMatches native cmnd!")
         nativeCmnds.append(nativeCmndName)
         matchedNativeCmnd = True
         break
     if not (matchedNativeArg or matchedNativeCmnd):
-      #print("\nDoes *not* match native arg!")
       otherArgs.append(arg)
-    #print("\nnativeArgs = " + str(nativeArgs))
-    #print("otherArgs = " + str(otherArgs))
-
-  #print("\nnativeArgs = " + str(nativeArgs))
-  #print("nativeCmnds = " + str(nativeCmnds))
-  #print("otherArgs = " + str(otherArgs))
 
   if len(nativeCmnds) == 0:
     nativeCmnd = None
@@ -1460,7 +1444,6 @@ def requoteCmndLineArgsIntoArray(inArgs):
       newArg = arg
     else:
       newArg = splitArg[0]+"="+'='.join(splitArg[1:])
-    #print("\nnewArg =" + newArg)
     argsArray.append(newArg)
   return argsArray
 
@@ -1472,19 +1455,12 @@ def getRepoVersionDictFromRepoVersionFileString(repoVersionFileStr):
   len_repoVersionFileStrList = len(repoVersionFileStrList)
   i = 0
   while i < len_repoVersionFileStrList:
-    #print("i = %d" % i)
     repoDirLine = repoVersionFileStrList[i]
-    #print("repoDirLine = '" + repoDirLine + "'")
     if repoDirLine[0:3] == "***":
       repoDir = repoDirLine.split(":")[1].strip()
-      #print("repoDir = '" + repoDir + "'")
       repoVersionLine = repoVersionFileStrList[i+1]
-      #print("repoVersionLine = '" + repoVersionLine + "'")
       repoSha1 = repoVersionLine.split(" ")[0].strip()
-      #print("repoSha1 = '" + repoSha1 + "'")
-      #print("baseRepoName = '"+baseRepoName+"'")
       repoDirToEnter = ("." if repoDir == baseRepoName else repoDir)
-      #print("repoDirToEnter = '" + repoDirToEnter + "'")
       repoVersionDict.update({repoDirToEnter : repoSha1})
     else:
       break
@@ -1535,20 +1511,14 @@ def replaceRepoVersionInCmndLineArg(cmndLineArg, verToken, repoDirName, repoSha1
 def replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, repoDirName, \
   repoVersionDict, repoVersionDict2 \
   ):
-  #print("repoDirName = %s" % repoDirName)
   repoSha1 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict)
   repoSha1_2 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict2)
-  #print("repoSha1 =   " + repoSha1  )
-  #print("repoSha1_2 = " + repoSha1_2)
   cmndLineArgsArrayRepo = []
   for cmndLineArg in cmndLineArgsArray:
-    #print("cmndLineArg = " + cmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(cmndLineArg, \
       "_VERSION_", repoDirName, repoSha1)
-    #print("newCmndLineArg = " + newCmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(newCmndLineArg, \
       "_VERSION2_", repoDirName, repoSha1_2)
-    #print("newCmndLineArg = " + newCmndLineArg)
     cmndLineArgsArrayRepo.append(newCmndLineArg)
   return cmndLineArgsArrayRepo
 
@@ -1626,8 +1596,6 @@ def getTrackingBranch(options, getCmndOutputFunc):
 
 # Get number of commits as a str wr.t.t tracking branch
 def getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc):
-  #print("type(options.useGit) =", type(options.useGit))
-  #print("type(trackingBranch) =", type(trackingBranch))
   if trackingBranch == "":
     return ""
   (summaryLines, rtnCode) = \
@@ -1639,14 +1607,12 @@ def getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc):
   summaryLines = summaryLines.strip()
   if summaryLines:
     for summaryLine in filterWarnings(summaryLines.splitlines()):
-      #print("summaryLine = '" + summaryLine + "'")
       numAuthorCommits = int(summaryLine.strip().split()[0].strip())
-      #print("numAuthorCommits = " + numAuthorCommits)
       numCommits += numAuthorCommits
   return str(numCommits)
   # NOTE: Above, we would like to use 'git ref-list --count' but that is not
   # supported in older versions of git (at least not in 1.7.0.4).  Using 'git
-  # shortlog -s' will return just one line per author so this is not likley to
+  # shortlog -s' will return just one line per author so this is not likely to
   # return a lot of data and the cost of the python code to process this
   # should be insignificant compared to the process execution command.
 
@@ -1903,7 +1869,6 @@ if __name__ == '__main__':
   repoVersionDict2 = getRepoVersionDictFromRepoVersionFile(options.versionFile2)
 
   # Reform the commandline arguments correctly
-  #print("otherArgs = ", str(otherArgs))
   cmndLineArgsArray = requoteCmndLineArgsIntoArray(otherArgs)
 
   if options.debug:

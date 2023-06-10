@@ -45,10 +45,10 @@
     \brief Test interpolation and projection capabilities for triangular elements
 
     The test considers two triangles in the physical space sharing a common face.
-    In order to test significant configurations, we consider 3 mappings of the reference triangle
+    In order to test significant configurations, we consider 3 rotations of the reference triangle
     to the first (physical) triangular, so that the common face is mapped from all the 3 sides
     of the reference triangular.
-    Then, for each of the mappings, the global ids of the vertices of the common side are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common side are permuted (2 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -647,7 +647,7 @@ int InterpolationProjectionTri(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+3)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1111,7 +1111,7 @@ int InterpolationProjectionTri(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+3)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1587,7 +1587,7 @@ int InterpolationProjectionTri(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+3)); //reorder vertices of common side
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

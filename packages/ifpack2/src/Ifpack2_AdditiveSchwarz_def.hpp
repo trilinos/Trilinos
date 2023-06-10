@@ -82,6 +82,8 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <locale> // std::toupper
 
+#include <Tpetra_BlockMultiVector.hpp>
+
 
 // FIXME (mfh 25 Aug 2015) Work-around for Bug 6392.  This doesn't
 // need to be a weak symbol because it only refers to a function in
@@ -288,6 +290,26 @@ Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename 
 }
 
 
+namespace
+{
+
+template<class MatrixType, class map_type>
+Teuchos::RCP<const map_type>
+pointMapFromMeshMap(const Teuchos::RCP<const map_type> & meshMap,const typename MatrixType::local_ordinal_type blockSize)
+{
+  using BMV = Tpetra::BlockMultiVector<
+      typename MatrixType::scalar_type,
+      typename MatrixType::local_ordinal_type,
+      typename MatrixType::global_ordinal_type,
+      typename MatrixType::node_type>;
+
+  if (blockSize == 1) return meshMap;
+  
+  return Teuchos::RCP<const map_type>(new map_type(BMV::makePointMap (*meshMap,blockSize)));
+}
+
+} // namespace
+
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
@@ -385,8 +407,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     MV* OverlappingB = nullptr;
     MV* OverlappingY = nullptr;
     {
-      RCP<const map_type> B_and_Y_map = IsOverlapping_ ?
-        OverlappingMatrix_->getRowMap () : localMap_;
+      RCP<const map_type> B_and_Y_map = pointMapFromMeshMap<MatrixType>(IsOverlapping_ ?
+        OverlappingMatrix_->getRowMap () : localMap_ , Matrix_->getBlockSize());
       if (overlapping_B_.get () == nullptr ||
           overlapping_B_->getNumVectors () != numVectors) {
         overlapping_B_.reset (new MV (B_and_Y_map, numVectors, false));
@@ -405,8 +427,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
     RCP<MV> globalOverlappingB;
     if (! IsOverlapping_) {
+      auto matrixPointRowMap = pointMapFromMeshMap<MatrixType>(Matrix_->getRowMap (),Matrix_->getBlockSize ());
+
       globalOverlappingB =
-        OverlappingB->offsetViewNonConst (Matrix_->getRowMap (), 0);
+        OverlappingB->offsetViewNonConst (matrixPointRowMap, 0);
 
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
@@ -414,7 +438,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // for its Import object?  Of course a general RowMatrix might
         // not necessarily have one.
         DistributedImporter_ =
-          rcp (new import_type (Matrix_->getRowMap (),
+          rcp (new import_type (matrixPointRowMap,
                                 Matrix_->getDomainMap ()));
       }
     }

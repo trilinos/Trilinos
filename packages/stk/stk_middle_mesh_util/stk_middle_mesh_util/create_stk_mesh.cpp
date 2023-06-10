@@ -1,7 +1,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #include "create_stk_mesh.hpp"
-#include "field.hpp"
+#include "stk_middle_mesh/field.hpp"
 #include "constants.hpp"
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>

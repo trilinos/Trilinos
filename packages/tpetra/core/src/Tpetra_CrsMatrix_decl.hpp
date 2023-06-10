@@ -2414,6 +2414,9 @@ private:
     /// zeros count as "entries."
     size_t getLocalMaxNumRowEntries () const override;
 
+    //! The number of degrees of freedom per mesh point.
+    virtual LocalOrdinal getBlockSize () const override { return 1; }
+
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
 
@@ -2984,6 +2987,13 @@ public:
       const size_t numPermutes);
 
   protected:
+
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
+                      /// use copyAndPermutes for anything we don't override
+  // clang-format off
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,

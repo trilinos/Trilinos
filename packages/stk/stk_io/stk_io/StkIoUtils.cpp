@@ -111,7 +111,7 @@ stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
 IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo)
 {
     IossBlockMembership blockMemberships;
-    const Ioss::Region & io_region = *stkIo.get_input_io_region();
+    const Ioss::Region & io_region = *stkIo.get_input_ioss_region();
     for(auto sideset : io_region.get_sidesets())
     {
         std::vector<std::string> sideBlockNames;

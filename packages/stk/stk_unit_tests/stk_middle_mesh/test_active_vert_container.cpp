@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "active_vert_container.hpp"
-#include "boundary_fixture.hpp"
-#include "create_mesh.hpp"
-#include "point.hpp"
+#include "stk_middle_mesh/active_vert_container.hpp"
+#include "stk_middle_mesh/boundary_fixture.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/point.hpp"
 
 namespace {
 

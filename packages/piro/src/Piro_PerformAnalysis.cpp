@@ -49,11 +49,6 @@
 #include <string>
 #include "Thyra_DetachedVectorView.hpp"
 
-#ifdef HAVE_PIRO_TRIKOTA
-#include "TriKota_Driver.hpp"
-#include "TriKota_ThyraDirectApplicInterface.hpp"
-#endif
-
 #include "Piro_SteadyStateSolver.hpp"
 
 #ifdef HAVE_PIRO_NOX
@@ -130,15 +125,6 @@ Piro::PerformAnalysis(
     Piro::PerformSolveBase(piroModel, analysisParams.sublist("Solve"), result);
     status = 0; // Succeeds or throws
   }
-#ifdef HAVE_PIRO_TRIKOTA
-  else if (analysis=="Dakota") {
-    *out << "Piro::PerformAnalysis: Dakota Analysis Being Performed " << endl;
-
-    status = Piro::PerformDakotaAnalysis(piroModel,
-                         analysisParams.sublist("Dakota"), result);
-
-  }
-#endif
 
 #ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
@@ -149,13 +135,12 @@ Piro::PerformAnalysis(
   }
 #endif
   else {
-    if (analysis == "Dakota" || 
-        analysis == "ROL")
+    if (analysis == "ROL")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Solve, Dakota, ROL\n" << endl;
+           << "       Valid analysis types are: Solve and ROL\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -170,64 +155,6 @@ Piro::PerformAnalysis(
     }
 
   return status;
-}
-
-int
-Piro::PerformDakotaAnalysis(
-    Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& dakotaParams,
-    RCP< Thyra::VectorBase<double> >& p)
-{
-#ifdef HAVE_PIRO_TRIKOTA
-  dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
-  using std::string;
-
-  string dakotaIn  = dakotaParams.get("Input File","dakota.in");
-  string dakotaOut = dakotaParams.get("Output File","dakota.out");
-  string dakotaErr = dakotaParams.get("Error File","dakota.err");
-  string dakotaRes = dakotaParams.get("Restart File","dakota_restart.out");
-  string dakotaRestartIn;
-  if (dakotaParams.isParameter("Restart File To Read"))
-    dakotaRestartIn = dakotaParams.get<string>("Restart File To Read");
-
-  int dakotaRestartEvals= dakotaParams.get("Restart Evals To Read", 0);
-
-  int p_index = dakotaParams.get("Parameter Vector Index", 0);
-  int g_index = dakotaParams.get("Response Vector Index", 0);
-
-  TriKota::Driver dakota(dakotaIn, dakotaOut, dakotaErr, dakotaRes,
-                         dakotaRestartIn, dakotaRestartEvals);
-
-  RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
-    rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
-	false);
-
-  dakota.run(trikota_interface.get());
-
-  Dakota::RealVector finalValues;
-  if (dakota.rankZero())
-    finalValues = dakota.getFinalSolution().all_continuous_variables();
-
-  // Copy Dakota parameters into Thyra
-  p = Thyra::createMember(piroModel.get_p_space(p_index));
-  {
-      Thyra::DetachedVectorView<double> global_p(p);
-      for (int i = 0; i < finalValues.length(); ++i)
-        global_p[i] = finalValues[i];
-  }
-
-  return 0;
-#else
-  (void)piroModel;
-  (void)dakotaParams;
-  (void)p;
- 
- RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
- *out << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
-      << "\nYou must enable TriKota." << endl;
- return 0;  // should not fail tests
-#endif
 }
 
 int
@@ -828,10 +755,9 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: Solve, ROL or Dakota.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve or ROL.");
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
-  validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
   validPL->set<int>("Output Level", 2, "Verbosity level, ranges from 0 (no output) to 4 (extreme output)");
   validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
@@ -839,25 +765,6 @@ Piro::getValidPiroAnalysisParameters()
   return validPL;
 }
 
-
-RCP<const Teuchos::ParameterList>
-Piro::getValidPiroAnalysisDakotaParameters()
-{
-  Teuchos::RCP<Teuchos::ParameterList> validPL =
-     rcp(new Teuchos::ParameterList("Valid Piro Analysis Dakota Params"));;
-
-  validPL->set<std::string>("Input File", "","Defaults to dakota.in");
-  validPL->set<std::string>("Output File", "","Defaults to dakota.out");
-  validPL->set<std::string>("Error File", "","Defaults to dakota.err");
-  validPL->set<std::string>("Restart File", "","Defaults to dakota_restart.out");
-  validPL->set<std::string>("Restart File To Read", "","Defaults to NULL (no restart file read)");
-  validPL->set<int>("Restart Evals To Read", 0,
-                    "Number of evaluations to read from restart. Defaults to 0 (all)");
-  validPL->set<int>("Parameter Vector Index", 0,"");
-  validPL->set<int>("Response Vector Index", 0,"");
-
-  return validPL;
-}
 
 RCP<const Teuchos::ParameterList>
 Piro::getValidPiroAnalysisROLParameters(int num_parameters)

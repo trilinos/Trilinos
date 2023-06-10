@@ -1,4 +1,4 @@
-#include "predicates/element_xi_classifier.hpp"
+#include "stk_middle_mesh/predicates/element_xi_classifier.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

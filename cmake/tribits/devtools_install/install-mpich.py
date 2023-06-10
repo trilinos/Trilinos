@@ -146,7 +146,7 @@ command --download-cmnd=<download-cmnd> is:
     echoChDir(self.mpichBaseDir)
     echoRunSysCmnd("tar -xzf "+self.mpichTarball)
     # NOTE: I found that you have to untar the tarball and can't store the
-    # open source in the git repo.  Otherwise the timestaps are messed up and
+    # open source in the git repo.  Otherwise the timestamps are messed up and
     # it 'make' tries to recreate some generated files.
 
   def doConfigure(self):

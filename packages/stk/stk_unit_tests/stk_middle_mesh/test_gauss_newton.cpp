@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "gauss_newton.hpp"
+#include "stk_middle_mesh/gauss_newton.hpp"
 
 using namespace stk::middle_mesh::utils::impl;
 
