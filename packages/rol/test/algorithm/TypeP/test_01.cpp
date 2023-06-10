@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
 
   try {
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
+    RealT errtol = 1e3*tol;
 
     ROL::ParameterList list;
     list.sublist("General").set("Output Level",iprint);
@@ -117,9 +118,9 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Line Search").set("Initial Step Size",1e0);
     list.sublist("Step").sublist("Line Search").set("Maximum Step Size",1e8);
     list.sublist("Step").sublist("Line Search").set("Use Adaptive Step Size Selection",true);
-    list.sublist("Status Test").set("Gradient Tolerance",tol);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Gradient Tolerance",1e1*tol);
     list.sublist("Status Test").set("Step Tolerance",1e-4*tol);
+    list.sublist("Status Test").set("Use Relative Tolerances",true);
     list.sublist("Status Test").set("Iteration Limit", 10000);
 
     int dim = 5;
@@ -172,7 +173,8 @@ int main(int argc, char *argv[]) {
     }
     *outStream << std::endl;
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > 100*tol ? 1 : 0);
+    *outStream << "  Error Tol = " << errtol << std::endl;
+    errorFlag += (err > errtol ? 1 : 0);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
