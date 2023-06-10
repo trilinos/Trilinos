@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 
   try {
-    RealT tol = 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>());
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
     list.sublist("General").set("Output Level",iprint);
@@ -117,11 +117,11 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Line Search").set("Initial Step Size",1e0);
     list.sublist("Step").sublist("Line Search").set("Maximum Step Size",1e8);
     list.sublist("Step").sublist("Line Search").set("Use Adaptive Step Size Selection",true);
-    list.sublist("Status Test").set("Gradient Tolerance",1e-7);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-8);
-    list.sublist("Status Test").set("Step Tolerance",1e-12);
+    list.sublist("Status Test").set("Gradient Tolerance",tol);
+    list.sublist("Status Test").set("Constraint Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Step Tolerance",1e-4*tol);
     list.sublist("Status Test").set("Iteration Limit", 10000);
- 
+
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     }
     *outStream << std::endl;
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += (err > 100*tol ? 1 : 0);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
