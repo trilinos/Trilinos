@@ -178,7 +178,7 @@ public:
     obj_->update(*x0,type,iter);
     // Update samplers
     vsampler_->update(*x0);
-    if ( type != UpdateType::Trial || type != UpdateType::Revert ) {
+    if ( type != UpdateType::Trial && type != UpdateType::Revert ) {
       gsampler_->update(*x0);
       hsampler_->update(*x0);
     }

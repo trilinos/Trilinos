@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_01.cpp
+/*! \file  example_01_l1.cpp
     \brief Shows how to solve the Navier-Stokes control problem.
 */
 
@@ -57,7 +57,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_Solver.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
@@ -71,6 +71,9 @@
 #include "dynpde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
 #include "initial_condition.hpp"
+#include "l1penaltydynamic.hpp"
+
+#include "ROL_TypeP_TrustRegionAlgorithm.hpp"
 
 template<class Real>
 void computeInitialCondition(const ROL::Ptr<ROL::Vector<Real>>       &u0,
@@ -106,7 +109,7 @@ int main(int argc, char *argv[]) {
     int nt           = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
     RealT T          = parlist->sublist("Time Discretization").get("End Time",             1.0);
     RealT dt         = T/static_cast<RealT>(nt);
-    bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", false);
+    bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", true);
     int verbosity    = parlist->sublist("General").get("Print Verbosity", 0);
     verbosity        = (myRank==0 ? verbosity : 0);
     parlist->sublist("General").set("Print Verbosity", verbosity);
@@ -164,7 +167,10 @@ int main(int argc, char *argv[]) {
       zk = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(1));
     }
     ROL::Ptr<ROL::PartitionedVector<RealT>> z
-      = ROL::PartitionedVector<RealT>::create(*zk, nt);
+      = ROL::PartitionedVector<RealT>::create(*zk, nt); // nt 'clones' of zk's
+
+		// write l1 obj that takes in rol vector, loops nt entries, grabs
+		// data from nt entries, sum abs of zk clones
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
@@ -174,10 +180,12 @@ int main(int argc, char *argv[]) {
     RealT w2 = parlist->sublist("Problem").get("State Boundary Cost",1.0);
     RealT w3 = parlist->sublist("Problem").get("Control Cost",0.0);
     RealT wT = parlist->sublist("Problem").get("Final Time State Cost",1.0);
+
     std::vector<RealT> wts = {w1, w2, w3}, wts_T = {wT};
     std::string intObj = parlist->sublist("Problem").get("Integrated Objective Type", "Dissipation");
     std::string ftObj  = parlist->sublist("Problem").get("Final Time Objective Type", "Tracking");
-    qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(intObj,
+    
+		qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(intObj,
                                                              *parlist,
                                                              pde->getVelocityFE(),
                                                              pde->getPressureFE(),
@@ -201,13 +209,13 @@ int main(int argc, char *argv[]) {
                                                                    pde->getVelocityBdryFE(4),
                                                                    pde->getBdryCellLocIds(4),
                                                                    pde->getFieldHelper());
-    }
-    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
+		}
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k // pde integrated obj
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
-    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_T
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_T // final time obj
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_T,wts_T,assembler);
-    ROL::Ptr<LTI_Objective<RealT>> dyn_obj
-      = ROL::makePtr<LTI_Objective<RealT>>(*parlist,obj_k,obj_T);
+    ROL::Ptr<LTI_Objective<RealT>> dyn_obj // combination
+      = ROL::makePtr<LTI_Objective<RealT>>(*parlist,obj_k,obj_T);// integrates over interval, added over timepoints somewhere
 
     /*************************************************************************/
     /***************** BUILD REDUCED COST FUNCTIONAL *************************/
@@ -243,9 +251,15 @@ int main(int argc, char *argv[]) {
     // Construct reduce dynamic objective function
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);
-
-    /*************************************************************************/
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);// summing over 
+    // create l1 dynamic objective for nobj, pass to TRnonsmooth
+    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
+			= ROL::makePtr<L1_Dyn_Objective<RealT>>(rpl,timeStamp); 
+		
+		//Algo pointer
+		ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
+    
+		/*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
     /*************************************************************************/
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
@@ -310,11 +324,14 @@ int main(int argc, char *argv[]) {
         (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
       }
     }
-    ROL::Ptr<ROL::Problem<RealT>> problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
-    problem->finalize(false,true,*outStream);
-    ROL::Solver<RealT> solver(problem,*parlist);
+		parlist->sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG"); 
+		algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
+		
+    //ROL::OptimizationProblem<RealT> problem(obj,z);// need to change this
+    //ROL::OptimizationSolver<RealT> solver(problem,*parlist);// need to change this
     std::clock_t timer = std::clock();
-    solver.solve(*outStream);
+    //solver.solve(*outStream);
+		algo->run(*un, *obj, *nobj, *outStream); 
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
