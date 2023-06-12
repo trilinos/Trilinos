@@ -176,6 +176,8 @@ set(eti_files_without_dir "")
 file(GLOB tpetra_ETI_files
     "${CMAKE_CURRENT_BINARY_DIR}/../tpetra/core/src/*.cpp"
 )
+list(APPEND tpetra_ETI_files "${CMAKE_CURRENT_BINARY_DIR}/../tpetra/core/src/TpetraCore_ETIHelperMacros.h")
+
 foreach(tpetra_ETI_file IN LISTS tpetra_ETI_files)
   list(APPEND eti_files_with_dir "${tpetra_ETI_file}")
   get_filename_component(tpetra_ETI_file_without_dir "${tpetra_ETI_file}" NAME)
@@ -216,22 +218,28 @@ file(WRITE ${all_ETI_classes_list} ${CONTENTS})
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/python)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 
-EXECUTE_PROCESS(COMMAND
-${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_ETI.py ${CMAKE_CURRENT_BINARY_DIR} ${all_ETI_files_list} ${all_ETI_classes_list} "src/PyTrilinos2_Tpetra_ETI.hpp"
+add_custom_command(
+  OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp ${CMAKE_CURRENT_BINARY_DIR}/python/getTpetraTypeName.py
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_ETI.py ${CMAKE_CURRENT_BINARY_DIR} ${all_ETI_files_list} ${all_ETI_classes_list} "src/PyTrilinos2_Tpetra_ETI.hpp"
 )
+add_custom_target(generate_ETI_name DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp)
 
 file (GLOB PyTrilinos2PyFiles2 "${CMAKE_CURRENT_BINARY_DIR}/python/*.py")
 list (APPEND PyTrilinos2PyFiles ${PyTrilinos2PyFiles2})
 
-EXECUTE_PROCESS(COMMAND
-${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
+add_custom_command(
+  OUTPUT  ${binder_include_name}
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
+  DEPENDS generate_ETI_name 
 )
+add_custom_target(generate_include_name DEPENDS ${binder_include_name})
+add_dependencies(generate_include_name generate_ETI_name)
 
 set(BINDER_OPTIONS "")
-list(APPEND BINDER_OPTIONS ${binder_include_name})
 list(APPEND BINDER_OPTIONS --root-module PyTrilinos2)
 list(APPEND BINDER_OPTIONS --prefix ${CMAKE_CURRENT_BINARY_DIR}/binder)
-list(APPEND BINDER_OPTIONS -max-file-size=1000000)
+#list(APPEND BINDER_OPTIONS -max-file-size=1000000)
+list(APPEND BINDER_OPTIONS -single-file)
 list(APPEND BINDER_OPTIONS --bind Teuchos)
 list(APPEND BINDER_OPTIONS --bind Tpetra)
 list(APPEND BINDER_OPTIONS --bind MueLu)
@@ -262,23 +270,13 @@ list(APPEND BINDER_OPTIONS -DNDEBUG)
 message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
 
 
-EXECUTE_PROCESS(COMMAND
-  ${PyTrilinos2_BINDER_EXECUTABLE} ${BINDER_OPTIONS}
-  RESULT_VARIABLE STATUS
-  OUTPUT_VARIABLE OUTPUT_BINDER 
+add_custom_command(
+  OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/binder/PyTrilinos2.cpp
+  COMMAND ${PyTrilinos2_BINDER_EXECUTABLE} ${binder_include_name} ${BINDER_OPTIONS}
+  DEPENDS ${binder_include_name} generate_include_name
 )
-
-if(STATUS AND NOT STATUS EQUAL 0)
-  message("${OUTPUT_BINDER}")
-  if(PYTRILINOS2_CMAKE_ERROR)
-    message(FATAL_ERROR "BINDER FAILED: ${STATUS}")
-  else()
-    message("BINDER FAILED: ${STATUS}")
-  endif()
-else()
-  message(STATUS "BINDER SUCCESS:") 
-  message("${OUTPUT_BINDER}")
-endif()
+add_custom_target(binder_call DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/binder/PyTrilinos2.cpp)
+add_dependencies(binder_call generate_ETI_name generate_include_name)
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   SET(PyTrilinos2_DEFAULT_INSTALL_PREFIX ${PYTHON_PREFIX})
@@ -314,7 +312,7 @@ SET(PyTrilinos2_INSTALL_DIR
 MESSAGE(STATUS "PyTrilinos2 installation path: ${PyTrilinos2_INSTALL_DIR}")
 
 INSTALL(FILES
-  ${PyTrilinos2PyFiles}
+  ${CMAKE_CURRENT_BINARY_DIR}/python/getTpetraTypeName.py
   DESTINATION ${PyTrilinos2_INSTALL_DIR})
 
 # Find the pybind11 CMake module

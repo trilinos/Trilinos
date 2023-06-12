@@ -213,3 +213,4 @@ CONFIGURE_FILE(
   ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/TpetraCore_ETIHelperMacros.h.in
   ${${PACKAGE_NAME}_ETI_FILE_PATH}
   )
+add_custom_target(Tpetra_ETI_generated DEPENDS ${${PACKAGE_NAME}_ETI_FILE_PATH})
