@@ -66,11 +66,40 @@
 #include <KokkosSparse_trsv.hpp>
 #include <shylu_fastutil.hpp>
 
-//whether to print extra debug output at runtime to stdout
-//comment out next line to disable
+// FASTILU Preprocesser options:
+
+// whether to print extra debug output at runtime to stdout
+// comment out next line to disable
 //#define FASTILU_DEBUG_OUTPUT
 
-//forward declaration
+// whether to print timings
+//#define FASTILU_TIMER
+
+// some useful preprocessor functions
+#ifdef FASTILU_TIMER
+#define FASTILU_CREATE_TIMER(name) Kokkos::Timer timer
+
+#define FASTILU_REPORT_TIMER(timer, report)     \
+  std::cout << report << " : " << timer.seconds() << std::endl;  \
+  timer.reset()
+
+#define FASTILU_FENCE_REPORT_TIMER(timer, fenceobj, report)   \
+  fenceobj.fence();                                           \
+  FASTILU_REPORT_TIMER(timer, report)
+
+#else
+#define FASTILU_CREATE_TIMER(name) ((void) (0))
+#define FASTILU_REPORT_TIMER(timer, report) ((void) (0))
+#define FASTILU_FENCE_REPORT_TIMER(timer, fenceobj, report) ((void) (0))
+#endif
+
+#ifdef FASTILU_DEBUG_OUTPUT
+#define FASTILU_DBG_COUT(args) std::cout << args << std::endl;
+#else
+#define FASTILU_DBG_COUT(args) ((void) (0))
+#endif
+
+// forward declarations
 template<class Ordinal, class Scalar, class ExecSpace>
 class FastILUFunctor;
 
@@ -443,9 +472,7 @@ class FastILUPrec
         void symbolicILU()
         {
             using WithoutInit = Kokkos::ViewAllocateWithoutInitializing;
-            #ifdef FASTILU_INIT_TIMER
-            Kokkos::Timer timer;
-            #endif
+            FASTILU_CREATE_TIMER(timer);
             using std::vector;
             using std::cout;
             using std::stable_sort;
@@ -478,19 +505,13 @@ class FastILUPrec
                      );
             int knzl = *nzl;
             int knzu = *nzu;
-            #ifdef FASTILU_INIT_TIMER
-            std::cout << " findFills time : " << timer.seconds() << std::endl;
-            timer.reset();
-            #endif
+            FASTILU_REPORT_TIMER(timer, " findFills time");
 
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "knzl =" << knzl;
-            std::cout << "knzu =" << knzu;
-
-            std::cout << "ILU: nnz = "<< knzl + knzu << std::endl;
-            std::cout << "Actual nnz for ILU: " << *nzl + *nzu << std::endl;
-            #endif
-
+            FASTILU_DBG_COUT(
+                "knzl =" << knzl << "\n" <<
+                "knzu =" << knzu << "\n" <<
+                "ILU: nnz = "<< knzl + knzu << "\n" <<
+                "Actual nnz for ILU: " << *nzl + *nzu);
 
             //Initialize the A matrix that is to be used in the computation
             aRowMap = OrdinalArray(WithoutInit("aRowMap"), nRows + 1);
@@ -509,14 +530,10 @@ class FastILUPrec
             aRowMap_[0] = aRowPtr;
             for (i = 0; i < nRows; i++)
             {
-                #ifdef FASTILU_DEBUG_OUTPUT
-                std::cout << "***row:" << i << std::endl;
-                #endif
+                FASTILU_DBG_COUT("***row:" << i);
                 for(Ordinal k = ial[i]; k < ial[i+1]; k++)
                 {
-                    #ifdef FASTILU_DEBUG_OUTPUT
-                    std::cout << "jal[k]=" << jal[k] << std::endl;
-                    #endif
+                    FASTILU_DBG_COUT("jal[k]=" << jal[k]);
                     aColIdx_[aRowPtr] = jal[k];
                     aRowIdx_[aRowPtr] = i;
                     aLvlIdx_[aRowPtr] = levell[k];
@@ -531,35 +548,24 @@ class FastILUPrec
                 }
                 aRowMap_[i+1] = aRowPtr;
             }
-            #ifdef FASTILU_INIT_TIMER
-            std::cout << " Copy time : " << timer.seconds() << std::endl;
-            timer.reset();
-            #endif
+            FASTILU_REPORT_TIMER(timer, " Copy time");
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = typename HostSpace::execution_space;
             KokkosSparse::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
               (aRowMap_, aColIdx_);
-            #ifdef FASTILU_INIT_TIMER
-            host_space().fence();
-            std::cout << " Sort time : " << timer.seconds() << std::endl;
-            timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(timer, host_space(), " Sort time");
 
             Kokkos::deep_copy(aRowMap, aRowMap_);
             Kokkos::deep_copy(aColIdx, aColIdx_);
             Kokkos::deep_copy(aRowIdx, aRowIdx_);
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished initializing A" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished initializing A");
 
             //Compute RowMap for L and U.
             // > form RowMap for L
             lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
             lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
             Ordinal nnzL = countL();
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished counting L" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished counting L");
 
             // > form RowMap for U and Ut
             uRowMap  = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
@@ -569,9 +575,7 @@ class FastILUPrec
             Ordinal nnzU = countU();
 
             // > form RowMap for Ut
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished counting U" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished counting U");
 
             //Allocate memory and initialize pattern for L, U (transpose).
             lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
@@ -590,10 +594,7 @@ class FastILUPrec
             lVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lVal);
             uVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uVal);
             utVal_   = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utVal);
-            #ifdef FASTILU_INIT_TIMER
-            std::cout << " Mirror : " << timer.seconds() << std::endl;
-            timer.reset();
-            #endif
+            FASTILU_REPORT_TIMER(timer, " Mirror");
         }
 
         void symbolicILU(OrdinalArrayMirror pRowMap_, OrdinalArrayMirror pColIdx_, ScalarArrayMirror pVal_, OrdinalArrayHost pLvlIdx_)
@@ -640,27 +641,21 @@ class FastILUPrec
             Kokkos::deep_copy(aRowMap, aRowMap_);
             Kokkos::deep_copy(aColIdx, aColIdx_);
             Kokkos::deep_copy(aRowIdx, aRowIdx_);
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished initializing A" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished initializing A");
 
             //Now allocate memory for L and U.
             //
             lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
             lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
             countL();
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished counting L" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished counting L");
 
             uRowMap = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
             utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
             utRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utRowMap);
             uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
             countU();
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished counting U" << std::endl;
-            #endif
+            FASTILU_DBG_COUT("**Finished counting U");
 
             //Allocate memory and initialize pattern for L, U (transpose).
             lColIdx = OrdinalArray(WithoutInit("lColIdx"), lRowMap_[nRows]);
@@ -684,9 +679,7 @@ class FastILUPrec
         void numericILU()
         {
             const Scalar zero = STS::zero();
-            #ifdef FASTILU_TIMER
-            Kokkos::Timer Timer;
-            #endif
+            FASTILU_CREATE_TIMER(Timer);
             if (useMetis && (guessFlag == 0 || level == 0)) { // applied only at the first call (level 0)
               // apply column permutation before sorting it
               FastILUPrec_Functor perm_functor(aColIdxIn, ipermMetis);
@@ -712,11 +705,7 @@ class FastILUPrec
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_policy, functor);
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + sort/copy/permute values  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + sort/copy/permute values");
 
             // obtain diagonal scaling factor
             Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
@@ -733,35 +722,19 @@ class FastILUPrec
                 applyManteuffelShift();
                 Kokkos::deep_copy(aVal, aVal_);
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + apply shift/scale  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + apply shift/scale");
+            FASTILU_DBG_COUT("**Finished diagonal scaling");
 
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished diagonal scaling" << std::endl;
-            #endif
             fillL();
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + fill L  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished copying L" << std::endl;
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + fill L");
+            FASTILU_DBG_COUT("**Finished copying L");
+
             fillU();
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + fill U  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "**Finished copying U" << std::endl;
-            std::cout << "nnz L = " << lRowMap_[nRows] << std::endl;
-            std::cout << "nnz U = " << uRowMap_[nRows] << std::endl;
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + fill U");
+            FASTILU_DBG_COUT(
+              "**Finished copying U\n" <<
+              "nnz L = " << lRowMap_[nRows] << "\n" <<
+              "nnz U = " << uRowMap_[nRows]);
         }
 
         //Initialize the rowMap (rowPtr) for L
@@ -873,9 +846,7 @@ class FastILUPrec
         //Put initial guess into U
         void fillU()
         {
-            #ifdef FASTILU_TIMER
-            Kokkos::Timer Timer;
-            #endif
+            FASTILU_CREATE_TIMER(Timer);
             int nnzU = a2uMap.extent(0);
             ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), permCopy);
@@ -897,11 +868,7 @@ class FastILUPrec
                 FastILUPrec_Functor functorG(uGVal, uGRowMap, uGColIdx, uVal, uRowMap, uColIdx);
                 Kokkos::parallel_for(
                   "numericILU::copyVals(G)", copy_policy, functorG);
-                #ifdef FASTILU_TIMER
-                ExecSpace().fence();
-                std::cout << "   + merge_sorted  " << Timer.seconds() << std::endl;
-                Timer.reset();
-                #endif
+                FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + merge_sorted");
             }
         }
 
@@ -1405,25 +1372,15 @@ class FastILUPrec
         void initialize()
         {
             Kokkos::Timer timer;
-            #ifdef FASTILU_INIT_TIMER
-            Kokkos::Timer timer2;
-            #endif
+            FASTILU_CREATE_TIMER(timer2);
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             symbolicILU();
-            #ifdef FASTILU_INIT_TIMER
-            double tic = timer2.seconds();
-            timer2.reset();
-            std::cout << " + initial SymbolicILU (" << level << ") time : " << tic << std::endl;
-            #endif
+            FASTILU_REPORT_TIMER(timer2, " + initial SymbolicILU (" << level << ") time");
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->initialize(aRowMap_, aColIdx_, aVal_, aLvlIdx_);
-                #ifdef FASTILU_INIT_TIMER
-                tic = timer2.seconds();
-                timer2.reset();
-                std::cout << "  > SymbolicILU (" << level << ") time : " << tic << std::endl;
-                #endif
+                FASTILU_REPORT_TIMER(timer2, "  > SymbolicILU (" << level << ") time");
             }
             //Allocate memory for the local A.
             //initialize L, U, A patterns
@@ -1446,39 +1403,24 @@ class FastILUPrec
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
             #endif
-            double t = timer.seconds();
-
-            #ifdef FASTILU_INIT_TIMER
-            std::cout << "Symbolic phase complete." << std::endl;
-            std::cout << "Init time: "<< t << "s" << std::endl;
-            #endif
-            initTime = t;
-            return;
+            initTime = timer.seconds();
+            FASTILU_REPORT_TIMER(timer, "Symbolic phase complete.\n" <<
+                "Init time: ");
         }
 
         //Symbolic Factorization Phase
         void initialize(OrdinalArrayMirror pRowMap_, OrdinalArrayMirror pColIdx_, ScalarArrayMirror pVal_, OrdinalArrayHost pLvlIdx_)
         {
             Kokkos::Timer timer;
-            #ifdef FASTILU_INIT_TIMER
-            Kokkos::Timer timer2;
-            #endif
+            FASTILU_CREATE_TIMER(timer2);
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             symbolicILU(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
-            #ifdef FASTILU_INIT_TIMER
-            double tic = timer2.seconds();
-            timer2.reset();
-            std::cout << " - initial SymbolicILU (" << level << ") time : " << tic << std::endl;
-            #endif
+            FASTILU_REPORT_TIMER(timer2, " - initial SymbolicILU (" << level << ") time");
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->initialize(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
-                #ifdef FASTILU_INIT_TIMER
-                double tic = timer2.seconds();
-                timer2.reset();
-                std::cout << "  = SymbolicILU (" << level << ") time : " << tic << std::endl;
-                #endif
+                FASTILU_REPORT_TIMER(timer2, "  = SymbolicILU (" << level << ") time");
             }
             //Allocate memory for the local A.
             //initialize L, U, A patterns
@@ -1502,14 +1444,9 @@ class FastILUPrec
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
             #endif
             ExecSpace().fence();  //Fence so that init time is accurate
-            double t = timer.seconds();
-
-            #ifdef FASTILU_INIT_TIMER
-            std::cout << " + Symbolic phase complete." << std::endl;
-            std::cout << " + Init time: "<< t << "s" << std::endl;
-            #endif
-            initTime = t;
-            return;
+            initTime = timer.seconds();
+            FASTILU_REPORT_TIMER(timer, " + Symbolic phase complete.\n" <<
+                                        " + Init time:");
         }
 
         void setValues(ScalarArray& aValIn_)
@@ -1530,26 +1467,16 @@ class FastILUPrec
         void compute()
         {
             Kokkos::Timer timer;
-            #ifdef FASTILU_TIMER
-            std::cout << "  >> compute <<" << std::endl;
-            Kokkos::Timer Timer;
-            Kokkos::Timer Timer2;
-            #endif
+            FASTILU_CREATE_TIMER(Timer);
             if ((level > 0) && (guessFlag !=0))
             {
                 initGuessPrec->compute();
+                FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > initGuess");
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "  > initGuess " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+
             numericILU();
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "  > numericILU " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > numericILU ");
+
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,
                     lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega);
@@ -1565,11 +1492,7 @@ class FastILUPrec
             {
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "  > iluFunctor (" << nFact << ") " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << nFact << ")");
 
             // transposee u
             // transpose
@@ -1591,11 +1514,7 @@ class FastILUPrec
                 Kokkos::deep_copy(utColIdx_, utColIdx);
                 Kokkos::deep_copy(utVal_, utVal);
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "  > transposeU " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > transposeU");
 
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
@@ -1617,11 +1536,8 @@ class FastILUPrec
                 #else
                 KokkosSparse::Experimental::sptrsv_symbolic(&khU, utRowMap, utColIdx);
                 #endif
-                #ifdef FASTILU_TIMER
-                ExecSpace().fence();
-                std::cout << "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0)
-                          << ", " << Timer.seconds() << " seconds" << std::endl;
-                #endif
+                FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
+                  "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0));
             } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
                 // Prepare L for TRSV by removing unit-diagonals
                 lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
@@ -1673,12 +1589,9 @@ class FastILUPrec
                 Kokkos::parallel_for(
                   "numericILU::swapDiag", swap_policy, functor);
             }
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "  >> compute done " << Timer2.seconds() << " <<" << std::endl << std::endl;
-            #endif
-            ExecSpace().fence();  //Fence so computeTime is accurate
+            ExecSpace().fence(); // Fence so computeTime is accurate
             computeTime = timer.seconds();
+            FASTILU_REPORT_TIMER(timer, "  >> compute done\n");
         }
 
         //Preconditioner application. Note that this does
@@ -1985,9 +1898,7 @@ class FastILUPrec
                     }
                 }
             }
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "l2 norm of nonlinear residual = " << std::sqrt(sum) << std::endl;
-            #endif
+            FASTILU_DBG_COUT("l2 norm of nonlinear residual = " << std::sqrt(sum));
         }
         friend class FastILUFunctor<Ordinal, Scalar, ExecSpace>;
         friend class FastICFunctor<Ordinal, Scalar, ExecSpace>;
@@ -1999,7 +1910,6 @@ class FastILUPrec
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace>;
-
 };
 
 //TODO: find a way to avoid the if condition (only store lower triangular part of A?)
@@ -2603,5 +2513,10 @@ class ParInitZeroFunctor
 
         scalar_array_type x_ ;
 };
+
+#undef FASTILU_CREATE_TIMER
+#undef FASTILU_REPORT_TIMER
+#undef FASTILU_FENCE_REPORT_TIMER
+#undef FASTILU_DBG_COUT
 
 #endif
