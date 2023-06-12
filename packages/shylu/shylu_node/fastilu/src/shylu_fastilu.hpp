@@ -152,6 +152,7 @@ class FastILUPrec
         Ordinal level;
         Ordinal blkSzILU;
         Ordinal blkSz;
+        Ordinal blockCrsSize;
         Scalar omega; //Underrelaxation parameter
         Scalar shift; //Manteuffel Shift
 
@@ -842,7 +843,6 @@ class FastILUPrec
 
             // create a map from A to U (sorted)
             auto nnzU = uRowMap_[nRows];
-#if 1
             a2uMap = OrdinalArray("a2uMap", nnzU);
             auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
             for (Ordinal i = 0; i < nRows; i++)
@@ -866,7 +866,6 @@ class FastILUPrec
                 uRowMap_[i] = uRowMap_[i-1];
             }
             uRowMap_[0] = 0;
-#endif
 
             return nnzU;
         }
@@ -877,46 +876,9 @@ class FastILUPrec
             #ifdef FASTILU_TIMER
             Kokkos::Timer Timer;
             #endif
-#if 1
             int nnzU = a2uMap.extent(0);
-            #if 1
             ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), permCopy);
-            #else
-            Kokkos::deep_copy(aVal_, aVal);
-            auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
-            Kokkos::deep_copy(a2uMap_, a2uMap);
-            for (int k=0; k<nnzU; k++) {
-                auto pos = a2uMap_(k);
-                uVal_(k) = aVal_[pos];
-                uColIdx_(k) = aRowIdx_[pos];
-            }
-            Kokkos::deep_copy(uVal, uVal_);
-            Kokkos::deep_copy(uColIdx, uColIdx_);
-            #endif
-#else
-            // extract U
-            Kokkos::deep_copy(utRowMap, uRowMap); // using utRowMap (will get incremented)
-            FastILUPrec_Functor functor(aVal, aRowMap, aColIdx, uVal, utRowMap, uColIdx);
-            Kokkos::RangePolicy<GetUpperTag, ExecSpace> getU_policy (0, nRows);
-            Kokkos::parallel_for(
-              "numericILU::getUpper", getU_policy, functor);
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + transpose_matrix  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
-
-            // sort
-            KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
-              (uRowMap, uColIdx, uVal);
-            ExecSpace().fence();
-            #ifdef FASTILU_TIMER
-            ExecSpace().fence();
-            std::cout << "   + sort_matrix  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
-#endif
 
             if ((level > 0) && (guessFlag !=0))
             {
@@ -1052,9 +1014,6 @@ class FastILUPrec
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
-#if 0
-            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
-#endif
             BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
@@ -1075,9 +1034,6 @@ class FastILUPrec
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
             ExecSpace().fence();
-#if 0
-            JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
-#endif
             BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
@@ -1131,6 +1087,7 @@ class FastILUPrec
             shift = shift_;
             blkSzILU = blkSzILU_;
             blkSz = blkSz_;
+            blockCrsSize = blockCrsSize_;
             doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
             sptrsv_KKSpMV = true;   // use Kokkos-Kernels SpMV for Fast SpTRSV
 
@@ -1453,7 +1410,6 @@ class FastILUPrec
             #endif
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
-            #if 1
             symbolicILU();
             #ifdef FASTILU_INIT_TIMER
             double tic = timer2.seconds();
@@ -1469,13 +1425,6 @@ class FastILUPrec
                 std::cout << "  > SymbolicILU (" << level << ") time : " << tic << std::endl;
                 #endif
             }
-            #else
-            if ((level > 0) && (guessFlag != 0))
-            {
-                initGuessPrec->initialize();
-            }
-            symbolicILU();
-            #endif
             //Allocate memory for the local A.
             //initialize L, U, A patterns
             #ifdef SHYLU_DEBUG
@@ -1516,7 +1465,6 @@ class FastILUPrec
             #endif
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
-            #if 1
             symbolicILU(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
             #ifdef FASTILU_INIT_TIMER
             double tic = timer2.seconds();
@@ -1532,13 +1480,6 @@ class FastILUPrec
                 std::cout << "  = SymbolicILU (" << level << ") time : " << tic << std::endl;
                 #endif
             }
-            #else
-            if ((level > 0) && (guessFlag != 0))
-            {
-                initGuessPrec->initialize();
-            }
-            symbolicILU();
-            #endif
             //Allocate memory for the local A.
             //initialize L, U, A patterns
             #ifdef SHYLU_DEBUG
@@ -1631,7 +1572,6 @@ class FastILUPrec
             #endif
 
             // transposee u
-            #if 1
             // transpose
             Kokkos::deep_copy(utRowMap, 0);
             KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
@@ -1651,10 +1591,6 @@ class FastILUPrec
                 Kokkos::deep_copy(utColIdx_, utColIdx);
                 Kokkos::deep_copy(utVal_, utVal);
             }
-            #else
-            // transposee u on host (need to copy to & from host)
-            transposeU();
-            #endif
             #ifdef FASTILU_TIMER
             ExecSpace().fence();
             std::cout << "  > transposeU " << Timer.seconds() << std::endl;
