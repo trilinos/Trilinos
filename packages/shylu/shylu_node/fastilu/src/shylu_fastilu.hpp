@@ -77,7 +77,7 @@
 
 // some useful preprocessor functions
 #ifdef FASTILU_TIMER
-#define FASTILU_CREATE_TIMER(name) Kokkos::Timer timer
+#define FASTILU_CREATE_TIMER(timer) Kokkos::Timer timer
 
 #define FASTILU_REPORT_TIMER(timer, report)     \
   std::cout << report << " : " << timer.seconds() << std::endl;  \
@@ -332,7 +332,7 @@ class FastILUPrec
             Kokkos::deep_copy(utColIdx, utColIdx_);
             Kokkos::deep_copy(utVal, utVal_);
         }
-        //
+
         void findFills(int levfill, OrdinalArrayMirror aRowMap, OrdinalArrayMirror aColIdx,
                        int *nzl, std::vector<int> &lRowMap, std::vector<int> &lColIdx, std::vector<int> &lLevel,
                        int *nzu, std::vector<int> &uRowMap, std::vector<int> &uColIdx, std::vector<int> &uLevel) {
@@ -464,8 +464,8 @@ class FastILUPrec
 
             *nzl = knzl;
             *nzu = knzu;
-
         }
+
         //Symbolic ILU code
         //initializes the matrices L and U and readies them
         //according to the level of fill
@@ -1404,8 +1404,7 @@ class FastILUPrec
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
             #endif
             initTime = timer.seconds();
-            FASTILU_REPORT_TIMER(timer, "Symbolic phase complete.\n" <<
-                "Init time: ");
+            FASTILU_REPORT_TIMER(timer, "Symbolic phase complete.\nInit time");
         }
 
         //Symbolic Factorization Phase
@@ -1445,8 +1444,7 @@ class FastILUPrec
             #endif
             ExecSpace().fence();  //Fence so that init time is accurate
             initTime = timer.seconds();
-            FASTILU_REPORT_TIMER(timer, " + Symbolic phase complete.\n" <<
-                                        " + Init time:");
+            FASTILU_REPORT_TIMER(timer, " + Symbolic phase complete.\n + Init time");
         }
 
         void setValues(ScalarArray& aValIn_)
