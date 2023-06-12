@@ -1347,29 +1347,8 @@ class FastILUPrec
                 initGuessPrec->initialize(aRowMap_, aColIdx_, aVal_, aLvlIdx_);
                 FASTILU_REPORT_TIMER(timer2, "  > SymbolicILU (" << level << ") time");
             }
-            //Allocate memory for the local A.
-            //initialize L, U, A patterns
-            #ifdef SHYLU_DEBUG
-            Ordinal nnzU = uRowMap[nRows];
-            MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, uRowMap, diagElems);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal);
 
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), copyFunc4);
-
-            //Note that the following is a temporary measure
-            //to ensure that memory resides on the device.
-            Ordinal nnzL = lRowMap[nRows];
-            Ordinal nnzA = aRowMap[nRows];
-            MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace> copyFunc2(aColIdx, aRowIdx, aVal);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal);
-
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
-            #endif
-            ExecSpace().fence();  //Fence so that init time is accurate
-            initTime = timer.seconds();
+            initialize_common(timer);
             FASTILU_REPORT_TIMER(timer, "Symbolic phase complete.\nInit time");
         }
 
@@ -1387,6 +1366,13 @@ class FastILUPrec
                 initGuessPrec->initialize(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
                 FASTILU_REPORT_TIMER(timer2, "  = SymbolicILU (" << level << ") time");
             }
+
+            initialize_common(timer);
+            FASTILU_REPORT_TIMER(timer, " + Symbolic phase complete.\n + Init time");
+        }
+
+        void initialize_common(Kokkos::Timer& timer)
+        {
             //Allocate memory for the local A.
             //initialize L, U, A patterns
             #ifdef SHYLU_DEBUG
@@ -1410,7 +1396,6 @@ class FastILUPrec
             #endif
             ExecSpace().fence();  //Fence so that init time is accurate
             initTime = timer.seconds();
-            FASTILU_REPORT_TIMER(timer, " + Symbolic phase complete.\n + Init time");
         }
 
         void setValues(ScalarArray& aValIn_)
