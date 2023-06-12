@@ -68,7 +68,7 @@ void compute_global_sum_and_max(ParallelMachine comm,
   MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
 
   uint64_t numGlobalReduce[2] = {0u, 0u};
-  ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm), "MPI_Allreduce failed");
+  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm), "MPI_Allreduce failed");
   MPI_Op_free(&myOp);
 
   globalSumNumIds = numGlobalReduce[0];
@@ -89,10 +89,10 @@ void generate_parallel_ids_in_gap(ParallelMachine comm,
   newIds.clear();
   newIds.reserve(numNewIdsLocal);
   uint64_t myFirstNewId;
-  ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
+  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
   myFirstNewId -= numNewIdsLocal;
 
-  ThrowRequireMsg(0 == parallel_index_gap_finder_global(comm, 0, maxAllowedId,
+  STK_ThrowRequireMsg(0 == parallel_index_gap_finder_global(comm, 0, maxAllowedId,
                                                     existingIds, numNewIdsLocal,
                                                     globalNumIdsRequested,
                                                     myFirstNewId, newIds),
@@ -127,7 +127,7 @@ void generate_parallel_ids_above_existing_max(ParallelMachine comm,
     //  Otherwise still use a very cheap algorithm, densely pack the resulting ids
     //
     uint64_t myFirstNewId;
-    ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
+    STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
     myFirstNewId -= numNewIdsLocal;
     //
     //  Run basic cheap algorithm.  Start counting new ids at end.

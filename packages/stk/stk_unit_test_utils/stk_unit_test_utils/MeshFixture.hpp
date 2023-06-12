@@ -38,7 +38,7 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/baseImpl/BucketRepository.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -93,24 +93,27 @@ protected:
     }
 
     void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                          unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                          unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                          unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
     }
 
     virtual void setup_mesh(const std::string &meshSpecification,
                             stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                            unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                            unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                            unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
         stk::io::fill_mesh(meshSpecification, *bulkData);
     }
 
     void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification,
                                        stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                       unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                                       unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                                       unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
         stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
@@ -137,24 +140,26 @@ protected:
 
     virtual stk::mesh::MetaData& get_meta()
     {
-        ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+        STK_ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
         return *metaData;
     }
 
     virtual stk::mesh::BulkData& get_bulk()
     {
-        ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+        STK_ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
         return *bulkData;
     }
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                               unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                               unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                               unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
         stk::mesh::MeshBuilder builder(communicator);
         builder.set_spatial_dimension(m_spatialDim);
         builder.set_entity_rank_names(m_entityRankNames);
         builder.set_aura_option(auraOption);
-        builder.set_bucket_capacity(bucketCapacity);
+        builder.set_initial_bucket_capacity(initialBucketCapacity);
+        builder.set_maximum_bucket_capacity(maximumBucketCapacity);
 
         bulkData = builder.create();
         metaData = &(bulkData->mesh_meta_data());
@@ -162,7 +167,7 @@ protected:
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
-        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
+        STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
     }
 
@@ -270,24 +275,27 @@ protected:
     }
 
     void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                          unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                          unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                          unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
     }
 
     virtual void setup_mesh(const std::string &meshSpecification,
                             stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                            unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                            unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                            unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
         stk::io::fill_mesh(meshSpecification, *bulkData);
     }
 
     void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification,
                                        stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                       unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                                       unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                                       unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
-        allocate_bulk(auraOption, bucketCapacity);
+        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
         stk::unit_test_util::simple_fields::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
@@ -314,24 +322,26 @@ protected:
 
     virtual stk::mesh::MetaData& get_meta()
     {
-        ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+        STK_ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
         return *metaData;
     }
 
     virtual stk::mesh::BulkData& get_bulk()
     {
-        ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+        STK_ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
         return *bulkData;
     }
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                               unsigned bucketCapacity = mesh::impl::BucketRepository::default_bucket_capacity)
+                               unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
+                               unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
         stk::mesh::MeshBuilder builder(communicator);
         builder.set_spatial_dimension(m_spatialDim);
         builder.set_entity_rank_names(m_entityRankNames);
         builder.set_aura_option(auraOption);
-        builder.set_bucket_capacity(bucketCapacity);
+        builder.set_initial_bucket_capacity(initialBucketCapacity);
+        builder.set_maximum_bucket_capacity(maximumBucketCapacity);
 
         if(nullptr == metaData) {
           metaData = builder.create_meta_data();
@@ -341,27 +351,31 @@ protected:
         if(nullptr == bulkData) {
           bulkData = builder.create(metaData);
           m_auraOption = auraOption;
-          m_bucketCapacity = bucketCapacity;
+          m_initialBucketCapacity = initialBucketCapacity;
+          m_maximumBucketCapacity = maximumBucketCapacity;
         }
 
-        ThrowRequireMsg((auraOption == m_auraOption) && (bucketCapacity == m_bucketCapacity),
-           "allocate_bulk being called with different arguments from previous call: auraOption = "
-                                << auraOption << " (previously: " << m_auraOption << ") bucketCapacity = "
-                                 << bucketCapacity << " (previously: " << m_bucketCapacity << ")" );
+        STK_ThrowRequireMsg((auraOption == m_auraOption) &&
+                            (initialBucketCapacity == m_initialBucketCapacity) &&
+                            (maximumBucketCapacity == m_maximumBucketCapacity),
+           "allocate_bulk() being called with different arguments from previous call:\n"
+           "    auraOption = " << auraOption << " (previously: " << m_auraOption << ")\n"
+           "    initialBucketCapacity = " << initialBucketCapacity << " (previously: " << m_initialBucketCapacity << ")\n"
+           "    maximumBucketCapacity = " << maximumBucketCapacity << " (previously: " << m_maximumBucketCapacity << ")");
     }
 
     void set_meta(std::shared_ptr<stk::mesh::MetaData> inMetaData)
     {
-        ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
+        STK_ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
         metaData = inMetaData;
     }
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
-        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
+        STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
 
-        ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
+        STK_ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
                         "Unit test error. Trying to reset non NULL meta data.");
     }
 
@@ -373,7 +387,8 @@ protected:
     std::shared_ptr<stk::mesh::BulkData> bulkData;
 
     stk::mesh::BulkData::AutomaticAuraOption m_auraOption{stk::mesh::BulkData::AUTO_AURA};
-    unsigned m_bucketCapacity{0};
+    unsigned m_initialBucketCapacity = 0;
+    unsigned m_maximumBucketCapacity = 0;
 };
 
 class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {

@@ -64,7 +64,6 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 #include <vector>
 #include <list>
 #include <algorithm>
@@ -72,15 +71,6 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cmath>
-//For alpha hulls (is optional feature requiring a third-party library)
-#ifdef HAVE_MUELU_CGAL //Include all headers needed for both 2D and 3D fixed-alpha alpha shapes
-#include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
-#include "CGAL/Delaunay_triangulation_2.h"
-#include "CGAL/Delaunay_triangulation_3.h"
-#include "CGAL/Alpha_shape_2.h"
-#include "CGAL/Fixed_alpha_shape_3.h"
-#include "CGAL/algorithm.h"
-#endif
 
 namespace MueLu {
 
@@ -170,8 +160,8 @@ namespace MueLu {
     Teuchos::RCP<Matrix> Ac;
     if(doCoarseGraphEdges_)
       Ac = Get<RCP<Matrix> >(coarseLevel, "A");
-    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords = Teuchos::null;
-    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coordsCoarse = Teuchos::null;
+    Teuchos::RCP<CoordinateMultiVector> coords = Teuchos::null;
+    Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
     Teuchos::RCP<GraphBase> fineGraph = Teuchos::null;
     Teuchos::RCP<GraphBase> coarseGraph = Teuchos::null;
     if(doFineGraphEdges_)
@@ -180,25 +170,28 @@ namespace MueLu {
       coarseGraph = Get<RCP<GraphBase> >(coarseLevel, "Graph");
     if(useVTK) //otherwise leave null, will not be accessed by non-vtk code
     {
-      coords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(fineLevel, "Coordinates");
+      coords = Get<RCP<CoordinateMultiVector> >(fineLevel, "Coordinates");
+      coords_ = coords;
       if(doCoarseGraphEdges_)
-        coordsCoarse = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(coarseLevel, "Coordinates");
+        coordsCoarse = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates");
       dims_ = coords->getNumVectors();  //2D or 3D?
       if(numProcs > 1)
       {
         if (aggregates->AggregatesCrossProcessors())
         { // Do we want to use the map from aggregates here instead of the map from A? Using the map from A seems to be problematic with multiple dofs per node
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), Amat->getColMap());
-          RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
+          RCP<CoordinateMultiVector> ghostedCoords = Xpetra::MultiVectorFactory<coordinate_type, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
           ghostedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
           coords = ghostedCoords;
+          coords_ = ghostedCoords;
         }
         if(doCoarseGraphEdges_)
         {
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coordsCoarse->getMap(), Ac->getColMap());
-          RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(Ac->getColMap(), dims_);
+          RCP<CoordinateMultiVector> ghostedCoords = Xpetra::MultiVectorFactory<coordinate_type, LocalOrdinal, GlobalOrdinal, Node>::Build(Ac->getColMap(), dims_);
           ghostedCoords->doImport(*coordsCoarse, *coordImporter, Xpetra::INSERT);
           coordsCoarse = ghostedCoords;
+          coordsCoarse_ = ghostedCoords;
         }
       }
     }
@@ -280,24 +273,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(coords.is_null(), Exceptions::RuntimeError,"AggExportFactory could not get coordinates, but they are required for VTK output.");
       numAggs_ = numAggs;
       numNodes_ = coords->getLocalLength();
-      //get access to the coord data
-      xCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(0));
-      yCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(1));
-      zCoords_ = Teuchos::null;
-      if(doCoarseGraphEdges_)
-      {
-        cx_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(0));
-        cy_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(1));
-        cz_ = Teuchos::null;
-      }
-      if(dims_ == 3)
-      {
-        zCoords_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coords->getData(2));
-        if(doCoarseGraphEdges_)
-          cz_ = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>(coordsCoarse->getData(2));
-      }
       //Get the sizes of the aggregates to speed up grabbing node IDs
-      aggSizes_ = aggregates->ComputeAggregateSizes();
+      aggSizes_ = aggregates->ComputeAggregateSizesArrayRCP();
       myRank_ = myRank;
       string aggStyle = "Point Cloud";
       try
@@ -329,18 +306,9 @@ namespace MueLu {
         doJacksPlus_(vertices, geomSizes);
       else if(aggStyle == "Convex Hulls")
         doConvexHulls(vertices, geomSizes);
-      else if(aggStyle == "Alpha Hulls")
-      {
-        #ifdef HAVE_MUELU_CGAL
-        doAlphaHulls_(vertices, geomSizes);
-        #else
-        GetOStream(Warnings0) << "   Trilinos was not configured with CGAL so Alpha Hulls not available.\n   Using Convex Hulls instead." << std::endl;
-        doConvexHulls(vertices, geomSizes);
-        #endif
-      }
       else
       {
-        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\n   Defaulting to Point Cloud." << std::endl;
+        GetOStream(Warnings0) << "   Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, and Convex Hulls.\n   Defaulting to Point Cloud." << std::endl;
         aggStyle = "Point Cloud";
         this->doPointCloud(vertices, geomSizes, numAggs_, numNodes_);
       }
@@ -376,177 +344,17 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
-    if(dims_ == 2)
-      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_);
-    else
-      this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_, zCoords_);
-  }
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
 
-#ifdef HAVE_MUELU_CGAL
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    using namespace std;
-    if(dims_ == 2)
-      doAlphaHulls2D_(vertices, geomSizes);
-    else if(dims_ == 3)
-      doAlphaHulls3D_(vertices, geomSizes);
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    //const double ALPHA_VAL = 2; //Make configurable?
-    using namespace std;
-    //CGAL setup
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-    typedef K::FT FT;
-    typedef K::Point_2 Point;
-    typedef K::Segment_2 Segment;
-    typedef CGAL::Alpha_shape_vertex_base_2<K> Vb;
-    typedef CGAL::Alpha_shape_face_base_2<K> Fb;
-    typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
-    typedef CGAL::Delaunay_triangulation_2<K,Tds> Triangulation_2;
-    typedef CGAL::Alpha_shape_2<Triangulation_2> Alpha_shape_2;
-    typedef Alpha_shape_2::Alpha_shape_edges_iterator Alpha_shape_edges_iterator;
-#if 0 // taw: does not compile with CGAL 4.8
-    for(int i = 0; i < numAggs_; i++)
-    {
-      //Populate a list of Point_2 for this aggregate
-      list<Point> aggPoints;
-      vector<int> aggNodes;
-      for(int j = 0; j < numNodes_; j++)
-      {
-        if(vertex2AggId_[j] == i)
-        {
-          Point p(xCoords_[j], yCoords_[j]);
-          aggPoints.push_back(p);
-          aggNodes.push_back(j);
-        }
-      }
-      Alpha_shape_2 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL), Alpha_shape_2::GENERAL);
-      vector<Segment> segments;
-      CGAL::alpha_edges(hull, back_inserter(segments));
-      vertices.reserve(vertices.size() + 2 * segments.size());
-      geomSizes.reserve(geomSizes.size() + segments.size());
-      for(size_t j = 0; j < segments.size(); j++)
-      {
-        for(size_t k = 0; k < aggNodes.size(); k++)
-        {
-          if(fabs(segments[j][0].x == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][0].y == yCoords_[aggNodes[k]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[k]);
-            break;
-          }
-        }
-        for(size_t k = 0; k < aggNodes.size(); k++)
-        {
-          if(fabs(segments[j][1].x  == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][1].y == yCoords_[aggNodes[k]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[k]);
-            break;
-          }
-        }
-        geomSizes.push_back(2); //all cells are line segments
-      }
+    if(dims_ == 2) {  
+      this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords);
+    } else {
+      zCoords = coords_->getData(2);
+      this->doConvexHulls3D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords, yCoords, zCoords);
     }
-#endif // if 0
   }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
-  {
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel Gt;
-#if 0 // does not compile with CGAL 4-8
-    typedef CGAL::Alpha_shape_cell_base_3<Gt> Fb;
-    typedef CGAL::Triangulation_data_structure_3<Vb,Fb> Tds;
-    typedef CGAL::Delaunay_triangulation_3<Gt,Tds> Triangulation_3;
-    typedef Gt::Point_3 Point;
-    typedef Alpha_shape_3::Alpha_iterator Alpha_iterator;
-    typedef Alpha_shape_3::Cell_handle Cell_handle;
-    typedef Alpha_shape_3::Vertex_handle Vertex_handle;
-    typedef Alpha_shape_3::Facet Facet;
-    typedef Alpha_shape_3::Edge Edge;
-    typedef Gt::Weighted_point Weighted_point;
-    typedef Gt::Bare_point Bare_point;
-    const double ALPHA_VAL = 2; //Make configurable?
-    using namespace std;
-
-    for(int i = 0; i < numAggs_; i++)
-    {
-      list<Point> aggPoints;
-      vector<int> aggNodes;
-      for(int j = 0; j < numNodes_; j++)
-      {
-        if(vertex2AggId[j] == i)
-        {
-          Point p(xCoords_[j], yCoords_[j], zCoords_[j]);
-          aggPoints.push_back(p);
-          aggNodes.push_back(j);
-        }
-      }
-      Fixed_alpha_shape_3 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL));
-      list<Cell_handle> cells;
-      list<Facet> facets;
-      list<Edge> edges;
-      hull.get_alpha_shape_cells(back_inserter(cells));
-      hull.get_alpha_shape_facets(back_inserter(facets));
-      hull.get_alpha_shape_edges(back_inserter(edges));
-      for(size_t j = 0; j < cells.size(); j++)
-      {
-        Point tetPoints[4];
-        tetPoints[0] = cells[j]->vertex(0);
-        tetPoints[1] = cells[j]->vertex(1);
-        tetPoints[2] = cells[j]->vertex(2);
-        tetPoints[3] = cells[j]->vertex(3);
-        for(int k = 0; k < 4; k++)
-        {
-          for(size_t l = 0; l < aggNodes.size(); l++)
-          {
-            if(fabs(tetPoints[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
-               fabs(tetPoints[k].z - zCoords_[aggNodes[l]]) < 1e-12)
-            {
-              vertices.push_back(aggNodes[l]);
-              break;
-            }
-          }
-        }
-        geomSizes.push_back(-10); //tetrahedron
-      }
-      for(size_t j = 0; j < facets.size(); j++)
-      {
-        int indices[3];
-        indices[0] = (facets[i].second + 1) % 4;
-        indices[1] = (facets[i].second + 2) % 4;
-        indices[2] = (facets[i].second + 3) % 4;
-        if(facets[i].second % 2 == 0)
-          swap(indices[0], indices[1]);
-        Point facetPts[3];
-        facetPts[0] = facets[i].first->vertex(indices[0])->point();
-        facetPts[1] = facets[i].first->vertex(indices[1])->point();
-        facetPts[2] = facets[i].first->vertex(indices[2])->point();
-        //add triangles in terms of node indices
-        for(size_t l = 0; l < aggNodes.size(); l++)
-        {
-          if(fabs(facetPts[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
-             fabs(facetPts[k].z - zCoords_[aggNodes[l]]) < 1e-12)
-          {
-            vertices.push_back(aggNodes[l]);
-            break;
-          }
-        }
-        geomSizes.push_back(3);
-      }
-      for(size_t j = 0; j < edges.size(); j++)
-      {
-
-      }
-    }
-#endif // if 0
-  }
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const
@@ -557,6 +365,19 @@ namespace MueLu {
     //Allow two different colors of connections (by setting "aggregates" scalar to CONTRAST_1 or CONTRAST_2)
     vector<pair<int, int> > vert1; //vertices (node indices)
     vector<pair<int, int> > vert2; //size of every cell is assumed to be 2 vertices, since all edges are drawn as lines
+    
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
+    if(dims_ == 3)
+      zCoords = coords_->getData(2);
+
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx = coordsCoarse_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy = coordsCoarse_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz = Teuchos::null;
+    if(dims_ == 3)
+      cz = coordsCoarse_->getData(2);
+
     if(A->isGloballyIndexed())
     {
       ArrayView<const GlobalOrdinal> indices;
@@ -723,9 +544,9 @@ namespace MueLu {
     {
       if(fine)
       {
-        fout << xCoords_[unique1[i]] << " " << yCoords_[unique1[i]] << " ";
+        fout << xCoords[unique1[i]] << " " << yCoords[unique1[i]] << " ";
         if(dims_ == 3)
-          fout << zCoords_[unique1[i]] << " ";
+          fout << zCoords[unique1[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -733,9 +554,9 @@ namespace MueLu {
       }
       else
       {
-        fout << cx_[unique1[i]] << " " << cy_[unique1[i]] << " ";
+        fout << cx[unique1[i]] << " " << cy[unique1[i]] << " ";
         if(dims_ == 3)
-          fout << cz_[unique1[i]] << " ";
+          fout << cz[unique1[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -746,9 +567,9 @@ namespace MueLu {
     {
       if(fine)
       {
-        fout << xCoords_[unique2[i]] << " " << yCoords_[unique2[i]] << " ";
+        fout << xCoords[unique2[i]] << " " << yCoords[unique2[i]] << " ";
         if(dims_ == 3)
-          fout << zCoords_[unique2[i]] << " ";
+          fout << zCoords[unique2[i]] << " ";
         else
           fout << "0 ";
         if(i % 2)
@@ -756,9 +577,9 @@ namespace MueLu {
       }
       else
       {
-        fout << cx_[unique2[i]] << " " << cy_[unique2[i]] << " ";
+        fout << cx[unique2[i]] << " " << cy[unique2[i]] << " ";
         if(dims_ == 3)
-          fout << cz_[unique2[i]] << " ";
+          fout << cz[unique2[i]] << " ";
         else
           fout << "0 ";
         if((i + unique1.size()) % 2)
@@ -817,6 +638,13 @@ namespace MueLu {
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
     using namespace std;
+    
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords = coords_->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords = coords_->getData(1);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords = Teuchos::null;
+    if(dims_ == 3)
+      zCoords = coords_->getData(2);
+    
     vector<int> uniqueFine = this->makeUnique(vertices);
     string indent = "      ";
     fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
@@ -870,11 +698,11 @@ namespace MueLu {
     fout << indent;
     for(size_t i = 0; i < uniqueFine.size(); i++)
     {
-      fout << xCoords_[uniqueFine[i]] << " " << yCoords_[uniqueFine[i]] << " ";
+      fout << xCoords[uniqueFine[i]] << " " << yCoords[uniqueFine[i]] << " ";
       if(dims_ == 2)
         fout << "0 ";
       else
-        fout << zCoords_[uniqueFine[i]] << " ";
+        fout << zCoords[uniqueFine[i]] << " ";
       if(i % 3 == 2)
         fout << endl << indent;
     }

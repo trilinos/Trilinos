@@ -1,5 +1,4 @@
 #include "stk_util/parallel/DeletionGroup.hpp"
-#include "stk_util/command_line/CommandLineParserUtils.hpp"
 
 namespace stk {
 namespace impl {

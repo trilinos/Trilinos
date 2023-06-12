@@ -9,10 +9,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_simd)
 
 FILE(GLOB SOURCES *.cpp)
 
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView2d.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView3d.cpp")
-
 TRIBITS_ADD_EXECUTABLE(
     simd_old_unit_tests
     SOURCES ${SOURCES}
@@ -23,7 +19,6 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
    simd_old_unit_tests
-   NAME STKSimd_Simd
    ARGS "--gtest_filter=StkSimd.SimdAddSubtractMultDivide"
    COMM serial mpi
    PASS_REGULAR_EXPRESSION "PASS"

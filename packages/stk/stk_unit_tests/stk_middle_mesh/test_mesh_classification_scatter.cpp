@@ -1,10 +1,10 @@
-#include "create_mesh.hpp"
-#include "mesh_classification_scatter.hpp"
-#include "mesh_entity.hpp"
-#include "mesh_gather_to_root.hpp"
-#include "mesh_scatter_from_root.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_classification_scatter.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
+#include "stk_middle_mesh/mesh_gather_to_root.hpp"
+#include "stk_middle_mesh/mesh_scatter_from_root.hpp"
 #include "gtest/gtest.h"
-#include "variable_size_field.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -52,7 +52,7 @@ class MeshClassificationScatterTester : public ::testing::Test
 
       mesh::impl::MeshScatterFromRoot scatterMiddleGrid(inputComm, middleGridSerial, meshComm, middleGridDestRanks);
       middleGridParallel = scatterMiddleGrid.scatter();
-      middleGridSerialEntityDestinations = scatterMiddleGrid.get_entity_desintations();
+      middleGridSerialEntityDestinations = scatterMiddleGrid.get_entity_destinations();
     }
 
     void runtest(double tol)

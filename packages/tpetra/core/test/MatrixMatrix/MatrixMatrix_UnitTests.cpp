@@ -752,7 +752,7 @@ mult_test_results jacobi_test(
   RCP<Matrix_t> C2;
   bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
-    if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
+    if(std::is_same<NT,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
       //p.set("openmp: jacobi algorithm","MSAK");
       p.set("openmp: jacobi algorithm","KK");
@@ -762,7 +762,7 @@ mult_test_results jacobi_test(
     }
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-    if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
+    if(std::is_same<NT,Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
       //p.set("cuda: jacobi algorithm","MSAK");
       p.set("cuda: jacobi algorithm","KK");

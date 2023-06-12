@@ -2,7 +2,7 @@
 #define PREDICATES_QUAD_TO_TRIANGLES
 
 #include "intersection_common.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "triangle_coord_utils.hpp"
 
 namespace stk {
@@ -51,9 +51,9 @@ class QuadToTriangles
     // enforces consistency conditions between the records
     void enforce_record_consistency(impl::PointRecordForTriangle& r1, PointRecordForTriangle& r2);
 
-    utils::Point compute_xyz_coords(const PointRecord& quadRecord);
+    utils::Point compute_xyz_coords(const PointRecord& quadRecord, bool allowExterior=false);
 
-    utils::Point get_quad_xi_coords(const PointRecord& quadRecord);
+    utils::Point get_quad_xi_coords(const PointRecord& quadRecord, bool allowExterior=false);
 
     PointRecord classify_onto(const PointRecord& record, mesh::MeshEntityPtr el);
 

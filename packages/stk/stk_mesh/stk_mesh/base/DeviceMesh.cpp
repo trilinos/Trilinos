@@ -251,6 +251,7 @@ inline void reallocate_views(DEVICE_VIEW & deviceView, HOST_VIEW & hostView, siz
 void DeviceMesh::set_entity_keys(const stk::mesh::BulkData& bulk_in)
 {
   unsigned totalNumEntityKeys = bulk_in.get_size_of_entity_index_space();
+  auto& hostEntityKeys = deviceMeshHostData->hostEntityKeys;
 
   reallocate_views(entityKeys, hostEntityKeys, totalNumEntityKeys, RESIZE_FACTOR);
 
@@ -268,6 +269,8 @@ void DeviceMesh::set_entity_keys(const stk::mesh::BulkData& bulk_in)
 
 void DeviceMesh::set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
 {
+  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
+
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
   {
     const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
@@ -287,6 +290,12 @@ void DeviceMesh::set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
 
 void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
 {
+  auto& hostEntityConnectivityOffset = deviceMeshHostData->hostEntityConnectivityOffset;
+  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
+  auto& hostSparseConnectivity = deviceMeshHostData->hostSparseConnectivity;
+  auto& hostSparseConnectivityOrdinals = deviceMeshHostData->hostSparseConnectivityOrdinals;
+  auto& hostSparsePermutations = deviceMeshHostData->hostSparsePermutations;
+
   unsigned totalNumConnectedEntities[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
   unsigned totalNumPermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
@@ -384,6 +393,9 @@ void DeviceMesh::fill_mesh_indices(const stk::mesh::BulkData& bulk_in)
 
 void DeviceMesh::fill_volatile_fast_shared_comm_map(const stk::mesh::BulkData & bulk_in)
 {
+  auto& hostVolatileFastSharedCommMapOffset = deviceMeshHostData->hostVolatileFastSharedCommMapOffset;
+  auto& hostVolatileFastSharedCommMap = deviceMeshHostData->hostVolatileFastSharedCommMap;
+
   for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEM_RANK; ++rank) {
     if(bulk_in.buckets(rank).size() == 0) { continue; }
 
@@ -423,12 +435,14 @@ void DeviceMesh::fill_volatile_fast_shared_comm_map(const stk::mesh::BulkData & 
         }
       }
     }
-    ThrowRequireMsg(entryIndex == totalSizeForAllProcs, "Unexpected size for volatile fast shared comm map");
+    STK_ThrowRequireMsg(entryIndex == totalSizeForAllProcs, "Unexpected size for volatile fast shared comm map");
   }
 }
 
 void DeviceMesh::copy_entity_keys_to_device()
 {
+  auto& hostEntityKeys = deviceMeshHostData->hostEntityKeys;
+
   Kokkos::deep_copy(entityKeys, hostEntityKeys);
 }
 
@@ -442,6 +456,8 @@ void DeviceMesh::copy_mesh_indices_to_device()
 
 void DeviceMesh::copy_bucket_entity_offsets_to_device()
 {
+  auto& hostBucketEntityOffsets = deviceMeshHostData->hostBucketEntityOffsets;
+
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
   {
     Kokkos::deep_copy(bucketEntityOffsets[rank], hostBucketEntityOffsets[rank]);
@@ -450,6 +466,11 @@ void DeviceMesh::copy_bucket_entity_offsets_to_device()
 
 void DeviceMesh::copy_sparse_connectivities_to_device()
 {
+  auto& hostEntityConnectivityOffset = deviceMeshHostData->hostEntityConnectivityOffset;
+  auto& hostSparseConnectivity = deviceMeshHostData->hostSparseConnectivity;
+  auto& hostSparseConnectivityOrdinals = deviceMeshHostData->hostSparseConnectivityOrdinals;
+  auto& hostSparsePermutations = deviceMeshHostData->hostSparsePermutations;
+
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
   {
     for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
@@ -464,6 +485,9 @@ void DeviceMesh::copy_sparse_connectivities_to_device()
 
 void DeviceMesh::copy_volatile_fast_shared_comm_map_to_device()
 {
+  auto& hostVolatileFastSharedCommMapOffset = deviceMeshHostData->hostVolatileFastSharedCommMapOffset;
+  auto& hostVolatileFastSharedCommMap = deviceMeshHostData->hostVolatileFastSharedCommMap;
+
   for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEM_RANK; ++rank)
   {
     Kokkos::deep_copy(volatileFastSharedCommMapOffset[rank], hostVolatileFastSharedCommMapOffset[rank]);

@@ -45,10 +45,10 @@
     \brief Test interpolation and projection capabilities for Hexaedral elements
 
     The test considers two hexahedra in the physical space sharing a common face. 
-    In order to test significant configurations, we consider 6 mappings of the reference hexahedron
+    In order to test significant configurations, we consider 6 rotations of the reference hexahedron
     to the first (physical) hexahedron, so that the common face is mapped from all the 6 faces
     of the reference hexahedron.
-    Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common face are permuted (8 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -73,6 +73,7 @@
 #include "Intrepid2_ProjectionTools.hpp"
 #include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HVOL_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_In_FEM.hpp"
@@ -150,7 +151,7 @@ int InterpolationProjectionHex(const bool verbose) {
   pickTest = true;
   /* initialize random seed: */
   std::srand (std::time(NULL));
-  int configuration = std::rand() % 24;
+  int configuration = std::rand() % 48;
   elemPermutation = configuration % 6;
   sharedSidePermutation = configuration/6;
   *outStream << "Randomly picked configuration (cellTopo premutation, shared face permutation): (" << elemPermutation << ", " <<sharedSidePermutation << ")" << std::endl;
@@ -247,6 +248,9 @@ int InterpolationProjectionHex(const bool verbose) {
   shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Hexahedron<8> >());
   ordinal_type numNodesPerElem = cellTopo.getNodeCount();
 
+  using faceShape = shards::Quadrilateral<4>;
+  const CellTopologyData * const faceTopoData = shards::getCellTopologyData<faceShape >();
+
   *outStream
   << "===============================================================================\n"
   << "|                                                                             |\n"
@@ -259,14 +263,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
     //reordering of nodes to explore different orientations
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
 
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -364,6 +371,8 @@ int InterpolationProjectionHex(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType>());
+          if(degree==2)
+            basis_set.push_back(new Basis_HGRAD_HEX_C2_FEM<DeviceType,ValueType,ValueType>());
           basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(degree,POINTTYPE_EQUISPACED));
           basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(degree,POINTTYPE_WARPBLEND));
 
@@ -754,7 +763,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -775,13 +784,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
   try {
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
+
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -1286,7 +1299,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    }  //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1306,13 +1319,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
   try {
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
+
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -1788,7 +1805,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    }  //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

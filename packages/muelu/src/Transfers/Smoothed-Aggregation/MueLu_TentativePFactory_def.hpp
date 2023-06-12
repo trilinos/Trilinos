@@ -62,20 +62,14 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_IO.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraBlockCrsMatrix.hpp"
-//#include "Tpetra_BlockCrsMatrix.hpp"
-#endif
 
 #include "MueLu_TentativePFactory_decl.hpp"
 
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -222,7 +216,7 @@ namespace MueLu {
       // Get some info about aggregates
       int                         myPID        = coarseCoordsMap->getComm()->getRank();
       LO                          numAggs      = aggregates->GetNumAggregates();
-      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizesArrayRCP();
       const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
       const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 
@@ -286,8 +280,6 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPuncoupledBlockCrs(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                           RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
-#ifdef HAVE_MUELU_TPETRA
-
     /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
        be generalized later, if we ever need to do so:
        1) Null space dimension === block size of matrix:  So no elasticity right now
@@ -311,7 +303,7 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
-    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizesArrayRCP();
 
     // Need to generate the coarse block map
     // NOTE: We assume NSDim == block size here
@@ -476,9 +468,6 @@ namespace MueLu {
     } //for (GO agg = 0; agg < numAggs; agg++)
 
     Ptentative = P_wrap;
-#else
-    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
-#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -870,7 +859,7 @@ namespace MueLu {
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
-    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizesArrayRCP();
 
 
     // Sanity checking

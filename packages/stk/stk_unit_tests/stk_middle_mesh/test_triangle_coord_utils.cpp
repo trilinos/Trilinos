@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "intersection_common.hpp"
-#include "predicates/triangle_coord_utils.hpp"
+#include "stk_middle_mesh/predicates/intersection_common.hpp"
+#include "stk_middle_mesh/predicates/triangle_coord_utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -370,6 +370,41 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.type, PointClassification::Edge);
     EXPECT_EQ(record2.id, 0);
     expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 0.75, 0}, 1e-13);
+  }  
+}
+
+TEST_F(TriangleCoordUtilsTester, ExteriorDeviation)
+{
+  setup({0, 0, 0}, {1, 0, 0}, {0, 1, 0});
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(0.5, -0.5));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 0.5, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(-0.5, 0.5));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 0.5, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(0.75, 0.75));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 0.5, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(1.5, 0.5));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 1.5, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(0.5, 1.5));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 1.5, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, tri, Point(0.5, -1));
+    EXPECT_NEAR(triCoordUtils.compute_exterior_deviation(r1), 1.5, 1e-13);
   }  
 
 }

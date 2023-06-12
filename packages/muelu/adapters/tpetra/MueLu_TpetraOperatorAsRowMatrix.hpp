@@ -132,6 +132,10 @@ namespace MueLu {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 
+    typename row_matrix_type::local_ordinal_type getBlockSize() const {
+      throw MueLu::Exceptions::RuntimeError("Not implemented.");
+    }
+
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {
       return op_->getDomainMap()->getComm();
     }

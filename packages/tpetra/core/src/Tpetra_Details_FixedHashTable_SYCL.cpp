@@ -53,7 +53,7 @@ namespace Details {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  using sycl_device_type = typename Kokkos::Compat::KokkosSYCLWrapperNode::device_type;
+  using sycl_device_type = typename Tpetra::KokkosCompat::KokkosSYCLWrapperNode::device_type;
 
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_SYCL( LO, GO ) \
   TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT( LO, GO, sycl_device_type )

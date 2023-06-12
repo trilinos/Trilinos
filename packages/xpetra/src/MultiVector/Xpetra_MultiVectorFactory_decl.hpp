@@ -83,7 +83,7 @@ namespace Xpetra {
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+         class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class MultiVectorFactory
 {
   private:

@@ -53,7 +53,7 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -456,7 +456,7 @@ namespace MueLu {
   } // namespace
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -482,7 +482,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
 
@@ -492,7 +492,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -523,7 +523,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
     LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
-    auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
+    auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
 

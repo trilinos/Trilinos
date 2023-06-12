@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,6 +9,7 @@
 #include <Ioss_Compare.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
@@ -167,8 +168,8 @@ int main(int argc, char *argv[])
                  fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
-    int64_t mem = Ioss::Utils::get_memory_info();
-    int64_t hwm = Ioss::Utils::get_hwm_memory_info();
+    int64_t mem = Ioss::MemoryUtils::get_memory_info();
+    int64_t hwm = Ioss::MemoryUtils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
                  "\n\tCurrent Memory:    {}M\n"

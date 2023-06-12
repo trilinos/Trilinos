@@ -77,7 +77,7 @@ public:
     Mesh_Element & meshElem = get_mesh_element();
     meshElem.create_cutter(krino_mesh, *interfaceGeometry);
     LevelSetElementCutter * cutter = dynamic_cast<LevelSetElementCutter *>(meshElem.get_cutter());
-    ThrowRequire(cutter);
+    STK_ThrowRequire(cutter);
     return *cutter;
   }
 

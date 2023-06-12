@@ -50,11 +50,11 @@ void output_field_with_mesh(const stk::mesh::BulkData & mesh, const stk::mesh::P
 
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
 {
-  ThrowAssert(fileIndex >= 0);
+  STK_ThrowAssert(fileIndex >= 0);
   if (fileIndex < 1)
     return fileBaseName + ".e";
 
-  ThrowAssert(fileIndex <= 9998);
+  STK_ThrowAssert(fileIndex <= 9998);
   char counterChar[32] = {'\0'};
   std::snprintf(counterChar, 32, "%.4d", fileIndex+1);
   const std::string filename = fileBaseName + ".e-s" + std::string(counterChar);

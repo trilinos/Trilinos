@@ -71,7 +71,7 @@ void GetPartsByName(std::vector<stk::mesh::Part*> & parts,
   for(size_t i = 0; i < names.size(); i++)
   {
     parts.push_back(inBulk.mesh_meta_data().get_part(names[i]));
-    ThrowRequireMsg(parts[i] != nullptr, "Can't find " <<  names[i] << " in mesh.\n");
+    STK_ThrowRequireMsg(parts[i] != nullptr, "Can't find " <<  names[i] << " in mesh.\n");
   }
 }
 
@@ -144,7 +144,7 @@ void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, 
   for(size_t i=0; i<blockNames.size(); i++)
   {
     parts[i] = oldBulk.mesh_meta_data().get_part(blockNames[i]);
-    ThrowRequireMsg(parts[i] != nullptr, "Can't find block " << blockNames[i] << " in mesh.\n");
+    STK_ThrowRequireMsg(parts[i] != nullptr, "Can't find block " << blockNames[i] << " in mesh.\n");
   }
 
   stk::mesh::Selector selector = stk::mesh::selectUnion(parts);

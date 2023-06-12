@@ -47,6 +47,7 @@
 #include <iomanip>
 #include <iostream>
 #include <unistd.h>
+#include <sys/resource.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
@@ -88,9 +89,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
 #endif
@@ -105,7 +104,6 @@
 #include <MueLu_AMGXOperator.hpp>
 #include <MueLu_AMGX_Setup.hpp>
 #endif
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
@@ -113,7 +111,6 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
@@ -122,7 +119,6 @@
 
 /*********************************************************************/
 
-#ifdef HAVE_MUELU_TPETRA
 #include "KokkosBlas1_abs_impl.hpp"
 template<class RV, class XV, class SizeType>
 void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
@@ -183,8 +179,29 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
        throw std::runtime_error("Invalid 'equilibrate' option '"+equilibrate+"'");
   }
 }
-#endif
 
+
+/*********************************************************************/
+// Gets current memory usage in kilobytes
+size_t get_current_memory_usage()
+{
+  size_t memory = 0; 
+  
+  // darwin reports rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+  const size_t RU_MAXRSS_UNITS=1024;
+#else
+  const size_t RU_MAXRSS_UNITS=1;
+#endif
+  
+  struct rusage sys_resources;
+  getrusage(RUSAGE_SELF, &sys_resources);
+  memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
+  
+  /* Success */
+  return memory;
+}
+/*********************************************************************/
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -244,9 +261,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
-#ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
-#endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
@@ -377,11 +392,9 @@ MueLu::MueLu_AMGX_initialize_plugins();
   tm = Teuchos::null;
 
   // Do equilibration if requested
-#ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
     equilibrateMatrix(A,equilibrate);
   }
-#endif
 
   bool resetStackedTimer = false;
   if (paramList.isParameter("number of reruns"))
@@ -496,6 +509,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
       comm->barrier();
       tm = Teuchos::null;
+
+
+      size_t mem = get_current_memory_usage();
+      out2<<"Memory use after preconditioner setup (GB): " << (mem/1024.0/1024.0)<<std::endl;
 
       // =========================================================================
       // System solution (Ax = b)

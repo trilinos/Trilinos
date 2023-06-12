@@ -50,13 +50,15 @@
 
 #include "MueLu_MatrixFreeTentativeP_fwd.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
+#include <Teuchos_BLAS_types.hpp>
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "Xpetra_Operator.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_MultiVector_fwd.hpp"
+#include "Xpetra_Operator_fwd.hpp"
 
 namespace MueLu {
 
@@ -68,14 +70,14 @@ namespace MueLu {
   // class MatrixFreeTentativeP;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
+  class MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
     typedef Kokkos::MDRangePolicy<local_ordinal_type, execution_space, Kokkos::Rank<2>> md_range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>      node_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
 
   private:
@@ -89,7 +91,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates_kokkos> aggregates)
+    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates> aggregates)
     : fine_map_(fine_map),
       coarse_map_(coarse_map),
       aggregates_(aggregates)
@@ -116,7 +118,7 @@ namespace MueLu {
     }
 
     // get the aggregates
-    Teuchos::RCP<const Aggregates_kokkos> getAggregates() const {
+    Teuchos::RCP<const Aggregates> getAggregates() const {
       return aggregates_;
     }
 
@@ -129,7 +131,7 @@ namespace MueLu {
     const Teuchos::RCP<const Map> coarse_map_;
 
     // the aggregates required for the grid transfer
-    const Teuchos::RCP<const Aggregates_kokkos> aggregates_;
+    const Teuchos::RCP<const Aggregates> aggregates_;
   };
 
 } //namespace MueLu

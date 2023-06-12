@@ -56,7 +56,7 @@ void throw_conflicting_restrictions(const FieldBase& field, const PartVector& pa
   for ( size_t i = 0, ie = parts.size(); i < ie; ++i) {
     oss << parts[i]->name() << ", ";
   }
-  ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.  Field name = "
+  STK_ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.  Field name = "
                 << field.name() << "on bucket with parts = " << oss.str() << "with one selector = " << first.selector() << ", num_scalars = "
                 << first.num_scalars_per_entity()
                 << " and another selector = " << second.selector() << ", dimension = " << second.num_scalars_per_entity() << "!");

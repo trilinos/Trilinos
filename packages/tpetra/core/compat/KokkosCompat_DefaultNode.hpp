@@ -39,54 +39,21 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOSCOMPAT_DEFAULTNODE_HPP
-#define KOKKOSCOMPAT_DEFAULTNODE_HPP
+#ifndef TPETRAKOKKOSCOMPAT_DEFAULTNODE_HPP
+#define TPETRAKOKKOSCOMPAT_DEFAULTNODE_HPP
 
 #include "TpetraCore_config.h"
-#include "KokkosClassic_DefaultNode_config.h"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Teuchos_RCP.hpp"
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Teuchos {
-  // Dear users: This is just a forward declaration.
-  // Please skip over it.
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-namespace KokkosClassic {
-
-
-  /// \brief Specify Tpetra's default Node type.
-  ///
-  /// Tpetra::Map uses this class to get Tpetra's default Node type.
-  /// <i>This is an implementation detail of Tpetra</i>.  If you want
-  /// to know the default Node type, just ask Tpetra::Map, like this:
-  /// \code
-  /// typedef Tpetra::Map<>::node_type default_node_type;
-  /// \endcode
-  class DefaultNode {
-  public:
-#if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosSYCLWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosHIPWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
-#elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-    typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#warning "The header file Trilinos/packages/tpetra/core/compat/KokkosCompat_DefaultNode.hpp is deprecated. Use Tpetra_KokkosCompat_DefaultNode.hpp"
+#include "Tpetra_KokkosCompat_DefaultNode.hpp"
 #else
-#    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
+#error "The header file Trilinos/packages/tpetra/core/compat/KokkosCompat_DefaultNode.hpp is deprecated. Use Tpetra_KokkosCompat_DefaultNode.hpp"
 #endif
 
-  };
+namespace KokkosClassic {
+    using DefaultNode [[deprecated]] = Tpetra::KokkosClassic::DefaultNode;
+}
 
-} // namespace KokkosClassic
-
-#endif // KOKKOS_DEFAULTNODE_HPP
+#endif // TPETRAKOKKOSCOMPAT_DEFAULTNODE_HPP
 

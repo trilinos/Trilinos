@@ -295,7 +295,7 @@ namespace { // (anonymous)
     }
 #endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_ENABLE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     {
       using device_type = Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>;
       testStatic1dViewValues<device_type>
@@ -305,7 +305,7 @@ namespace { // (anonymous)
         return;
       }
     }
-#endif // KOKKOS_ENABLE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_SERIAL
     {
@@ -482,13 +482,13 @@ namespace { // (anonymous)
     }
 #endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_ENABLE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     {
       using device_type = Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>;
       testStatic2dViewValues<device_type>
         (success, out, "(Threads,HostSpace)");
     }
-#endif // KOKKOS_ENABLE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_SERIAL
     {
@@ -714,7 +714,7 @@ namespace { // (anonymous)
     }
 #endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_ENABLE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     {
       using device_type = Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>;
       testStatic2dDualViewValues<device_type>
@@ -724,7 +724,7 @@ namespace { // (anonymous)
         return;
       }
     }
-#endif // KOKKOS_ENABLE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_SERIAL
     {

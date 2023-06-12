@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mesh_entity.hpp"
-#include "predicates/intersection.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
+#include "stk_middle_mesh/predicates/intersection.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -979,7 +979,6 @@ TEST(PointClassifier, EdgeIntersectionXiQuadOverlappedEdges)
   const double eps           = 1e-13;
   const double smallSlopeEps = 1e-13;
   PointClassifier c(eps, smallSlopeEps);
-  utils::Point pt1, pt2;
   PointRecord r1, r2;
   PossibleEdgeIntersection p, p2;
 

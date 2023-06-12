@@ -50,7 +50,7 @@
 
 std::vector<std::pair<uint64_t, uint64_t> > GenerateGlobalPairedList(std::vector<uint64_t>& localOrderArray, std::vector<uint64_t>&  newIdsLocal, stk::ParallelMachine comm) {
 
-  ThrowRequireMsg(localOrderArray.size() == newIdsLocal.size(),"Inconsistent Sizes in GenerateGlobalPairedList");
+  STK_ThrowRequireMsg(localOrderArray.size() == newIdsLocal.size(),"Inconsistent Sizes in GenerateGlobalPairedList");
 
   std::vector<std::pair<uint64_t, uint64_t> > idOrderPairsLocal;
   std::vector<std::pair<uint64_t, uint64_t> > idOrderPairsGlobal;

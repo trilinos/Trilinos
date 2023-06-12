@@ -53,21 +53,13 @@
 // Some classes are only used in the definition (_def.hpp) of this class
 // but forward declarations are needed here to enable the UseShortNames mechanism.
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_Export_fwd.hpp>
-#include <Xpetra_ExportFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_BlockedRAPFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_SubBlockAFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

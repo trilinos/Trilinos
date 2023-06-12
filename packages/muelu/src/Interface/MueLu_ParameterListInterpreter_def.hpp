@@ -68,7 +68,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -79,7 +78,6 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
-#include "MueLu_MasterList.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -101,14 +99,12 @@
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_NodePartitionInterface.hpp"
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
@@ -258,23 +254,23 @@ namespace MueLu {
 
     // Check for Kokkos
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
       useKokkos_ = true;
 # endif    
     (void)MUELU_TEST_AND_SET_VAR(paramList, "use kokkos refactor", bool, useKokkos_);
@@ -1156,10 +1152,6 @@ namespace MueLu {
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
       //      aggFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
 
-    } else if (aggType == "coupled") {
-      aggFactory = rcp(new CoupledAggregationFactory());
-      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-
     } else if (aggType == "brick") {
       aggFactory = rcp(new BrickAggregationFactory());
       ParameterList aggParams;
@@ -1440,7 +1432,7 @@ namespace MueLu {
         manager.SetFactory("Coordinates", NoFactory::getRCP());
 
       } else {
-        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+        RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
@@ -1584,7 +1576,7 @@ namespace MueLu {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && (defined(HAVE_MUELU_ZOLTAN) || defined(HAVE_MUELU_ZOLTAN2)) // skip to the end, print warning, and turn off repartitioning if we don't have MPI and Zoltan/Zoltan2
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, enableInPlace);
       // Short summary of the issue: RebalanceTransferFactory shares ownership
       // of "P" with SaPFactory, and therefore, changes the stored version.
@@ -1631,24 +1623,25 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
 
-#ifndef HAVE_MUELU_ZOLTAN
+# ifndef HAVE_MUELU_ZOLTAN
       bool switched = false;
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
-#else
-# ifndef HAVE_MUELU_ZOLTAN2
+# else
+#  ifndef HAVE_MUELU_ZOLTAN2
       bool switched = false;
-# endif
-#endif
-#ifndef HAVE_MUELU_ZOLTAN2
+#  endif // HAVE_MUELU_ZOLTAN2
+# endif // HAVE_MUELU_ZOLTAN
+
+# ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
         this->GetOStream(Warnings0) << "Zoltan2 interface is not available, trying to switch to Zoltan" << std::endl;
         partName = "zoltan";
       }
-#endif
+# endif // HAVE_MUELU_ZOLTAN2
 
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
@@ -1670,26 +1663,22 @@ namespace MueLu {
       // Partitioner
       RCP<Factory> partitioner;
       if (levelID == nodeRepartitionLevel) {
-#ifdef HAVE_MPI
         //        partitioner = rcp(new NodePartitionInterface());
         partitioner = rcp(new MueLu::NodePartitionInterface<SC,LO,GO,NO>());
         ParameterList partParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node id"               ,int,repartheurParams);
         partitioner->SetParameterList(partParams);
         partitioner->SetFactory("Node Comm",         manager.GetFactory("Node Comm"));
-#else
-        throw Exceptions::RuntimeError("MPI is not available");
-#endif
       }
       else if (partName == "zoltan") {
-#ifdef HAVE_MUELU_ZOLTAN
+# ifdef HAVE_MUELU_ZOLTAN
         partitioner = rcp(new ZoltanInterface());
-        // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-#else
+        // NOTE: ZoltanInterface ("zoltan") does not support external parameters through ParameterList
+# else
         throw Exceptions::RuntimeError("Zoltan interface is not available");
-#endif
+# endif // HAVE_MUELU_ZOLTAN
       } else if (partName == "zoltan2") {
-#ifdef HAVE_MUELU_ZOLTAN2
+# ifdef HAVE_MUELU_ZOLTAN2
         partitioner = rcp(new Zoltan2Interface());
         ParameterList partParams;
         RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
@@ -1697,9 +1686,9 @@ namespace MueLu {
         partitioner->SetParameterList(partParams);
         partitioner->SetFactory("repartition: heuristic target rows per process",
                                 manager.GetFactory("repartition: heuristic target rows per process"));
-#else
+# else
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
-#endif
+# endif // HAVE_MUELU_ZOLTAN2
       }
 
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
@@ -1800,8 +1789,12 @@ namespace MueLu {
       }
 #else
       paramList.set("repartition: enable",false);
+# ifndef HAVE_MPI
       this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
-#endif
+# else
+      this->GetOStream(Warnings0) << "Zoltan/Zoltan2 are unavailable for repartitioning\n";
+# endif // HAVE_MPI
+#endif // defined(HAVE_MPI) && (defined(HAVE_MUELU_ZOLTAN) || defined(HAVE_MUELU_ZOLTAN2))
     }
   }
 
@@ -1921,7 +1914,7 @@ namespace MueLu {
       tf->SetFactory("Chosen P", manager.GetFactory("P"));
       tf->AddCoordTransferFactory(semicoarsenFactory);
 
-      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
       coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
       tf->AddCoordTransferFactory(coords);

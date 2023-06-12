@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "field_scatter_from_root.hpp"
-#include "create_mesh.hpp"
-#include "mesh_scatter_from_root.hpp"
+#include "stk_middle_mesh/field_scatter_from_root.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_scatter_from_root.hpp"
 
 namespace {
 
@@ -79,7 +79,7 @@ class FieldScatterFromRootTester
       mesh::impl::MeshScatterFromRoot scatterer(m_unionComm, m_meshSerial, m_meshComm,
                                                 elementDestinationRanks); 
       std::shared_ptr<mesh::Mesh> meshParallel = scatterer.scatter();
-      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_desintations();
+      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_destinations();
 
 
       mesh::FieldPtr<utils::Point> fieldSrc, fieldDest;

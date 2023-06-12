@@ -49,12 +49,12 @@
 #define Moertel_ExplicitTemplateInstantiation_hpp
 
 #include "Moertel_config.h"
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #ifdef HAVE_MOERTEL_TPETRA
 //typedef DefaultNodeType KokkosNode;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> KokkosNode;
-//typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosNode;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> KokkosNode;
+//typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType KokkosNode;
 #else
 typedef int KokkosNode;
 #endif // HAVE_MOERTEL_TPETRA

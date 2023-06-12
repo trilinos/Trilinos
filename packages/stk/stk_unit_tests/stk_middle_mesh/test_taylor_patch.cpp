@@ -1,4 +1,4 @@
-#include "taylor_patch.hpp"
+#include "stk_middle_mesh/taylor_patch.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

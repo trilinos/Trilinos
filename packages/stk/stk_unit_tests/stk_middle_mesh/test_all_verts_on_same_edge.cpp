@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "element_mesh_classifier.hpp"
-#include "field.hpp"
-#include "predicates/point_classifier_normal_wrapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/element_mesh_classifier.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/predicates/point_classifier_normal_wrapper.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -38,14 +38,14 @@ class AllVertsOnSameEdgeTester : public ::testing::Test
       vertClassifications =
           mesh::create_field<predicates::impl::PointRecord>(mesh1, mesh::impl::FieldShape(1, 0, 0), 1);
 
-      predicates::impl::PointClassifierNormalWrapper pointClassifier(mesh2);
+      m_pointClassifier = std::make_shared<predicates::impl::PointClassifierNormalWrapper>(mesh2);
       for (auto& vert : mesh1->get_vertices())
       {
         for (auto mesh2El : mesh2->get_elements())
         {
           if (mesh2El)
           {
-            predicates::impl::PointRecord record = pointClassifier.classify_reverse(mesh2El, vert->get_point_orig(0));
+            predicates::impl::PointRecord record = m_pointClassifier->classify_reverse(mesh2El, vert->get_point_orig(0));
             if (record.type != PointClassification::Exterior)
             {
               (*vertClassifications)(vert, 0, 0) = record;
@@ -58,6 +58,7 @@ class AllVertsOnSameEdgeTester : public ::testing::Test
 
     std::shared_ptr<mesh::Mesh> mesh1;
     std::shared_ptr<mesh::Mesh> mesh2;
+    std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> m_pointClassifier;
     mesh::FieldPtr<predicates::impl::PointRecord> vertClassifications;
     std::set<mesh::MeshEntityPtr, mesh::MeshEntityCompare> verts;
 };

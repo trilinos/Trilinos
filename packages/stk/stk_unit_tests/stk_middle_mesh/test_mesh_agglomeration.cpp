@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "mesh_agglomerator.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_agglomerator.hpp"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -41,9 +41,6 @@ TEST(MeshAgglomerator, All)
         (std::abs(pt1.y - yval) < 1e-13 && std::abs(pt2.y - yval) < 1e-13))
       partitionEdges.insert(edge);
   }
-
-  for (auto& edge : partitionEdges)
-    std::cout << "partition edge = " << edge << std::endl;
 
   auto funcE = [partitionEdges](MeshEntityPtr edge) { return partitionEdges.count(edge) > 0; };
 

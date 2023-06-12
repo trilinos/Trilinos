@@ -196,12 +196,12 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
     for(PairIterEntityComm ec = shared_comm_info_range(entity_comm_info); !ec.empty(); ++ec)
     {
         CommBuffer & buf = comm.recv_buffer(ec->proc);
-        ThrowRequireMsg(buf.remaining(), "P"<<comm.parallel_rank()<<" empty buf, expected to recv parts for: "<<expected_key<<" from proc "<<ec->proc);
+        STK_ThrowRequireMsg(buf.remaining(), "P"<<comm.parallel_rank()<<" empty buf, expected to recv parts for: "<<expected_key<<" from proc "<<ec->proc);
 
         unsigned count = 0;
         stk::mesh::EntityKey key;
         buf.unpack<stk::mesh::EntityKey>(key);
-        ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
+        STK_ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
 
         buf.unpack<unsigned>(count);
         for(unsigned j = 0; j < count; ++j)
@@ -475,14 +475,17 @@ void comm_shared_procs(PairIterEntityComm commInfo,
   }
 }
 
-void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs)
+void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
 {
   procs.clear();
-  const int n = ec.size(); 
-  for (int i=0; i<n; ++i) {
-    procs.push_back( ec[i].proc );
+  for(; !ec.empty(); ++ec) {
+    if (ec->ghost_id == 0 || procs.empty()) {
+      procs.push_back( ec->proc );
+    }
+    else {
+      stk::util::insert_keep_sorted_and_unique(ec->proc, procs);
+    }
   }
-  stk::util::sort_and_unique(procs);
 }
 
 void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)

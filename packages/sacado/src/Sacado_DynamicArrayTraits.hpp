@@ -35,7 +35,7 @@
 #include <stdint.h>
 
 #include "Sacado_Traits.hpp"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Core.hpp"
 #endif
 
@@ -52,7 +52,7 @@ namespace Sacado {
   template <typename ExecSpace>
   void destroyGlobalMemoryPool(const ExecSpace& space) {}
 
-#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
+#if 0 && defined(HAVE_SACADO_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   namespace Impl {
     extern const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
   }
@@ -80,7 +80,7 @@ namespace Sacado {
   }
 #endif
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
@@ -188,7 +188,7 @@ namespace Sacado {
       T* m = 0;
       if (sz > 0)
         KOKKOS_IMPL_CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
-#elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#elif defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
       // This code assumes all threads enter ds_alloc, even those with sz == 0
       T* m = 0;
       const int total_sz = warpReduce(sz);
@@ -200,7 +200,7 @@ namespace Sacado {
       }
       m = warpBcast(m,0);
       m += warpScan(sz);
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       T* m = 0;
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0) {
@@ -215,7 +215,7 @@ namespace Sacado {
       T* m = 0;
       if (sz > 0) {
         m = static_cast<T* >(operator new(sz*sizeof(T)));
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
         if (m == 0)
           Kokkos::abort("Allocation failed.");
 #endif
@@ -230,13 +230,13 @@ namespace Sacado {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       if (sz > 0)
         KOKKOS_IMPL_CUDA_SAFE_CALL( cudaFree(m) );
-#elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#elif defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
       const int total_sz = warpReduce(sz);
       const int lane = warpLane();
       if (total_sz > 0 && lane == 0) {
         global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, total_sz*sizeof(T));
       }
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0)
           global_sacado_openmp_memory_pool->deallocate((void*) m, sz*sizeof(T));
@@ -365,13 +365,13 @@ namespace Sacado {
         //const int lane = warpLane();
         const int lane = threadIdx.x;
         if (sz > 0 && lane == 0) {
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
           m = static_cast<T*>(global_sacado_cuda_memory_pool_on_device->allocate(sz*sizeof(T)));
           if (m == 0)
             Kokkos::abort("Allocation failed.  Kokkos memory pool is out of memory");
 #else
           m = static_cast<T* >(operator new(sz*sizeof(T)));
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
 #endif
@@ -382,7 +382,7 @@ namespace Sacado {
       else {
         if (sz > 0) {
           m = static_cast<T* >(operator new(sz*sizeof(T)));
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
 #endif
@@ -399,7 +399,7 @@ namespace Sacado {
         // const int lane = warpLane();
         const int lane = threadIdx.x;
         if (sz > 0 && lane == 0) {
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
           global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, sz*sizeof(T));
 #else
           operator delete((void*) m);
@@ -518,13 +518,13 @@ namespace Sacado {
         const int total_sz = warpReduce(sz, blockDim.x);
         const int lane = threadIdx.x;
         if (total_sz > 0 && lane == 0) {
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
           m = static_cast<T*>(global_sacado_cuda_memory_pool_on_device->allocate(total_sz*sizeof(T)));
           if (m == 0)
             Kokkos::abort("Allocation failed.  Kokkos memory pool is out of memory");
 #else
           m = static_cast<T* >(operator new(total_sz*sizeof(T)));
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
 #endif
@@ -536,7 +536,7 @@ namespace Sacado {
       else {
         if (sz > 0) {
           m = static_cast<T* >(operator new(sz*sizeof(T)));
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
 #endif
@@ -555,7 +555,7 @@ namespace Sacado {
         const int total_sz = warpReduce(sz, blockDim.x);
         const int lane = threadIdx.x;
         if (total_sz > 0 && lane == 0) {
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_KOKKOS_USE_MEMORY_POOL)
           global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, total_sz*sizeof(T));
 #else
           operator delete((void*) m);

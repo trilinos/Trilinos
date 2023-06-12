@@ -103,7 +103,7 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
     }
     else {
       unsigned expected = p+1;
-      ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
+      STK_ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
       EXPECT_EQ(expected, recv_bufs[p].size());
     }
   }

@@ -8,6 +8,7 @@
 #include "field_scatter_from_root.hpp"
 #include "mesh_snapper.hpp"
 #include "nonconformal4.hpp"
+#include "stk_util/parallel/ParallelReduceBool.hpp"
 
 #include <stdexcept>
 
@@ -59,7 +60,7 @@ void ApplicationInterfaceFakeParallelImpl::create_middle_grid()
 
 std::shared_ptr<mesh::Mesh> ApplicationInterfaceFakeParallelImpl::get_middle_grid_for_mesh1()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh1Parallel)
     return m_middleGridParallel1;
@@ -70,7 +71,7 @@ std::shared_ptr<mesh::Mesh> ApplicationInterfaceFakeParallelImpl::get_middle_gri
 
 std::shared_ptr<mesh::Mesh> ApplicationInterfaceFakeParallelImpl::get_middle_grid_for_mesh2()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh2Parallel)
     return m_middleGridParallel2;
@@ -81,7 +82,7 @@ std::shared_ptr<mesh::Mesh> ApplicationInterfaceFakeParallelImpl::get_middle_gri
 
 mesh::FieldPtr<mesh::MeshEntityPtr> ApplicationInterfaceFakeParallelImpl::get_mesh1_classification()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh1Parallel)
     return m_mesh1ClassificationParallel;
@@ -92,7 +93,7 @@ mesh::FieldPtr<mesh::MeshEntityPtr> ApplicationInterfaceFakeParallelImpl::get_me
 
 mesh::FieldPtr<mesh::MeshEntityPtr> ApplicationInterfaceFakeParallelImpl::get_mesh2_classification()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh2Parallel)
     return m_mesh2ClassificationParallel;
@@ -104,7 +105,7 @@ mesh::FieldPtr<mesh::MeshEntityPtr> ApplicationInterfaceFakeParallelImpl::get_me
 mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr>
 ApplicationInterfaceFakeParallelImpl::compute_mesh1_inverse_classification()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh1Parallel)
     return nonconformal4::impl::invert_classification_field(m_middleGridParallel1, m_mesh1Parallel,
@@ -117,7 +118,7 @@ ApplicationInterfaceFakeParallelImpl::compute_mesh1_inverse_classification()
 mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr>
 ApplicationInterfaceFakeParallelImpl::compute_mesh2_inverse_classification()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh2Parallel)
     return nonconformal4::impl::invert_classification_field(m_middleGridParallel2, m_mesh2Parallel,
@@ -129,7 +130,7 @@ ApplicationInterfaceFakeParallelImpl::compute_mesh2_inverse_classification()
 
 mesh::FieldPtr<mesh::RemoteSharedEntity> ApplicationInterfaceFakeParallelImpl::get_remote_info_mesh_one_to_two()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh1Parallel)
   {
@@ -141,7 +142,7 @@ mesh::FieldPtr<mesh::RemoteSharedEntity> ApplicationInterfaceFakeParallelImpl::g
 
 mesh::FieldPtr<mesh::RemoteSharedEntity> ApplicationInterfaceFakeParallelImpl::get_remote_info_mesh_two_to_one()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh2Parallel)
   {
@@ -153,7 +154,7 @@ mesh::FieldPtr<mesh::RemoteSharedEntity> ApplicationInterfaceFakeParallelImpl::g
 
 mesh::FieldPtr<utils::Point> ApplicationInterfaceFakeParallelImpl::get_xi_points_on_mesh1()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh1Parallel && m_xiPts)
   {
@@ -165,7 +166,7 @@ mesh::FieldPtr<utils::Point> ApplicationInterfaceFakeParallelImpl::get_xi_points
 
 mesh::FieldPtr<utils::Point> ApplicationInterfaceFakeParallelImpl::get_xi_points_on_mesh2()
 {
-  ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
+  STK_ThrowRequireMsg(m_middleGridCreated, "must call create_middle_grid() before accessing information about the middle grid");
 
   if (m_mesh2Parallel && m_xiPts)
   {
@@ -223,7 +224,7 @@ void ApplicationInterfaceFakeParallelImpl::do_boundary_snap()
         mesh::impl::make_standard_improver(m_mesh2Serial, fixture2, m_boundarySnapOpts.snapThenQualityOpts);
 
     mesh::impl::MeshBoundarySnapper snapper;
-    snapper.snap(m_mesh1Serial, m_mesh2Serial);
+    snapper.snap(m_mesh1Serial, m_mesh2Serial, MPI_COMM_SELF);
 
     qualityImprover1->run();
     qualityImprover2->run();
@@ -291,7 +292,7 @@ void ApplicationInterfaceFakeParallelImpl::scatter_mesh(mesh::FieldPtr<mesh::Mes
   MPI_Comm meshComm        = inputMeshParallel ? inputMeshParallel->get_comm() : MPI_COMM_NULL;
   mesh::impl::MeshScatterFromRoot scatter1(m_unionComm, m_middleGridSerial, meshComm, elementDestinations);
   middleGridParallel = scatter1.scatter();
-  middleGridSerialEntityDestinations = scatter1.get_entity_desintations();
+  middleGridSerialEntityDestinations = scatter1.get_entity_destinations();
 
   mesh::impl::MeshClassificationScatter classificationScatter(
       m_unionComm, m_middleGridSerial, middleGridSerialEntityDestinations, middleGridParallel, 
@@ -338,11 +339,10 @@ void ApplicationInterfaceFakeParallelImpl::scatter_remote_info()
 
 void ApplicationInterfaceFakeParallelImpl::scatter_xi_points()
 {
-  if (m_xiPts)
-  {
-    scatter_xi_points(m_middleGridParallel1, m_middleGridSerialEntityDestinations1, m_mesh1XiPointsSerial, m_mesh1XiPointsParallel);
-    scatter_xi_points(m_middleGridParallel2, m_middleGridSerialEntityDestinations2, m_mesh2XiPointsSerial, m_mesh2XiPointsParallel);
-  }
+
+  scatter_xi_points(m_middleGridParallel1, m_middleGridSerialEntityDestinations1, m_mesh1XiPointsSerial, m_mesh1XiPointsParallel);
+  scatter_xi_points(m_middleGridParallel2, m_middleGridSerialEntityDestinations2, m_mesh2XiPointsSerial, m_mesh2XiPointsParallel);
+
 }
 
 void ApplicationInterfaceFakeParallelImpl::scatter_xi_points(std::shared_ptr<mesh::Mesh> middleMeshParallel,
@@ -350,6 +350,10 @@ void ApplicationInterfaceFakeParallelImpl::scatter_xi_points(std::shared_ptr<mes
                                                              mesh::FieldPtr<utils::Point> xiPointsSerial,
                                                              mesh::FieldPtr<utils::Point>& xiPointsParallel)
 {
+
+  if (!stk::is_true_on_any_proc(m_unionComm, m_xiPts != nullptr))
+    return;
+
   if (middleMeshParallel)
   {
     int npts = std::max(m_xiPts->get_xi_coords(mesh::MeshEntityType::Triangle).size(),
@@ -419,6 +423,22 @@ std::pair<int, int> get_comm_sizes_on_root(MPI_Comm comm1, MPI_Comm comm2, MPI_C
   MPI_Wait(&sendReq2, MPI_STATUS_IGNORE);
 
   return std::make_pair(mesh1CommSize, mesh2CommSize);
+}
+
+int ApplicationInterfaceFakeParallelImpl::decide_root_rank(MPI_Comm unionComm, std::shared_ptr<mesh::Mesh> mesh1,
+                                                           std::shared_ptr<mesh::Mesh> mesh2)
+{
+  int val = -1;
+  if (mesh1 && utils::impl::comm_rank(mesh1->get_comm()) == 0)
+    val = utils::impl::comm_rank(unionComm);
+
+  int rootRank;
+  MPI_Allreduce(&val, &rootRank, 1, MPI_INT, MPI_MAX, unionComm);
+  
+  if (rootRank == -1)
+    throw std::runtime_error("failed to determine root rank, was mesh1 not provided on all procs?");
+
+  return rootRank;
 }
 
 } // namespace impl

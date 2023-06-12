@@ -50,7 +50,7 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
-#include "Xpetra_Matrix.hpp"
+#include "Xpetra_Matrix_fwd.hpp"
 #include "MueLu_MultiVectorTransferFactory_fwd.hpp"
 
 namespace MueLu {

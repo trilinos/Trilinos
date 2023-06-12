@@ -1,12 +1,36 @@
 #include "gtest/gtest.h"
 
-#include "adjacency_search.hpp"
-#include "create_mesh.hpp"
-#include "predicates/intersection.hpp"
+#include "stk_middle_mesh/adjacency_search.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/predicates/intersection.hpp"
 
 namespace stk {
 namespace middle_mesh {
 namespace impl {
+
+namespace {
+
+std::shared_ptr<mesh::Mesh> create_mesh(const std::vector<utils::Point>& vertPts, const std::vector<std::array<int, 4>>& elVertIds)
+{
+  auto mesh = mesh::make_empty_mesh();
+
+  std::vector<mesh::MeshEntityPtr> verts;
+  for (auto& pt : vertPts)
+    verts.push_back(mesh->create_vertex(pt));
+
+  for (auto& vertIds : elVertIds)
+  {
+    if (vertIds[3] == -1)
+    {
+      mesh->create_triangle_from_verts(verts[vertIds[0]], verts[vertIds[1]], verts[vertIds[2]]);
+    } else
+    {
+      mesh->create_quad_from_verts(verts[vertIds[0]], verts[vertIds[1]], verts[vertIds[2]], verts[vertIds[3]]);
+    }
+  }
+
+  return mesh;
+}
 
 bool any_contains(const std::vector<mesh::MeshEntityPtr>& entities, mesh::MeshEntityPtr el1)
 {
@@ -46,6 +70,8 @@ void test_contains_inverse(const std::vector<mesh::MeshEntityPtr>& entities, mes
 
       EXPECT_TRUE(found);
     }
+}
+
 }
 
 TEST(AdjacencySearch, Identical)
@@ -421,6 +447,33 @@ TEST(AdjacencySearch, Contains2)
   EXPECT_EQ(nentities, spec.numelX*spec.numelY);
 }
 */
+
+TEST(AdjacencySearch, UnreachableCutCorner)
+{
+  auto mesh1 = create_mesh( {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}},
+                            {{0, 1, 2, 3}});
+
+  auto mesh2 = create_mesh( {{0, 0, 0}, {0.25, 0, 0}, {0.75, 0, 0}, {1.25, 0, 0},
+                             {0, 0.75, 0}, {0.25, 0.75, 0}, {0.75, 0.75, 0}, {1.25, 0.75, 0},
+                             {0, 1, 0}, {0.25, 1, 0}, {0.5, 1.25, 0}, {0.9, 1.0, 0},
+                             {1.1, 1.25, 0}, {1.5, 0.9, 0}},
+                            {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6},
+                             {4, 5, 9, 8}, {5, 6, 10, 9}, {6, 7, 11, 10},
+                             {7, 13, 12, 11}});
+
+                               
+  mesh::impl::AdjacencySearch search(mesh1, mesh2);
+
+  mesh::MeshEntityPtr el1;
+  std::vector<mesh::MeshEntityPtr> entities;
+  while ((el1 = search.get_next(entities)))
+  {
+    EXPECT_EQ(entities.size(), 7u);
+
+    auto pred = [](const mesh::MeshEntityPtr& e) { return e->get_id() == 6; };
+    EXPECT_NE(std::find_if(entities.begin(), entities.end(), pred), entities.end());
+  }
+}
 
 } // namespace impl
 } // namespace middle_mesh

@@ -1,6 +1,6 @@
-#include "conservative_transfer_adaptor.hpp"
-#include "simple_interpolator.hpp"
-#include "stencil_interpolator.hpp"
+#include "stk_middle_mesh/conservative_transfer_adaptor.hpp"
+#include "stk_middle_mesh/simple_interpolator.hpp"
+#include "stk_middle_mesh/stencil_interpolator.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

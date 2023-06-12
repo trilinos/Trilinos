@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
     if (NumGlobalElements < NumProc) {
       std::cout << "numGlobalBlocks = " << NumGlobalElements
         << " cannot be < number of processors = " << NumProc << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Create the interface between NOX and the application

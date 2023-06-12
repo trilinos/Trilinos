@@ -1,83 +1,58 @@
-#ifndef KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
-#define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
+#ifndef TPETRAKOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
+#define TPETRAKOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
-#include "Kokkos_Core.hpp"
+#include "TpetraCore_config.h"
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-//
-// Dear users: These are just forward declarations.  Please skip
-// over them and go down to KokkosDeviceWrapperNode below.  Thank
-// you.
-//
-namespace Teuchos {
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+// the .cpp for this header sets this so we don't get a deprecation warning
+// just for that file
+#if not defined(TPETRA_DETAILS_INTERNAL_INCLUDE_SILENCE_DEPRECATION)
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#warning "The header file Trilinos/packages/tpetra/core/compat/ClassicNodeAPI_Wrapper.hpp is deprecated. Use Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#else
+#error "The header file Trilinos/packages/tpetra/core/compat/ClassicNodeAPI_Wrapper.hpp is deprecated. Use Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#endif
+#endif // not defined(TPETRA_DETAILS_INTERNAL_INCLUDE_SILENCE_DEPRECATION)
+
 
 namespace Kokkos {
-namespace Compat {
 
-/// \brief Node that wraps a new Kokkos execution space.
-///
-/// \tparam ExecutionSpace The type of the Kokkos execution space to wrap.
-/// \tparam MemorySpace The Kokkos memory space in which to work.
-///   Defaults to the default memory space of ExecutionSpace.
-template<class ExecutionSpace,
-         class MemorySpace = typename ExecutionSpace::memory_space>
-class KokkosDeviceWrapperNode {
-public:
-  //! The Node's Kokkos execution space.
-  typedef ExecutionSpace execution_space;
-  //! The Node's Kokkos memory space.
-  typedef MemorySpace memory_space;
-  /// \brief The Node's Kokkos::Device specialization.
-  ///
-  /// This is just an (execution space, memory space) pair.
-  typedef Kokkos::Device<execution_space, memory_space> device_type;
+  // can't just do 
+  // namespace Compat = Tpetra::KokkosCompat;
+  // because Teuchos defines a Kokkos::Compat namespace
+  // if no one does this, then we could make the alias
 
-  /// \brief This is NOT a "classic" Node type.
-  ///
-  /// We will deprecate the "classic" Node types with the 11.14
-  /// release of Trilinos, and remove them entirely with the 12.0
-  /// release.  This Node type is safe to use.
-  static constexpr bool classic = false;
+namespace [[deprecated]] Compat {
 
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) = delete;
-  KokkosDeviceWrapperNode () = delete;
-
-  //! Human-readable name of this Node.
-  static std::string name ();
-};
+  template <typename ExecutionSpace,
+            typename MemorySpace = 
+              typename ExecutionSpace::memory_space>
+  using KokkosDeviceWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>;
 
 #ifdef KOKKOS_ENABLE_SYCL
-  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
+  using KokkosSYCLWrapperNode [[deprecated]] = KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>;
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
-  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace> KokkosHIPWrapperNode;
+  using KokkosHIPWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosHIPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
-  typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
+  using KokkosCudaWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosCudaWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-  typedef KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
+  using KokkosOpenMPWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
-  typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
+  using KokkosThreadsWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosThreadsWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_SERIAL
-  typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
+  using KokkosSerialWrapperNode [[deprecated]] = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
 #endif // KOKKOS_ENABLE_SERIAL
-
-  // The above definitions / initializations of class (static)
-  // variables need to precede the first use of these variables.
-  // Otherwise, CUDA 7.5 with GCC 4.8.4 emits a warning ("explicit
-  // specialization of member ... must precede its first use").
-
 } // namespace Compat
 } // namespace Kokkos
-#endif
+
+#endif // TPETRAKOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP

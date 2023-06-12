@@ -367,7 +367,7 @@ class PhactoriFollowSurfaceSide1(PhactoriOperationSpecifics):
             firstSurfaceCellIndex = oneCellIndex
     if PhactoriDbg(100):
       myDebugPrint3("FindSurfaceCells retMap:\n")
-      for cellIndex, tag in retMap
+      for cellIndex, tag in retMap:
         myDebugPrint3(str(cellIndex) + " " + str(surfaceStatus[cellIndex]) + "\n")
       myDebugPrint3("FindSurfaceCells num items: " + len(retMap.keys()) + "\n")
       myDebugPrint3("firstSurfaceCellIndex: " + str(firstSurfaceCellIndex) + "\n")

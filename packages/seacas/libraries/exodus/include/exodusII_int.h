@@ -1,6 +1,6 @@
 /*
 
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -800,10 +800,11 @@ EXODUS_EXPORT void ex__compress_variable(int exoid, int varid, int type);
 EXODUS_EXPORT int  ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
 EXODUS_EXPORT int  ex__check_valid_file_id(
      int exoid, const char *func); /** Return fatal error if exoid does not refer to valid file */
-EXODUS_EXPORT int ex__check_multiple_open(const char *path, int mode, const char *func);
-EXODUS_EXPORT int ex__check_file_type(const char *path, int *type);
-EXODUS_EXPORT int ex__get_dimension(int exoid, const char *DIMENSION, const char *label,
-                                    size_t *count, int *dimid, const char *routine);
+EXODUS_EXPORT int   ex__check_multiple_open(const char *path, int mode, const char *func);
+EXODUS_EXPORT int   ex__check_file_type(const char *path, int *type);
+EXODUS_EXPORT char *ex__canonicalize_filename(const char *path);
+EXODUS_EXPORT int   ex__get_dimension(int exoid, const char *DIMENSION, const char *label,
+                                      size_t *count, int *dimid, const char *routine);
 
 EXODUS_EXPORT int ex__get_nodal_var(int exoid, int time_step, int nodal_var_index,
                                     int64_t num_nodes, void *nodal_var_vals);

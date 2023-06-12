@@ -39,8 +39,12 @@ TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_transfer)
 
 FILE(GLOB SOURCES *.cpp)
 
+IF(NOT STK_ENABLE_STKMiddle_mesh)
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestConservativeTransfer.cpp")
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE(
-    stk_transfer_unit_tests
+    stk_transfer_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
@@ -48,8 +52,7 @@ TRIBITS_ADD_EXECUTABLE(
     )
 
 TRIBITS_ADD_TEST(
-    stk_transfer_unit_tests
-    NAME STK_Transfer_how_to_use_copyTransfer
+    stk_transfer_utest
     ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
     COMM serial mpi
     NUM_MPI_PROCS 2

@@ -89,6 +89,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
+* `${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
 * `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
@@ -278,7 +279,7 @@ These options are described below.
   processed in CTest -S driver scripts using ``tribits_ctest_driver()``.)
 
   In general, a project should change the default to ``TRUE`` when using a
-  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  newer CDash installation with CDash versions 3.0+ that can accommodate the
   results coming from ctest -S and display them package-by-package very
   nicely.  Otherwise, most projects are better off with package-by-package
   mode since it results in nicer display on CDash for older CDash versions.
@@ -670,6 +671,19 @@ These options are described below.
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `tribits_add_test()`_ (which uses a
   raw command with ``add_test()``).
+
+.. _${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES:
+
+**${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES**
+
+  To change the default value of the
+  ``${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`` to ``TRUE``, for
+  example, for a TriBITS project, set::
+
+    set(${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES_DEFAULT TRUE)
+
+  in the project's `<projectDir>/CMakeLists.txt`_ or
+  `<projectDir>/ProjectName.cmake`_ files.
 
 .. _${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE:
 

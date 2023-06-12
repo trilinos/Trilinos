@@ -59,7 +59,7 @@ public:
 
   void set_vertex_weight( size_t idx, double weight)
   {
-    ThrowRequireMsg(mNumFieldCriteria==1 && idx < mVertexWeights.size(), "invalid index for " << __PRETTY_FUNCTION__);
+    STK_ThrowRequireMsg(mNumFieldCriteria==1 && idx < mVertexWeights.size(), "invalid index for " << __PRETTY_FUNCTION__);
     mVertexWeights[idx] = weight;
   }
 

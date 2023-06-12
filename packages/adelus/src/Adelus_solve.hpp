@@ -99,7 +99,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -242,6 +242,10 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
           auto ptr2_view = subview(Z,   end_row-1, Kokkos::ALL());
           auto ptr3_view = subview(RHS, end_row-1, Kokkos::make_pair(0, n_rhs_this));
           elimination_rhs(n_rhs_this, ptr2_view, ptr3_view, row1, act_col);//note: row1 = ptr4
+//Workaround for GPU-aware MPI issue on HIP: fence here to make sure "elimination_rhs" completes before MPI_Bcast
+#if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
+          Kokkos::fence();
+#endif
           end_row--;
 #ifdef GET_TIMING
           eliminaterhstime += (MPI_Wtime()-t1);
@@ -300,7 +304,10 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
                          B_view,
                          d_one,
                          C_view);
-
+//Workaround for GPU-aware MPI issue on HIP: fence here to make sure "gemm" completes before MPI_Send
+#if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
+        Kokkos::fence();
+#endif
 #ifdef GET_TIMING
         updrhstime += (MPI_Wtime()-t1);
 #endif
@@ -403,7 +410,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -611,16 +618,12 @@ template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
-#if 0
-  back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
-#else
   if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
     back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
   }
   else {
     back_solve_currcol_bcast(ahandle, Z, RHS);
   }
-#endif
 }
 
 }//namespace Adelus

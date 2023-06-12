@@ -382,6 +382,11 @@ size_t OverlappingRowMatrix<MatrixType>::getLocalMaxNumRowEntries() const
   return MaxNumEntries_;
 }
 
+template<class MatrixType>
+typename MatrixType::local_ordinal_type OverlappingRowMatrix<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
 
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::hasColMap() const

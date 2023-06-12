@@ -56,14 +56,12 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     SOURCES simple1D-UncoupledAggregation.cpp
     )
 
-  IF( ${PACKAGE_NAME}_ENABLE_Tpetra )
-    TRIBITS_ADD_TEST(
-      simple1D-UncoupledAggregation
-      NAME "simple1D-UncoupledAggregation-Tpetra"
-      ARGS "--linAlgebra=Tpetra"
-      COMM serial mpi
-      )
-  ENDIF()
+  TRIBITS_ADD_TEST(
+    simple1D-UncoupledAggregation
+    NAME "simple1D-UncoupledAggregation-Tpetra"
+    ARGS "--linAlgebra=Tpetra"
+    COMM serial mpi
+    )
 
   IF( ${PACKAGE_NAME}_ENABLE_Epetra )
     TRIBITS_ADD_TEST(

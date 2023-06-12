@@ -51,11 +51,9 @@
 #include <Teuchos_Utils.hpp>
 
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

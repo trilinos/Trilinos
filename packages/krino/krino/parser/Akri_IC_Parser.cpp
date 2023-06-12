@@ -85,7 +85,7 @@ parse_composition_method(const Parser::Node & ic_node, IC_Alg& ic_alg)
 {
   // This is a little strange because composition looks like an IC, but really sets a flag
   std::string composition_method;
-  ThrowRequire(ic_node.get_if_present("composition_method", composition_method));
+  STK_ThrowRequire(ic_node.get_if_present("composition_method", composition_method));
 
   std::transform(composition_method.begin(), composition_method.end(), composition_method.begin(), ::toupper);
 

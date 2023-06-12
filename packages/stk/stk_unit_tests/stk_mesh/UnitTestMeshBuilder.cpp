@@ -34,6 +34,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <gtest/gtest.h>
 
@@ -203,3 +204,117 @@ TEST(MeshBuilder, bulkdata_add_fmwk_data_false)
   EXPECT_FALSE(bulk->add_fmwk_data());
 }
 
+TEST(MeshBuilder, default_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), stk::mesh::get_default_initial_bucket_capacity());
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), stk::mesh::get_default_maximum_bucket_capacity());
+}
+
+TEST(MeshBuilder, set_invalid_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_bucket_capacity(0);
+  EXPECT_ANY_THROW(builder.create());
+}
+
+TEST(MeshBuilder, set_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned setCapacity = 256;
+  builder.set_bucket_capacity(setCapacity);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), setCapacity);
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), setCapacity);
+}
+
+TEST(MeshBuilder, set_invalid_initial_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_initial_bucket_capacity(0);
+  EXPECT_ANY_THROW(builder.create());
+}
+
+TEST(MeshBuilder, set_initial_bucket_capacity_bigger_than_maximum)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned initialCapacity = stk::mesh::get_default_maximum_bucket_capacity() * 2;
+  builder.set_initial_bucket_capacity(initialCapacity);
+  EXPECT_ANY_THROW(builder.create());
+}
+
+TEST(MeshBuilder, set_initial_bucket_capacity_smaller_than_maximum)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned initialCapacity = stk::mesh::get_default_maximum_bucket_capacity() / 2;
+  builder.set_initial_bucket_capacity(initialCapacity);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), initialCapacity);
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), stk::mesh::get_default_maximum_bucket_capacity());
+}
+
+TEST(MeshBuilder, set_invalid_maximum_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_maximum_bucket_capacity(0);
+  EXPECT_ANY_THROW(builder.create());
+}
+
+TEST(MeshBuilder, set_maximum_bucket_capacity_bigger_than_initial)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned maxCapacity = stk::mesh::get_default_initial_bucket_capacity() * 2;
+  builder.set_maximum_bucket_capacity(maxCapacity);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), stk::mesh::get_default_initial_bucket_capacity());
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), maxCapacity);
+}
+
+TEST(MeshBuilder, set_maximum_bucket_capacity_smaller_than_initial)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned maxCapacity = stk::mesh::get_default_initial_bucket_capacity() / 2;
+  builder.set_maximum_bucket_capacity(maxCapacity);
+  EXPECT_ANY_THROW(builder.create());
+}
+
+TEST(MeshBuilder, set_identical_initial_and_maximum_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned initialCapacity = 256;
+  const unsigned maximumCapacity = 256;
+  builder.set_initial_bucket_capacity(initialCapacity);
+  builder.set_maximum_bucket_capacity(maximumCapacity);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), initialCapacity);
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), maximumCapacity);
+}
+
+TEST(MeshBuilder, set_different_initial_and_maximum_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned initialCapacity = 32;
+  const unsigned maximumCapacity = 256;
+  builder.set_initial_bucket_capacity(initialCapacity);
+  builder.set_maximum_bucket_capacity(maximumCapacity);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_EQ(bulk->get_initial_bucket_capacity(), initialCapacity);
+  EXPECT_EQ(bulk->get_maximum_bucket_capacity(), maximumCapacity);
+}
+
+TEST(MeshBuilder, set_faulty_initial_and_maximum_bucket_capacity)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  const unsigned initialCapacity = 64;
+  const unsigned maximumCapacity = 32;
+  builder.set_initial_bucket_capacity(initialCapacity);
+  builder.set_maximum_bucket_capacity(maximumCapacity);
+  EXPECT_ANY_THROW(builder.create());
+}

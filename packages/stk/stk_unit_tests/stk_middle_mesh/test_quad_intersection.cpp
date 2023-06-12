@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mesh_entity.hpp"
-#include "predicates/intersection.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
+#include "stk_middle_mesh/predicates/intersection.hpp"
 
 namespace stk {
 namespace middle_mesh {

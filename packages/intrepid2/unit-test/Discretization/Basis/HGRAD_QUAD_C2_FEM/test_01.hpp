@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.hpp
-    \brief  Unit tests for the Intrepid2::HGRAD_QUAD_C2_FEM class.
+    \brief  Unit tests for the Intrepid2::HGRAD_QUAD_DEG2_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, and Kyungjoo Kim.
 */
 
@@ -72,8 +72,8 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename ValueType, typename DeviceType>
-    int HGRAD_QUAD_C2_FEM_Test01(const bool verbose) {
+    template<bool serendipity, typename ValueType, typename DeviceType>
+    int HGRAD_QUAD_DEG2_FEM_Test01(const bool verbose) {
       
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -95,19 +95,18 @@ namespace Intrepid2 {
 
       *outStream 
         << "===============================================================================\n" 
-        << "|                                                                             |\n" 
-        << "|                 Unit Test (Basis_HGRAD_QUAD_C2_FEM)                         |\n" 
+        << "|                                                                             |\n";
+      if constexpr (serendipity) 
+        *outStream
+        << "|           Unit Test (Basis_HGRAD_QUAD_I2_Serendipity FEM)                   |\n";
+      else 
+        *outStream
+        << "|                 Unit Test (Basis_HGRAD_QUAD_C2_FEM)                         |\n";
+      *outStream   
         << "|                                                                             |\n" 
         << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" 
         << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n" 
-        << "|                                                                             |\n" 
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" 
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" 
-        << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" 
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" 
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" 
-        << "|                                                                             |\n" 
+        << "|                                                                             |\n"         << "|                                                                             |\n" 
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
@@ -120,9 +119,11 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HGRAD_QUAD_C2_FEM<DeviceType,outputValueType,pointValueType> quadBasis;
-      //typedef typename decltype(quadBasis)::OutputViewType OutputViewType;
-      //typedef typename decltype(quadBasis)::PointViewType  PointViewType;
+      BasisPtr<DeviceType,outputValueType,pointValueType> quadBasis;
+      if constexpr (serendipity) 
+        quadBasis = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_Serendipity_FEM<DeviceType,outputValueType,pointValueType>());
+      else
+        quadBasis = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM<DeviceType,outputValueType,pointValueType>());
 
       *outStream
         << "\n"
@@ -135,9 +136,9 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
         DynRankView ConstructWithLabel(quadNodes, 10, 2);
 
-        const ordinal_type numFields = quadBasis.getCardinality();
+        const ordinal_type numFields = quadBasis->getCardinality();
         const ordinal_type numPoints = quadNodes.extent(0);
-        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+        const ordinal_type spaceDim  = quadBasis->getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
         const ordinal_type workSize  = numFields*numFields*D2Cardin;
@@ -148,68 +149,68 @@ namespace Intrepid2 {
 
         {
           // exception #1: DIV cannot be applied to scalar functions
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(vals, quadNodes, OPERATOR_DIV) );
         }   
         // Exceptions 2-6: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
           // exception #2
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofOrdinal(3,0,0) );
           // exception #3
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofOrdinal(1,1,1) );
           // exception #4
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofOrdinal(0,4,0) );
           // exception #5
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(numFields) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofTag(numFields) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofTag(-1) );
         } 
         // Exceptions 7- test exception handling with incorrectly dimensioned input/output arrays
         {
           // exception #7: input points array must be of rank-2
           DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(vals, badPoints1, OPERATOR_VALUE) );
         }
         { 
           // exception #8 dimension 1 in the input point array must equal space dimension of the cell
           DynRankView ConstructWithLabel(badPoints2, 4, spaceDim + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints2, OPERATOR_VALUE) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(vals, badPoints2, OPERATOR_VALUE) );
         }
         { 
           // exception #9 output values must be of rank-2 for OPERATOR_VALUE
           DynRankView ConstructWithLabel(badVals1, 4, 3, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals1, quadNodes, OPERATOR_VALUE) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals1, quadNodes, OPERATOR_VALUE) );
         }
         {
           // exception #10 output values must be of rank-3 for OPERATOR_GRAD
           DynRankView ConstructWithLabel(badVals2, 4, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals2, quadNodes, OPERATOR_GRAD) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals2, quadNodes, OPERATOR_GRAD) );
           // exception #11 output values must be of rank-3 for OPERATOR_CURL
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals2, quadNodes, OPERATOR_CURL) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals2, quadNodes, OPERATOR_CURL) );
           // exception #12 output values must be of rank-3 for OPERATOR_D2
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals2, quadNodes, OPERATOR_D2) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals2, quadNodes, OPERATOR_D2) );
         } 
         {
           // exception #13 incorrect 0th dimension of output array (must equal number of basis functions)
           DynRankView ConstructWithLabel(badVals3, numFields + 1, numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals3, quadNodes, OPERATOR_VALUE) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals3, quadNodes, OPERATOR_VALUE) );
         }
         { 
           // exception #14 incorrect 1st dimension of output array (must equal number of points in quadNodes)
           DynRankView ConstructWithLabel(badVals4, numFields, numPoints + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals4, quadNodes, OPERATOR_VALUE) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals4, quadNodes, OPERATOR_VALUE) );
         }
         { 
           // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
           DynRankView ConstructWithLabel(badVals5, numFields, numPoints, spaceDim + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals5, quadNodes, OPERATOR_GRAD) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals5, quadNodes, OPERATOR_GRAD) );
         } 
         {
           // exception #16: incorrect 2nd dimension of output array (must equal D2 cardinality in 2D)
           DynRankView ConstructWithLabel(badVals6, numFields, numPoints, 40);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals6, quadNodes, OPERATOR_D2) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals6, quadNodes, OPERATOR_D2) );
           // exception #17: incorrect 2nd dimension of output array (must equal D3 cardinality in 2D)
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals6, quadNodes, OPERATOR_D3) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getValues(badVals6, quadNodes, OPERATOR_D3) );
         } 
 #endif
         // Check if number of thrown exceptions matches the one we expect 
@@ -232,15 +233,15 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       try{
-        const ordinal_type numFields = quadBasis.getCardinality();
-        const auto allTags   = quadBasis.getAllDofTags();
+        const ordinal_type numFields = quadBasis->getCardinality();
+        const auto allTags   = quadBasis->getAllDofTags();
     
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i = 0; i < dofTagSize; ++i) {
-          const auto bfOrd  = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
+          const auto bfOrd  = quadBasis->getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
-          const auto myTag = quadBasis.getDofTag(bfOrd);
+          const auto myTag = quadBasis->getDofTag(bfOrd);
           if( !( (myTag(0) == allTags(i,0)) &&
                  (myTag(1) == allTags(i,1)) &&
                  (myTag(2) == allTags(i,2)) &&
@@ -262,8 +263,8 @@ namespace Intrepid2 {
     
         // Now do the same but loop over basis functions
         for( ordinal_type bfOrd = 0; bfOrd < numFields; bfOrd++) {
-          const auto myTag  = quadBasis.getDofTag(bfOrd);
-          const auto myBfOrd = quadBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
+          const auto myTag  = quadBasis->getDofTag(bfOrd);
+          const auto myBfOrd = quadBasis->getDofOrdinal(myTag(0), myTag(1), myTag(2));
           if( bfOrd != myBfOrd) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -517,9 +518,9 @@ namespace Intrepid2 {
         Kokkos::deep_copy(quadNodes, quadNodesHost);
 
         // Dimensions for the output arrays:
-        const ordinal_type numFields = quadBasis.getCardinality();
+        const ordinal_type numFields = quadBasis->getCardinality();
         const ordinal_type numPoints = quadNodes.extent(0);
-        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+        const ordinal_type spaceDim  = quadBasis->getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         const ordinal_type D3Cardin = getDkCardinality(OPERATOR_D3, spaceDim);
         const ordinal_type D4Cardin = getDkCardinality(OPERATOR_D4, spaceDim);
@@ -527,7 +528,7 @@ namespace Intrepid2 {
         { 
           // Check VALUE of basis functions: resize vals to rank-2 container:
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -551,7 +552,7 @@ namespace Intrepid2 {
         {
           // Check GRAD of basis function: resize vals to rank-3 container
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -577,7 +578,7 @@ namespace Intrepid2 {
         { 
           // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_D1);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_D1);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -603,7 +604,7 @@ namespace Intrepid2 {
         {
           // Check CURL of basis function: resize vals just for illustration! 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_CURL);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -638,7 +639,7 @@ namespace Intrepid2 {
         {
           // Check D2 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D2Cardin);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_D2);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_D2);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -664,7 +665,7 @@ namespace Intrepid2 {
         { 
           // Check D3 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D3Cardin);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_D3);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_D3);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
 
@@ -691,7 +692,7 @@ namespace Intrepid2 {
         { 
           // Check D4 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_D4);
+          quadBasis->getValues(vals, quadNodes, OPERATOR_D4);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
 
@@ -730,7 +731,7 @@ namespace Intrepid2 {
             // The last dimension is the number of kth derivatives and needs to be resized for every Dk
             const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
-            quadBasis.getValues(vals, quadNodes, op);
+            quadBasis->getValues(vals, quadNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals); 
 
@@ -762,10 +763,9 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HGRAD_QUAD_C2_FEM<DeviceType> quadB;
-        const ordinal_type numFields = quadB.getCardinality();
+        const ordinal_type numFields = quadBasis->getCardinality();
         const ordinal_type spaceDim =
-            quadB.getBaseCellTopology().getDimension();
+            quadBasis->getBaseCellTopology().getDimension();
 
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -774,28 +774,31 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
         {
           DynRankView ConstructWithLabel(badVals, 1, 2, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofCoords(badVals) );
         }
+
+        if constexpr(!serendipity)  
         {
           DynRankView ConstructWithLabel(badVals, 8, 2);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofCoords(badVals) );
         }
+
         {
           DynRankView ConstructWithLabel(badVals, 9, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis->getDofCoords(badVals) );
         }
 #endif
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
 
         DynRankView ConstructWithLabel(bvals_dev, numFields, numFields);
         DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
 
-        quadB.getDofCoords(cvals_dev);
-        quadB.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+        quadBasis->getDofCoords(cvals_dev);
+        quadBasis->getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
         Kokkos::deep_copy(bvals, bvals_dev);
@@ -832,7 +835,7 @@ namespace Intrepid2 {
       << "===============================================================================\n";
       
       try {
-        const EFunctionSpace fs = quadBasis.getFunctionSpace();
+        const EFunctionSpace fs = quadBasis->getFunctionSpace();
         
         if (fs != FUNCTION_SPACE_HGRAD)
         {

@@ -25,7 +25,7 @@ BoundingSurface::build(
 {
   Surface_Manager & manager = Surface_Manager::get(meta);
 
-  ThrowRequire(!manager.has_bounding_surface(surfName));
+  STK_ThrowRequire(!manager.has_bounding_surface(surfName));
   BoundingSurface * boundingSurf = new BoundingSurface(surfName, surf);
   manager.add_bounding_surface(boundingSurf);
   return *boundingSurf;

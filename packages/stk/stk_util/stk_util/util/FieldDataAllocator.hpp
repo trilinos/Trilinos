@@ -43,15 +43,23 @@
 #include <new>         // for bad_alloc
 #include <iostream>
 #include <stk_util/util/ReportHandler.hpp>
-
+#include <stk_util/stk_config.h>
 #include "Kokkos_Core.hpp"
+
+#if defined(STK_ASAN_IS_ON) && defined(STK_ASAN_FIELD_ACCESS)
+  #include <sanitizer/asan_interface.h>
+  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 1024;
+#else
+  #define ASAN_POISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
+  #define ASAN_UNPOISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
+  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 0;
+#endif
 
 namespace stk {
 
 namespace impl {
 
-void* page_aligned_allocate_impl(size_t num_bytes);
-void page_aligned_deallocate_impl(void * ptr, size_t num_bytes);
+constexpr unsigned DEFAULT_FIELD_ALIGNMENT_BYTES = 64;  // For avx512 SIMD support
 
 template <typename T>
 class BaseFieldDataAllocator
@@ -99,66 +107,34 @@ public:
   }
 };
 
-template <typename T>
-class PageAlignedAllocator : public BaseFieldDataAllocator<T>
+template <typename T, unsigned ALIGNMENT = DEFAULT_FIELD_ALIGNMENT_BYTES>
+class AlignedFieldDataAllocator : public BaseFieldDataAllocator<T>
 {
 public:
   using ValueType = typename BaseFieldDataAllocator<T>::ValueType;
   using Pointer = typename BaseFieldDataAllocator<T>::Pointer;
   using SizeType = typename BaseFieldDataAllocator<T>::SizeType;
 
-  PageAlignedAllocator() {}
+  AlignedFieldDataAllocator() = default;
 
-  PageAlignedAllocator(const PageAlignedAllocator&) {}
+  AlignedFieldDataAllocator(const AlignedFieldDataAllocator&) {}
 
   template <typename U>
-  PageAlignedAllocator (const PageAlignedAllocator<U>&) {}
+  AlignedFieldDataAllocator (const AlignedFieldDataAllocator<U>&) {}
 
-  ~PageAlignedAllocator() {}
+  ~AlignedFieldDataAllocator() = default;
 
   static Pointer allocate(SizeType num, const void* = 0)
   {
-    size_t size = num * sizeof(ValueType);
-
-    if (use_page_aligned_memory(size)) {
-      return static_cast<Pointer>(page_aligned_allocate(size));
-    }
-    else {
-      return static_cast<Pointer>(malloc(size));
-    }
+    size_t alignedSize = ((num * sizeof(ValueType) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT + ASAN_FIELD_PADDING_SIZE;
+    void * allocatedMemory = aligned_alloc(ALIGNMENT, alignedSize);
+    ASAN_POISON_MEMORY_REGION(allocatedMemory, alignedSize);
+    return static_cast<Pointer>(allocatedMemory);
   }
 
-  static void deallocate(Pointer p, SizeType num)
+  static void deallocate(Pointer p, SizeType)
   {
-    size_t size = num * sizeof(ValueType);
-
-    if (use_page_aligned_memory(size)) {
-      page_aligned_deallocate(p, size);
-    }
-    else {
-      free(p);
-    }
-  }
-
-private:
-  static bool use_page_aligned_memory(SizeType num_bytes)
-  {
-    return num_bytes >= get_half_page_size();
-  }
-
-  static void* page_aligned_allocate(size_t num_bytes)
-  {
-    return page_aligned_allocate_impl(num_bytes);
-  }
-
-  static void page_aligned_deallocate(void * ptr, size_t num_bytes)
-  {
-    page_aligned_deallocate_impl(ptr, num_bytes);
-  }
-
-  static size_t get_half_page_size()
-  {
-    return sysconf( _SC_PAGE_SIZE ) >> 1;
+    free(p);
   }
 };
 
@@ -187,7 +163,7 @@ public:
     void* ret;
     cudaError_t status = cudaHostAlloc(&ret, size, cudaHostAllocMapped);
 
-    ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAllocator::allocate: " + std::string(cudaGetErrorString(status)));
+    STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAllocator::allocate: " + std::string(cudaGetErrorString(status)));
 
     return reinterpret_cast<T*>(ret);
   }
@@ -224,7 +200,7 @@ public:
     void* ret;
     hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
 
-    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
+    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
 
     return reinterpret_cast<T*>(ret);
   }
@@ -232,7 +208,7 @@ public:
   static void deallocate(Pointer p, SizeType)
   {
     hipError_t status = hipHostFree(p);
-    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
+    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
   }
 
 };
@@ -254,7 +230,7 @@ template <typename ValueType>
 using FieldDataAllocator = HIPPinnedAndMappedAllocator<ValueType>;
 #else
 template <typename ValueType>
-using FieldDataAllocator = PageAlignedAllocator<ValueType>;
+using FieldDataAllocator = AlignedFieldDataAllocator<ValueType>;
 #endif
 
 } // namespace stk

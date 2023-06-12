@@ -52,7 +52,6 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {

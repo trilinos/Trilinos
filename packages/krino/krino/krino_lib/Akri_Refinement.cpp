@@ -105,34 +105,34 @@ int Refinement::refinement_level(const stk::mesh::Entity elem) const
 {
   if (!is_child(elem))
     return 0;
-  ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
+  STK_ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
   const auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
-  ThrowAssertMsg(refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   return *refineLevel;
 }
 
 void Refinement::set_refinement_level(const stk::mesh::Entity elem, const int refinementLevel) const
 {
-  ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
+  STK_ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
   auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
-  ThrowAssertMsg(is_child(elem) && refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(is_child(elem) && refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   *refineLevel = refinementLevel;
 }
 
 
 int Refinement::get_originating_processor_for_parent_element(const stk::mesh::Entity elem) const
 {
-  ThrowAssertMsg(is_parent(elem), "Call to get_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(is_parent(elem), "Call to get_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
   const auto * originatingProc = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
-  ThrowAssertMsg(originatingProc != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(originatingProc != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   return *originatingProc;
 }
 
 void Refinement::set_originating_processor_for_parent_element(const stk::mesh::Entity elem, const int originatingProc) const
 {
-  ThrowAssertMsg(is_parent(elem), "Call to set_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(is_parent(elem), "Call to set_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
   auto * originatingProcData = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
-  ThrowAssertMsg(originatingProcData != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  STK_ThrowAssertMsg(originatingProcData != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
   *originatingProcData = originatingProc;
 }
 
@@ -158,9 +158,9 @@ unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity
 std::array<stk::mesh::Entity,2> Refinement::get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  ThrowAssertMsg(myRefinedEdgeNodeParentIdsField, "Edge Node Ids field is not defined.");
+  STK_ThrowAssertMsg(myRefinedEdgeNodeParentIdsField, "Edge Node Ids field is not defined.");
   auto * edgeNodeIds = stk::mesh::field_data(*myRefinedEdgeNodeParentIdsField, edgeNode);
-  ThrowAssertMsg(edgeNodeIds != nullptr, "Edge Node Ids field missing on node " << mesh.identifier(edgeNode));
+  STK_ThrowAssertMsg(edgeNodeIds != nullptr, "Edge Node Ids field missing on node " << mesh.identifier(edgeNode));
   return {{mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[0]), mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[1])}};
 }
 
@@ -180,7 +180,7 @@ static bool has_child_with_invalid_id(const uint64_t * childElemIdsData, const u
 
 bool Refinement::is_this_parent_element_partially_refined(const stk::mesh::Entity parentElem) const
 {
-  ThrowAssert(is_parent(parentElem));
+  STK_ThrowAssert(is_parent(parentElem));
   //const auto & [childElemIdsData, numChildWhenFullyRefined] = get_child_ids_and_num_children_when_fully_refined(parentElem);
   const auto & childElemIdsDataAndnumChildWhenFullyRefined = get_child_ids_and_num_children_when_fully_refined(parentElem);
   const auto & childElemIdsData = std::get<0>(childElemIdsDataAndnumChildWhenFullyRefined);
@@ -206,7 +206,7 @@ std::tuple<const uint64_t *,unsigned> Refinement::get_child_ids_and_num_children
   const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(elem);
   const stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
   const auto * childElemIdsData = stk::mesh::field_data(childElementIdsField, elem);
-  ThrowAssertMsg(nullptr != childElemIdsData, "Element is parent, but does not have " << childElementIdsField.name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Element is parent, but does not have " << childElementIdsField.name() << " defined.");
   return std::make_tuple(childElemIdsData, numChildWhenFullyRefined);
 }
 
@@ -269,27 +269,27 @@ bool Refinement::is_refined_edge_node(const stk::mesh::Entity node) const
 
 stk::mesh::Part & Refinement::child_part() const
 {
-  ThrowAssert(myChildPart);
+  STK_ThrowAssert(myChildPart);
   return *myChildPart;
 }
 
 stk::mesh::Part & Refinement::parent_part() const
 {
-  ThrowAssert(myParentPart);
+  STK_ThrowAssert(myParentPart);
   return *myParentPart;
 }
 
 stk::mesh::Part & Refinement::refined_edge_node_part() const
 {
-  ThrowAssert(myRefinedEdgeNodePart);
+  STK_ThrowAssert(myRefinedEdgeNodePart);
   return *myRefinedEdgeNodePart;
 }
 
 stk::math::Vector3d Refinement::get_coordinates(const stk::mesh::Entity node, const int dim) const
 {
-  ThrowAssertMsg(myCoordsField, "Coordinates field is not defined.");
+  STK_ThrowAssertMsg(myCoordsField, "Coordinates field is not defined.");
   const double * coordsData = stk::mesh::field_data(*myCoordsField, node);
-  ThrowAssertMsg(nullptr != coordsData, "Node does not have " << myCoordsField->name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != coordsData, "Node does not have " << myCoordsField->name() << " defined.");
   return stk::math::Vector3d(coordsData, dim);
 }
 
@@ -367,7 +367,7 @@ static void attach_child_to_existing_sides_and_append_missing_sides_to_sides_to_
 
     if (!sides.empty())
     {
-      ThrowRequire(sides.size() == 1);
+      STK_ThrowRequire(sides.size() == 1);
 
       attach_entity_to_element(mesh, mesh.mesh_meta_data().side_rank(), sides[0], childElem);
     }
@@ -414,10 +414,10 @@ stk::mesh::Field<uint64_t> & Refinement::get_child_element_ids_field(const unsig
   switch(numChildWhenFullyRefined)
   {
   case 4:
-      ThrowAssert(myChildElementIds4Field);
+      STK_ThrowAssert(myChildElementIds4Field);
       return *myChildElementIds4Field;
   case 8:
-      ThrowAssert(myChildElementIds8Field);
+      STK_ThrowAssert(myChildElementIds8Field);
       return *myChildElementIds8Field;
   default:
       ThrowRuntimeError("Unsupported number of children when fully refined in get_child_element_ids_field: " << numChildWhenFullyRefined);
@@ -429,7 +429,7 @@ stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildW
 {
   stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
   stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, parent);
-  ThrowAssertMsg(nullptr != childElemIdsData, "Element is does not have " << childElementIdsField.name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Element is does not have " << childElementIdsField.name() << " defined.");
   return childElemIdsData;
 }
 
@@ -437,7 +437,7 @@ stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildW
 {
   stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
   stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, bucket);
-  ThrowAssertMsg(nullptr != childElemIdsData, "Bucket does not have " << childElementIdsField.name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Bucket does not have " << childElementIdsField.name() << " defined.");
   return childElemIdsData;
 }
 
@@ -485,7 +485,7 @@ void Refinement::set_parent_parts_and_parent_child_relation_fields(const stk::me
 
   if (isNewParent)
   {
-    ThrowAssert(mesh.bucket(parentElement).owned());
+    STK_ThrowAssert(mesh.bucket(parentElement).owned());
     set_originating_processor_for_parent_element(parentElement, mesh.parallel_rank());
   }
 }
@@ -757,6 +757,8 @@ void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterfa
 
   mesh.modification_begin();
 
+  destroy_custom_ghostings();
+
   myNodeRefiner.create_refined_edge_nodes(mesh, get_parts_for_new_refined_edge_nodes(), myRefinedEdgeNodeParentIdsField);
 
   const std::vector<BucketData> bucketsData = get_buckets_data_for_candidate_elements_to_refine(edgeMarker);
@@ -838,7 +840,7 @@ void Refinement::mark_already_refined_edges()
 
 void Refinement::respect_originating_proc_for_parents_modified_by_unrefinement(const std::vector<stk::mesh::Entity> & parentsModifiedByUnrefinement, const std::vector<int> & originatingProcForParentsModifiedByUnrefinement)
 {
-  ThrowAssert(parentsModifiedByUnrefinement.size() == originatingProcForParentsModifiedByUnrefinement.size());
+  STK_ThrowAssert(parentsModifiedByUnrefinement.size() == originatingProcForParentsModifiedByUnrefinement.size());
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
   std::vector<stk::mesh::EntityProc> entitiesToMove;
@@ -866,6 +868,15 @@ std::vector<int> Refinement::get_originating_procs_for_elements(const std::vecto
   return originatingProcsForElems;
 }
 
+void Refinement::destroy_custom_ghostings()
+{
+  // stk::mesh::destroy_elements_no_mod_cycle() currently can create parallel inconsistencies in
+  // the mesh when there are custom ghostings (e.g. from contact or transfers) present. See
+  // COMPSIMHD-15326 for example. Since those are going to have to be rebuilt after the adaptivity
+  // anyway we clear them out here as a workaround.
+  krino::destroy_custom_ghostings(myMeta.mesh_bulk_data());
+}
+
 bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
@@ -884,6 +895,7 @@ bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
     const std::vector<int> originatingProcForParentsBeingModified = get_originating_procs_for_elements(ownedParentElementsModifiedByUnrefinement);
 
     mesh.modification_begin();
+    destroy_custom_ghostings();
     stk::mesh::destroy_elements_no_mod_cycle(mesh, childElementsToDeleteForUnrefinement, mesh.mesh_meta_data().universal_part());
     remove_parent_parts(ownedParentElementsModifiedByUnrefinement);
     mesh.modification_end();
@@ -932,7 +944,7 @@ void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
       fix_node_owners_to_assure_active_owned_element_for_node(mesh, *myActivePart);
   }
 
-  ThrowAssertMsg(!have_any_hanging_refined_nodes(), "Mesh has hanging refined node.");
+  STK_ThrowAssertMsg(!have_any_hanging_refined_nodes(), "Mesh has hanging refined node.");
 
   check_leaf_children_have_parents_on_same_proc(mesh, this);
 }
@@ -960,6 +972,7 @@ void Refinement::fully_unrefine_mesh()
     addParts.push_back(myActivePart);
 
   mesh.modification_begin();
+  destroy_custom_ghostings();
   stk::mesh::destroy_elements_no_mod_cycle(mesh, allChildElems, mesh.mesh_meta_data().universal_part());
   mesh.change_entity_parts(ownedParentElems, addParts, stk::mesh::ConstPartVector{myParentPart});
   mesh.modification_end();
@@ -972,9 +985,9 @@ void Refinement::find_edges_to_refine(const EdgeMarkerInterface & edgeMarker)
 
 stk::mesh::EntityId Refinement::get_parent_id(const stk::mesh::Entity elem) const
 {
-  ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
+  STK_ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
   const auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
-  ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
   return *parentElemIdData;
 }
 
@@ -986,9 +999,9 @@ std::pair<stk::mesh::EntityId,int> Refinement::get_parent_id_and_parallel_owner_
 
 void Refinement::set_parent_id(const stk::mesh::Entity elem, const stk::mesh::EntityId parentElemId) const
 {
-  ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
+  STK_ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
   auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
-  ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
+  STK_ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
   *parentElemIdData = parentElemId;
 }
 
@@ -1036,7 +1049,7 @@ void unpack_parent_and_child_id_on_originating_proc(const stk::mesh::BulkData & 
       stk::mesh::EntityId childId;
       commSparse.recv_buffer(procId).unpack(childId);
       stk::mesh::Entity parent = mesh.get_entity(stk::topology::ELEMENT_RANK, parentId);
-      ThrowRequire(mesh.is_valid(parent));
+      STK_ThrowRequire(mesh.is_valid(parent));
       parentsAndOffProcChildId.emplace_back(parent, childId);
     }
   });
@@ -1073,7 +1086,7 @@ void Refinement::fill_parents_and_children_and_parents_with_off_proc_child(std::
         }
         else
         {
-          ThrowAssertMsg(is_parent(elem), "In fill_parents_and_children_and_parents_with_off_proc_child(), found non-parent element " << mesh.identifier(elem) << " without local parent.");
+          STK_ThrowAssertMsg(is_parent(elem), "In fill_parents_and_children_and_parents_with_off_proc_child(), found non-parent element " << mesh.identifier(elem) << " without local parent.");
           children.push_back(elem);
           originatingProcsParentIdChildId.emplace_back(get_originating_processor_for_parent_element(elem), parentId, mesh.identifier(elem));
         }
@@ -1114,7 +1127,7 @@ void Refinement::add_child_to_parent(const stk::mesh::EntityId childId, const st
   while(iChild<numChildWhenFullyRefined && childElemIdsData[iChild] != stk::mesh::InvalidEntityId)
     ++iChild;
 
-  ThrowRequireMsg(iChild < numChildWhenFullyRefined, "Logic error when assigning child id for parent element.");
+  STK_ThrowRequireMsg(iChild < numChildWhenFullyRefined, "Logic error when assigning child id for parent element.");
 
   childElemIdsData[iChild] = childId;
 }

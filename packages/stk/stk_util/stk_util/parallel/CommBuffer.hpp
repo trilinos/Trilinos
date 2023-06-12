@@ -57,7 +57,7 @@ public:
 private:
   /** Do not try to pack a pointer for global communication */
   template<typename T> CommBuffer &pack( const T* value ) {
-    ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
+    STK_ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
     return *this;
   }
 

@@ -54,7 +54,7 @@ include(GlobalSet)
 # it is true, then sets the global (internal cache) macro define variable
 # ``<macroDefineName>`` to ``ON``, and otherwise sets it to ``OFF``.  If
 # ``NONCACHE`` is passed in, then ``<macroDefineName>`` is set as a non-cache
-# local varaible instead of a cache variable.
+# local variable instead of a cache variable.
 #
 # This is designed to make it easy to add a user-enabled option to a
 # configured header file and have the define set in one shot.  This would

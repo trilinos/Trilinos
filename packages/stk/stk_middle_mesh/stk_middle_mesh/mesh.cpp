@@ -6,6 +6,8 @@
 
 #include "newton2.hpp"
 #include "parallel_exchange.hpp"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
+
 
 namespace stk {
 namespace middle_mesh {
@@ -538,14 +540,28 @@ void check_topology(std::shared_ptr<Mesh> mesh)
   check_topology_up(mesh->get_vertices(), mesh->get_edges(), 2);
   check_topology_up(mesh->get_edges(), mesh->get_elements(), 1);
 
+  check_remotes_unique(mesh);
+  check_remotes_symmetric(mesh);
   check_edge_orientation_parallel(mesh);
 }
 
 void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesDown)
 {
   // check all downward adjacencies are not null
+  std::array<int, 4> expectedNumDown = {0, 2, 3, 4};
   for (auto& entity : entities)
     if (entity)
+    { 
+      int expectedDown = expectedNumDown.at(static_cast<int>(entity->get_type()));
+      if (entity->count_down() != expectedDown)
+      {
+        std::stringstream ss;
+        ss << "number of downward adjacencies is incorrect for " << entity << " expected " 
+           << expectedDown << ", found " << entity->count_down();
+        throw std::runtime_error(ss.str());
+      }
+      
+      
       for (int i = 0; i < entity->count_down(); ++i)
       {
         auto entityDown = entity->get_down(i);
@@ -557,11 +573,24 @@ void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::
         if (entityDown != entitiesDown[entityDown->get_id()])
           throw std::runtime_error("downward entity ID is inconsistent");
       }
+
+      std::array<MeshEntityPtr, MAX_DOWN> down;
+      int entityDim = get_type_dimension(entity->get_type());
+      for (int dim=0; dim < entityDim; ++dim)
+      {
+        int ndown = get_downward(entity, dim, down.data());
+        std::sort(down.begin(), down.begin() + ndown);
+        for (int i=1; i < ndown; ++i)
+          if (down[i] == down[i-1])
+            throw std::runtime_error("duplicate downward entity");
+      }
+    }
 }
 
 void check_topology_up(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesUp,
                        const int minUp)
 {
+  std::vector<MeshEntityPtr> retrievedUpEntities;
   for (auto& entity : entities)
   {
     if (!entity)
@@ -580,6 +609,18 @@ void check_topology_up(const std::vector<MeshEntityPtr>& entities, const std::ve
       if (entityUp != entitiesUp[entityUp->get_id()])
         throw std::runtime_error("upward entity ID is inconsistent");
     }
+
+
+    int entityDim = get_type_dimension(entity->get_type());
+    for (int dim=entityDim+1; dim <= 2; ++dim)
+    {
+      retrievedUpEntities.clear();
+      int nup = get_upward(entity, dim, retrievedUpEntities);
+      std::sort(retrievedUpEntities.begin(), retrievedUpEntities.end());
+      for (int i=1; i < nup; ++i)
+        if (retrievedUpEntities[i-1] == retrievedUpEntities[i])
+          throw std::runtime_error("duplicate upward entity");
+    }
   }
 }
 
@@ -594,11 +635,6 @@ struct EdgeAndVertIds
 
 void check_edge_orientation_parallel(std::shared_ptr<Mesh> mesh)
 {
-  // for each shared edge that I own
-  //    get Vertices
-  //    for each sharer of the edge
-  //      send the remote edge id, remote vert ids
-
   utils::impl::ParallelExchange<EdgeAndVertIds> exchanger(mesh->get_comm(), 77);
   std::vector<int> recvSizes(utils::impl::comm_size(mesh->get_comm()), 0);
 
@@ -635,16 +671,6 @@ void check_edge_orientation_parallel(std::shared_ptr<Mesh> mesh)
   exchanger.start_recvs();
   exchanger.complete_recvs();
 
-  // for each shared edge that I do not own
-  //   figure out owner
-  //   increment receive count
-
-  // do parallel exchange
-
-  // for each receive buffer
-  //   get edge id
-  //   make sure the edge id is valid
-  //   check if edge vert ids are same as vert ids in receive buffer
   for (size_t sendRank = 0; sendRank < recvSizes.size(); ++sendRank)
     if (recvSizes[sendRank] > 0)
     {
@@ -655,12 +681,92 @@ void check_edge_orientation_parallel(std::shared_ptr<Mesh> mesh)
         MeshEntityPtr v1   = edge->get_down(0);
         MeshEntityPtr v2   = edge->get_down(1);
         if (v1->get_id() != ids.vert1Id || v2->get_id() != ids.vert2Id)
-          throw std::runtime_error("edge has incorrect orientation");
+          throw std::runtime_error("edge has incorrect orientation or vertex RemoteSharedEntities are inconsistent with the edge RemoteSharedEntity");
       }
     }
 
   exchanger.complete_sends();
 }
+
+struct RemoteData
+{
+  int remoteId;
+  int localId;
+  int localRank;
+};
+
+void check_remotes_symmetric(std::shared_ptr<Mesh> mesh)
+{
+  int myRank = utils::impl::comm_rank(mesh->get_comm());
+  for (int dim=0; dim <= 1; ++dim)
+  {
+    stk::DataExchangeUnknownPatternNonBlockingBuffer<RemoteData> exchanger(mesh->get_comm());
+
+    for (auto& entity : mesh->get_mesh_entities(dim))
+      if (entity)
+      {
+        for (int i=0; i < entity->count_remote_shared_entities(); ++i)
+        {
+          const RemoteSharedEntity& remote = entity->get_remote_shared_entity(i);
+          RemoteData data{remote.remoteId, entity->get_id(), myRank};
+          exchanger.get_send_buf(remote.remoteRank).push_back(data);
+        }
+      }
+
+    exchanger.start_nonblocking();
+    exchanger.post_nonblocking_receives();
+
+    auto f = [](int rank, const std::vector<RemoteData>& buf) {};
+    exchanger.complete_receives(f);
+    exchanger.complete_sends();
+
+    for (int rank=0; rank < utils::impl::comm_size(mesh->get_comm()); ++rank)
+    {
+      for (const RemoteData& data : exchanger.get_recv_buf(rank))
+      {
+        MeshEntityPtr entity = mesh->get_mesh_entities(dim)[data.remoteId];
+        RemoteSharedEntity remote = get_remote_shared_entity(entity, data.localRank);
+
+        if (remote.remoteId != data.localId)
+        {
+          std::stringstream ss;
+          ss << "entity " << data.localId << " on rank " << data.localRank << " has a remote entity " 
+             << data.remoteId << " on rank " << myRank << ", but the remote does not have a symmetric RemoteSharedEntity";
+          throw std::runtime_error(ss.str());
+        }
+      }
+    }
+  }
+}
+
+void check_remotes_unique(std::shared_ptr<Mesh> mesh)
+{
+  std::vector<RemoteSharedEntity> remotes;
+  auto cmp = [](const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+  {
+    if (lhs.remoteRank != rhs.remoteRank)
+      return lhs.remoteRank < rhs.remoteRank;
+    else
+      return lhs.remoteId < rhs.remoteId;
+  };
+
+  for (int dim=0; dim < 2; ++dim)
+    for (MeshEntityPtr entity : mesh->get_mesh_entities(dim))
+      if (entity)
+      {
+        int nremotes = entity->count_remote_shared_entities();
+        remotes.clear();
+        for (int i=0; i < nremotes; ++i)
+          remotes.push_back(entity->get_remote_shared_entity(i));
+
+        std::sort(remotes.begin(), remotes.end(), cmp);
+        for (size_t i=1; i < remotes.size(); ++i)
+          if (!cmp(remotes[i-1], remotes[i]) && !cmp(remotes[i], remotes[i-1]))
+            throw std::runtime_error(std::string("detected duplicate remote for entity ") +
+                                     std::to_string(entity->get_id()) + " of dimensions " + std::to_string(dim));
+      }
+}
+
 
 void check_coordinate_field(std::shared_ptr<Mesh> mesh)
 {
@@ -727,6 +833,7 @@ int get_vertices(MeshEntityPtr e, MeshEntityPtr* verts)
       verts[1] = down[1];
 
       ndown = get_downward(e->get_down(1), 0, down);
+        
       apply_orientation(e->get_down_orientation(1), down, ndown);
       verts[2] = down[1];
 
@@ -928,6 +1035,26 @@ int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
     owner = std::min(owner, entity->get_remote_shared_entity(i).remoteRank);
 
   return owner;
+}
+
+RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
+{
+  int myrank = utils::impl::comm_rank(mesh->get_comm());
+  RemoteSharedEntity remote{myrank, entity->get_id()};
+  for (int i=0; i < entity->count_remote_shared_entities(); ++i)
+  {
+    RemoteSharedEntity remote_i = entity->get_remote_shared_entity(i);
+    if (remote_i.remoteRank < remote.remoteRank)
+      remote = remote_i;
+  }
+
+  return remote;
+}
+
+
+bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
+{
+  return get_owner(mesh, entity) == utils::impl::comm_rank(mesh->get_comm());
 }
 
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank)
@@ -1272,10 +1399,21 @@ std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm)
 {
   Mesh* m = new Mesh(comm);
   std::shared_ptr<Mesh> mp(m);
-  auto f = create_field<impl::GeoClassification>(mp, FieldShape(1, 1, 1), 1);
+  auto f = create_field<impl::GeoClassification>(mp, FieldShape(1, 1, 1), 1, impl::GeoClassification(), true);
   mp->set_geo_classification(f);
   // auto mesh = std::make_shared<Mesh>();
   return mp;
+}
+
+int count_entities_of_type(std::shared_ptr<mesh::Mesh> mesh, MeshEntityType type)
+{
+  int count = 0;
+  int dim = get_type_dimension(type);
+  for (auto& entity : mesh->get_mesh_entities(dim))
+    if (entity && entity->get_type() == type)
+      count++;
+
+  return count;
 }
 
 } // namespace mesh

@@ -60,9 +60,31 @@ inline std::ostream& operator<<(std::ostream& os, EntityOrientation orient)
 
 struct RemoteSharedEntity
 {
+  RemoteSharedEntity(int remoteRank_=0, int remoteId_=0) :
+    remoteRank(remoteRank_),
+    remoteId(remoteId_)
+  {}
+
     int remoteRank;
     int remoteId;
 };
+
+constexpr bool operator==(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return lhs.remoteRank == rhs.remoteRank &&
+         lhs.remoteId   == rhs.remoteId;
+}
+
+constexpr bool operator!=(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return !(lhs == rhs);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const RemoteSharedEntity& remote)
+{
+  os << remote.remoteRank << ", " << remote.remoteId;
+  return os;
+}
 
 class MeshEntity
 {

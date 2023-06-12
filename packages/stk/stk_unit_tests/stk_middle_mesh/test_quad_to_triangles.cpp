@@ -1,6 +1,6 @@
-#include "intersection_common.hpp"
-#include "mesh.hpp"
-#include "predicates/quad_to_triangles.hpp"
+#include "stk_middle_mesh/predicates/intersection_common.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/predicates/quad_to_triangles.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {
@@ -674,8 +674,6 @@ TEST(QuadToTriangles, classify_onto)
     expect_near(quadToTriangles.compute_xyz_coords(record2), {0.25, 0, 0}, 1e-13);
   }
 
-  std::cout << "\nproblem case" << std::endl;
-
   // edge 1
   {
     quadToTriangles.set_triangles(el0);  
@@ -715,6 +713,23 @@ TEST(QuadToTriangles, classify_onto)
     expect_near(quadToTriangles.compute_xyz_coords(record2), {0, 0.75, 0}, 1e-13);
   }      
 
+}
+
+TEST_F(QuadToTrianglesTester, compute_xyz_coords_exterior)
+{
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, quadToTriangles.el1, utils::Point(0.5, -0.5));
+    PointRecordForTriangle r2(PointClassification::Exterior, -1, quadToTriangles.el2, utils::Point(0.5, -1.5));
+    PointRecord record(PointClassification::Exterior, -1, el, r1, r2);
+    expect_near(quadToTriangles.compute_xyz_coords(record, true), {0.5, -0.5}, 1e-13);
+  }
+
+  {
+    PointRecordForTriangle r1(PointClassification::Exterior, -1, quadToTriangles.el1, utils::Point(0.5,  1.5));
+    PointRecordForTriangle r2(PointClassification::Exterior, -1, quadToTriangles.el2, utils::Point(0.5, -0.5));
+    PointRecord record(PointClassification::Exterior, -1, el, r1, r2);
+    expect_near(quadToTriangles.compute_xyz_coords(record, true), {0.5, 1.5}, 1e-13);
+  }
 }
 
 

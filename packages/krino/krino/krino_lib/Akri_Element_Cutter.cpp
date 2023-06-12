@@ -38,7 +38,7 @@ void fill_sorted_domains(const bool isOneLSPerPhase,const InterfaceID & interfac
   }
   else
   {
-    ThrowAssert(all_interfaces_have_single_level_set({interface0, interface1}));
+    STK_ThrowAssert(all_interfaces_have_single_level_set({interface0, interface1}));
     sortedDomains = {interface0.first_ls(), interface1.first_ls()};
   }
 }
@@ -54,7 +54,7 @@ void fill_sorted_domains(const bool isOneLSPerPhase,const InterfaceID & interfac
   }
   else
   {
-    ThrowAssert(all_interfaces_have_single_level_set({interface0, interface1, interface2}));
+    STK_ThrowAssert(all_interfaces_have_single_level_set({interface0, interface1, interface2}));
     sortedDomains = {interface0.first_ls(), interface1.first_ls(), interface2.first_ls()};
   }
 }
@@ -241,7 +241,7 @@ void Element_Cutter::fill_interior_intersections(const ElementIntersectionPointF
   else if (myTopology.base() == stk::topology::TRIANGLE_3_2D || myTopology.base() == stk::topology::TRIANGLE_3)
     fill_triangle_interior_intersection_points(intersectionPointFilter, intersections);
   else
-    ThrowErrorMsg("Unexepected topology " << myTopology.name());
+    STK_ThrowErrorMsg("Unexepected topology " << myTopology.name());
 }
 
 std::unique_ptr<Element_Cutter> create_element_cutter(const bool oneLSPerPhase,
@@ -278,7 +278,7 @@ Element_Cutter::sign_at_position(const InterfaceID interface, const Vector3d & p
 double
 Element_Cutter::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
 {
-  ThrowErrorMsgIf(cutting_surfaces.find(interface) == cutting_surfaces.end(),
+  STK_ThrowErrorMsgIf(cutting_surfaces.find(interface) == cutting_surfaces.end(),
       "No cutting surface found for interface " << interface);
   const Cutting_Surface & interface_surface = *(cutting_surfaces.find(interface)->second);
   return interface_surface.interface_crossing_position(edge);
@@ -441,7 +441,7 @@ build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::ve
     case 1:  // ls[0]==0 && ls[1]<0 && ls[2]<0
     case 25: // ls[0]==0 && ls[1]>0 && ls[2]>0
     {
-      ThrowAssert((nodeSigns[i0] == 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] == 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0));
+      STK_ThrowAssert((nodeSigns[i0] == 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] == 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0));
       return (permute_case_id==1) ?
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i0], (nodeParamCoords[i0] + nodeParamCoords[i1] - nodeParamCoords[i2]))) :
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i0], (nodeParamCoords[i0] + nodeParamCoords[i2] - nodeParamCoords[i1])));
@@ -451,7 +451,7 @@ build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::ve
     case 2:  // ls[0]>0 && ls[1]<0 && ls[2]<0
     case 24: // ls[0]<0 && ls[1]>0 && ls[2]>0)
     {
-      ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0));
+      STK_ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0));
       return (permute_case_id==2) ?
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i5], nodeParamCoords[i3])) :
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i3], nodeParamCoords[i5]));
@@ -461,7 +461,7 @@ build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::ve
     case 5:  // ls[0]>0 && ls[1]==0 && ls[2]<0
     case 21: // ls[0]<0 && ls[1]==0 && ls[2]>0
     {
-      ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] == 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] == 0 && nodeSigns[i2] > 0));
+      STK_ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] == 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] == 0 && nodeSigns[i2] > 0));
       return (permute_case_id==5) ?
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i5], nodeParamCoords[i1])) :
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i1], nodeParamCoords[i5]));
@@ -471,7 +471,7 @@ build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::ve
     case 4:  // ls[0]==0 && ls[1]==0 && ls[2]<0
     case 22: // ls[0]==0 && ls[1]==0 && ls[2]>0
     {
-      ThrowAssert((nodeSigns[i0] == 0 && nodeSigns[i1] == 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] == 0 && nodeSigns[i1] == 0 && nodeSigns[i2] > 0));
+      STK_ThrowAssert((nodeSigns[i0] == 0 && nodeSigns[i1] == 0 && nodeSigns[i2] < 0) || (nodeSigns[i0] == 0 && nodeSigns[i1] == 0 && nodeSigns[i2] > 0));
       return (permute_case_id==4) ?
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i0], nodeParamCoords[i1])) :
           (std::make_shared<Plane_Cutting_Surface_2D>(nodeParamCoords[i1], nodeParamCoords[i0]));
@@ -554,7 +554,7 @@ build_tetrahedral_cutting_surface(const std::vector<int> & nodeSigns,
     case 2:  // ls[0]>0 && ls[1]<0 && ls[2]<0 && ls[3]<0
     case 78: // ls[0]<0 && ls[1]>0 && ls[2]>0 && ls[3]>0
     {
-      ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0 && nodeSigns[i3] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0 && nodeSigns[i3] > 0));
+      STK_ThrowAssert((nodeSigns[i0] > 0 && nodeSigns[i1] < 0 && nodeSigns[i2] < 0 && nodeSigns[i3] < 0) || (nodeSigns[i0] < 0 && nodeSigns[i1] > 0 && nodeSigns[i2] > 0 && nodeSigns[i3] > 0));
 
       return (permute_case_id==2) ?
           (std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i4],nodeParamCoords[i7],nodeParamCoords[i6])) :
@@ -591,7 +591,7 @@ build_tetrahedral_cutting_surface(const std::vector<int> & nodeSigns,
 
     case 14: // ls[0]>0 && ls[1]=0 && ls[2]=0 && ls[3]<0
     {
-      ThrowAssert(nodeSigns[i0] > 0 && nodeSigns[i1] == 0 && nodeSigns[i2] == 0 && nodeSigns[i3] < 0);
+      STK_ThrowAssert(nodeSigns[i0] > 0 && nodeSigns[i1] == 0 && nodeSigns[i2] == 0 && nodeSigns[i3] < 0);
       return std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i2],nodeParamCoords[i1],nodeParamCoords[i7]);
     }
     break;
@@ -619,12 +619,12 @@ build_cutting_surface(const MasterElement & masterElem,
 
   if (baseTopology == stk::topology::TRIANGLE_3_2D || baseTopology == stk::topology::TRIANGLE_3)
   {
-    ThrowRequire(cutEdges.size() == 2);
+    STK_ThrowRequire(cutEdges.size() == 2);
     return build_triangle_cutting_surface(nodeSigns, nodeParamCoords);
   }
 
-  ThrowRequireMsg(baseTopology == stk::topology::TETRAHEDRON_4, "Unsupported base topology: " << baseTopology.name());
-  ThrowRequire(cutEdges.size() == 3 || cutEdges.size() == 4);
+  STK_ThrowRequireMsg(baseTopology == stk::topology::TETRAHEDRON_4, "Unsupported base topology: " << baseTopology.name());
+  STK_ThrowRequire(cutEdges.size() == 3 || cutEdges.size() == 4);
   return build_tetrahedral_cutting_surface(nodeSigns, nodeParamCoords, intersectingPlanesDiagonalPicker);
 }
 
@@ -663,7 +663,7 @@ LS_Per_Interface_Cutter::LS_Per_Interface_Cutter(const MasterElement & masterEle
   for(auto && interface : get_interfaces_present(parentEdges))
   {
     const std::vector<Element_Cutter::Edge_Crossing> cutEdges = build_cut_edges(interface, parentEdges, areParentEdgesOrientedSameAsElementEdges);
-    ThrowRequire(!cutEdges.empty());
+    STK_ThrowRequire(!cutEdges.empty());
 
     cutting_surfaces[interface] = build_cutting_surface(masterElem, cutEdges, intersectingPlanesDiagonalPicker);
   }
@@ -673,14 +673,14 @@ bool
 LS_Per_Interface_Cutter::have_crossing(const InterfaceID interface, const Segment3d & edge) const
 {
   const auto iter = cutting_surfaces.find(interface);
-  ThrowRequire(iter != cutting_surfaces.end());
+  STK_ThrowRequire(iter != cutting_surfaces.end());
   const Cutting_Surface & interface_surface = *(iter->second);
   return interface_surface.sign_at_position(edge.GetNode(0)) == -interface_surface.sign_at_position(edge.GetNode(1));
 }
 
 int LS_Per_Interface_Cutter::get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const
 {
-  ThrowRequireMsg(false, "Improper usage of LS_Per_Interface_Cutter.");
+  STK_ThrowRequireMsg(false, "Improper usage of LS_Per_Interface_Cutter.");
   return -1;
 }
 
@@ -758,7 +758,7 @@ std::shared_ptr<Cutting_Surface> One_LS_Per_Phase_Cutter::attempt_to_build_cutti
   try
   {
     const std::vector<Edge_Crossing> cutEdges = build_cut_edges(interface, parentEdges, areParentEdgesOrientedSameAsElementEdges);
-    ThrowRequire(!cutEdges.empty());
+    STK_ThrowRequire(!cutEdges.empty());
     cuttingSurface = build_cutting_surface(masterElem, cutEdges, intersectingPlanesDiagonalPicker);
   }
   catch (const std::exception & err)
@@ -816,7 +816,7 @@ bool intersection_point_is_real(const Vector3d & intersectionPoint,
 
 static void add_triple_point_interfaces(const bool isOneLSPerPhase, const std::vector<int> & triplePointDomains, std::set<InterfaceID> & interfaces)
 {
-  ThrowRequire(triplePointDomains.size() == 3);
+  STK_ThrowRequire(triplePointDomains.size() == 3);
   if (isOneLSPerPhase)
   {
     interfaces.insert(InterfaceID(triplePointDomains[0],triplePointDomains[1]));
@@ -979,7 +979,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_element(cons
   else if (baseTopology == stk::topology::TRIANGLE_3 || baseTopology == stk::topology::TRIANGLE_3_2D)
     add_interfaces_that_have_uncaptured_intersection_within_tri(nodesSnappedDomains, allSurfaces, interfacesWithUncapturedCrossings);
   else
-    ThrowRequireMsg(false, "Unsupported topology " << baseTopology);
+    STK_ThrowRequireMsg(false, "Unsupported topology " << baseTopology);
 }
 
 static void add_interfaces_that_have_uncaptured_intersection_within_element(const stk::topology & baseTopology,
@@ -993,7 +993,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_element(cons
   else if (baseTopology == stk::topology::TRIANGLE_3 || baseTopology == stk::topology::TRIANGLE_3_2D)
     add_interfaces_that_have_uncaptured_intersection_within_tri(elemNodesCoords, nodesSnappedDomains, allSurfaces, interfacesWithUncapturedCrossings);
   else
-    ThrowRequireMsg(false, "Unsupported topology " << baseTopology);
+    STK_ThrowRequireMsg(false, "Unsupported topology " << baseTopology);
 }
 
 void One_LS_Per_Phase_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
@@ -1008,7 +1008,7 @@ bool
 One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const Segment3d & edge) const
 {
   const auto iter = cutting_surfaces.find(interface);
-  ThrowRequire(iter != cutting_surfaces.end());
+  STK_ThrowRequire(iter != cutting_surfaces.end());
   const Cutting_Surface & interface_surface = *(iter->second);
   if (interface_surface.sign_at_position(edge.GetNode(0)) == -interface_surface.sign_at_position(edge.GetNode(1)))
   {
@@ -1022,7 +1022,7 @@ One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const Segmen
 int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const
 {
   const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, all_cutting_surfaces);
-  ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
+  STK_ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
   return *optimalPhases.begin();
 }
 

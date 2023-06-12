@@ -176,7 +176,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
 
     if (!nodeSideIntersection.empty())
     {
-      ThrowRequire(1 == nodeSideIntersection.size());
+      STK_ThrowRequire(1 == nodeSideIntersection.size());
       return nodeSideIntersection[0];
     }
 
@@ -881,7 +881,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
           }
       }
 
-    ThrowRequireMsg(num_new_child_elements_tet4(edge_code) == new_tets.size(), "Mismatch of size " << num_new_child_elements_tet4(edge_code) << "  " << new_tets.size() << " for case " << edge_code); // FIXME: remove check
+    STK_ThrowRequireMsg(num_new_child_elements_tet4(edge_code) == new_tets.size(), "Mismatch of size " << num_new_child_elements_tet4(edge_code) << "  " << new_tets.size() << " for case " << edge_code); // FIXME: remove check
 
     return new_tets;
   }

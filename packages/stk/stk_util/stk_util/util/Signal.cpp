@@ -39,6 +39,7 @@
 #include "stk_util/util/FeatureTest.hpp"    // for SIERRA_MPI_ABORT_SIGNAL, SIERRA_USER_SHUTDOWN...
 #include "stk_util/util/ReportHandler.hpp"  // for SignalHandler
 #include "stk_util/util/SignalHandler.hpp"  // for SignalHandler
+#include "stk_util/stk_config.h"
 #include <csignal>                          // for SIGBUS, SIGILL, SIGSEGV, raise, SIGTERM
 #include <sstream>
 
@@ -145,15 +146,6 @@ private:
   Callback<EnvSignal>	termCallback;
 };
 
-
-#ifdef __SANITIZE_ADDRESS__
-#define STK_ASAN_IS_ON
-#endif
-#if !defined(STK_ASAN_IS_ON) && defined(__has_feature)
-# if __has_feature(address_sanitizer)
-#define STK_ASAN_IS_ON
-# endif
-#endif
 
 void
 EnvSignal::activateSignals()

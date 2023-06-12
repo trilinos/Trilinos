@@ -47,6 +47,7 @@
 #define MUELU_PERFMODELS_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "Xpetra_Import_fwd.hpp"
 
 #include <vector>
 #include <ostream>
@@ -102,14 +103,31 @@ namespace MueLu {
      */    
     void pingpong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE, const RCP<const Teuchos::Comm<int> > &comm);
 
-    /* Lookup in the stream_vector table */
+    /* Lookup in the pingpong_vector table */
     double pingpong_host_lookup(int SIZE_IN_BYTES);
     double pingpong_device_lookup(int SIZE_IN_BYTES);
 
     /* Print table */
     void print_pingpong_table(std::ostream & out);
 
-    
+    /* A halo-exchange based ping-pong, inspired by halo-mode in MPPTEST from ANL.
+     * Here we use exactly the communication pattern specified in the import object
+     * and send messages accordingly.  We vary the size in bytes sent per message,
+     * which should capture max-rate effects to some degree.
+     *
+     * See further: https://www.mcs.anl.gov/research/projects/mpi/mpptest/
+     */
+    void halopong_make_table(int KERNEL_REPEATS, int LOG_MAX_SIZE, const RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > & import);
+
+    /* Lookup in the halopong_vector table */
+    double halopong_host_lookup(int SIZE_IN_BYTES_PER_MESSAGE);
+    double halopong_device_lookup(int SIZE_IN_BYTES_PER_MESSAGE);
+
+    /* Print table */
+    void print_halopong_table(std::ostream & out);
+
+
+
     /* Estimate launch latency based on the cost of submitting an empty Kokkos::parallel_for.
      * This necessary to correct the memory bandwidth costs for models on high latency platforms, 
      * e.g., GPUS.
@@ -135,6 +153,10 @@ namespace MueLu {
     std::vector<int>     pingpong_sizes_;
     std::vector<double>  pingpong_host_times_;
     std::vector<double>  pingpong_device_times_;
+
+    std::vector<int>     halopong_sizes_;
+    std::vector<double>  halopong_host_times_;
+    std::vector<double>  halopong_device_times_;
 
     double launch_and_wait_latency_;
 

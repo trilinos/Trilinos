@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 
@@ -134,7 +134,10 @@ namespace Iotm {
       struct FaceConnections
       {
         FaceConnections() : numSides(0u) {}
-        FaceConnections(unsigned numSides_) : numSides(numSides_), sideReference(numSides_, 0) {}
+        explicit FaceConnections(unsigned numSides_)
+            : numSides(numSides_), sideReference(numSides_, 0)
+        {
+        }
 
         bool has_any_connection(int thisSide) const
         {
@@ -517,7 +520,7 @@ namespace Iotm {
         if (!reciprocity.empty()) {
           FaceConnections &thisEntry = m_indexGraph[adjacency.elementIndex];
 
-          for (FaceConnection &connectionToThatElement : reciprocity) {
+          for (const FaceConnection &connectionToThatElement : reciprocity) {
             IndexType thatIndex = connectionToThatElement.thatElement;
             int       thatSide  = connectionToThatElement.thatSide;
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,6 +8,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DataPool.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_ScopeGuard.h>
@@ -16,8 +17,8 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
-#include <transform/Iotr_Factory.h>
 #include <fmt/format.h>
+#include <transform/Iotr_Factory.h>
 
 #include <algorithm>
 #include <cassert>
@@ -175,8 +176,8 @@ int main(int argc, char *argv[])
                  fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
-    int64_t mem = Ioss::Utils::get_memory_info();
-    int64_t hwm = Ioss::Utils::get_hwm_memory_info();
+    int64_t mem = Ioss::MemoryUtils::get_memory_info();
+    int64_t hwm = Ioss::MemoryUtils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
                  "\n\tCurrent Memory:    {}M\n"
@@ -765,8 +766,7 @@ namespace {
         if (debug) {
           DO_OUTPUT << name << ", ";
         }
-        std::string type  = iblock->topology()->name();
-        size_t      count = iblock->entity_count();
+        size_t count = iblock->entity_count();
         total_entities += count;
 
         auto block = new T(*iblock);

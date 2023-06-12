@@ -347,6 +347,14 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (
 
 //==============================================================================
 template<class MatrixType>
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, double), global_ordinal_type parameter1, double parameter2){
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
+  IFPACK2_CHK_ERR(AddFunToList(temp));
+  return 0;
+} //SetParameter() - int,double function pointer
+
+//==============================================================================
+template<class MatrixType>
 int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, global_ordinal_type), global_ordinal_type parameter1, global_ordinal_type parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
@@ -393,7 +401,7 @@ template<class MatrixType>
 int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G){
   using LO = local_ordinal_type;
   using GO = global_ordinal_type;
-  using SC = scalar_type;
+  // using SC = scalar_type;
 
   // Sanity check
   if(!A_->getRowMap()->isSameAs(*G->getRowMap()))
@@ -884,7 +892,7 @@ template<class MatrixType>
 int Hypre<MatrixType>::CopyTpetraToHypre(){
   using LO = local_ordinal_type;
   using GO = global_ordinal_type;
-  using SC = scalar_type;
+  // using SC = scalar_type;
 
   Teuchos::RCP<const crs_matrix_type> Matrix = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
   if(Matrix.is_null()) 

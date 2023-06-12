@@ -63,7 +63,6 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_RAPFactory_decl.hpp"
 //#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -144,13 +143,13 @@ namespace MueLu {
       bool isEpetra = A->getRowMap()->lib() == Xpetra::UseEpetra;
       bool isGPU =
 #ifdef KOKKOS_ENABLE_CUDA
-	(typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name()) ||
+	(typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name()) ||
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-	(typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name()) ||
+	(typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name()) ||
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-	(typeid(Node).name() == typeid(Kokkos::Compat::KokkosSYCLWrapperNode).name()) ||
+	(typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name()) ||
 #endif
 	false;
 

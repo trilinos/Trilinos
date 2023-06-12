@@ -34,17 +34,17 @@
 
 #include <gtest/gtest.h>                // for TEST
 #include <sstream>                      // for ostringstream
+#include <unistd.h>
 #include "mpi.h"                        // for MPI_COMM_WORLD
 
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/DumpMeshInfo.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 
 namespace {
 
-// Test that our debug printing works
-
-TEST( UnitTestDebugDump, MetaData )
+TEST(UnitTestDebugDump, dump_all_meta_info)
 {
   const unsigned NX = 3;
   const unsigned NY = 1;
@@ -52,12 +52,14 @@ TEST( UnitTestDebugDump, MetaData )
   stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
   fixture.m_meta.commit();
 
-  // Doesn't check anything, but at least makes sure it passes
-  std::ostringstream myout;
-  fixture.m_meta.dump_all_meta_info(myout);
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_all_meta_info(fixture.m_meta, oss);
+
+//  std::cout << oss.str() << std::endl;
 }
 
-TEST( UnitTestDebugDump, BulkData )
+TEST(UnitTestDebugDump, dump_all_mesh_info)
 {
   const unsigned NX = 3;
   const unsigned NY = 1;
@@ -66,12 +68,107 @@ TEST( UnitTestDebugDump, BulkData )
   hf.m_meta.commit();
   hf.generate_mesh();
 
-  // Doesn't check anything, but at least makes sure it passes
-  std::ostringstream myout;
-  hf.m_bulk_data.dump_all_mesh_info(myout);
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_all_mesh_info(hf.m_bulk_data, oss);
 
-  // Uncomment to see output
-  //std::cout << out.str() << std::endl;
+//  std::cout << oss.str() << std::endl;
 }
 
-} // namespace
+TEST(UnitTestDebugDump, dump_mesh_per_proc)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_mesh_per_proc(hf.m_bulk_data, "junk_mesh");
+
+  unlink(("junk_mesh." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD))).c_str());
+}
+
+TEST(UnitTestDebugDump, dump_partition_summary)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_partition_summary(hf.m_bulk_data, oss);
+
+//  std::cout << oss.str() << std::endl;
+}
+
+TEST(UnitTestDebugDump, dump_partition_summary_per_proc)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_partition_summary_per_proc(hf.m_bulk_data, "junk_partition_summary");
+
+  unlink(("junk_partition_summary." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD))).c_str());
+}
+
+TEST(UnitTestDebugDump, dump_bucket_size_histogram)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_bucket_size_histogram(hf.m_bulk_data, oss);
+
+//  std::cout << oss.str() << std::endl;
+}
+
+TEST(UnitTestDebugDump, dump_bucket_size_histogram_per_proc)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_bucket_size_histogram_per_proc(hf.m_bulk_data, "junk_histogram");
+
+  unlink(("junk_histogram." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD))).c_str());
+}
+
+TEST(UnitTestDebugDump, dump_global_bucket_size_histogram)
+{
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  hf.m_meta.commit();
+  hf.generate_mesh();
+
+  // Doesn't check anything, but at least makes sure it builds and runs
+  std::ostringstream oss;
+  stk::mesh::impl::dump_bucket_size_histogram_per_proc(hf.m_bulk_data, "junk_histogram");
+
+  unlink(("junk_histogram." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD))).c_str());
+}
+
+}

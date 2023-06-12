@@ -156,7 +156,7 @@ const T * CSet::p_insert(const DELETER & deleter, const T * value)
   auto im = cset::lower_bound(m_type, type);
   const size_t offset = im - m_type.begin();
 
-  ThrowAssert(m_value.size() == m_type.size());
+  STK_ThrowAssert(m_value.size() == m_type.size());
   auto iv = m_value.begin();
   std::advance(iv, offset);
 
@@ -165,7 +165,7 @@ const T * CSet::p_insert(const DELETER & deleter, const T * value)
     iv = m_value.insert(iv , std::shared_ptr<const void>(value, deleter));
   }
 
-  ThrowAssert(iv != m_value.end());
+  STK_ThrowAssert(iv != m_value.end());
   return static_cast<const T*>((*iv).get());
 }
 

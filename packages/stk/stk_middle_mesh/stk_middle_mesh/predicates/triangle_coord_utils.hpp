@@ -11,9 +11,12 @@ namespace impl {
 class TriangleCoordUtils
 {
   public:
-    utils::Point compute_xyz_coords(const PointRecordForTriangle& record)
+    utils::Point compute_xyz_coords(const PointRecordForTriangle& record, bool allowExterior=false)
     {
-      assert(record.type != PointClassification::Exterior);
+      if (!allowExterior)
+      {
+        assert(record.type != PointClassification::Exterior);
+      }
       assert(record.el->get_type() == stk::middle_mesh::mesh::MeshEntityType::Triangle);
 
       if (record.type == PointClassification::Vert)
@@ -31,9 +34,12 @@ class TriangleCoordUtils
       }
     }
 
-    utils::Point compute_xi_coords(const PointRecordForTriangle& record)
+    utils::Point compute_xi_coords(const PointRecordForTriangle& record, bool allowExterior=false)
     {
-      assert(record.type != PointClassification::Exterior);
+      if (!allowExterior)
+      {
+        assert(record.type != PointClassification::Exterior);
+      }
       assert(record.el->get_type() == stk::middle_mesh::mesh::MeshEntityType::Triangle);
       return record.m_ptXi;
     }
@@ -302,6 +308,24 @@ class TriangleCoordUtils
 
         return create_record(el, entityNewLocalId, edgeXiNew);
       }
+    }
+
+    // returns a measure of how far outside the element the point is
+    double compute_exterior_deviation(const PointRecordForTriangle& r)
+    {
+      assert(r.type == PointClassification::Exterior);
+
+      std::array<double, 3> xi = {1 - r.m_ptXi.x - r.m_ptXi.y, r.m_ptXi.x, r.m_ptXi.y};
+      double dev = 0.0;
+      for (int i=0; i < 3; ++i)
+      {
+        if (xi[i] > 1)
+          dev += std::max(xi[i] - 1, 0.0);
+        else if (xi[i] < 0)
+          dev += -xi[i];
+      }
+
+      return dev;
     }
 };
 

@@ -77,6 +77,7 @@ The first argument can assume the following values:
   - "RELAXATION": returns an instance of Ifpack2::Relaxation.
   - "CHEBYSHEV": returns an instance of Ifpack2::Chebyshev (overlap is ignored).
   - "ILUT": returns an instance of Ifpack2::ILUT.
+  - "MDF": returns an instance of Ifpack2::MDF.
   - "RILUK": returns an instance of Ifpack2::RILUK.
   - "RBILUK": returns an instance of Ifpack2::Experimental::RBILUK.
 

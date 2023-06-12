@@ -178,7 +178,7 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 setParameters (const Teuchos::ParameterList& pl)
 {
-  // CAG: Copied form Relaxation
+  // CAG: Copied from Relaxation
   // FIXME (aprokop 18 Oct 2013) Casting away const is bad here.
   // but otherwise, we will get [unused] in pl
   this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));

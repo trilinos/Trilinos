@@ -1,12 +1,12 @@
-#include "create_mesh.hpp"
-#include "mesh.hpp"
-#include "mesh_entity.hpp"
-#include "mesh_scatter_from_root.hpp"
-#include "parallel_exchange.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
+#include "stk_middle_mesh/mesh_scatter_from_root.hpp"
+#include "stk_middle_mesh/parallel_exchange.hpp"
 #include "util/mesh_comparer.hpp"
 #include "util/meshes.hpp"
 #include "gtest/gtest.h"
-#include "variable_size_field.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -16,7 +16,6 @@ namespace {
 
 void trim_mesh(std::shared_ptr<mesh::Mesh> meshSerial, MPI_Comm meshComm, mesh::FieldPtr<int> destRanksOnMeshComm);
 
-void check_remotes_unique(std::shared_ptr<mesh::Mesh> mesh);
 
 void check_entity_destinations(MPI_Comm unionComm, int rootRankOnUnionComm,
                                std::shared_ptr<mesh::Mesh> inputMesh,
@@ -52,7 +51,7 @@ class MeshScatterFromRootTester : public ::testing::Test
       auto inputMesh = utils::impl::comm_rank(unionComm) == rootRankOnUnionComm ? meshSerial : nullptr;
       mesh::impl::MeshScatterFromRoot scatterer(unionComm, inputMesh, meshComm, destRanksOnInputComm);
       std::shared_ptr<mesh::Mesh> meshScattered = scatterer.scatter();
-      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_desintations();
+      mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> entityDestinations = scatterer.get_entity_destinations();
 
       check_entity_destinations(unionComm, rootRankOnUnionComm,
                                 inputMesh, meshScattered, entityDestinations);
@@ -63,9 +62,6 @@ class MeshScatterFromRootTester : public ::testing::Test
 
         mesh::check_topology(meshScattered);
         compare_meshes(meshScattered, meshSerial, tol);
-
-        if (!meshspec.xPeriodic && !meshspec.yPeriodic)
-          check_remotes_unique(meshScattered);
       }
     }
 
@@ -76,22 +72,6 @@ class MeshScatterFromRootTester : public ::testing::Test
     std::shared_ptr<mesh::Mesh> meshSerial;
 };
 
-void check_remotes_unique(std::shared_ptr<mesh::Mesh> mesh)
-{
-  std::set<int> remoteRanks;
-  for (int dim = 0; dim < 2; ++dim)
-    for (auto& entity : mesh->get_mesh_entities(dim))
-      if (entity && entity->count_remote_shared_entities() > 0)
-      {
-        remoteRanks.clear();
-        for (int i = 0; i < entity->count_remote_shared_entities(); ++i)
-        {
-          int remoteRank = entity->get_remote_shared_entity(i).remoteRank;
-          EXPECT_EQ(remoteRanks.count(remoteRank), 0u);
-          remoteRanks.insert(remoteRank);
-        }
-      }
-}
 
 void trim_mesh(std::shared_ptr<mesh::Mesh> meshSerial, MPI_Comm unionComm, mesh::FieldPtr<int> destRanksOnInputComm)
 {
@@ -107,9 +87,10 @@ void trim_mesh(std::shared_ptr<mesh::Mesh> meshSerial, MPI_Comm unionComm, mesh:
 // equal to remove_rank are incremented by 1, so that remove_rank
 // does not appear in the field values
 mesh::FieldPtr<int> get_dest_rank_field(std::shared_ptr<mesh::Mesh> mesh, const std::vector<double>& xBoundaries,
-                                        int removeRank = -1)
+                                        int removeRank = 999999)
 {
   assert(xBoundaries.size() >= 1);
+
   auto fieldPtr = mesh::create_field<int>(mesh, mesh::impl::FieldShape(0, 0, 1), 1);
   auto& field   = *fieldPtr;
 
@@ -209,17 +190,15 @@ TEST_F(MeshScatterFromRootTester, BothCommsSame)
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
+  int commSize = utils::impl::comm_size(MPI_COMM_WORLD);
   mesh::impl::MeshSpec spec = {.numelX = 4, .numelY = 4, .xmin = 0, .xmax = 1, .ymin = 0, .ymax = 1};
 
-  for (int rootRank = 0; rootRank < 2; ++rootRank)
+  for (int rootRank = 0; rootRank < commSize; ++rootRank)
   {
-    for (int i = 1; i < utils::impl::comm_size(MPI_COMM_WORLD); ++i)
-    {
-      setup(MPI_COMM_WORLD, MPI_COMM_WORLD, rootRank, spec);
+    setup(MPI_COMM_WORLD, MPI_COMM_WORLD, rootRank, spec);
 
-      auto destRankField = get_dest_rank_field(meshSerial, linspace(0, 1, i + 1));
-      runtest(destRankField, 1e-13);
-    }
+    auto destRankField = get_dest_rank_field(meshSerial, linspace(0, 1, commSize + 1));
+    runtest(destRankField, 1e-13);
   }
 }
 
@@ -283,7 +262,7 @@ TEST_F(MeshScatterFromRootTester, BothCommsSameRootProc0Periodic)
   for (int i = 1; i < utils::impl::comm_size(MPI_COMM_WORLD); ++i)
   {
     setup(MPI_COMM_WORLD, MPI_COMM_WORLD, rootRank, spec, func);
-    auto destRankField = get_dest_rank_field(meshSerial, linspace(-rOut, rOut, i + 1));
+    auto destRankField = get_dest_rank_field(meshSerial, linspace(-rOut, rOut, i + 2));
     runtest(destRankField, 1e-13);
   }
 }

@@ -72,20 +72,16 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TimeMonitor;
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
-#endif
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>
 #endif
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#endif
 
 // Stratimikos
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -96,9 +92,6 @@ using Teuchos::TimeMonitor;
 // Stratimikos includes
 #include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
-#ifdef HAVE_MUELU_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#endif
 #endif
 
 // Support for ML interface
@@ -138,19 +131,19 @@ struct EpetraSolvers_Wrapper{
 
 #if defined(HAVE_MUELU_EPETRA)
 template<class GlobalOrdinal>
-struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
+struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
+  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
+                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
+                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Kn,
+                                                Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
+                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
                                                 Teuchos::ParameterList & mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
+                                                Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
 #if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
     typedef typename Xpetra::Matrix<SC,LO,GO,NO> Matrix;
 
@@ -191,21 +184,21 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
 #endif
   }
 
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
+  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Ms,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M0inv,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M1,
+                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
+                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& node_material,
+                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
                                                    Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
+                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
 #if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
 
     RCP<const Epetra_CrsMatrix> epetraSM    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
@@ -320,13 +313,11 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     {
       // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
       RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
       MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
     }
-#endif
 
     // Belos linear problem
     typedef MultiVector          MV;
@@ -448,14 +439,12 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         } else if (value == "eCoordinates")
           sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
 #endif
-#ifdef HAVE_MUELU_TPETRA
         else if (value == "tD0") {
           auto tD0 = Teuchos::rcp_dynamic_cast<TpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
           sublist->set(*key_it, tD0);
         } else if (value == "tCoordinates") {
           sublist->set(*key_it, Teuchos::rcp_dynamic_cast<TpetraMultiVector>(coords, true)->getTpetra_MultiVector());
         }
-#endif
       }
     }
 
@@ -472,11 +461,6 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
     Stratimikos::enableMueLuMaxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
-#ifdef HAVE_MUELU_IFPACK2
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
     linearSolverBuilder.setParameterList(rcp(&stratimikosParams,false));              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.

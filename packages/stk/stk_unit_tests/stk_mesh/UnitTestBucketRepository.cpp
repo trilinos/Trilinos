@@ -82,15 +82,21 @@ TEST(BucketRepositoryTest, createBuckets)
     partition->add(node);
   }
 
-  size_t expectedNumBuckets = 2;
+  const size_t maxBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity();
+  size_t expectedNumBuckets = (numNodes+maxBucketCapacity-1)/maxBucketCapacity;
   EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
 
   const stk::mesh::BucketVector & nodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
   EXPECT_EQ(expectedNumBuckets, nodeBuckets.size());
 
-  size_t expectedBucketSize = 512;
-  EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
-  EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
+  size_t numRemainingNodes = numNodes;
+  for (const stk::mesh::Bucket * bucket : nodeBuckets) {
+    size_t expectedSize = std::min(maxBucketCapacity, numRemainingNodes);
+    EXPECT_EQ(expectedSize, bucket->size());
+    numRemainingNodes -= bucket->size();
+  }
+  const size_t lastBucketSize = nodeBuckets.back()->size();
+  const bool lastBucketMaxedOut = (lastBucketSize >= maxBucketCapacity);
 
   stk::mesh::EntityId nodeID = numNodes+1;
   stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
@@ -101,19 +107,12 @@ TEST(BucketRepositoryTest, createBuckets)
   stkMeshBulkData.my_set_entity_key(node, nodeKey);
   partition->add(node);
 
-  expectedNumBuckets = 3;
+  expectedNumBuckets = (lastBucketMaxedOut) ? expectedNumBuckets + 1 : expectedNumBuckets;
+
   const stk::mesh::BucketVector & newNodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
   EXPECT_EQ(expectedNumBuckets, newNodeBuckets.size());
   EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
 
-  EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
-  EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
-  expectedBucketSize = 1;
-  EXPECT_EQ(expectedBucketSize, nodeBuckets[2]->size());
-
-  size_t expectedBucketCapacity = 512;
-  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[0]->capacity());
-  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[1]->capacity());
-  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[2]->capacity());
-
+  const size_t newLastBucketSize = (lastBucketMaxedOut) ? 1 : lastBucketSize + 1;
+  EXPECT_EQ(newLastBucketSize, newNodeBuckets.back()->size());
 }

@@ -66,7 +66,8 @@ class SidesetUpdater : public ModificationObserver
 public:
 
   SidesetUpdater(BulkData &bulk, Selector& active_selector)
-    : m_bulkData(bulk)
+    : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY)
+    , m_bulkData(bulk)
     , m_metaData(bulk.mesh_meta_data())
     , m_activeSelector(active_selector)
     , m_isActive(true)
@@ -101,7 +102,7 @@ public:
       std::ostringstream oss;
       oss << fileNamePrefix << "." << m_bulkData.parallel_rank();
       m_debugOutputFileStream = std::ofstream(oss.str(), std::ofstream::out);
-      ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
+      STK_ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
       set_output_stream(m_debugOutputFileStream);
     }
 

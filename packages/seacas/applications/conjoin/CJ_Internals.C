@@ -122,7 +122,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
   // nonzero element count are in the correct order.
   size_t last_offset = 0;
   bool   order_ok    = true;
-  for (auto &block : blocks) {
+  for (const auto &block : blocks) {
     if (block.elementCount > 0) {
       if (block.offset_ < last_offset) {
         order_ok = false;
@@ -578,8 +578,8 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
 
     // store element type as attribute of connectivity variable
     status = nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
-                             static_cast<int>(std::strlen(blocks[iblk].elType)) + 1,
-                             blocks[iblk].elType);
+                             static_cast<int>(std::strlen(blocks[iblk].elType.c_str())) + 1,
+                             blocks[iblk].elType.c_str());
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       errmsg = fmt::format("Error: failed to store element type name {} in file id {}",

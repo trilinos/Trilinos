@@ -50,19 +50,15 @@
 
 #include "MueLu_MatrixFreeTentativePFactory_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
-#include "MueLu_MasterList.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
-#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MatrixFreeTentativeP.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -82,7 +78,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
     // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
@@ -96,22 +92,22 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  void MatrixFreeTentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     const ParameterList& pL = GetParameterList();
     std::string nspName = "Nullspace";
     if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
 
-    auto aggregates    = Get< RCP<Aggregates_kokkos> >       (fineLevel, "Aggregates");
-    auto amalgInfo     = Get< RCP<AmalgamationInfo_kokkos> > (fineLevel, "UnAmalgamationInfo");
-    auto fineNullspace = Get< RCP<MultiVector> >             (fineLevel, nspName);
-    auto coarseMap     = Get< RCP<const Map> >               (fineLevel, "CoarseMap");
+    auto aggregates    = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
+    auto amalgInfo     = Get< RCP<AmalgamationInfo> >  (fineLevel, "UnAmalgamationInfo");
+    auto fineNullspace = Get< RCP<MultiVector> >       (fineLevel, nspName);
+    auto coarseMap     = Get< RCP<const Map> >         (fineLevel, "CoarseMap");
     Teuchos::RCP<const Map> fineMap = fineNullspace->getMap();
 
     // Matrix-free should never run with aggregates that cross processors
@@ -121,7 +117,7 @@ namespace MueLu {
     size_t NSDim = fineNullspace->getNumVectors();
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
-    Teuchos::RCP<Operator> P = Teuchos::rcp(new MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>(coarseMap, fineMap, aggregates));
+    Teuchos::RCP<Operator> P = Teuchos::rcp(new MatrixFreeTentativeP<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>(coarseMap, fineMap, aggregates));
     P->apply(*fineNullspace,*coarseNullspace,Teuchos::TRANS,1.0,0.0); // coarse = alpha*R*fine + beta*coarse
 
     Set(coarseLevel, "Nullspace", coarseNullspace);

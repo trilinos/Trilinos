@@ -46,6 +46,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
+#include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector, etc
@@ -66,6 +67,7 @@
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include "stk_util/util/AdjustForAlignment.hpp"
 #include <string>                       // for string, operator==, etc
 #include <unistd.h>                     // for unlink
 #include <vector>                       // for vector
@@ -596,7 +598,7 @@ void verify_fields_are_on_entities(const std::string& filename, stk::mesh::Entit
   for(const std::string& field_name : fieldnames)
   {
     stk::mesh::FieldBase* field = bulk.mesh_meta_data().get_field(rank, field_name);
-    ThrowRequireWithSierraHelpMsg(field!=nullptr);
+    STK_ThrowRequireWithSierraHelpMsg(field!=nullptr);
     stk::mesh::Selector selector = stk::mesh::selectField(*field) & meta.locally_owned_part();
     unsigned numAccelEntities = stk::mesh::count_selected_entities(selector, bulk.buckets(rank));
     EXPECT_EQ(goldNum, numAccelEntities);
@@ -672,13 +674,13 @@ TEST_F(FieldFixture, totalNgpFieldDataBytes)
   get_bulk().modification_end();
 
   const size_t numBuckets = get_bulk().buckets(stk::topology::ELEM_RANK).size();
-  const size_t bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
+  const size_t bucketCapacity = stk::mesh::get_default_maximum_bucket_capacity();
   const size_t numPerEntityA = 1;
   const size_t numPerEntityB = 5;
   const size_t maxNumPerEntity = std::max(numPerEntityA, numPerEntityB);
   const size_t bytesPerScalar = sizeof(double);
   const size_t expectedTotalFieldDataBytes = (numBuckets * bucketCapacity * maxNumPerEntity * bytesPerScalar);
-  EXPECT_EQ(stk::mesh::get_total_ngp_field_allocation_bytes(field), expectedTotalFieldDataBytes);
+  EXPECT_LE(stk::mesh::get_total_ngp_field_allocation_bytes(field), expectedTotalFieldDataBytes);
 }
 
 TEST_F(FieldFixture, writingDifferentNodalFieldsPerSolutionCase)
@@ -1432,5 +1434,915 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
   }
   unlink(serialOutputMeshName.c_str());
 }
+
+void create_node(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId)
+{
+  bulk.modification_begin();
+  bulk.declare_node(nodeId);
+  bulk.modification_end();
+}
+
+void create_node(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId, stk::mesh::Part & part)
+{
+  bulk.modification_begin();
+  bulk.declare_node(nodeId, stk::mesh::PartVector{&part});
+  bulk.modification_end();
+}
+
+void change_node_parts(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
+                       stk::mesh::Part & addPart, stk::mesh::Part & removePart)
+{
+  const stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+  bulk.modification_begin();
+  bulk.change_entity_parts(node, stk::mesh::PartVector{&addPart}, stk::mesh::PartVector{&removePart});
+  bulk.modification_end();
+}
+
+class VariableCapacityBuckets : public ::testing::Test
+{
+public:
+  VariableCapacityBuckets()
+  {
+  }
+
+  void build_empty_mesh(unsigned initialBucketCapacity, unsigned maximumBucketCapacity)
+  {
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_spatial_dimension(3);
+    builder.set_initial_bucket_capacity(initialBucketCapacity);
+    builder.set_maximum_bucket_capacity(maximumBucketCapacity);
+    m_bulk = builder.create();
+    m_meta = &m_bulk->mesh_meta_data();
+  }
+
+protected:
+  std::unique_ptr<stk::mesh::BulkData> m_bulk;
+  stk::mesh::MetaData * m_meta;
+};
+
+TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity1)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  {
+    create_node(*m_bulk, 1);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+
+    EXPECT_EQ(buckets[0]->size(), 1u);
+    EXPECT_EQ(buckets[0]->capacity(), 1u);
+  }
+
+  {
+    create_node(*m_bulk, 2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    EXPECT_EQ(buckets[0]->size(), 1u);
+    EXPECT_EQ(buckets[0]->capacity(), 1u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 1u);
+  }
+
+  {
+    create_node(*m_bulk, 3);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 3u);
+
+    EXPECT_EQ(buckets[0]->size(), 1u);
+    EXPECT_EQ(buckets[0]->capacity(), 1u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 1u);
+
+    EXPECT_EQ(buckets[2]->size(), 1u);
+    EXPECT_EQ(buckets[2]->capacity(), 1u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, createNodes_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  {
+    create_node(*m_bulk, 1);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+
+    EXPECT_EQ(buckets[0]->size(), 1u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+  }
+
+  {
+    create_node(*m_bulk, 2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+  }
+
+  {
+    create_node(*m_bulk, 3);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 2u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, createNodes_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  {
+    create_node(*m_bulk, 1);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+
+    EXPECT_EQ(buckets[0]->size(), 1u);
+    EXPECT_EQ(buckets[0]->capacity(), 1u);
+  }
+
+  {
+    create_node(*m_bulk, 2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+  }
+
+  {
+    create_node(*m_bulk, 3);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 1u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+  stk::mesh::Part & block2 = m_meta->declare_part_with_topology("block_2", stk::topology::NODE);
+
+  {
+    create_node(*m_bulk, 1, block1);
+    create_node(*m_bulk, 2, block1);
+    create_node(*m_bulk, 3, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 2u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 2u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(block1Buckets[1]->size(), 1u);
+    EXPECT_EQ(block1Buckets[1]->capacity(), 2u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 0u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 1, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 2u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 1u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 2u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 2, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 1u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 2u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 2u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 3, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 0u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 2u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 2u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(block2Buckets[1]->size(), 1u);
+    EXPECT_EQ(block2Buckets[1]->capacity(), 2u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, changeNodeParts_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+  stk::mesh::Part & block2 = m_meta->declare_part_with_topology("block_2", stk::topology::NODE);
+
+  {
+    create_node(*m_bulk, 1, block1);
+    create_node(*m_bulk, 2, block1);
+    create_node(*m_bulk, 3, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 2u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 2u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(block1Buckets[1]->size(), 1u);
+    EXPECT_EQ(block1Buckets[1]->capacity(), 1u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 0u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 1, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 2u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 1u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 1u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 2, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+
+    EXPECT_EQ(block1Buckets[0]->size(), 1u);
+    EXPECT_EQ(block1Buckets[0]->capacity(), 2u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 2u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 2u);
+  }
+
+  {
+    change_node_parts(*m_bulk, 3, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 0u);
+
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 2u);
+
+    EXPECT_EQ(block2Buckets[0]->size(), 2u);
+    EXPECT_EQ(block2Buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(block2Buckets[1]->size(), 1u);
+    EXPECT_EQ(block2Buckets[1]->capacity(), 1u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+
+  {
+    stk::mesh::EntityIdVector ids{1, 2, 3};
+    stk::mesh::EntityVector newNodes;
+    m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 2u);
+  }
+}
+
+TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+
+  {
+    stk::mesh::EntityIdVector ids{1, 2, 3};
+    stk::mesh::EntityVector newNodes;
+    m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    EXPECT_EQ(buckets[0]->size(), 2u);
+    EXPECT_EQ(buckets[0]->capacity(), 2u);
+
+    EXPECT_EQ(buckets[1]->size(), 1u);
+    EXPECT_EQ(buckets[1]->capacity(), 1u);
+  }
+}
+
+
+void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
+                           const stk::mesh::Field<int> & field)
+{
+  bulk.modification_begin();
+  const stk::mesh::Entity node = bulk.declare_node(nodeId);
+  bulk.modification_end();
+
+  *stk::mesh::field_data(field, node) = nodeId;
+}
+
+void create_node_with_multistate_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
+                                      const stk::mesh::Field<int> & field1, const stk::mesh::Field<int> & field2)
+{
+  bulk.modification_begin();
+  const stk::mesh::Entity node = bulk.declare_node(nodeId);
+  bulk.modification_end();
+
+  *stk::mesh::field_data(field1, node) = 100 + nodeId;
+  *stk::mesh::field_data(field2, node) = 200 + nodeId;
+}
+
+void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
+                           const stk::mesh::Field<int> & field, stk::mesh::Part & part)
+{
+  bulk.modification_begin();
+  const stk::mesh::Entity node = bulk.declare_node(nodeId, stk::mesh::PartVector{&part});
+  bulk.modification_end();
+
+  *stk::mesh::field_data(field, node) = nodeId;
+}
+
+int get_field_value(stk::mesh::BulkData & bulk, const stk::mesh::Field<int> & field, stk::mesh::EntityId nodeId)
+{
+  const stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+  return *stk::mesh::field_data(field, node);
+}
+
+enum class FieldDataManagerType
+{
+  DEFAULT,
+  CONTIGUOUS
+};
+
+class VariableCapacityFieldData : public ::testing::TestWithParam<FieldDataManagerType>
+{
+public:
+  VariableCapacityFieldData()
+  {
+  }
+
+  void build_empty_mesh(unsigned initialBucketCapacity, unsigned maximumBucketCapacity)
+  {
+    if (GetParam() == FieldDataManagerType::DEFAULT) {
+      const unsigned numRanks = 1;
+      const unsigned alignment = 4;
+      m_fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(numRanks, alignment);
+    }
+    else if (GetParam() == FieldDataManagerType::CONTIGUOUS) {
+      const unsigned extraCapacity = 0;
+      const unsigned alignment = 4;
+      m_fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>(extraCapacity, alignment);
+    }
+
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_spatial_dimension(3);
+    builder.set_initial_bucket_capacity(initialBucketCapacity);
+    builder.set_maximum_bucket_capacity(maximumBucketCapacity);
+    builder.set_field_data_manager(m_fieldDataManager.get());
+    m_bulk = builder.create();
+    m_meta = &m_bulk->mesh_meta_data();
+    m_meta->use_simple_fields();
+  }
+
+  int expected_bytes_allocated(const stk::mesh::BucketVector & buckets, int dataSize)
+  {
+    int extraCapacity = 0;
+    if (GetParam() == FieldDataManagerType::CONTIGUOUS) {
+      extraCapacity = dynamic_cast<stk::mesh::ContiguousFieldDataManager&>(*m_fieldDataManager).get_extra_capacity();
+    }
+
+    return std::accumulate(buckets.begin(), buckets.end(), 0,
+                           [&](int currentValue, const stk::mesh::Bucket * bucket) {
+                              const int allocationCount = (GetParam() == FieldDataManagerType::DEFAULT) ? bucket->capacity()
+                                                                                                        : bucket->size();
+                              return currentValue + stk::adjust_up_to_alignment_boundary(dataSize*allocationCount,
+                                                                                         m_fieldDataManager->get_alignment_bytes());
+                           }) + extraCapacity;
+  }
+
+protected:
+  std::unique_ptr<stk::mesh::FieldDataManager> m_fieldDataManager;
+  std::unique_ptr<stk::mesh::BulkData> m_bulk;
+  stk::mesh::MetaData * m_meta;
+};
+
+INSTANTIATE_TEST_SUITE_P(VariableCapacityBuckets, VariableCapacityFieldData,
+                         ::testing::Values(FieldDataManagerType::DEFAULT, FieldDataManagerType::CONTIGUOUS));
+
+TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_data(*m_bulk, 1, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 2, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 3, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 3u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_data(*m_bulk, 1, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 2, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 3, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_data(*m_bulk, 1, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 2, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+  }
+
+  {
+    create_node_with_data(*m_bulk, 3, field);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_withMultistateFieldData)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  const unsigned numberOfStates = 2;
+  auto & field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1", numberOfStates);
+  auto & field2 = dynamic_cast<stk::mesh::Field<int>&>(*field1.field_state(stk::mesh::FieldState::StateOld));
+  const unsigned field1Ordinal = field1.mesh_meta_data_ordinal();
+  const unsigned field2Ordinal = field1.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_multistate_data(*m_bulk, 1, field1, field2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated1 = m_fieldDataManager->get_num_bytes_allocated_on_field(field1Ordinal);
+    const int bytesAllocated2 = m_fieldDataManager->get_num_bytes_allocated_on_field(field2Ordinal);
+    ASSERT_EQ(bytesAllocated1, expected_bytes_allocated(buckets, dataSize));
+    ASSERT_EQ(bytesAllocated2, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 1), 101);
+  }
+
+  m_bulk->update_field_data_states();
+
+  {
+    create_node_with_multistate_data(*m_bulk, 2, field1, field2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated1 = m_fieldDataManager->get_num_bytes_allocated_on_field(field1Ordinal);
+    const int bytesAllocated2 = m_fieldDataManager->get_num_bytes_allocated_on_field(field2Ordinal);
+    ASSERT_EQ(bytesAllocated1, expected_bytes_allocated(buckets, dataSize));
+    ASSERT_EQ(bytesAllocated2, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 1), 201);  // Flipped values due to state rotation
+    EXPECT_EQ(get_field_value(*m_bulk, field2, 1), 101);
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 2), 102);  // Unflipped values written into new state layout
+    EXPECT_EQ(get_field_value(*m_bulk, field2, 2), 202);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_withMultistateFieldData)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  const unsigned numberOfStates = 2;
+  auto & field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1", numberOfStates);
+  auto & field2 = dynamic_cast<stk::mesh::Field<int>&>(*field1.field_state(stk::mesh::FieldState::StateOld));
+  const unsigned field1Ordinal = field1.mesh_meta_data_ordinal();
+  const unsigned field2Ordinal = field1.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_multistate_data(*m_bulk, 1, field1, field2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated1 = m_fieldDataManager->get_num_bytes_allocated_on_field(field1Ordinal);
+    const int bytesAllocated2 = m_fieldDataManager->get_num_bytes_allocated_on_field(field2Ordinal);
+    ASSERT_EQ(bytesAllocated1, expected_bytes_allocated(buckets, dataSize));
+    ASSERT_EQ(bytesAllocated2, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 1), 101);
+  }
+
+  m_bulk->update_field_data_states();
+
+  {
+    create_node_with_multistate_data(*m_bulk, 2, field1, field2);
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 1u);
+    const int bytesAllocated1 = m_fieldDataManager->get_num_bytes_allocated_on_field(field1Ordinal);
+    const int bytesAllocated2 = m_fieldDataManager->get_num_bytes_allocated_on_field(field2Ordinal);
+    ASSERT_EQ(bytesAllocated1, expected_bytes_allocated(buckets, dataSize));
+    ASSERT_EQ(bytesAllocated2, expected_bytes_allocated(buckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 1), 201);  // Flipped values due to state rotation
+    EXPECT_EQ(get_field_value(*m_bulk, field2, 1), 101);
+    EXPECT_EQ(get_field_value(*m_bulk, field1, 2), 102);  // Unflipped values written into new state layout
+    EXPECT_EQ(get_field_value(*m_bulk, field2, 2), 202);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+  stk::mesh::Part & block2 = m_meta->declare_part_with_topology("block_2", stk::topology::NODE);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_data(*m_bulk, 1, field, block1);
+    create_node_with_data(*m_bulk, 2, field, block1);
+    create_node_with_data(*m_bulk, 3, field, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 2u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 0u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+
+  {
+    change_node_parts(*m_bulk, 1, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+
+  {
+    change_node_parts(*m_bulk, 2, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+  {
+    change_node_parts(*m_bulk, 3, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 0u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 2u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+  stk::mesh::Part & block2 = m_meta->declare_part_with_topology("block_2", stk::topology::NODE);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    create_node_with_data(*m_bulk, 1, field, block1);
+    create_node_with_data(*m_bulk, 2, field, block1);
+    create_node_with_data(*m_bulk, 3, field, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 2u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 0u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+
+  {
+    change_node_parts(*m_bulk, 1, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+
+  {
+    change_node_parts(*m_bulk, 2, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 1u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 1u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+  {
+    change_node_parts(*m_bulk, 3, block2, block1);
+
+    const stk::mesh::BucketVector & block1Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block1);
+    ASSERT_EQ(block1Buckets.size(), 0u);
+    const stk::mesh::BucketVector & block2Buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, block2);
+    ASSERT_EQ(block2Buckets.size(), 2u);
+
+    const stk::mesh::BucketVector & allBuckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(allBuckets, dataSize));
+    EXPECT_EQ(get_field_value(*m_bulk, field, 1), 1);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 2), 2);
+    EXPECT_EQ(get_field_value(*m_bulk, field, 3), 3);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(2, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, block1, nullptr);
+
+  {
+    m_bulk->deactivate_field_updating();
+    stk::mesh::EntityIdVector ids{1, 2, 3};
+    stk::mesh::EntityVector newNodes;
+    m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+    m_bulk->allocate_field_data();
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+  }
+}
+
+TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCapacity2)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  stk::mesh::Part & block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+  const int dataSize = sizeof(int);
+  stk::mesh::put_field_on_mesh(field, block1, nullptr);
+
+  {
+    m_bulk->deactivate_field_updating();
+    stk::mesh::EntityIdVector ids{1, 2, 3};
+    stk::mesh::EntityVector newNodes;
+    m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
+    m_bulk->allocate_field_data();
+
+    const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
+    ASSERT_EQ(buckets.size(), 2u);
+
+    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+  }
+}
+
 } //namespace <anonymous>
 

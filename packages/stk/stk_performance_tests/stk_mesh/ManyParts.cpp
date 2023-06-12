@@ -41,7 +41,7 @@
 TEST(many_parts, many_parts)
 {
   const unsigned NUM_RUNS = 5;
-  unsigned num_parts = 3000;
+  unsigned num_parts = 8000;
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {

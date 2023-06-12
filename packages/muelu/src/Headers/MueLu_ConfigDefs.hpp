@@ -50,8 +50,8 @@
 
 #include <Teuchos_ConfigDefs.hpp>
 
-// Kokkos
-#include <KokkosCompat_DefaultNode.hpp> // default template parameter of many MueLu classes
+// Tpetra
+#include <Tpetra_KokkosCompat_DefaultNode.hpp> // default template parameter of many MueLu classes
 
 // Memory management
 #include <Teuchos_Array.hpp>

@@ -746,7 +746,7 @@ TEST(MeshImplUtils, comm_mesh_very_parallel_consistency_nominal)
     mesh.modification_end();
     std::ostringstream msg ;
     bool is_consistent = mesh.my_comm_mesh_verify_parallel_consistency(msg);
-    ThrowErrorMsgIf(!is_consistent, msg.str());
+    STK_ThrowErrorMsgIf(!is_consistent, msg.str());
   }
 }
 

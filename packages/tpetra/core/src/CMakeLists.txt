@@ -77,18 +77,21 @@ ENDFUNCTION()
 # Function that turns a valid Node template parameter into a macro
 # name (all caps, with no white space and no punctuation other than
 # underscore).
+# Upper-cases the Kokkos execution space name, except for Threads,
+# which is turned into PTHREAD (cwp: for unclear reasons)
 #
 # NAME_OUT [out] The mangled type name.
 #
 # NAME_IN [in] The type to mangle.
 FUNCTION(TPETRA_NODE_MACRO_NAME NAME_OUT NAME_IN)
-  STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
+  STRING(REGEX MATCH "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
   STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
+
   IF(DOES_NOT_MATCH)
     MESSAGE(FATAL_ERROR "Tpetra: Node $NAME_IN is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
-    STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
+    STRING(REGEX REPLACE "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
 
     # Special case: Threads.  The macro name unfortunately differs
     # from the execution space name in a way that doesn't fit the
@@ -934,5 +937,4 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change, another, and another and yet another.
-#
+# Here's another change, another, and another 

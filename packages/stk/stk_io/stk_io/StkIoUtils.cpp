@@ -111,7 +111,7 @@ stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
 IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo)
 {
     IossBlockMembership blockMemberships;
-    const Ioss::Region & io_region = *stkIo.get_input_io_region();
+    const Ioss::Region & io_region = *stkIo.get_input_ioss_region();
     for(auto sideset : io_region.get_sidesets())
     {
         std::vector<std::string> sideBlockNames;
@@ -498,8 +498,8 @@ std::string construct_parallel_filename(const std::string &baseFilename, int num
 
 std::string construct_filename_for_serial_or_parallel(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
 {
-    ThrowRequire(numSubdomains > 0);
-    ThrowRequire(subdomainIndex >=0 && subdomainIndex<numSubdomains);
+    STK_ThrowRequire(numSubdomains > 0);
+    STK_ThrowRequire(subdomainIndex >=0 && subdomainIndex<numSubdomains);
     if(numSubdomains == 1)
         return baseFilename;
     return stk::io::construct_parallel_filename(baseFilename, numSubdomains, subdomainIndex);

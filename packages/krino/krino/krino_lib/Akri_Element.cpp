@@ -170,7 +170,7 @@ ElementObj::update_phase(const std::vector<Surface_Identifier> & surfaceIDs, con
 {
   PhaseTag phase = startPhase;
   const int numInterfaces = interfaces.size();
-  ThrowRequire((int)interfaceSigns.size() == numInterfaces);
+  STK_ThrowRequire((int)interfaceSigns.size() == numInterfaces);
 
   if (numInterfaces > 0)
   {
@@ -220,7 +220,7 @@ ElementObj::compute_local_coords_from_owner_coordinates(const Mesh_Element * own
   std::vector<Vector3d> nodeOwnerCoords;
   fill_node_owner_coords(owner, nodeOwnerCoords);
 
-  ThrowAssert((spatial_dim() == 2 && (nodeOwnerCoords.size() == 3 || nodeOwnerCoords.size() == 6)) ||
+  STK_ThrowAssert((spatial_dim() == 2 && (nodeOwnerCoords.size() == 3 || nodeOwnerCoords.size() == 6)) ||
       (spatial_dim() == 3 && (nodeOwnerCoords.size() == 4 || nodeOwnerCoords.size() == 10)));
   if (spatial_dim() == 2 && nodeOwnerCoords.size() == 6)
     nodeOwnerCoords.resize(3);
@@ -277,7 +277,7 @@ ElementObj::have_refined_edges() const
     const unsigned * const lnn = get_edge_node_ordinals(Top, edge);
 
     const int num_edge_nodes = Top.edge_topology(edge).num_nodes();
-    ThrowRequire(2 == num_edge_nodes || 3 == num_edge_nodes);
+    STK_ThrowRequire(2 == num_edge_nodes || 3 == num_edge_nodes);
 
     if ((2 == num_edge_nodes &&
          NULL != SubElementNode::common_child({my_nodes[lnn[0]], my_nodes[lnn[1]]})) ||
@@ -322,7 +322,7 @@ ElementObj::prolongate_fields(const CDMesh & mesh) const
   else
     prolong_element = mesh.fetch_prolong_element(subelem->get_owner().entityId());
 
-  //I think that adaptivity currently can lead to prolong_element == NULL: ThrowAssert(NULL != prolong_element);
+  //I think that adaptivity currently can lead to prolong_element == NULL: STK_ThrowAssert(NULL != prolong_element);
 
   for(auto && field : elementFields)
   {
@@ -345,7 +345,7 @@ ElementObj::get_evaluation_master_element(const FieldRef field) const
   // Supports Q1Q1, Q2Q2, and Q2Q1 cases
   const MasterElement* calc_master_elem = &master_elem();
   const unsigned full_npe = master_elem().get_topology().num_nodes();
-  ThrowAssert(field.type_is<double>());
+  STK_ThrowAssert(field.type_is<double>());
 
   for ( unsigned n = 0; n < full_npe; n++ )
   {
@@ -353,7 +353,7 @@ ElementObj::get_evaluation_master_element(const FieldRef field) const
     if (nullptr == data)
     {
       calc_master_elem = &MasterElementDeterminer::getMasterElement(master_elem().get_topology().base());
-      ThrowRequire(n >= calc_master_elem->num_nodes());
+      STK_ThrowRequire(n >= calc_master_elem->num_nodes());
       break;
     }
   }
@@ -404,7 +404,7 @@ ElementObj::evaluate_prolongation_field(const CDMesh & mesh, const FieldRef fiel
 
   for ( int n = 0; n < npe; n++ )
   {
-    ThrowRequire(nullptr != node_data[n]);
+    STK_ThrowRequire(nullptr != node_data[n]);
     for (unsigned i=0; i<field_length; ++i) result[i] += shapefcn[n]*node_data[n][i];
   }
 }
@@ -466,7 +466,7 @@ Mesh_Element::Mesh_Element(CDMesh & mesh,
   const stk::topology me_topology = my_master_elem.get_topology();
 
   std::tie(my_subelement_topology, my_subelement_order) = determine_subelement_topology(me_topology);
-  ThrowRequire(stk::topology::INVALID_TOPOLOGY != my_subelement_topology);
+  STK_ThrowRequire(stk::topology::INVALID_TOPOLOGY != my_subelement_topology);
 
   const unsigned npe_coords = me_topology.num_nodes();
   const stk::mesh::Entity* elem_nodes = mesh.stk_bulk().begin_nodes(my_entity);
@@ -481,12 +481,12 @@ Mesh_Element::Mesh_Element(CDMesh & mesh,
   if (npe_coords > npe_base)
   {
     my_nodes.resize(npe_coords);
-    ThrowRequireMsg(npe_coords == npe_base + me_topology.num_edges(), "Unexpected topology");
+    STK_ThrowRequireMsg(npe_coords == npe_base + me_topology.num_edges(), "Unexpected topology");
     for (unsigned edge_i=0; edge_i<me_topology.num_edges(); ++edge_i) // higher order nodes
     {
       const unsigned * edge_lnn = get_edge_node_ordinals(me_topology, edge_i);
       const unsigned inode = edge_lnn[2];
-      ThrowAssert(inode >= npe_base && inode<npe_coords);
+      STK_ThrowAssert(inode >= npe_base && inode<npe_coords);
       my_nodes[inode] = mesh.create_midside_node(this, my_nodes[edge_lnn[0]], my_nodes[edge_lnn[1]], elem_nodes[inode]);
     }
   }
@@ -523,14 +523,14 @@ static int get_local_node_number( const NodeVec & nodes, const SubElementNode * 
   for (size_t iNode=0; iNode<nodes.size(); ++iNode)
     if (nodes[iNode] == node)
       return iNode;
-  ThrowRequireMsg(false, "Failed to find local node.");
+  STK_ThrowRequireMsg(false, "Failed to find local node.");
   return -1;
 }
 
 Vector3d
 Mesh_Element::get_node_parametric_coords( const SubElementNode * node ) const
 {
-  ThrowAssertMsg(!get_nodes().empty(), "Attempt to use get_node_parametric_coords before NodeVec filled.");
+  STK_ThrowAssertMsg(!get_nodes().empty(), "Attempt to use get_node_parametric_coords before NodeVec filled.");
   return get_node_parametric_coords(get_local_node_number(get_nodes(), node));
 }
 
@@ -585,7 +585,7 @@ std::string Mesh_Element::visualize(const CDMesh & mesh) const
 double
 Mesh_Element::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
 {
-  ThrowRequire(get_cutter());
+  STK_ThrowRequire(get_cutter());
   return get_cutter()->interface_crossing_position(interface, edge);
 }
 
@@ -605,7 +605,7 @@ static ElementIntersectionPointFilter build_element_intersection_filter(const No
 void
 Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const
 {
-  ThrowRequire(get_cutter() && faceNodes.size() == 3);
+  STK_ThrowRequire(get_cutter() && faceNodes.size() == 3);
   const std::array<Vector3d,3> faceNodeOwnerCoords = {{faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
   const ElementIntersectionPointFilter intersectionPointFilter = build_element_intersection_filter(faceNodes);
   get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, interface1, interface2, intersectionPointFilter, faceIntersectionPoints);
@@ -614,14 +614,14 @@ Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const 
 int
 Mesh_Element::interface_node_sign(const InterfaceID interface, const SubElementNode * node) const
 {
-  ThrowRequire(get_cutter());
+  STK_ThrowRequire(get_cutter());
   return get_cutter()->sign_at_position(interface, node->owner_coords(this));
 }
 
 double
 Mesh_Element::interface_crossing_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const
 {
-  ThrowRequire(get_cutter());
+  STK_ThrowRequire(get_cutter());
   Segment3d edge(node1->owner_coords(this), node2->owner_coords(this));
   return get_cutter()->interface_crossing_position(interface, edge);
 }
@@ -638,7 +638,7 @@ Mesh_Element::is_prolonged() const
 
 int Mesh_Element::get_interface_index(const InterfaceID interface) const
 {
-  ThrowAssert(have_interface(interface));
+  STK_ThrowAssert(have_interface(interface));
   const auto iter = std::lower_bound(myCuttingInterfaces.begin(), myCuttingInterfaces.end(), interface);
   return std::distance(myCuttingInterfaces.begin(), iter);
 }
@@ -698,7 +698,7 @@ Vector3d Mesh_Element::get_intersection_point_parametric_coordinates(const Inter
   for (size_t iNode=0; iNode<numIntersectionPointNodes; ++iNode)
   {
     const SubElementNode * node = get_node_matching_entity(my_nodes, intersectionPointNodes[iNode]);
-    ThrowAssert(node);
+    STK_ThrowAssert(node);
     pCoords += intersectionPointWeights[iNode] * node->owner_coords(this);
   }
   return pCoords;
@@ -741,7 +741,7 @@ Mesh_Element::cut_interior_intersection_points(CDMesh & mesh)
     const ElementObj * containingElem = nullptr;
     Vector3d containingElemPCoords;
     find_child_coordinates_at_owner_coordinates(pCoords, containingElem, containingElemPCoords);
-    ThrowAssert(containingElem);
+    STK_ThrowAssert(containingElem);
 
     ElementObj * elem = const_cast<ElementObj *>(containingElem);
     if (!elem->captures_intersection_point_domains(intersectionPoint.get_sorted_domains()))
@@ -811,7 +811,7 @@ Mesh_Element::create_base_subelement()
     std::vector<const SubElementNode *> sub_nodes(my_nodes.begin(), my_nodes.begin()+3);
     base_subelement = std::make_unique<SubElement_Tri_3>( sub_nodes, parent_side_ids, this);
   }
-  ThrowErrorMsgIf(!base_subelement, "Elements with topology " << base_topology.name() << " not supported for CDFEM.");
+  STK_ThrowErrorMsgIf(!base_subelement, "Elements with topology " << base_topology.name() << " not supported for CDFEM.");
 
   base_subelement->initialize_interface_signs();
   add_subelement(std::move(base_subelement));
@@ -978,7 +978,7 @@ ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_owner_nodes(con
   stk::mesh::EntityId pn2_id = pn2->entityId();
   stk::mesh::EntityId pn3_id = pn3->entityId();
 
-  ThrowAssert(pn0_id != 0 && pn1_id != 0 && pn2_id != 0 && pn3_id != 0);
+  STK_ThrowAssert(pn0_id != 0 && pn1_id != 0 && pn2_id != 0 && pn3_id != 0);
 
   if ((pn0_id < pn1_id) == (pn2_id < pn3_id))
   {
@@ -1008,7 +1008,7 @@ ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(cons
 
   // Make sure that diagonal can be picked either way and still avoid Steiner point
   const int caseId = (face0 ? 1 : 0) + (face1 ? 2 : 0) + (face2 ? 4 : 0) + (face3 ? 8 : 0);
-  ThrowRequire(caseId == 3 || caseId == 5 || caseId == 10 || caseId == 12);
+  STK_ThrowRequire(caseId == 3 || caseId == 5 || caseId == 10 || caseId == 12);
 
   return (evaluate_quad(n0,n1,n2,n3) == -1);
 }

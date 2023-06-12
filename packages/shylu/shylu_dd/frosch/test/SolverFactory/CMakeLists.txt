@@ -12,7 +12,7 @@ ParameterLists
 ##############
 IF(HAVE_SHYLU_DDFROSCH_AMESOS)
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_amesos_klu_DIM2_EPETRA
@@ -34,7 +34,7 @@ ENDIF()
 # Amesos2 Klu #
 ###############
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_amesos2_klu_DIM2_EPETRA
@@ -71,7 +71,7 @@ NUM_MPI_PROCS 1
 ###############
 IF(HAVE_SHYLU_DDFROSCH_BELOS)
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_belos_gmres_DIM2_EPETRA
@@ -240,7 +240,7 @@ ENDIF()
 #####################################################
 IF(HAVE_SHYLU_DDFROSCH_THYRA AND HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_thyrapreconditioner_frosch_onelevelpreconditioner_DIM2_EPETRA
@@ -278,7 +278,7 @@ ENDIF()
 ###########################
 IF(HAVE_SHYLU_DDFROSCH_THYRA AND HAVE_SHYLU_DDFROSCH_STRATIMIKOS AND HAVE_SHYLU_DDFROSCH_BELOS)
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_thyrasolver_belos_gmres_DIM2_EPETRA

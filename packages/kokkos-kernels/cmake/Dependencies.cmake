@@ -1,6 +1,6 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
-        LIB_REQUIRED_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms
-        LIB_OPTIONAL_TPLS quadmath MKL BLAS LAPACK CUSPARSE METIS SuperLU Cholmod CUBLAS
+        LIB_REQUIRED_PACKAGES Kokkos
+        LIB_OPTIONAL_TPLS quadmath MKL BLAS LAPACK CUSPARSE METIS SuperLU Cholmod CUBLAS ROCBLAS ROCSPARSE
         TEST_OPTIONAL_TPLS yaml-cpp
 )
 # NOTE: If you update names in LIB_OPTIONAL_TPLS above, make sure to map those names in

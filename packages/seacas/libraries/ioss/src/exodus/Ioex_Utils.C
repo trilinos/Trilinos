@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -540,9 +540,9 @@ namespace Ioex {
       // block.
       std::string name{names[i]};
       if (name.find(':') == std::string::npos) {
-        Ioss::Field field(name, block->field_int_type(), IOSS_SCALAR(), Ioss::Field::MAP,
-                          my_element_count);
-        field.set_index(i + 1);
+        auto field = Ioss::Field(name, block->field_int_type(), IOSS_SCALAR(), Ioss::Field::MAP,
+                                 my_element_count)
+                         .set_index(i + 1);
         block->field_add(field);
         continue;
       }
@@ -566,8 +566,9 @@ namespace Ioex {
       int comp_count = ii - i;
 
       std::string storage = fmt::format("Real[{}]", comp_count);
-      Ioss::Field field(base, block->field_int_type(), storage, Ioss::Field::MAP, my_element_count);
-      field.set_index(i + 1);
+      auto        field =
+          Ioss::Field(base, block->field_int_type(), storage, Ioss::Field::MAP, my_element_count)
+              .set_index(i + 1);
       block->field_add(field);
 
       i = ii - 1;

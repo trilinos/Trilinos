@@ -82,6 +82,8 @@ struct ThreadedVectorBinding {
 double evaluate(const std::string & expression,
                 std::vector<ScalarBinding> boundScalars = std::vector<ScalarBinding>(),
                 std::vector<VectorBinding> boundVectors = std::vector<VectorBinding>(),
+                std::vector<std::string> unboundVariables = std::vector<std::string>(),
+                std::vector<std::string> deactivatedVariables = std::vector<std::string>(),
                 const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
 {
   stk::expreval::Eval eval(expression, arrayOffsetType);
@@ -93,6 +95,14 @@ double evaluate(const std::string & expression,
 
   for (VectorBinding & vector : boundVectors) {
     eval.bindVariable(vector.varName, *vector.varValues.data(), vector.varValues.size());
+  }
+
+  for (std::string & varName : unboundVariables) {
+    eval.unbindVariable(varName);
+  }
+
+  for (std::string & varName : deactivatedVariables) {
+    eval.deactivateVariable(varName);
   }
 
   return eval.evaluate();
@@ -165,7 +175,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
     variableSizesHost(varIndex)   = 1;
-    ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
+    STK_ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
     }
@@ -174,7 +184,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
     variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
     variableSizesHost(varIndex + boundScalars.size())  = boundVectors[varIndex].varValues.size();
-    ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
+    STK_ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
         variableHostValues(threadIndex, varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[threadIndex][varComponent];
@@ -1157,14 +1167,14 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_compoundSimpleMath)
   EXPECT_DOUBLE_EQ(device_evaluate("1+1+1+1+1+1+1+1+1+1+1"),   11);
 }
 
-TEST(UnitTestEvaluator, unboundScalar)
+TEST(UnitTestEvaluator, defaultScalar)
 {
   EXPECT_DOUBLE_EQ(evaluate("x",                       {}),                     0);
   EXPECT_DOUBLE_EQ(evaluate("x + y + z",               {}),                     0);
   EXPECT_DOUBLE_EQ(evaluate("x + y + z",               {{"y", 1}}),             1);
 }
 
-TEST(UnitTestEvaluator, Ngp_unboundScalar)
+TEST(UnitTestEvaluator, Ngp_defaultScalar)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("x",                       {}),                     0);
   EXPECT_DOUBLE_EQ(device_evaluate("x + y + z",               {}),                     0);
@@ -1189,13 +1199,42 @@ TEST(UnitTestEvaluator, Ngp_bindScalar)
   EXPECT_DOUBLE_EQ(device_evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}), 12);
 }
 
-TEST(UnitTestEvaluator, unboundVector)
+TEST(UnitTestEvaluator, unbindScalar)
+{
+  EXPECT_DOUBLE_EQ(evaluate("x=5",             {{"x", 2}}, {}, {"x"}),                           5);
+  EXPECT_DOUBLE_EQ(evaluate("x",               {{"x", 2}}, {}, {"x"}),                           0);
+  EXPECT_DOUBLE_EQ(evaluate("x*x",             {{"x", 2}}, {}, {"x"}),                           0);
+  EXPECT_DOUBLE_EQ(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {"x"}),                 0);
+  EXPECT_DOUBLE_EQ(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {"y"}),                 0);
+  EXPECT_DOUBLE_EQ(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {"x", "y"}),  0);
+  EXPECT_DOUBLE_EQ(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {"z"}),       2);
+  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {"z"}),       8);
+  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {"y"}),       9);
+  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {"x"}),      12);
+}
+
+TEST(UnitTestEvaluator, deactivateScalar)
+{
+  EXPECT_DOUBLE_EQ(evaluate("x=5",             {{"x", 2}}, {}, {}, {"x"}), 5);
+  EXPECT_ANY_THROW(evaluate("x",               {{"x", 2}}, {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*x",             {{"x", 2}}, {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {}, {"y"}));
+  EXPECT_ANY_THROW(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"x", "y"}));
+  EXPECT_ANY_THROW(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"z"}));
+  EXPECT_ANY_THROW(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"z"}));
+  EXPECT_ANY_THROW(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"y"}));
+  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"x"}), 12);
+}
+
+
+TEST(UnitTestEvaluator, defaultVector)
 {
   EXPECT_DOUBLE_EQ(evaluate("x[0]",                       {}, {}),                     0);
   EXPECT_ANY_THROW(evaluate("x[0]+x[1]+x[2]",             {}, {}));
 }
 
-TEST(UnitTestEvaluator, Ngp_unboundVector)
+TEST(UnitTestEvaluator, Ngp_defaultVector)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("x[0]",                       {}, {}),                     0);
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMP)
@@ -1211,15 +1250,15 @@ TEST(UnitTestEvaluator, bindVector)
   EXPECT_DOUBLE_EQ(evaluate("(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])^0.5",
                             {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}),                   5);
   EXPECT_DOUBLE_EQ(evaluate("(a[1]*b[1] + a[2]*b[2] + a[3]*b[3])^0.5",
-                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}},
-                            stk::expreval::Variable::ONE_BASED_INDEX),                   5);
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {}, {},                            stk::expreval::Variable::ONE_BASED_INDEX),                   5);
   EXPECT_DOUBLE_EQ(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}), 6);
   EXPECT_DOUBLE_EQ(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
                             {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}),                   6);
   EXPECT_DOUBLE_EQ(evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}), 2);
 
   EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[3]",           {},         {{"a", {1, 2, 3}}}));
-  EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, stk::expreval::Variable::ONE_BASED_INDEX));
+  EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, {}, {},
+                            stk::expreval::Variable::ONE_BASED_INDEX));
   EXPECT_ANY_THROW(evaluate("a",                        {},         {{"a", {1, 2, 3}}}));
 }
 
@@ -1243,6 +1282,48 @@ TEST(UnitTestEvaluator, Ngp_bindVector)
   EXPECT_ANY_THROW(device_evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, stk::expreval::Variable::ONE_BASED_INDEX));
   EXPECT_ANY_THROW(device_evaluate("a",                        {},         {{"a", {1, 2, 3}}}));
   #endif
+}
+
+TEST(UnitTestEvaluator, unbindVector)
+{
+  EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, {"a"}));
+  EXPECT_DOUBLE_EQ(evaluate("a[0]=x*a[1]+a[2]",         {{"x", 4}}, {{"a", {1, 2, 3}}}, {"x"}), 3);
+  EXPECT_ANY_THROW(evaluate("a[0]=x*a[1]+a[2]",         {{"x", 4}}, {{"a", {1, 2, 3}}}, {"x","a"}));
+  EXPECT_DOUBLE_EQ(evaluate("a[1]=x*0.5+a[0]; a[1]*2",  {{"x", 2}}, {{"a", {3, 4}}}, {"x"}),    6);
+  EXPECT_ANY_THROW(evaluate("(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {"a", "b"}));
+  EXPECT_ANY_THROW(evaluate("(a[1]*b[1] + a[2]*b[2] + a[3]*b[3])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {"b"}, {},
+                            stk::expreval::Variable::ONE_BASED_INDEX));
+  EXPECT_DOUBLE_EQ(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {"z"}), 6);
+  EXPECT_ANY_THROW(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {"a"}));
+  EXPECT_ANY_THROW(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
+                            {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}, {"z"}));
+  EXPECT_ANY_THROW(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
+                            {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}, {"a"}));
+  EXPECT_DOUBLE_EQ(evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}, {"a"}), 2);
+  EXPECT_ANY_THROW(evaluate("a[1]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}, {"a"}));
+}
+
+TEST(UnitTestEvaluator, deactivateVector)
+{
+  EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, {}, {"a"}));
+  EXPECT_ANY_THROW(evaluate("a[0]=x*a[1]+a[2]",         {{"x", 4}}, {{"a", {1, 2, 3}}}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("a[0]=x*a[1]+a[2]",         {{"x", 4}}, {{"a", {1, 2, 3}}}, {}, {"x","a"}));
+  EXPECT_ANY_THROW(evaluate("a[1]=x*0.5+a[0]; a[1]*2",  {{"x", 2}}, {{"a", {3, 4}}}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {}, {"a", "b"}));
+  EXPECT_ANY_THROW(evaluate("(a[1]*b[1] + a[2]*b[2] + a[3]*b[3])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {}, {"b"},
+                            stk::expreval::Variable::ONE_BASED_INDEX));
+  EXPECT_DOUBLE_EQ(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {}, {"z"}), 6);
+  EXPECT_ANY_THROW(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {}, {"a"}));
+  EXPECT_ANY_THROW(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
+                            {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}, {}, {"z"}));
+  EXPECT_ANY_THROW(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
+                            {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}, {}, {"a"}));
+  EXPECT_ANY_THROW(evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}, {}, {"a"}));
+  EXPECT_ANY_THROW(evaluate("a[1]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}, {}, {"a"}));
 }
 
 TEST(UnitTestEvaluator, Ngp_bindThreaded)

@@ -95,7 +95,7 @@ TEST(MeshGroupingEntity_legacy, getElementBlockFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("block_1");
   EXPECT_TRUE(part != nullptr);
@@ -117,7 +117,7 @@ TEST(MeshGroupingEntity_legacy, getElementBlockFromNonIoPart)
   stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
   EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
   EXPECT_TRUE(entity == nullptr);
@@ -131,7 +131,7 @@ TEST(MeshGroupingEntity_legacy, getSideSetFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|sideset:x", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("surface_1");
   EXPECT_TRUE(part != nullptr);
@@ -150,7 +150,7 @@ TEST(MeshGroupingEntity_legacy, getNodeSetFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|nodeset:x", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("nodelist_1");
   EXPECT_TRUE(part != nullptr);
@@ -175,7 +175,7 @@ TEST(MeshGroupingEntity_legacy, nonInputIoPart)
   EXPECT_TRUE(stk::io::is_part_io_part(dummyPart));
 
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
   EXPECT_TRUE(entity == nullptr);
@@ -222,7 +222,7 @@ TEST(MeshGroupingEntity_legacy, matchhingNameAndType)
   ioBroker.add_all_mesh_fields_as_input_fields();
   ioBroker.populate_bulk_data();
   
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *skippedPart);
   EXPECT_TRUE(entity == nullptr);
@@ -314,7 +314,7 @@ TEST(MeshGroupingEntity, getElementBlockFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("block_1");
   EXPECT_TRUE(part != nullptr);
@@ -336,7 +336,7 @@ TEST(MeshGroupingEntity, getElementBlockFromNonIoPart)
   stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
   EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
   EXPECT_TRUE(entity == nullptr);
@@ -350,7 +350,7 @@ TEST(MeshGroupingEntity, getSideSetFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|sideset:x", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("surface_1");
   EXPECT_TRUE(part != nullptr);
@@ -369,7 +369,7 @@ TEST(MeshGroupingEntity, getNodeSetFromPart)
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|nodeset:x", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   stk::mesh::Part* part = meta.get_part("nodelist_1");
   EXPECT_TRUE(part != nullptr);
@@ -394,7 +394,7 @@ TEST(MeshGroupingEntity, nonInputIoPart)
   EXPECT_TRUE(stk::io::is_part_io_part(dummyPart));
 
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
   EXPECT_TRUE(entity == nullptr);
@@ -441,7 +441,7 @@ TEST(MeshGroupingEntity, matchhingNameAndType)
   ioBroker.add_all_mesh_fields_as_input_fields();
   ioBroker.populate_bulk_data();
 
-  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = ioBroker.get_input_ioss_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *skippedPart);
   EXPECT_TRUE(entity == nullptr);

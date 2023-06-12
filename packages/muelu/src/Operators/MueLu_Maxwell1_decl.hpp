@@ -50,16 +50,13 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
-#include "MueLu_SaPFactory_fwd.hpp"
 
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_SmootherBase.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"

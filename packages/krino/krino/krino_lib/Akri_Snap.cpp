@@ -195,7 +195,7 @@ static double get_node_intersection_point_weight(const IntersectionPoint & inter
 {
   const std::vector<stk::mesh::Entity> & nodes = intersectionPoint.get_nodes();
   const auto iter = std::find(nodes.begin(), nodes.end(), node);
-  ThrowRequire(iter != nodes.end());
+  STK_ThrowRequire(iter != nodes.end());
   const auto index = std::distance(nodes.begin(), iter);
   return intersectionPoint.get_weights()[index];
 }
@@ -487,7 +487,7 @@ void interpolate_nodal_field(const stk::mesh::BulkData & mesh,
     {
       krinolog << "When snapping node " << mesh.identifier(node) << ", the field " << field.name() << " is missing on interpolating node " << mesh.identifier(interpNodes[iNode]) << stk::diag::dendl;
       krinolog << "Should the field " << field.name() << " be an interpolation field?" << stk::diag::dendl;
-      ThrowRequireMsg(false, "Interpolation field missing on interpolation node " << mesh.identifier(interpNodes[iNode]));
+      STK_ThrowRequireMsg(false, "Interpolation field missing on interpolation node " << mesh.identifier(interpNodes[iNode]));
     }
 
     for (unsigned i=0; i<fieldLength; ++i)
@@ -504,7 +504,7 @@ void snap_nodes(const stk::mesh::BulkData & mesh,
     const std::vector<SnapInfo> & snapInfos,
     NodeToCapturedDomainsMap & nodesToCapturedDomains )
 {
-  ThrowRequire(mesh.parallel_size() == 1 || mesh.is_automatic_aura_on());
+  STK_ThrowRequire(mesh.parallel_size() == 1 || mesh.is_automatic_aura_on());
 
   std::vector< const stk::mesh::FieldBase *> interpFieldVec;
   for(auto && field : interpolationFieldSet)
@@ -557,7 +557,7 @@ static double interpolate_nodal_field_component(const stk::mesh::BulkData & mesh
       {
         krinolog << "When unsnapping node " << mesh.identifier(node) << ", the field " << field.name() << " is missing on interpolating node " << mesh.identifier(interpNodes[iInterpNode]) << stk::diag::dendl;
         krinolog << "Should the field " << field.name() << " be an interpolation field?" << stk::diag::dendl;
-        ThrowRequireMsg(false, "Interpolation field missing on interpolation node " << mesh.identifier(interpNodes[iInterpNode]));
+        STK_ThrowRequireMsg(false, "Interpolation field missing on interpolation node " << mesh.identifier(interpNodes[iInterpNode]));
       }
 
       interpVal += interpWeights[iInterpNode] * nodeVal[component];

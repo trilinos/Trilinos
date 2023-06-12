@@ -57,7 +57,6 @@
 
 #include "MueLu_OnePtAggregationAlgorithm_kokkos.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm_kokkos.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos.hpp"
@@ -66,11 +65,9 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp" // for sum_all and similar stuff...
 
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color.hpp"
@@ -185,7 +182,7 @@ namespace MueLu {
     RCP<const LWGraph_kokkos> graph = Get< RCP<LWGraph_kokkos> >(currentLevel, "Graph");
 
     // Build
-    RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     aggregates->setObjectLabel("UC");
 
     const LO numRows = graph->GetNodeNumVertices();

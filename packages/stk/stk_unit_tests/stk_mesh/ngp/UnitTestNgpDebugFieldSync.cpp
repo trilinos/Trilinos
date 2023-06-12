@@ -75,7 +75,7 @@ public:
       stk::mesh::EntityVector elemsToChange;
       for (unsigned elemNum = 0; elemNum < elemCountAndPart.first; ++elemNum) {
         stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, ++elemId);
-        ThrowRequireMsg(get_bulk().is_valid(element), "Invalid element in fixture!");
+        STK_ThrowRequireMsg(get_bulk().is_valid(element), "Invalid element in fixture!");
         elemsToChange.push_back(element);
       }
       get_bulk().change_entity_parts(elemsToChange, addParts);
@@ -372,8 +372,7 @@ public:
 
   template <typename T>
   stk::mesh::Field<T> & build_mesh_with_scalar_field_default_debugger(const std::string & fieldName,
-                                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
-                                                                      unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
+                                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
@@ -393,10 +392,9 @@ public:
 
   template <typename T>
   stk::mesh::Field<T> & build_mesh_with_scalar_field(const std::string & fieldName,
-                                                     const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
-                                                     unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
+                                                     const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -415,10 +413,9 @@ public:
 
   template <typename T>
   stk::mesh::Field<T> & build_mesh_with_vector_field(const std::string & fieldName,
-                                                     const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
-                                                     unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
+                                                     const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & stkField = create_vector_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 

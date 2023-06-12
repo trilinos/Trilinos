@@ -69,9 +69,9 @@ bool MeshModification::modification_end(modification_optimization opt)
       return false;
   }
 
-  ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+  STK_ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+  STK_ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
   m_bulkData.m_entityKeyMapping->clear_all_cache();
 
@@ -116,15 +116,6 @@ bool MeshModification::modification_end(modification_optimization opt)
       m_bulkData.m_modSummary.write_summary(synchronized_count());
       m_bulkData.check_mesh_consistency();
   }
-  else
-  {
-      m_bulkData.m_modSummary.write_summary(synchronized_count());
-      if(!m_bulkData.add_fmwk_data())
-      {
-          std::vector<Entity> shared_modified;
-          m_bulkData.internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(shared_modified);
-      }
-  }
 
   m_bulkData.internal_finish_modification_end(opt);
 
@@ -138,9 +129,9 @@ bool MeshModification::resolve_node_sharing()
         return false;
     }
 
-    ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+    STK_ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-    ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+    STK_ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
     if(m_bulkData.parallel_size() > 1)
     {
@@ -166,9 +157,9 @@ bool MeshModification::modification_end_after_node_sharing_resolution()
         return false;
     }
 
-    ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+    STK_ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-    ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+    STK_ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
     if(m_bulkData.parallel_size() > 1)
     {
@@ -212,7 +203,7 @@ bool MeshModification::modification_end_after_node_sharing_resolution()
 
 void MeshModification::change_entity_owner( const EntityProcVec & arg_change)
 {
-    ThrowRequireMsg(in_synchronized_state(), "BulkData::change_entity_owner() must not be called from within a modification cycle.");
+    STK_ThrowRequireMsg(in_synchronized_state(), "BulkData::change_entity_owner() must not be called from within a modification cycle.");
     modification_optimization mod_optimization = MOD_END_SORT;
     modification_begin("change_entity_owner");
     m_bulkData.internal_change_entity_owner(arg_change, mod_optimization);
@@ -236,7 +227,7 @@ void MeshModification::internal_resolve_shared_modify_delete(
          stk::mesh::EntityProcVec& entitiesToRemoveFromSharing,
          stk::mesh::EntityVector & entitiesNoLongerShared)
 {
-    ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
+    STK_ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
 
     // We iterate backwards to ensure that we hit the higher-ranking entities first.
     for(std::vector<EntityParallelState>::const_reverse_iterator
@@ -377,7 +368,7 @@ void MeshModification::destroy_dependent_ghosts(Entity entity,
       Entity e = rels[r];
 
       bool upwardRelationOfEntityIsInClosure = m_bulkData.owned_closure(e);
-      ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, m_bulkData.entity_rank(e) << " with id " << m_bulkData.identifier(e) << " should not be in closure." );
+      STK_ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, m_bulkData.entity_rank(e) << " with id " << m_bulkData.identifier(e) << " should not be in closure." );
   
       // Recursion
       if (m_bulkData.is_valid(e) && m_bulkData.bucket(e).in_aura())
@@ -464,7 +455,7 @@ bool MeshModification::remote_owner_destroyed(EntityKey key,
 
 void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<EntityParallelState >& remotely_modified_ghosted_entities)
 {
-  ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
+  STK_ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
   // Resolve modifications for ghosted entities:
 
   const size_t ghosting_count = m_bulkData.m_ghosting.size();

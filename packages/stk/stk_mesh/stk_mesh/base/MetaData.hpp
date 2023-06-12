@@ -174,18 +174,18 @@ public:
    */
   void set_mesh_bulk_data(BulkData* bulk)
   {
-      ThrowRequireMsg(m_bulk_data == NULL || m_bulk_data == bulk || bulk == NULL, "MetaData::set_mesh_bulk_data ERROR, trying to set mesh when it's already set.");
+      STK_ThrowRequireMsg(m_bulk_data == NULL || m_bulk_data == bulk || bulk == NULL, "MetaData::set_mesh_bulk_data ERROR, trying to set mesh when it's already set.");
       m_bulk_data = bulk;
       set_mesh_on_fields(bulk);
   }
 
   BulkData& mesh_bulk_data() {
-      ThrowRequireMsg(has_mesh(), "MetaData::mesh_bulk_data() ERROR, mesh not set yet.");
+      STK_ThrowRequireMsg(has_mesh(), "MetaData::mesh_bulk_data() ERROR, mesh not set yet.");
     return *m_bulk_data;
   }
 
   const BulkData& mesh_bulk_data() const {
-      ThrowRequireMsg(has_mesh(), "MetaData::mesh_bulk_data() ERROR, mesh not set yet.");
+      STK_ThrowRequireMsg(has_mesh(), "MetaData::mesh_bulk_data() ERROR, mesh not set yet.");
     return *m_bulk_data;
   }
 
@@ -271,7 +271,7 @@ public:
    */
   Part &declare_part_with_topology( const std::string &name, stk::topology::topology_t topology, bool arg_force_no_induce = false )
   {
-    ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
+    STK_ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
 
     stk::topology topo = topology;
     if (topo.is_super_topology()) {
@@ -548,7 +548,10 @@ public:
 
   stk::topology get_topology(const Part & part) const;
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_meta_info() from DumpMeshInfo.hpp instead")
   void dump_all_meta_info(std::ostream& out = std::cout) const;
+#endif
 
   void set_mesh_on_fields(BulkData* bulk);
 
@@ -839,7 +842,7 @@ inline bool MetaData::is_valid_part_ordinal(unsigned ord) const
 inline
 Part & MetaData::get_part( unsigned ord ) const
 {
-  ThrowAssertMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
+  STK_ThrowAssertMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
 
   return *m_part_repo.get_all_parts()[ord];
 }
@@ -867,7 +870,7 @@ field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
     else {
       os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
     }
-    ThrowErrorMsg(os.str());
+    STK_ThrowErrorMsg(os.str());
   }
 
   const DataTraits & dt = data_traits< typename Traits::data_type >();
@@ -879,7 +882,7 @@ field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
 
   FieldBase * const field = m_field_repo.get_field( arg_entity_rank, name , dt , Traits::Rank , tags , 0 );
 
-  ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
+  STK_ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
                   "field " << field->name() << " has type " << field->data_traits().type_info.name() << " when expecting type " << dt.type_info.name());
 
   return static_cast<field_type*>(field);
@@ -903,7 +906,7 @@ Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
 
   FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, Traits::Rank, tags, 0);
 
-  ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
+  STK_ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
                   "field " << field->name() << " has type " << field->data_traits().type_info.name()
                   << " when expecting type " << dt.type_info.name());
 
@@ -941,7 +944,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     else {
       os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
     }
-    ThrowErrorMsg(os.str());
+    STK_ThrowErrorMsg(os.str());
   }
 
   const char** reservedStateSuffix = reserved_state_suffix();
@@ -954,7 +957,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     const int offset     = len_name - len_suffix ;
     if ( 0 <= offset ) {
       const char * const name_suffix = name.c_str() + offset ;
-      ThrowErrorMsgIf( equal_case( name_suffix , reservedStateSuffix[i] ),
+      STK_ThrowErrorMsgIf( equal_case( name_suffix , reservedStateSuffix[i] ),
           "For name = \"" << name_suffix <<
           "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
           reservedStateSuffix[i] << "\"" );
@@ -972,7 +975,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
   f[0] = dynamic_cast<field_type*>(rawField);
 
   if (rawField != nullptr) {
-    ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
+    STK_ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
   }
 
   if (f[0] != nullptr) {
@@ -1049,7 +1052,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
     const int offset     = len_name - len_suffix;
     if ( 0 <= offset ) {
       const char * const name_suffix = name.c_str() + offset;
-      ThrowErrorMsgIf(equal_case( name_suffix , reservedStateSuffix[i]),
+      STK_ThrowErrorMsgIf(equal_case( name_suffix , reservedStateSuffix[i]),
           "For name = \"" << name_suffix <<
           "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
           reservedStateSuffix[i] << "\"");
@@ -1066,7 +1069,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
   f[0] = dynamic_cast<Field<T>*>(rawField);
 
   if (rawField != nullptr) {
-    ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
+    STK_ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
   }
 
   if (f[0] != nullptr) {
@@ -1415,7 +1418,7 @@ field_type * get_field_by_name(const std::string & name,
     else {
       os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
     }
-    ThrowErrorMsg(os.str());
+    STK_ThrowErrorMsg(os.str());
   }
 
   field_type* field = nullptr;

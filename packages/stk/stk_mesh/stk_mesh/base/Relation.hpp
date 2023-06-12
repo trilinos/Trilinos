@@ -239,7 +239,7 @@ private:
    */
   static bool compute_polarity(const stk::topology & topology, unsigned permutation)
   {
-    ThrowAssert(permutation < topology.num_permutations());
+    STK_ThrowAssert(permutation < topology.num_permutations());
     const bool polarity = permutation < topology.num_positive_permutations();
     return polarity;
   }
@@ -256,7 +256,7 @@ inline
 Relation::raw_relation_id_type
 Relation::raw_relation_id( EntityRank rank , unsigned id )
 {
-  ThrowAssertMsg( id <= id_mask,
+  STK_ThrowAssertMsg( id <= id_mask,
                   "For args rank " << rank << ", id " << id << ": " <<
                   "id " << " > id_mask=" << id_mask );
 
@@ -422,7 +422,7 @@ Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type
       m_attribute( (relation_type << fmwk_permutation_digits) | permut ),
       m_target_entity(obj)
 {
-  ThrowAssertMsg( permut <= fmwk_permutation_mask,
+  STK_ThrowAssertMsg( permut <= fmwk_permutation_mask,
       "permutation " << permut << " exceeds maximum allowed value");
 }
 

@@ -50,12 +50,14 @@
 #include "Ifpack2_Diagonal.hpp"
 #include "Ifpack2_IdentitySolver.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_MDF.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Experimental_RBILUK.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_DatabaseSchwarz.hpp"
 #include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
@@ -122,6 +124,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<row_matrix_type> (matrix));
   }
+  else if (precTypeUpper == "MDF") {
+    prec = rcp (new MDF<row_matrix_type> (matrix));
+  }
   else if (precTypeUpper == "RBILUK") {
     prec = rcp (new Experimental::RBILUK<row_matrix_type>(matrix));
   }
@@ -161,6 +166,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     Teuchos::ParameterList params;
     params.set ("relaxation: container", "Dense");
     prec->setParameters (params);
+  }
+  else if (precTypeUpper == "DATABASE SCHWARZ") {
+    prec = rcp (new DatabaseSchwarz<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "SPARSE_BLOCK_RELAXATION" ||
            precTypeUpper == "SPARSE BLOCK RELAXATION" ||
@@ -245,11 +253,12 @@ OneLevelFactory<MatrixType>::isSupported (const std::string& precType) const
 #ifdef HAVE_IFPACK2_AMESOS2
     "AMESOS2",
 #endif
-    "DIAGONAL", "ILUT", "RELAXATION", "RILUK", "RBILUK",
+    "DIAGONAL", "ILUT", "RELAXATION", "RILUK", "RBILUK", "MDF",
 #ifdef HAVE_IFPACK2_SHYLU_NODEFASTILU
     "FAST_IC", "FAST_ILU", "FAST_ILDL",
 #endif
     "BLOCK_RELAXATION", "BLOCK RELAXATION", "BLOCKRELAXATION", "DENSE_BLOCK_RELAXATION", "DENSE BLOCK RELAXATION", "DENSEBLOCKRELAXATION",
+    "DATABASE SCHWARZ",
 #ifdef HAVE_IFPACK2_AMESOS2
     "SPARSE_BLOCK_RELAXATION", "SPARSE BLOCK RELAXATION", "SPARSEBLOCKRELAXATION",
 #endif

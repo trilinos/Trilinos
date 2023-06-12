@@ -39,7 +39,7 @@ public:
     m_bulk(bulk),
     m_surface(bulk->mesh_meta_data().get_part(surfaceName))
   {
-    ThrowRequireMsg(m_surface != nullptr,
+    STK_ThrowRequireMsg(m_surface != nullptr,
                     "StkMesh error, no part found for surface-name '"<<surfaceName<<"'");
   }
 
@@ -77,7 +77,7 @@ public:
                             const double & fieldValue)
   {
     const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
-    ThrowRequireMsg(field != nullptr, "StkMesh::set_stk_field_values failed to find field with name "<<fieldName);
+    STK_ThrowRequireMsg(field != nullptr, "StkMesh::set_stk_field_values failed to find field with name "<<fieldName);
     stk::mesh::field_fill(fieldValue, *field);
   }
 
@@ -85,7 +85,7 @@ public:
                                const double expectedFieldValue)
   {
     const stk::mesh::FieldBase* field = stk::mesh::get_field_by_name(fieldName, m_bulk->mesh_meta_data());
-    ThrowRequireMsg(field != nullptr, "StkMesh::verify_stk_field_values failed to find field with name "<<fieldName);
+    STK_ThrowRequireMsg(field != nullptr, "StkMesh::verify_stk_field_values failed to find field with name "<<fieldName);
     stk::mesh::Selector fieldSelector(*field);
     stk::mesh::EntityVector sides;
     stk::mesh::get_entities(*m_bulk, stk::topology::FACE_RANK, fieldSelector, sides);

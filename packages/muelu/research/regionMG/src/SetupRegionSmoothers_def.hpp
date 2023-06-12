@@ -47,7 +47,7 @@
 
 #include <vector>
 
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teuchos_RCP.hpp>
 

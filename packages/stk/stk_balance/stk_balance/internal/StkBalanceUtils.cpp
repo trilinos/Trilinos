@@ -141,7 +141,11 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
         double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, *node));
         double eps = balanceSettings.getAbsoluteToleranceForParticleSearch(bucket[j]);
 
-        stk::balance::internal::StkBox box(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps, xyz[0] + eps, xyz[1] + eps, xyz[2] + eps);
+        stk::balance::internal::StkBox box = (stkMeshBulkData.mesh_meta_data().spatial_dimension() == 3) ?
+              stk::balance::internal::StkBox(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps,
+                                             xyz[0] + eps, xyz[1] + eps, xyz[2] + eps) :
+              stk::balance::internal::StkBox(xyz[0] - eps, xyz[1] - eps, 0,
+                                             xyz[0] + eps, xyz[1] + eps, 0);
 
         unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
         int val2 = stkMeshBulkData.parallel_rank();
@@ -157,7 +161,7 @@ SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMesh
                                                     const BalanceSettings &balanceSettings,
                                                     const stk::mesh::Selector& searchSelector)
 {
-  ThrowRequireWithSierraHelpMsg(!balanceSettings.usingColoring());
+  STK_ThrowRequireWithSierraHelpMsg(!balanceSettings.usingColoring());
 
   const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
 

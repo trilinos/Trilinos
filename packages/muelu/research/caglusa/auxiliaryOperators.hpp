@@ -15,7 +15,7 @@
 #include <MueLu_HierarchyManager.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_RAPFactory.hpp>
-#include <MueLu_AmalgamationFactory_kokkos.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory_kokkos.hpp>
 #include <MueLu_ThresholdAFilterFactory.hpp>
 
@@ -27,16 +27,15 @@ namespace MueLu {
   buildDistanceLaplacian(RCP<const Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph,
                          RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> >& coords)
   {
-#include "MueLu_UseShortNames.hpp"
 
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
     const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
     const LocalOrdinal INV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-    auto distLapl = MatrixFactory::Build(graph);
+    auto distLapl = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(graph);
 
     auto rowMap = graph->getRowMap();
     auto colMap = graph->getColMap();
-    auto ghosted_coords = MultiVectorFactory::Build(colMap, coords->getNumVectors());
+    auto ghosted_coords = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, coords->getNumVectors());
     ghosted_coords->doImport(*coords, *graph->getImporter(), Xpetra::INSERT);
 
     {
@@ -75,20 +74,19 @@ namespace MueLu {
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   constructAuxiliaryOperator(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op,
                              Teuchos::ParameterList& problemParams) {
-    #include "MueLu_UseShortNames.hpp"
 
     using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using IOhelpers = MueLu::IOhelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
     RCP<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > hop = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(op);
 
-    RCP<Matrix> auxOp;
+    RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > auxOp;
 
     const std::string auxOpStr = problemParams.get<std::string>("auxiliary operator");
 
     if ((auxOpStr == "near") || (auxOpStr == "distanceLaplacian")) {
       if (hop.is_null())
-        auxOp = rcp_dynamic_cast<Matrix>(op, true);
+        auxOp = rcp_dynamic_cast<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(op, true);
       else
         auxOp = hop->nearFieldMatrix();
 #ifdef MUELU_HIERARCHICAL_DEBUG
@@ -107,8 +105,8 @@ namespace MueLu {
         fineLevel.Set("Coordinates",coords);
         fineLevel.Set("DofsPerNode",1);
         fineLevel.setlib(auxOp->getDomainMap()->lib());
-        auto amalgFact = rcp(new AmalgamationFactory_kokkos());
-        auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+        auto amalgFact = rcp(new AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
+        auto dropFact = rcp(new CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
         dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
         double dropTol = problemParams.get<double>("drop tolerance");
@@ -128,10 +126,10 @@ namespace MueLu {
         fineLevel.SetFactoryManager(Teuchos::null);
         fineLevel.SetLevelID(0);
         fineLevel.Set("A",auxOp);
-        auto filterFact = rcp(new ThresholdAFilterFactory("A", 1.0e-8, true, -1));
+        auto filterFact = rcp(new ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>("A", 1.0e-8, true, -1));
         fineLevel.Request("A",filterFact.get());
         filterFact->Build(fineLevel);
-        auxOp = fineLevel.Get< RCP<Matrix> >("A",filterFact.get());
+        auxOp = fineLevel.Get< RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("A",filterFact.get());
       }
 
       if (auxOpStr == "distanceLaplacian") {
@@ -159,7 +157,6 @@ namespace MueLu {
                                   RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > auxH,
                                   Teuchos::ParameterList& params,
                                   Teuchos::FancyOStream& out) {
-#include "MueLu_UseShortNames.hpp"
 
     params.set("coarse: max size", 1);
     params.set("max levels", auxH->GetNumLevels());
@@ -170,7 +167,7 @@ namespace MueLu {
     if (!hop.is_null())
       op->describe(out, Teuchos::VERB_EXTREME);
 
-    RCP<Hierarchy> H = rcp(new Hierarchy());
+    RCP<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H = rcp(new Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
     RCP<Level> lvl = H->GetLevel(0);
     lvl->Set("A", op);
     // lvl->Set("Coordinates", coords);
@@ -182,14 +179,14 @@ namespace MueLu {
       // auto mgr = auxLvl->GetFactoryManager();
       // auxLvl->print(std::cout, MueLu::Debug);
 
-      RCP<Matrix> P = auxLvl->Get<RCP<Matrix> >("P");
-      RCP<Operator> fineAOp = fineLvl->Get<RCP<Operator> >("A");
+      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > P = auxLvl->Get<RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("P");
+      RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > fineAOp = fineLvl->Get<RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("A");
       lvl->Set("P", P);
       params.sublist("level "+std::to_string(lvlNo)).set("P", P);
 
       if (!implicitTranspose) {
         TEUCHOS_ASSERT(auxLvl->IsAvailable("R"));
-        RCP<Matrix> R = auxLvl->Get<RCP<Matrix> >("R");
+        RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > R = auxLvl->Get<RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("R");
         lvl->Set("R", R);
         params.sublist("level "+std::to_string(lvlNo)).set("R", R);
       }
@@ -259,11 +256,11 @@ namespace MueLu {
           lvl->Set("A", matA);
         } else {
           coarseA->describe(out, Teuchos::VERB_EXTREME, /*printHeader=*/false);
-          lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+          lvl->Set("A", rcp_dynamic_cast<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(coarseA));
         }
       } else {
         // classical RAP
-        auto fineAmat = rcp_dynamic_cast<Matrix>(fineAOp, true);
+        auto fineAmat = rcp_dynamic_cast<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(fineAOp, true);
         Level fineLevel, coarseLevel;
         fineLevel.SetFactoryManager(Teuchos::null);
         coarseLevel.SetFactoryManager(Teuchos::null);
@@ -272,12 +269,12 @@ namespace MueLu {
         coarseLevel.SetLevelID(1);
         fineLevel.Set("A", fineAmat);
         coarseLevel.Set("P", P);
-        RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+        RCP<RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rapFact = rcp(new RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", true);
         rapFact->SetParameterList(rapList);
         coarseLevel.Request("A", rapFact.get());
-        RCP<Matrix> matA = coarseLevel.Get<RCP<Matrix> >("A", rapFact.get());
+        RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matA = coarseLevel.Get<RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("A", rapFact.get());
 
         using std::setw;
         using std::endl;
@@ -294,7 +291,7 @@ namespace MueLu {
       }
     }
 
-    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
+    RCP<HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mueLuFactory = rcp(new ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>(params,op->getDomainMap()->getComm()));
     H->setlib(op->getDomainMap()->lib());
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
     mueLuFactory->SetupHierarchy(*H);

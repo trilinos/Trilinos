@@ -50,15 +50,13 @@
 
 #include "MueLu_MatrixFreeTentativePFactory_fwd.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 
 namespace MueLu {
@@ -104,13 +102,13 @@ namespace MueLu {
   class MatrixFreeTentativePFactory;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+  class MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>      node_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
 
   private:

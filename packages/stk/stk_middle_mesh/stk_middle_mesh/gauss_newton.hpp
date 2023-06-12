@@ -31,8 +31,10 @@ class GaussNewton
     // computes the rectangular jacobian matrix  J_ij = dr_i(x)/dx_j
     // On entry x0 is the initial guess for the solution.  On exit, it will be the solution computed
     // by Gauss Newton
+    // Returns true if the method converged.  Returns false if the method did not converge
+    // and allowFailure is true.  Throws and exception otherwise
     template <typename Tfunc, typename Tjac>
-    void solve(Tfunc func, Tjac jacFunc, std::vector<double>& x0)
+    bool solve(Tfunc func, Tjac jacFunc, std::vector<double>& x0, bool allowFailure=false)
     {
       assert(x0.size() == size_t(get_num_variables()));
       func(x0, m_residuals);
@@ -41,7 +43,7 @@ class GaussNewton
       for (int i=0; i < m_itermax; ++i)
       {
         if (is_converged(m_jac, m_residuals))
-          return;
+          return true;
 
         for (int j=0; j < get_num_residuals(); ++j)
           m_residualsForLapack(j, 0) = m_residuals[j];
@@ -57,7 +59,10 @@ class GaussNewton
       }
 
       if (is_converged(m_jac, m_residuals))
-        return;
+        return true;
+
+      if (allowFailure)
+        return false;
       else
         throw std::runtime_error("Gauss Newton did not converge");
     }

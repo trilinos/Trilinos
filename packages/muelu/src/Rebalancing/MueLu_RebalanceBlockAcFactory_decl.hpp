@@ -52,7 +52,6 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_MapExtractorFactory_fwd.hpp>
 
@@ -63,7 +62,6 @@
 #include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Types.hpp"
 

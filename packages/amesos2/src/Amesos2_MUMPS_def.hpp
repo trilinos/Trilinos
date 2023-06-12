@@ -75,9 +75,6 @@ namespace Amesos2
                               Teuchos::RCP<Vector>       X,
                               Teuchos::RCP<const Vector> B )
     : SolverCore<Amesos2::MUMPS,Matrix,Vector>(A, X, B)
-    , nzvals_()                   // initialize to empty arrays
-    , rowind_()
-    , colptr_()
     , is_contiguous_(true)
   {
 
@@ -156,6 +153,8 @@ namespace Amesos2
   MUMPS<Matrix,Vector>::~MUMPS( )
   {
     /* Clean up the struc*/
+    typedef FunctionMap<MUMPS,scalar_type> function_map;
+
     if(MUMPS_STRUCT == true)
       {
         free(mumps_par.a);
@@ -211,13 +210,6 @@ namespace Amesos2
           #ifdef HAVE_AMESOS2_TIMERS
           Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
           #endif
-          
-          #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-          std::cout << "MUMPS:: Before numeric factorization" << std::endl;
-          std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-          std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-          std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-          #endif
         }
       }
     mumps_par.job = 2;
@@ -254,11 +246,11 @@ namespace Amesos2
 
     if ( is_contiguous_ == true ) {
       Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+        mumps_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
     }
     else {
       Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+        mumps_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
     }
  
     
@@ -286,13 +278,13 @@ namespace Amesos2
 
     if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
             as<size_t>(ld_rhs),
             ROOTED);
     }
     else {
       Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
             as<size_t>(ld_rhs),
             CONTIGUOUS_AND_ROOTED);
     }
@@ -395,9 +387,9 @@ namespace Amesos2
       {
         // Only the root image needs storage allocated
         if( !MUMPS_MATRIX_LOAD && this->root_ ){
-          nzvals_.resize(this->globalNumNonZeros_);
-          rowind_.resize(this->globalNumNonZeros_);
-          colptr_.resize(this->globalNumCols_ + 1);
+          Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
+          Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
+          Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
         }
   
         local_ordinal_type nnz_ret = 0;
@@ -407,15 +399,15 @@ namespace Amesos2
         #endif
     
         if ( is_contiguous_ == true ) {
-          Util::get_ccs_helper<
-            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+          Util::get_ccs_helper_kokkos_view<
+            MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
+            ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
                 nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
         }
         else {
-          Util::get_ccs_helper<
-            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+          Util::get_ccs_helper_kokkos_view<
+            MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
+            ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
                 nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
         }
   
@@ -453,7 +445,7 @@ namespace Amesos2
       MUMPS_STRUCT = true;
       mumps_par.n =  this->globalNumCols_;
       mumps_par.nz = this->globalNumNonZeros_;
-      mumps_par.a = (magnitude_type*)malloc(mumps_par.nz * sizeof(magnitude_type));
+      mumps_par.a = (mumps_type*)malloc(mumps_par.nz * sizeof(mumps_type));
       mumps_par.irn = (MUMPS_INT*)malloc(mumps_par.nz *sizeof(MUMPS_INT));
       mumps_par.jcn = (MUMPS_INT*)malloc(mumps_par.nz * sizeof(MUMPS_INT));
     }
@@ -470,25 +462,25 @@ namespace Amesos2
     
     for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++)
       {
-        for( j = colptr_[i]; j < colptr_[i+1]-1; j++)
+        for( j = host_col_ptr_view_(i); j < host_col_ptr_view_(i+1)-1; j++)
           {
             mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
-            mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
-            mumps_par.a[tri_count] = nzvals_[j];
+            mumps_par.irn[tri_count] = (MUMPS_INT)host_rows_view_(j)+1; //Fortran index
+            mumps_par.a[tri_count] = host_nzvals_view_(j);
             
             tri_count++;
           }
         
-        j = colptr_[i+1]-1;
+        j = host_col_ptr_view_(i+1)-1;
         mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
-        mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
-        mumps_par.a[tri_count] = nzvals_[j];
+        mumps_par.irn[tri_count] = (MUMPS_INT)host_rows_view_(j)+1; //Fortran index
+        mumps_par.a[tri_count] = host_nzvals_view_(j);
 
         tri_count++;
         
-        if(rowind_[j] > max_local_ordinal)
+        if(host_rows_view_(j) > max_local_ordinal)
           {
-            max_local_ordinal = rowind_[j];
+            max_local_ordinal = host_rows_view_(j);
           }
       }
     TEUCHOS_TEST_FOR_EXCEPTION(std::numeric_limits<MUMPS_INT>::max() <= max_local_ordinal,

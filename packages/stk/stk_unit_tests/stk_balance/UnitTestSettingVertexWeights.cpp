@@ -105,7 +105,7 @@ private:
 
   size_t get_num_global_elements() const
   {
-    ThrowRequireWithSierraHelpMsg(num_global_elements>0);
+    STK_ThrowRequireWithSierraHelpMsg(num_global_elements>0);
     return num_global_elements;
   }
 

@@ -1,7 +1,7 @@
 
-#include "create_mesh.hpp"
-#include "mesh.hpp"
-#include "mesh_geo_classifier.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_geo_classifier.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

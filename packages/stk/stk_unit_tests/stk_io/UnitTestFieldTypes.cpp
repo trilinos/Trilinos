@@ -763,7 +763,7 @@ TEST(StkIoFieldType_legacy, inputFile)
       stkIo.read_defined_input_fields(numSteps);
   }
 
-  Teuchos::RCP<Ioss::Region> ioRegion = stkIo.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_input_ioss_region();
 
   const Ioss::NodeBlockContainer &    nodeBlocks = ioRegion->get_node_blocks();
   const Ioss::ElementBlockContainer & elemBlocks = ioRegion->get_element_blocks();
@@ -879,7 +879,7 @@ get_field_output_type_from_storage(const std::string & storageType)
   else if (storageType == quaternion_3d)  return stk::io::FieldOutputType::QUATERNION_3D;
   else if (stk::string_starts_with(sierra::make_lower(storageType), "real")) return stk::io::FieldOutputType::CUSTOM;
   else {
-    ThrowErrorMsg("Invalid storage type: " << storageType);
+    STK_ThrowErrorMsg("Invalid storage type: " << storageType);
     return stk::io::FieldOutputType::SCALAR;  // Quiet down compiler
   }
 }
@@ -2622,7 +2622,7 @@ TEST(StkIoFieldType, inputFile)
       stkIo.read_defined_input_fields(numSteps);
   }
 
-  Teuchos::RCP<Ioss::Region> ioRegion = stkIo.get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioRegion = stkIo.get_input_ioss_region();
 
   const Ioss::NodeBlockContainer &    nodeBlocks = ioRegion->get_node_blocks();
   const Ioss::ElementBlockContainer & elemBlocks = ioRegion->get_element_blocks();

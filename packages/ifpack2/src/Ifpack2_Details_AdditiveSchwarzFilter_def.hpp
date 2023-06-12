@@ -471,6 +471,12 @@ AdditiveSchwarzFilter<MatrixType>::getGraph() const
 }
 
 template<class MatrixType>
+typename MatrixType::local_ordinal_type AdditiveSchwarzFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
+
+template<class MatrixType>
 global_size_t AdditiveSchwarzFilter<MatrixType>::getGlobalNumRows() const
 {
   return A_->getGlobalNumRows();

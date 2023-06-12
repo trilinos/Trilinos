@@ -62,7 +62,7 @@ class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,
-             unsigned block_size = 1000,
+             unsigned bucketCapacity = stk::mesh::get_default_bucket_capacity(),
              const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 
   ~BoxFixture () {}
@@ -131,7 +131,7 @@ class BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,
-             unsigned block_size = 1000,
+             unsigned bucketCapacity = stk::mesh::get_default_bucket_capacity(),
              const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 
   ~BoxFixture () {}

@@ -46,6 +46,7 @@
 #define MUELU_MAXWELL1_DEF_HPP
 
 #include <sstream>
+#include "MueLu_SmootherBase.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -57,8 +58,6 @@
 #include "MueLu_Maxwell_Utils.hpp"
 
 #include "MueLu_ReitzingerPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -227,15 +226,15 @@ namespace MueLu {
 
     // Are we using Kokkos?
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkos_ = true;
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);

@@ -208,12 +208,12 @@ namespace {
     Ioss::Field::BasicType ioFieldType = ioField.get_type();
     const bool ioFieldTypeIsRecognized = (ioFieldType == Ioss::Field::INTEGER) || (ioFieldType == Ioss::Field::INT64)
                                       || (ioFieldType == Ioss::Field::REAL)    || (ioFieldType == Ioss::Field::COMPLEX);
-    ThrowRequireMsg(ioFieldTypeIsRecognized, "Unrecognized field type for IO field '"<<ioField.get_name()<<"'");
+    STK_ThrowRequireMsg(ioFieldTypeIsRecognized, "Unrecognized field type for IO field '"<<ioField.get_name()<<"'");
 
     return stk::io::impl::declare_stk_field_internal(meta, type, part, ioField, useCartesianForScalar);
   }
 
-  template <typename T>
+  template <typename Tfield, typename Tio>
   void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const Ioss::Field &ioField,
                                      const stk::mesh::FieldBase *field,
@@ -222,7 +222,7 @@ namespace {
   {
     size_t iossNumFieldComponents = ioField.transformed_storage()->component_count();
 
-    std::vector<T> ioFieldData;
+    std::vector<Tio> ioFieldData;
     size_t ioEntityCount = ioEntity->get_field_data(ioField.get_name(), ioFieldData);
     assert(ioFieldData.size() == entities.size() * iossNumFieldComponents);
 
@@ -243,8 +243,8 @@ namespace {
     field->modify_on_host();
     for (size_t i=0; i < entityCount; ++i) {
       if (mesh.is_valid(entities[i])) {
-        T *fldData = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
-        if (fldData !=nullptr) {
+        Tfield *fldData = static_cast<Tfield*>(stk::mesh::field_data(*field, entities[i]));
+        if (fldData != nullptr) {
           const size_t stkNumFieldComponents = stk::mesh::field_scalars_per_entity(*field, entities[i]);
           const size_t len = std::min(stkNumFieldComponents, iossNumFieldComponents);
           for(size_t j=0; j<len; ++j) {
@@ -255,7 +255,7 @@ namespace {
     }
   }
 
-  template <typename T>
+  template <typename Tfield, typename Tio>
   void internal_subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                                const Ioss::Field &ioField,
                                                const stk::mesh::FieldBase *field,
@@ -264,7 +264,7 @@ namespace {
                                                const stk::mesh::Part *stkPart)
   {
     size_t field_componentCount = ioField.transformed_storage()->component_count();
-    std::vector<T> ioFieldData;
+    std::vector<Tio> ioFieldData;
     size_t ioEntityCount = ioEntity->get_field_data(ioField.get_name(), ioFieldData);
     assert(ioFieldData.size() == entities.size() * field_componentCount);
     size_t entityCount = entities.size();
@@ -288,7 +288,7 @@ namespace {
       if (mesh.is_valid(entities[i])) {
         const stk::mesh::Bucket &bucket = mesh.bucket(entities[i]);
         if (selector(bucket)) {
-          T *fldData = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
+          Tfield *fldData = static_cast<Tfield*>(stk::mesh::field_data(*field, entities[i]));
           if (fldData !=nullptr) {
             for(size_t j=0; j<field_componentCount; ++j) {
               fldData[j] = ioFieldData[i*field_componentCount+j];
@@ -329,7 +329,7 @@ namespace {
           if (curBkt != prevBkt) {
             prevBkt = curBkt;
             stkFieldLength = stk::mesh::field_scalars_per_entity(*field, *curBkt);
-            ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
+            STK_ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
             length = std::min(iossFieldLength, stkFieldLength);
           }
           T* ioFieldDataPtr = ioFieldData.data()+i*iossFieldLength;
@@ -400,7 +400,7 @@ namespace {
   {
       stk::mesh::EntityRank rank = stk::mesh::EntityRank::ELEM_RANK;
 
-      ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
+      STK_ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
 
       const std::vector<stk::io::FieldAndName>& additionalFields = params.get_additional_attribute_fields();
 
@@ -412,7 +412,7 @@ namespace {
           if(attribute.apply_to_entity(ioBlock)) {
               const stk::mesh::FieldBase *stkField = attribute.field();
 
-              ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
+              STK_ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
               stk::mesh::PartVector relevantParts;
               relevantParts.push_back(&part);
               stk::io::superset_mesh_parts(part, relevantParts);
@@ -424,7 +424,7 @@ namespace {
                       int ebSize = ioBlock->get_property("entity_count").get_int();
 
                       const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*stkField, rank, relevantParts);
-                      ThrowRequireMsg(res.num_scalars_per_entity() != 0,
+                      STK_ThrowRequireMsg(res.num_scalars_per_entity() != 0,
                                       "Could not find a restriction for field: " + stkField->name() + " on part: " + part.name());
                       stk::io::FieldType fieldType;
                       stk::io::get_io_field_type(stkField, res, &fieldType);
@@ -439,7 +439,7 @@ namespace {
   {
       stk::mesh::EntityRank rank = stk::mesh::EntityRank::ELEM_RANK;
 
-      ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
+      STK_ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
 
       const std::vector<stk::io::FieldAndName>& additionalFields = params.get_additional_attribute_fields();
 
@@ -450,7 +450,7 @@ namespace {
           if(attribute.apply_to_entity(ioBlock)) {
               const stk::mesh::FieldBase *stkField = attribute.field();
 
-              ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
+              STK_ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
 
               const std::string dbName = attribute.db_name();
 
@@ -505,7 +505,7 @@ void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableTyp
   else {
     if (oldVariableType->name() != type->name()) {
       const bool success = meta.remove_attribute(field, oldVariableType);
-      ThrowRequireMsg(success, "stk::io::impl::set_field_output_type(): Failed to remove old attribute " +
+      STK_ThrowRequireMsg(success, "stk::io::impl::set_field_output_type(): Failed to remove old attribute " +
                       oldVariableType->name() + " from field " + field.name());
       meta.declare_attribute_no_delete(field, type);
     }
@@ -517,7 +517,7 @@ void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typ
   const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
 
   if (not variableType) {
-    ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
+    STK_ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
                   "  - scalar\n"
                   "  - vector_2d      [x, y]\n"
                   "  - vector_3d      [x, y, z]\n"
@@ -1101,7 +1101,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       const Ioss::VariableType * variableType = impl::get_variable_type_from_factory(typeName);
 
       if (not variableType) {
-        ThrowErrorMsg("Unrecognized custom named suffix Field output type '" + typeName + "'.\n"
+        STK_ThrowErrorMsg("Unrecognized custom named suffix Field output type '" + typeName + "'.\n"
                       "Please be sure to pre-register your custom output type with a call to:\n"
                       "  stk::io::create_named_suffix_field_output_type()");
       }
@@ -1143,12 +1143,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           case (FieldOutputType::QUATERNION_2D)  : impl::set_field_output_type(*fieldOfState, "quaternion_2d"); break;
           case (FieldOutputType::QUATERNION_3D)  : impl::set_field_output_type(*fieldOfState, "quaternion_3d"); break;
           case (FieldOutputType::CUSTOM) : {
-            ThrowErrorMsg("To set a custom FieldOutputType, please call stk::io::create_named_suffix_field_output_type()"
+            STK_ThrowErrorMsg("To set a custom FieldOutputType, please call stk::io::create_named_suffix_field_output_type()"
                           " and stk::io::set_named_suffix_field_output_type() instead");
             break;
           }
           default:
-            ThrowErrorMsg("Unsupported FieldOutputType for Field " << field.name() << ": "
+            STK_ThrowErrorMsg("Unsupported FieldOutputType for Field " << field.name() << ": "
                           << static_cast<int>(fieldOutputType));
         }
       }
@@ -1238,8 +1238,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void put_face_block_io_part_attribute(mesh::Part & part)
     {
-      ThrowRequireMsg(part.mesh_meta_data().spatial_dimension() == 3, "face-block IO attribute can not be used for 2D.");
-      ThrowRequireMsg(part.primary_entity_rank() == stk::topology::FACE_RANK, "face-block IO attribute must only be used for face-rank parts.");
+      STK_ThrowRequireMsg(part.mesh_meta_data().spatial_dimension() == 3, "face-block IO attribute can not be used for 2D.");
+      STK_ThrowRequireMsg(part.primary_entity_rank() == stk::topology::FACE_RANK, "face-block IO attribute must only be used for face-rank parts.");
 
       if (!is_part_face_block_io_part(part)) {
         put_io_part_attribute(part);
@@ -1257,7 +1257,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void put_edge_block_io_part_attribute(mesh::Part & part)
     {
-      ThrowRequireMsg(part.primary_entity_rank() == stk::topology::EDGE_RANK, "edge-block IO attribute must only be used for edge-rank parts.");
+      STK_ThrowRequireMsg(part.primary_entity_rank() == stk::topology::EDGE_RANK, "edge-block IO attribute must only be used for edge-rank parts.");
 
       if (!is_part_edge_block_io_part(part)) {
         put_io_part_attribute(part);
@@ -1363,7 +1363,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       if (ioPartAttr != nullptr) {
         mesh::MetaData & meta = mesh::MetaData::get(part);
         bool success = meta.remove_attribute(part, ioPartAttr);
-        ThrowRequireMsg(success, "stk::io::remove_io_part_attribute(" << part.name() << ") FAILED.");
+        STK_ThrowRequireMsg(success, "stk::io::remove_io_part_attribute(" << part.name() << ") FAILED.");
         delete ioPartAttr;
       }
     }
@@ -1868,7 +1868,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                                          stk::mesh::EntityRank partType,
                                                          const stk::mesh::BulkData &bulk)
     {
-      ThrowRequireMsg(ioEntity->get_database()->is_input(), "Database is output type");
+      STK_ThrowRequireMsg(ioEntity->get_database()->is_input(), "Database is output type");
       if (db_api_int_size(ioEntity) == 4) {
           return get_entity_list<int>(ioEntity, partType, bulk);
       } else {
@@ -1882,7 +1882,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                 std::vector<stk::mesh::Entity> &entities)
     {
       const stk::mesh::BulkData &bulk = params.bulk_data();
-      ThrowRequireMsg(!ioEntity->get_database()->is_input(), "Database is input type");
+      STK_ThrowRequireMsg(!ioEntity->get_database()->is_input(), "Database is input type");
       assert(ioEntity->property_exists(s_internalSelectorName));
 
       mesh::Selector *select = reinterpret_cast<mesh::Selector*>(ioEntity->get_property(s_internalSelectorName).get_pointer());
@@ -1898,7 +1898,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState fieldState, std::vector<std::string>* multiStateSuffixes)
     {
       if(nullptr != multiStateSuffixes) {
-          ThrowRequireMsg((multiStateSuffixes->size() >= fieldState),
+          STK_ThrowRequireMsg((multiStateSuffixes->size() >= fieldState),
                           "Invalid field state index '" << fieldState << "'");
           return (*multiStateSuffixes)[fieldState];
       }
@@ -1924,7 +1924,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         case stk::mesh::StateNP1:
           break;
         default:
-          ThrowRequireMsg(false, "Internal Error: Unsupported stk::mesh::FieldState: " << fieldState << ".\n");
+          STK_ThrowRequireMsg(false, "Internal Error: Unsupported stk::mesh::FieldState: " << fieldState << ".\n");
         }
       return suffix;
     }
@@ -1952,7 +1952,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         std::vector<std::string>* multiStateSuffixes = stateCount > 2 ? inputMultiStateSuffixes : nullptr;
 
         if(nullptr != multiStateSuffixes) {
-            ThrowRequire(multiStateSuffixes->size() >= stateCount);
+            STK_ThrowRequire(multiStateSuffixes->size() >= stateCount);
         }
 
         for(size_t state = 0; state < stateCount - 1; state++) {
@@ -1978,7 +1978,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         std::vector<std::string>* multiStateSuffixes = stateCount > 2 ? inputMultiStateSuffixes : nullptr;
 
         if(nullptr != multiStateSuffixes) {
-            ThrowRequire(multiStateSuffixes->size() >= stateCount);
+            STK_ThrowRequire(multiStateSuffixes->size() >= stateCount);
         }
 
         for(size_t state = 0; state < stateCount - 1; state++)
@@ -2009,7 +2009,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         std::vector<std::string>* multiStateSuffixes = stateCount > 2 ? inputMultiStateSuffixes : nullptr;
 
         if(nullptr != multiStateSuffixes) {
-            ThrowRequire(multiStateSuffixes->size() >= stateCount);
+            STK_ThrowRequire(multiStateSuffixes->size() >= stateCount);
         }
 
         for(size_t state = 0; state < stateCount - 1; state++)
@@ -2038,34 +2038,47 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         /// Ioss field and stk::mesh::Field; better error messages...
 
         if (field != nullptr && ioEntity->field_exists(ioFieldName)) {
+            // Make sure the IO field type matches the STK field type.
+            // By default, all IO fields are created of type 'double'
             const Ioss::Field &ioField = ioEntity->get_fieldref(ioFieldName);
             if (field->type_is<double>()) {
-                internal_field_data_from_ioss<double>(mesh, ioField, field, entities, ioEntity);
-            } else if (field->type_is<int>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                if (db_api_int_size(ioEntity) == 4) {
+                internal_field_data_from_ioss<double, double>(mesh, ioField, field, entities, ioEntity);
+            }
+            else if (field->type_is<int>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
                     ioField.check_type(Ioss::Field::INTEGER);
-                    internal_field_data_from_ioss<int>(mesh, ioField, field, entities, ioEntity);
+                    internal_field_data_from_ioss<int, int>(mesh, ioField, field, entities, ioEntity);
                 } else {
                     ioField.check_type(Ioss::Field::INT64);
-                    internal_field_data_from_ioss<int64_t>(mesh, ioField, field, entities, ioEntity);
+                    internal_field_data_from_ioss<int, int64_t>(mesh, ioField, field, entities, ioEntity);
                 }
-            } else if (field->type_is<int64_t>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                ioField.check_type(Ioss::Field::INT64);
-                internal_field_data_from_ioss<int64_t>(mesh, ioField, field, entities, ioEntity);
-            } else if (field->type_is<uint32_t>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                ioField.check_type(Ioss::Field::INTEGER);
-                internal_field_data_from_ioss<uint32_t>(mesh, ioField, field, entities, ioEntity);
-            } else if (field->type_is<uint64_t>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                ioField.check_type(Ioss::Field::INT64);
-                internal_field_data_from_ioss<uint64_t>(mesh, ioField, field, entities, ioEntity);
+            }
+            else if (field->type_is<int64_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
+                    ioField.check_type(Ioss::Field::INTEGER);
+                    internal_field_data_from_ioss<int64_t, int>(mesh, ioField, field, entities, ioEntity);
+                } else {
+                    ioField.check_type(Ioss::Field::INT64);
+                    internal_field_data_from_ioss<int64_t, int64_t>(mesh, ioField, field, entities, ioEntity);
+                }
+            }
+            else if (field->type_is<uint32_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
+                    ioField.check_type(Ioss::Field::INTEGER);
+                    internal_field_data_from_ioss<uint32_t, int>(mesh, ioField, field, entities, ioEntity);
+                } else {
+                    ioField.check_type(Ioss::Field::INT64);
+                    internal_field_data_from_ioss<uint32_t, int64_t>(mesh, ioField, field, entities, ioEntity);
+                }
+            }
+            else if (field->type_is<uint64_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
+                    ioField.check_type(Ioss::Field::INTEGER);
+                    internal_field_data_from_ioss<uint64_t, int>(mesh, ioField, field, entities, ioEntity);
+                } else {
+                    ioField.check_type(Ioss::Field::INT64);
+                    internal_field_data_from_ioss<uint64_t, int64_t>(mesh, ioField, field, entities, ioEntity);
+                }
             }
 
         }
@@ -2081,30 +2094,46 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         /// \todo REFACTOR Need some additional compatibility checks between
         /// Ioss field and stk::mesh::Field; better error messages...
         if (field != nullptr && ioEntity->field_exists(ioFieldName)) {
+            // Make sure the IO field type matches the STK field type.
+            // By default, all IO fields are created of type 'double'
             const Ioss::Field &ioField = ioEntity->get_fieldref(ioFieldName);
             if (field->type_is<double>()) {
-                internal_subsetted_field_data_from_ioss<double>(mesh, ioField, field, entities, ioEntity, stkPart);
-            } else if (field->type_is<int>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                if (db_api_int_size(ioEntity) == 4) {
+                internal_subsetted_field_data_from_ioss<double, double>(mesh, ioField, field, entities, ioEntity, stkPart);
+            }
+            else if (field->type_is<int>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
                     ioField.check_type(Ioss::Field::INTEGER);
-                    internal_subsetted_field_data_from_ioss<int>(mesh, ioField, field, entities, ioEntity, stkPart);
+                    internal_subsetted_field_data_from_ioss<int, int>(mesh, ioField, field, entities, ioEntity, stkPart);
                 } else {
                     ioField.check_type(Ioss::Field::INT64);
-                    internal_subsetted_field_data_from_ioss<int64_t>(mesh, ioField, field, entities, ioEntity,
-                                                                     stkPart);
+                    internal_subsetted_field_data_from_ioss<int, int64_t>(mesh, ioField, field, entities, ioEntity, stkPart);
                 }
-            } else if (field->type_is<uint32_t>()) {
-                // Make sure the IO field type matches the STK field type.
-                // By default, all IO fields are created of type 'double'
-                if (db_api_int_size(ioEntity) == 4) {
+            }
+            else if (field->type_is<int64_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
                     ioField.check_type(Ioss::Field::INTEGER);
-                    internal_subsetted_field_data_from_ioss<uint32_t>(mesh, ioField, field, entities, ioEntity, stkPart);
+                    internal_subsetted_field_data_from_ioss<int64_t, int>(mesh, ioField, field, entities, ioEntity, stkPart);
                 } else {
                     ioField.check_type(Ioss::Field::INT64);
-                    internal_subsetted_field_data_from_ioss<uint64_t>(mesh, ioField, field, entities, ioEntity,
-                                                                      stkPart);
+                    internal_subsetted_field_data_from_ioss<int64_t, int64_t>(mesh, ioField, field, entities, ioEntity, stkPart);
+                }
+            }
+            else if (field->type_is<uint32_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
+                    ioField.check_type(Ioss::Field::INTEGER);
+                    internal_subsetted_field_data_from_ioss<uint32_t, int>(mesh, ioField, field, entities, ioEntity, stkPart);
+                } else {
+                    ioField.check_type(Ioss::Field::INT64);
+                    internal_subsetted_field_data_from_ioss<uint32_t, int64_t>(mesh, ioField, field, entities, ioEntity, stkPart);
+                }
+            }
+            else if (field->type_is<uint64_t>()) {
+                if (ioField.get_type() == Ioss::Field::INTEGER) {
+                    ioField.check_type(Ioss::Field::INTEGER);
+                    internal_subsetted_field_data_from_ioss<uint64_t, int>(mesh, ioField, field, entities, ioEntity, stkPart);
+                } else {
+                    ioField.check_type(Ioss::Field::INT64);
+                    internal_subsetted_field_data_from_ioss<uint64_t, int64_t>(mesh, ioField, field, entities, ioEntity, stkPart);
                 }
             }
         }
@@ -2531,7 +2560,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         if(leafPart != nullptr && is_part_element_block_io_part(*leafPart)) {
           auto iter = blockSizes.find(leafPart->mesh_meta_data_ordinal());
-          ThrowRequireMsg(iter != blockSizes.end(), "Could not find element block in block size list: " << leafPart->name());
+          STK_ThrowRequireMsg(iter != blockSizes.end(), "Could not find element block in block size list: " << leafPart->name());
           isEmptyElementBlock = (iter->second == 0);
         }
 
@@ -2569,7 +2598,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         std::string name = getPartName(part);
 
         Ioss::Assembly *assembly = ioRegion.get_assembly(name);
-        ThrowRequireMsg(assembly != nullptr, "Failed to find assembly "<<name);
+        STK_ThrowRequireMsg(assembly != nullptr, "Failed to find assembly "<<name);
 
         if (has_sub_assemblies(meta, part.name())) {
           std::vector<std::string> subAssemblyNames = get_sub_assembly_names(meta, part.name());
@@ -3913,7 +3942,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             {
                 FieldNameToPartVector names;
                 const Ioss::NodeBlockContainer nodeBlocks = region.get_node_blocks();
-                ThrowRequire(nodeBlocks.size() == 1);
+                STK_ThrowRequire(nodeBlocks.size() == 1);
                 insert_var_names_for_part(nodeBlocks[0], &meta.universal_part(), names);
                 return names;
             }
@@ -3999,7 +4028,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
           if (stk::io::is_part_io_part(*part)) {
             Ioss::GroupingEntity *entity = region.get_entity(part->name());
-            ThrowRequireMsg(entity != nullptr, "Could not find Ioss grouping entity with name: " + part->name() + ". Contact sierra-help.");
+            STK_ThrowRequireMsg(entity != nullptr, "Could not find Ioss grouping entity with name: " + part->name() + ". Contact sierra-help.");
 
             if (entity->type() == Ioss::SIDESET) {
               Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
@@ -4113,7 +4142,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         Ioss::Region &outRegion = params.io_region();
 
         Ioss::DatabaseIO *dbo = outRegion.get_database();
-        ThrowRequire(nullptr != dbo);
+        STK_ThrowRequire(nullptr != dbo);
 
         write_mesh_data_for_subdomain(params, nodeSharingInfo);
 
@@ -4157,7 +4186,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         Ioss::DatabaseIO *dbo = create_database_for_subdomain(baseFilename, indexSubdomain, numSubdomains);
         Ioss::Region outRegion(dbo, "name");
 
-        ThrowRequireMsg(params.io_region_ptr() == nullptr, "OutputParams argument must have a NULL IORegion");
+        STK_ThrowRequireMsg(params.io_region_ptr() == nullptr, "OutputParams argument must have a NULL IORegion");
         params.set_io_region(&outRegion);
         add_properties_for_subdomain(params, indexSubdomain, numSubdomains, globalNumNodes, globalNumElems);
 

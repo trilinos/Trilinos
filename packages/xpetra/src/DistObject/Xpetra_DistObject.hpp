@@ -52,7 +52,7 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Export.hpp"
-#include <KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 namespace Xpetra {
@@ -60,7 +60,7 @@ namespace Xpetra {
   template <class Packet,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class DistObject
     : virtual public Teuchos::Describable
   {

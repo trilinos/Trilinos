@@ -62,6 +62,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files =
     stk_search_utest
+    stk_search_doc_tests
     [ if-not-defined-val $(releasable-arg) :
         stk_search_integration_tester ]
   ;
@@ -172,6 +173,19 @@ exe stk_search_integration_tester
   ;
 }
 
+exe stk_search_doc_tests
+  :
+    [ glob 
+      $(stk_search-root)/../stk_doc_tests/stk_search/*.cpp 
+     ]
+    /sierra/stk_search//stk_search
+    /sierra/stk_search_util//stk_search_util_base
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_mesh//stk_mesh_base
+  : <tag>@sierra-exec-tag
+    <include>$(stk_search-root-inc)
+  ;
+  
 exe stk_search_utest
   :
     [ glob $(stk_search-root)/../stk_unit_tests/stk_search/*.cpp ]

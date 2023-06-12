@@ -638,7 +638,7 @@ void fill_data_for_side_block( OutputParams &params,
                                std::vector<INT> &elem_side_ids,
                                stk::mesh::EntityVector &sides)
 {
-    ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
+    STK_ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
 
     stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension());
 

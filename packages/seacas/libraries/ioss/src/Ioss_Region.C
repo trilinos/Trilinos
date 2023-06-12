@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -362,55 +362,55 @@ namespace Ioss {
     // Region owns all sub-grouping entities it contains...
     try {
       IOSS_FUNC_ENTER(m_);
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         delete (nb);
       }
 
-      for (auto &eb : edgeBlocks) {
+      for (const auto &eb : edgeBlocks) {
         delete (eb);
       }
 
-      for (auto &fb : faceBlocks) {
+      for (const auto &fb : faceBlocks) {
         delete (fb);
       }
 
-      for (auto &eb : elementBlocks) {
+      for (const auto &eb : elementBlocks) {
         delete (eb);
       }
 
-      for (auto &sb : structuredBlocks) {
+      for (const auto &sb : structuredBlocks) {
         delete (sb);
       }
 
-      for (auto &ss : sideSets) {
+      for (const auto &ss : sideSets) {
         delete (ss);
       }
 
-      for (auto &ns : nodeSets) {
+      for (const auto &ns : nodeSets) {
         delete (ns);
       }
 
-      for (auto &es : edgeSets) {
+      for (const auto &es : edgeSets) {
         delete (es);
       }
 
-      for (auto &fs : faceSets) {
+      for (const auto &fs : faceSets) {
         delete (fs);
       }
 
-      for (auto &es : elementSets) {
+      for (const auto &es : elementSets) {
         delete (es);
       }
 
-      for (auto &cs : commSets) {
+      for (const auto &cs : commSets) {
         delete (cs);
       }
 
-      for (auto &as : assemblies) {
+      for (const auto &as : assemblies) {
         delete (as);
       }
 
-      for (auto &bl : blobs) {
+      for (const auto &bl : blobs) {
         delete (bl);
       }
 
@@ -468,7 +468,7 @@ namespace Ioss {
     int64_t total_sides = 0;
     {
       const Ioss::SideSetContainer &sss = get_sidesets();
-      for (auto &fs : sss) {
+      for (const auto &fs : sss) {
         total_sides += get_entity_count(fs->get_side_blocks());
       }
     }
@@ -1998,7 +1998,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeBlock *ge = nullptr;
-    for (auto &nb : nodeBlocks) {
+    for (const auto &nb : nodeBlocks) {
       if (db_hash == nb->hash() && nb->name() == db_name) {
         ge = nb;
         break;
@@ -2514,7 +2514,7 @@ namespace Ioss {
 
     if (my_name == "node_count") {
       int64_t count = 0;
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         count += nb->entity_count();
       }
       return Property(my_name, count);

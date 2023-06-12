@@ -839,7 +839,7 @@ void test_one_block_reconnect(stk::mesh::BulkData& bulk)
 {
   stk::mesh::PartVector allBlocksInMesh;
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
-  ThrowRequire(allBlocksInMesh.size() == 1u);
+  STK_ThrowRequire(allBlocksInMesh.size() == 1u);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = true;
 
@@ -857,7 +857,7 @@ void test_one_block_reconnect(stk::mesh::BulkData& bulk)
 void test_two_block_reconnect(stk::mesh::BulkData& bulk, const stk::mesh::PartVector& blocks,
                               const unsigned expectedCommonNodeCount)
 {
-  ThrowRequire(blocks.size() >= 2u);
+  STK_ThrowRequire(blocks.size() >= 2u);
   stk::mesh::PartVector allBlocksInMesh;
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::impl::LinkInfo info;
@@ -987,19 +987,18 @@ void test_reconnect_block_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector
   std::vector<stk::tools::BlockPair> reconnectBlockPairs;
 
   for(const BlockConnection& connectPair : reconnectPairs) {
-    ThrowRequire(connectPair.block1 != connectPair.block2);
+    STK_ThrowRequire(connectPair.block1 != connectPair.block2);
 
     stk::mesh::Part* block1 = meta.get_part(connectPair.block1);
     stk::mesh::Part* block2 = meta.get_part(connectPair.block2);
 
-    ThrowRequire(block1 != nullptr && block2 != nullptr);
+    STK_ThrowRequire(block1 != nullptr && block2 != nullptr);
 
     stk::tools::impl::insert_block_pair(block1, block2, reconnectBlockPairs);
   }
 
   EXPECT_EQ(expectedGlobalInitialCommonNodes, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::disconnect_block_pairs(bulk, disconnectBlockPairs, info);
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "test.g");
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::reconnect_block_pairs(bulk, reconnectBlockPairs, info);

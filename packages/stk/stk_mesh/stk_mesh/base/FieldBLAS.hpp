@@ -81,8 +81,10 @@ struct BucketSpan {
     length = b.size() * field_meta_data.m_bytesPerEntity/f.data_traits().size_of;
   }
 
-  BucketSpan& operator=(const BucketSpan& B) noexcept
+  BucketSpan& operator=(const BucketSpan& B)
   {
+    STK_ThrowAssertMsg(length == B.length, "The registered field lengths must match to be copied correctly");
+
     for(size_t i = 0; i < length; ++i) {
       ptr[i] = B.ptr[i];
     }
@@ -179,15 +181,15 @@ struct FortranBLAS
         }
     }
 
-    inline static void fill(int kmax, const Scalar alpha, Scalar x[], const int inc=1)
+    inline static void fill(int numVals, Scalar alpha, Scalar x[], int stride = 1)
     {
-        auto ke = kmax*inc;
-        if (alpha == Scalar(0) ) {
-        	std::memset(x,0,ke*sizeof(Scalar));
-        } else {
-          for(int k = 0; k < ke ; k += inc) {
-              x[k] = alpha;
-          }
+        if (stride == 1) {
+            std::fill(x, x+numVals, alpha);
+        }
+        else {
+            for (Scalar * end = x+(numVals*stride); x < end; x+=stride) {
+                *x = alpha;
+            }
         }
     }
 
@@ -297,11 +299,10 @@ struct FortranBLAS<std::complex<Scalar> >
         }
     }
 
-    inline static void fill(int kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[], const int inc=1)
+    inline static void fill(int numVals, std::complex<Scalar> alpha, std::complex<Scalar> x[], int stride=1)
     {
-        auto ke = kmax*inc;
-        for(int k = 0; k < ke ; k += inc) {
-            x[k] = alpha;
+        for (std::complex<Scalar> * end = x+(numVals*stride); x < end; x+=stride) {
+            *x = alpha;
         }
     }
 
@@ -369,7 +370,7 @@ struct FortranBLAS<double>
 
     static void scal(int kmax, const double alpha, double x[]);
 
-    static void fill(int kmax, const double alpha, double x[], const int inc=1);
+    static void fill(int kmax, double alpha, double x[], int inc=1);
 
     static void swap(int kmax, double x[], double y[]);
 
@@ -397,7 +398,7 @@ struct FortranBLAS<float>
 
     static void scal(int kmax, const float alpha, float x[]);
 
-    static void fill(int kmax, const float alpha, float x[], const int inc=1);
+    static void fill(int kmax, float alpha, float x[], int inc=1);
 
     static void swap(int kmax, float x[], float y[]);
 
@@ -429,7 +430,7 @@ template<class Scalar>
 inline
 void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
@@ -441,7 +442,7 @@ void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yF
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
     }
     unfix_omp_threads(orig_thread_count);
@@ -459,7 +460,7 @@ template<class Scalar>
 inline
 void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta, const FieldBase& yField, const Selector& selector)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
@@ -482,7 +483,7 @@ void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta,
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         FortranBLAS<Scalar>::axpby(x.size(),alpha,x.data(),beta,y.data());
       }
     }
@@ -520,8 +521,8 @@ void INTERNAL_field_product(const FieldBase& xField, const FieldBase& yField, co
 inline
 void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
 {
-    ThrowAssert(is_compatible(xField, yField));
-    ThrowAssert(is_compatible(yField, zField));
+    STK_ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(yField, zField));
 
     if (xField.data_traits().type_info == typeid(double)) {
         INTERNAL_field_product<double>(xField,yField,zField,selector);
@@ -534,7 +535,7 @@ void field_product(const FieldBase& xField, const FieldBase& yField, const Field
     } else if (xField.data_traits().type_info == typeid(int)) {
         INTERNAL_field_product<int>(xField,yField,zField,selector);
     } else {
-        ThrowAssertMsg(false,"Error in field_product; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
+        STK_ThrowAssertMsg(false,"Error in field_product; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -549,25 +550,25 @@ template<class Scalar>
 inline
 void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
+  BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-    int orig_thread_count = fix_omp_threads();
+  int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        y = x;
-    }
-    unfix_omp_threads(orig_thread_count);
+  for (size_t i = 0; i < buckets.size(); ++i) {
+      Bucket & b = *buckets[i];
+      BucketSpan<Scalar> x(xField, b);
+      BucketSpan<Scalar> y(yField, b);
+      y = x;
+  }
+  unfix_omp_threads(orig_thread_count);
 }
 
 inline
 void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     if (xField.data_traits().type_info == typeid(double)) {
         INTERNAL_field_copy<double>(xField,yField,selector);
@@ -580,7 +581,7 @@ void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector
     } else if (xField.data_traits().type_info == typeid(int)) {
         INTERNAL_field_copy<int>(xField,yField,selector);
     } else {
-        ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
+        STK_ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -595,7 +596,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_dot(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -609,7 +610,7 @@ Scalar field_dot(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Field<
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
     }
 
@@ -623,7 +624,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 std::complex<Scalar> field_dot(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7>& xField, const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7>& yField, const Selector& selector, const MPI_Comm comm) 
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -639,7 +640,7 @@ std::complex<Scalar> field_dot(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T
         Bucket & b = *buckets[i];
         BucketSpan<std::complex<Scalar>> x(xField, b);
         BucketSpan<std::complex<Scalar>> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
 
         local_result_r += priv_tmp.real();
@@ -673,7 +674,7 @@ template<class Scalar>
 inline
 void field_dot(std::complex<Scalar>& global_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -689,7 +690,7 @@ void field_dot(std::complex<Scalar>& global_result, const FieldBase& xField, con
         Bucket & b = *buckets[i];
         BucketSpan<std::complex<Scalar>> x(xField, b);
         BucketSpan<std::complex<Scalar>> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
 
         local_result_r += priv_tmp.real();
@@ -707,7 +708,7 @@ template<class Scalar>
 inline
 void field_dot(Scalar& glob_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -721,7 +722,7 @@ void field_dot(Scalar& glob_result, const FieldBase& xField, const FieldBase& yF
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
     }
 
@@ -750,7 +751,7 @@ template<class Scalar>
 inline
 void field_scale(const Scalar alpha, const FieldBase& xField, const Selector& selector)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -777,7 +778,7 @@ template<class Scalar>
 inline
 void field_fill_component(const Scalar* alpha, const FieldBase& xField, const Selector& selector)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -810,7 +811,7 @@ template<class Scalar>
 inline
 void field_fill(const Scalar alpha, const FieldBase& xField, const Selector& selector)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -829,7 +830,7 @@ template<class Scalar>
 inline
 void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
 {
-    ThrowAssert(xFields.size() >= 1 );
+    STK_ThrowAssert(xFields.size() >= 1 );
 
     stk::mesh::EntityRank fieldEntityRank = xFields[0]->entity_rank();
     BucketVector const& buckets = xFields[0]->get_mesh().get_buckets(fieldEntityRank,selector);
@@ -837,8 +838,8 @@ void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields
     for (auto&& bucket : buckets){
         for (unsigned int i=0; i<xFields.size(); ++i){
             const FieldBase& xField = *xFields[i];
-            ThrowAssert( is_compatible<Scalar>(xField) );
-            ThrowAssert(fieldEntityRank == xField.entity_rank());
+            STK_ThrowAssert( is_compatible<Scalar>(xField) );
+            STK_ThrowAssert(fieldEntityRank == xField.entity_rank());
             BucketSpan<Scalar> x(xField, *bucket);
             FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
         }
@@ -875,7 +876,7 @@ void INTERNAL_field_swap(const FieldBase& xField, const FieldBase& yField, const
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
-        ThrowAssert(x.size() == y.size());
+        STK_ThrowAssert(x.size() == y.size());
         FortranBLAS<Scalar>::swap(x.size(),x.data(),y.data());
     }
     unfix_omp_threads(orig_thread_count);
@@ -884,7 +885,7 @@ void INTERNAL_field_swap(const FieldBase& xField, const FieldBase& yField, const
 inline
 void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    ThrowAssert(is_compatible(xField, yField));
+    STK_ThrowAssert(is_compatible(xField, yField));
 
     if (xField.data_traits().type_info == typeid(double)) {
         INTERNAL_field_swap<double>(xField,yField,selector);
@@ -897,7 +898,7 @@ void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector
     } else if (xField.data_traits().type_info == typeid(int)) {
         INTERNAL_field_swap<int>(xField,yField,selector);
     } else {
-        ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
+        STK_ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -974,7 +975,7 @@ template<class Scalar>
 inline
 void field_nrm2(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -999,7 +1000,7 @@ template<class Scalar>
 inline
 void field_nrm2(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
+    STK_ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1102,7 +1103,7 @@ template<class Scalar>
 inline
 void field_asum(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1126,7 +1127,7 @@ template<class Scalar>
 inline
 void field_asum(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
+    STK_ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1357,7 +1358,7 @@ Entity field_eamax(const FieldBase& xField, const Selector& selector)
     } else if (xField.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamax<int>(xField,selector);
     } else {
-        ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
+        STK_ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
     }
     return stk::mesh::Entity();
 }
@@ -1381,7 +1382,7 @@ template<class Scalar>
 inline
 void field_amax(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
+    STK_ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1411,7 +1412,7 @@ template<class Scalar>
 inline
 void field_amax(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1766,7 +1767,7 @@ Entity field_eamin(const FieldBase& xField, const Selector& selector)
     } else if (xField.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamin<int>(xField,selector);
     } else {
-        ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
+        STK_ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
     }
     return stk::mesh::Entity();
 }
@@ -1782,7 +1783,7 @@ template<class Scalar>
 inline
 void field_amin(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
+    STK_ThrowAssert( is_compatible<std::complex<Scalar>>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 
@@ -1812,7 +1813,7 @@ template<class Scalar>
 inline
 void field_amin(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
 {
-    ThrowAssert( is_compatible<Scalar>(xField) );
+    STK_ThrowAssert( is_compatible<Scalar>(xField) );
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
 

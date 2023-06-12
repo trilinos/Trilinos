@@ -197,7 +197,7 @@ Ellipsoid::Ellipsoid(
 : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
   mySign(sign)
 {
-  ThrowAssert(center.size() == 3 && semiAxes.size() == 3);
+  STK_ThrowAssert(center.size() == 3 && semiAxes.size() == 3);
   mySemiAxesNorm = 0.0;
   for(unsigned i = 0; i < 3; ++i) {
     myCenter[i] = center[i];
@@ -208,7 +208,7 @@ Ellipsoid::Ellipsoid(
 
   if (!rotationVec.empty())
   {
-    ThrowAssert(rotationVec.size() == 3);
+    STK_ThrowAssert(rotationVec.size() == 3);
     Vector3d pointRotation(-rotationVec[0], -rotationVec[1], -rotationVec[2]); // myRotation is the rotation used for the query point locations, which is the opposite of the rotation of the ellipsoid
     myRotation = std::make_unique<Quaternion>();
     myRotation->set_from_rotation_vector(pointRotation);

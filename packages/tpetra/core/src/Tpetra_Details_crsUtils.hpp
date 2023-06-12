@@ -220,14 +220,23 @@ pad_crs_arrays(
   size_t increase = 0;
   {
     // Must do on host because padding uses std::map
+    execution_space exec_space_instance = execution_space();
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_end_h, row_ptr_end);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_end_h, row_ptr_end);
     auto row_ptr_beg_h = create_mirror_view(
       hostSpace, row_ptr_beg, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), row_ptr_beg_h, row_ptr_beg);
+    Kokkos::deep_copy(exec_space_instance, row_ptr_beg_h, row_ptr_beg);
+
+    // lbv 03/15/23: The execution space deep_copy does an asynchronous
+    // copy so we really want to fence that space before touching the
+    // host data as it is not guarenteed to have arrived by the time we
+    // start the parallel_reduce below which might use a different
+    // execution space, see:
+    // https://kokkos.github.io/kokkos-core-wiki/API/core/view/deep_copy.html#semantics
+    exec_space_instance.fence();
 
     auto newAllocPerRow_h = create_mirror_view(
       hostSpace, newAllocPerRow, verbose, prefix.get());

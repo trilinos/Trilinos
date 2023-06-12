@@ -269,6 +269,47 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name, void
   return retval;
 }
 
+/** Zero-copy API.  *IF* a field is zero-copyable, then this function will set the `data`
+ * pointer to point to a chunk of memory of size `data_size` bytes containing the field
+ * data for the specified field.  If the field is not zero-copyable, then the  `data`
+ * pointer will point to `nullptr` and `data_size` will be 0 and `retval` will be -2.
+ * TODO: Verify that returning `-2` on error makes sense or helps at all...
+ */
+int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name, void **data,
+                                             size_t *data_size) const
+{
+  verify_field_exists(field_name, "input");
+
+  int64_t     retval = -1;
+  Ioss::Field field  = get_field(field_name);
+  if (field.zero_copy_enabled()) {
+    retval = internal_get_zc_field_data(field, data, data_size);
+  }
+  else {
+    retval     = -2;
+    *data      = nullptr;
+    *data_size = 0;
+  }
+  return retval;
+}
+
+int64_t Ioss::GroupingEntity::internal_get_zc_field_data(const Ioss::Field &field, void ** /*data*/,
+                                                         size_t * /*data_size*/) const
+{
+  // Dummy version to avoid putting empty virtual functions in all databases that don't support
+  // zero-copy;
+  std::ostringstream errmsg;
+  fmt::print(
+      errmsg,
+      "\nINTERNAL ERROR: Something is wrong on a database.  The field '{}' indicates that it"
+      " is zero-copyable, but the database containing that field does not implement the zero-copy"
+      " `get_field_internal()` function.\n\n",
+      field.get_name(), name());
+  IOSS_ERROR(errmsg);
+
+  return -2;
+}
+
 /** \brief Write field data from memory into the database file using a pointer.
  *
  *  \param[in] field_name The name of the field to write.

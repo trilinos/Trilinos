@@ -33,6 +33,8 @@
 // 
 
 #include <stk_util/util/ci_string.hpp>
+#include <ostream>
+#include <istream>
 
 
 std::ostream &

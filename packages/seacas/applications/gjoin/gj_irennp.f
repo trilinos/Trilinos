@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -471,8 +471,16 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
 
          END IF
       ELSE IF (NUMFLD .GE. 2) THEN
+C     ... 'EQUIV' TOLER 'CLOSEST'|'MATERIAL'
          TOLER = RFIELD(2)
          DO 230 IFLD = 3, NUMFLD
+            if (intyp(ifld) .ne. 0) then
+               CALL PRTERR ('CMDWARN',
+     $              'Unrecognized EQUIV Option: '//CFIELD(IFLD))
+               CALL PRTERR ('CMDWARN',
+     $              'Expected `CLOSEST` and/or `MATERIAL`')
+               goto 110
+            end if
             IF (MATSTR(CFIELD(IFLD),'CLOSEST',1)) THEN
                CLOSE = .TRUE.
             ELSE IF (MATSTR(CFIELD(IFLD),'MATERIAL',1)) THEN
@@ -480,6 +488,7 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
             ELSE
                CALL PRTERR ('CMDWARN',
      $              'Unrecognized EQUIV Option: '//CFIELD(IFLD))
+               goto 110
             END IF
   230    CONTINUE
       END IF

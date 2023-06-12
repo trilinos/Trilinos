@@ -86,7 +86,7 @@ class PhactoriSegment:
     return math.sqrt(self.FindDistanceSquaredToPoint(testPoint))
 
   def FindDistanceToPointProjected(self, testPoint, projectionAxis):
-    return math.sqrt(self.FindDistanceSquaredToPoint(testPoint), projectionAxis)
+    return math.sqrt(self.FindDistanceSquaredToPointProjected(testPoint, projectionAxis))
 
   def FindNearestPointOnSegmentToPoint(self, testPoint):
     if self.lengthSquared == 0.0:

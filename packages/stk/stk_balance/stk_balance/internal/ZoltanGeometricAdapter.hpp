@@ -56,13 +56,13 @@ public:
 
   virtual size_t getLocalNumOf(Zoltan2::MeshEntityType etype) const
   {
-    ThrowRequireMsg(get_mapped_topology(etype) == m_primary_rank, "getLocalNumOf couldn't return valid answer.");
+    STK_ThrowRequireMsg(get_mapped_topology(etype) == m_primary_rank, "getLocalNumOf couldn't return valid answer.");
     return mGeometricVertices.num_vertices();
   }
 
   virtual void getIDsViewOf(Zoltan2::MeshEntityType etype, BalanceGlobalNumber const *&Ids) const
   {
-    ThrowRequireMsg(get_mapped_topology(etype) == m_primary_rank, "getIDsViewOf couldn't return valid answer.");
+    STK_ThrowRequireMsg(get_mapped_topology(etype) == m_primary_rank, "getIDsViewOf couldn't return valid answer.");
     Ids = mGeometricVertices.get_vertex_ids().data();
   }
 
@@ -73,7 +73,7 @@ public:
 
   virtual void getCoordinatesViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&coords, int &stride, int coordDim) const
   {
-    ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
+    STK_ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
     coords = NULL;
     stride = getDimension();
 
@@ -84,13 +84,13 @@ public:
 
   virtual int getNumWeightsPerOf(Zoltan2::MeshEntityType etype) const
   {
-    ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
+    STK_ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
     return static_cast<int>(mGeometricVertices.getNumWeightsPerVertex());
   }
 
   virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, int idx = 0) const
   {
-    ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
+    STK_ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
     weights = NULL;
     stride = mGeometricVertices.getNumWeightsPerVertex();
 

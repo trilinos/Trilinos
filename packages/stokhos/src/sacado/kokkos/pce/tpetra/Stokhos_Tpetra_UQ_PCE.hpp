@@ -54,7 +54,7 @@
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
@@ -128,7 +128,7 @@ struct DeviceForNode2 {
 };
 
 template <typename Device>
-struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+struct DeviceForNode2< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
 
@@ -329,9 +329,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(mv.getLocalViewDevice(Tpetra::Access::ReadOnly));
+      return dimension_scalar(mv.getLocalViewHost(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(mv.getLocalViewHost(Tpetra::Access::ReadOnly));
+    return dimension_scalar(mv.getLocalViewDevice(Tpetra::Access::ReadOnly));
   }
 
   template <class S, class L, class G, class N>
@@ -342,9 +342,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(v.getLocalViewDevice(Tpetra::Access::ReadOnly));
+      return dimension_scalar(v.getLocalViewHost(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(v.getLocalViewHost(Tpetra::Access::ReadOnly));
+    return dimension_scalar(v.getLocalViewDevice(Tpetra::Access::ReadOnly));
   }
 }
 

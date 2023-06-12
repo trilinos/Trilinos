@@ -22,12 +22,11 @@ void ActiveVertData::set_sizes(mesh::MeshEntityPtr vert)
     ntriangles += count_num_triangles(vert, els[i]);
 
   // size data structures
-  m_triVerts.resize(ntriangles, 3);
-  m_currentEntity.resize(ntriangles);
-  // m_w_mats.resize(ntriangles, 6);
+  m_triVertIndices.resize(ntriangles, 3);
+  m_currentEntityIdx.resize(ntriangles);
 }
 
-void ActiveVertData::get_triangles(mesh::MeshEntityPtr vert)
+void ActiveVertData::set_triangles(mesh::MeshEntityPtr vert)
 {
   std::unordered_map<mesh::MeshEntityPtr, int> vertIndices;
   std::vector<mesh::MeshEntityPtr> els;
@@ -36,8 +35,8 @@ void ActiveVertData::get_triangles(mesh::MeshEntityPtr vert)
   int triIdx = 0;
   std::array<mesh::MeshEntityPtr, 12> triVerts;
   // ensure the vertex the patch is centered on is the first vert
-  m_vertsUnique.push_back(vert);
-  m_pointsOrig.push_back(vert->get_point_orig(0));
+  m_localVertsUnique.push_back(vert);
+  m_allPointsOrig.push_back(vert->get_point_orig(0));
   vertIndices[vert] = 0;
   for (int i = 0; i < nelems; ++i)
   {
@@ -50,9 +49,9 @@ void ActiveVertData::get_triangles(mesh::MeshEntityPtr vert)
       auto vertJ = triVerts[j];
       if (vertIndices.count(vertJ) == 0)
       {
-        m_vertsUnique.push_back(vertJ);
-        m_pointsOrig.push_back(vertJ->get_point_orig(0));
-        vertIndices[vertJ] = m_vertsUnique.size() - 1;
+        m_localVertsUnique.push_back(vertJ);
+        m_allPointsOrig.push_back(vertJ->get_point_orig(0));
+        vertIndices[vertJ] = m_localVertsUnique.size() - 1;
       }
     }
 
@@ -60,62 +59,32 @@ void ActiveVertData::get_triangles(mesh::MeshEntityPtr vert)
     for (int t = 0; t < ntris; ++t)
     {
       for (int j = 0; j < 3; ++j)
+        m_triVertIndices(triIdx, j) = vertIndices[triVerts[3 * t + j]];
 
-        m_triVerts(triIdx, j) = vertIndices[triVerts[3 * t + j]];
-
-      // TODO: DEBUGGING
-      // auto area_t = computeTriArea(tri_verts[3*t], tri_verts[3*t + 1], tri_verts[3*t + 2]);
-      // std::cout << "area_t = " << area_t << std::endl;
-      // assert(area_t > 0);
       triIdx++;
     }
-    /*
-    if (ntris == 2)
-    {
-      for (int j=0; j < 3; ++j)
-        m_tri_verts(tri_idx, j) = vert_indices[tri_verts[j]];
-
-      tri_idx++;
-    }
-    */
   }
+
+  m_allPoints = m_allPointsOrig;
 }
 
-/*
-void ActiveVertData::computeW()
-{
-  for (int i=0; i < getNumElements(); ++i)
-  {
-    auto verts = getElementVerts(i);
-    for (int j=0; j < 6; ++j)
-    {
-      utils::impl::PlaneProjection val = static_cast<utils::impl::PlaneProjection>(j);
-      auto pt1 = applyutils::impl::PlaneProjection(val, verts[0]->get_point_orig(0));
-      auto pt2 = applyutils::impl::PlaneProjection(val, verts[1]->get_point_orig(0));
-      auto pt3 = applyutils::impl::PlaneProjection(val, verts[2]->get_point_orig(0));
-      TriPts pts{pt1, pt2, pt3};
-      m_w_mats(i, j) = DistortionMetric::computeW(pts);
-    }
-  }
-}
-*/
 
 // gets the local index of vert in each triangle and writes it to
 // m_current_entity
-void ActiveVertData::get_current_indices(mesh::MeshEntityPtr vert)
+void ActiveVertData::set_current_indices(mesh::MeshEntityPtr vert)
 {
-  for (unsigned int i = 0; i < m_currentEntity.size(); ++i)
+  for (unsigned int i = 0; i < m_currentEntityIdx.size(); ++i)
   {
     int idx = -1;
     for (int j = 0; j < 3; ++j)
-      if (m_vertsUnique[m_triVerts(i, j)] == vert)
+      if (m_localVertsUnique[m_triVertIndices(i, j)] == vert)
       {
         idx = j;
         break;
       }
 
     assert(idx != -1);
-    m_currentEntity[i] = idx;
+    m_currentEntityIdx[i] = idx;
   }
 }
 
@@ -145,8 +114,10 @@ int ActiveVertData::get_local_idx(mesh::MeshEntityPtr el, mesh::MeshEntityPtr ve
   int dim   = get_type_dimension(vert->get_type());
   int ndown = mesh::get_downward(el, dim, verts);
   for (int i = 0; i < ndown; ++i)
+  {  
     if (verts[i] == vert)
       return i;
+  }
 
   throw std::invalid_argument("vert is not downward adjacent to el");
 }
@@ -209,6 +180,30 @@ int ActiveVertData::get_triangle_verts(mesh::MeshEntityPtr el, mesh::MeshEntityP
     }
     */
   }
+}
+
+
+void ActiveVertData::add_remote_vert(const mesh::RemoteSharedEntity& owner)
+{
+  m_remoteVertOwners.push_back(owner);
+  m_allPoints.emplace_back(0, 0, 0);
+  m_allPointsOrig.emplace_back(0, 0, 0);
+}
+
+void ActiveVertData::add_remote_element(const std::array<int, 3>& triVertIndices)
+{
+  int nrows = m_triVertIndices.extent0();
+  m_triVertIndices.resize(nrows+1, 3);
+  int centerVertIdx = -1;
+  for (int i=0; i < 3; ++i)
+  {
+    m_triVertIndices(nrows, i) = triVertIndices[i];
+    if (triVertIndices[i] == 0)
+      centerVertIdx = i;
+  }
+
+  assert(centerVertIdx >= 0 && centerVertIdx < 3);
+  m_currentEntityIdx.push_back(centerVertIdx);
 }
 
 } // namespace impl

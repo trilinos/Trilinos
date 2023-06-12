@@ -1,12 +1,12 @@
 #ifndef POINT_CLASSIFIER_NORMAL_WRAPPER
 #define POINT_CLASSIFIER_NORMAL_WRAPPER
 
-#include "field.hpp"
-#include "mesh.hpp"
-#include "mesh_entity.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
 #include "point_classifier_normal_interpolation.hpp"
-#include "stk_middle_mesh/predicates/intersection_common.hpp"
-#include "stk_middle_mesh/predicates/quad_to_triangles.hpp"
+#include "intersection_common.hpp"
+#include "quad_to_triangles.hpp"
 #include "triangle_coord_utils.hpp"
 
 namespace stk {
@@ -42,12 +42,14 @@ class PointClassifierNormalWrapper
     PointRecord classify_reverse(mesh::MeshEntityPtr destFace, const utils::Point& pt, bool logicalResultOnly = false);
 
     // for a point classified on either a vertex, edge, or interior of an element,
-    // compute the XYZ coordinates of the intersection
-    utils::Point compute_xyz_coords(const PointRecord& record1);
+    // compute the XYZ coordinates of the intersection.
+    // Points classifies on the exterior are allowed if allowExterior=true
+    utils::Point compute_xyz_coords(const PointRecord& record1, bool allowExterior=false);
 
     // compute the parametric coordinates of the point on record1.el.  Point
-    // must be classifier on a vertex, edge, or interior of the element
-    utils::Point compute_xi_coords(const PointRecord& record1);
+    // must be classifier on a vertex, edge, or interior of the element.  Can
+    // be on the exterior if allowExterior=true
+    utils::Point compute_xi_coords(const PointRecord& record1, bool allowExterior=false);
 
     // For a point classified on an edge, computes the xi coordinate of the
     // point on that edge

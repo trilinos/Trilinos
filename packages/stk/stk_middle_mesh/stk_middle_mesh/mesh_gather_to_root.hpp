@@ -4,6 +4,7 @@
 #include "field.hpp"
 #include "mesh.hpp"
 #include "parallel_exchange.hpp"
+#include "utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -80,8 +81,6 @@ class MeshGatherToRoot
     void get_info(MeshEntityPtr el, int myrank, ElementInfo& elInfo);
 
     void unpack_info(utils::impl::ParallelExchange<ElementInfo>& exchanger);
-
-    int get_rank_on_input_comm(int splitCommRank);
 
     MPI_Comm m_inputComm;
     MPI_Comm m_comm;

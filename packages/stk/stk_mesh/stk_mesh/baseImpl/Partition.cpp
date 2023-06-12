@@ -44,6 +44,7 @@
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -76,7 +77,7 @@ Partition::~Partition()
 
 bool Partition::remove(Entity entity)
 {
-  ThrowAssert(belongs(m_mesh.bucket(entity)));
+  STK_ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket &bucket   = m_mesh.bucket(entity);
   unsigned ordinal = m_mesh.bucket_ordinal(entity);
@@ -109,7 +110,7 @@ bool Partition::add(Entity entity)
 
 bool Partition::move_to(Entity entity, Partition &dst_partition)
 {
-  ThrowAssert(belongs(m_mesh.bucket(entity)));
+  STK_ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket *src_bucket   = m_mesh.bucket_ptr(entity);
   unsigned src_ordinal = m_mesh.bucket_ordinal(entity);
@@ -118,7 +119,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
     return false;
   }
 
-  ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
+  STK_ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                   "Partition::move_to cannot move an entity that does not belong to it.");
 
   // If the last bucket is full, automatically create a new one.
@@ -139,7 +140,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
       throw std::runtime_error(os.str());
   }
 
-  ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
+  STK_ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
                   "Error: cannot change topology of entity (rank: "
                   << static_cast<stk::topology::rank_t>(m_mesh.entity_rank(entity))
                   << ", global_id: " << m_mesh.identifier(entity) << ") from "
@@ -206,7 +207,7 @@ void Partition::add_bucket(Bucket* bucket)
 
 void Partition::remove_impl()
 {
-  ThrowAssert(!empty());
+  STK_ThrowAssert(!empty());
 
   Bucket &last_bucket   = **(end() - 1);
 
@@ -286,7 +287,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   {
     // If we need a temporary bucket, it only needs to hold one entity and
     // the corresponding field data.
-    tmp_bucket = m_repository->allocate_bucket(m_rank, partition_key, 1 /* capacity */);
+    tmp_bucket = m_repository->allocate_bucket(m_rank, partition_key, 1, 1);
     vacancy_bucket = tmp_bucket;
     vacancy_ordinal = 0;
   }
@@ -321,10 +322,10 @@ void Partition::sort(const EntitySorterBase& sorter)
       const unsigned n = *bucket_itr == orig_vacancy_bucket ? curr_bucket.size() -1 : curr_bucket.size(); // skip very last entity in partition
 
       for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr ) {
-          ThrowAssert(sorted_ent_vector_itr != entities.end());
+          STK_ThrowAssert(sorted_ent_vector_itr != entities.end());
 
           Entity curr_entity = curr_bucket[curr_bucket_ord];
-          ThrowAssert(m_mesh.is_valid(curr_entity));
+          STK_ThrowAssert(m_mesh.is_valid(curr_entity));
 
           if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
           {
@@ -352,17 +353,21 @@ void Partition::sort(const EntitySorterBase& sorter)
     m_repository->deallocate_bucket(tmp_bucket);
   }
 
+  if (not m_buckets.empty()) {
+    m_buckets.back()->reset_empty_space(reduced_fields);
+  }
+
   internal_check_invariants();
 }
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
-  if (no_buckets())
-  {
+  if (no_buckets()) {
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->get_bucket_capacity());
+                                                   m_repository->get_initial_bucket_capacity(),
+                                                   m_repository->get_maximum_bucket_capacity());
     bucket->m_partition = this;
     m_buckets.push_back(bucket);
 
@@ -371,14 +376,19 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
 
   Bucket *bucket = *(end() - 1);  // Last bucket of the partition.
 
-  if (bucket->size() == bucket->capacity())
-  {
-    std::vector<unsigned> partition_key = get_legacy_partition_id();
-    partition_key[ partition_key[0] ] = m_buckets.size();
-    bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                           m_repository->get_bucket_capacity());
-    bucket->m_partition = this;
-    m_buckets.push_back(bucket);
+  if (bucket->size() == bucket->capacity()) {
+    if (bucket->size() == m_repository->get_maximum_bucket_capacity()) {
+      std::vector<unsigned> partition_key = get_legacy_partition_id();
+      partition_key[ partition_key[0] ] = m_buckets.size();
+      bucket = m_repository->allocate_bucket(m_rank, partition_key,
+                                             m_repository->get_initial_bucket_capacity(),
+                                             m_repository->get_maximum_bucket_capacity());
+      bucket->m_partition = this;
+      m_buckets.push_back(bucket);
+    }
+    else {
+      bucket->grow_capacity();
+    }
   }
 
   return bucket;

@@ -49,7 +49,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA)
 #error "Muemex requires MATLAB, Epetra and Tpetra."
 #else
 
@@ -108,7 +108,7 @@ enum MuemexType
 #endif
 };
 
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
 typedef typename Tpetra::Map<>::local_ordinal_type mm_LocalOrd;  //these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
 typedef typename Tpetra::Map<>::global_ordinal_type mm_GlobalOrd;
 typedef std::complex<double> complex_t;

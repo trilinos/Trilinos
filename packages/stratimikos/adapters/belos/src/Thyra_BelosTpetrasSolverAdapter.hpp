@@ -115,7 +115,7 @@ namespace Thyra {
         problem_->setProblem();
     }
 
-    typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const {
+    typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const override {
       return tpetra_solver->achievedTol();
     }
 

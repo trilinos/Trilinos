@@ -66,6 +66,7 @@ void test_rocsparse_safe_call() {
 void test_rocsparse_singleton() {
   KokkosKernels::Impl::RocsparseSingleton& s =
       KokkosKernels::Impl::RocsparseSingleton::singleton();
+  (void)s;
 }
 
 TEST_F(TestCategory, sparse_rocsparse_version) { test_rocsparse_version(); }

@@ -54,13 +54,14 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
   namespace Impl {                                                                                                                                                       
-                                                                                                                                                                         
+
+    template<bool serendipity>                                                                                                                                                          
     template<EOperator opType>                                                                                                                                           
     template<typename OutputViewType,                                                                                                                                    
              typename inputViewType>                                                                                                                                     
     KOKKOS_INLINE_FUNCTION                                                                                                                                               
     void                                                                                                                                                                 
-    Basis_HGRAD_QUAD_C2_FEM::Serial<opType>::                                                                                                                             
+    Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<opType>::                                                                                                                             
     getValues(       OutputViewType output,                                                                                                                              
                const inputViewType input ) {   
     switch (opType) {
@@ -78,8 +79,11 @@ namespace Intrepid2 {
       output.access(5) = x*(x + 1.0)*(1.0 - y)*(1.0 + y)/2.0;
       output.access(6) = (1.0 - x)*(1.0 + x)*y*(y + 1.0)/2.0;
       output.access(7) = x*(x - 1.0)*(1.0 - y)*(1.0 + y)/2.0;
+
       // quad bubble basis function
-      output.access(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
+      if constexpr (!serendipity) {
+        output.access(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
+      }
       break;
     }
     case OPERATOR_D1 :
@@ -112,8 +116,10 @@ namespace Intrepid2 {
       output.access(7, 0) = 0.5*(1.0 - y)*(1.0+ y)*(-1.0 + 2.0*x);
       output.access(7, 1) = (1.0 - x)*x*y;
  
-      output.access(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
-      output.access(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+      if constexpr (!serendipity) {
+        output.access(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
+        output.access(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;
+      }
       break;
     }
     case OPERATOR_CURL : {
@@ -145,9 +151,11 @@ namespace Intrepid2 {
       
       output.access(7, 1) =-0.5*(1.0 - y)*(1.0 + y)*(-1.0 + 2.0*x);
       output.access(7, 0) = (1.0 - x)*x*y;
-      
-      output.access(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
-      output.access(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+
+      if constexpr (!serendipity) {
+        output.access(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
+        output.access(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;
+      }          
       break;
     }
     case OPERATOR_D2 : {
@@ -186,9 +194,11 @@ namespace Intrepid2 {
       output.access(7, 1) = x*(0. - 2.*y) + 1.*y;
       output.access(7, 2) = (1.0 - x)*x;
 
-      output.access(8, 0) =-2.0 + 2.0*y*y;
-      output.access(8, 1) = 4*x*y;
-      output.access(8, 2) =-2.0 + 2.0*x*x;
+      if constexpr (!serendipity) {
+        output.access(8, 0) =-2.0 + 2.0*y*y;
+        output.access(8, 1) = 4*x*y;
+        output.access(8, 2) =-2.0 + 2.0*x*x;
+      }
       break;
     }
     case OPERATOR_D3 : {
@@ -234,10 +244,12 @@ namespace Intrepid2 {
       output.access(7, 2) = 1.0 - 2.0*x;
       output.access(7, 3) = 0.0;        
       
-      output.access(8, 0) = 0.0;
-      output.access(8, 1) = 4.0*y;
-      output.access(8, 2) = 4.0*x;
-      output.access(8, 3) = 0.0;                
+      if constexpr (!serendipity) {
+        output.access(8, 0) = 0.0;
+        output.access(8, 1) = 4.0*y;
+        output.access(8, 2) = 4.0*x;
+        output.access(8, 3) = 0.0;
+      }              
       break;
     }
     case OPERATOR_D4 : {
@@ -289,11 +301,13 @@ namespace Intrepid2 {
       output.access(7, 3) = 0.0;                
       output.access(7, 4) = 0.0;                
       
-      output.access(8, 0) = 0.0;
-      output.access(8, 1) = 0.0;
-      output.access(8, 2) = 4.0;
-      output.access(8, 3) = 0.0;                
-      output.access(8, 4) = 0.0;                
+      if constexpr (!serendipity) {
+        output.access(8, 0) = 0.0;
+        output.access(8, 1) = 0.0;
+        output.access(8, 2) = 4.0;
+        output.access(8, 3) = 0.0;                
+        output.access(8, 4) = 0.0;
+      }            
       break;
     }
     case OPERATOR_MAX : {
@@ -319,12 +333,13 @@ namespace Intrepid2 {
     }
     }
   }
-
+ 
+  template<bool serendipity>
   template<typename DT, 
   typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void 
-  Basis_HGRAD_QUAD_C2_FEM::
+  Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::
   getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const EOperator operatorType ) {
@@ -393,17 +408,14 @@ namespace Intrepid2 {
     }
   }
 
-
-
-
   }
   // -------------------------------------------------------------------------------------
 
 
-  template<typename DT, typename OT, typename PT>
-  Basis_HGRAD_QUAD_C2_FEM<DT,OT,PT>::
-  Basis_HGRAD_QUAD_C2_FEM() {
-    this->basisCardinality_  = 9;
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  Basis_HGRAD_QUAD_DEG2_FEM<serendipity, DT,OT,PT>::
+  Basis_HGRAD_QUAD_DEG2_FEM() {
+    this->basisCardinality_  = serendipity ? 8 : 9;
     this->basisDegree_       = 2;    
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
@@ -427,11 +439,11 @@ namespace Intrepid2 {
                                  1, 1, 0, 1,
                                  1, 2, 0, 1,
                                  1, 3, 0, 1,
-                                 // quad center
+                                 // quad center, not used for serendipity elements
                                  2, 0, 0, 1};
   
       //host view
-      OrdinalTypeArray1DHost tagView(&tags[0],36);
+      OrdinalTypeArray1DHost tagView(&tags[0], serendipity ? 32 : 36);
     
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -458,7 +470,9 @@ namespace Intrepid2 {
     dofCoords(6,0) =  0.0;   dofCoords(6,1) =  1.0;
     dofCoords(7,0) = -1.0;   dofCoords(7,1) =  0.0;
   
-    dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
+    if constexpr (!serendipity) {
+      dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
+    }
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);   

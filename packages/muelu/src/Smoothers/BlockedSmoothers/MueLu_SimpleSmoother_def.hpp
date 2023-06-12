@@ -65,12 +65,9 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_SubBlockAFactory.hpp"
 
 // include files for default FactoryManager
 #include "MueLu_SchurComplementFactory.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 namespace MueLu {

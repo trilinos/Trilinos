@@ -23,7 +23,7 @@ protected:
   {
     setup_mesh("generated:1x1x4|sideset:x", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().universal_part(), m_faces);
-    ThrowRequire(m_faces.size() > 0);
+    STK_ThrowRequire(m_faces.size() > 0);
   }
 
   void use_full_infile_output_dir_options()

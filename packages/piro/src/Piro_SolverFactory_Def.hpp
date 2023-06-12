@@ -51,11 +51,6 @@
 #include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* HAVE_PIRO_NOX */
 
-#ifdef HAVE_PIRO_RYTHMOS
-// point.
-#include "Piro_RythmosSolver.hpp"
-#endif /* HAVE_PIRO_RYTHMOS */
-
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"  
 #endif /*HAVE_PIRO_TEMPUS */
@@ -98,11 +93,6 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
       result = observedLocaSolver(piroParams, model, adjointModel, observer);
   } else
 #endif /* HAVE_PIRO_NOX */
-#ifdef HAVE_PIRO_RYTHMOS
-  if (solverType == "Rythmos") {
-    result = rythmosSolver<Scalar>(piroParams, model, observer);
-  } else
-#endif /* HAVE_PIRO_RYTHMOS */
 #ifdef HAVE_PIRO_TEMPUS
   if (solverType == "Tempus") {
     result = tempusSolver<Scalar>(piroParams, model, adjointModel, observer);
@@ -150,11 +140,6 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     result = observedLocaSolver(piroParams, model, adjointModel, observer);
   } else
 #endif /* HAVE_PIRO_NOX */
-#ifdef HAVE_PIRO_RYTHMOS
-  if (solverType == "Rythmos") {
-    result = rythmosSolver<Scalar>(piroParams, model, observer);
-  } else
-#endif /* HAVE_PIRO_RYTHMOS */
 #ifdef HAVE_PIRO_TEMPUS
   if (solverType == "Tempus") {
     result = tempusSolver<Scalar>(piroParams, model, adjointModel, observer);

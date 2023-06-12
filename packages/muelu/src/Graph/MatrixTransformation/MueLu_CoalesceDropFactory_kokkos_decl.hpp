@@ -48,13 +48,13 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Xpetra_Matrix_fwd.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
-#include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -131,13 +131,13 @@ namespace MueLu {
   class CoalesceDropFactory_kokkos;
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+  class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
   public:
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
     using execution_space     = typename DeviceType::execution_space;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
 
   private:
     // For compatibility

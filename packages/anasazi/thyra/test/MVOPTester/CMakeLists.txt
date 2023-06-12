@@ -1,6 +1,6 @@
 
 
-IF(Anasazi_ENABLE_Epetra)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MVOPTesterThyra_test
     SOURCES cxx_main.cpp

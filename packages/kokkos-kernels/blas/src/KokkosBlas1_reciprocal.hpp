@@ -25,8 +25,8 @@ namespace KokkosBlas {
 
 /// \brief R(i,j) = reciprocal(X(i,j))
 ///
-/// Replace each entry in R with the reciprocalolute value (magnitude) of the
-/// corresponding entry in X.
+/// Replace each entry in R with the absolute value (magnitude), of the
+/// reciprocal of the corresponding entry in X.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have

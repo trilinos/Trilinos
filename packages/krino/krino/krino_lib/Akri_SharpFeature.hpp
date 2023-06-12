@@ -15,7 +15,7 @@ class SharpFeatureConstraint
 public:
   bool is_pinned() const { return myConstrainedEdgeNeighbors[0] == invalid_entity() && myConstrainedEdgeNeighbors[1] == invalid_entity(); }
   bool is_constrained_on_edge() const { return myConstrainedEdgeNeighbors[0] != invalid_entity() && myConstrainedEdgeNeighbors[1] != invalid_entity(); }
-  const std::array<stk::mesh::Entity,2> & get_sharp_edge_nodes() const { ThrowAssert(is_constrained_on_edge()); return myConstrainedEdgeNeighbors; }
+  const std::array<stk::mesh::Entity,2> & get_sharp_edge_nodes() const { STK_ThrowAssert(is_constrained_on_edge()); return myConstrainedEdgeNeighbors; }
   static SharpFeatureConstraint edge_constraint(const stk::mesh::Entity entity0, const stk::mesh::Entity entity1) { return SharpFeatureConstraint{entity0, entity1}; }
   static SharpFeatureConstraint pinned_constraint() { return SharpFeatureConstraint(invalid_entity(),invalid_entity()); }
 private:

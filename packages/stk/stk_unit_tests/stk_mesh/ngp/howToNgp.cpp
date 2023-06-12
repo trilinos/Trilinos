@@ -128,10 +128,10 @@ void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldTy
                            stk::mesh::Entity elem = bucket[i];
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
                            if (bucket.member(partThatHasField)) {
-                             NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) > 0);
+                             STK_NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) > 0);
                            }
                            if (bucket.member(partThatDoesntHaveField)) {
-                             NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) == 0);
+                             STK_NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) == 0);
                            }
                          });
                        });
@@ -221,16 +221,16 @@ void run_connected_node_test(const stk::mesh::BulkData& bulk)
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
                            stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
                            stk::topology bucketTopo = bucket.topology();
-                           NGP_ThrowRequire(elemTopo == bucketTopo);
-                           NGP_ThrowRequire(nodes.size() == bucketTopo.num_nodes());
-                           NGP_ThrowRequire(node0 == nodes[0]);
-                           NGP_ThrowRequire(node7 == nodes[7]);
+                           STK_NGP_ThrowRequire(elemTopo == bucketTopo);
+                           STK_NGP_ThrowRequire(nodes.size() == bucketTopo.num_nodes());
+                           STK_NGP_ThrowRequire(node0 == nodes[0]);
+                           STK_NGP_ThrowRequire(node7 == nodes[7]);
 
                            stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[0]);
                            stk::mesh::NgpMesh::ConnectedEntities node0_elems = ngpMesh.get_elements(stk::topology::NODE_RANK,
                            nodeIndex);
-                           NGP_ThrowRequire(1 == node0_elems.size());
-                           NGP_ThrowRequire(node0_elems[0] == elem);
+                           STK_NGP_ThrowRequire(1 == node0_elems.size());
+                           STK_NGP_ThrowRequire(node0_elems[0] == elem);
                          });
                        });
 }
@@ -255,7 +255,7 @@ TEST_F(NgpHowTo, loopOverElemNodes_bucketCapacity)
     return;
   }
   const unsigned bucketCapacity = 8;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
@@ -345,23 +345,23 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
                            stk::mesh::NgpMesh::ConnectedEntities faces = ngpMesh.get_faces(stk::topology::ELEM_RANK, elemIndex);
                            stk::topology bucketTopo = bucket.topology();
-                           NGP_ThrowRequire(elemTopo == bucketTopo);
-                           NGP_ThrowRequire(faces.size() == bucketTopo.num_faces());
-                           NGP_ThrowRequire(face0 == faces[0]);
-                           NGP_ThrowRequire(face1 == faces[1]);
-                           NGP_ThrowRequire(face2 == faces[2]);
-                           NGP_ThrowRequire(face3 == faces[3]);
-                           NGP_ThrowRequire(face4 == faces[4]);
-                           NGP_ThrowRequire(face5 == faces[5]);
+                           STK_NGP_ThrowRequire(elemTopo == bucketTopo);
+                           STK_NGP_ThrowRequire(faces.size() == bucketTopo.num_faces());
+                           STK_NGP_ThrowRequire(face0 == faces[0]);
+                           STK_NGP_ThrowRequire(face1 == faces[1]);
+                           STK_NGP_ThrowRequire(face2 == faces[2]);
+                           STK_NGP_ThrowRequire(face3 == faces[3]);
+                           STK_NGP_ThrowRequire(face4 == faces[4]);
+                           STK_NGP_ThrowRequire(face5 == faces[5]);
 
                            stk::mesh::NgpMesh::ConnectedEntities edges = ngpMesh.get_edges(stk::topology::ELEM_RANK, elemIndex);
-                           NGP_ThrowRequire(0 == edges.size());
+                           STK_NGP_ThrowRequire(0 == edges.size());
 
                            stk::mesh::FastMeshIndex faceIndex = ngpMesh.fast_mesh_index(faces[0]);
                            stk::mesh::NgpMesh::ConnectedEntities face0_elems = ngpMesh.get_elements(stk::topology::FACE_RANK,
                            faceIndex);
-                           NGP_ThrowRequire(1 == face0_elems.size());
-                           NGP_ThrowRequire(face0_elems[0] == elem);
+                           STK_NGP_ThrowRequire(1 == face0_elems.size());
+                           STK_NGP_ThrowRequire(face0_elems[0] == elem);
                          });
                        });
 }
@@ -485,24 +485,24 @@ void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
                            stk::mesh::NgpMesh::ConnectedOrdinals ordinals = ngpMesh.get_face_ordinals(stk::topology::ELEM_RANK,
                            elemIndex);
                            stk::topology bucketTopo = bucket.topology();
-                           NGP_ThrowRequire(elemTopo == bucketTopo);
-                           NGP_ThrowRequire(ordinals.size() == bucketTopo.num_faces());
-                           NGP_ThrowRequire(ordinal0 == ordinals[0]);
-                           NGP_ThrowRequire(ordinal1 == ordinals[1]);
-                           NGP_ThrowRequire(ordinal2 == ordinals[2]);
-                           NGP_ThrowRequire(ordinal3 == ordinals[3]);
-                           NGP_ThrowRequire(ordinal4 == ordinals[4]);
-                           NGP_ThrowRequire(ordinal5 == ordinals[5]);
+                           STK_NGP_ThrowRequire(elemTopo == bucketTopo);
+                           STK_NGP_ThrowRequire(ordinals.size() == bucketTopo.num_faces());
+                           STK_NGP_ThrowRequire(ordinal0 == ordinals[0]);
+                           STK_NGP_ThrowRequire(ordinal1 == ordinals[1]);
+                           STK_NGP_ThrowRequire(ordinal2 == ordinals[2]);
+                           STK_NGP_ThrowRequire(ordinal3 == ordinals[3]);
+                           STK_NGP_ThrowRequire(ordinal4 == ordinals[4]);
+                           STK_NGP_ThrowRequire(ordinal5 == ordinals[5]);
 
                            stk::mesh::NgpMesh::ConnectedOrdinals edgeOrdinals = ngpMesh.get_edge_ordinals(stk::topology::ELEM_RANK,
                            elemIndex);
-                           NGP_ThrowRequire(0 == edgeOrdinals.size());
+                           STK_NGP_ThrowRequire(0 == edgeOrdinals.size());
 
                            stk::mesh::Entity face = ngpMesh.get_faces(stk::topology::ELEM_RANK, elemIndex)[0];
                            stk::mesh::FastMeshIndex faceIndex = ngpMesh.fast_mesh_index(face);
                            stk::mesh::NgpMesh::ConnectedOrdinals face0_elemOrdinals = ngpMesh.get_element_ordinals(stk::topology::FACE_RANK, faceIndex);
-                           NGP_ThrowRequire(1 == face0_elemOrdinals.size());
-                           NGP_ThrowRequire(face0_elemOrdinals[0] == ordinal0);
+                           STK_NGP_ThrowRequire(1 == face0_elemOrdinals.size());
+                           STK_NGP_ThrowRequire(face0_elemOrdinals[0] == ordinal0);
                          });
                        });
 }
@@ -564,22 +564,22 @@ void run_connected_face_permutation_test(const stk::mesh::BulkData& bulk)
                            stk::mesh::NgpMesh::Permutations facePermutations = ngpMesh.get_face_permutations(stk::topology::ELEM_RANK, elemIndex);
                            stk::mesh::NgpMesh::Permutations edgePermutations = ngpMesh.get_edge_permutations(stk::topology::ELEM_RANK, elemIndex);
                            stk::topology bucketTopo = bucket.topology();
-                           NGP_ThrowRequire(elemTopo == bucketTopo);
-                           NGP_ThrowRequire(facePermutations.size() == bucketTopo.num_faces());
-                           NGP_ThrowRequire(edgePermutations.size() == bucketTopo.num_edges());
+                           STK_NGP_ThrowRequire(elemTopo == bucketTopo);
+                           STK_NGP_ThrowRequire(facePermutations.size() == bucketTopo.num_faces());
+                           STK_NGP_ThrowRequire(edgePermutations.size() == bucketTopo.num_edges());
 
                            for(unsigned j=0; j<numFacesPerHex; ++j) {
-                             NGP_ThrowRequire(p.elemFacePermutations[i][j] == facePermutations[j]);
+                             STK_NGP_ThrowRequire(p.elemFacePermutations[i][j] == facePermutations[j]);
                            }
                            for(unsigned j=0; j<numEdgesPerHex; ++j) {
-                             NGP_ThrowRequire(p.elemEdgePermutations[i][j] == edgePermutations[j]);
+                             STK_NGP_ThrowRequire(p.elemEdgePermutations[i][j] == edgePermutations[j]);
                            }
                            if (i == 0) {
                              stk::mesh::Entity face = ngpMesh.get_faces(stk::topology::ELEM_RANK, elemIndex)[0];
                              stk::mesh::FastMeshIndex faceIndex = ngpMesh.fast_mesh_index(face);
                              stk::mesh::NgpMesh::Permutations face0_elemPermutations = ngpMesh.get_element_permutations(stk::topology::FACE_RANK, faceIndex);
-                             NGP_ThrowRequire(1 == face0_elemPermutations.size());
-                             NGP_ThrowRequire(face0_elemPermutations[0] == p.elemFacePermutations[0][0]);
+                             STK_NGP_ThrowRequire(1 == face0_elemPermutations.size());
+                             STK_NGP_ThrowRequire(face0_elemPermutations[0] == p.elemFacePermutations[0][0]);
                            }
                          });
                        });
@@ -635,7 +635,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
                            stk::mesh::NgpMesh::ConnectedEntities faces = ngpMesh.get_faces(stk::topology::ELEM_RANK, elemIndex);
                            stk::topology bucketTopo = bucket.topology();
-                           NGP_ThrowRequire(elemTopo == bucketTopo);
+                           STK_NGP_ThrowRequire(elemTopo == bucketTopo);
                            int numFaces = faces.size();
                            stk::mesh::atomic_add(&resultDevice(ELEM_FACE_CHECK), numFaces);
 
@@ -647,7 +647,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
                              unsigned faceOrdinal = 0; //when we add ordinals we can fix this. But for a hex all faces have the same topology anyway...
                              stk::topology faceTopo = elemTopo.face_topology(faceOrdinal);
 
-                             NGP_ThrowRequire(faceNodes.size() == faceTopo.num_nodes());
+                             STK_NGP_ThrowRequire(faceNodes.size() == faceTopo.num_nodes());
                              stk::mesh::atomic_add(&resultDevice(FACE_NODE_CHECK), 1);
                            }
 
@@ -1252,9 +1252,9 @@ void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOr
                              const stk::mesh::NgpMesh::BucketType& nodeBucket =
                              ngpMesh.get_bucket(stk::topology::NODE_RANK, meshIndex.bucket_id);
                              if (ngpMesh.identifier(node) == 1 || ngpMesh.identifier(node) == 2) {
-                               NGP_ThrowRequire(nodeBucket.member(partOrdinal) == true);
+                               STK_NGP_ThrowRequire(nodeBucket.member(partOrdinal) == true);
                              } else {
-                               NGP_ThrowRequire(nodeBucket.member(partOrdinal) == false);
+                               STK_NGP_ThrowRequire(nodeBucket.member(partOrdinal) == false);
                              }
                            }
                          });

@@ -31,7 +31,7 @@ Facet::unpack_from_buffer( stk::CommBuffer & b )
     default: ThrowRuntimeError("Unrecognized facet dimension.");
   }
 
-  ThrowRequire(facet);
+  STK_ThrowRequire(facet);
   return facet;
 }
 

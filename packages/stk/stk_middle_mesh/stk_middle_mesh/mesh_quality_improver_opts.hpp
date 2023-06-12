@@ -22,6 +22,8 @@ struct MeshQualityImproverOpts
 
     double delta = 1e-3; // parameter for the mesh quality objective.  Smaller values prioritize
                          // fixing invalid elements over improving the average quality
+
+    bool verboseOutput = false;
 };
 
 } // namespace middle_mesh

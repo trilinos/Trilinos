@@ -51,7 +51,7 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseSolver.hpp>
 
-#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsGraph_fwd.hpp"
 
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Level_fwd.hpp"

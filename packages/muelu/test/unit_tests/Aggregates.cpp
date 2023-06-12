@@ -51,7 +51,7 @@
 
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_StructuredAggregationFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_HybridAggregationFactory.hpp>
@@ -133,39 +133,6 @@ public:
       return aggregates;
     }  // gimmeUncoupledAggregates
 
-    // Little utility to generate coupled aggregates.
-    static RCP<Aggregates>
-    gimmeCoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo)
-    //  RCP<Aggregates> gimmeCoupledAggregates(const RCP<xpetra_matrix_type> & A, RCP<AmalgamationInfo> & amalgInfo)
-    {
-      Level level;
-      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      amalgFact->SetDefaultVerbLevel(MueLu::None);
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-
-      // Setup aggregation factory (use default factory for graph)
-      RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
-      aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetMinNodesPerAggregate(3);
-      aggFact->SetMaxNeighAlreadySelected(0);
-      aggFact->SetOrdering("natural");
-      aggFact->SetPhase3AggCreation(0.5);
-
-      level.Request("Aggregates", aggFact.get());
-      level.Request("UnAmalgamationInfo", amalgFact.get());
-
-      level.Request(*aggFact);
-      aggFact->Build(level);
-      RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get()); // fix me
-      amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
-      level.Release("UnAmalgamationInfo", amalgFact.get());
-      level.Release("Aggregates", aggFact.get());
-      return aggregates;
-    }  // gimmeCoupledAggregates
 
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
@@ -312,9 +279,9 @@ public:
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeCoupledAggregates(A, amalgInfo);
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
     TEST_EQUALITY(aggregates != Teuchos::null, true);
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),true);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -329,11 +296,11 @@ public:
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeCoupledAggregates(A, amalgInfo);
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
     GO numAggs = aggregates->GetNumAggregates();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),true);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
     ArrayRCP<LO> aggStart;
@@ -971,14 +938,18 @@ public:
     level.Request(*aggFact);
     aggFact->Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
-    Array< LO > aggPtr;
-    Array< LO > aggNodes;
-    Array< LO > unaggregated;
+    typename Aggregates::LO_view aggPtr;
+    typename Aggregates::LO_view aggNodes;
+    typename Aggregates::LO_view unaggregated;
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+
+    typename Aggregates::LO_view::HostMirror unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+
     //     Test to check that the dirichlet node is aggregated:
-    for( int i = 0; i < unaggregated.size(); i++){
-      TEST_EQUALITY( unaggregated[i] == 2, false);
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++){
+      TEST_EQUALITY( unaggregated_h(i) == 2, false);
     }
     // Repeat with greedy Dirichlet
     Level levelGreedyAndNoPreserve;
@@ -1002,7 +973,23 @@ public:
     aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    TEST_EQUALITY(unaggregated[0],2);// check that the node with the Dof flagged as dirichlet is unaggregated
+    unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+
+    // GH: loop over the unaggregated list and add to the counter each time node 2 appears
+    int unaggregated_count_node2 = 0;
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++)
+      if(unaggregated_h(i) == (LO)2)
+        unaggregated_count_node2++;
+
+    TEST_EQUALITY(unaggregated_count_node2,1);// check that the node with the Dof flagged as dirichlet appears in the list once
+
+    // GH: print this to out since the test can be sensitive to ordering issues
+    out << "unaggregated_h = [";
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0)-1; i++){
+      out << unaggregated_h(i) << ", ";
+    }
+    out << unaggregated_h(unaggregated_h.extent(0)-1) << "]\n";
 
     // Repeat with greedy Dirichlet and preserve Dirichlet points
     Level levelGreedyAndPreserve;
@@ -1027,8 +1014,10 @@ public:
     aggregates = levelGreedyAndPreserve.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    for( int i = 0; i < unaggregated.size(); i++){
-      TEST_EQUALITY( unaggregated[i] == 2, false);
+    unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+    Kokkos::deep_copy(unaggregated_h, unaggregated);
+    for( LO i = 0; i < (LO)unaggregated_h.extent(0); i++){
+      TEST_EQUALITY( unaggregated_h(i) == 2, false);
     }
   }
 

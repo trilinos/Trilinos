@@ -56,7 +56,8 @@ class ElemElemGraphUpdater : public stk::mesh::ModificationObserver
 {
 public:
     ElemElemGraphUpdater(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_)
-    : bulkData(bulk), elemGraph(elemGraph_), changeEntityOwnerInProgress(false)
+    : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_HIGH_PRIORITY),
+      bulkData(bulk), elemGraph(elemGraph_), changeEntityOwnerInProgress(false)
     {
     }
 

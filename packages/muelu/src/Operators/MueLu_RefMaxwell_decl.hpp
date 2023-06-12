@@ -49,7 +49,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
@@ -59,8 +58,14 @@
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+#include "MueLu_MasterList.hpp"
+#include "MueLu_FactoryManager.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_SmootherPrototype_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
@@ -75,8 +80,8 @@
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
-#include "MueLu_XpetraOperator.hpp"
 
+#include "Xpetra_Operator.hpp"
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"

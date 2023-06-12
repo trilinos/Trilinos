@@ -53,9 +53,7 @@
 
 #include "MueLu_TransPFactory_decl.hpp"
 
-#include "MueLu_DisableMultipleCallCheck.hpp"
 
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"

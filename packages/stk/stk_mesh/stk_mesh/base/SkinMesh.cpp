@@ -265,7 +265,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       Permutation permut =
               mesh.find_permutation(element_topology, elem_nodes,
                                     side_topology, ordered_side_nodes.data(), side_ordinal);
-      ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
+      STK_ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
 
       mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);
     // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
@@ -298,7 +298,7 @@ void skin_mesh( BulkData & mesh, PartVector const& skin_parts)
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts,
                 const Selector * secondary_selector)
 {
-  ThrowErrorMsgIf( mesh.in_modifiable_state(), "mesh is not SYNCHRONIZED" );
+  STK_ThrowErrorMsgIf( mesh.in_modifiable_state(), "mesh is not SYNCHRONIZED" );
 
   const Part & locally_owned = mesh.mesh_meta_data().locally_owned_part();
   const EntityRank side_rank = mesh.mesh_meta_data().side_rank();

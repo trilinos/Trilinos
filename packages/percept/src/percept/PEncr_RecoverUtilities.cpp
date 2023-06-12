@@ -46,13 +46,13 @@
       //const P_uint length = field.field()->length();
       const P_uint length = field.max_size();
 
-      ThrowAssert(values.size()==nNodes*length);
+      STK_ThrowAssert(values.size()==nNodes*length);
 
       for (P_uint n=0; n<nNodes; n++)
         {
           const P_Real * data = m_eMesh.field_data(&field, nodes[n]);
           //double * PerceptMesh::field_data(const stk::mesh::FieldBase *field, const stk::mesh::Entity entity, unsigned *stride)
-          ThrowAssert(data);
+          STK_ThrowAssert(data);
 
           for (P_uint i=0; i<length; i++)
             values[n*length+i] = data[i];
@@ -292,7 +292,7 @@
     P_uint RecoverUtilities::simplexPolynomialBasisSize(const P_uint spatial_dim,
                                                         const P_uint polyDegree)
     {
-      ThrowAssert(polyDegree>0 && (spatial_dim==2 || spatial_dim==3));
+      STK_ThrowAssert(polyDegree>0 && (spatial_dim==2 || spatial_dim==3));
 
       return (spatial_dim==2) ? ( (polyDegree+1)*(polyDegree+2) )/2
         : ( (polyDegree+1)*(polyDegree+2)*(polyDegree+3) )/6;
@@ -374,8 +374,8 @@
       static std::vector<P_int>  my_iwork;
       static std::vector<double> my_work(1);
 
-      ThrowRequire(sample_dim>=1);
-      ThrowRequire(nSamplePts>=1);
+      STK_ThrowRequire(sample_dim>=1);
+      STK_ThrowRequire(nSamplePts>=1);
 
       const P_int NRHS = sample_dim;
       const P_int M = nSamplePts;

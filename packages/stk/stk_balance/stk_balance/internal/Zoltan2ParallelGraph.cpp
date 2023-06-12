@@ -44,7 +44,7 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
     const double weightMultiplier = blockWeightMultiplier.second;
 
     const stk::mesh::Part * block = stkMeshBulkData.mesh_meta_data().get_part(blockName);
-    ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockName + "'");
+    STK_ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockName + "'");
 
     const stk::mesh::BucketVector & buckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK,
                                                                           *block & selector & locallyOwnedPart);
@@ -194,7 +194,7 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
     int index = mOffsets[localId] + offset;
 
     if (usingColoring) {
-      ThrowRequireMsg(graphEdges[i].vertex2_id() < numElements, "Adding invalid element to ZoltanII graph");
+      STK_ThrowRequireMsg(graphEdges[i].vertex2_id() < numElements, "Adding invalid element to ZoltanII graph");
     }
     mAdjacency[index] = graphEdges[i].vertex2_id();
     adjacencyProcs[index] = graphEdges[i].vertex2_owning_proc();
@@ -326,7 +326,7 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
             mVertexWeights[local_id] = 0; //real field weights set in adjust_vertex_weights
           }
           else {
-            ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
+            STK_ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
           }
 
           stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);

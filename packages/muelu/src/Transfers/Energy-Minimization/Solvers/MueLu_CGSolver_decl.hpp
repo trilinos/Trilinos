@@ -47,7 +47,6 @@
 #define MUELU_CGSOLVER_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrixFactory_fwd.hpp>
 

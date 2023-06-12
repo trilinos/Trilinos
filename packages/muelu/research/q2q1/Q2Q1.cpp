@@ -53,11 +53,9 @@
 
 #include "MueLu.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#endif
 
 #ifdef HAVE_MUELU_STRATIMIKOS
 #include <Stratimikos_LinearSolverBuilder.hpp>
@@ -77,7 +75,6 @@
 
 #include <Thyra_DefaultPreconditioner.hpp>
 #include <Thyra_DefaultScaledAdjointLinearOp.hpp>
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveFactoryBase.hpp>
@@ -324,7 +321,6 @@ int main(int argc, char *argv[]) {
 
     // Stratimikos vodou
     typedef Thyra::PreconditionerFactoryBase<SC>             Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<tCrsMatrix > Impl;
     typedef Thyra::LinearOpWithSolveFactoryBase<SC>          LOWSFB;
     typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
     typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;

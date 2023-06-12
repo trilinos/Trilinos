@@ -90,12 +90,12 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(10.0),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
-    auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     std::cout << "p=" << rank << " | aggregate sizes="
               << sizes.view(0, sizes.size()) << std::endl;
 
 #if 0
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
     printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
@@ -171,8 +171,7 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
-    auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
@@ -195,6 +194,7 @@ namespace MueLuTests {
     }
 
 #if 0
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
     printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
@@ -253,8 +253,8 @@ namespace MueLuTests {
 
     out << "numDirichletNodes=" << numDirichletNodes << std::endl;
 
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
@@ -308,8 +308,8 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
@@ -376,7 +376,7 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
@@ -410,7 +410,7 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
@@ -444,7 +444,7 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }

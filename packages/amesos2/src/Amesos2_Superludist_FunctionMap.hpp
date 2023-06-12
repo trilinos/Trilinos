@@ -525,6 +525,12 @@ namespace Amesos2 {
     {
       SLUD::D::dSolveFinalize(options, solve_struct);
     }
+
+    static int ldperm_dist(int job, int n, SLUD::int_t nnz, SLUD::int_t colptr[], SLUD::int_t adjncy[],
+            double nzval[], SLUD::int_t *perm, double u[], double v[])
+    {
+      return SLUD::D::dldperm_dist(job, n, nnz, colptr, adjncy, nzval, perm, u, v);
+    }
   };
 
 
@@ -568,6 +574,7 @@ namespace Amesos2 {
 		      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
 		      SLUD::int_t ldb, int nrhs,
 		      type_map::SOLVEstruct_t* solve_struct,
+		      SLUD::SuperLUStat_t* stat, int* info)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
@@ -785,6 +792,12 @@ namespace Amesos2 {
 			      type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveFinalize(options, solve_struct);
+    }
+
+    static int ldperm_dist(int job, int n, SLUD::int_t nnz, SLUD::int_t colptr[], SLUD::int_t adjncy[],
+            SLUD::Z::doublecomplex nzval[], SLUD::int_t *perm, double u[], double v[])
+    {
+      return SLUD::Z::zldperm_dist(job, n, nnz, colptr, adjncy, nzval, perm, u, v);
     }
   };
 #endif	// HAVE_TEUCHOS_COMPLEX

@@ -294,7 +294,7 @@ public:
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
-    auto io_region = ioBroker.get_input_io_region();
+    auto io_region = ioBroker.get_input_ioss_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
@@ -407,7 +407,8 @@ public:
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     builder.set_aura_option(aura);
     builder.set_upward_connectivity(m_upwardConnectivity);
-    builder.set_bucket_capacity(m_bucketCapacity);
+    builder.set_initial_bucket_capacity(m_initialBucketCapacity);
+    builder.set_maximum_bucket_capacity(m_maximumBucketCapacity);
     stk::log_with_time_and_memory(m_comm, "Creating MetaData/BulkData objects");
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
 
@@ -479,7 +480,8 @@ public:
   void set_add_faces(bool trueOrFalse) { m_addFaces = trueOrFalse; }
   void set_upward_connectivity(bool trueOrFalse) { m_upwardConnectivity = trueOrFalse; }
   void set_aura_option(bool trueOrFalse) { m_auraOption = trueOrFalse; }
-  void set_bucket_capacity(int bktCap) { m_bucketCapacity = bktCap; }
+  void set_initial_bucket_capacity(int initialCapacity) { m_initialBucketCapacity = initialCapacity; }
+  void set_maximum_bucket_capacity(int maximumCapacity) { m_maximumBucketCapacity = maximumCapacity; }
 
 private:
   MPI_Comm m_comm;
@@ -488,7 +490,8 @@ private:
   bool m_addFaces;
   bool m_upwardConnectivity;
   bool m_auraOption;
-  int m_bucketCapacity;
+  int m_initialBucketCapacity;
+  int m_maximumBucketCapacity;
   std::vector<double> m_baselineBuffer;
 };
 
@@ -510,7 +513,8 @@ int main(int argc, const char** argv)
   bool auraOption = false;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
-  int bucketCapacity = 512;
+  int initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity();
+  int maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity();
 
   MPI_Comm comm = stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
   int myRank = stk::parallel_machine_rank(comm);
@@ -534,7 +538,8 @@ int main(int argc, const char** argv)
   cmdLine.add_optional<std::string>({"heartbeat_format", "h", "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]"}, "none");
   cmdLine.add_optional<int>({"interpolate", "i", "number of intervals to divide each input time step into"}, 0);
   cmdLine.add_optional<int>({"integer_size", "I", "use 4 or 8-byte integers for input and output"}, 4);
-  cmdLine.add_optional<int>({"bucket_capacity", "b", "bucket capacity"}, 512);
+  cmdLine.add_optional<int>({"initial_bucket_capacity", "b", "initial bucket capacity"}, stk::mesh::get_default_initial_bucket_capacity());
+  cmdLine.add_optional<int>({"maximum_bucket_capacity", "B", "maximum bucket capacity"}, stk::mesh::get_default_maximum_bucket_capacity());
 
   stk::CommandLineParser::ParseState parseState = cmdLine.parse(argc, argv);
 
@@ -615,8 +620,11 @@ int main(int argc, const char** argv)
   if (cmdLine.is_option_provided("integer_size")) {
     integer_size = cmdLine.get_option_value<int>("integer_size");
   }
-  if (cmdLine.is_option_provided("bucket_capacity")) {
-    bucketCapacity = cmdLine.get_option_value<int>("bucket_capacity");
+  if (cmdLine.is_option_provided("initial_bucket_capacity")) {
+    initialBucketCapacity = cmdLine.get_option_value<int>("initial_bucket_capacity");
+  }
+  if (cmdLine.is_option_provided("maximum_bucket_capacity")) {
+    maximumBucketCapacity = cmdLine.get_option_value<int>("maximum_bucket_capacity");
   }
 
   mesh = cmdLine.get_option_value<std::string>("mesh");
@@ -665,7 +673,8 @@ int main(int argc, const char** argv)
   ioMeshDriver.set_add_faces(addFaces);
   ioMeshDriver.set_upward_connectivity(upwardConnectivity);
   ioMeshDriver.set_aura_option(auraOption);
-  ioMeshDriver.set_bucket_capacity(bucketCapacity);
+  ioMeshDriver.set_initial_bucket_capacity(initialBucketCapacity);
+  ioMeshDriver.set_maximum_bucket_capacity(maximumBucketCapacity);
 
   ioMeshDriver.driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 

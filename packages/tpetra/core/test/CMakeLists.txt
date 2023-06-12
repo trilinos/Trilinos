@@ -31,6 +31,7 @@ ADD_SUBDIRECTORIES(
   Operator
   PerformanceCGSolve
   Sort
+  Spaces
   Utils
   RowMatrixTransposer
   Tsqr

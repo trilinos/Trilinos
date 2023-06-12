@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "complex_utils.hpp"
-#include "mat2x2.hpp"
+#include "stk_middle_mesh/complex_utils.hpp"
+#include "stk_middle_mesh/mat2x2.hpp"
 
 namespace stk {
 namespace middle_mesh {

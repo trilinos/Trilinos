@@ -98,7 +98,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionMultiSubset)
     // This commits BulkData and populates the coordinates, connectivity, mesh...
     stkIo.populate_bulk_data();
 
-    double time = stkIo.get_input_io_region()->get_state_time(1);
+    double time = stkIo.get_input_ioss_region()->get_state_time(1);
 
     //+ Initialize the "pressure" field from mesh data on the shell parts on demand...
     for (size_t i=0; i < all_parts.size(); i++) {

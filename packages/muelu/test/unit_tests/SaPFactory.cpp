@@ -55,7 +55,7 @@
 
 #include <MueLu_SaPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
@@ -81,7 +81,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#   if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
+#   if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
@@ -138,11 +138,10 @@ namespace MueLuTests {
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
         // define transfer operators
-        RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-        CoupledAggFact->SetMinNodesPerAggregate(3);
-        CoupledAggFact->SetMaxNeighAlreadySelected(0);
-        CoupledAggFact->SetOrdering("natural");
-        CoupledAggFact->SetPhase3AggCreation(0.5);
+        RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+        UncoupledAggFact->SetMinNodesPerAggregate(3);
+        UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+        UncoupledAggFact->SetOrdering("natural");
 
         RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
         RCP<SaPFactory>        Pfact = rcp( new SaPFactory());
@@ -167,7 +166,7 @@ namespace MueLuTests {
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
         M.SetFactory("Ptent", Ptentfact);
-        M.SetFactory("Aggregates", CoupledAggFact);
+        M.SetFactory("Aggregates", UncoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
 

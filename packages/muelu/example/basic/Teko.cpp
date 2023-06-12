@@ -75,8 +75,6 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Stratimikos_MueLuHelpers.hpp"
 
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-
 
 // Belos includes
 #include "BelosConfigDefs.hpp"
@@ -200,17 +198,12 @@ void ReadSplittingFromDisk(const std::string & partitionFile,
 template<class SC,class LO, class GO, class NO>
   int solve_thyra(RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > & crsMat, const std::string &xmlFile) {
   typedef Tpetra::CrsMatrix<SC>       TP_Crs;
-  typedef Thyra::PreconditionerFactoryBase<SC>        Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
 
   typedef Thyra::MultiVectorBase<SC>  MV;
   typedef Thyra::LinearOpBase<SC>     OP;
   auto comm = crsMat->getRowMap()->getComm();
 
-  // tell Stratimikos => Teko about Ifpack2
   RCP<Stratimikos::DefaultLinearSolverBuilder> linearSolverBuilder = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder);
-  linearSolverBuilder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-  
  
   /////////////////////////////////////////////////////////
   // Build the Thyra operators
@@ -285,7 +278,6 @@ template<class SC,class LO, class GO, class NO>
   //typedef Tpetra::Vector<SC>          TP_Vec;
   typedef Tpetra::CrsMatrix<SC>       TP_Crs;
   typedef Thyra::PreconditionerFactoryBase<SC>        Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
 
   typedef Thyra::MultiVectorBase<SC>  MV;
   typedef Thyra::LinearOpBase<SC>     OP;
@@ -295,7 +287,6 @@ template<class SC,class LO, class GO, class NO>
 
   // tell Stratimikos => Teko about MueLu
   RCP<Stratimikos::DefaultLinearSolverBuilder> linearSolverBuilder = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder);
-  linearSolverBuilder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
   Stratimikos::enableMueLu<SC,LO,GO,NO>(*linearSolverBuilder);
  
   /////////////////////////////////////////////////////////

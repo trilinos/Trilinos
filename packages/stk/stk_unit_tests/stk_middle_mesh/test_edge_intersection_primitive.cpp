@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "predicates/edge_intersection_primitive.hpp"
+#include "stk_middle_mesh/predicates/edge_intersection_primitive.hpp"
 
 namespace stk {
 namespace middle_mesh {

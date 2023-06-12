@@ -49,7 +49,6 @@
 #include <Xpetra_CrsGraphFactory.hpp>
 
 #include "MueLu_PreDropFunctionConstVal_decl.hpp"
-#include "MueLu_Graph.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 namespace MueLu {

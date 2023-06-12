@@ -228,6 +228,32 @@ TEST_F(ManyBlocksSidesets, disconnect_blocks_face_creation)
   batchTimer.print_batch_timing(NUM_ITERS);
 }
 
+void write_restart_null_database(stk::io::StkMeshIoBroker &outStkIo, int step, double time)
+{
+    const std::string dummyFileName("foo.restart");
+    size_t outputFileIndex = outStkIo.create_output_mesh(dummyFileName, stk::io::WRITE_RESTART, "null");
+
+    if (step>0)
+    {
+        const stk::mesh::FieldVector fields = outStkIo.bulk_data().mesh_meta_data().get_fields();
+        for(stk::mesh::FieldBase* field : fields)
+        {
+            const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*field);
+            if(fieldRole == nullptr || *fieldRole == Ioss::Field::TRANSIENT)
+                outStkIo.add_field(outputFileIndex, *field);
+        }
+    }
+
+    outStkIo.write_output_mesh(outputFileIndex);
+
+    if (step>0)
+    {
+        outStkIo.begin_output_step(outputFileIndex, time);
+        outStkIo.write_defined_output_fields(outputFileIndex);
+        outStkIo.end_output_step(outputFileIndex);
+    }
+}
+
 TEST_F(ManyBlocksSidesets, sidesets_writeRestart)
 {
   if (get_parallel_size() > 16) return;
@@ -242,16 +268,16 @@ TEST_F(ManyBlocksSidesets, sidesets_writeRestart)
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS, NUM_FIELDS);
 
+    stk::parallel_machine_barrier(get_bulk().parallel());
+
     batchTimer.start_batch_timer();
 
     for(unsigned i=0; i<NUM_ITERS; ++i) {
-      std::string fileName("manyBlocksFields.rsout");
       stk::io::StkMeshIoBroker ioBroker;
       ioBroker.set_bulk_data(get_bulk());
       int outputTimeStep = static_cast<int>(i);
       double outputTime = 1.0*outputTimeStep;
-      stk::io::write_mesh_with_fields(fileName, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
-      unlink(fileName.c_str());
+      write_restart_null_database(ioBroker, outputTimeStep, outputTime);
     }
 
     batchTimer.stop_batch_timer();
@@ -274,16 +300,16 @@ TEST_F(ManyBlocksSidesets, noSidesets_writeRestart)
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     setup_multi_block_mesh_without_sidesets(ELEMS_PER_DIM, NUM_BLOCKS, NUM_FIELDS);
 
+    stk::parallel_machine_barrier(get_bulk().parallel());
+
     batchTimer.start_batch_timer();
 
     for(unsigned i=0; i<NUM_ITERS; ++i) {
-      std::string fileName("manyBlocksFields.rsout");
       stk::io::StkMeshIoBroker ioBroker;
       ioBroker.set_bulk_data(get_bulk());
       int outputTimeStep = static_cast<int>(i);
       double outputTime = 1.0*outputTimeStep;
-      stk::io::write_mesh_with_fields(fileName, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
-      unlink(fileName.c_str());
+      write_restart_null_database(ioBroker, outputTimeStep, outputTime);
     }
 
     batchTimer.stop_batch_timer();

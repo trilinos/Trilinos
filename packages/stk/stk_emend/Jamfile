@@ -162,7 +162,7 @@ rule bjam-features-rule ( properties * )
   return  $(result) ;
 }
 
-alias independent_set_lib
+alias stk_independent_set_lib
   : # No sources defined for header-only libraries
   : # No build requirements
   : # No default build
@@ -172,7 +172,7 @@ alias independent_set_lib
 exe stk_emend_independent_set_utest
   :
     [ glob $(stk_emend-root)/stk_emend/independent_set/unit_tests/*.cpp ]
-    independent_set_lib
+    stk_independent_set_lib
     /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag

@@ -34,13 +34,13 @@ class FieldScatterFromRoot
       m_fieldDest(fieldDest)
     {
       if (utils::impl::comm_rank(unionComm) == rootRankOnUnionComm)
-        ThrowRequireMsg(fieldSrc != nullptr, "fieldSrc must be provided on rootRankOnUnionComm");
+        STK_ThrowRequireMsg(fieldSrc != nullptr, "fieldSrc must be provided on rootRankOnUnionComm");
 
 
       if (fieldSrc)
       {
-        ThrowRequireMsg(entityDestinations != nullptr, "the entity destination field must be defined on meshSerial");
-        ThrowRequireMsg(entityDestinations->get_mesh() == entityDestinations->get_mesh(), 
+        STK_ThrowRequireMsg(entityDestinations != nullptr, "the entity destination field must be defined on meshSerial");
+        STK_ThrowRequireMsg(entityDestinations->get_mesh() == entityDestinations->get_mesh(), 
                         "the entity destination field must be defined on the same mesh as the fieldSrc");
       }
 
@@ -69,10 +69,10 @@ class FieldScatterFromRoot
       if (m_fieldDest)
       {
         for (int i=0; i < 3; ++i)
-          ThrowRequireMsg(fieldShapePlusNumComp[i] == m_fieldDest->get_field_shape().count[i], 
+          STK_ThrowRequireMsg(fieldShapePlusNumComp[i] == m_fieldDest->get_field_shape().count[i], 
                           "FieldShape must be same on source and destination fields");
 
-        ThrowRequireMsg(fieldShapePlusNumComp[3] == m_fieldDest->get_num_comp(), "Number of Field components must be same on source and destination fields");
+        STK_ThrowRequireMsg(fieldShapePlusNumComp[3] == m_fieldDest->get_num_comp(), "Number of Field components must be same on source and destination fields");
       }
 #endif
     }
@@ -113,7 +113,7 @@ class FieldScatterFromRoot
 
     void set_recv_buffer_sizes(Exchanger& exchanger)
     {
-      ThrowRequire(m_fieldDest != nullptr);
+      STK_ThrowRequire(m_fieldDest != nullptr);
 
       auto meshDest     = m_fieldDest->get_mesh();
       FieldShape fshape = m_fieldDest->get_field_shape();
@@ -136,7 +136,7 @@ class FieldScatterFromRoot
 
     void pack_data(Exchanger& exchanger)
     {
-      ThrowRequire(m_fieldSrc != nullptr);
+      STK_ThrowRequire(m_fieldSrc != nullptr);
 
       auto& entityDestinations = *m_entityDestinations;
       auto& fieldSrc           = *m_fieldSrc;
@@ -166,7 +166,7 @@ class FieldScatterFromRoot
 
     void unpack_data(stk::CommBuffer& buf)
     {
-      ThrowRequire(m_fieldDest);
+      STK_ThrowRequire(m_fieldDest);
 
       auto& fieldDest   = *m_fieldDest;
       FieldShape fshape = fieldDest.get_field_shape();

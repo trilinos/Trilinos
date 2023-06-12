@@ -222,6 +222,9 @@ int main(int argc, char *argv[])
     for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
 
     A.ReplaceGlobalValues(0, numvals, Rowvals, Rowinds);
+
+    delete [] Rowvals;
+    delete [] Rowinds;
   }
   // Iterate (again)
   lambda = 0.0;

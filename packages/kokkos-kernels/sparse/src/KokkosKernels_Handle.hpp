@@ -871,12 +871,17 @@ class KokkosKernelsHandle {
   }
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
-  void create_par_ilut_handle(const size_type nrows, const size_type nnzL = 0,
-                              const size_type nnzU     = 0,
-                              const size_type max_iter = 1) {
+  void create_par_ilut_handle(
+      const size_type max_iter = 20,
+      const typename PAR_ILUTHandleType::float_t residual_norm_delta_stop =
+          1e-2,
+      const typename PAR_ILUTHandleType::float_t fill_in_limit = 0.75,
+      const bool async_update = false, const bool verbose = false) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
-    this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU, max_iter);
+    this->par_ilutHandle =
+        new PAR_ILUTHandleType(max_iter, residual_norm_delta_stop,
+                               fill_in_limit, async_update, verbose);
     this->par_ilutHandle->set_team_size(this->team_work_size);
     this->par_ilutHandle->set_vector_size(this->vector_size);
   }

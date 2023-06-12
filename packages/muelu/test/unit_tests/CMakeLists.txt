@@ -31,7 +31,6 @@ APPEND_SET(SOURCES
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
   ClassicalPFactory.cpp
-# CoupledAggregationFactory.cpp
   FineLevelInputDataFactory.cpp
   GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
@@ -58,6 +57,7 @@ APPEND_SET(SOURCES
   ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
+  SegregatedAFactory.cpp
   SemiCoarsenPFactory.cpp
   Smoothers/SmootherFactory.cpp
   StructuredAggregationFactory.cpp
@@ -147,45 +147,42 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Ifpack2
   ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_EpetraExt
-  ${PACKAGE_NAME}_ENABLE_Tpetra
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Zoltan
   )
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
-ENDIF()
+APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
 
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
   APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
   APPEND_SET(SOURCES Smoothers/IfpackSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Belos)
+IF(${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Smoothers/BelosSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Thyra)
+IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
   APPEND_SET(SOURCES Smoothers/StratimikosSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
-  IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra OR NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
     APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
   ENDIF()
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF(${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
   APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
+IF(${PACKAGE_NAME}_ENABLE_AmgX)
   APPEND_SET(SOURCES Adapters/AmgxOperatorAdapter.cpp)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsAmgxAdapter_cp
     SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
@@ -198,7 +195,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 ENDIF()
 
 IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
-    (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+    (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests ON)
 ELSE()
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests OFF)
@@ -238,7 +235,7 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES_REGION
     RegionMatrix.cpp
     RegionVector.cpp
@@ -336,11 +333,66 @@ ENDIF()
 
   ENDIF() # Epetra / EpetraExt
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
 
+  TRIBITS_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    UnitTests_Blocked
+    NAME "UnitTestsBlockedTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    UnitTests_Blocked
+    NAME "UnitTestsBlockedTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    UnitTests_Intrepid2
+    NAME "UnitTestsIntrepid2Tpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    RUN_SERIAL
+    )
+
+  TRIBITS_ADD_TEST(
+    UnitTests_Intrepid2
+    NAME "UnitTestsIntrepid2Tpetra"
+    ARGS "--linAlgebra=Tpetra"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    RUN_SERIAL
+    )
+
+  IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
     TRIBITS_ADD_TEST(
-      UnitTests
-      NAME "UnitTestsTpetra"
+      UnitTests_CreatePreconditioner
+      NAME "UnitTestsCreatePreconditionerTpetra"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
@@ -348,17 +400,27 @@ ENDIF()
       )
 
     TRIBITS_ADD_TEST(
-      UnitTests
-      NAME "UnitTestsTpetra"
+      UnitTests_CreatePreconditioner
+      NAME "UnitTestsCreatePreconditionerTpetra"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
       )
+  ENDIF()
+
+  IF (${PACKAGE_NAME}_ENABLE_Experimental)
+    APPEND_SET(SOURCES_REGION Galeri.cpp)
+
+    TRIBITS_ADD_EXECUTABLE(
+      UnitTests_Region
+      SOURCES ${SOURCES_REGION}
+      COMM serial mpi
+    )
 
     TRIBITS_ADD_TEST(
-      UnitTests_Blocked
-      NAME "UnitTestsBlockedTpetra"
+      UnitTests_Region
+      NAME "UnitTestsRegion"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
@@ -366,83 +428,14 @@ ENDIF()
       )
 
     TRIBITS_ADD_TEST(
-      UnitTests_Blocked
-      NAME "UnitTestsBlockedTpetra"
+      UnitTests_Region
+      NAME "UnitTestsRegion"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
       )
-
-    TRIBITS_ADD_TEST(
-      UnitTests_Intrepid2
-      NAME "UnitTestsIntrepid2Tpetra"
-      ARGS "--linAlgebra=Tpetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      RUN_SERIAL
-      )
-
-    TRIBITS_ADD_TEST(
-      UnitTests_Intrepid2
-      NAME "UnitTestsIntrepid2Tpetra"
-      ARGS "--linAlgebra=Tpetra"
-      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-      NUM_MPI_PROCS 4
-      COMM mpi
-      RUN_SERIAL
-      )
-
-    IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
-      TRIBITS_ADD_TEST(
-        UnitTests_CreatePreconditioner
-        NAME "UnitTestsCreatePreconditionerTpetra"
-        ARGS "--linAlgebra=Tpetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 1
-        COMM serial mpi
-        )
-
-      TRIBITS_ADD_TEST(
-        UnitTests_CreatePreconditioner
-        NAME "UnitTestsCreatePreconditionerTpetra"
-        ARGS "--linAlgebra=Tpetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 4
-        COMM mpi
-        )
-    ENDIF()
-
-    IF (${PACKAGE_NAME}_ENABLE_Experimental)
-      APPEND_SET(SOURCES_REGION Galeri.cpp)
-
-      TRIBITS_ADD_EXECUTABLE(
-        UnitTests_Region
-        SOURCES ${SOURCES_REGION}
-        COMM serial mpi
-      )
-
-      TRIBITS_ADD_TEST(
-        UnitTests_Region
-        NAME "UnitTestsRegion"
-        ARGS "--linAlgebra=Tpetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 1
-        COMM serial mpi
-        )
-
-      TRIBITS_ADD_TEST(
-        UnitTests_Region
-        NAME "UnitTestsRegion"
-        ARGS "--linAlgebra=Tpetra"
-        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-        NUM_MPI_PROCS 4
-        COMM mpi
-        )
-    ENDIF()
-
-  ENDIF() # Tpetra
+  ENDIF()
 
 
 
