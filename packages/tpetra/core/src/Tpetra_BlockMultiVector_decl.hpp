@@ -324,7 +324,7 @@ public:
   static map_type
   makePointMap (const map_type& meshMap, const LO blockSize);
 
-  /// \brief Create and return the point Map corresponding to the
+  /// \brief Create and return an owning RCP to the point Map corresponding to the
   ///   given mesh Map and block size.
   ///
   /// This is a class ("static") method so that you can make and reuse

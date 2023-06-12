@@ -212,7 +212,7 @@ typedef Tpetra::global_size_t GST;
 
   if (meshMap.isContiguous ()) {
     return map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
-                                     meshMap.getComm ());
+                     meshMap.getComm ());
   }
   else {
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
@@ -232,7 +232,7 @@ typedef Tpetra::global_size_t GST;
       }
     }
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
-                 meshMap.getComm ());
+                     meshMap.getComm ());
 
   }
 }
