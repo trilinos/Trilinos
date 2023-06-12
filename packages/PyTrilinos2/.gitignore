@@ -7,3 +7,4 @@ config.status
 build
 dist
 *.err
+examples/*.png

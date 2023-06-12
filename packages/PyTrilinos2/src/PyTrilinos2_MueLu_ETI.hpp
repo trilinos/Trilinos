@@ -3,7 +3,7 @@
 
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 
-#define BINDER_MUELU_CREATETPETRAPRECONDITIONER_INSTANT_2(SCALAR,LO,GO,NO) \
+#define BINDER_MUELU_CREATETPETRAPRECONDITIONER_INSTANT(SCALAR,LO,GO,NO) \
   template Teuchos::RCP<MueLu::TpetraOperator<SCALAR, LO, GO, NO> > CreateTpetraPreconditioner<SCALAR, LO, GO, NO>(const Teuchos::RCP<Tpetra::Operator<SCALAR, LO, GO, NO> > &inA, Teuchos::ParameterList& inParamList);
 
 namespace MueLu {
@@ -11,7 +11,7 @@ namespace MueLu {
     template <typename T>
     void initiate(T) {};
 
-  BINDER_MUELU_CREATETPETRAPRECONDITIONER_INSTANT_2(double, int, long long, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType)
+  BINDER_MUELU_CREATETPETRAPRECONDITIONER_INSTANT(Tpetra::Details::DefaultTypes::scalar_type, Tpetra::Details::DefaultTypes::local_ordinal_type, Tpetra::Details::DefaultTypes::global_ordinal_type, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType)
 }
 
 #endif // PYTRILINOS2_MUELU_ETI
