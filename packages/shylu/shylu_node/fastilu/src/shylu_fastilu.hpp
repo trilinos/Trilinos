@@ -555,45 +555,7 @@ class FastILUPrec
               (aRowMap_, aColIdx_);
             FASTILU_FENCE_REPORT_TIMER(timer, host_space(), " Sort time");
 
-            Kokkos::deep_copy(aRowMap, aRowMap_);
-            Kokkos::deep_copy(aColIdx, aColIdx_);
-            Kokkos::deep_copy(aRowIdx, aRowIdx_);
-            FASTILU_DBG_COUT("**Finished initializing A");
-
-            //Compute RowMap for L and U.
-            // > form RowMap for L
-            lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
-            lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
-            Ordinal nnzL = countL();
-            FASTILU_DBG_COUT("**Finished counting L");
-
-            // > form RowMap for U and Ut
-            uRowMap  = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
-            utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
-            utRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utRowMap);
-            uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
-            Ordinal nnzU = countU();
-
-            // > form RowMap for Ut
-            FASTILU_DBG_COUT("**Finished counting U");
-
-            //Allocate memory and initialize pattern for L, U (transpose).
-            lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
-            uColIdx = OrdinalArray(WithoutInit("uColIdx"), nnzU);
-            utColIdx = OrdinalArray(WithoutInit("utColIdx"), nnzU);
-
-            lVal = ScalarArray(WithoutInit("lVal"), nnzL);
-            uVal = ScalarArray(WithoutInit("uVal"), nnzU);
-            utVal = ScalarArray(WithoutInit("utVal"), nnzU);
-
-            //Create mirror
-            lColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lColIdx);
-            uColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uColIdx);
-            utColIdx_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utColIdx);
-
-            lVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lVal);
-            uVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uVal);
-            utVal_   = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utVal);
+            symbolicILU_common();
             FASTILU_REPORT_TIMER(timer, " Mirror");
         }
 
@@ -632,39 +594,42 @@ class FastILUPrec
                 }
                 aRowMap_[i+1] = aRowPtr;
             }
-            // sort based on ColIdx, RowIdx stays the same (do we need this?)
-            //using host_space = Kokkos::HostSpace::execution_space;
-            //KokkosSparse::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
-            //  (aRowMap_, aColIdx_, aVal_);
-            //host_space().fence();
+
+            symbolicILU_common();
+        }
+
+        void symbolicILU_common()
+        {
+            using WithoutInit = Kokkos::ViewAllocateWithoutInitializing;
 
             Kokkos::deep_copy(aRowMap, aRowMap_);
             Kokkos::deep_copy(aColIdx, aColIdx_);
             Kokkos::deep_copy(aRowIdx, aRowIdx_);
             FASTILU_DBG_COUT("**Finished initializing A");
 
-            //Now allocate memory for L and U.
-            //
+            //Compute RowMap for L and U.
+            // > form RowMap for L
             lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
             lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
-            countL();
+            const Ordinal nnzL = countL();
             FASTILU_DBG_COUT("**Finished counting L");
 
-            uRowMap = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
+            // > form RowMap for U and Ut
+            uRowMap  = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
             utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
             utRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utRowMap);
             uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
-            countU();
+            const Ordinal nnzU = countU();
             FASTILU_DBG_COUT("**Finished counting U");
 
             //Allocate memory and initialize pattern for L, U (transpose).
-            lColIdx = OrdinalArray(WithoutInit("lColIdx"), lRowMap_[nRows]);
-            uColIdx = OrdinalArray(WithoutInit("uColIdx"), uRowMap_[nRows]);
-            utColIdx = OrdinalArray(WithoutInit("utColIdx"), uRowMap_[nRows]);
+            lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
+            uColIdx = OrdinalArray(WithoutInit("uColIdx"), nnzU);
+            utColIdx = OrdinalArray(WithoutInit("utColIdx"), nnzU);
 
-            lVal = ScalarArray(WithoutInit("lVal"), lRowMap_[nRows]);
-            uVal = ScalarArray(WithoutInit("uVal"), uRowMap_[nRows]);
-            utVal = ScalarArray(WithoutInit("utVal"), uRowMap_[nRows]);
+            lVal = ScalarArray(WithoutInit("lVal"), nnzL);
+            uVal = ScalarArray(WithoutInit("uVal"), nnzU);
+            utVal = ScalarArray(WithoutInit("utVal"), nnzU);
 
             //Create mirror
             lColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lColIdx);
@@ -1403,6 +1368,7 @@ class FastILUPrec
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
             #endif
+            ExecSpace().fence();  //Fence so that init time is accurate
             initTime = timer.seconds();
             FASTILU_REPORT_TIMER(timer, "Symbolic phase complete.\nInit time");
         }
