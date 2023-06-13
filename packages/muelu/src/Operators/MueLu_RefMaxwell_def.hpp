@@ -1227,6 +1227,8 @@ namespace MueLu {
         UncoupledAggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(maxAggSize));
         bool matchMLbehavior = parameterList_.get("aggregation: match ML phase2a",MasterList::getDefault<bool>("aggregation: match ML phase2a"));
         UncoupledAggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(matchMLbehavior));
+        bool avoidSingletons = parameterList_.get("aggregation: phase3 avoid singletons",MasterList::getDefault<bool>("aggregation: phase3 avoid singletons"));
+        UncoupledAggFact->SetParameter("aggregation: phase3 avoid singletons",Teuchos::ParameterEntry(avoidSingletons));
 
         coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
