@@ -206,6 +206,7 @@ namespace MueLu {
            //     fillComplete() with domainMap == importer->getTargetMap().
 
           RCP<Matrix> rebalancedP;
+reallyExplicit = false;
           if (reallyExplicit) {
             size_t totalMaxPerRow = 0;
             ArrayRCP<size_t> nnzPerRow(originalP->getRowMap()->getLocalNumElements(), 0);
