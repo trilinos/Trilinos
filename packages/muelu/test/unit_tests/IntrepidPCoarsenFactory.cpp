@@ -853,7 +853,7 @@ namespace MueLuTests {
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxGID = max(maxGID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
+          maxGID = std::max(maxGID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxGID + 1;
@@ -1037,7 +1037,7 @@ namespace MueLuTests {
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxLID = max(maxLID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
+          maxLID = std::max(maxLID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxLID + 1;
