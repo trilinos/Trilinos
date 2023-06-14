@@ -2150,10 +2150,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               Data<Scalar,DeviceType>  leftTensorComponent =  leftComponent.getTensorComponent(r);
               Data<Scalar,DeviceType> rightTensorComponent = rightComponent.getTensorComponent(r);
               
-              const int  leftTensorComponentRank    =  leftTensorComponent.rank();
               const int  leftTensorComponentDimSpan =  leftTensorComponent.extent_int(2);
               const int  leftTensorComponentFields  =  leftTensorComponent.extent_int(0);
-              const int rightTensorComponentRank    = rightTensorComponent.rank();
               const int rightTensorComponentDimSpan = rightTensorComponent.extent_int(2);
               const int rightTensorComponentFields  = rightTensorComponent.extent_int(0);
               
