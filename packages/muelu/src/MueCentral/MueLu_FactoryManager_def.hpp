@@ -227,7 +227,7 @@ namespace MueLu {
       if (varName == "pcoarsen: element to node map")   return GetFactory("P");
 #endif
 
-      // FIXME: These are user data, but we might want to print them
+      // NOTE: These are user data, but we might want to print them, so they need a default factory
       if (varName == "NodeMatrix")                    return NoFactory::getRCP();
       if (varName == "NodeAggMatrix")                 return NoFactory::getRCP();
 
