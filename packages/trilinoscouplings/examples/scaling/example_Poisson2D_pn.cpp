@@ -229,7 +229,7 @@ struct PamgenMesh{
 
 
 // forward declarations
-void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes,long long P1_globalNumEdges,long long P1_globalNumElem,
+void PromoteMesh_Pn_Kirby(const int degree, const Intrepid::EPointType & pointType,long long P1_globalNumNodes,long long P1_globalNumEdges,long long P1_globalNumElem,
                  const FieldContainer<int>    & P1_elemToNode,
                  const FieldContainer<double> & P1_nodeCoord,
                  const FieldContainer<double> & P1_edgeCoord,
@@ -1561,7 +1561,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 
 /*********************************************************************************************************/
-void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes, long long P1_globalNumEdges,long long P1_globalNumElem,
+void PromoteMesh_Pn_Kirby(const int degree, const Intrepid::EPointType & pointType,long long P1_globalNumNodes, long long P1_globalNumEdges,long long P1_globalNumElem,
                  const FieldContainer<int>    & P1_elemToNode,
                  const FieldContainer<double> & P1_nodeCoord,
                  const FieldContainer<double> & P1_edgeCoord,
