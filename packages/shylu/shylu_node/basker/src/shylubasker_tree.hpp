@@ -932,7 +932,7 @@ namespace BaskerNS
     for(Int i=0; i < nblks; i++)
     {
       #ifdef MY_DEBUG
-      printf( " >> i = %d <<\n",i );
+      printf( "\n >> i = %d <<\n",i );
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {

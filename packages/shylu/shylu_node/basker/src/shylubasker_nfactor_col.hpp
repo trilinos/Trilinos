@@ -529,7 +529,7 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     printf("---------Checking Workspace, kid: %d-------\n", kid);
-    ASSERT(top == ws_size);
+    BASKER_ASSERT(top == ws_size);
     for(Int i = 0 ; i < ws_size; i++)
     {
       if(ws[i] != 0)
@@ -538,7 +538,7 @@ namespace BaskerNS
         BASKER_MATRIX  &L = LL(L_col)(L_row); //NDE - warning: unused L
         printf("kid: %d k: %d i: %d ws[i]=%d L.scol: %d \n",
                kid, k, i, ws[i], L.scol);
-        ASSERT(ws[i] == 0);
+        BASKER_ASSERT(ws[i] == 0);
       }
     }
     #endif
@@ -1134,7 +1134,7 @@ namespace BaskerNS
     ucnt = 0;
     
     #ifdef BASKER_DEBUG_NFACTOR_COL
-    ASSERT(top == ws_size);
+    BASKER_ASSERT(top == ws_size);
     for(i = 0 ; i < ws_size; i++){
       if(X(i) !=0)
       {

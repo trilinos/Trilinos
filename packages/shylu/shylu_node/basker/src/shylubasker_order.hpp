@@ -1106,7 +1106,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //finds the starting point of A for submatrices
     find_2D_convert(BTF_A);
     //now we can fill submatrices
-    //printf("AFTER CONVERT\n"); fflush(stdout);
     #ifdef BASKER_KOKKOS
     kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);

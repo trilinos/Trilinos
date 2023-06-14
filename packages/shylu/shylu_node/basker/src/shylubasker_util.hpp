@@ -764,11 +764,12 @@ namespace BaskerNS
           }
           else
           {
-            //printf("Using BTF AU\n");
+            //printf(" %d: Using BTF AVM(%d,%d), %dx%d\n",kid,U_col,U_row, AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol);
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
             //     kid);
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
+            //printf(" %d: Using BTF AU(%d,%d) done\n",kid,U_col,U_row);
           }
 
         }//over inner lvls

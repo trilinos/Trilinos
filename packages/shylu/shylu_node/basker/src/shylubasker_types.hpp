@@ -90,24 +90,23 @@ enum BASKER_INCOMPLETE_CODE
 #define BASKER_FILL_USEPESTIMATE   2.00
 
 //MACRO SYSTEM FUNCTIONS
-#ifdef BASKER_DEBUG
-#include <assert.h>
-#define ASSERT(a)             assert(a)
+/*#ifdef BASKER_DEBUG
+ #include <assert.h>
+ #define ASSERT(a)             assert(a)
 #else
-//#define ASSERT(a)             BASKER_NO_OP
-#include <assert.h>
-#define ASSERT(a)           assert(a)
-#endif
+ //#define ASSERT(a)             BASKER_NO_OP
+ #include <assert.h>
+ #define ASSERT(a)           assert(a)
+#endif*/
 
 #ifdef BASKER_DEBUG
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
       {printf("\n\n%s \nLINE: %d \nFILE: %s\n\n", s, __LINE__, __FILE__);} \
-    ASSERT(a);                   \
-    assert(a);		 \
+    assert(a);	                 \
     if(!(a))                     \
-      exit(0);                  \
+      exit(0);                   \
   }
 #else
 #define BASKER_ASSERT(a,s)      \

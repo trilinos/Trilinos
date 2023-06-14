@@ -750,7 +750,7 @@ namespace BaskerNS
         //  (blk_idx > 1))
 
         //Continue to be in btf
-        if( (Options.use_sequential_diag_facto || (blk_work < break_work_size || blk_size < break_block_size)) && (blk_idx > 1) )
+        if( (Options.use_sequential_diag_facto || (blk_work <= break_work_size || blk_size < break_block_size)) && (blk_idx > 1) )
         {
           #ifdef BASKER_DEBUG_ORDER_BTF
            printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
@@ -761,7 +761,7 @@ namespace BaskerNS
           scol    = _btf_tabs[blk_idx];
         }
         //break due to size i.e. entered non-trivial large BTF_A block
-        else if( blk_work >= break_work_size && blk_size >= break_block_size)
+        else if( blk_work > break_work_size && blk_size >= break_block_size)
         {
           if(Options.verbose == BASKER_TRUE) {
             printf("Basker: blk=%d break due to size (work: %d > %d, size: %d > %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
