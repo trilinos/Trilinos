@@ -1828,6 +1828,51 @@ namespace Intrepid2 {
         return shmem_size;
       }
     };
+  
+    template<class Scalar, class DeviceType>
+    class F_RefSpaceIntegral
+    {
+      ScalarView<Scalar,DeviceType> integral_;
+      Data<Scalar,DeviceType>  left_;
+      Data<Scalar,DeviceType>  right_;
+      Data<Scalar,DeviceType>  weights_;
+      ordinal_type dimSpan_;
+      ordinal_type leftRank_;
+      ordinal_type rightRank_;
+      ordinal_type numPoints_;
+    public:
+      F_RefSpaceIntegral(ScalarView<Scalar,DeviceType> integralView,
+                         Data<Scalar,DeviceType> left, Data<Scalar,DeviceType> right, Data<Scalar,DeviceType> weights,
+                         ordinal_type dimSpan)
+      :
+      integral_(integralView),
+      left_(left),
+      right_(right),
+      weights_(weights),
+      dimSpan_(dimSpan)
+      {
+        leftRank_  = left.rank();
+        rightRank_ = right.rank();
+        numPoints_ = weights.extent_int(0);
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()( const ordinal_type & i, const ordinal_type & j ) const
+      {
+        Scalar refSpaceIntegral = 0.0;
+        for (int ptOrdinal=0; ptOrdinal<numPoints_; ptOrdinal++)
+        {
+          const Scalar & weight = weights_(ptOrdinal);
+          for (int a=0; a<dimSpan_; a++)
+          {
+            const Scalar &  leftValue = ( leftRank_ == 2) ?  left_(i,ptOrdinal) :  left_(i,ptOrdinal,a);
+            const Scalar & rightValue = (rightRank_ == 2) ? right_(j,ptOrdinal) : right_(j,ptOrdinal,a);
+            refSpaceIntegral += leftValue * rightValue * weight;
+          }
+        }
+        integral_(i,j) = refSpaceIntegral;
+      }
+    };
   }
 
 template<typename DeviceType>
@@ -2116,35 +2161,26 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
             
               for (int d=d_start; d<d_end; d++)
               {
+                ScalarView<Scalar,DeviceType> componentIntegralView;
+                
                 const bool allocateFadStorage = !std::is_pod<Scalar>::value;
                 if (allocateFadStorage)
                 {
                   auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
-                  componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
                 }
                 else
                 {
-                  componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
                 }
             
-                auto componentIntegralView = componentIntegrals[r][d];
-                
                 auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftTensorComponentFields,rightTensorComponentFields});
                 
-                for (int a=0; a<leftTensorComponentDimSpan; a++)
-                {
-                  Kokkos::parallel_for("compute componentIntegrals", policy,
-                  KOKKOS_LAMBDA (const int &i, const int &j) {
-                    Scalar refSpaceIntegral = 0.0;
-                    for (int ptOrdinal=0; ptOrdinal<numPoints; ptOrdinal++)
-                    {
-                      const Scalar &  leftValue = ( leftTensorComponentRank == 2) ?  leftTensorComponent(i,ptOrdinal) :  leftTensorComponent(i,ptOrdinal,a);
-                      const Scalar & rightValue = (rightTensorComponentRank == 2) ? rightTensorComponent(j,ptOrdinal) : rightTensorComponent(j,ptOrdinal,a);
-                      refSpaceIntegral += leftValue * rightValue * quadratureWeights(ptOrdinal);
-                    }
-                    componentIntegralView(i,j) = refSpaceIntegral;
-                  });
-                }
+                Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
+                                                                                     leftTensorComponentDimSpan);
+                Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
+                
+                componentIntegrals[r][d] = componentIntegralView;
                 
                 if (approximateFlops != NULL)
                 {
