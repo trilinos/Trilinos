@@ -320,15 +320,25 @@ public:
   /// This is a class ("static") method so that you can make and reuse
   /// a point Map for creating different BlockMultiVector instances,
   /// using the more efficient four-argument constructor.
+  ///
   static map_type
   makePointMap (const map_type& meshMap, const LO blockSize);
+
+  /// \brief Create and return an owning RCP to the point Map corresponding to the
+  ///   given mesh Map and block size.
+  ///
+  /// This is a class ("static") method so that you can make and reuse
+  /// a point Map for creating different BlockMultiVector instances,
+  /// using the more efficient four-argument constructor.
+  static Teuchos::RCP<const map_type>
+  makePointMapRCP (const map_type& meshMap, const LO blockSize);
 
   /// \brief Get this BlockMultiVector's (previously computed) point Map.
   ///
   /// It is always valid to call this method.  A BlockMultiVector
   /// always has a point Map.  We do not compute the point Map lazily.
-  map_type getPointMap () const {
-    return pointMap_;
+  const map_type getPointMap () const {
+    return *pointMap_;
   }
 
   //! Get the number of degrees of freedom per mesh point.
@@ -619,7 +629,7 @@ protected:
 
 private:
   //! The point Map (describing the distribution of degrees of freedom).
-  map_type pointMap_;
+  Teuchos::RCP<const map_type> pointMap_;
 
 protected:
   //! The Tpetra::MultiVector used to represent the data.
