@@ -333,7 +333,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     belosList->set("Implicit Residual Scaling", "None");
 
     Belos::SolverFactory<SC, MV, OP> solverFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create("cg", belosList);
+    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create("gmres", belosList);
     solver->setProblem(belosProblem);
     Belos::ReturnType retStatus = Belos::Unconverged;
     retStatus = solver->solve();
