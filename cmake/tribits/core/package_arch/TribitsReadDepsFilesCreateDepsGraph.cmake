@@ -182,8 +182,18 @@ macro(tribits_read_all_package_deps_files_create_deps_graph)
   set(${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES "") # Packages and subpackages
 
   foreach(TRIBITS_PACKAGE  IN LISTS ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
-    tribits_read_toplevel_package_deps_files_add_to_graph(${TRIBITS_PACKAGE}
-      ${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
+    set(absPackageSrcDir "${PROJECT_SOURCE_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR}")
+    set(packageDependenciesFile "${absPackageSrcDir}/cmake/Dependencies.cmake")
+    if ( (NOT EXISTS "${packageDependenciesFile}")
+      AND (NOT ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+        ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST)
+      )
+      # ToDo: Print message about the package being missing depending on the
+      # value of ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES!
+    else()
+      message("${TRIBITS_PACKAGE} package dependency file: '${packageDependenciesFile}' exists!")
+      tribits_read_toplevel_package_deps_files_add_to_graph(${TRIBITS_PACKAGE})
+    endif()
   endforeach()
 
   list(LENGTH ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
