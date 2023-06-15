@@ -11,8 +11,6 @@
    \author Created by N.V. Roberts.
 */
 
-using namespace Intrepid2;
-
 #include "Intrepid2_DataCombiners.hpp"
 
 namespace Intrepid2 {
