@@ -144,30 +144,20 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 ///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
-/// This method implements CrsGraph::packNew, and thus
+/// This method implements CrsGraph::pack, and thus
 /// CrsGraph::packAndPrepare, for the case where the graph to
 /// pack has a valid KokkosSparse::CrsGraph.
 template<typename LO, typename GO, typename NT>
 void
-packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
-                 const Kokkos::DualView<
-                   const LO*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exportLIDs,
-                 const Kokkos::DualView<
-                   const int*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exportPIDs,
-                 Kokkos::DualView<
-                   typename CrsGraph<LO, GO, NT>::packet_type*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exports,
-                 Kokkos::DualView<
-                   size_t*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 > numPacketsPerLID,
-                 size_t& constantNumPackets,
-                 const bool pack_pids);
+packCrsGraph (
+  const CrsGraph<LO, GO, NT>& sourceGraph,
+  const Kokkos::DualView<const LO*, typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportLIDs,
+  const Kokkos::DualView<const int*, typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportPIDs,
+  Kokkos::DualView<typename CrsGraph<LO, GO, NT>::packet_type*, typename CrsGraph<LO, GO, NT>::buffer_device_type>& exports,
+  Kokkos::DualView<size_t*, typename CrsGraph<LO, GO, NT>::buffer_device_type> numPacketsPerLID,
+  size_t& constantNumPackets,
+  const bool pack_pids
+);
 
 /// \brief Pack specified entries of the given local sparse graph for
 ///   communication.

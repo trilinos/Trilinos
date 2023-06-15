@@ -548,7 +548,7 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
+  virtual bool checkSizes (const Tpetra::SrcDistObject& source) override;
 
   // clang-format on
   using dist_object_type::
@@ -574,15 +574,15 @@ protected:
                                           // clang-format off
 
   virtual void
-  packAndPrepare
-  (const SrcDistObject& source,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& exportLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type>& exports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets);
+  packAndPrepare(
+    const SrcDistObject& source,
+    const Kokkos::DualView<const local_ordinal_type*,
+    buffer_device_type>& exportLIDs,
+    Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+    Kokkos::DualView<size_t*,
+    buffer_device_type> numPacketsPerLID,
+    size_t& constantNumPackets
+  ) override;
 
   // clang-format on
   using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
@@ -592,15 +592,13 @@ protected:
                                             // clang-format off
 
   virtual void
-  unpackAndCombine
-  (const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& importLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type> imports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   const size_t constantNumPackets,
-   const CombineMode combineMode);
+  unpackAndCombine(
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+    Kokkos::DualView<packet_type*, buffer_device_type> imports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+    const size_t constantNumPackets,
+    const CombineMode combineMode
+  ) override;
 
   //@}
 

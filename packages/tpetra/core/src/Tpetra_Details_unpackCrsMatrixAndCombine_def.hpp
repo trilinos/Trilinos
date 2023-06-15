@@ -1248,17 +1248,14 @@ unpackCrsMatrixAndCombine(
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombineNew(
+unpackCrsMatrixAndCombine(
   const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-  Kokkos::DualView<char*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type> imports,
-  Kokkos::DualView<size_t*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type> numPacketsPerLID,
-  const Kokkos::DualView<const LO*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
+  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type> imports,
+  Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type> numPacketsPerLID,
+  const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
   const size_t /* constantNumPackets */,
-  const CombineMode combineMode)
-{
+  const CombineMode combineMode
+) {
   using Kokkos::View;
   using crs_matrix_type = CrsMatrix<ST, LO, GO, NT>;
   using dist_object_type = DistObject<char, LO, GO, NT>;
@@ -1629,7 +1626,7 @@ unpackAndCombineIntoCrsArrays (
     size_t, \
     CombineMode); \
   template void \
-  Details::unpackCrsMatrixAndCombineNew<ST, LO, GO, NT> ( \
+  Details::unpackCrsMatrixAndCombine<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT>&, \
     Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>, \
     Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>, \

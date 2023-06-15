@@ -150,19 +150,19 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 ///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
-/// This method implements CrsMatrix::packNew, and thus
+/// This method implements CrsMatrix::pack, and thus
 /// CrsMatrix::packAndPrepare, for the case where the matrix to
 /// pack has a valid KokkosSparse::CrsMatrix.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                  Kokkos::DualView<char*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-                  size_t& constantNumPackets);
+packCrsMatrix (
+  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+  const Kokkos::DualView<const LO*,
+  typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
+  size_t& constantNumPackets
+);
 
 /// \brief Pack specified entries of the given local sparse matrix for
 ///   communication.

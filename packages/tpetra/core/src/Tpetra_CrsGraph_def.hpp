@@ -5505,13 +5505,13 @@ namespace Tpetra {
       // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (exports.view_host (), exports_a_h);
     }
-    // packCrsGraphNew requires k_rowPtrsPacked_ to be set
+    // packCrsGraph requires k_rowPtrsPacked_ to be set
     else if (! getColMap ().is_null () &&
         (rowPtrsPacked_dev_.extent (0) != 0 ||
          getRowMap ()->getLocalNumElements () == 0)) {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "packCrsGraphNew path" << endl;
+        os << *prefix << "packCrsGraph path" << endl;
         std::cerr << os.str();
       }
       using export_pids_type =
@@ -5519,14 +5519,13 @@ namespace Tpetra {
       export_pids_type exportPIDs; // not filling it; needed for syntax
       using LO = local_ordinal_type;
       using NT = node_type;
-      using Tpetra::Details::packCrsGraphNew;
-      packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
-                                 exports, numPacketsPerLID,
-                                 constantNumPackets, false);
+      using Tpetra::Details::packCrsGraph;
+      packCrsGraph<LO,GO,NT> (
+        *srcCrsGraphPtr, exportLIDs, exportPIDs, exports, numPacketsPerLID, constantNumPackets, false
+      );
     }
     else {
-      srcCrsGraphPtr->packFillActiveNew (exportLIDs, exports, numPacketsPerLID,
-                                         constantNumPackets);
+      srcCrsGraphPtr->packFillActive(exportLIDs, exports, numPacketsPerLID, constantNumPackets);
     }
 
     if (verbose) {
@@ -5548,23 +5547,24 @@ namespace Tpetra {
     // packCrsGraph requires k_rowPtrsPacked to be set
     if( !col_map.is_null() && (rowPtrsPacked_dev_.extent(0) != 0  ||  getRowMap()->getLocalNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
-      packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
-                                                    exportLIDs, constantNumPackets);
+      packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(
+        *this, exports, numPacketsPerLID, exportLIDs, constantNumPackets
+      );
     }
     else {
-      this->packFillActive(exportLIDs, exports, numPacketsPerLID,
-                           constantNumPackets);
+      this->packFillActive(exportLIDs, exports, numPacketsPerLID, constantNumPackets);
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                  Teuchos::Array<GlobalOrdinal>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets) const
-  {
+  packFillActive (
+    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+    Teuchos::Array<GlobalOrdinal>& exports,
+    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+    size_t& constantNumPackets
+  ) const {
     using std::endl;
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
@@ -5747,14 +5747,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  packFillActiveNew (const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets) const
-  {
+  packFillActive(
+    const Kokkos::DualView<const local_ordinal_type*,
+    buffer_device_type>& exportLIDs,
+    Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+    Kokkos::DualView<size_t*,
+    buffer_device_type> numPacketsPerLID,
+    size_t& constantNumPackets
+  ) const {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
@@ -5764,13 +5764,13 @@ namespace Tpetra {
       Kokkos::Device<host_execution_space, Kokkos::HostSpace>;
     using exports_dv_type =
       Kokkos::DualView<packet_type*, buffer_device_type>;
-    const char tfecfFuncName[] = "packFillActiveNew: ";
+    const char tfecfFuncName[] = "packFillActive: ";
     const bool verbose = verbose_;
 
     const auto numExportLIDs = exportLIDs.extent (0);
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsGraph", "packFillActiveNew");
+      prefix = this->createPrefix("CrsGraph", "packFillActive");
       std::ostringstream os;
       os << *prefix << "numExportLIDs: " << numExportLIDs
          << ", numPacketsPerLID.extent(0): "
@@ -5891,7 +5891,7 @@ namespace Tpetra {
 
     Details::disableWDVTracking();
     Kokkos::parallel_scan
-      ("Tpetra::CrsGraph::packFillActiveNew: Pack exports",
+      ("Tpetra::CrsGraph::packFillActive: Pack exports",
        inputRange, [=, &prefix]
        (const LO i, size_t& exportsOffset, const bool final) {
          const size_t curOffset = exportsOffset;

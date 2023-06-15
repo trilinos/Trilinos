@@ -3089,7 +3089,7 @@ public:
     ///   entries for all packed rows <i>on all processes in the
     ///   matrix's communicator</i>.
     ///
-    /// \subsection Tpetra_CrsMatrix_packNew_summary Packing scheme
+    /// \subsection Tpetra_CrsMatrix_pack_summary Packing scheme
     ///
     /// The number of "packets" per row is the number of bytes per
     /// row.  Each row has the following storage format:
@@ -3123,7 +3123,7 @@ public:
     /// packing scheme.  We describe it here more for Tpetra
     /// developers and less for users.
     ///
-    /// \subsection Tpetra_CrsMatrix_packNew_disc Discussion
+    /// \subsection Tpetra_CrsMatrix_pack_disc Discussion
     ///
     /// DistObject requires packing an object's entries as type
     /// <tt>Packet</tt>, which is the first template parameter of
@@ -3158,7 +3158,7 @@ public:
     /// of entries explicitly).  This ensures sparsity of storage and
     /// communication in case most rows are empty.
     ///
-    /// \subsection Tpetra_CrsMatrix_packNew_why Justification
+    /// \subsection Tpetra_CrsMatrix_pack_why Justification
     ///
     /// GCC >= 4.9 and recent-future versions of the Intel compiler
     /// implement stricter aliasing rules that forbid unaligned type
@@ -3178,7 +3178,7 @@ public:
     /// Knowing the number of entries for each row also makes
     /// parallelizing packing and unpacking easier.
     void
-    packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+    pack (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
              Kokkos::DualView<char*, buffer_device_type>& exports,
              const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
              size_t& constantNumPackets) const;
@@ -3191,7 +3191,7 @@ public:
     /// Call this only when this matrix (which is the source matrix to
     /// pack) does not yet have a KokkosSparse::CrsMatrix.
     void
-    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+    packNonStatic (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                       Kokkos::DualView<char*, buffer_device_type>& exports,
                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                       size_t& constantNumPackets) const;
@@ -3297,7 +3297,7 @@ public:
                const size_t numEnt,
                const size_t numBytesPerValue);
 
-    /// \brief Allocate space for packNew() to pack entries to send.
+    /// \brief Allocate space for pack() to pack entries to send.
     ///
     /// This is part of the implementation of packAndPrepare, which
     /// helps implement the "new" DistObject interface.
@@ -3306,10 +3306,12 @@ public:
     /// \param totalNumEntries [out] Total number of entries to send.
     /// \param exportLIDs [in] Local indices of the rows to send.
     void
-    allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
-                          size_t& totalNumEntries,
-                          const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& exportLIDs) const;
+    allocatePackSpace (
+      Kokkos::DualView<char*, buffer_device_type>& exports,
+      size_t& totalNumEntries,
+      const Kokkos::DualView<const local_ordinal_type*,
+      buffer_device_type>& exportLIDs
+    ) const;
     //@}
 
   public:

@@ -922,13 +922,13 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew(
+packCrsMatrix(
   const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
   const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
   const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-  size_t& constantNumPackets)
-{
+  size_t& constantNumPackets
+) {
   using device_type = typename CrsMatrix<ST, LO, GO, NT>::device_type;
   using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
 
@@ -947,7 +947,7 @@ packCrsMatrixNew(
   auto exportLIDs_d = exportLIDs.view_device ();
 
   ::Tpetra::Details::ProfilingRegion region_pack_crs_matrix_new(
-    "Tpetra::Details::packCrsMatrixNew",
+    "Tpetra::Details::packCrsMatrix",
     "Import/Export"
   );
   PackCrsMatrixImpl::packCrsMatrix<ST,LO,GO,NT,buffer_device_type> (
@@ -1091,7 +1091,7 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     const Teuchos::ArrayView<const LO>&, \
     size_t&); \
   template void \
-  Details::packCrsMatrixNew<ST, LO, GO, NT> (const CrsMatrix<ST, LO, GO, NT>&, \
+  Details::packCrsMatrix<ST, LO, GO, NT> (const CrsMatrix<ST, LO, GO, NT>&, \
     Kokkos::DualView<char*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<size_t*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const LO*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \

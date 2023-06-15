@@ -855,25 +855,15 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 ///   communication ("new" DistObject interface version).
 template<typename LO, typename GO, typename NT>
 void
-packCrsGraphNew (const CrsGraph<LO,GO,NT>& sourceGraph,
-                 const Kokkos::DualView<
-                   const LO*,
-                   typename CrsGraph<LO,GO,NT>::buffer_device_type
-                 >& export_lids,
-                 const Kokkos::DualView<
-                   const int*,
-                   typename CrsGraph<LO,GO,NT>::buffer_device_type
-                 >& export_pids,
-                 Kokkos::DualView<
-                   typename CrsGraph<LO,GO,NT>::packet_type*,
-                   typename CrsGraph<LO,GO,NT>::buffer_device_type>& exports,
-                 Kokkos::DualView<
-                   size_t*,
-                   typename CrsGraph<LO,GO,NT>::buffer_device_type
-                 > num_packets_per_lid,
-                 size_t& constant_num_packets,
-                 const bool pack_pids)
-{
+packCrsGraph (
+  const CrsGraph<LO,GO,NT>& sourceGraph,
+  const Kokkos::DualView<const LO*, typename CrsGraph<LO,GO,NT>::buffer_device_type>& export_lids,
+  const Kokkos::DualView< const int*, typename CrsGraph<LO,GO,NT>::buffer_device_type>& export_pids,
+  Kokkos::DualView<typename CrsGraph<LO,GO,NT>::packet_type*, typename CrsGraph<LO,GO,NT>::buffer_device_type>& exports,
+  Kokkos::DualView<size_t*, typename CrsGraph<LO,GO,NT>::buffer_device_type> num_packets_per_lid,
+  size_t& constant_num_packets,
+  const bool pack_pids
+) {
   using Kokkos::View;
   using crs_graph_type = CrsGraph<LO,GO,NT>;
   using BDT = typename crs_graph_type::buffer_device_type;
@@ -881,7 +871,7 @@ packCrsGraphNew (const CrsGraph<LO,GO,NT>& sourceGraph,
   using exports_dual_view_type = Kokkos::DualView<PT*, BDT>;
   using LGT = typename crs_graph_type::local_graph_device_type;
   using LMT = typename crs_graph_type::map_type::local_map_type;
-  const char prefix[] = "Tpetra::Details::packCrsGraphNew: ";
+  const char prefix[] = "Tpetra::Details::packCrsGraph: ";
 
   const LGT local_graph = sourceGraph.getLocalGraphDevice ();
   const LMT local_col_map = sourceGraph.getColMap ()->getLocalMap ();
@@ -1021,7 +1011,7 @@ packCrsGraphWithOwningPIDs
     const Teuchos::ArrayView<const LO>&, \
     size_t&); \
   template void \
-  Details::packCrsGraphNew<LO, GO, NT> ( \
+  Details::packCrsGraph<LO, GO, NT> ( \
     const CrsGraph<LO, GO, NT>&, \
     const Kokkos::DualView< \
       const LO*, \

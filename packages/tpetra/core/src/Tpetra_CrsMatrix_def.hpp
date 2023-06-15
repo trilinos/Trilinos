@@ -6126,7 +6126,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Attempt to cast the source object to CrsMatrix.  If successful,
-    // use the source object's packNew() method to pack its data for
+    // use the source object's pack() method to pack its data for
     // communication.  Otherwise, attempt to cast to RowMatrix; if
     // successful, use the source object's pack() method.  Otherwise,
     // the source object doesn't have the right type.
@@ -6155,12 +6155,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Source matrix same (CrsMatrix) type as target; "
-          "calling packNew" << endl;
+          "calling pack" << endl;
         std::cerr << os.str ();
       }
       try {
-        srcCrsMat->packNew (exportLIDs, exports, numPacketsPerLID,
-                            constantNumPackets);
+        srcCrsMat->pack (exportLIDs, exports, numPacketsPerLID, constantNumPackets);
       }
       catch (std::exception& e) {
         lclBad = 1;
@@ -6258,13 +6257,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (gblBad != 0) {
         Tpetra::Details::gathervPrint (std::cerr, msg.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, "packNew() or pack() threw an exception on "
+          (true, std::logic_error, "pack() or pack() threw an exception on "
            "one or more participating processes.");
       }
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (lclBad != 0, std::logic_error, "packNew threw an exception on one "
+        (lclBad != 0, std::logic_error, "pack threw an exception on one "
          "or more participating processes.  Here is this process' error "
          "message: " << msg.str ());
     }
@@ -6468,17 +6467,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
-                        size_t& totalNumEntries,
-                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs) const
-  {
+  allocatePackSpace (
+    Kokkos::DualView<char*, buffer_device_type>& exports,
+    size_t& totalNumEntries,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs
+  ) const {
     using Details::Behavior;
     using Details::dualViewStatusToString;
     using std::endl;
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    //const char tfecfFuncName[] = "allocatePackSpaceNew: ";
+    //const char tfecfFuncName[] = "allocatePackSpace: ";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -6486,7 +6486,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix", "allocatePackSpaceNew");
+      prefix = this->createPrefix("CrsMatrix", "allocatePackSpace");
       std::ostringstream os;
       os << *prefix << "Before:"
          << endl
@@ -6555,28 +6555,26 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+  pack (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
            Kokkos::DualView<char*, buffer_device_type>& exports,
            const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
            size_t& constantNumPackets) const
   {
-    // The call to packNew in packAndPrepare catches and handles any exceptions.
-    Details::ProfilingRegion region_pack_new("Tpetra::CrsMatrix::packNew", "Import/Export");
+    // The call to pack in packAndPrepare catches and handles any exceptions.
+    Details::ProfilingRegion region_pack_new("Tpetra::CrsMatrix::pack", "Import/Export");
     if (this->isStaticGraph ()) {
-      using ::Tpetra::Details::packCrsMatrixNew;
-      packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
-                        constantNumPackets);
+      using ::Tpetra::Details::packCrsMatrix;
+      packCrsMatrix (*this, exports, numPacketsPerLID, exportLIDs, constantNumPackets);
     }
     else {
-      this->packNonStaticNew (exportLIDs, exports, numPacketsPerLID,
-                              constantNumPackets);
+      this->packNonStatic(exportLIDs, exports, numPacketsPerLID, constantNumPackets);
     }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+  packNonStatic (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                     Kokkos::DualView<char*, buffer_device_type>& exports,
                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                     size_t& constantNumPackets) const
@@ -6590,12 +6588,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     using ST = impl_scalar_type;
-    const char tfecfFuncName[] = "packNonStaticNew: ";
+    const char tfecfFuncName[] = "packNonStatic: ";
 
     const bool verbose = Behavior::verbose("CrsMatrix");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("CrsMatrix", "packNonStaticNew");
+      prefix = this->createPrefix("CrsMatrix", "packNonStatic");
       std::ostringstream os;
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
@@ -6617,7 +6615,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // unallocated.  Do the first two parts of "Count, allocate, fill,
     // compute."
     size_t totalNumEntries = 0;
-    this->allocatePackSpaceNew (exports, totalNumEntries, exportLIDs);
+    this->allocatePackSpace (exports, totalNumEntries, exportLIDs);
     const size_t bufSize = static_cast<size_t> (exports.extent (0));
 
     // Write-only host access
@@ -6726,7 +6724,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew: After:" << endl
+      os << *prefix << "Tpetra::CrsMatrix::packNonStatic: After:" << endl
          << *prefix << "  "
          << dualViewStatusToString (exports, "exports")
          << endl
@@ -7014,10 +7012,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (isStaticGraph ()) {
-      using Details::unpackCrsMatrixAndCombineNew;
-      unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
-                                   importLIDs, constantNumPackets,
-                                   combineMode);
+      using Details::unpackCrsMatrixAndCombine;
+      unpackCrsMatrixAndCombine(
+        *this, imports, numPacketsPerLID, importLIDs, constantNumPackets, combineMode
+      );
     }
     else {
       {

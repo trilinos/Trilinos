@@ -1252,13 +1252,13 @@ public:
                     size_t& constantNumPackets) const;
 
     void
-    packFillActiveNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets) const;
+    packFillActive (
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+      Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+      Kokkos::DualView<size_t*,
+      buffer_device_type> numPacketsPerLID,
+      size_t& constantNumPackets
+    ) const;
 
   // clang-format on
   using dist_object_type::unpackAndCombine; ///< DistObject has overloaded

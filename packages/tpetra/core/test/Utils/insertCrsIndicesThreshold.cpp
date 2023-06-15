@@ -163,7 +163,7 @@ int main(int narg, char **arg)
       size_t nInserted_LS; 
       {
         char name[25];
-        sprintf(name, "nz=%04d search", nnz);
+        snprintf(name, sizeof(name), "nz=%04d search", nnz);
         Teuchos::RCP<Teuchos::TimeMonitor> timeMonitor(
           new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name)));
         size_t num_assigned = 0;
@@ -175,7 +175,7 @@ int main(int narg, char **arg)
       size_t nInserted_T;
       {
         char name[25];
-        sprintf(name, "nz=%04d table", nnz);
+        snprintf(name, sizeof(name), "nz=%04d table", nnz);
         Teuchos::RCP<Teuchos::TimeMonitor> timeMonitor(
           new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name)));
         size_t num_assigned = 0;
