@@ -438,6 +438,16 @@ namespace MueLu {
 
           // }
 
+          if (parameterList_.get<bool>("refmaxwell: fill communicator", false)) {
+            int temp;
+            temp  = std::nearbyint(Teuchos::as<double>(numProcsAH  * numProcs) / Teuchos::as<double>(numProcsAH+numProcsA22));
+            numProcsA22 = std::nearbyint(Teuchos::as<double>(numProcsA22 * numProcs) / Teuchos::as<double>(numProcsAH+numProcsA22));
+            numProcsAH = temp;
+            if (numProcsAH+numProcsA22 == numProcs+1)
+              numProcsA22 -= 1;
+            TEUCHOS_ASSERT(numProcsAH + numProcsA22 == numProcs);
+          }
+
           if ((numProcsAH < 0) || (numProcsA22 < 0) || (numProcsAH + numProcsA22 > numProcs)) {
             GetOStream(Warnings0) << "RefMaxwell::compute(): Disabling rebalancing of subsolves, since partition heuristic resulted "
                                   << "in undesirable number of partitions: " << numProcsAH << ", " << numProcsA22 << std::endl;
