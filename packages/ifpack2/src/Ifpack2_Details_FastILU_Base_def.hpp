@@ -42,8 +42,8 @@
 
 /// @file Ifpack2_Details_FastILU_Base_def.hpp
 
-#ifndef __IFPACK2_FASTILU_BASE_DEF_HPP__ 
-#define __IFPACK2_FASTILU_BASE_DEF_HPP__ 
+#ifndef __IFPACK2_FASTILU_BASE_DEF_HPP__
+#define __IFPACK2_FASTILU_BASE_DEF_HPP__
 
 #include <Ifpack2_Details_CrsArrays.hpp>
 #include "Tpetra_BlockCrsMatrix.hpp"
@@ -58,6 +58,59 @@ namespace Ifpack2
 {
 namespace Details
 {
+
+template <typename View1, typename View2, typename View3>
+std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
+  const View1& row_map,
+  const View2& entries,
+  const View3& values,
+  const int block_size)
+{
+  using size_type = typename View1::non_const_value_type;
+  using lno_t     = typename View2::non_const_value_type;
+  using scalar_t  = typename View3::non_const_value_type;
+
+  const size_type nrows = row_map.extent(0) - 1;
+  std::vector<std::vector<scalar_t>> result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, 0.0);
+  }
+
+  std::cout << "cols: " << entries.extent(0) << std::endl;
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = row_map(row_idx);
+    const size_type row_nnz_end   = row_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx      = entries(row_nnz);
+      const scalar_t value     = values.extent(0) > 0 ? values(row_nnz) : 1;
+      result[row_idx][col_idx] = value;
+    }
+  }
+
+  return result;
+}
+
+template <typename scalar_t>
+void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
+  for (const auto& row : matrix) {
+    for (const auto& item : row) {
+      std::printf("%.2f ", item);
+    }
+    std::cout << std::endl;
+  }
+}
+
+template <typename View>
+void print_view(const View& view, const std::string& name)
+{
+  std::cout << name << "(" << view.extent(0) << "): ";
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    std::cout << view(i) << ", ";
+  }
+  std::cout << std::endl;
+}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -173,7 +226,127 @@ initialize()
   }
 
   if (params_.blockCrs) {
-    mat_ = Tpetra::convertToBlockCrsMatrix(*Ifpack2::Details::getCrsMatrix(this->mat_), params_.blockCrsSize);
+    std::cout << "JGF before conversion:" << std::endl;
+    auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+    print_view(localRowPtrs_, "rowptrs");
+    print_view(localColInds_, "colids");
+    print_view(localValues_,  "localValues_");
+    print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
+
+    auto crs_row_map = crs_matrix->getRowMap();
+    auto crs_col_map = crs_matrix->getColMap();
+
+    // Populate blocks, they must be fully populated with entries so fill with zeroes
+    const auto nrows = localRowPtrsHost_.size() - 1;
+    std::vector<LocalOrdinal> local_new_rowmap(nrows+1);
+    LocalOrdinal new_nnz_count = 0;
+    const auto block_size = params_.blockCrsSize;
+    const auto blocks_per_row = nrows / block_size; // assumes square matrix
+    std::vector<bool> row_block_active(blocks_per_row, false);
+    assert(nrows % block_size == 0);
+    // Sizing
+    for (size_t row = 0; row < nrows; ++row) {
+      local_new_rowmap[row] = new_nnz_count;
+      LocalOrdinal row_itr = localRowPtrs_(row);
+
+      if (row % block_size == 0) {
+        // We are starting a fresh sequence of blocks in the vertical
+        row_block_active.assign(row_block_active.size(), false);
+      }
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        const LocalOrdinal first_possible_col_in_block      = row_block_idx * block_size;
+        const LocalOrdinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
+        LocalOrdinal curr_nnz_col = localColInds_(row_itr);
+        if (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block) {
+          // This block has at least one nnz in this row
+          row_block_active[row_block_idx] = true;
+        }
+        if (row_block_active[row_block_idx]) {
+          new_nnz_count += block_size;
+          for (LocalOrdinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col) {
+            curr_nnz_col = localColInds_(row_itr);
+            if (possible_col == curr_nnz_col) {
+              // Already a non-zero entry, skip
+              ++row_itr;
+            }
+          }
+        }
+      }
+    }
+    local_new_rowmap[nrows] = new_nnz_count;
+
+    std::vector<LocalOrdinal> local_col_ids_to_insert(new_nnz_count);
+    std::vector<Scalar>       local_vals_to_insert(new_nnz_count, 0.0);
+
+    for (size_t row = 0; row < nrows; ++row) {
+      LocalOrdinal row_itr = localRowPtrs_(row);
+      LocalOrdinal row_end = localRowPtrs_(row+1);
+      LocalOrdinal row_itr_new = local_new_rowmap[row];
+
+      if (row % block_size == 0) {
+        // We are starting a fresh sequence of blocks in the vertical
+        row_block_active.assign(row_block_active.size(), false);
+      }
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        const LocalOrdinal first_possible_col_in_block      = row_block_idx * block_size;
+        const LocalOrdinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
+        LocalOrdinal curr_nnz_col = localColInds_(row_itr);
+        if (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block) {
+          // This block has at least one nnz in this row
+          row_block_active[row_block_idx] = true;
+        }
+        if (row_block_active[row_block_idx]) {
+          for (LocalOrdinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
+            local_col_ids_to_insert[row_itr_new] = possible_col;
+            curr_nnz_col = localColInds_(row_itr);
+            if (possible_col == curr_nnz_col && row_itr < row_end) {
+              // Already a non-zero entry
+              local_vals_to_insert[row_itr_new] = localValues_(row_itr);
+              ++row_itr;
+            }
+          }
+        }
+      }
+    }
+
+    // Create new TCrsMatrix with the new filled data
+    using local_crs = typename TCrsMatrix::local_matrix_device_type;
+    local_crs kk_crs_matrix_block_filled(
+      "a-blk-filled", nrows, nrows, new_nnz_count, local_vals_to_insert.data(), local_new_rowmap.data(), local_col_ids_to_insert.data());
+    TCrsMatrix crs_matrix_block_filled(crs_row_map, crs_col_map, kk_crs_matrix_block_filled);
+    mat_ = Teuchos::RCP(&crs_matrix_block_filled, false);
+
+    std::cout << "JGF after filling:" << std::endl;
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+    print_view(localRowPtrs_, "rowptrs");
+    print_view(localColInds_, "colids");
+    print_view(localValues_,  "localValues_");
+    print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
+
+    auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(crs_matrix_block_filled, params_.blockCrsSize);
+    mat_ = bcrs_matrix;
+
+    std::cout << "JGF after conversion:" << std::endl;
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+    print_view(localRowPtrs_, "rowptrs");
+    print_view(localColInds_, "colids");
+    print_view(localValues_,  "localValues_");
+    print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
+
+    // std::cout << "JGF after converting back:" << std::endl;
+    // mat_ = Tpetra::convertToCrsMatrix(*bcrs_matrix);
+    // CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+    // CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+    // print_view(localRowPtrs_, "rowptrs");
+    // print_view(localColInds_, "colids");
+    // print_view(localValues_,  "localValues_");
+    // print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
   }
 
   Kokkos::Timer copyTimer;
@@ -260,7 +433,7 @@ initialize()
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-isInitialized() const 
+isInitialized() const
 {
   return initFlag_;
 }
@@ -328,7 +501,7 @@ getNumApply() const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 double FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-getInitializeTime() const 
+getInitializeTime() const
 {
   return initTime_;
 }
@@ -439,7 +612,7 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
 {
   *this = getDefaults();
   //For each parameter, check that if the parameter exists, it has the right type
-  //Then get the value and sanity check it 
+  //Then get the value and sanity check it
   //If the parameter doesn't exist, leave it as default (from Params::getDefaults())
   //"sweeps" aka nFact
   #define TYPE_ERROR(name, correctTypeName) {throw std::invalid_argument(precType + "::setParameters(): parameter \"" + name + "\" has the wrong type (must be " + correctTypeName + ")");}
@@ -461,7 +634,7 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       nFact = pL.get<int>("sweeps");
       CHECK_VALUE("sweeps", nFact, nFact < 1, "must have a value of at least 1");
     }
-    else 
+    else
       TYPE_ERROR("sweeps", "int");
   }
   std::string sptrsv_type = "Fast";
@@ -538,7 +711,7 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       blockSizeILU = pL.get<int>("block size for ILU");
       CHECK_VALUE("block size for ILU", blockSizeILU, blockSizeILU < 1, "must have a value of at least 1");
     }
-    else 
+    else
       TYPE_ERROR("block size for ILU", "int");
   }
   //"block size" aka blkSz
@@ -576,4 +749,3 @@ template class Ifpack2::Details::FastILU_Base<S, L, G, N>;
 } //namespace Ifpack2
 
 #endif
-

@@ -75,6 +75,61 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
+#define JGF_SUPER_DEBUG
+
+template <typename View>
+void print_view(const std::string& name, const View& view)
+{
+  std::cout << name << "(" << view.extent(0) << "): ";
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    std::cout << view(i) << ", ";
+  }
+  std::cout << std::endl;
+}
+
+template <typename View1, typename View2, typename View3>
+std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
+  const View1& row_map,
+  const View2& entries,
+  const View3& values,
+  const int block_size)
+{
+  using size_type = typename View1::non_const_value_type;
+  using lno_t     = typename View2::non_const_value_type;
+  using scalar_t  = typename View3::non_const_value_type;
+
+  const size_type nrows = row_map.extent(0) - 1;
+  std::vector<std::vector<scalar_t>> result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, 0.0);
+  }
+
+  std::cout << "cols: " << entries.extent(0) << std::endl;
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = row_map(row_idx);
+    const size_type row_nnz_end   = row_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx      = entries(row_nnz);
+      const scalar_t value     = values.extent(0) > 0 ? values(row_nnz) : 1;
+      result[row_idx][col_idx] = value;
+    }
+  }
+
+  return result;
+}
+
+template <typename scalar_t>
+void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
+  for (const auto& row : matrix) {
+    for (const auto& item : row) {
+      std::printf("%.2f ", item);
+    }
+    std::cout << std::endl;
+  }
+}
+
 // some useful preprocessor functions
 #ifdef FASTILU_TIMER
 #define FASTILU_CREATE_TIMER(timer) Kokkos::Timer timer
@@ -1407,6 +1462,14 @@ class FastILUPrec
           {
             initGuessPrec->setValues(aValIn_);
           }
+#ifdef JGF_SUPER_DEBUG
+            std::cout << "nrows: " << nRows << std::endl;
+            print_view("aRowMap", aRowMapHost);
+            print_view("aColIdxHost", aColIdxHost);
+            print_view("aValHost", aValHost);
+            const auto decomp = decompress_matrix(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
+            print_matrix(decomp);
+#endif
         }
 
         //Actual computation phase.
