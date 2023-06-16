@@ -1367,7 +1367,6 @@ unpackAndCombineWithOwningPIDsCount (
   using Kokkos::MemoryUnmanaged;
   using Kokkos::View;
   typedef typename Node::device_type DT;
-  typedef typename DistObject<char, LocalOrdinal, GlobalOrdinal, Node>::buffer_device_type BDT;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1392,12 +1391,12 @@ unpackAndCombineWithOwningPIDsCount (
                                             permuteFromLIDs.size (), true,
                                             "permute_from_lids");
   auto imports_d =
-    create_mirror_view_from_raw_host_array (BDT (),
+    create_mirror_view_from_raw_host_array (DT (),
                                             imports.getRawPtr (),
                                             imports.size (), true,
                                             "imports");
   auto num_packets_per_lid_d =
-    create_mirror_view_from_raw_host_array (BDT (),
+    create_mirror_view_from_raw_host_array (DT (),
                                             numPacketsPerLID.getRawPtr (),
                                             numPacketsPerLID.size (), true,
                                             "num_packets_per_lid");
