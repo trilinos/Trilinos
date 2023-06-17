@@ -84,10 +84,8 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    ReorderBlockAFactory() { }
+    ReorderBlockAFactory() = default;
 
-    //! Destructor.
-    virtual ~ReorderBlockAFactory() { }
     //@}
 
     //! Input
@@ -107,9 +105,6 @@ namespace MueLu {
     void Build(Level & currentLevel) const;
 
     //@}
-
-  private:
-
   }; // class ReorderBlockAFactory
 
 } // namespace MueLu
