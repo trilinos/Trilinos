@@ -16,6 +16,15 @@ IF (NOT KokkosKernels_ENABLE_COMPONENT_BLAS)
   LIST(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/batched/KokkosBatched_Util.cpp)
 ENDIF()
 
-# Adding unit-tests
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+IF(KokkosKernels_ENABLE_TESTS OR KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
+  # Adding unit-tests
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+    ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+ENDIF()
+# NOTE: Above, the build directory 'batched' is not created unless unit tests
+# are actually enabled (which are actually included from the base-level
+# CMakeLists.txt file).  And the KokkosKernelsTargets.cmake file that gets
+# generated from this CMake package in the build dir will be broken if these
+# are listed in the `INTERFACE_INCLUDE_DIRECTORIES` property when the build
+# `batched` is not created (see Trilinos PR #11966).
