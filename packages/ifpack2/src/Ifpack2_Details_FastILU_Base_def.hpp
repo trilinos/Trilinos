@@ -355,6 +355,7 @@ initialize()
 
   if (params_.use_metis)
   {
+    assert(!params_.blockCrs);
     const std::string timerNameMetis ("Ifpack2::FastILU::Metis");
     Teuchos::RCP<Teuchos::Time> timerMetis = Teuchos::TimeMonitor::lookupCounter (timerNameMetis);
     if (timerMetis.is_null ()) {
@@ -427,6 +428,7 @@ initialize()
   }
 
   initLocalPrec();  //note: initLocalPrec updates initTime
+  std::cout << "JGF MADE IT PAST INIT!!" << std::endl;
   initFlag_ = true;
   nInit_++;
 }
