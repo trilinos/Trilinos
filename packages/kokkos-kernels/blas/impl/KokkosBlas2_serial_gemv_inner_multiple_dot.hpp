@@ -31,7 +31,7 @@ struct OpID {
 struct OpConj {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
-    using KAT = Kokkos::Details::ArithTraits<ValueType>;
+    using KAT = Kokkos::ArithTraits<ValueType>;
     return KAT::conj(v);
   }
 };

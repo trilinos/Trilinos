@@ -16,6 +16,10 @@
 #ifndef TEST_SPARSE_HPP
 #define TEST_SPARSE_HPP
 
+#if KOKKOS_VERSION >= 40099
+#include "Test_Sparse_coo2crs.hpp"
+#endif  // KOKKOS_VERSION >= 40099
+#include "Test_Sparse_crs2coo.hpp"
 #include "Test_Sparse_block_gauss_seidel.hpp"
 #include "Test_Sparse_Controls.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"

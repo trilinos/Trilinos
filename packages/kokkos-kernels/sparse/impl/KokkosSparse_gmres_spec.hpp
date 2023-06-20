@@ -158,6 +158,5 @@ struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
       false, true>;
 
 #include <KokkosSparse_gmres_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_gmres_eti_spec_decl.hpp>
 
 #endif

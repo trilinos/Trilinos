@@ -219,12 +219,12 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  if (params.a_mtx_bin_file == NULL) {
+  if (params.a_mtx_bin_file == "") {
     std::cerr << "Provide a and b matrix files" << std::endl;
     print_options();
     return 0;
   }
-  if (params.b_mtx_bin_file == NULL) {
+  if (params.b_mtx_bin_file == "") {
     std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
@@ -253,15 +253,9 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
-#ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
-        Kokkos::CudaHostPinnedSpace>(params);
-#else
     KokkosKernels::Experiment::run_spgemm_jacobi<
         size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
         Kokkos::Cuda::memory_space>(params);
-#endif
   }
 #endif
 

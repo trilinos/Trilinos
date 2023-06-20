@@ -21,7 +21,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Specialization struct which defines whether a specialization exists
-template <class AVT, class BVT>
+template <class execution_space, class AVT, class BVT>
 struct trmm_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -33,6 +33,7 @@ struct trmm_tpl_spec_avail {
                                              MEMSPACE)                     \
   template <class ExecSpace>                                               \
   struct trmm_tpl_spec_avail<                                              \
+      ExecSpace,                                                           \
       Kokkos::View<const SCALAR**, LAYOUTA,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -71,6 +72,7 @@ KOKKOSBLAS3_TRMM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
                                                MEMSPACE)                   \
   template <class ExecSpace>                                               \
   struct trmm_tpl_spec_avail<                                              \
+      Kokkos::Cuda,                                                        \
       Kokkos::View<const SCALAR**, LAYOUTA,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \

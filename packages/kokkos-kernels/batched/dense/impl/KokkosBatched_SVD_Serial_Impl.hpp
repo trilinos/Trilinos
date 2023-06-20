@@ -29,6 +29,19 @@ KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_USV_Tag, const AViewType &A,
                                              const SViewType &sigma,
                                              const VViewType &Vt,
                                              const WViewType &work) {
+  static_assert(Kokkos::is_view_v<AViewType> && AViewType::rank == 2,
+                "SVD: A must be a rank-2 view");
+  static_assert(Kokkos::is_view_v<UViewType> && UViewType::rank == 2,
+                "SVD: U must be a rank-2 view");
+  static_assert(Kokkos::is_view_v<SViewType> && SViewType::rank == 1,
+                "SVD: s must be a rank-1 view");
+  static_assert(Kokkos::is_view_v<VViewType> && VViewType::rank == 2,
+                "SVD: V must be a rank-2 view");
+  static_assert(Kokkos::is_view_v<WViewType> && WViewType::rank == 1,
+                "SVD: W must be a rank-1 view");
+  static_assert(
+      !std::is_same_v<typename WViewType::array_layout, Kokkos::LayoutStride>,
+      "SVD: W must be contiguous (not LayoutStride)");
   using value_type = typename AViewType::non_const_value_type;
   return KokkosBatched::SerialSVDInternal::invoke<value_type>(
       A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1), U.data(),
@@ -41,6 +54,15 @@ template <typename AViewType, typename SViewType, typename WViewType>
 KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_S_Tag, const AViewType &A,
                                              const SViewType &sigma,
                                              const WViewType &work) {
+  static_assert(Kokkos::is_view_v<AViewType> && AViewType::rank == 2,
+                "SVD: A must be a rank-2 view");
+  static_assert(Kokkos::is_view_v<SViewType> && SViewType::rank == 1,
+                "SVD: s must be a rank-1 view");
+  static_assert(Kokkos::is_view_v<WViewType> && WViewType::rank == 1,
+                "SVD: W must be a rank-1 view");
+  static_assert(
+      !std::is_same_v<typename WViewType::array_layout, Kokkos::LayoutStride>,
+      "SVD: W must be contiguous (not LayoutStride)");
   using value_type = typename AViewType::non_const_value_type;
   return KokkosBatched::SerialSVDInternal::invoke<value_type>(
       A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1), nullptr, 0,

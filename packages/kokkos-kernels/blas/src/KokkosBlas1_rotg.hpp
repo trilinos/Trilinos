@@ -26,10 +26,14 @@ namespace KokkosBlas {
 ///
 /// \tparam Scalar data type of inputs and outputs
 ///
+/// \param space [in] the execution space
 /// \param a [in/out] on input one of the values to rotate, on output the
-/// rotated value \param b [in/out] on input one of the values to rotate, on
-/// output the rotated value \param c [out] cosine value associated with the
-/// rotation \param s [out] sine value associated with the rotation
+///          rotated value
+/// \param b [in/out] on input one of the values to rotate, on
+///          output the rotated value
+/// \param c [out] cosine value associated with the
+///          rotation
+/// \param s [out] sine value associated with the rotation
 template <class execution_space, class SViewType, class MViewType>
 void rotg(execution_space const& space, SViewType const& a, SViewType const& b,
           MViewType const& c, SViewType const& s) {

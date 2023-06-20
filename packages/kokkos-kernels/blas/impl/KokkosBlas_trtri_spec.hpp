@@ -123,6 +123,5 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       false, true>;
 
 #include <KokkosBlas_trtri_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas_trtri_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS_TRTRI_SPEC_HPP_

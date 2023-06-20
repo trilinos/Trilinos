@@ -39,57 +39,26 @@ void impl_test_team_scal(int N) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
-      ScalarB * [2],
-      typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
+  view_stride_adapter<ViewTypeA> x("X", N);
+  view_stride_adapter<ViewTypeB> y("Y", N);
 
   ScalarA a(3);
   typename AT::mag_type eps  = AT::epsilon() * 1000;
   typename AT::mag_type zero = AT::abs(AT::zero());
   typename AT::mag_type one  = AT::abs(AT::one());
 
-  BaseTypeA b_x("X", N);
-  BaseTypeB b_y("Y", N);
-  BaseTypeB b_org_y("Org_Y", N);
-
-  ViewTypeA x                        = Kokkos::subview(b_x, Kokkos::ALL(), 0);
-  ViewTypeB y                        = Kokkos::subview(b_y, Kokkos::ALL(), 0);
-  typename ViewTypeA::const_type c_x = x;
-  typename ViewTypeB::const_type c_y = y;
-
-  typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-  typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y, Kokkos::ALL(), 0);
-
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_x, rand_pool, ScalarA(1));
-  Kokkos::fill_random(b_y, rand_pool, ScalarB(1));
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(1));
 
-  Kokkos::deep_copy(b_org_y, b_y);
-
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   ScalarA expected_result(0);
   for (int i = 0; i < N; i++) {
-    expected_result += ScalarB(a * h_x(i)) * ScalarB(a * h_x(i));
+    expected_result += ScalarB(a * x.h_view(i)) * ScalarB(a * x.h_view(i));
   }
 
   Kokkos::parallel_for(
@@ -99,18 +68,20 @@ void impl_test_team_scal(int N) {
         KokkosBlas::Experimental::scal(
             teamMember,
             Kokkos::subview(
-                y, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                y.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
             Kokkos::subview(
-                x, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                x.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
   {
-    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y, y);
+    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y.d_view, y.d_view);
     typename AT::mag_type divisor =
         AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
     typename AT::mag_type diff =
@@ -118,7 +89,7 @@ void impl_test_team_scal(int N) {
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
-  Kokkos::deep_copy(b_y, b_org_y);
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy,
@@ -127,18 +98,20 @@ void impl_test_team_scal(int N) {
         KokkosBlas::Experimental::scal(
             teamMember,
             Kokkos::subview(
-                y, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                y.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
             Kokkos::subview(
-                c_x, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                x.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
 
   {
-    ScalarB const_nonconst_result = KokkosBlas::dot(y, y);
+    ScalarB const_nonconst_result = KokkosBlas::dot(y.d_view, y.d_view);
     typename AT::mag_type divisor =
         AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
     typename AT::mag_type diff =
@@ -157,46 +130,25 @@ void impl_test_team_scal_mv(int N, int K) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-
-  typename vfA_type::BaseType b_x("A", N, K);
-  typename vfB_type::BaseType b_y("B", N, K);
-  typename vfB_type::BaseType b_org_y("B", N, K);
-
-  ViewTypeA x = vfA_type::view(b_x);
-  ViewTypeB y = vfB_type::view(b_y);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-
-  typename h_vfA_type::BaseType h_b_x = Kokkos::create_mirror_view(b_x);
-  typename h_vfB_type::BaseType h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
-  typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
+  view_stride_adapter<ViewTypeA> x("X", N, K);
+  view_stride_adapter<ViewTypeB> y("Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_x, rand_pool, ScalarA(1));
-  Kokkos::fill_random(b_y, rand_pool, ScalarB(1));
-
-  Kokkos::deep_copy(b_org_y, b_y);
-
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(1));
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   ScalarA a(3);
-  typename ViewTypeA::const_type c_x = x;
 
   ScalarA *expected_result = new ScalarA[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++) {
-      expected_result[j] += ScalarB(a * h_x(i, j)) * ScalarB(a * h_x(i, j));
+      expected_result[j] +=
+          ScalarB(a * x.h_view(i, j)) * ScalarB(a * x.h_view(i, j));
     }
   }
 
@@ -211,11 +163,11 @@ void impl_test_team_scal_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y, Kokkos::ALL(), teamId), a,
-            Kokkos::subview(x, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
+            Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
       });
 
-  KokkosBlas::dot(r, y, y);
+  KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_scalar_result = r(k);
     typename AT::mag_type divisor =
@@ -225,18 +177,19 @@ void impl_test_team_scal_mv(int N, int K) {
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
-  Kokkos::deep_copy(b_y, b_org_y);
+  // Zero out y again, and run again with const input
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy,
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y, Kokkos::ALL(), teamId), a,
-            Kokkos::subview(c_x, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId), a,
+            Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
       });
 
-  KokkosBlas::dot(r, y, y);
+  KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA const_scalar_result = r(k);
     typename AT::mag_type divisor =
@@ -258,21 +211,24 @@ void impl_test_team_scal_mv(int N, int K) {
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++) {
-      expected_result[j] +=
-          ScalarB((3.0 + j) * h_x(i, j)) * ScalarB((3.0 + j) * h_x(i, j));
+      expected_result[j] += ScalarB((3.0 + j) * x.h_view(i, j)) *
+                            ScalarB((3.0 + j) * x.h_view(i, j));
     }
   }
+
+  // Zero out y to run again
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy,
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y, Kokkos::ALL(), teamId),
-            params(teamId), Kokkos::subview(x, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId),
+            params(teamId), Kokkos::subview(x.d_view, Kokkos::ALL(), teamId));
       });
 
-  KokkosBlas::dot(r, y, y);
+  KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_vector_result = r(k);
     typename AT::mag_type divisor =
@@ -282,18 +238,20 @@ void impl_test_team_scal_mv(int N, int K) {
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
-  Kokkos::deep_copy(b_y, b_org_y);
+  // Zero out y again, and run again with const input
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy,
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::scal(
-            teamMember, Kokkos::subview(y, Kokkos::ALL(), teamId),
-            params(teamId), Kokkos::subview(c_x, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId),
+            params(teamId),
+            Kokkos::subview(x.d_view_const, Kokkos::ALL(), teamId));
       });
 
-  KokkosBlas::dot(r, y, y);
+  KokkosBlas::dot(r, y.d_view, y.d_view);
   for (int k = 0; k < K; k++) {
     ScalarA const_vector_result = r(k);
     typename AT::mag_type divisor =
@@ -331,8 +289,7 @@ int test_team_scal() {
   // Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -377,8 +334,7 @@ int test_team_scal_mv() {
   // Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;

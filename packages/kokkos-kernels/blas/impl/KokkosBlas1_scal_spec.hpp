@@ -29,7 +29,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class RV, class AV, class XV, int Xrank = XV::rank>
+template <class execution_space, class RV, class AV, class XV,
+          int Xrank = XV::rank>
 struct scal_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -46,6 +47,7 @@ struct scal_eti_spec_avail {
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                  \
   struct scal_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                              \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR,                                                                  \
@@ -67,6 +69,7 @@ struct scal_eti_spec_avail {
                                            MEM_SPACE)                       \
   template <>                                                               \
   struct scal_eti_spec_avail<                                               \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
@@ -80,6 +83,7 @@ struct scal_eti_spec_avail {
   };                                                                        \
   template <>                                                               \
   struct scal_eti_spec_avail<                                               \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       SCALAR,                                                               \
@@ -99,23 +103,28 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class RV, class AV, class XV, int XV_Rank = XV::rank,
-          bool tpl_spec_avail = scal_tpl_spec_avail<RV, AV, XV>::value,
-          bool eti_spec_avail = scal_eti_spec_avail<RV, AV, XV>::value>
+template <class execution_space, class RV, class AV, class XV,
+          int XV_Rank = XV::rank,
+          bool tpl_spec_avail =
+              scal_tpl_spec_avail<execution_space, RV, AV, XV>::value,
+          bool eti_spec_avail =
+              scal_eti_spec_avail<execution_space, RV, AV, XV>::value>
 struct Scal {
-  static void scal(const RV& R, const AV& A, const XV& X);
+  static void scal(const execution_space& space, const RV& R, const AV& A,
+                   const XV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Scal for single vectors (1-D Views).
-template <class RV, class XV>
-struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RV, class XV>
+struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1,
+            false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::non_const_value_type AV;
   typedef typename XV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
 
-  static void scal(const RV& R, const AV& alpha, const XV& X) {
+  static void scal(const execution_space& space, const RV& R, const AV& alpha,
+                   const XV& X) {
     static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<1-D>: RV is not a Kokkos::View.");
@@ -154,10 +163,12 @@ struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      V_Scal_Generic<RV, AV, XV, index_type>(R, alpha, X, a);
+      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
+                                                              X, a);
     } else {
       typedef typename XV::size_type index_type;
-      V_Scal_Generic<RV, AV, XV, index_type>(R, alpha, X, a);
+      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
+                                                              X, a);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -169,12 +180,14 @@ struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
 ///
 /// 1. R(i,j) = a*X(i,j) for a in -1,0,1
 /// 2. R(i,j) = alpha(j)*X(i,j)
-template <class RMV, class AV, class XMV>
-struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RMV, class AV, class XMV>
+struct Scal<execution_space, RMV, AV, XMV, 2, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
 
-  static void scal(const RMV& R, const AV& av, const XMV& X) {
+  static void scal(const execution_space& space, const RMV& R, const AV& av,
+                   const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D>: RMV is not a Kokkos::View.");
@@ -212,10 +225,12 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      MV_Scal_Invoke_Left<RMV, AV, XMV, index_type>(R, av, X, a);
+      MV_Scal_Invoke_Left<execution_space, RMV, AV, XMV, index_type>(space, R,
+                                                                     av, X, a);
     } else {
       typedef typename XMV::size_type index_type;
-      MV_Scal_Invoke_Left<RMV, AV, XMV, index_type>(R, av, X, a);
+      MV_Scal_Invoke_Left<execution_space, RMV, AV, XMV, index_type>(space, R,
+                                                                     av, X, a);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -227,14 +242,15 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 ///
 /// 1. R(i,j) = a*X(i,j) for a in -1,0,1
 /// 2. R(i,j) = alpha*X(i,j)
-template <class RMV, class XMV>
-struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RMV, class XMV>
+struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
+            false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
 
-  static void scal(const RMV& R, const AV& alpha, const XMV& X) {
+  static void scal(const execution_space& space, const RMV& R, const AV& alpha,
+                   const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D, AV=scalar>: RMV is not a Kokkos::View.");
@@ -275,12 +291,14 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      MV_Scal_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-                          index_type>(R, alpha, X, a);
+      MV_Scal_Invoke_Left<execution_space, RMV,
+                          typename XMV::non_const_value_type, XMV, index_type>(
+          space, R, alpha, X, a);
     } else {
       typedef typename XMV::size_type index_type;
-      MV_Scal_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-                          index_type>(R, alpha, X, a);
+      MV_Scal_Invoke_Left<execution_space, RMV,
+                          typename XMV::non_const_value_type, XMV, index_type>(
+          space, R, alpha, X, a);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -299,6 +317,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
 //
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct Scal<                                                \
+      EXEC_SPACE,                                                             \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       SCALAR,                                                                 \
@@ -309,6 +328,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
 
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template struct Scal<                                                       \
+      EXEC_SPACE,                                                             \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       SCALAR,                                                                 \
@@ -326,6 +346,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
 #define KOKKOSBLAS1_SCAL_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,       \
                                           MEM_SPACE)                        \
   extern template struct Scal<                                              \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
@@ -336,6 +357,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       2, false, true>;                                                      \
   extern template struct Scal<                                              \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       SCALAR,                                                               \
@@ -347,6 +369,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
 #define KOKKOSBLAS1_SCAL_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,       \
                                           MEM_SPACE)                        \
   template struct Scal<                                                     \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
@@ -357,6 +380,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       2, false, true>;                                                      \
   template struct Scal<                                                     \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       SCALAR,                                                               \
@@ -366,7 +390,5 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
       2, false, true>;
 
 #include <KokkosBlas1_scal_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_scal_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_

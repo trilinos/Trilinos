@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::Details::ArithTraits<value_type> ats;
+    // typedef Kokkos::ArithTraits<value_type> ats;
     Kokkos::Timer timer;
 
     ///
