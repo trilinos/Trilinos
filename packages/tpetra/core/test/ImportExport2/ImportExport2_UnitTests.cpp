@@ -39,6 +39,8 @@
 // ************************************************************************
 // @HEADER
 
+#include <unistd.h>
+
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -459,6 +461,20 @@ namespace {
       }
       src_mat->fillComplete ();
 
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(-1);
+
+#if 0
+      fflush(stdout);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "========\nsrc_mat\n========" << std::endl;
+      sleep(1); comm->barrier();
+      src_mat->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "========\nend of src_mat\n========\n\n" << std::endl;
+      sleep(1); comm->barrier();
+#endif
+
       // Create the importer
       Import<LO, GO> importer (src_map, tgt_map, getImportParameterList ());
       // Do the import, and fill-complete the target matrix.
@@ -496,6 +512,9 @@ namespace {
                                                           Teuchos::null,
                                                           Teuchos::null,
                                                           rcp(&dummy,false));
+      //comm->barrier();
+      //TEST_EQUALITY(1,1);
+      //return;
 
       // Make sure that A_tgt2's row Map is the same as tgt_map, and
       // is also the same as the Import's targetMap.  They should have
@@ -521,6 +540,25 @@ namespace {
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
       typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
       typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
+
+#if 0
+      fflush(stdout);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "tgt_mat\n========" << std::endl;
+      sleep(1); comm->barrier();
+      A_tgt2->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "=======\nend of tgt_mat\n========\n\n" << std::endl;
+      sleep(1); comm->barrier();
+
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "A_tgt2\n========" << std::endl;
+      sleep(1); comm->barrier();
+      A_tgt2->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "=======\nend of A_tgt2\n========" << std::endl;
+      sleep(1); comm->barrier();
+ #endif
  
       lids_type tgtRowInds;
       vals_type tgtRowVals;
@@ -560,6 +598,8 @@ namespace {
         typedef typename Array<Scalar>::size_type size_type;
         for (size_type k = 0; k < static_cast<size_type> (tgtNumEntries); ++k) {
           TEST_EQUALITY(tgtRowInds[k], tgt2RowInds[k]);
+          out << "JHU: tgtRowInds[" << k << "]=" << tgtRowInds[k]
+              << ", tgt2RowInds[" << k << "] = " << tgt2RowInds[k] << std::endl;
           // The "out" and "success" variables should have been
           // automatically defined by the unit test framework, in case
           // you're wondering where they came from.
@@ -2388,6 +2428,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+    //JHU FIXME
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
       Importer->getRemoteLIDs (),

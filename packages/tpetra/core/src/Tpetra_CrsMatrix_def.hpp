@@ -4529,7 +4529,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       );
       this->checkInternalState ();
     }
-  }
+  } //fillComplete(domainMap, rangeMap, params)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -8445,11 +8445,19 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     }
 
-    /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
+
+    // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
+    // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
+    // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
+    destMat->numImportPacketsPerLID_.modify_host(); //FIXME
+
+#define TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
+#ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
 #endif
@@ -8533,9 +8541,56 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
                                    SourcePids (),
                                    TargetPids);
+#else
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
+#  endif
+    ArrayRCP<size_t> CSR_rowptr;
+    ArrayRCP<GO> CSR_colind_GID;
+    ArrayRCP<LO> CSR_colind_LID;
+    ArrayRCP<Scalar> CSR_vals;
+
+    destMat->imports_.sync_device ();
+    destMat->numImportPacketsPerLID_.sync_device ();
+
+    size_t N = BaseRowMap->getLocalNumElements ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+        (destMat->numImportPacketsPerLID_.need_sync_device(), std::logic_error, "The "
+         "input Kokkos::DualView was most recently modified on host, but TAFC "
+         "needs the device view of the data to be the most recently modified.");
+
+    Details::unpackAndCombineIntoCrsArrays_new(
+                                   *this, 
+                                   RemoteLIDs,
+                                   destMat->imports_.view_device(),                //hostImports
+                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                   NumSameIDs,
+                                   PermuteToLIDs,
+                                   PermuteFromLIDs,
+                                   N,
+                                   MyPID,
+                                   CSR_rowptr,
+                                   CSR_colind_GID,
+                                   CSR_vals,
+                                   SourcePids(),
+                                   TargetPids);
+
+    // If LO and GO are the same, we can reuse memory when
+    // converting the column indices from global to local indices.
+    if (typeid (LO) == typeid (GO)) {
+      CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
+    }
+    else {
+      CSR_colind_LID.resize (CSR_colind_GID.size());
+    }
+    CSR_colind_LID.resize (CSR_colind_GID.size());
+    size_t mynnz = CSR_vals.size();
+#endif //ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE ... else
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
+    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays_new with a parallel_for.
     for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
     {
       if(TargetPids[i] == -1) TargetPids[i] = MyPID;
