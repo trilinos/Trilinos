@@ -267,6 +267,12 @@ namespace Intrepid2
     //! Returns the orientations for all cells.  Calls initializeOrientations() if it has not previously been called.
     Data<Orientation,DeviceType> getOrientations();
     
+    //! \brief Fills the provided container with the orientations for the specified cell range.  Calls getOrientations() and copies the orientations from the Data container into the ScalarView container.
+    //! \param [out] orientationsView - the container that will be filled.
+    //! \param [in] startCell - the first cell ordinal whose orientation will be copied.
+    //! \param [in] endCell - the first cell ordinal whose orientation will not be copied; use -1 to indicate that orientations for all cells from startCell on should be copied.
+    void orientations(ScalarView<Orientation,DeviceType> orientationsView, const int &startCell = 0, const int &endCell = -1);
+    
     //! returns coordinate in dimension dim of the indicated node in the indicated grid cell
     KOKKOS_INLINE_FUNCTION
     PointScalar gridCellCoordinate(const int &gridCellOrdinal, const int &localNodeNumber, const int &dim) const;

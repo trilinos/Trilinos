@@ -62,9 +62,6 @@ namespace Intrepid2 {
     const std::string name(basis->getName());
     CoeffMatrixDataViewType matData;
 
-    //
-    // High order HGRAD Elements
-    //
     const auto cellTopo = basis->getBaseCellTopology();
     const ordinal_type numEdges = cellTopo.getSubcellCount(1);
     const ordinal_type numFaces = cellTopo.getSubcellCount(2);
@@ -142,7 +139,7 @@ namespace Intrepid2 {
     { //faces
       subcellBasis = cellBasis; // if(dim==2)
       for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
-        // this works for triangles (numOrt=6) and quadratures (numOrt=8)
+        // this works for triangles (numOrt=6) and quadrilaterals (numOrt=8)
         const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
         if(cellBasis->getDofCount(2, faceId) < 1) continue;
         if(cellTopo.getDimension()!=2) {

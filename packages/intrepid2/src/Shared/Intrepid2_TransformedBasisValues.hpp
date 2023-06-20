@@ -53,7 +53,9 @@
 #define Intrepid2_TransformedBasisValues_h
 
 #include "Intrepid2_BasisValues.hpp"
+#include "Intrepid2_DataTools.hpp"
 #include "Intrepid2_ScalarView.hpp"
+#include "Intrepid2_Utils.hpp"
 
 namespace Intrepid2 {
 /** \class Intrepid2::TransformedBasisValues
@@ -142,6 +144,37 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION DataVariationType cellVariationType() const
     {
       return transform_.getVariationTypes()[0];
+    }
+    
+    //! Replaces the internal pullback (transformation operator) with the result of the pullback multiplied by the specified (C,P) weights.  ViewType may be a rank-2 Kokkos::View, a rank-2 Kokkos::DynRankView, or a rank-2 Intrepid2::Data object.
+    template<class ViewType>
+    void multiplyByPointwiseWeights(const ViewType &weights)
+    {
+      ordinal_type weightRank = getFunctorRank(weights); // .rank() or ::rank, depending on weights type
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(weightRank != 2, std::invalid_argument, "pointwise weights must have shape (C,P).");
+      
+      Data<Scalar,DeviceType> weightData(weights);
+      if (!transform_.isValid())
+      {
+        // empty transform_ is understood as identity; multiplying by weightData is thus
+        // the same as transform_ = weightData
+        transform_ = weightData;
+        return;
+      }
+      else
+      {
+        if (transform_.rank() == 4)
+        {
+          transform_ = DataTools::multiplyByCPWeights(transform_,weightData);
+        }
+        else // transformRank == 2
+        {
+          auto result = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(weightData, transform_);
+          
+          result.storeInPlaceProduct(weightData,transform_);
+          transform_ = result;
+        }
+      }
     }
     
     //! Returns the logical extent in the cell dimension, which is the 0 dimension in this container.
