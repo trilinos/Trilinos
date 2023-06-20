@@ -122,7 +122,7 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real> &x,
   state_->nfval++;
   state_->snorm = ROL_INF<Real>();
   state_->gnorm = ROL_INF<Real>();
-  computeGradient(x,obj);
+  computeGradient(x,obj,true);
   // Check if inverse Hessian is implemented for dogleg methods
   model_->validate(obj,x,g,etr_);
   // Compute initial trust region radius if desired.
@@ -159,25 +159,27 @@ Real TrustRegionAlgorithm<Real>::computeValue( const Vector<Real> &x,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::computeGradient( const Vector<Real> &x,
-                                                  Objective<Real>    &obj) {
+void TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+                                                 Objective<Real>    &obj,
+                                                 bool accept) {
   if ( useInexact_[1] ) {
-    const Real one(1);
-    Real gtol1 = scale0_*state_->searchSize;
-    Real gtol0 = gtol1 + one;
-    while ( gtol0 > gtol1 ) {
-      obj.gradient(*state_->gradientVec,x,gtol1);
+    Real gtol0 = scale0_*state_->searchSize;
+    if (accept) gtol_ = gtol0 + static_cast<Real>(1);
+    else        gtol0 = scale0_*std::min(state_->gnorm,state_->searchSize);
+    while ( gtol_ > gtol0 ) {
+      gtol_ = gtol0;
+      obj.gradient(*state_->gradientVec,x,gtol_); state_->ngrad++;
       state_->gnorm = state_->gradientVec->norm();
-      gtol0 = gtol1;
-      gtol1 = scale0_*std::min(state_->gnorm,state_->searchSize);
+      gtol0 = scale0_*std::min(state_->gnorm,state_->searchSize);
     }
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>());
-    obj.gradient(*state_->gradientVec,x,gtol);
-    state_->gnorm = state_->gradientVec->norm();
+    if (accept) {
+      gtol_ = std::sqrt(ROL_EPSILON<Real>());
+      obj.gradient(*state_->gradientVec,x,gtol_); state_->ngrad++;
+      state_->gnorm = state_->gradientVec->norm();
+    }
   }
-  state_->ngrad++;
 }
 
 template<typename Real>
@@ -234,7 +236,7 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
       else { // Shrink trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
-      if (useInexact_[1]) computeGradient(x,obj);
+      computeGradient(x,obj,false);
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
@@ -254,7 +256,7 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       gvec->set(*state_->gradientVec);
-      computeGradient(x,obj);
+      computeGradient(x,obj,true);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*gvec,*state_->gradientVec,
                      state_->snorm,state_->iter);

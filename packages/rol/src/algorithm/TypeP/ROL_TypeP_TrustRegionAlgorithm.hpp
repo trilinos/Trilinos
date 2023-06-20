@@ -177,6 +177,7 @@ private:
   Real force_;
   int updateIter_;
   Real forceFactor_;
+  Real gtol_;
 
   bool initProx_;
   Real t0_; 
@@ -225,7 +226,7 @@ private:
                     const Vector<Real> &xold,
                     Objective<Real> &obj);
 
-  Real computeGradient(const Vector<Real> &x,
+  void computeGradient(const Vector<Real> &x,
                        Vector<Real> &g,
                        Vector<Real> &px,
                        Vector<Real> &dg,
@@ -233,6 +234,9 @@ private:
                        Real del,
                        Objective<Real> &sobj,
                        Objective<Real> &nobj,
+                       bool accept,
+                       Real &gtol,
+                       Real &gnorm,
                        std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x

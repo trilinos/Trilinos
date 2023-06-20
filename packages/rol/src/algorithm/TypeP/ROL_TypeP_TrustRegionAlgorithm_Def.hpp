@@ -160,7 +160,7 @@ void TrustRegionAlgorithm<Real>::initialize(Vector<Real>          &x,
   nobj.update(x, UpdateType::Initial,state_->iter); 
   state_->nvalue = nobj.value(x,ftol); state_->nnval++; 
   state_->value = state_->svalue + state_->nvalue; 
-  state_->gnorm = computeGradient(x,*state_->gradientVec,px,dg,*state_->stepVec,state_->searchSize,sobj,nobj,outStream);
+  computeGradient(x,*state_->gradientVec,px,dg,*state_->stepVec,state_->searchSize,sobj,nobj,true,gtol_,state_->gnorm,outStream);
   
   state_->snorm = ROL_INF<Real>();
   // Normalize initial CP step length
@@ -198,7 +198,7 @@ Real TrustRegionAlgorithm<Real>::computeValue(Real inTol,
 }
 
 template<typename Real>
-Real TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+void TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
                                                  Vector<Real> &g,
                                                  Vector<Real> &px,
                                                  Vector<Real> &dg,
@@ -206,29 +206,32 @@ Real TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
                                                  Real del,
                                                  Objective<Real> &sobj,
                                                  Objective<Real> &nobj,
+                                                 bool accept,
+                                                 Real &gtol,
+                                                 Real &gnorm,
                                                  std::ostream &outStream) const {
-  Real gnorm(0);
   if ( useInexact_[1] ) {
-    const Real one(1);
-    Real gtol1 = scale0_*del;
-    Real gtol0 = gtol1 + one;
-    while ( gtol0 > gtol1 ) {
-      sobj.gradient(g,x,gtol1); state_->ngrad++; 
+    Real gtol0 = scale0_*del;
+    if (accept) gtol  = gtol0 + static_cast<Real>(1);
+    else        gtol0 = scale0_*std::min(gnorm,del);
+    while ( gtol0 > gtol ) {
+      gtol = gtol0;
+      sobj.gradient(g,x,gtol); state_->ngrad++; 
       dg.set(g.dual());
-      pgstep(px, step, nobj, x, dg, t0_, gtol1); // change gtol? one or ocScale? 
+      pgstep(px, step, nobj, x, dg, t0_, gtol0); // change gtol? one or ocScale? 
       gnorm = step.norm() / t0_;
-      gtol0 = gtol1;
-      gtol1 = scale0_*std::min(gnorm,del);
+      gtol0 = scale0_*std::min(gnorm,del);
     }
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>());
-    sobj.gradient(g,x,gtol); state_->ngrad++; 
-    dg.set(g.dual()); 
-    pgstep(px, step, nobj, x, dg, t0_, gtol); 
-    gnorm = step.norm() / t0_; 
+    if (accept) {
+      gtol = std::sqrt(ROL_EPSILON<Real>());
+      sobj.gradient(g,x,gtol); state_->ngrad++; 
+      dg.set(g.dual()); 
+      pgstep(px, step, nobj, x, dg, t0_, gtol); 
+      gnorm = step.norm() / t0_; 
+    }
   }
-  return gnorm;
 }
 
 template<typename Real>
@@ -335,6 +338,7 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
       else { // Shrink trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
+      computeGradient(x,*state_->gradientVec,*px,*dg,*pwa1,state_->searchSize,sobj,nobj,false,gtol_,state_->gnorm,outStream);
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
@@ -357,7 +361,7 @@ void TrustRegionAlgorithm<Real>::run(Vector<Real>          &x,
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
-      state_->gnorm = computeGradient(x,*state_->gradientVec,*px,*dg,*pwa1,state_->searchSize,sobj,nobj,outStream);
+      computeGradient(x,*state_->gradientVec,*px,*dg,*pwa1,state_->searchSize,sobj,nobj,true,gtol_,state_->gnorm,outStream);
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
@@ -617,7 +621,7 @@ void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
   //       y = Cauchy step
   //       x = Current iterate
   //       g = Current gradient
-  const Real half(0.5), one(1);
+  const Real half(0.5), one(1), safeguard(1e2*ROL_EPSILON<Real>());
   const Real mval(sval+nval);
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   Real mcomp(0), mval_min(0), sval_min(0), nval_min(0);
@@ -654,8 +658,8 @@ void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
     alpha = one;
     pwa.set(y); pwa.axpy(-lambda,pwa1);                         // pwa = y - lambda gmod.dual()
     dprox(pwa,x,lambda,del,nobj,pwa2,pwa3,pwa4,pwa5,outStream); // pwa = P(y - lambda gmod.dual())
+    pwa2.set(pwa);                                              // pwa2 = P(y - lambda gmod.dual())
     pwa.axpy(-one,y);                                           // pwa = P(y - lambda gmod.dual()) - y = step
-    pwa2.set(y); pwa2.plus(pwa);                                // pwa2 = P(y - lambda gmod.dual())
     ss = pwa.dot(pwa);                                          // Norm squared of step
 
     // Evaluate model Hessian
@@ -669,15 +673,30 @@ void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
     Qk    = gs + nnew - nold; 
 
     // Perform line search
-    mcomp = useNMSP_ ? *std::max_element(mqueue.begin(),mqueue.end()) : mold;
-    while( mnew > mcomp + mu0_*Qk) {
-      alpha *= interpf_;
-      pwa2.set(y); pwa2.axpy(alpha,pwa);
-      nobj.update(pwa2, UpdateType::Trial);
-      nnew  = nobj.value(pwa2, tol); state_->nnval++; 
-      snew  = half * alpha * alpha * sHs + alpha * gs + sold;
-      mnew  = nnew + snew;
-      Qk    = alpha * gs + nnew - nold;
+    //mcomp = useNMSP_ ? *std::max_element(mqueue.begin(),mqueue.end()) : mold;
+    //while( mnew > mcomp + mu0_*Qk ) {
+    //  alpha *= interpf_;
+    //  pwa2.set(y); pwa2.axpy(alpha,pwa);
+    //  nobj.update(pwa2, UpdateType::Trial);
+    //  nnew  = nobj.value(pwa2, tol); state_->nnval++; 
+    //  snew  = half * alpha * alpha * sHs + alpha * gs + sold;
+    //  mnew  = nnew + snew;
+    //  Qk    = alpha * gs + nnew - nold;
+    //}
+    if (useNMSP_) { // Nonmonotone
+      mcomp = *std::max_element(mqueue.begin(),mqueue.end());
+      while( mnew > mcomp + mu0_*Qk ) {
+        alpha *= interpf_;
+        pwa2.set(y); pwa2.axpy(alpha,pwa);
+        nobj.update(pwa2, UpdateType::Trial);
+        nnew  = nobj.value(pwa2, tol); state_->nnval++; 
+        snew  = half * alpha * alpha * sHs + alpha * gs + sold;
+        mnew  = nnew + snew;
+        Qk    = alpha * gs + nnew - nold;
+      }
+    }
+    else {
+      alpha = (sHs <= safeguard) ? one : std::min(one,-(gs + nnew - nold)/sHs);
     }
 
     // Update model quantities
