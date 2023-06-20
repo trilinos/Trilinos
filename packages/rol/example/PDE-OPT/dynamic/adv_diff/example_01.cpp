@@ -60,6 +60,7 @@
 #include "ROL_DynamicObjectiveCheck.hpp"
 
 #include <iostream>
+//#include <fenv.h>
 
 #include "../../TOOLS/meshmanager.hpp"
 #include "../../TOOLS/lindynconstraint.hpp"
@@ -71,6 +72,8 @@
 #include "mesh_adv_diff.hpp"
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+
   using RealT = double;
 
   /*** Initialize communicator. ***/
@@ -187,6 +190,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     auto problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
     problem->addBoundConstraint(bnd);
+    problem->finalize(false,true,*outStream);
     ROL::Solver<RealT> solver(problem,*parlist);
     z->zero();
     std::clock_t timer = std::clock();

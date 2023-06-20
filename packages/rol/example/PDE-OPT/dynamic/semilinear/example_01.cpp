@@ -56,7 +56,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
@@ -206,9 +206,6 @@ int main(int argc, char *argv[]) {
     zlo->setScalar(lbnd);
     zhi->setScalar(ubnd);
     ROL::Ptr<ROL::BoundConstraint<RealT>>   bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo,zhi);
-    if (deactivate) {
-      bnd->deactivate();
-    }
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -230,8 +227,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::OptimizationProblem<RealT> problem(obj,z,bnd);
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Ptr<ROL::Problem<RealT>> problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
+    if (!deactivate) problem->addBoundConstraint(bnd);
+    problem->finalize(false,true,*outStream);
+    ROL::Solver<RealT> solver(problem,*parlist);
     z->zero();
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
