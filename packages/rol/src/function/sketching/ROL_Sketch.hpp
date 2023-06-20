@@ -401,7 +401,7 @@ public:
     std::vector<Ptr<Vector<Real>>> U(rank);
     LA::Matrix<Real> V(ncol_,rank);
     for (int i = 0; i < rank; ++i) {
-      U[i] = (*Y_)[0]->clone();
+      U[i] = Y_[0]->clone();
       U[i]->randomize(-one,one);
       for (int j = 0; j < ncol_; ++j) V(j,i) = dist(eng);
     }
@@ -409,7 +409,7 @@ public:
     update();
     std::vector<Ptr<Vector<Real>>> A(ncol_);
     for (int i = 0; i < ncol_; ++i) {
-      A[i] = (*Y_)[0]->clone(); A[i]->zero();
+      A[i] = Y_[0]->clone(); A[i]->zero();
       for (int j = 0; j < rank; ++j) {
         A[i]->axpy(V(i,j),*U[j]);
       }
@@ -421,7 +421,7 @@ public:
     bool flagQ = testQ(outStream, verbosity);
     // Test reconstruction of A
     Real nerr(0), maxerr(0);
-    Ptr<Vector<Real>> err = (*Y_)[0]->clone();
+    Ptr<Vector<Real>> err = Y_[0]->clone();
     for (int i = 0; i < ncol_; ++i) {
       reconstruct(*err,i);
       err->axpy(-one,*A[i]);
@@ -455,7 +455,7 @@ private:
     }
     for (int i = 0; i < k_; ++i) {
       for (int j = 0; j < k_; ++j) {
-        qij    = (*Y_)[i]->dot(*(*Y_)[j]);
+        qij    = Y_[i]->dot(*Y_[j]);
         err    = (i==j ? std::abs(qij-one) : std::abs(qij));
         maxerr = (err > maxerr ? err : maxerr);
         if (verbosity > 1) outStream << std::setw(12) << std::right << qij;
