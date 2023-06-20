@@ -49,6 +49,8 @@ endforeach()
 
 SET(COMPILE_ONLY_SOURCES
   TestCreateMirror.cpp
+  TestDualViewParameterPack.cpp
+  TestIsViewTrait.cpp
 )
 KOKKOS_ADD_EXECUTABLE(
   ContainersTestCompileOnly
