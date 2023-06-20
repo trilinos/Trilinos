@@ -8450,6 +8450,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
+#define TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
+#ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
 #endif
@@ -8533,6 +8536,65 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
                                    SourcePids (),
                                    TargetPids);
+#else
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
+#  endif
+    ArrayRCP<size_t> CSR_rowptr;
+    ArrayRCP<GO> CSR_colind_GID;
+    ArrayRCP<LO> CSR_colind_LID;
+    ArrayRCP<Scalar> CSR_vals;
+
+    size_t N = BaseRowMap->getLocalNumElements ();
+
+#if 0
+    Details::unpackAndCombineIntoCrsArrays_test(
+                                   *this, 
+                                   RemoteLIDs,
+                                   destMat->imports_.view_device(),                //hostImports
+                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                   NumSameIDs,
+                                   PermuteToLIDs,
+                                   PermuteFromLIDs,
+                                   N,
+                                   MyPID,
+                                   CSR_rowptr,
+                                   CSR_colind_GID,
+                                   //Teuchos::arcp_reinterpret_cast<impl_scalar_type>(CSR_vals)
+                                   CSR_vals,
+                                   SourcePids(),
+                                   TargetPids
+                                   );
+#endif
+
+    Details::unpackAndCombineIntoCrsArrays_new(
+                                   *this, 
+                                   RemoteLIDs,
+                                   destMat->imports_.view_device(),                //hostImports
+                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                   NumSameIDs,
+                                   PermuteToLIDs,
+                                   PermuteFromLIDs,
+                                   N,
+                                   MyPID,
+                                   CSR_rowptr,
+                                   CSR_colind_GID,
+                                   //Teuchos::arcp_reinterpret_cast<impl_scalar_type>(CSR_vals),
+                                   CSR_vals,
+                                   SourcePids(),
+                                   TargetPids);
+
+    // If LO and GO are the same, we can reuse memory when
+    // converting the column indices from global to local indices.
+    if (typeid (LO) == typeid (GO)) {
+      CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
+    }
+    else {
+      CSR_colind_LID.resize (CSR_colind_GID.size());
+    }
+    CSR_colind_LID.resize (CSR_colind_GID.size());
+    size_t mynnz = CSR_vals.size();
+#endif //ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE ... else
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.

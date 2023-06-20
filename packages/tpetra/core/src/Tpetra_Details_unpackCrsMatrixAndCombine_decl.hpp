@@ -243,6 +243,47 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<size_t>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
     const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
+    const Teuchos::ArrayView<int>& SourcePids,
+    Teuchos::Array<int>& TargetPids);
+
+#if 0
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+unpackAndCombineIntoCrsArrays_test (
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
+    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+    const Kokkos::View<const char*, typename Node::device_type>& imports_d,
+    const Kokkos::View<const size_t*, typename Node::device_type>& num_packets_per_lid_d,
+    const size_t numSameIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    size_t TargetNumRows,
+    const int MyTargetPID,
+    Teuchos::ArrayRCP<size_t>& CRS_rowptr,
+    Teuchos::ArrayRCP<GlobalOrdinal>& CRS_colind,
+    //Teuchos::ArrayRCP<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals
+    Teuchos::ArrayRCP<Scalar>& CRS_vals,
+    const Teuchos::ArrayView<const int>& SourcePids,
+    Teuchos::Array<int>& TargetPids
+    );
+#endif
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+unpackAndCombineIntoCrsArrays_new (
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
+    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+    const Kokkos::View<const char*, typename Node::device_type>& imports_d,
+    const Kokkos::View<const size_t*, typename Node::device_type>& num_packets_per_lid_d,
+    const size_t numSameIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    size_t TargetNumRows,
+    const int MyTargetPID,
+    Teuchos::ArrayRCP<size_t>& CRS_rowptr,
+    Teuchos::ArrayRCP<GlobalOrdinal>& CRS_colind,
+    //Teuchos::ArrayRCP<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
+    Teuchos::ArrayRCP<Scalar>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
 
