@@ -486,7 +486,7 @@ private:
     for (int i = 0; i < k_; ++i) {
       for (int j = 0; j < k_; ++j) {
         qij = zero;
-        for (int k = 0; k < ncol_; ++k) qij += (*X_)(k,i) * (*X_)(k,j);
+        for (int k = 0; k < ncol_; ++k) qij += X_(k,i) * X_(k,j);
         err = (i==j ? std::abs(qij-one) : std::abs(qij));
         maxerr = (err > maxerr ? err : maxerr);
         if (verbosity > 1) outStream << std::setw(12) << std::right << qij;
