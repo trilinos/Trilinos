@@ -88,7 +88,6 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
   protected:
     mutable Teuchos::RCP<LocalFILU> localPrec_;
-    mutable Teuchos::RCP<LocalFILU> localPrec2_;
 
     void initLocalPrec();
     //compute() takes A's local values
