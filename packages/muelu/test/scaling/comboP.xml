@@ -1,0 +1,221 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="use kokkos refactor" type="bool" value="false"/>
+  <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
+  <Parameter name="refmaxwell: mode" type="string" value="additive"/>
+  <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
+  <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
+  <Parameter name="refmaxwell: subsolves on subcommunicators" type="bool" value="false"/>
+  <Parameter name="refmaxwell: enable reuse" type="bool" value="true"/>
+  <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+  </ParameterList>
+  <!-- When using MultiPhys() constructor in concert with repartitioning all
+       sub-blocks must "repartition: enable", "repartition: rebalance P and R",
+       and ""repartition: explicit via new copy rebalance P and R"". Thus,
+       these options are automatically appended to the sub-block 
+       parameter lists. However, each sub-block can choose different
+       repartitioning options, so other repartitioning options are 
+       ignored in the outer MultiPhys parameter list with one
+       exception:  MultiPhys parameter "repartition: use subcommunicators" is
+       used to set sub-blocks' version of this parameter. 
+  -->
+  <Parameter name="repartition: enable" type="bool" value="true"/>
+
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: use l1" type="bool" value="true"/>
+  </ParameterList>
+  <!--Parameter name="coarse: type" type="string" value="none"/-->
+
+  <ParameterList name="subblockList0">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+
+    <Parameter name="number of equations" type="int" value="2"/>
+    <Parameter name="nullspace: calculate rotations"       type="bool"     value="true"/>
+    <Parameter name="transpose: use implicit" type="bool" value="false"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+    <!--Parameter name="coarse: max size" type="int" value="56"/-->
+    <Parameter name="coarse: max size" type="int" value="56"/>
+    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+    </ParameterList>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="1"/>
+      <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- Added automatically when MultiPhys() constructor used in conjunction with repartitioning
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+    <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
+    -->
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="65"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="subblockList2">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="number of equations" type="int" value="2"/>
+    <Parameter name="nullspace: calculate rotations"       type="bool"     value="true"/>
+    <Parameter name="transpose: use implicit" type="bool" value="false"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+    <Parameter name="coarse: max size" type="int" value="56"/>
+    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+    </ParameterList>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="1"/>
+      <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- Added automatically when MultiPhys() constructor used in conjunction with repartitioning
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+    <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
+    -->
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="190"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="subblockList1">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="transpose: use implicit" type="bool" value="false"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+    <Parameter name="coarse: max size" type="int" value="28"/>
+    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+    </ParameterList>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="1"/>
+      <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- Added automatically when MultiPhys() constructor used in conjunction with repartitioning
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+    <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
+    -->
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="subblockList3">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="transpose: use implicit" type="bool" value="false"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+    <Parameter name="coarse: max size" type="int" value="28"/>
+    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+    </ParameterList>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="1"/>
+      <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- Added automatically when MultiPhys() constructor used in conjunction with repartitioning
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+    <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
+    -->
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="60"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="subblockList4">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="transpose: use implicit" type="bool" value="false"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
+    <Parameter name="coarse: max size" type="int" value="128"/>
+    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
+
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{6}"/>
+      <Parameter name="P" type="string" value="{6}"/>
+    </ParameterList>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="1"/>
+      <Parameter name="relaxation: use l1" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- Added automatically when MultiPhys() constructor used in conjunction with repartitioning
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
+    <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
+    -->
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="10"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    <ParameterList name="repartition: params">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>

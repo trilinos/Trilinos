@@ -92,6 +92,7 @@ namespace MueLu {
         maxCoarseSize_(MasterList::getDefault<int>("coarse: max size")),
         verbosity_(Medium),
         doPRrebalance_(MasterList::getDefault<bool>("repartition: rebalance P and R")),
+        doPRViaCopyrebalance_(MasterList::getDefault<bool>("repartition: explicit via new copy rebalance P and R")),
         implicitTranspose_(MasterList::getDefault<bool>("transpose: use implicit")),
         fuseProlongationAndUpdate_(MasterList::getDefault<bool>("fuse prolongation and update")),
         suppressNullspaceDimensionCheck_(MasterList::getDefault<bool>("nullspace: suppress dimension check")),
@@ -211,6 +212,7 @@ namespace MueLu {
       }
 
       H.SetPRrebalance(doPRrebalance_);
+      H.SetPRViaCopyrebalance(doPRViaCopyrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
       H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
 
@@ -359,6 +361,7 @@ namespace MueLu {
     MsgType verbosity_;
 
     bool doPRrebalance_;
+    bool doPRViaCopyrebalance_;
     bool implicitTranspose_;
     bool fuseProlongationAndUpdate_;
 
