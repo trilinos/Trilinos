@@ -224,29 +224,15 @@ class FastILUPrec
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
 
-  template <typename View1, typename View2>
-  KOKKOS_INLINE_FUNCTION
-  static void assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize)
-  {
-    const Ordinal blockItems = blockCrsSize*blockCrsSize;
-    std::copy(vals_src.data() + src*blockItems, vals_src.data() + (src+1)*blockItems, vals_dest.data() + dest*blockItems);
-  }
+  static constexpr auto identity_lambda = [](const Scalar& val) { return val; };
+  using idlt = decltype(identity_lambda);
 
-  template <typename View1, typename View2>
+  template <typename View1, typename View2, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block_lower(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize)
+  static void assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
-    const Ordinal dest_offset = blockCrsSize*dest;
-    const Ordinal src_offset  = blockCrsSize*dest;
-    for (Ordinal i = 0; i < blockCrsSize; ++i) {
-      for (Ordinal j = 0; j < blockCrsSize; ++j) {
-        const Ordinal blockOffset = blockCrsSize*i + j;
-        if (i > j) {
-          vals_dest(dest_offset + blockOffset) = vals_src(src_offset + blockOffset);
-        }
-      }
-    }
+    std::transform(vals_src.data() + src*blockItems, vals_src.data() + (src+1)*blockItems, vals_dest.data() + dest*blockItems, lam);
   }
 
   template <typename View1>
@@ -257,9 +243,44 @@ class FastILUPrec
     std::fill(vals_dest.data() + dest*blockItems, vals_dest.data() + (dest+1)*blockItems, value);
   }
 
-  template <typename View1, typename View2, typename L>
+  template <typename View1, typename View2, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
-  static void assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam)
+  static void assign_block_lower(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  {
+    const Ordinal blockItems = blockCrsSize*blockCrsSize;
+    const Ordinal dest_offset = blockItems*dest;
+    const Ordinal src_offset  = blockItems*src;
+    for (Ordinal i = 0; i < blockCrsSize; ++i) {
+      for (Ordinal j = 0; j < blockCrsSize; ++j) {
+        const Ordinal blockOffset = blockCrsSize*i + j;
+        if (i > j) {
+          vals_dest(dest_offset + blockOffset) = lam(vals_src(src_offset + blockOffset));
+        }
+      }
+    }
+  }
+
+  template <typename View1, typename View2, typename L = idlt>
+  KOKKOS_INLINE_FUNCTION
+  static void assign_block_except_diag(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  {
+    const Ordinal blockItems = blockCrsSize*blockCrsSize;
+    const Ordinal dest_offset = blockItems*dest;
+    const Ordinal src_offset  = blockItems*src;
+    for (Ordinal i = 0; i < blockCrsSize; ++i) {
+      for (Ordinal j = 0; j < blockCrsSize; ++j) {
+        const Ordinal blockOffset = blockCrsSize*i + j;
+        if (i != j) {
+          vals_dest(dest_offset + blockOffset) = lam(vals_src(src_offset + blockOffset));
+        }
+      }
+    }
+  }
+
+
+  template <typename View1, typename View2, typename L = idlt>
+  KOKKOS_INLINE_FUNCTION
+  static void assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal i = 0, j = blockItems*src; i < blockCrsSize; ++i, j+=(blockCrsSize+1)) {
@@ -277,9 +298,9 @@ class FastILUPrec
     }
   }
 
-  template <typename View1, typename View2, typename L>
+  template <typename View1, typename View2, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
-  static void assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam)
+  static void assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
       diag_dest(dest+i) = lam(diag_src(src+i));
@@ -946,7 +967,7 @@ class FastILUPrec
         {
             FASTILU_CREATE_TIMER(Timer);
             int nnzU = a2uMap.extent(0);
-            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx);
+            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx, blockCrsSize);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), permCopy);
 
             if ((level > 0) && (guessFlag !=0))
@@ -1039,6 +1060,7 @@ class FastILUPrec
         void applyManteuffelShift()
         {
             const Scalar one = STS::one();
+            auto shift_lambda = [&](const Scalar& val) { return (one/(one + shift)) * val; };
             for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
@@ -1047,7 +1069,10 @@ class FastILUPrec
                     Ordinal col = aColIdx_[k];
                     if (row != col)
                     {
-                        aVal_[k] = (one/(one + shift))*aVal_[k];
+                      assign_block(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
+                    }
+                    else {
+                      assign_block_except_diag(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
                     }
                 }
             }
@@ -1122,7 +1147,6 @@ class FastILUPrec
                     FastILU::SpTRSV sptrsv_algo_, Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_,
                     Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_, Ordinal blockCrsSize_ = 1)
         {
-            std::cout << "NROW IS: " << nRow_ << std::endl;
             nRows = nRow_;
             sptrsv_algo = sptrsv_algo_;
             nFact = nFact_;
@@ -1361,7 +1385,6 @@ class FastILUPrec
             // functor to extract L & diagongals
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetLowerTag &, const int i) const {
-                auto identity = [&](const Scalar& val) { return val; };
                 Ordinal lPtr = lRowMap[i];
                 for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
@@ -1371,7 +1394,7 @@ class FastILUPrec
                     {
                         if (row == col)
                         {
-                          assign_diag_from_block(diagElems, aVal, row, k, blockCrsSize, identity);
+                          assign_diag_from_block(diagElems, aVal, row, k, blockCrsSize);
                           assign_block_diag_only(lVal, lPtr, STS::one(), blockCrsSize);
                           assign_block_lower(lVal, aVal, lPtr, k, blockCrsSize);
                         } else {
@@ -2431,18 +2454,19 @@ class ParPermCopyFunctor
         typedef ExecSpace execution_space;
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+        using parent = FastILUPrec<Ordinal, Scalar, ExecSpace>;
 
         ParPermCopyFunctor (ordinal_array_type a2uMap, scalar_array_type aVal, ordinal_array_type aRowIdx,
-                            scalar_array_type uVal, ordinal_array_type uColIdx)
+                scalar_array_type uVal, ordinal_array_type uColIdx, const Ordinal blockCrsSize)
             :
-                a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), uVal_(uVal), uColIdx_(uColIdx)
+          a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), uVal_(uVal), uColIdx_(uColIdx), blockCrsSize_(blockCrsSize)
         {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal k) const
             {
                 auto pos = a2uMap_(k);
-                uVal_(k) = aVal_[pos];
+                parent::assign_block(uVal_, aVal_, k, pos, blockCrsSize_);
                 uColIdx_(k) = aRowIdx_[pos];
             }
 
@@ -2451,6 +2475,7 @@ class ParPermCopyFunctor
         ordinal_array_type aRowIdx_;
         scalar_array_type  uVal_;
         ordinal_array_type uColIdx_;
+        const Ordinal      blockCrsSize_;
 };
 
 
