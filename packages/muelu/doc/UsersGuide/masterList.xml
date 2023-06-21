@@ -1933,6 +1933,15 @@ optimized neighbor discovery for Importer construction.</description>
       <default>false</default>
       <description>Dump matrices to disk.</description>
     </parameter>
+
+    <parameter>
+      <name>maxwell1: nodal smoother fix zero diagonal threshold</name>
+      <comment-ML>Hardwired to 1e-10 in ML</comment-ML>
+      <type>double</type>
+      <default>1e-10</default>
+      <description>Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.</description>
+    </parameter>
+
   </maxwell1>
 
   <refmaxwell>
