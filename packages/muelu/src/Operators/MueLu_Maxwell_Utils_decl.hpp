@@ -127,7 +127,7 @@ namespace MueLu {
 
     // Performs an RAP
     static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-    PtAPWrapper(RCP<Matrix>& A,RCP<Matrix>& P, Teuchos::ParameterList &params, std::string & label);
+    PtAPWrapper(const RCP<Matrix>& A,const RCP<Matrix>& P, Teuchos::ParameterList &params, std::string & label);
 
   };
 
