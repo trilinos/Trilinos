@@ -497,8 +497,10 @@ namespace MueLu {
             // We will duplicate that unless told otherwise.
             double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
             Teuchos::ParameterList RAPlist;
-            RAPlist.set("rap: fix zero diagonals", true);
-            RAPlist.set("rap: fix zero diagonals threshold",thresh);
+            if(thresh > 0.0) {
+              RAPlist.set("rap: fix zero diagonals", true);
+              RAPlist.set("rap: fix zero diagonals threshold",thresh);
+            }
             
             RCP<Matrix> NewKn = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(OldSmootherMatrix,NodalP,RAPlist,labelstr);
             EdgeL->Set("NodeMatrix",NewKn);
