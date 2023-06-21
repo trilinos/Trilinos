@@ -364,10 +364,6 @@ public:
           isValueComputed_   = false;
           isStateComputed_   = false;
           isAdjointComputed_ = false;
-          stateSketch_->reset(true);
-          stateSketchCache_->reset(true);
-          adjointSketch_->reset(true);
-          if (useHessian_) stateSensSketch_->reset(true);
           break;
         }
       }
