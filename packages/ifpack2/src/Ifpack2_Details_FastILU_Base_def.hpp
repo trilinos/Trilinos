@@ -235,6 +235,11 @@ initialize()
     print_view(localValues_,  "localValues_");
     print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
 
+    localRowPtrsHost2_ = localRowPtrsHost_;
+    localRowPtrs2_     = localRowPtrs_;
+    localColInds2_     = localColInds_;
+    localValues2_      = localValues_;
+
     auto crs_row_map = crs_matrix->getRowMap();
     auto crs_col_map = crs_matrix->getColMap();
 

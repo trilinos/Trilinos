@@ -75,8 +75,6 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
-#define JGF_SUPER_DEBUG
-
 template <typename View>
 void print_view(const std::string& name, const View& view)
 {
@@ -98,22 +96,27 @@ std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix
   using lno_t     = typename View2::non_const_value_type;
   using scalar_t  = typename View3::non_const_value_type;
 
-  const size_type nrows = row_map.extent(0) - 1;
+  const size_type nbrows   = row_map.extent(0) - 1;
+  const size_type nrows    = nbrows * block_size;
+  const size_type block_items = block_size * block_size;
   std::vector<std::vector<scalar_t>> result;
   result.resize(nrows);
   for (auto& row : result) {
     row.resize(nrows, 0.0);
   }
 
-  std::cout << "cols: " << entries.extent(0) << std::endl;
-
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+  for (size_type row_idx = 0; row_idx < nbrows; ++row_idx) {
     const size_type row_nnz_begin = row_map(row_idx);
     const size_type row_nnz_end   = row_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
       const lno_t col_idx      = entries(row_nnz);
-      const scalar_t value     = values.extent(0) > 0 ? values(row_nnz) : 1;
-      result[row_idx][col_idx] = value;
+      for (size_type i = 0; i < block_size; ++i) {
+        const size_type unc_row_idx = row_idx*block_size + i;
+        for (size_type j = 0; j < block_size; ++j) {
+          const size_type unc_col_idx = col_idx*block_size + j;
+          result[unc_row_idx][unc_col_idx] = values(row_nnz*block_items + i*block_size + j);
+        }
+      }
     }
   }
 
@@ -128,6 +131,31 @@ void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
     }
     std::cout << std::endl;
   }
+}
+
+template <typename View1, typename View2, typename View3>
+bool
+compare_matrices(
+  const View1& row_map1,
+  const View2& entries1,
+  const View3& values1,
+  const int block_size1,
+  const View1& row_map2,
+  const View2& entries2,
+  const View3& values2,
+  const int block_size2,
+  const std::string& name)
+{
+  auto unc_1 = decompress_matrix(row_map1, entries1, values1, block_size1);
+  auto unc_2 = decompress_matrix(row_map2, entries2, values2, block_size2);
+
+  if (unc_1 != unc_2) {
+    print_matrix(unc_1);
+    std::cout << name << " MATRICES DID NOT EQUAL" << std::endl;
+    print_matrix(unc_2);
+    return false;
+  }
+  return true;
 }
 
 // some useful preprocessor functions
@@ -672,7 +700,7 @@ class FastILUPrec
 
             aLvlIdx_ = OrdinalArrayHost(WithoutInit("aLvlIdx"), knzl + knzu);
 
-            aVal = ScalarArray(WithoutInit("aVal"), aColIdx.extent(0));
+            aVal = ScalarArray(WithoutInit("aVal"), aColIdx.extent(0) * blockCrsSize * blockCrsSize);
             aVal_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aVal);
 
             Ordinal aRowPtr = 0;
@@ -725,7 +753,7 @@ class FastILUPrec
             aColIdx_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aColIdx);
             aRowIdx_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aRowIdx);
 
-            aVal = ScalarArray(WithoutInit("aVal"), nnzA);
+            aVal = ScalarArray(WithoutInit("aVal"), nnzA * blockCrsSize * blockCrsSize);
             aVal_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aVal);
 
             Ordinal aRowPtr = 0;
@@ -735,7 +763,6 @@ class FastILUPrec
                 for(Ordinal k = pRowMap_(i); k < pRowMap_(i+1); k++)
                 {
                     if (pLvlIdx_(k) <= level) {
-                        aVal_[aRowPtr] = pVal_[k];
                         aColIdx_[aRowPtr] = pColIdx_[k];
                         aRowIdx_[aRowPtr] = i;
                         aRowPtr++;
@@ -776,9 +803,9 @@ class FastILUPrec
             uColIdx = OrdinalArray(WithoutInit("uColIdx"), nnzU);
             utColIdx = OrdinalArray(WithoutInit("utColIdx"), nnzU);
 
-            lVal = ScalarArray(WithoutInit("lVal"), nnzL);
-            uVal = ScalarArray(WithoutInit("uVal"), nnzU);
-            utVal = ScalarArray(WithoutInit("utVal"), nnzU);
+            lVal = ScalarArray(WithoutInit("lVal"), nnzL * blockCrsSize * blockCrsSize);
+            uVal = ScalarArray(WithoutInit("uVal"), nnzU * blockCrsSize * blockCrsSize);
+            utVal = ScalarArray(WithoutInit("utVal"), nnzU * blockCrsSize * blockCrsSize);
 
             //Create mirror
             lColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lColIdx);
@@ -1153,6 +1180,10 @@ class FastILUPrec
             nTrisol = nTrisol_;
 
             useMetis = false;
+
+            auto unc = decompress_matrix(aRowMapIn_, aColIdxIn_, aValIn_, blockCrsSize_);
+            std::cout << "From FastILUPrec with blockCrsSize_=" << blockCrsSize_ << ", incoming A is:" << std::endl;
+            print_matrix(unc);
 
             computeTime = 0.0;
             applyTime = 0.0;
@@ -1538,15 +1569,40 @@ class FastILUPrec
           {
             initGuessPrec->setValues(aValIn_);
           }
-#ifdef JGF_SUPER_DEBUG
-            std::cout << "nrows: " << nRows << std::endl;
-            print_view("aRowMap", aRowMapHost);
-            print_view("aColIdxHost", aColIdxHost);
-            print_view("aValHost", aValHost);
-            const auto decomp = decompress_matrix(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
-            print_matrix(decomp);
-#endif
         }
+
+  void verify(const FastPrec& rhs, const bool initialize_only=false)
+  {
+    // verify a this using brs and a rhs using crs
+    assert(nRows*blockCrsSize == rhs.nRows);
+    assert(guessFlag == rhs.guessFlag);
+    assert(nFact == rhs.nFact);
+    assert(nTrisol == rhs.nTrisol);
+    assert(level == rhs.level);
+    assert(blkSzILU == rhs.blkSzILU);
+    assert(blkSz == rhs.blkSz);
+    assert(blockCrsSize != 1);
+    assert(rhs.blockCrsSize == 1);
+    assert(omega == rhs.omega);
+    assert(shift == rhs.shift);
+
+    assert(!useMetis);
+    assert(useMetis == rhs.useMetis);
+
+    if (!initialize_only) {
+      assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
+
+      assert(compare_matrices(lRowMap, lColIdx, lVal, blockCrsSize, rhs.lRowMap, rhs.lColIdx, rhs.lVal, 1, "L"));
+
+      assert(compare_matrices(uRowMap, uColIdx, uVal, blockCrsSize, rhs.uRowMap, rhs.uColIdx, rhs.uVal, 1, "U"));
+
+      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "U"));
+    }
+
+    if ((level > 0) && (guessFlag != 0)) {
+      initGuessPrec->verify(*rhs.initGuessPrec, initialize_only);
+    }
+  }
 
         //Actual computation phase.
         //blkSzILU is the chunk size (hard coded).
@@ -1564,6 +1620,8 @@ class FastILUPrec
 
             numericILU();
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > numericILU ");
+
+            return; // JGF MADE IT THIS FAR
 
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,

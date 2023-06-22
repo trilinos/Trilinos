@@ -110,12 +110,17 @@ initLocalPrec()
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
                                           blockCrsSize));
+  localPrec2_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
+                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
+                                           1));
   #ifdef HAVE_IFPACK2_METIS
   if (p.use_metis) {
     localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
   }
   #endif
   localPrec_->initialize();
+  localPrec2_->initialize();
+  localPrec_->verify(*localPrec2_, true);
   this->initTime_ = localPrec_->getInitializeTime();
 }
 
@@ -127,6 +132,10 @@ computeLocalPrec()
   localPrec_->setValues(this->localValues_);
   localPrec_->compute();
   this->computeTime_ = localPrec_->getComputeTime();
+
+  localPrec2_->compute();
+  localPrec_->verify(*localPrec2_);
+  std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -134,6 +143,7 @@ void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
   localPrec_->apply(x, y);
+  localPrec2_->apply(x, y);
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   this->applyTime_ += localPrec_->getApplyTime();
 }
