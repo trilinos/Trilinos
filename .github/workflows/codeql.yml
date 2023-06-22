@@ -68,8 +68,10 @@ jobs:
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     - run: |
-        cmake -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Teuchos=ON .
-        make -j12
+        mkdir mybuild
+        cd mybuild
+        cmake -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Teuchos=ON ..
+        make -j4
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
