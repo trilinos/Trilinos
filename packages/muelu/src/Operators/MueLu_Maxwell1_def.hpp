@@ -107,8 +107,6 @@ namespace MueLu {
      
       // Hardwiring options to ensure ML compatibility
       newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
-      newList.sublist("maxwell1: 22list").set("tentative: constant column sums", false);
-      newList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
 
       newList.sublist("maxwell1: 11list").set("use kokkos refactor", false);
       newList.sublist("maxwell1: 11list").set("tentative: constant column sums", false);
@@ -145,7 +143,6 @@ namespace MueLu {
       newList.set("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
       newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
       newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold",1e-10);
-
 
       list = newList;
     }
@@ -482,8 +479,13 @@ namespace MueLu {
       }
       else {
         // Set the Nodal P
+        // NOTE:  ML uses normalized prolongators for the aggregation hierarchy
+        // and then prolongators of all 1's for doing the Reitzinger prolongator
+        // generation for the edge hierarchy.
         auto NodalP = NodeL->Get<RCP<Matrix> >("P");
-        EdgeL->Set("Pnodal",NodalP);
+        auto NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
+        TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");        
+        EdgeL->Set("Pnodal",NodalP_ones);
 
         // If we repartition a processor away, a RCP<Operator> is stuck
         // on the level instead of an RCP<Matrix>
@@ -495,14 +497,14 @@ namespace MueLu {
 
             // ML does a *fixed* 1e-10 diagonal repair on the Nodal Smoothing Matrix
             // We will duplicate that unless told otherwise.
-            double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
             Teuchos::ParameterList RAPlist;
+            double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
             if(thresh > 0.0) {
               RAPlist.set("rap: fix zero diagonals", true);
               RAPlist.set("rap: fix zero diagonals threshold",thresh);
             }
-            
-            RCP<Matrix> NewKn = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(OldSmootherMatrix,NodalP,RAPlist,labelstr);
+            RCP<Matrix> NewKn = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(OldSmootherMatrix,NodalP_ones,RAPlist,labelstr);
+
             EdgeL->Set("NodeMatrix",NewKn);
             OldSmootherMatrix = NewKn;
           }
