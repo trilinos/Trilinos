@@ -113,11 +113,12 @@ CompositeStepAlgorithm<Real>::CompositeStepAlgorithm( ParameterList &list )
 /** \brief Compute trial step.
 */
 template<typename Real>
-void CompositeStepAlgorithm<Real>::computeTrial(Vector<Real> &s,
+void CompositeStepAlgorithm<Real>::computeTrial(Vector<Real>       &s,
                                                 const Vector<Real> &x,
                                                 const Vector<Real> &l,
-                                                Objective<Real> &obj,
-                                                Constraint<Real> &con) {
+                                                Objective<Real>    &obj,
+                                                Constraint<Real>   &con,
+                                                std::ostream       &os) {
 
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   Real f = 0.0;
@@ -145,7 +146,7 @@ void CompositeStepAlgorithm<Real>::computeTrial(Vector<Real> &s,
   con.value(*c, x, zerotol);
 
   // Compute quasi-normal step.
-  computeQuasinormalStep(*n, *c, x, zeta_*Delta_, con);
+  computeQuasinormalStep(*n, *c, x, zeta_*Delta_, con, os);
 
   // Compute gradient of Lagrangian ... should have been stored.
   con.applyAdjointJacobian(*ajl, l, x, zerotol);
@@ -154,28 +155,29 @@ void CompositeStepAlgorithm<Real>::computeTrial(Vector<Real> &s,
   state_->ngrad++;
 
   // Solve tangential subproblem.
-  solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
+  solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con, os);
   totalIterCG_ += iterCG_;
 
   // Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
-  accept(s, *n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, obj, con);
+  accept(s, *n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, obj, con, os);
 }
 
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::computeLagrangeMultiplier(Vector<Real> &l,
+void CompositeStepAlgorithm<Real>::computeLagrangeMultiplier(Vector<Real>       &l,
                                                              const Vector<Real> &x,
                                                              const Vector<Real> &gf,
-                                                             Constraint<Real> &con) {
+                                                             Constraint<Real>   &con,
+                                                             std::ostream       &os) {
 
   Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   std::vector<Real> augiters;
 
   if (infoLM_) {
-    std::stringstream hist;
-    hist << "\n  Lagrange multiplier step\n";
-    std::cout << hist.str();
+    // std::ios_base::fmtflags osFlags(os.flags());
+    os << "\n  Lagrange multiplier step\n";
+    // os.flags(osFlags);
   }
 
   /* Apply adjoint of constraint Jacobian to current multiplier. */
@@ -202,7 +204,7 @@ void CompositeStepAlgorithm<Real>::computeLagrangeMultiplier(Vector<Real> &l,
   augiters = con.solveAugmentedSystem(*v1, *v2, *b1, *b2, x, tol);
   totalCallLS_++;
   totalIterLS_ = totalIterLS_ + augiters.size();
-  printInfoLS(augiters);
+  printInfoLS(augiters, os);
 
   /* Return updated Lagrange multiplier. */
   // v2 is the multiplier update
@@ -212,16 +214,17 @@ void CompositeStepAlgorithm<Real>::computeLagrangeMultiplier(Vector<Real> &l,
 
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
+void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real>       &n,
                                                           const Vector<Real> &c,
                                                           const Vector<Real> &x,
-                                                          Real delta,
-                                                          Constraint<Real> &con) {
+                                                          Real               delta,
+                                                          Constraint<Real>   &con,
+                                                          std::ostream       &os) {
 
   if (infoQN_) {
-    std::stringstream hist;
-    hist << "\n  Quasi-normal step\n";
-    std::cout << hist.str();
+    // std::ios_base::fmtflags osFlags(os.flags());
+    os << "\n  Quasi-normal step\n";
+    // os.flags(osFlags);
   }
 
   Real zero(0);
@@ -252,9 +255,9 @@ void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
     n.set(*nCP);
     n.scale( delta/norm_nCP );
     if (infoQN_) {
-      std::stringstream hist;
-      hist << "  taking partial Cauchy step\n";
-      std::cout << hist.str();
+      // std::ios_base::fmtflags osFlags(os.flags());
+      os << "  taking partial Cauchy step\n";
+      // os.flags(osFlags);
     }
     return;
   }
@@ -276,7 +279,7 @@ void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
   augiters = con.solveAugmentedSystem(*dn, *y, *nCPdual, *ctemp, x, tol);
   totalCallLS_++;
   totalIterLS_ = totalIterLS_ + augiters.size();
-  printInfoLS(augiters);
+  printInfoLS(augiters, os);
 
   nN->set(*dn);
   nN->plus(*nCP);
@@ -288,9 +291,9 @@ void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
     // Take full feasibility step.
     n.set(*nN);
     if (infoQN_) {
-      std::stringstream hist;
-      hist << "  taking full Newton step\n";
-      std::cout << hist.str();
+      // std::ios_base::fmtflags osFlags(os.flags());
+      os << "  taking full Newton step\n";
+      // os.flags(osFlags);
     }
   }
   else {
@@ -304,9 +307,9 @@ void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
     n.set(*nCP);
     n.axpy(tau, *dn);
     if (infoQN_) {
-      std::stringstream hist;
-      hist << "  taking dogleg step\n";
-      std::cout << hist.str();
+      // std::ios_base::fmtflags osFlags(os.flags());
+      os << "  taking dogleg step\n";
+      // os.flags(osFlags);
     }
   }
 
@@ -314,16 +317,17 @@ void CompositeStepAlgorithm<Real>::computeQuasinormalStep(Vector<Real> &n,
 
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
-                                                             Vector<Real> &tCP,
-                                                             Vector<Real> &Wg,
+void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real>       &t,
+                                                             Vector<Real>       &tCP,
+                                                             Vector<Real>       &Wg,
                                                              const Vector<Real> &x,
                                                              const Vector<Real> &g,
                                                              const Vector<Real> &n,
                                                              const Vector<Real> &l,
-                                                             Real delta,
-                                                             Objective<Real> &obj,
-                                                             Constraint<Real> &con) {
+                                                             Real               delta,
+                                                             Objective<Real>    &obj,
+                                                             Constraint<Real>   &con,
+                                                             std::ostream       &os) {
 
   /* Initialization of the CG step. */
   bool orthocheck = true;  // set to true if want to check orthogonality
@@ -376,18 +380,18 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
   Real rptol(1e-12);
 
   if (infoTS_) {
-    std::stringstream hist;
-    hist << "\n  Tangential subproblem\n";
-    hist << std::setw(6)  << std::right << "iter" << std::setw(18) << "||Wr||/||Wr0||" << std::setw(15) << "||s||";
-    hist << std::setw(15) << "delta" << std::setw(15) << "||c'(x)s||" << "\n";
-    std::cout << hist.str();
+    std::ios_base::fmtflags osFlags(os.flags());
+    os << "\n  Tangential subproblem\n";
+    os << std::setw(6)  << std::right << "iter" << std::setw(18) << "||Wr||/||Wr0||" << std::setw(15) << "||s||";
+    os << std::setw(15) << "delta" << std::setw(15) << "||c'(x)s||" << "\n";
+    os.flags(osFlags);
   }
 
   if (normg == 0) {
     if (infoTS_) {
-      std::stringstream hist;
-      hist << "    >>> Tangential subproblem: Initial gradient is zero! \n";
-      std::cout << hist.str();
+      // std::ios_base::fmtflags osFlags(os.flags());
+      os << "    >>> Tangential subproblem: Initial gradient is zero! \n";
+      // os.flags(osFlags);
     }
     iterCG_ = 0; Wg.zero(); flagCG_ = 0;
     return;
@@ -408,7 +412,7 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
       augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
       totalCallLS_++;
       totalIterLS_ = totalIterLS_ + augiters.size();
-      printInfoLS(augiters);
+      printInfoLS(augiters, os);
 
       Wg.set(*Wr);
       normWg = Wg.norm();
@@ -421,9 +425,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
         flagCG_ = 0;
         iterCG_--;
         if (infoTS_) {
-          std::stringstream hist;
-          hist << "  Initial projected residual is close to zero! \n";
-          std::cout << hist.str();
+          // std::ios_base::fmtflags osFlags(os.flags());
+          os << "  Initial projected residual is close to zero! \n";
+          // os.flags(osFlags);
         }
         return;
       }
@@ -442,7 +446,7 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
       augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
       totalCallLS_++;
       totalIterLS_ = totalIterLS_ + augiters.size();
-      printInfoLS(augiters);
+      printInfoLS(augiters, os);
 
       if (orthocheck) {
         Wrs.push_back(xvec_->clone());
@@ -456,11 +460,11 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
       Ptr<Vector<Real> > ct = cvec_->clone();
       con.applyJacobian(*ct, t, x, zerotol);
       Real linc = ct->norm();
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(6);
-      hist << std::setw(6)  << std::right << iterCG_-1 << std::setw(18) << normWr[iterCG_-1]/normWg << std::setw(15) << t.norm();
-      hist << std::setw(15) << delta << std::setw(15) << linc << "\n";
-      std::cout << hist.str();
+      std::ios_base::fmtflags osFlags(os.flags());
+      os << std::scientific << std::setprecision(6);
+      os << std::setw(6)  << std::right << iterCG_-1 << std::setw(18) << normWr[iterCG_-1]/normWg << std::setw(15) << t.norm();
+      os << std::setw(15) << delta << std::setw(15) << linc << "\n";
+      os.flags(osFlags);
     }
 
     // Check if done (small relative residual).
@@ -468,9 +472,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
       flagCG_ = 0;
       iterCG_ = iterCG_-1;
       if (infoTS_) {
-        std::stringstream hist;
-        hist << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
-        std::cout << hist.str();
+        // std::ios_base::fmtflags osFlags(os.flags());
+        os << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
+        // os.flags(osFlags);
       }
       return;
     }
@@ -505,9 +509,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
         if (Tm1.normOne() > S_max) {
           flagCG_ = 4;
           if (infoTS_) {
-            std::stringstream hist;
-            hist << "  large nonorthogonality in W(R)'*R detected \n";
-            std::cout << hist.str();
+            // std::ios_base::fmtflags osFlags(os.flags());
+            os << "  large nonorthogonality in W(R)'*R detected \n";
+            // os.flags(osFlags);
           }
           return;
         }
@@ -565,9 +569,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
         tCP.set(t);
       }
       if (infoTS_) {
-        std::stringstream hist;
-        hist << "  negative curvature detected \n";
-        std::cout << hist.str();
+        // std::ios_base::fmtflags osFlags(os.flags());
+        os << "  negative curvature detected \n";
+        // os.flags(osFlags);
       }
       return;
     }
@@ -576,9 +580,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
     if (std::abs(rp) < rptol*normp*normr) {
       flagCG_ = 5;
       if (infoTS_) {
-        std::stringstream hist;
-        hist << "  Zero alpha due to inexactness. \n";
-        std::cout << hist.str();
+        // std::ios_base::fmtflags osFlags(os.flags());
+        os << "  Zero alpha due to inexactness. \n";
+        // os.flags(osFlags);
       }
       return;
     }
@@ -613,9 +617,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
       }
       flagCG_ = 3;
       if (infoTS_) {
-         std::stringstream hist;
-         hist << "  trust-region condition active \n";
-         std::cout << hist.str();
+         // std::ios_base::fmtflags osFlags(os.flags());
+         os << "  trust-region condition active \n";
+         // os.flags(osFlags);
       }
       return;
     }
@@ -638,9 +642,9 @@ void CompositeStepAlgorithm<Real>::solveTangentialSubproblem(Vector<Real> &t,
 
   flagCG_ = 1;
   if (infoTS_) {
-    std::stringstream hist;
-    hist << "  maximum number of iterations reached \n";
-    std::cout << hist.str();
+    // std::ios_base::fmtflags osFlags(os.flags());
+    os << "  maximum number of iterations reached \n";
+    // os.flags(osFlags);
   }
 
 } // solveTangentialSubproblem
@@ -651,7 +655,7 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
                                           Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
                                           const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
                                           const Vector<Real> &g, Vector<Real> &tCP, Vector<Real> &Wg,
-                                          Objective<Real> &obj, Constraint<Real> &con) {
+                                          Objective<Real> &obj, Constraint<Real> &con, std::ostream &os) {
 
   Real beta         = 1e-8;              // predicted reduction parameter
   Real tol_red_tang = 1e-3;              // internal reduction factor for tangtol
@@ -666,9 +670,9 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
   Real rpred_over_pred = 0.5*(1-eta_);
 
   if (infoAC_) {
-    std::stringstream hist;
-    hist << "\n  Composite step acceptance\n";
-    std::cout << hist.str();
+    // std::ios_base::fmtflags osFlags(os.flags());
+    os << "\n  Composite step acceptance\n";
+    // os.flags(osFlags);
   }
 
   Real zero      =  0.0;
@@ -745,10 +749,10 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
         num_proj++;
         if (tangtol < mintol) {
           if (infoAC_) {
-            std::stringstream hist;
-            hist << "\n The projection of the tangential step cannot be done with sufficient precision.\n";
-            hist << " Is the quasi-normal step very small? Continuing with no global convergence guarantees.\n";
-            std::cout << hist.str();
+            // std::ios_base::fmtflags osFlags(os.flags());
+            os << "\n The projection of the tangential step cannot be done with sufficient precision.\n";
+            os << " Is the quasi-normal step very small? Continuing with no global convergence guarantees.\n";
+            // os.flags(osFlags);
           }
           break;
         }
@@ -760,7 +764,7 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
       augiters = con.solveAugmentedSystem(t, *ltemp, *t_dual, *czero, x, tol);
       totalCallLS_++;
       totalIterLS_ = totalIterLS_ + augiters.size();
-      printInfoLS(augiters);
+      printInfoLS(augiters, os);
       totalProj_++;
       con.applyJacobian(*rt, t, x, zerotol);
       linc_postproj = rt->norm();
@@ -790,7 +794,7 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
       obj.gradient(gf_new, *xtrial, zerotol);
       con.value(c_new, *xtrial, zerotol);
       l_new.set(l);
-      computeLagrangeMultiplier(l_new, *xtrial, gf_new, con);
+      computeLagrangeMultiplier(l_new, *xtrial, gf_new, con, os);
 
       // Penalty parameter update.
       part_pred = - Wg.dot(*t_orig);
@@ -843,17 +847,17 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
       t_m_tCP->plus(tCP);
       if ((t_m_tCP->norm() > 0) && try_tCP) {
         if (infoAC_) {
-          std::stringstream hist;
-          hist << "       ---> now trying tangential Cauchy point\n";
-          std::cout << hist.str();
+          // std::ios_base::fmtflags osFlags(os.flags());
+          os << "       ---> now trying tangential Cauchy point\n";
+          // os.flags(osFlags);
         }
         t.set(tCP);
       }
       else {
         if (infoAC_) {
-          std::stringstream hist;
-          hist << "       ---> recomputing quasi-normal step and re-solving tangential subproblem\n";
-          std::cout << hist.str();
+          // std::ios_base::fmtflags osFlags(os.flags());
+          os << "       ---> recomputing quasi-normal step and re-solving tangential subproblem\n";
+          // os.flags(osFlags);
         }
         totalRef_++;
         // Reset global quantities.
@@ -879,9 +883,9 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
           tangtol_ *= tol_red_all;
         }
         // Recompute the quasi-normal step.
-        computeQuasinormalStep(n, c, x, zeta_*Delta_, con);
+        computeQuasinormalStep(n, c, x, zeta_*Delta_, con, os);
         // Solve tangential subproblem.
-        solveTangentialSubproblem(t, tCP, Wg, x, g, n, l, Delta_, obj, con);
+        solveTangentialSubproblem(t, tCP, Wg, x, g, n, l, Delta_, obj, con, os);
         totalIterCG_ += iterCG_;
         if (flagCG_ == 1) {
           totalNegCurv_++;
@@ -916,37 +920,39 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
 
   // Print diagnostics.
   if (infoAC_) {
-    std::stringstream hist;
-    hist << "\n         Trial step info ...\n";
-    hist <<   "         n_norm              = " << nnorm_ << "\n";
-    hist <<   "         t_norm              = " << tnorm_ << "\n";
-    hist <<   "         s_norm              = " << snorm_ << "\n";
-    hist <<   "         xtrial_norm         = " << xtrial->norm() << "\n";
-    hist <<   "         f_old               = " << f << "\n";
-    hist <<   "         f_trial             = " << f_new << "\n";
-    hist <<   "         f_old-f_trial       = " << f-f_new << "\n";
-    hist <<   "         ||c_old||           = " << c.norm() << "\n";
-    hist <<   "         ||c_trial||         = " << c_new.norm() << "\n";
-    hist <<   "         ||Jac*t_preproj||   = " << linc_preproj << "\n";
-    hist <<   "         ||Jac*t_postproj||  = " << linc_postproj << "\n";
-    hist <<   "         ||t_tilde||/||t||   = " << t_orig->norm() / t.norm() << "\n";
-    hist <<   "         ||t_tilde||/||n+t|| = " << t_orig->norm() / snorm_ << "\n";
-    hist <<   "         # projections       = " << num_proj << "\n";
-    hist <<   "         penalty param       = " << penalty_ << "\n";
-    hist <<   "         ared                = " << ared_ << "\n";
-    hist <<   "         pred                = " << pred_ << "\n";
-    hist <<   "         ared/pred           = " << ared_/pred_ << "\n";
-    std::cout << hist.str();
+    std::ios_base::fmtflags osFlags(os.flags());
+    os << std::scientific << std::setprecision(6);
+    os << "\n         Trial step info ...\n";
+    os <<   "         n_norm              = " << nnorm_ << "\n";
+    os <<   "         t_norm              = " << tnorm_ << "\n";
+    os <<   "         s_norm              = " << snorm_ << "\n";
+    os <<   "         xtrial_norm         = " << xtrial->norm() << "\n";
+    os <<   "         f_old               = " << f << "\n";
+    os <<   "         f_trial             = " << f_new << "\n";
+    os <<   "         f_old-f_trial       = " << f-f_new << "\n";
+    os <<   "         ||c_old||           = " << c.norm() << "\n";
+    os <<   "         ||c_trial||         = " << c_new.norm() << "\n";
+    os <<   "         ||Jac*t_preproj||   = " << linc_preproj << "\n";
+    os <<   "         ||Jac*t_postproj||  = " << linc_postproj << "\n";
+    os <<   "         ||t_tilde||/||t||   = " << t_orig->norm() / t.norm() << "\n";
+    os <<   "         ||t_tilde||/||n+t|| = " << t_orig->norm() / snorm_ << "\n";
+    os <<   "         # projections       = " << num_proj << "\n";
+    os <<   "         penalty param       = " << penalty_ << "\n";
+    os <<   "         ared                = " << ared_ << "\n";
+    os <<   "         pred                = " << pred_ << "\n";
+    os <<   "         ared/pred           = " << ared_/pred_ << "\n";
+    os.flags(osFlags);
   }
 
 } // accept
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::updateRadius(Vector<Real> &x,
-                                                Vector<Real> &l,
+void CompositeStepAlgorithm<Real>::updateRadius(Vector<Real>       &x,
+                                                Vector<Real>       &l,
                                                 const Vector<Real> &s,
-                                                Objective<Real> &obj,
-                                                Constraint<Real> &con) {
+                                                Objective<Real>    &obj,
+                                                Constraint<Real>   &con,
+                                                std::ostream       &os) {
   Real zero(0);
   Real one(1);
   Real two(2);
@@ -991,7 +997,7 @@ void CompositeStepAlgorithm<Real>::updateRadius(Vector<Real> &x,
   Real val = obj.value(x, zerotol);
   state_->nfval++;
   obj.gradient(*g, x, zerotol);
-  computeLagrangeMultiplier(l, x, *g, con);
+  computeLagrangeMultiplier(l, x, *g, con, os);
   con.applyAdjointJacobian(*ajl, l, x, zerotol);
   gl->set(*g); gl->plus(*ajl);
   state_->ngrad++;
@@ -1012,13 +1018,13 @@ void CompositeStepAlgorithm<Real>::updateRadius(Vector<Real> &x,
 
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::initialize(Vector<Real>        &x,
-                                              const Vector<Real>  &g,
-                                              Vector<Real>  &l,
-                                              const Vector<Real>  &c,
-                                              Objective<Real>     &obj,
-                                              Constraint<Real>    &con,
-                                              std::ostream        &outStream ) {
+void CompositeStepAlgorithm<Real>::initialize(Vector<Real>       &x,
+                                              const Vector<Real> &g,
+                                              Vector<Real>       &l,
+                                              const Vector<Real> &c,
+                                              Objective<Real>    &obj,
+                                              Constraint<Real>   &con,
+                                              std::ostream       &os) {
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   TypeE::Algorithm<Real>::initialize(x,g,l,c);
 
@@ -1046,7 +1052,7 @@ void CompositeStepAlgorithm<Real>::initialize(Vector<Real>        &x,
   obj.gradient(*gvec_, x, zerotol);
 
   // Compute gradient of Lagrangian at new multiplier guess.
-  computeLagrangeMultiplier(l, x, *gvec_, con);
+  computeLagrangeMultiplier(l, x, *gvec_, con, os);
   con.applyAdjointJacobian(*ajl, l, x, zerotol);
   gl->set(*gvec_); gl->plus(*ajl);
   state_->ngrad++;
@@ -1061,22 +1067,22 @@ void CompositeStepAlgorithm<Real>::run(Vector<Real>       &x,
                                        Constraint<Real>   &econ,
                                        Vector<Real>       &emul,
                                        const Vector<Real> &eres,
-                                       std::ostream       &outStream ) {
+                                       std::ostream       &outStream) {
 
-  initialize(x,g,emul,eres,obj,econ,outStream);
+  initialize(x, g, emul, eres, obj, econ, outStream);
 
   // Output.
-  if (verbosity_ > 0) writeOutput(outStream,true);
+  if (verbosity_ > 0) writeOutput(outStream, true);
 
   // Step vector.
   Ptr<Vector<Real> > s = x.clone();
 
   while (status_->check(*state_)) {
-    computeTrial(*s, x, emul, obj, econ);
-    updateRadius(x, emul, *s, obj, econ);
+    computeTrial(*s, x, emul, obj, econ, outStream);
+    updateRadius(x, emul, *s, obj, econ, outStream);
 
     // Update output.
-    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
+    if (verbosity_ > 0) writeOutput(outStream, printHeader_);
   }
 
   if (verbosity_ > 0) TypeE::Algorithm<Real>::writeExitStatus(outStream);
@@ -1190,17 +1196,17 @@ int CompositeStepAlgorithm<Real>::sgn(T val) const {
 
 
 template<typename Real>
-void CompositeStepAlgorithm<Real>::printInfoLS(const std::vector<Real> &res) const {
+void CompositeStepAlgorithm<Real>::printInfoLS(const std::vector<Real> &res, std::ostream &os) const {
   if (infoLS_) {
-    std::stringstream hist;
-    hist << std::scientific << std::setprecision(8);
-    hist << std::endl << "    Augmented System Solver:" << std::endl;
-    hist << "    True Residual" << std::endl;
+    std::ios_base::fmtflags osFlags(os.flags());
+    os << std::scientific << std::setprecision(8);
+    os << std::endl << "    Augmented System Solver:" << std::endl;
+    os << "    True Residual" << std::endl;
     for (unsigned j=0; j<res.size(); j++) {
-      hist << "    " << std::left << std::setw(14) << res[j] << std::endl;
+      os << "    " << std::left << std::setw(14) << res[j] << std::endl;
     }
-    hist << std::endl;
-    std::cout << hist.str();
+    os << std::endl;
+    os.flags(osFlags);
   }
 }
 
