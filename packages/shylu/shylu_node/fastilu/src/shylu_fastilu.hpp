@@ -291,7 +291,7 @@ class FastILUPrec
 
   template <typename View1>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block(View1& vals_dest, const Ordinal dest, typename View1::const_value_type value, const Ordinal blockCrsSize)
+  static void assign_block(View1& vals_dest, const Ordinal dest, const Scalar value, const Ordinal blockCrsSize)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     std::fill(vals_dest.data() + dest*blockItems, vals_dest.data() + (dest+1)*blockItems, value);
@@ -331,7 +331,6 @@ class FastILUPrec
       }
     }
   }
-
 
   template <typename View1, typename View2, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
@@ -1657,18 +1656,14 @@ class FastILUPrec
             numericILU();
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > numericILU ");
 
-            return; // JGF MADE IT THIS FAR
-
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,
-                    lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega);
+                    lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega, blockCrsSize);
             Ordinal extent = aRowMap_[nRows]/blkSzILU;
             if (aRowMap_[nRows]%blkSzILU != 0)
             {
                 extent++;
             }
-            //Ordinal extent = aRowMap[nRows];
-            //ExecSpace().fence();
 
             for (int i = 0; i < nFact; i++)
             {
@@ -1676,14 +1671,15 @@ class FastILUPrec
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << nFact << ")");
 
-            // transposee u
-            // transpose
+            return; // JGF MADE IT THIS FAR
+
+            // transpose u
             Kokkos::deep_copy(utRowMap, 0);
             KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
               (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
             // sort, if the triangular solve algorithm requires a sorted matrix.
             bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
-            if(sortRequired) {
+            if (sortRequired) {
               KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
                 (utRowMap, utColIdx, utVal);
             }
@@ -2287,29 +2283,45 @@ class FastILUFunctor
         FastILUFunctor (Ordinal nNZ, Ordinal bs, ordinal_array_type Ap, ordinal_array_type Ai,
                 ordinal_array_type Aj, scalar_array_type Ax, ordinal_array_type Lp,
                 ordinal_array_type Li, scalar_array_type Lx, ordinal_array_type Up,
-                ordinal_array_type Ui, scalar_array_type Ux, scalar_array_type diag, Scalar omega)
+                ordinal_array_type Ui, scalar_array_type Ux, scalar_array_type diag, Scalar omega, Ordinal blockCrsSize)
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li),_Up(Up),
-                _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega)
-        {}
+                _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega), _blockCrsSize(blockCrsSize)
+        {
+              std::cout << "JGF starting a new Functor" << std::endl;
+              auto unc_a = decompress_matrix(Ap, Aj, Ax, blockCrsSize);
+              auto unc_l = decompress_matrix(Lp, Li, Lx, blockCrsSize);
+              auto unc_u = decompress_matrix(Up, Ui, Ux, blockCrsSize);
+
+              std::cout << "JGF A" << std::endl;
+              print_matrix(unc_a);
+              std::cout << "JGF L" << std::endl;
+              print_matrix(unc_l);
+              std::cout << "JGF U" << std::endl;
+              print_matrix(unc_u);
+        }
 
         KOKKOS_INLINE_FUNCTION
-            void operator()(const Ordinal blk_index) const
-            {
-                const Scalar zero = STS::zero();
-                const Scalar one = STS::one();
+        void operator()(const Ordinal blk_index) const
+        {
+          Ordinal start = blk_index * blk_size;
+          Ordinal end = start + blk_size;
+          end = (end > nnz) ? nnz : end;
+          if (_blockCrsSize == 1) {
+            functor_impl(start, end);
+          }
+          else {
+            functor_bcrs_impl(start, end);
+          }
+        }
 
-                Ordinal start = blk_index * blk_size;
-                Ordinal end = start + blk_size;
+        KOKKOS_INLINE_FUNCTION
+        void functor_impl(const Ordinal start, const Ordinal end) const
+        {
+              static const Scalar zero = STS::zero();
+              static const Scalar one = STS::one();
 
-                Ordinal nz_index;
-
-                if (end > nnz)
-                {
-                    end = nnz;
-                }
-
-                for (nz_index = start; nz_index < end && nz_index < nnz; nz_index++)
+                for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++)
                 {
                     Ordinal i = _Ai[nz_index];
                     Ordinal j = _Aj[nz_index];
@@ -2321,15 +2333,19 @@ class FastILUFunctor
                     Ordinal lptr = _Lp[i];
                     Ordinal uptr = _Up[j];
 
+                    std::cout << "  JGF A(" << i << ")(" << j << ")" << ((i > j) ? "lower" : "upper") << std::endl;
+
                     while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
                     {
                         lCol = _Li[lptr];
                         uCol = _Ui[uptr];
+                        std::cout << "    JGF L(" << i << ")(" << lCol << ") U(" << j << ")(" << uCol << ")" << std::endl;
                         lAdd = zero;
                         if (lCol == uCol)
                         {
                             lAdd = _Lx[lptr] * _Ux[uptr];
                             acc_val += lAdd;
+                            std::cout << "    JGF MATCH " << lCol << " " << lAdd << std::endl;
                         }
                         if (lCol <= uCol)
                         {
@@ -2342,6 +2358,8 @@ class FastILUFunctor
                     }
 
                     acc_val -= lAdd;
+
+                    std::cout << "  JGF lptr=" << lptr << " uptr=" << uptr << " lAdd=" << lAdd << " lrowend=" << _Lp[i+1] << " urowend=" << _Up[j+1] << std::endl;
 
                     // Place the value into L or U
                     if (i > j)
@@ -2356,12 +2374,101 @@ class FastILUFunctor
                         _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
                     }
                 }
-            }
+        }
+
+        KOKKOS_INLINE_FUNCTION
+        void functor_bcrs_impl(const Ordinal start, const Ordinal end) const
+        {
+              static const Scalar zero = STS::zero();
+              static const Scalar one = STS::one();
+
+           const Ordinal blockItems = _blockCrsSize*_blockCrsSize;
+           for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++) {
+              Ordinal i = _Ai[nz_index]; // row of this nnz in A
+              Ordinal j = _Aj[nz_index]; // col of this nnz in A
+              Ordinal lCol;
+              Ordinal uCol;
+              std::vector<Scalar> acc_val(_blockCrsSize, zero);
+              std::vector<Scalar> lAdd(_blockCrsSize, zero);
+              Scalar temp = zero;
+              Ordinal lptr = _Lp[i]; // lptr= curr col of row i
+              Ordinal uptr = _Up[j]; // uptr= curr col of row j
+
+              // Looking at rows i,j for all matching columns, multiply and add all matches
+              // except for the last match
+              while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
+              {
+                lCol = _Li[lptr];
+                uCol = _Ui[uptr];
+                lAdd = std::vector<Scalar>(_blockCrsSize, zero);
+                temp = zero;
+                if (lCol == uCol) {
+                  const Ordinal l_offset = blockItems*lptr;
+                  const Ordinal u_offset  = blockItems*uptr;
+                  for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
+                    for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
+                      const Ordinal blockOffset = _blockCrsSize*i + j;
+                      const Scalar curr_val = _Lx[l_offset + blockOffset] * _Ux[u_offset + blockOffset];
+                      temp += curr_val;
+                      lAdd[bi] = curr_val; // this may not be right
+                    }
+                    acc_val[bi] += temp;
+                  }
+                }
+                if (lCol <= uCol)
+                {
+                  lptr++;
+                }
+                if (lCol >= uCol)
+                {
+                  uptr++;
+                }
+              }
+
+              for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
+                acc_val[bi] -= lAdd[bi];
+              }
+
+//               // Place the value into L or U
+//               Scalar val = _Ax[nz_index];
+//               if (i > j)
+//               {
+//                 // Divide acc_val
+// //              val = (val-acc_val) / _Ux[_Up[j+1]-1]; Get the last nnz val in jth row
+// //              _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
+//               for (Ordinal bi = 0; ) {
+              
+//                 const Ordinal l_offset = blockItems*(lptr-1);
+//                 const Ordinal u_offset  = blockItems*(_Up[j+1]-1);
+//                 for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
+//                   for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
+//                     const Ordinal blockOffset = _blockCrsSize*i + j;
+//                     const Scalar curr_val = _Lx[l_offset + blockOffset] * _Ux[u_offset + blockOffset];
+
+//                     val = (val-acc_val) / _Ux[_Up[j+1]-1];
+//                     _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
+//                   }
+//                 }
+//               }
+//               else if (i == j) {
+//                 val = (val-acc_val);
+//                 _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
+//                 _diag[j] = val;
+//               }
+//               else
+//               {
+//                 val = (val-acc_val);
+//                 _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
+//               }
+//             }
+          }
+        }
 
         Ordinal nnz, blk_size;
         ordinal_array_type _Ap, _Ai, _Aj, _Lp, _Li, _Up, _Ui;
         scalar_array_type _Ax, _Lx, _Ux, _diag;
         Scalar _omega;
+        const Ordinal _blockCrsSize;
 };
 
 
