@@ -3818,7 +3818,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
     {
 	     printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
 		    Amat->invec_leng);
-         printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
+         printf("E: Using Hiptmair damping factor of %f.\n",dataptr->omega);
          fflush(stdout);
     }
   }
@@ -4056,7 +4056,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
     {
 	     printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
 		    Amat->invec_leng);
-         printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
+         printf("E: Using Hiptmair damping factor of %f.\n",dataptr->omega);
          fflush(stdout);
     }
   }
@@ -4115,14 +4115,15 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
             will be zero. */
          if (Mmat) {
            if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-             printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
+             printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T (boundary).\n");
            ML_2matmult(Mmat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
          }
          else {
            if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-             printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
+             printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T (boundary).\n");
            ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
          }
+
          matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
          row_ptr = matdata->rowptr;
          val_ptr = matdata->values;
@@ -4135,6 +4136,9 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
                val_ptr[k] = 0.0;
            }
          ML_2matmult(Tmat_trans,tmpmat2,tmpmat, ML_CSR_MATRIX);
+
+
+       
          ML_Operator_Destroy(&tmpmat2);
        }
      else

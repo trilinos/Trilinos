@@ -39,6 +39,18 @@ int *bindx; double *vals;
 struct ML_CSR_MSRdata *msr_data;
 
 
+ {/*CMSCMSCMS*/
+   char name[80];
+   static int cms_ct=0;
+   sprintf(name,"A_rap_%d",cms_ct);
+   ML_Operator_Print_UsingGlobalOrdering(Amat, name, NULL,NULL);
+   sprintf(name,"P_rap_%d",cms_ct);
+   ML_Operator_Print_UsingGlobalOrdering(Pmat, name, NULL,NULL);
+   sprintf(name,"R_rap_%d",cms_ct);
+   ML_Operator_Print_UsingGlobalOrdering(Rmat, name, NULL,NULL);
+   cms_ct++;
+ }/*CMSCMSCMS*/
+
    /* Check that N_input_vector is reasonable */
 
 #  ifdef ML_TIMING
@@ -219,4 +231,14 @@ fflush(stdout);
    }
 #  endif
 
+
+
+   {/*CMSCMSCMS*/
+     char name[80];
+     static int cms_ct=0;
+     sprintf(name,"Ac_rap_%d",cms_ct);
+     ML_Operator_Print_UsingGlobalOrdering(Result, name, NULL,NULL);
+     cms_ct++;
+   }/*CMSCMSCMS*/
+   
 }

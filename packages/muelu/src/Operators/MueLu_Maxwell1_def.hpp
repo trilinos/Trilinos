@@ -144,6 +144,22 @@ namespace MueLu {
       newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
       newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold",1e-10);
 
+
+
+      // CMS hackery
+      newList.sublist("maxwell1: 11list").sublist("export data").set("A","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("Pnodal","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("NodeMatrix","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("NodeAggMatrix","{0,1}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("Coordinates","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("A","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("P","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("D0","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 22list").sublist("export data").set("A","{0,1,2,3,4,5}");
+      newList.sublist("maxwell1: 22list").sublist("export data").set("P","{0,1,2,3,4,5}");
+
+
+
       list = newList;
     }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
