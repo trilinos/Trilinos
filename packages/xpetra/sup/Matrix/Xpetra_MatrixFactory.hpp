@@ -283,6 +283,13 @@ namespace Xpetra {
       return rcp(new CrsMatrixWrap(graph, paramList));
     }
 
+    //! Constructor specifying graph and values array
+    static RCP<Matrix> Build(const RCP<const CrsGraph>& graph, 
+                             typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, 
+                             const RCP<ParameterList>& paramList = Teuchos::null) {
+      return rcp(new CrsMatrixWrap(graph, values, paramList));
+    }
+
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
 
