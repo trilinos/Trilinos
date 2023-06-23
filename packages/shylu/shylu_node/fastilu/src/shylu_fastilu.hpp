@@ -158,6 +158,32 @@ compare_matrices(
   return true;
 }
 
+template <typename View>
+bool
+compare_views(
+  const View& view1,
+  const View& view2,
+  const std::string& name)
+{
+  bool equal = view1.extent(0) == view2.extent(0);
+
+  if (equal) {
+    for (size_t i = 0; i < view1.extent(0); ++i) {
+      if (view1(i) != view2(i)) {
+        equal = false;
+        break;
+      }
+    }
+  }
+
+  if (!equal) {
+    print_view(name + "1", view1);
+    std::cout << name << " VIEWS DID NOT EQUAL" << std::endl;
+    print_view(name + "2", view2);
+  }
+  return equal;
+}
+
 // some useful preprocessor functions
 #ifdef FASTILU_TIMER
 #define FASTILU_CREATE_TIMER(timer) Kokkos::Timer timer
@@ -271,9 +297,9 @@ class FastILUPrec
     std::fill(vals_dest.data() + dest*blockItems, vals_dest.data() + (dest+1)*blockItems, value);
   }
 
-  template <typename View1, typename View2, typename L = idlt>
+  template <typename View1, typename View2, typename LO, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block_lower(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  static void assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     const Ordinal dest_offset = blockItems*dest;
@@ -281,25 +307,26 @@ class FastILUPrec
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
       for (Ordinal j = 0; j < blockCrsSize; ++j) {
         const Ordinal blockOffset = blockCrsSize*i + j;
-        if (i > j) {
+        if (ordinal_lam(i, j)) {
           vals_dest(dest_offset + blockOffset) = lam(vals_src(src_offset + blockOffset));
         }
       }
     }
   }
 
-  template <typename View1, typename View2, typename L = idlt>
+  template <typename View1, typename View2, typename LO, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block_except_diag(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  static void assign_block_cond_trans(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     const Ordinal dest_offset = blockItems*dest;
     const Ordinal src_offset  = blockItems*src;
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
       for (Ordinal j = 0; j < blockCrsSize; ++j) {
-        const Ordinal blockOffset = blockCrsSize*i + j;
-        if (i != j) {
-          vals_dest(dest_offset + blockOffset) = lam(vals_src(src_offset + blockOffset));
+        const Ordinal blockOffset  = blockCrsSize*i + j;
+        const Ordinal blockOffsetT = blockCrsSize*j + i;
+        if (ordinal_lam(i, j)) {
+          vals_dest(dest_offset + blockOffsetT) = lam(vals_src(src_offset + blockOffset));
         }
       }
     }
@@ -331,17 +358,23 @@ class FastILUPrec
   static void assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
   {
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
-      diag_dest(dest+i) = lam(diag_src(src+i));
+      diag_dest(dest*blockCrsSize + i) = lam(diag_src(src*blockCrsSize + i));
     }
   }
 
   template <typename View1, typename View2, typename View3, typename L>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block_diag_only_from_2diags(View1& vals_dest, View2& diag_src1, View3& diag_src2, const Ordinal dest, const Ordinal src1, const Ordinal src2, const Ordinal blockCrsSize, const L& lam)
+  static void assign_block_from_2diags(View1& vals, View2& diag_src1, View3& diag_src2, const Ordinal dest, const Ordinal src1, const Ordinal src2, const Ordinal blockCrsSize, const L& lam)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
-    for (Ordinal i = 0, j = blockItems*dest; i < blockCrsSize; ++i, j+=(blockCrsSize+1)) {
-      vals_dest(j) = lam(vals_dest(j), diag_src1(src1*blockCrsSize + i), diag_src2(src2*blockCrsSize + i));
+    const Ordinal dest_offset = blockItems*dest;
+    const Ordinal src1_offset  = blockCrsSize*src1;
+    const Ordinal src2_offset  = blockCrsSize*src2;
+    for (Ordinal i = 0; i < blockCrsSize; ++i) {
+      for (Ordinal j = 0; j < blockCrsSize; ++j) {
+        const Ordinal blockOffset = blockCrsSize*i + j;
+        vals(dest_offset + blockOffset) = lam(vals(dest_offset + blockOffset), diag_src1(src1_offset+i), diag_src2(src2_offset+j));
+      }
     }
   }
 
@@ -857,6 +890,7 @@ class FastILUPrec
             Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
             Kokkos::parallel_for(
               "numericILU::getDiags", get_policy, functor);
+
             // apply diagonal scaling
             Kokkos::RangePolicy<DiagScalTag, ExecSpace> scale_policy (0, nRows);
             Kokkos::parallel_for(
@@ -1086,8 +1120,9 @@ class FastILUPrec
 
         void applyManteuffelShift()
         {
-            const Scalar one = STS::one();
-            auto shift_lambda = [&](const Scalar& val) { return (one/(one + shift)) * val; };
+            static const Scalar one = STS::one();
+            static auto shift_lambda = [&](const Scalar val) { return (one/(one + shift)) * val; };
+            static constexpr auto not_diag_lamb = [](const Ordinal i, const Ordinal j) { return i != j; };
             for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
@@ -1099,7 +1134,7 @@ class FastILUPrec
                       assign_block(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
                     }
                     else {
-                      assign_block_except_diag(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
+                      assign_block_cond(aVal_, aVal_, k, k, not_diag_lamb, blockCrsSize, shift_lambda);
                     }
                 }
             }
@@ -1358,8 +1393,8 @@ class FastILUPrec
             // functor to extract diagonals (inverted)
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetDiagsTag &, const int i) const {
-                const Real one = RTS::one();
-                auto dlambda = [&](const Scalar& val) { return one/(RTS::sqrt(STS::abs(val))); };
+                static const Real one = RTS::one();
+                static constexpr auto dlambda = [&](const Scalar& val) { return one/(RTS::sqrt(STS::abs(val))); };
                 for(int k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     aRowIdx[k] = i;
@@ -1373,8 +1408,8 @@ class FastILUPrec
             // functor to swap diagonals
             KOKKOS_INLINE_FUNCTION
             void operator()(const SwapDiagTag &, const int i) const {
-                const Scalar one  = STS::one();
-                const Scalar zero = STS::zero();
+                static const Scalar one  = STS::one();
+                static const Scalar zero = STS::zero();
                 // zero the diagonal of L. If sorted, this finds it on first iter.
                 Ordinal lRowBegin = lRowMap(i);
                 Ordinal lRowEnd = lRowMap(i + 1);
@@ -1395,20 +1430,18 @@ class FastILUPrec
                   }
                 }
                 // invert D
-                auto dlambda = [&](const Scalar& val) { return one/val; };
+                static constexpr auto dlambda = [&](const Scalar& val) { return one/val; };
                 assign_diag_from_diag(diagElems, diagElems, i, i, blockCrsSize, dlambda);
             }
 
             // functor to apply diagonal scaling
             KOKKOS_INLINE_FUNCTION
             void operator()(const DiagScalTag &, const int i) const {
-                auto dlambda = [&](const Scalar& val1, const Scalar& val2, const Scalar& val3) { return val1*val2*val3; };
+                static constexpr auto dlambda = [&](const Scalar& val1, const Scalar& val2, const Scalar& val3) { return val1*val2*val3; };
                 for (int k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
-                    int row = aRowIdx[k];
-                    int col = aColIdx[k];
-
-                    assign_block_diag_only_from_2diags(aVal, diagFact, diagFact, k, row, col, blockCrsSize, dlambda);
+                    const Ordinal col = aColIdx[k];
+                    assign_block_from_2diags(aVal, diagFact, diagFact, k, i, col, blockCrsSize, dlambda);
                 }
             }
 
@@ -1417,6 +1450,7 @@ class FastILUPrec
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetLowerTag &, const int i) const {
                 Ordinal lPtr = lRowMap[i];
+                static constexpr auto lower_lamb = [](const Ordinal i, const Ordinal j) { return i > j; };
                 for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal row = i;
@@ -1427,7 +1461,7 @@ class FastILUPrec
                         {
                           assign_diag_from_block(diagElems, aVal, row, k, blockCrsSize);
                           assign_block_diag_only(lVal, lPtr, STS::one(), blockCrsSize);
-                          assign_block_lower(lVal, aVal, lPtr, k, blockCrsSize);
+                          assign_block_cond(lVal, aVal, lPtr, k, lower_lamb, blockCrsSize);
                         } else {
                           assign_block(lVal, aVal, lPtr, k, blockCrsSize);
                         }
@@ -1581,7 +1615,6 @@ class FastILUPrec
     assert(level == rhs.level);
     assert(blkSzILU == rhs.blkSzILU);
     assert(blkSz == rhs.blkSz);
-    assert(blockCrsSize != 1);
     assert(rhs.blockCrsSize == 1);
     assert(omega == rhs.omega);
     assert(shift == rhs.shift);
@@ -1590,13 +1623,16 @@ class FastILUPrec
     assert(useMetis == rhs.useMetis);
 
     if (!initialize_only) {
+      assert(compare_views(diagFact, rhs.diagFact, "diagFact"));
+      assert(compare_views(diagElems, rhs.diagElems, "diagElems"));
+
       assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
 
       assert(compare_matrices(lRowMap, lColIdx, lVal, blockCrsSize, rhs.lRowMap, rhs.lColIdx, rhs.lVal, 1, "L"));
 
       assert(compare_matrices(uRowMap, uColIdx, uVal, blockCrsSize, rhs.uRowMap, rhs.uColIdx, rhs.uVal, 1, "U"));
 
-      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "U"));
+      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "Ut"));
     }
 
     if ((level > 0) && (guessFlag != 0)) {
@@ -1924,7 +1960,6 @@ class FastILUPrec
             ExecSpace().fence();
             double t = timer.seconds();
             applyTime = t;
-            return;
         }
 
         Ordinal getNFact() const
@@ -2520,11 +2555,13 @@ class ParPermCopyFunctor
           a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), uVal_(uVal), uColIdx_(uColIdx), blockCrsSize_(blockCrsSize)
         {}
 
+        static constexpr auto upper_lamb = [](const Ordinal i, const Ordinal j) { return i <= j; };
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal k) const
             {
                 auto pos = a2uMap_(k);
-                parent::assign_block(uVal_, aVal_, k, pos, blockCrsSize_);
+                parent::assign_block_cond_trans(uVal_, aVal_, k, pos, upper_lamb, blockCrsSize_);
                 uColIdx_(k) = aRowIdx_[pos];
             }
 
