@@ -146,7 +146,7 @@ namespace MueLu {
     // if we have a blocked operator and a reordering string, create a nested blocked operator, if not skip the process
     if(reorderStr.empty())
     {
-      GetOStream(Statistics1) << "Skipping reordering A" << std::endl;
+      GetOStream(Statistics1) << "No reordering information provided. Skipping reordering of A." << std::endl;
     }
     else
     {
@@ -162,7 +162,7 @@ namespace MueLu {
                                                         << " blocked operator failed.");
 
       GetOStream(Statistics1) << "Reordering A using " << brm->toString() << " block gives a " << brop->Rows() << "x"
-                              << brop->Cols() << " blocked operators" << std::endl;
+                              << brop->Cols() << " blocked operator" << std::endl;
       GetOStream(Debug) << "Reordered operator has " << brop->getRangeMap()->getGlobalNumElements() << " rows and "
                         << brop->getDomainMap()->getGlobalNumElements() << " columns" << std::endl;
       GetOStream(Debug) << "Reordered operator: Use of Thyra style gids = "

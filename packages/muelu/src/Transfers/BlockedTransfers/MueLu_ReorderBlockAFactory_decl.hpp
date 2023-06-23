@@ -80,14 +80,6 @@ namespace MueLu {
     #include "MueLu_UseShortNames.hpp"
 
   public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    ReorderBlockAFactory() = default;
-
-    //@}
-
     //! Input
     //@{
 
