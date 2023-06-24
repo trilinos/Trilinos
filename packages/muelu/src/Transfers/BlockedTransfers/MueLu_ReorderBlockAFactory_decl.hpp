@@ -80,16 +80,6 @@ namespace MueLu {
     #include "MueLu_UseShortNames.hpp"
 
   public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    ReorderBlockAFactory() { }
-
-    //! Destructor.
-    virtual ~ReorderBlockAFactory() { }
-    //@}
-
     //! Input
     //@{
 
@@ -107,9 +97,6 @@ namespace MueLu {
     void Build(Level & currentLevel) const;
 
     //@}
-
-  private:
-
   }; // class ReorderBlockAFactory
 
 } // namespace MueLu

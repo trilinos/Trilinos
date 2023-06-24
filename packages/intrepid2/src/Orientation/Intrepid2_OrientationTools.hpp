@@ -481,10 +481,10 @@ namespace Intrepid2 {
 
 
     /** \brief  Modify basis due to orientation
-        \param  output        [out]  - output array
-        \param  input          [in]  - input array
-        \param  orts           [in]  - orientations
-        \param  basis          [in]  - basis type
+        \param  output        [out]  - output array, of shape (C,F,P[,D])
+        \param  input          [in]  - input array, of shape (C,F,P[,D]) or (F,P[,D])
+        \param  orts           [in]  - orientations, of shape (C)
+        \param  basis          [in]  - basis of cardinality F
     */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
@@ -496,6 +496,43 @@ namespace Intrepid2 {
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const OrientationViewType orts,
                              const BasisType * basis);
+    
+    /** \brief  Modify basis due to orientation, applying the transpose of the operator applied in modifyBasisByOrientation().  If the input provided represents basis coefficents in the global orientation, then this method will appropriately transform them to the local orientation.
+        \param  output        [out]  - output array, of shape (C,F,P[,D])
+        \param  input          [in]  - input array, of shape (C,F,P[,D]) or (F,P[,D])
+        \param  orts           [in]  - orientations, of shape (C)
+        \param  basis          [in]  - basis of cardinality F
+    */
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties,
+             typename OrientationViewType,
+             typename BasisType>
+    inline
+    static void
+    modifyBasisByOrientationTranspose(Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                                      const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                                      const OrientationViewType orts,
+                                      const BasisType * basis);
+    
+    /** \brief  Modify an assembled (C,F1,F2) matrix according to orientation of the cells.
+        \param  output           [out]  - output array, shape (C,F1,F2)
+        \param  input             [in]  - input array, shape (C,F1,F2)
+        \param  orts               [in]  - orientations, shape (C)
+        \param  basisLeft    [in]  - basis with cardinality F1
+        \param  basisRight  [in]  - basis with cardinality F2
+    */
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties,
+             typename OrientationViewType,
+             typename BasisTypeLeft,
+             typename BasisTypeRight>
+    inline
+    static void
+    modifyMatrixByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                              const OrientationViewType orts,
+                              const BasisTypeLeft* basisLeft,
+                              const BasisTypeRight* basisRight);
   };
   
   template<typename T> 

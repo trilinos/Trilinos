@@ -34,5 +34,6 @@ SET_TARGET_PROPERTIES( Intrepid2_CellGeometryTests PROPERTIES EXCLUDE_FROM_ALL T
 TRIBITS_ADD_EXECUTABLE( DataTests NOEXESUFFIX SOURCES DataTests.cpp UnitTestMain.cpp )
 SET_TARGET_PROPERTIES( Intrepid2_DataTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
-
-
+# StructuredVersusStandard integration
+TRIBITS_ADD_EXECUTABLE( StructuredVersusStandard NOEXESUFFIX SOURCES StructuredIntegrationTests_StructuredVersusStandard.cpp UnitTestMain.cpp )
+SET_TARGET_PROPERTIES( Intrepid2_StructuredVersusStandard PROPERTIES EXCLUDE_FROM_ALL TRUE)

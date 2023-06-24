@@ -58,7 +58,6 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
-//#include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -105,8 +104,8 @@ namespace MueLu {
 
     // special case: we get a single block CrsMatrix object on the finest level and
     // split it into a nxn blocked operator
-    if (A == Teuchos::null && currentLevel.GetLevelID() == 0) {
-
+    if (A == Teuchos::null && currentLevel.GetLevelID() == 0)
+    {
       GetOStream(Warnings0) << "Split input matrix (Warning: this is a rather expensive operation)" << std::endl;
 
       std::vector<Teuchos::RCP<const Map> > xmaps;
@@ -125,6 +124,7 @@ namespace MueLu {
       RCP<const MapExtractor> map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Ain->getRowMap(),xmaps,bThyraMode);
 
       // split null space vectors
+      // TODO: if he matrix blocks have different striding, this could be quite complicated
       //RCP<MultiVector> nullspace1 = map_extractor->ExtractVector(nullspace,0);
       //RCP<MultiVector> nullspace2 = map_extractor->ExtractVector(nullspace,1);
 
@@ -143,27 +143,39 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(),     Exceptions::BadCast,      "Input matrix A is not a BlockedCrsMatrix.");
     GetOStream(Statistics1) << "Got a " << A->Rows() << "x" << A->Cols() << " blocked operator as input" << std::endl;
 
-    Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString(reorderStr);
-    GetOStream(Debug) << "Reordering A using " << brm->toString() << std::endl;
+    // if we have a blocked operator and a reordering string, create a nested blocked operator, if not skip the process
+    if(reorderStr.empty())
+    {
+      GetOStream(Statistics1) << "No reordering information provided. Skipping reordering of A." << std::endl;
+    }
+    else
+    {
+      Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString(reorderStr);
+      GetOStream(Debug) << "Reordering A using " << brm->toString() << std::endl;
 
-    Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop =
-        Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(Xpetra::buildReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(brm, A));
+      Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop =
+              Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(
+                      Xpetra::buildReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(brm, A));
 
-    TEUCHOS_TEST_FOR_EXCEPTION(brop.is_null(),     Exceptions::RuntimeError,      "Block reordering of " << A->Rows() << "x" << A->Cols() << " blocked operator failed.");
+      TEUCHOS_TEST_FOR_EXCEPTION(brop.is_null(), Exceptions::RuntimeError,
+                                 "Block reordering of " << A->Rows() << "x" << A->Cols()
+                                                        << " blocked operator failed.");
 
-    GetOStream(Statistics1) << "Reordering A using " << brm->toString() << " block gives a " << brop->Rows() << "x" << brop->Cols() << " blocked operators" << std::endl;
-    GetOStream(Debug) << "Reordered operator has " << brop->getRangeMap()->getGlobalNumElements() << " rows and " << brop->getDomainMap()->getGlobalNumElements() << " columns" << std::endl;
-    GetOStream(Debug) << "Reordered operator: Use of Thyra style gids = " << brop->getRangeMapExtractor()->getThyraMode() << std::endl;
+      GetOStream(Statistics1) << "Reordering A using " << brm->toString() << " block gives a " << brop->Rows() << "x"
+                              << brop->Cols() << " blocked operator" << std::endl;
+      GetOStream(Debug) << "Reordered operator has " << brop->getRangeMap()->getGlobalNumElements() << " rows and "
+                        << brop->getDomainMap()->getGlobalNumElements() << " columns" << std::endl;
+      GetOStream(Debug) << "Reordered operator: Use of Thyra style gids = "
+                        << brop->getRangeMapExtractor()->getThyraMode() << std::endl;
 
-    // get rid of const (we expect non-const operators stored in Level)
-    Teuchos::RCP<ReorderedBlockedCrsMatrix> bret =
-        Teuchos::rcp_const_cast<ReorderedBlockedCrsMatrix>(brop);
+      // get rid of const (we expect non-const operators stored in Level)
+      Teuchos::RCP<ReorderedBlockedCrsMatrix> bret =
+              Teuchos::rcp_const_cast<ReorderedBlockedCrsMatrix>(brop);
 
-    // strided maps
-    // blocked operators do not have strided maps (information could be misleading?)
-    //Op->CreateView("stridedMaps", srangeMap, sdomainMap);
+      A = bret;
+    }
 
-    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bret), this);
+    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(A), this);
   }
 
 } // namespace MueLu

@@ -548,9 +548,9 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
-
   // clang-format on
+  virtual bool checkSizes(const Tpetra::SrcDistObject &source) override;
+
   using dist_object_type::
       copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
                       ///< use copyAndPermutes for anything we don't override
