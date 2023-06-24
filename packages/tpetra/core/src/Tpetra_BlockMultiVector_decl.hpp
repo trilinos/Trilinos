@@ -566,7 +566,6 @@ protected:
      buffer_device_type>& permuteFromLIDs,
    const CombineMode CM) override;
 
-  // clang-format on
   using dist_object_type::packAndPrepare; ///< DistObject overloads
                                           ///< packAndPrepare. Explicitly use
                                           ///< DistObject's packAndPrepare for
@@ -582,9 +581,8 @@ protected:
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets);
+   size_t& constantNumPackets) override;
 
-  // clang-format on
   using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
                                             ///< unpackAndCombine, use the
                                             ///< DistObject's implementation for
@@ -600,7 +598,8 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
-   const CombineMode combineMode);
+   const CombineMode combineMode) override;
+   // clang-format off
 
   //@}
 
