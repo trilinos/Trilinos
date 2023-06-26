@@ -140,7 +140,7 @@ namespace Belos {
       //Check init to zero on create.
       for(int i = 0; i<numrows; i++){
         for(int j = 0; j<numcols; j++){
-          ScalarType val = DMT::Value(*dm1,i,j);
+          ScalarType val = DMT::ValueConst(*dm1,i,j);
           if(val != zero){
             om->stream(Warnings)
               << "*** ERROR *** DenseMatTraits::Create(-,-,true)" << endl
@@ -152,7 +152,7 @@ namespace Belos {
 
       //Try to change a value.
       DMT::Value(*dm1,0,0) = (ScalarType)5.0; //TODO: Does this compile? Is an lvalue?
-      if(DMT::Value(*dm1,0,0) != (ScalarType)5.0){
+      if(DMT::ValueConst(*dm1,0,0) != (ScalarType)5.0){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::Value" << endl
           << "Does not give write access to matrix values!!" << endl;
@@ -165,14 +165,14 @@ namespace Belos {
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
       DMT::PutScalar(*dm2,(ScalarType)47.2);
-      if( DMT::Value(*dm2,0,0) != (ScalarType)47.2){
+      if( DMT::ValueConst(*dm2,0,0) != (ScalarType)47.2){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "PutScalar failed" << endl;
         return false;
       }
       DMT::PutScalar(*dm2);
-      if( DMT::Value(*dm2,0,0) != zero){
+      if( DMT::ValueConst(*dm2,0,0) != zero){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "PutScalar default args failed" << endl;
@@ -180,7 +180,7 @@ namespace Belos {
       }
       
       //Try calling const version? TODO need to check const-ness??
-      const ScalarType constval = DMT::Value(*dm1,1,1);
+      const ScalarType constval = DMT::ValueConst(*dm1,1,1);
       
       //get stride
       int stride = DMT::GetStride(*dm2);
@@ -188,11 +188,11 @@ namespace Belos {
 
       //randomize and add
       DMT::Randomize(*dm2);
-      ScalarType tmpVal = DMT::Value(*dm1,numrows-1,numcols-1) + DMT::Value(*dm2,numrows-1,numcols-1);
-      ScalarType tmpVal2 = DMT::Value(*dm1,0,0) + DMT::Value(*dm2,0,0);
+      ScalarType tmpVal = DMT::ValueConst(*dm1,numrows-1,numcols-1) + DMT::ValueConst(*dm2,numrows-1,numcols-1);
+      ScalarType tmpVal2 = DMT::ValueConst(*dm1,0,0) + DMT::ValueConst(*dm2,0,0);
       DMT::Add(*dm1,*dm2);
-      if(DMT::Value(*dm1,numrows-1,numcols-1) != tmpVal ||
-      DMT::Value(*dm1,0,0) != tmpVal2){
+      if(DMT::ValueConst(*dm1,numrows-1,numcols-1) != tmpVal ||
+      DMT::ValueConst(*dm1,0,0) != tmpVal2){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Add failed" << endl;
@@ -202,7 +202,7 @@ namespace Belos {
       //Test assign and scale: 
       DMT::Assign(*dm1,*dm2);
       DMT::Scale(*dm1,2.0);
-      if(DMT::Value(*dm1,1,1) != (ScalarType)DMT::Value(*dm2,1,1)*(ScalarType)2.0){
+      if(DMT::ValueConst(*dm1,1,1) != (ScalarType)DMT::ValueConst(*dm2,1,1)*(ScalarType)2.0){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Assign or scale failed" << endl;
@@ -216,7 +216,7 @@ namespace Belos {
       //
       
       RCP<DM> dm3 = DMT::Subview(*dm1, numrows-1, numcols-1, 1, 1);
-      if(DMT::Value(*dm3,0,0) != DMT::Value(*dm1,1,1)){
+      if(DMT::ValueConst(*dm3,0,0) != DMT::ValueConst(*dm1,1,1)){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Subview failed" << endl;
@@ -232,8 +232,8 @@ namespace Belos {
       // Try to change a value in the subview.
       ScalarType testVal = 237.1;
       DMT::Value(*dm3,0,0) = testVal;
-      if(DMT::Value(*dm3,0,0) != DMT::Value(*dm1,1,1) ||
-         DMT::Value(*dm3,0,0) != testVal){
+      if(DMT::ValueConst(*dm3,0,0) != DMT::ValueConst(*dm1,1,1) ||
+         DMT::ValueConst(*dm3,0,0) != testVal){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Subview did not edit value or did not edit original." << endl;
@@ -241,7 +241,7 @@ namespace Belos {
       }
 
       RCP<DM> dm4 = DMT::SubviewCopy(*dm1, numrows-2, numcols-2, 2, 2);
-      if(DMT::Value(*dm4,0,0) != DMT::Value(*dm1,2,2)){
+      if(DMT::ValueConst(*dm4,0,0) != DMT::ValueConst(*dm1,2,2)){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "SubviewCopy failed" << endl;
@@ -256,8 +256,8 @@ namespace Belos {
       }
       // Try to change a value in the subview.
       DMT::Value(*dm4,0,0) = testVal-(ScalarType)5;
-      if(DMT::Value(*dm4,0,0) == DMT::Value(*dm1,2,2) ||
-         DMT::Value(*dm4,0,0) != testVal-(ScalarType)5){
+      if(DMT::ValueConst(*dm4,0,0) == DMT::ValueConst(*dm1,2,2) ||
+         DMT::ValueConst(*dm4,0,0) != testVal-(ScalarType)5){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "SubviewCopy is incorrect. Possible view but not copy." << endl;
@@ -296,7 +296,7 @@ namespace Belos {
           << "Reshape test 3 gives wrong dimensions." << endl;
         return false;
       }
-      if(DMT::Value(*dm2,0,0) != zero || DMT::Value(*dm2,numrows+4,numcols+4) != zero){
+      if(DMT::ValueConst(*dm2,0,0) != zero || DMT::ValueConst(*dm2,numrows+4,numcols+4) != zero){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
           << "Reshape test 3 does not init to zero." << endl;
@@ -313,6 +313,7 @@ namespace Belos {
       //Compute Frobenius norm. //TODO: Do Frob norm of a matrix we know the answer for and check it. 
       DMT::NormFrobenius(*dm2);
 
+      //TODO: Definitely need testing to check host/device sync semantics. 
       return true;
     } //end test scope
   } //end test function
