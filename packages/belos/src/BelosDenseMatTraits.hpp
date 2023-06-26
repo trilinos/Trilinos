@@ -193,7 +193,7 @@ View(const pointer_type &ptr, const IntType&... indices)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const ScalarType & Value( const DM& dm, const int i, const int j ) 
+    static const ScalarType & ValueConst( const DM& dm, const int i, const int j ) 
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
     
     //TODO: Check formatting of ALL doxygen comments!
