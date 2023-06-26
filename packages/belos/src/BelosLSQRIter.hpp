@@ -71,8 +71,8 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP>
-class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
@@ -80,6 +80,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   // Convenience typedefs
   //
   typedef Belos::MultiVecTraits<ScalarType,MV> MVT;
+  typedef Belos::DenseMatTraits<ScalarType,DM> DMT;
   typedef Belos::OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -95,7 +96,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
    */
   LSQRIter( const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> > &problem,
 	    const Teuchos::RCP<Belos::OutputManager<ScalarType> > &printer,
-	    const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP> > &tester,
+	    const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> > &tester,
 		  Teuchos::ParameterList &params );
 
 // If either blocks or reorthogonalization exist, then
@@ -222,7 +223,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   //
   const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<Belos::OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> >       stest_;
 //  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
   //
@@ -283,10 +284,10 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
 //                                     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 
-  template<class ScalarType, class MV, class OP>
-  LSQRIter<ScalarType,MV,OP>::LSQRIter(const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  LSQRIter<ScalarType,MV,OP,DM>::LSQRIter(const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> > &problem,
 				       const Teuchos::RCP<Belos::OutputManager<ScalarType> > &printer,
-				       const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP> > &tester,
+				       const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> > &tester,
 						   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -306,8 +307,8 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void LSQRIter<ScalarType,MV,OP>::setStateSize ()
+  template <class ScalarType, class MV, class OP, class DM>
+  void LSQRIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
       // Check if there is any multivector to clone from.
@@ -340,8 +341,8 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV>& /* newstate */)
+  template <class ScalarType, class MV, class OP, class DM>
+  void LSQRIter<ScalarType,MV,OP,DM>::initializeLSQR(LSQRIterationState<ScalarType,MV>& /* newstate */)
   {
     using Teuchos::RCP;
 
@@ -429,8 +430,8 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void LSQRIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void LSQRIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -574,15 +575,15 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
           MVT::MvNorm( *AtU, xi );
           std::cout << "| V alpha - A' u |= "  << xi[0] << std::endl;
           // 2. confirm that U is a unit vector
-          Teuchos::SerialDenseMatrix<int,ScalarType> uotuo(1,1);
-          MVT::MvTransMv( one, *U_, *U_, uotuo );
-          std::cout << "<U, U> = " << printMat(uotuo) << std::endl;
+          RCP<DM> uotuo = DMT::Create(1,1);
+          MVT::MvTransMv( one, *U_, *U_, *uotuo );
+          std::cout << "<U, U> = " << DMT::ValueConst(*uotuo,0,0) << std::endl;
           // 3. print alpha =  <V, A'U>
           std::cout << "alpha = "  << alpha[0] << std::endl;
           // 4. compute < AV, U> which ought to be alpha
-          Teuchos::SerialDenseMatrix<int,ScalarType> utav(1,1);
-          MVT::MvTransMv( one, *AV, *U_, utav );
-          std::cout << "<AV, U> = alpha = " << printMat(utav) << std::endl;
+          RCP<DM> utav = DMT::Create(1,1);
+          MVT::MvTransMv( one, *AV, *U_, *utav );
+          std::cout << "<AV, U> = alpha = " << DMT::ValueConst(*utav,0,0) << std::endl;
         }
 
       MVT::MvAddMv( one, *AV, -alpha[0], *U_, *U_ ); // uNew := Av - uOld alphaOld
