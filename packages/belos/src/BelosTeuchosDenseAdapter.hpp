@@ -162,7 +162,7 @@ namespace Belos {
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const ScalarType & Value( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int i, const int j ) 
+    static const ScalarType & ValueConst( const Teuchos::SerialDenseMatrix<int,ScalarType>& dm, const int i, const int j ) 
     { 
       return dm(i,j);
     }

@@ -187,13 +187,14 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
            const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
   class RealSolverManager;
 
   // Specialization for isComplex = true adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP> //TODO
-  class RealSolverManager<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM> 
+  class RealSolverManager<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {}
     virtual ~RealSolverManager () {}
@@ -206,9 +207,9 @@ namespace Details {
   // The complex version (isComplex = true) needs to implement all the
   // pure virtual methods in SolverManager, even though they can never
   // actually be called, since the constructor throws.
-  template<class ScalarType, class MV, class OP>
-  class RealSolverManager<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class RealSolverManager<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {
       // Do not throw on constructor. The DII system registers all class types
