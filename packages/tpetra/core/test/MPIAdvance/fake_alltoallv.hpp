@@ -23,13 +23,18 @@ inline void Fake_Alltoallv(const void *sendbuf, const int *sendcounts,
   auto rb = reinterpret_cast<char *>(recvbuf);
   auto sb = reinterpret_cast<const char *>(sendbuf);
 
+  // get sizes for indexing into sb / rb
+  int sendsize, recvsize;
+  MPI_Type_size(sendtype, &sendsize);
+  MPI_Type_size(recvtype, &recvsize);
+
   // issue sends & recvs
   for (int source = 0; source < size; ++source) {
-    MPI_Irecv(&rb[rdispls[source]], recvcounts[source], recvtype, source,
+    MPI_Irecv(&rb[rdispls[source] * recvsize], recvcounts[source], recvtype, source,
               ARBITRARY_TAG, comm, &rreqs[source]);
   }
   for (int dest = 0; dest < size; ++dest) {
-    MPI_Isend(&sb[sdispls[dest]], sendcounts[dest], sendtype, dest,
+    MPI_Isend(&sb[sdispls[dest] * sendsize], sendcounts[dest], sendtype, dest,
               ARBITRARY_TAG, comm, &sreqs[dest]);
   }
 
