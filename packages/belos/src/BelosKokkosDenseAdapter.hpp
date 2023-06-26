@@ -223,7 +223,7 @@ namespace Belos {
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const IST & Value( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
+    static const IST & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
       return dm.h_view(i,j);
       //TODO check const semantics here?
     }
