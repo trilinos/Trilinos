@@ -35,8 +35,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -248,7 +246,6 @@ namespace Belos {
     //      
 
     // Storage for QR factorization of the least squares system.
-    // Teuchos::SerialDenseMatrix<int,ScalarType> alpha_, rho_, rho_old_;
     std::vector<ScalarType> alpha_, rho_, rho_old_;
     std::vector<MagnitudeType> tau_, cs_, theta_;
     
