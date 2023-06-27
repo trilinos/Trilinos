@@ -4,6 +4,7 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -35,6 +36,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 5
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -66,6 +68,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 4
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
@@ -97,6 +100,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99461
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
@@ -128,6 +132,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99194
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 5
