@@ -212,7 +212,7 @@ public:
   operator() (const size_type& i) const
   {
     typedef typename ViewType::non_const_value_type value_type;
-    typedef Kokkos::Details::ArithTraits<value_type> KAT;
+    typedef Kokkos::ArithTraits<value_type> KAT;
     theView_(i) = KAT::sqrt (theView_(i));
   }
 
@@ -288,7 +288,7 @@ gblNormImpl (const RV& normsOut,
       typename RV::host_mirror_space::memory_space>::value;
     if (inHostMemory) {
       for (size_t j = 0; j < numVecs; ++j) {
-        normsOut(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (normsOut(j));
+        normsOut(j) = Kokkos::ArithTraits<mag_type>::sqrt (normsOut(j));
       }
     }
     else {

@@ -64,7 +64,7 @@
 /// MpiTypeTraits for your Scalar types.  If you want to add a new
 /// Scalar type to Tpetra, and Kokkos does not support that type,
 /// first begin by adding a specialization of
-/// Kokkos::Details::ArithTraits for your type, that maps it to a type
+/// Kokkos::ArithTraits for your type, that maps it to a type
 /// that Kokkos does support.  Then, add a specialization of
 /// MpiTypeTraits for your Scalar types.
 
