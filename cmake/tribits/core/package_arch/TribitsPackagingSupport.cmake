@@ -186,16 +186,6 @@ macro(tribits_setup_packaging_and_distribution)
     [.]gitignore$
     )
 
-  # Print the set of excluded files
-  if(${PROJECT_NAME}_VERBOSE_CONFIGURE OR
-    ${PROJECT_NAME}_DUMP_CPACK_SOURCE_IGNORE_FILES
-    )
-    message("Exclude files when building source packages")
-    foreach(item ${CPACK_SOURCE_IGNORE_FILES})
-      message(${item})
-    endforeach()
-  endif()
-
   # K.3) Set up install component dependencies
 
   tribits_get_sublist_enabled(
@@ -254,6 +244,16 @@ macro(tribits_setup_packaging_and_distribution)
     endforeach()
   endif()
 
+  # Print the set of excluded files
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE OR
+    ${PROJECT_NAME}_DUMP_CPACK_SOURCE_IGNORE_FILES
+    )
+    message("Exclude files when building source packages:")
+    foreach(item IN LISTS CPACK_SOURCE_IGNORE_FILES)
+      message(${item})
+    endforeach()
+  endif()
+
   # K.8) Finally process with CPack
   include(CPack)
 
@@ -281,7 +281,74 @@ macro(tribits_project_define_packaging_runner)
     include(${CALLBACK_DEFINE_PACKAGING_FILE})
     # Call the callback macros to inject project-specific behavir
     tribits_project_define_packaging()
-    # Set back the callback macros to empty to ensure that nonone calls them
+    # Set back the callback macros to empty to ensure that no-one calls them
     create_empty_tribits_project_define_packaging()
   endif()
+endmacro()
+
+
+macro(create_empty_tribits_repository_setup_extra_options)
+  macro(tribits_repository_setup_extra_options)
+  endmacro()
+endmacro()
+
+
+macro(tribits_repository_setup_extra_options_runner  REPO_NAME)
+  set(CALLBACK_SETUP_EXTRA_OPTIONS_FILE
+    "${${REPO_NAME}_SOURCE_DIR}/cmake/CallbackSetupExtraOptions.cmake")
+  #print_var(CALLBACK_SETUP_EXTRA_OPTIONS_FILE)
+  if (EXISTS ${CALLBACK_SETUP_EXTRA_OPTIONS_FILE})
+    if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("Processing call-back file and macros in"
+        " '${CALLBACK_SETUP_EXTRA_OPTIONS_FILE}'")
+    endif()
+    # Define the callback macros as empty in case it is not defined
+    # in this file.
+    create_empty_tribits_repository_setup_extra_options()
+    # Include the file which will define the callback macros
+    set(REPOSITORY_NAME ${REPO_NAME})
+    tribits_trace_file_processing(REPOSITORY  INCLUDE
+      "${CALLBACK_SETUP_EXTRA_OPTIONS_FILE}")
+    include(${CALLBACK_SETUP_EXTRA_OPTIONS_FILE})
+    # Call the callback macros to inject repository-specific behavir
+    tribits_repository_setup_extra_options()
+    # Set back the callback macros to empty to ensure that nonone calls them
+    create_empty_tribits_repository_setup_extra_options()
+  endif()
+endmacro()
+
+
+macro(create_empty_tribits_repository_define_packaging)
+  macro(tribits_repository_define_packaging)
+  endmacro()
+endmacro()
+
+
+macro(tribits_repository_define_packaging_runner  REPO_NAME)
+  set(CALLBACK_DEFINE_PACKAGING_FILE
+    "${${REPO_NAME}_SOURCE_DIR}/cmake/CallbackDefineRepositoryPackaging.cmake")
+  #print_var(CALLBACK_DEFINE_PACKAGING_FILE)
+  if (EXISTS ${CALLBACK_DEFINE_PACKAGING_FILE})
+    if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("Processing call-back file and macros in"
+        " '${CALLBACK_DEFINE_PACKAGING_FILE}'")
+    endif()
+    # Define the callback macros as empty in case it is not defined
+    # in this file.
+    create_empty_tribits_repository_define_packaging()
+    # Include the file which will define the callback macros
+    tribits_trace_file_processing(REPOSITORY  INCLUDE
+      "${CALLBACK_DEFINE_PACKAGING_FILE}")
+    include(${CALLBACK_DEFINE_PACKAGING_FILE})
+    # Call the callback macros to inject repository-specific behavir
+    tribits_repository_define_packaging()
+    # Set back the callback macros to empty to ensure that nonone calls them
+    create_empty_tribits_repository_define_packaging()
+  endif()
+endmacro()
+
+
+macro(create_empty_tribits_project_define_packaging)
+  macro(tribits_project_define_packaging)
+  endmacro()
 endmacro()

@@ -562,7 +562,9 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
 	    " '${packageDependenciesFile}' does *NOT* exist!"
           "\n***\n" )
         message(FATAL_ERROR "Stopping due to above error!")
-      elseif((NOT PACKAGE_EXISTS) AND (EXISTS "${PACKAGE_ABS_DIR}"))
+      elseif((NOT PACKAGE_EXISTS) AND (EXISTS "${PACKAGE_ABS_DIR}")
+          AND (${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES STREQUAL "WARNING")
+        )
         message(WARNING "${TRIBITS_PACKAGE}: Package base directory '${PACKAGE_ABS_DIR}'"
 	  " exists but the dependencies file '${packageDependenciesFile}' does *NOT*"
 	  " exist!  Package is being ignored anyway!")
