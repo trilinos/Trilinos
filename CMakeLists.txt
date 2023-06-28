@@ -91,19 +91,8 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 # Don't allow disabled subpackages to be excluded from tarball
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
-# Set up C++ language standard selection (rest is handled by TriBITS)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 17)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(17|20|23)")
-ADVANCED_SET(CMAKE_CXX_STANDARD ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT}
-  CACHE STRING
-  "C++ standard number with values ${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED} (default ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT})")
-IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}$")
-  MESSAGE(FATAL_ERROR
-    "CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} is not in the allowed set "
-    "${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}")
-ENDIF ()
-
-message(STATUS "The Current CXX Standard is : " ${CMAKE_CXX_STANDARD})
+# Set up C++ language standard selection
+include(SetTrilinosCxxStandard)
 
 # Define empty macro to allow Kokkos and KokkosKernels to keep working until
 # updated versions after Kokkos 4.1 are snapshotted in.
