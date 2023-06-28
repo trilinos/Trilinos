@@ -541,6 +541,15 @@ void LinearSolverBuilder<Scalar>::initializeDefaults()
     );
 #endif
 
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+  setPreconditioningStrategyFactory(
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
+    Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
+    "Ifpack2", true
+    );
+#endif
+
+
   // Note: Above, the last PF object set will be the default!
 
 }
