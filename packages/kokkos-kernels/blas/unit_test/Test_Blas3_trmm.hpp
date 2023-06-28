@@ -19,6 +19,8 @@
 #include <KokkosBlas3_trmm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ExecutionSpace>
@@ -54,7 +56,7 @@ struct trmm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -100,7 +102,7 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans,
                     const char* diag, int M, int N, Scalar alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarA>;
+  using APT             = Kokkos::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps = APT::epsilon();
@@ -110,12 +112,13 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans,
   ViewTypeA A("A", K, K);
   ViewTypeB B("B", M, N);
   ViewTypeB B_expected("B_expected", M, N);
-  uint64_t seed = Kokkos::Impl::clock_tic();
-  ScalarA beta  = ScalarA(0);
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  ScalarA beta = ScalarA(0);
 
   // printf("KokkosBlas::trmm test for alpha %g, %c %c %c %c, M %d, N %d, eps
   // %g, ViewType: %s\n",
-  // Kokkos::Details::ArithTraits<Scalar>::real(alpha),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
+  // Kokkos::ArithTraits<Scalar>::real(alpha),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
 
   typename ViewTypeA::HostMirror host_A        = Kokkos::create_mirror_view(A);
   typename ViewTypeB::HostMirror host_B_actual = Kokkos::create_mirror_view(B);

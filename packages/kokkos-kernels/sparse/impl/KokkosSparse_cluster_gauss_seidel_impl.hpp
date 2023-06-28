@@ -247,16 +247,16 @@ class ClusterGaussSeidel {
 
     nnz_scalar_t _omega;
 
-    Team_PSGS(
-        const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_,
-        const_scalar_nnz_view_t adj_vals_, x_value_array_type Xvector_,
-        y_value_array_type Yvector_, nnz_lno_t color_set_begin_,
-        nnz_lno_t color_set_end_, nnz_lno_persistent_work_view_t color_adj_,
-        nnz_lno_persistent_work_view_t cluster_offsets_,
-        nnz_lno_persistent_work_view_t cluster_verts_,
-        scalar_persistent_work_view_t inverse_diagonal_,
-        nnz_lno_t clusters_per_team_,
-        nnz_scalar_t omega_ = Kokkos::Details::ArithTraits<nnz_scalar_t>::one())
+    Team_PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_,
+              const_scalar_nnz_view_t adj_vals_, x_value_array_type Xvector_,
+              y_value_array_type Yvector_, nnz_lno_t color_set_begin_,
+              nnz_lno_t color_set_end_,
+              nnz_lno_persistent_work_view_t color_adj_,
+              nnz_lno_persistent_work_view_t cluster_offsets_,
+              nnz_lno_persistent_work_view_t cluster_verts_,
+              scalar_persistent_work_view_t inverse_diagonal_,
+              nnz_lno_t clusters_per_team_,
+              nnz_scalar_t omega_ = Kokkos::ArithTraits<nnz_scalar_t>::one())
         : _xadj(xadj_),
           _adj(adj_),
           _adj_vals(adj_vals_),
@@ -691,7 +691,7 @@ class ClusterGaussSeidel {
           _diagonals(diagonals_),
           num_total_rows(num_total_rows_),
           rows_per_team(rows_per_team_),
-          one(Kokkos::Details::ArithTraits<nnz_scalar_t>::one()) {}
+          one(Kokkos::ArithTraits<nnz_scalar_t>::one()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t row_id) const {
@@ -781,12 +781,12 @@ class ClusterGaussSeidel {
   }
 
   template <typename x_value_array_type, typename y_value_array_type>
-  void apply(
-      x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
-      bool init_zero_x_vector = false, int numIter = 1,
-      nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
-      bool apply_forward = true, bool apply_backward = true,
-      bool /*update_y_vector*/ = true) {
+  void apply(x_value_array_type x_lhs_output_vec,
+             y_value_array_type y_rhs_input_vec,
+             bool init_zero_x_vector = false, int numIter = 1,
+             nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
+             bool apply_forward = true, bool apply_backward = true,
+             bool /*update_y_vector*/ = true) {
     auto gsHandle = get_gs_handle();
 
     size_type nnz                            = entries.extent(0);

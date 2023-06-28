@@ -133,6 +133,5 @@ struct Rotm<execution_space, VectorView, ParamView, false,
       false, true>;
 
 #include <KokkosBlas1_rotm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_rotm_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_ROTM_SPEC_HPP_

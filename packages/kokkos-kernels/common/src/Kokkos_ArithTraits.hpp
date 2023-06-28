@@ -18,7 +18,7 @@
 #define KOKKOS_ARITHTRAITS_HPP
 
 /// \file Kokkos_ArithTraits.hpp
-/// \brief Declaration and definition of Kokkos::Details::ArithTraits
+/// \brief Declaration and definition of Kokkos::ArithTraits
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_NumericTraits.hpp>
@@ -195,7 +195,6 @@ KOKKOS_FORCEINLINE_FUNCTION IntType intPowUnsigned(const IntType x,
 }  // namespace
 
 namespace Kokkos {
-namespace Details {
 
 // Macro to automate the wrapping of Kokkos Mathematical Functions
 // in the ArithTraits struct for real floating point types, hopefully
@@ -2043,13 +2042,12 @@ struct [[deprecated]] ArithTraits<qd_real> {
 };
 #endif  // HAVE_KOKKOS_QD
 
-}  // namespace Details
+namespace Details {
+template <typename T>
+using ArithTraits [[deprecated("Use Kokkos::ArithTraits instead")]] =
+    ::Kokkos::ArithTraits<T>;
 
-// Promote ArithTraits into Kokkos namespace.  At some point, we
-// will remove it from the Details namespace completely.  We leave
-// it there for now, because a lot of code depends on it being
-// there.
-using Details::ArithTraits;
+}  // namespace Details
 }  // namespace Kokkos
 
 #endif  // KOKKOS_ARITHTRAITS_HPP

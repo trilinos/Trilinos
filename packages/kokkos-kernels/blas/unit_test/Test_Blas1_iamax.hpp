@@ -23,29 +23,25 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_iamax(int N) {
   typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
   typedef typename AT::mag_type mag_type;
   using size_type = typename ViewTypeA::size_type;
 
-  ViewTypeA a("A", N);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
+  view_stride_adapter<ViewTypeA> a("X", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
-  Kokkos::fill_random(a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_a, a);
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
-  typename ViewTypeA::const_type c_a = a;
-
-  mag_type expected_result   = Kokkos::Details::ArithTraits<mag_type>::min();
+  mag_type expected_result   = Kokkos::ArithTraits<mag_type>::min();
   size_type expected_max_loc = 0;
   for (int i = 0; i < N; i++) {
-    mag_type val = AT::abs(h_a(i));
+    mag_type val = AT::abs(a.h_view(i));
     if (val > expected_result) {
       expected_result  = val;
       expected_max_loc = i + 1;
@@ -60,10 +56,10 @@ void impl_test_iamax(int N) {
   {
     // printf("impl_test_iamax -- return result as a scalar on host -- N %d\n",
     // N);
-    size_type nonconst_max_loc = KokkosBlas::iamax(a);
+    size_type nonconst_max_loc = KokkosBlas::iamax(a.d_view);
     ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
-    size_type const_max_loc = KokkosBlas::iamax(c_a);
+    size_type const_max_loc = KokkosBlas::iamax(a.d_view_const);
     ASSERT_EQ(const_max_loc, expected_max_loc);
   }
 
@@ -73,14 +69,15 @@ void impl_test_iamax(int N) {
     typedef Kokkos::View<size_type, typename ViewTypeA::array_layout,
                          Kokkos::HostSpace>
         ViewType0D;
-    ViewType0D r("Iamax::Result 0-D View on host");
+    ViewType0D r("Iamax::Result 0-D View on host",
+                 typename ViewTypeA::array_layout());
 
-    KokkosBlas::iamax(r, a);
+    KokkosBlas::iamax(r, a.d_view);
     Kokkos::fence();
     size_type nonconst_max_loc = r();
     ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
-    KokkosBlas::iamax(r, c_a);
+    KokkosBlas::iamax(r, a.d_view_const);
     size_type const_max_loc = r();
     ASSERT_EQ(const_max_loc, expected_max_loc);
   }
@@ -90,19 +87,20 @@ void impl_test_iamax(int N) {
     // %d\n", N);
     typedef Kokkos::View<size_type, typename ViewTypeA::array_layout, Device>
         ViewType0D;
-    ViewType0D r("Iamax::Result 0-D View on device");
+    ViewType0D r("Iamax::Result 0-D View on device",
+                 typename ViewTypeA::array_layout());
     typename ViewType0D::HostMirror h_r = Kokkos::create_mirror_view(r);
 
     size_type nonconst_max_loc, const_max_loc;
 
-    KokkosBlas::iamax(r, a);
+    KokkosBlas::iamax(r, a.d_view);
     Kokkos::deep_copy(h_r, r);
 
     nonconst_max_loc = h_r();
 
     ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
-    KokkosBlas::iamax(r, c_a);
+    KokkosBlas::iamax(r, a.d_view_const);
     Kokkos::deep_copy(h_r, r);
 
     const_max_loc = h_r();
@@ -114,40 +112,28 @@ void impl_test_iamax(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_iamax_mv(int N, int K) {
   typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
   typedef typename AT::mag_type mag_type;
   typedef typename ViewTypeA::size_type size_type;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-
-  typename vfA_type::BaseType b_a("A", N, K);
-
-  ViewTypeA a = vfA_type::view(b_a);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
+  view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
-  Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_b_a, b_a);
-
-  typename ViewTypeA::const_type c_a = a;
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
   mag_type* expected_result   = new mag_type[K];
   size_type* expected_max_loc = new size_type[K];
 
   for (int j = 0; j < K; j++) {
-    expected_result[j] = Kokkos::Details::ArithTraits<mag_type>::min();
+    expected_result[j] = Kokkos::ArithTraits<mag_type>::min();
     for (int i = 0; i < N; i++) {
-      mag_type val = AT::abs(h_a(i, j));
+      mag_type val = AT::abs(a.h_view(i, j));
       if (val > expected_result[j]) {
         expected_result[j]  = val;
         expected_max_loc[j] = i + 1;
@@ -162,11 +148,13 @@ void impl_test_iamax_mv(int N, int K) {
   {
     // printf("impl_test_iamax_mv -- return results as a 1-D View on host -- N
     // %d\n", N);
+    Kokkos::View<size_type*, Kokkos::HostSpace> rcontig(
+        "Iamax::Result View on host", K);
     Kokkos::View<size_type*, typename ViewTypeA::array_layout,
                  Kokkos::HostSpace>
-        r("Iamax::Result View on host", K);
+        r = rcontig;
 
-    KokkosBlas::iamax(r, a);
+    KokkosBlas::iamax(r, a.d_view);
     Kokkos::fence();
 
     for (int k = 0; k < K; k++) {
@@ -175,7 +163,7 @@ void impl_test_iamax_mv(int N, int K) {
       ASSERT_EQ(nonconst_result, exp_result);
     }
 
-    KokkosBlas::iamax(r, c_a);
+    KokkosBlas::iamax(r, a.d_view_const);
     Kokkos::fence();
 
     for (int k = 0; k < K; k++) {
@@ -188,13 +176,14 @@ void impl_test_iamax_mv(int N, int K) {
   {
     // printf("impl_test_iamax_mv -- return results as a 1-D View on device -- N
     // %d\n", N);
-    Kokkos::View<size_type*, typename ViewTypeA::array_layout, Device> r(
-        "Iamax::Result View on device", K);
+    Kokkos::View<size_type*, Device> rcontig("Iamax::Result View on host", K);
+    Kokkos::View<size_type*, typename ViewTypeA::array_layout, Device> r =
+        rcontig;
     typename Kokkos::View<size_type*, typename ViewTypeA::array_layout,
                           Device>::HostMirror h_r =
-        Kokkos::create_mirror_view(r);
+        Kokkos::create_mirror_view(rcontig);
 
-    KokkosBlas::iamax(r, a);
+    KokkosBlas::iamax(r, a.d_view);
     Kokkos::deep_copy(h_r, r);
 
     for (int k = 0; k < K; k++) {
@@ -203,7 +192,7 @@ void impl_test_iamax_mv(int N, int K) {
       ASSERT_EQ(nonconst_result, exp_result);
     }
 
-    KokkosBlas::iamax(r, c_a);
+    KokkosBlas::iamax(r, a.d_view_const);
     Kokkos::deep_copy(h_r, r);
 
     for (int k = 0; k < K; k++) {
@@ -240,17 +229,14 @@ int test_iamax() {
   // Test::impl_test_iamax<view_type_a_lr, Device>(132231);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-    Test::impl_test_iamax<view_type_a_ls, Device>(0);
-    Test::impl_test_iamax<view_type_a_ls, Device>(13);
-    Test::impl_test_iamax<view_type_a_ls, Device>(1024);
-    // Test::impl_test_iamax<view_type_a_ls, Device>(132231);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_iamax<view_type_a_ls, Device>(0);
+  Test::impl_test_iamax<view_type_a_ls, Device>(13);
+  Test::impl_test_iamax<view_type_a_ls, Device>(1024);
+  // Test::impl_test_iamax<view_type_a_ls, Device>(132231);
+#endif
 
   return 1;
 }
@@ -277,17 +263,14 @@ int test_iamax_mv() {
   // Test::impl_test_iamax_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; Test::impl_test_iamax_mv<view_type_a_ls, Device>(0, 5);
-    Test::impl_test_iamax_mv<view_type_a_ls, Device>(13, 5);
-    Test::impl_test_iamax_mv<view_type_a_ls, Device>(1024, 5);
-    // Test::impl_test_iamax_mv<view_type_a_ls, Device>(132231,5);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_iamax_mv<view_type_a_ls, Device>(0, 5);
+  Test::impl_test_iamax_mv<view_type_a_ls, Device>(13, 5);
+  Test::impl_test_iamax_mv<view_type_a_ls, Device>(1024, 5);
+  // Test::impl_test_iamax_mv<view_type_a_ls, Device>(132231,5);
+#endif
 
   return 1;
 }

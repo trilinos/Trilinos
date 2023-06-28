@@ -26,6 +26,7 @@ namespace Impl {
 #define KOKKOSBLAS3_DTRSM_BLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)    \
   template <class ExecSpace>                                                   \
   struct TRSM<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<const double**, LAYOUTA,                                    \
                    Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -42,8 +43,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& /*space*/, const char side[],            \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::trsm[TPL_BLAS,double]");      \
@@ -94,6 +95,7 @@ namespace Impl {
 #define KOKKOSBLAS3_STRSM_BLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)    \
   template <class ExecSpace>                                                   \
   struct TRSM<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<const float**, LAYOUTA,                                     \
                    Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -110,8 +112,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& /*space*/, const char side[],            \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::trsm[TPL_BLAS,float]");       \
@@ -161,7 +163,8 @@ namespace Impl {
 
 #define KOKKOSBLAS3_ZTRSM_BLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)    \
   template <class ExecSpace>                                                   \
-  struct TRSM<Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,           \
+  struct TRSM<ExecSpace,                                                       \
+              Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,           \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<Kokkos::complex<double>**, LAYOUTB,                 \
@@ -178,8 +181,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& /*space*/, const char side[],            \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion(                                           \
@@ -235,7 +238,8 @@ namespace Impl {
 
 #define KOKKOSBLAS3_CTRSM_BLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)    \
   template <class ExecSpace>                                                   \
-  struct TRSM<Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,            \
+  struct TRSM<ExecSpace,                                                       \
+              Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,            \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<Kokkos::complex<float>**, LAYOUTB,                  \
@@ -252,8 +256,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& /*space*/, const char side[],            \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion(                                           \
@@ -357,6 +361,7 @@ namespace Impl {
 #define KOKKOSBLAS3_DTRSM_CUBLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)  \
   template <class ExecSpace>                                                   \
   struct TRSM<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<const double**, LAYOUTA,                                    \
                    Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -373,8 +378,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& space, const char side[],                \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::trsm[TPL_CUBLAS,double]");    \
@@ -427,13 +432,18 @@ namespace Impl {
                                                                                \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-      if (A_is_ll)                                                             \
-        cublasDtrsm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha,       \
-                    A.data(), LDA, B.data(), LDB);                             \
-      else                                                                     \
-        cublasDtrsm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha,       \
-                    A.data(), LDA, B.data(), LDB);                             \
-                                                                               \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      if (A_is_ll) {                                                           \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasDtrsm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha,   \
+                        A.data(), LDA, B.data(), LDB));                        \
+      } else {                                                                 \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasDtrsm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha,   \
+                        A.data(), LDA, B.data(), LDB));                        \
+      }                                                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -441,6 +451,7 @@ namespace Impl {
 #define KOKKOSBLAS3_STRSM_CUBLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)  \
   template <class ExecSpace>                                                   \
   struct TRSM<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<const float**, LAYOUTA,                                     \
                    Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -457,8 +468,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& space, const char side[],                \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::trsm[TPL_CUBLAS,float]");     \
@@ -511,12 +522,18 @@ namespace Impl {
                                                                                \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-      if (A_is_ll)                                                             \
-        cublasStrsm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha,       \
-                    A.data(), LDA, B.data(), LDB);                             \
-      else                                                                     \
-        cublasStrsm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha,       \
-                    A.data(), LDA, B.data(), LDB);                             \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      if (A_is_ll) {                                                           \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasStrsm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha,   \
+                        A.data(), LDA, B.data(), LDB));                        \
+      } else {                                                                 \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasStrsm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha,   \
+                        A.data(), LDA, B.data(), LDB));                        \
+      }                                                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
                                                                                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -524,7 +541,8 @@ namespace Impl {
 
 #define KOKKOSBLAS3_ZTRSM_CUBLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)  \
   template <class ExecSpace>                                                   \
-  struct TRSM<Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,           \
+  struct TRSM<ExecSpace,                                                       \
+              Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,           \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<Kokkos::complex<double>**, LAYOUTB,                 \
@@ -541,8 +559,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& space, const char side[],                \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion(                                           \
@@ -596,16 +614,22 @@ namespace Impl {
                                                                                \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-      if (A_is_ll)                                                             \
-        cublasZtrsm(s.handle, side_, uplo_, trans_, diag_, M, N,               \
-                    reinterpret_cast<const cuDoubleComplex*>(&alpha),          \
-                    reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,   \
-                    reinterpret_cast<cuDoubleComplex*>(B.data()), LDB);        \
-      else                                                                     \
-        cublasZtrsm(s.handle, side_, uplo_, trans_, diag_, N, M,               \
-                    reinterpret_cast<const cuDoubleComplex*>(&alpha),          \
-                    reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,   \
-                    reinterpret_cast<cuDoubleComplex*>(B.data()), LDB);        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      if (A_is_ll) {                                                           \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZtrsm(                              \
+            s.handle, side_, uplo_, trans_, diag_, M, N,                       \
+            reinterpret_cast<const cuDoubleComplex*>(&alpha),                  \
+            reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,           \
+            reinterpret_cast<cuDoubleComplex*>(B.data()), LDB));               \
+      } else {                                                                 \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZtrsm(                              \
+            s.handle, side_, uplo_, trans_, diag_, N, M,                       \
+            reinterpret_cast<const cuDoubleComplex*>(&alpha),                  \
+            reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,           \
+            reinterpret_cast<cuDoubleComplex*>(B.data()), LDB));               \
+      }                                                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
                                                                                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -613,7 +637,8 @@ namespace Impl {
 
 #define KOKKOSBLAS3_CTRSM_CUBLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)  \
   template <class ExecSpace>                                                   \
-  struct TRSM<Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,            \
+  struct TRSM<ExecSpace,                                                       \
+              Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,            \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<Kokkos::complex<float>**, LAYOUTB,                  \
@@ -630,8 +655,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trsm(const char side[], const char uplo[], const char trans[], \
-                     const char diag[],                                        \
+    static void trsm(const ExecSpace& space, const char side[],                \
+                     const char uplo[], const char trans[], const char diag[], \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
       Kokkos::Profiling::pushRegion(                                           \
@@ -685,16 +710,22 @@ namespace Impl {
                                                                                \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-      if (A_is_ll)                                                             \
-        cublasCtrsm(s.handle, side_, uplo_, trans_, diag_, M, N,               \
-                    reinterpret_cast<const cuComplex*>(&alpha),                \
-                    reinterpret_cast<const cuComplex*>(A.data()), LDA,         \
-                    reinterpret_cast<cuComplex*>(B.data()), LDB);              \
-      else                                                                     \
-        cublasCtrsm(s.handle, side_, uplo_, trans_, diag_, N, M,               \
-                    reinterpret_cast<const cuComplex*>(&alpha),                \
-                    reinterpret_cast<const cuComplex*>(A.data()), LDA,         \
-                    reinterpret_cast<cuComplex*>(B.data()), LDB);              \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      if (A_is_ll) {                                                           \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasCtrsm(s.handle, side_, uplo_, trans_, diag_, M, N,           \
+                        reinterpret_cast<const cuComplex*>(&alpha),            \
+                        reinterpret_cast<const cuComplex*>(A.data()), LDA,     \
+                        reinterpret_cast<cuComplex*>(B.data()), LDB));         \
+      } else {                                                                 \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasCtrsm(s.handle, side_, uplo_, trans_, diag_, N, M,           \
+                        reinterpret_cast<const cuComplex*>(&alpha),            \
+                        reinterpret_cast<const cuComplex*>(A.data()), LDA,     \
+                        reinterpret_cast<cuComplex*>(B.data()), LDB));         \
+      }                                                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
                                                                                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \

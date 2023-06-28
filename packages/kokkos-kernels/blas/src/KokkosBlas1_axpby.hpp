@@ -30,23 +30,51 @@
 
 namespace KokkosBlas {
 
-template <class AV, class XMV, class BV, class YMV>
-void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
+/// \brief Computes Y := a*X + b*Y
+///
+/// This function is non-blocking and thread safe.
+///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam BV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param b [in] view of type BV, scaling parameter for Y.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
+template <class execution_space, class AV, class XMV, class BV, class YMV>
+void axpby(const execution_space& space, const AV& a, const XMV& X, const BV& b,
+           const YMV& Y) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::axpby: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::axpby: "
                 "X is not a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::axpby: XMV must be accessible from execution_space");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::axpby: "
                 "Y is not a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YMV::memory_space>::accessible,
+      "KokkosBlas::axpby: XMV must be accessible from execution_space");
   static_assert(std::is_same<typename YMV::value_type,
                              typename YMV::non_const_value_type>::value,
                 "KokkosBlas::axpby: Y is const.  It must be nonconst, "
                 "because it is an output argument "
                 "(we must be able to write to its entries).");
-  static_assert(int(YMV::Rank) == int(XMV::Rank),
+  static_assert(int(YMV::rank) == int(XMV::rank),
                 "KokkosBlas::axpby: "
                 "X and Y must have the same rank.");
-  static_assert(YMV::Rank == 1 || YMV::Rank == 2,
+  static_assert(YMV::rank == 1 || YMV::rank == 2,
                 "KokkosBlas::axpby: "
                 "XMV and YMV must either have rank 1 or rank 2.");
 
@@ -68,33 +96,88 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
   // Create unmanaged versions of the input Views.  XMV and YMV may be
   // rank 1 or rank 2.  AV and BV may be either rank-1 Views, or
   // scalar values.
-  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout,
-                       typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
-  typedef Kokkos::View<typename YMV::non_const_data_type, UnifiedYLayout,
-                       typename YMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      YMV_Internal;
-  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
-      AV, XMV_Internal, true>::type AV_Internal;
-  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
-      BV, YMV_Internal, true>::type BV_Internal;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type,
+                                    UnifiedXLayout, typename XMV::device_type,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using YMV_Internal = Kokkos::View<typename YMV::non_const_data_type,
+                                    UnifiedYLayout, typename YMV::device_type,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AV_Internal =
+      typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal,
+                                                             true>::type;
+  using BV_Internal =
+      typename KokkosKernels::Impl::GetUnifiedScalarViewType<BV, YMV_Internal,
+                                                             true>::type;
 
   AV_Internal a_internal  = a;
   XMV_Internal X_internal = X;
   BV_Internal b_internal  = b;
   YMV_Internal Y_internal = Y;
 
-  Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal, YMV_Internal>::axpby(
-      a_internal, X_internal, b_internal, Y_internal);
+  Impl::Axpby<execution_space, AV_Internal, XMV_Internal, BV_Internal,
+              YMV_Internal>::axpby(space, a_internal, X_internal, b_internal,
+                                   Y_internal);
 }
 
+/// \brief Computes Y := a*X + b*Y
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
+///
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam BV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param b [in] view of type BV, scaling parameter for Y.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
+template <class AV, class XMV, class BV, class YMV>
+void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
+  axpby(typename XMV::execution_space{}, a, X, b, Y);
+}
+
+/// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
+///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
+template <class execution_space, class AV, class XMV, class YMV>
+void axpy(const execution_space& space, const AV& a, const XMV& X,
+          const YMV& Y) {
+  axpby(space, a, X,
+        Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
+}
+
+/// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
+///
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
 template <class AV, class XMV, class YMV>
 void axpy(const AV& a, const XMV& X, const YMV& Y) {
-  axpby(a, X,
-        Kokkos::Details::ArithTraits<typename YMV::non_const_value_type>::one(),
-        Y);
+  axpy(typename XMV::execution_space{}, a, X, Y);
 }
 
 ///
@@ -107,10 +190,10 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
                 "KokkosBlas::serial_axpy: XMV is not a Kokkos::View");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::serial_axpy: YMV is not a Kokkos::View");
-  static_assert(XMV::Rank == 1 || XMV::Rank == 2,
+  static_assert(XMV::rank == 1 || XMV::rank == 2,
                 "KokkosBlas::serial_axpy: XMV must have rank 1 or 2.");
   static_assert(
-      XMV::Rank == YMV::Rank,
+      XMV::rank == YMV::rank,
       "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
 
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {

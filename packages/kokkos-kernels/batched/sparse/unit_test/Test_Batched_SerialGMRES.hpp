@@ -109,7 +109,7 @@ template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType>
 void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   const int nnz = (BlkSize - 2) * 3 + 2 * 2;
 
@@ -125,9 +125,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   using Layout     = typename ValuesViewType::array_layout;
   using EXSP       = typename ValuesViewType::execution_space;
 
-  using MagnitudeType =
-      typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
-  using NormViewType = Kokkos::View<MagnitudeType *, Layout, EXSP>;
+  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using NormViewType  = Kokkos::View<MagnitudeType *, Layout, EXSP>;
 
   using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
   using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

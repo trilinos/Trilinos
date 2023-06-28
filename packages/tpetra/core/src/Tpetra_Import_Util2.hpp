@@ -204,9 +204,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #ifdef HAVE_TPETRACORE_MPI
     using Teuchos::TimeMonitor;
     using ::Tpetra::Details::Behavior;
-    using Kokkos::AllowPadding;
-    using Kokkos::view_alloc;
-    using Kokkos::WithoutInitializing;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef std::pair<GO,GO> pidgidpair_t;

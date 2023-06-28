@@ -17,7 +17,7 @@
 #ifndef KOKKOS_SPARSE_ORDINALTRAITS_HPP_
 #define KOKKOS_SPARSE_ORDINALTRAITS_HPP_
 
-/// \file Kokkos_Sparse_OrdinalTraits.hpp
+/// \file KokkosSparse_OrdinalTraits.hpp
 /// \brief Declaration and definition of KokkosSparse::OrdinalTraits,
 ///   a traits class for "invalid" (flag) values of integer types that
 ///   KokkosKernels uses as local ordinals or global ordinals.

@@ -61,7 +61,7 @@ struct Functor_TestBatchedSerialLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_lu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize);

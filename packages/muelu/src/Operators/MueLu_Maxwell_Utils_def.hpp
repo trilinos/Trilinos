@@ -280,7 +280,7 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  PtAPWrapper(RCP<Matrix>& A,RCP<Matrix>& P, ParameterList &params, std::string & label) {
+  PtAPWrapper(const RCP<Matrix>& A,const RCP<Matrix>& P, ParameterList &params, std::string & label) {
     Level fineLevel, coarseLevel;
     fineLevel.SetFactoryManager(null);
     coarseLevel.SetFactoryManager(null);
