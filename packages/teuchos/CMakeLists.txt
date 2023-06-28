@@ -467,8 +467,6 @@ TRIBITS_PACKAGE_DEF()
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   config.h.in
   doc/images

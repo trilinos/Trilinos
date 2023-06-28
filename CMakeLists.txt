@@ -110,6 +110,11 @@ message(STATUS "The Current CXX Standard is : " ${CMAKE_CXX_STANDARD})
 SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OFF CACHE BOOL
   "Support being removed from TriBITS (see trilinos/Trilinos#8498)" FORCE)
 
+# Define empty macro to allow Kokkos and KokkosKernels to keep working until
+# updated versions after Kokkos 4.1 are snapshotted in.
+macro(tribits_exclude_autotools_files)
+endmacro()
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
 
