@@ -62,52 +62,100 @@
 #endif
 
 namespace Test {
-template <class ViewType,
-          bool strided = std::is_same<typename ViewType::array_layout,
-                                      Kokkos::LayoutStride>::value>
-struct multivector_layout_adapter;
 
-template <class ViewType>
-struct multivector_layout_adapter<ViewType, true> {
-  typedef typename ViewType::value_type Scalar;
-  typedef typename ViewType::device_type Device;
-  typedef Kokkos::View<Scalar* * [2], Kokkos::LayoutRight, Device>
-      BaseTypeRight;
-  typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device>
-      BaseTypeDefault;
-  typedef
-      typename std::conditional<std::is_same<typename ViewType::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                BaseTypeRight, BaseTypeDefault>::type BaseType;
+// Utility class for testing kernels with rank-1 and rank-2 views that may be
+// LayoutStride. Simplifies making a LayoutStride view of a given size that is
+// actually noncontiguous, and host-device transfers for checking results on
+// host.
+//
+// Constructed with label and extent(s), and then provides 5 views as members:
+//  - d_view, and a const-valued alias d_view_const
+//  - h_view
+//  - d_base
+//  - h_base
+// d_view is of type ViewType, and has the extents passed to the constructor.
+// h_view is a mirror of d_view.
+// d_base (and its mirror h_base) are contiguous views, so they can be
+// deep-copied to each other. d_view aliases d_base, and h_view aliases h_base.
+// This means that copying between d_base and h_base
+//    also copies between d_view and h_view.
+//
+// If the Boolean template parameter 'createMirrorView' is:
+// - 'true' (default value), then this utility class will use
+//   Kokkos::create_mirror_view();
+// - 'false', then this utility class will use Kokkos::create_mirror()
+template <class ViewType, bool createMirrorView = true>
+struct view_stride_adapter {
+  static_assert(Kokkos::is_view_v<ViewType>,
+                "view_stride_adapter: ViewType must be a Kokkos::View");
+  static_assert(ViewType::rank >= 1 && ViewType::rank <= 2,
+                "view_stride_adapter: ViewType must be rank 1 or rank 2");
 
-  static ViewType view(const BaseType& v) {
-    return Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, 0);
-  };
-};
+  static constexpr bool strided = std::is_same<typename ViewType::array_layout,
+                                               Kokkos::LayoutStride>::value;
+  static constexpr int rank     = ViewType::rank;
 
-template <class ViewType>
-struct multivector_layout_adapter<ViewType, false> {
-  typedef typename ViewType::value_type Scalar;
-  typedef typename ViewType::device_type Device;
-  typedef Kokkos::View<Scalar* * [2], Kokkos::LayoutRight, Device>
-      BaseTypeRight;
-  typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device>
-      BaseTypeDefault;
-  typedef
-      typename std::conditional<std::is_same<typename ViewType::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                BaseTypeRight, BaseTypeDefault>::type BaseType;
+  using DView = ViewType;
+  using HView = typename DView::HostMirror;
+  // If not strided, the base view types are the same as DView/HView.
+  // But if strided, the base views have one additional dimension, so that
+  // d_view/h_view have stride > 1 between consecutive elements.
+  using DViewBase = std::conditional_t<
+      strided,
+      Kokkos::View<typename ViewType::data_type*, Kokkos::LayoutRight,
+                   typename ViewType::device_type>,
+      DView>;
+  using HViewBase = typename DViewBase::HostMirror;
 
-  static ViewType view(const BaseType& v) {
-    return Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL);
-  };
+  view_stride_adapter(const std::string& label, int m, int n = 1) {
+    if constexpr (rank == 1) {
+      if constexpr (strided) {
+        d_base = DViewBase(label, m, 2);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
+                                  : Kokkos::create_mirror(d_base);
+        d_view = Kokkos::subview(d_base, Kokkos::ALL(), 0);
+        h_view = Kokkos::subview(h_base, Kokkos::ALL(), 0);
+      } else {
+        d_base = DViewBase(label, m);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
+                                  : Kokkos::create_mirror(d_base);
+        d_view = d_base;
+        h_view = h_base;
+      }
+    } else {
+      if constexpr (strided) {
+        d_base = DViewBase(label, m, n, 2);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
+                                  : Kokkos::create_mirror(d_base);
+        d_view =
+            Kokkos::subview(d_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+        h_view =
+            Kokkos::subview(h_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+      } else {
+        d_base = DViewBase(label, m, n);
+        h_base = createMirrorView ? Kokkos::create_mirror_view(d_base)
+                                  : Kokkos::create_mirror(d_base);
+        d_view = d_base;
+        h_view = h_base;
+      }
+    }
+    d_view_const = d_view;
+  }
+
+  // Have both const and nonconst versions of d_view (with same underlying
+  // data), since we often test BLAS with both
+  DView d_view;
+  typename DView::const_type d_view_const;
+  HView h_view;
+  DViewBase d_base;
+  HViewBase h_base;
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
 void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
                     std::string msg = "") {
-  typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
-  typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
+  typedef Kokkos::ArithTraits<Scalar1> AT1;
+  typedef Kokkos::ArithTraits<Scalar3> AT3;
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
@@ -116,8 +164,8 @@ void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
                         std::string msg = "") {
   typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
   typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
-  const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(val1);
-  const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(val2);
+  const auto ahv1 = Kokkos::ArithTraits<hv1_type>::abs(val1);
+  const auto ahv2 = Kokkos::ArithTraits<hv2_type>::abs(val2);
   EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
 }
 
@@ -205,7 +253,7 @@ struct SharedVanillaGEMM {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride,
                        typename ViewTypeB::device_type>
       SubviewTypeB;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -520,6 +568,68 @@ int string_compare_no_case(const char* str1, const char* str2) {
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
+int string_compare_no_case(const std::string& str1, const std::string& str2) {
+  return string_compare_no_case(str1.c_str(), str2.c_str());
+}
+/// /brief Coo matrix class for testing purposes.
+/// \tparam ScalarType
+/// \tparam LayoutType
+/// \tparam ExeSpaceType
+template <class ScalarType, class LayoutType, class ExeSpaceType>
+class RandCooMat {
+ private:
+  using RowViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ColViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using DataViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  RowViewTypeD __row_d;
+  ColViewTypeD __col_d;
+  DataViewTypeD __data_d;
+
+  template <class T>
+  T __getter_copy_helper(T src) {
+    T dst(std::string("RandCooMat.") + typeid(T).name() + " copy",
+          src.extent(0));
+    Kokkos::deep_copy(dst, src);
+    ExeSpaceType().fence();
+    return dst;
+  }
+
+ public:
+  std::string info;
+  /// Constructs a random coo matrix with negative indices.
+  /// \param m The max row id
+  /// \param n The max col id
+  /// \param n_tuples The number of tuples.
+  /// \param min_val The minimum scalar value in the matrix.
+  /// \param max_val The maximum scalar value in the matrix.
+  RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val,
+             ScalarType max_val) {
+    uint64_t ticks =
+        std::chrono::high_resolution_clock::now().time_since_epoch().count() %
+        UINT32_MAX;
+
+    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() +
+                       ", " + typeid(LayoutType).name() + ", " +
+                       typeid(ExeSpaceType).name() + std::to_string(n) +
+                       "...): rand seed: " + std::to_string(ticks) + "\n");
+    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
+
+    __row_d = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
+    Kokkos::fill_random(__row_d, random, -m, m);
+
+    __col_d = ColViewTypeD("RandCooMat.ColViewType", n_tuples);
+    Kokkos::fill_random(__col_d, random, -n, n);
+
+    __data_d = DataViewTypeD("RandCooMat.DataViewType", n_tuples);
+    Kokkos::fill_random(__data_d, random, min_val, max_val);
+
+    ExeSpaceType().fence();
+  }
+  auto get_row() { return __getter_copy_helper(__row_d); }
+  auto get_col() { return __getter_copy_helper(__col_d); }
+  auto get_data() { return __getter_copy_helper(__data_d); }
+};
+
 /// /brief Cs (Compressed Sparse) matrix class for testing purposes.
 /// This class is for testing purposes only and will generate a random
 /// Crs / Ccs matrix when instantiated. The class is intentionally written
@@ -528,16 +638,27 @@ int string_compare_no_case(const char* str1, const char* str2) {
 /// dim2 refers to either columns for a Crs matrix or rows for a Ccs matrix.
 /// \tparam ScalarType
 /// \tparam LayoutType
-/// \tparam ExeSpaceType
-template <class ScalarType, class LayoutType, class ExeSpaceType>
+/// \tparam Device
+template <class ScalarType, class LayoutType, class Device,
+          typename Ordinal = int64_t,
+          typename Size    = typename Kokkos::ViewTraits<Ordinal*, Device, void,
+                                                      void>::size_type>
 class RandCsMatrix {
+ public:
+  using value_type   = ScalarType;
+  using array_layout = LayoutType;
+  using device_type  = Device;
+  using ordinal_type = Ordinal;
+  using size_type    = Size;
+  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, Device>;
+  using IdViewTypeD  = Kokkos::View<Ordinal*, LayoutType, Device>;
+  using MapViewTypeD = Kokkos::View<Size*, LayoutType, Device>;
+
  private:
-  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using IdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using MapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  int64_t __dim2;
-  int64_t __dim1;
-  int64_t __nnz = 0;
+  using execution_space = typename Device::execution_space;
+  Ordinal __dim2;
+  Ordinal __dim1;
+  Size __nnz = 0;
   MapViewTypeD __map_d;
   IdViewTypeD __ids_d;
   ValViewTypeD __vals_d;
@@ -556,19 +677,19 @@ class RandCsMatrix {
   ///  4. __map(i) - col_map(i - 1) is in [0, m]
   void __populate_random_cs_mat(uint64_t ticks) {
     std::srand(ticks);
-    for (int64_t col_idx = 0; col_idx < __dim1; col_idx++) {
-      int64_t r = std::rand() % (__dim2 + 1);
+    for (Ordinal col_idx = 0; col_idx < __dim1; col_idx++) {
+      Ordinal r = std::rand() % (__dim2 + 1);
       if (r == 0 || __fully_sparse) {  // 100% sparse vector
         __map(col_idx) = __nnz;
       } else {  // sparse vector with r elements
         // Populate r row ids
-        std::vector<int64_t> v(r);
+        std::vector<Ordinal> v(r);
 
-        for (int64_t i = 0; i < r; i++) v.at(i) = i;
+        for (Ordinal i = 0; i < r; i++) v.at(i) = i;
 
         std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
 
-        for (int64_t i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
+        for (Ordinal i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
 
         // Point to new column and accumulate number of non zeros
         __map(col_idx) = __nnz;
@@ -581,8 +702,13 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__map_d, __map);
-    Kokkos::deep_copy(__ids_d, __ids);
-    ExeSpaceType().fence();
+    IdViewTypeD tight_ids(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                                             "RandCsMatrix.IdViewTypeD"),
+                          __nnz);
+    Kokkos::deep_copy(
+        tight_ids,
+        Kokkos::subview(__ids, Kokkos::make_pair(0, static_cast<int>(__nnz))));
+    __ids_d = tight_ids;
   }
 
   template <class T>
@@ -590,7 +716,6 @@ class RandCsMatrix {
     T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
           src.extent(0));
     Kokkos::deep_copy(dst, src);
-    ExeSpaceType().fence();
     return dst;
   }
 
@@ -601,7 +726,7 @@ class RandCsMatrix {
   /// \param dim2 The second dimension: columns for Crs or rows for Ccs
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCsMatrix(int64_t dim1, int64_t dim2, ScalarType min_val,
+  RandCsMatrix(Ordinal dim1, Ordinal dim2, ScalarType min_val,
                ScalarType max_val, bool fully_sparse = false) {
     __dim1         = dim1;
     __dim2         = dim2;
@@ -618,7 +743,7 @@ class RandCsMatrix {
 
     info = std::string(
         std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
-        typeid(LayoutType).name() + ", " + typeid(ExeSpaceType).name() + ">(" +
+        typeid(LayoutType).name() + ", " + execution_space().name() + ">(" +
         std::to_string(dim2) + ", " + std::to_string(dim1) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
@@ -633,17 +758,16 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__vals_d, __vals);
-    ExeSpaceType().fence();
   }
 
   // O(c), where c is a constant.
-  ScalarType operator()(int64_t idx) { return __vals(idx); }
-  int64_t get_nnz() { return __nnz; }
+  ScalarType operator()(Size idx) { return __vals(idx); }
+  size_t get_nnz() { return size_t(__nnz); }
   // dimension2: This is either columns for a Crs matrix or rows for a Ccs
   // matrix.
-  int64_t get_dim2() { return __dim2; }
+  Ordinal get_dim2() { return __dim2; }
   // dimension1: This is either rows for Crs matrix or columns for a Ccs matrix.
-  int64_t get_dim1() { return __dim1; }
+  Ordinal get_dim1() { return __dim1; }
   ValViewTypeD get_vals() { return __getter_copy_helper(__vals_d); }
   IdViewTypeD get_ids() { return __getter_copy_helper(__ids_d); }
   MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }

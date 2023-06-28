@@ -197,9 +197,9 @@ KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha,
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
-  static_assert(ViewType::Rank == 2,
+  static_assert(ViewType::rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
@@ -240,9 +240,9 @@ KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
-  static_assert(ViewType::Rank == 2,
+  static_assert(ViewType::rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
@@ -284,9 +284,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
-  static_assert(ViewType::Rank == 2,
+  static_assert(ViewType::rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.

@@ -24,6 +24,69 @@ In general, we prefer that the prototype has the doxygen style comment rather th
         KOKKOS_INLINE_FUNCTION ViewValueType
         access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &);
 
+.. code-block::
+    :caption: Type Doxygen Style Example
+
+    /// \class CooMatrix
+    ///
+    /// \brief Coordinate format implementation of a sparse matrix.
+    ///
+    /// \tparam ScalarType The type of scalar entries in the sparse matrix.
+    /// \tparam OrdinalType The type of index entries in the sparse matrix.
+    /// \tparam Device The Kokkos Device type.
+    /// "Coo" stands for "coordinate format".
+    template <class ScalarType>
+    class CooMatrix {
+      public:
+        //! Type of each value in the matrix
+        using scalar_type = ScalarType;
+
+      private:
+        size_type m_num_rows, m_num_cols;
+
+      public:
+        //! The data in the matrix
+        scalar_type data;
+
+      /// \brief Default constructor; constructs an empty sparse matrix.
+      KOKKOS_INLINE_FUNCTION
+      CooMatrix() : m_num_rows(0), m_num_cols(0) {}
+
+**NOTE:** To have vscode generate the "\\\\\\" style stubs:
+
+1. install the C/C++ IntelliSense, debugging, and code browsing extension.
+
+2. go to Settings, Extensions, C/C++, Doxygen Documentation Generator Settings, and ensure the setting for Doxdocgen is "\\\\\\".
+
+3. place your cursor on the line above `template ...` and type "\\\\\\".
+
+Including your documentation with directives
+--------------------------------------------
+Rather than have the documentation generation system default to generating documentation for the entire code base,
+we opt-in to what we would like to include in the generated documentation. To opt-in, simply place the publicly facing
+function signature or the class name in the appropriate ReStructuredText file. For example, to document a sparse
+function and class open up kokkos-kernels/docs/developer/apidocs/sparse.rst:
+
+.. code-block::
+    :caption: Function signature example
+
+    coo2crs
+    -------
+    .. doxygenfunction:: KokkosSparse::coo2crs(DimType, DimType, RowViewType, ColViewType, DataViewType)
+    .. doxygenfunction:: KokkosSparse::coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &cooMatrix)
+
+Note that only the signature is required. One may specify the parameter names and any default values, but this is not required.
+
+.. code-block::
+    :caption: User defined type example
+
+    coomatrix
+    ---------
+    .. doxygenclass::    KokkosSparse::CooMatrix
+      :members:
+
+For a full list of available directives, see https://breathe.readthedocs.io/en/latest/.
+
 Library policies
 ----------------
 

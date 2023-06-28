@@ -25,21 +25,38 @@ namespace KokkosBlas {
 
 /// \brief Return the dot product of the two vectors x and y.
 ///
+/// \tparam execution_space the Kokkos execution space where the kernel
+///         will be executed.
 /// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
 /// \tparam YVector Type of the second vector y; a 1-D Kokkos::View.
 ///
+/// \param space [in] an execution space instance that may specify
+///                   in which stream/queue the kernel will be executed.
 /// \param x [in] Input 1-D View.
 /// \param y [in] Input 1-D View.
 ///
 /// \return The dot product result; a single value.
-template <class XVector, class YVector>
+template <class execution_space, class XVector, class YVector,
+          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>,
+                                  int>::type = 0>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::dot_type
-dot(const XVector& x, const YVector& y) {
+dot(const execution_space& space, const XVector& x, const YVector& y) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::dot: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::dot: XVector must be a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::dot: XVector must be accessible from execution_space");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosBlas::dot: YVector must be a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::dot: YVector must be accessible from execution_space");
   static_assert((int)XVector::rank == (int)YVector::rank,
                 "KokkosBlas::dot: Vector ranks do not match.");
   static_assert(XVector::rank == 1,
@@ -55,16 +72,14 @@ dot(const XVector& x, const YVector& y) {
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  typedef Kokkos::View<
+  using XVector_Internal = Kokkos::View<
       typename XVector::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-      typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      XVector_Internal;
-  typedef Kokkos::View<
+      typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVector_Internal = Kokkos::View<
       typename YVector::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      YVector_Internal;
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using dot_type = typename Kokkos::Details::InnerProductSpaceTraits<
       typename XVector::non_const_value_type>::dot_type;
@@ -91,9 +106,10 @@ dot(const XVector& x, const YVector& y) {
   // 32-bit precision). Impl::Dot needs to support both cases, and it's easier
   // to do this with overloading than by extending the ETI to deal with two
   // different scalar types.
-  Impl::DotSpecialAccumulator<RVector_Internal, XVector_Internal,
-                              YVector_Internal>::dot(R, X, Y);
-  Kokkos::fence();
+  Impl::DotSpecialAccumulator<execution_space, RVector_Internal,
+                              XVector_Internal, YVector_Internal>::dot(space, R,
+                                                                       X, Y);
+  space.fence();
   // mfh 22 Jan 2020: We need the line below because
   // Kokkos::complex<T> lacks a constructor that takes a
   // Kokkos::complex<U> with U != T.
@@ -101,12 +117,37 @@ dot(const XVector& x, const YVector& y) {
       result);
 }
 
+/// \brief Return the dot product of the two vectors x and y.
+///
+/// The kernel is executed in the default stream/queue associated
+/// with the execution space of XVector.
+///
+/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
+/// \tparam YVector Type of the second vector y; a 1-D Kokkos::View.
+///
+/// \param x [in] Input 1-D View.
+/// \param y [in] Input 1-D View.
+///
+/// \return The dot product result; a single value.
+template <class XVector, class YVector>
+typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XVector::non_const_value_type>::dot_type
+dot(const XVector& x, const YVector& y) {
+  return dot(typename XVector::execution_space{}, x, y);
+}
+
 /// \brief Compute the column-wise dot products of two multivectors.
 ///
+/// This function is non-blocking and thread-safe.
+///
+/// \tparam execution_space the Kokkos execution space where the kernel
+///         will be executed.
 /// \tparam RV 0-D resp. 1-D output View
 /// \tparam XMV 1-D resp. 2-D input View
 /// \tparam YMV 1-D resp. 2-D input View
 ///
+/// \param space [in] an execution space instance that may specify
+///                   in which stream/queue the kernel will be executed.
 /// \param R [out] Output 1-D or 0-D View to which to write results.
 /// \param X [in] Input 2-D or 1-D View.
 /// \param Y [in] Input 2-D or 1-D View.
@@ -127,18 +168,29 @@ dot(const XVector& x, const YVector& y) {
 /// \note To implementers: We use enable_if here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
-template <class RV, class XMV, class YMV>
-void dot(const RV& R, const XMV& X, const YMV& Y,
+template <class execution_space, class RV, class XMV, class YMV>
+void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
          typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::dot: excution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::dot: "
                 "R is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::dot: "
                 "X is not a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::dot: XMV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::dot: "
                 "Y is not a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YMV::memory_space>::accessible,
+      "KokkosBlas::dot: XMV must be accessible from execution_space.");
   static_assert(std::is_same<typename RV::value_type,
                              typename RV::non_const_value_type>::value,
                 "KokkosBlas::dot: R is const.  "
@@ -215,8 +267,44 @@ void dot(const RV& R, const XMV& X, const YMV& Y,
   XMV_Internal X_internal = X;
   YMV_Internal Y_internal = Y;
 
-  Impl::Dot<RV_Internal, XMV_Internal, YMV_Internal>::dot(
-      R_internal, X_internal, Y_internal);
+  Impl::Dot<execution_space, RV_Internal, XMV_Internal, YMV_Internal>::dot(
+      space, R_internal, X_internal, Y_internal);
+}
+
+/// \brief Compute the column-wise dot products of two multivectors.
+///
+/// This function is non-blocking and thread-safe.
+/// The kernel is executed in the default stream/queue associated
+/// with the execution space of XVM.
+///
+/// \tparam RV 0-D resp. 1-D output View
+/// \tparam XMV 1-D resp. 2-D input View
+/// \tparam YMV 1-D resp. 2-D input View
+///
+/// \param R [out] Output 1-D or 0-D View to which to write results.
+/// \param X [in] Input 2-D or 1-D View.
+/// \param Y [in] Input 2-D or 1-D View.
+///
+/// This function implements a few different use cases:
+/// <ul>
+/// <li> If X and Y are both 1-D, then this is a single dot product.
+///   R must be 0-D (a View of a single value). </li>
+/// <li> If X and Y are both 2-D, then this function computes their
+///   dot products columnwise.  R must be 1-D. </li>
+/// <li> If X is 2-D and Y is 1-D, then this function computes the dot
+///   product of each column of X, with Y, in turn.  R must be
+///   1-D. </li>
+/// <li> If X is 1-D and Y is 2-D, then this function computes the dot
+///   product X with each column of Y, in turn.  R must be 1-D. </li>
+/// </ul>
+///
+/// \note To implementers: We use enable_if here so that the compiler
+///   doesn't confuse this version of dot() with the three-argument
+///   version of dot() in Kokkos_Blas1.hpp.
+template <class RV, class XMV, class YMV>
+void dot(const RV& R, const XMV& X, const YMV& Y,
+         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  dot(typename XMV::execution_space{}, R, X, Y);
 }
 }  // namespace KokkosBlas
 

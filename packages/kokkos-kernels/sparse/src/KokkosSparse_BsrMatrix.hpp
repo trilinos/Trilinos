@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-/// \file Kokkos_Sparse_BsrMatrix.hpp
+/// \file KokkosSparse_BsrMatrix.hpp
 /// \brief Local sparse matrix interface
 ///
 /// This file provides KokkosSparse::Experimental::BsrMatrix.
@@ -156,13 +156,12 @@ struct BsrRowView {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::Details::ArithTraits::max
+  ///        If none found, return Kokkos::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
-  /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match,
                                   bool /*is_sorted*/ = false) const {
-    ordinal_type offset = Kokkos::Details::ArithTraits<ordinal_type>::max();
+    ordinal_type offset = Kokkos::ArithTraits<ordinal_type>::max();
     for (ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
       if (idx == idx_to_match) {
@@ -213,6 +212,7 @@ struct BsrRowViewConst {
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
+  /// \param blockDim [in] The block dimensions.
   /// \param count [in] Number of entries in the row.
   /// \param start [in] Offset into values and colidx of the desired block-row
   /// start.
@@ -292,15 +292,14 @@ struct BsrRowViewConst {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::Details::ArithTraits::max
+  ///        If none found, return Kokkos::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
-  /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type& idx_to_match,
                                   bool /*is_sorted*/ = false) const {
     typedef typename std::remove_cv<ordinal_type>::type non_const_ordinal_type;
     non_const_ordinal_type offset =
-        Kokkos::Details::ArithTraits<non_const_ordinal_type>::max();
+        Kokkos::ArithTraits<non_const_ordinal_type>::max();
     for (non_const_ordinal_type blk_offset = 0; blk_offset < length;
          ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
@@ -333,6 +332,10 @@ class BsrMatrix {
   static_assert(
       std::is_signed<OrdinalType>::value,
       "BsrMatrix requires that OrdinalType is a signed integer type.");
+  static_assert(Kokkos::is_memory_traits_v<MemoryTraits> ||
+                    std::is_void_v<MemoryTraits>,
+                "BsrMatrix: MemoryTraits (4th template param) must be a Kokkos "
+                "MemoryTraits or void");
 
  private:
   typedef
@@ -389,6 +392,11 @@ class BsrMatrix {
   typedef typename values_type::const_value_type const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
+
+  // block values are actually a 1-D view, however they are implicitly
+  // arranged in LayoutRight, e.g. consecutive entries in the values view
+  // are consecutive entries within a row inside a block
+  using block_layout = Kokkos::LayoutRight;
 
   /// \name Storage of the actual sparsity structure and values.
   ///
@@ -452,12 +460,12 @@ class BsrMatrix {
     }
   }
 
-  /// \brief Constructor that copies raw arrays of host data in
-  ///   coordinate format.
+  /// \brief Construct BsrMatrix from host data in COO format.
   ///
-  /// On input, each entry of the sparse matrix is stored in val[k],
-  /// with row index rows[k] and column index cols[k].  We assume that
-  /// the entries are sorted in increasing order by row index.
+  /// The COO matrix must already have a block structure.
+  /// Each entry k of the input sparse matrix has a value stored in val[k],
+  /// row index in rows[k] and column index in cols[k].
+  /// The COO data must be sorted by increasing row index
   ///
   /// This constructor is mainly useful for benchmarking or for
   /// reading the sparse matrix's data from a file.
@@ -466,18 +474,19 @@ class BsrMatrix {
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.
-  /// \param val [in] The entries.
-  /// \param rows [in] The row indices.  rows[k] is the row index of
+  /// \param vals [in] The entries.
+  /// \param rows [in] The row indices. rows[k] is the row index of
   ///   val[k].
-  /// \param cols [in] The column indices.  cols[k] is the column
+  /// \param cols [in] The column indices. cols[k] is the column
   ///   index of val[k].
+  /// \param blockdim [in] The block size of the constructed BsrMatrix.
   /// \param pad [in] If true, pad the sparse matrix's storage with
   ///   zeros in order to improve cache alignment and / or
   ///   vectorization.
   ///
   /// The \c pad argument is currently not used.
   BsrMatrix(const std::string& label, OrdinalType nrows, OrdinalType ncols,
-            size_type annz, ScalarType* val, OrdinalType* rows,
+            size_type annz, ScalarType* vals, OrdinalType* rows,
             OrdinalType* cols, OrdinalType blockdim, bool pad = false) {
     (void)label;
     (void)pad;
@@ -489,120 +498,158 @@ class BsrMatrix {
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
-    if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
-      assert(
-          (ncols % blockDim_ == 0) &&
-          "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
-      assert((nrows % blockDim_ == 0) &&
-             "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
+    if (ncols % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << ncols
+         << " input CrsMatrix columns is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+    if (nrows % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << nrows
+         << " input CrsMatrix rows is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+    if (annz % (blockDim_ * blockDim_)) {
+      throw std::runtime_error(
+          "BsrMatrix:: annz should be a multiple of the number of entries in a "
+          "block");
     }
 
-    numCols_                  = ncols / blockDim_;
-    ordinal_type tmp_num_rows = nrows / blockDim_;
+    using Coord     = std::pair<OrdinalType, OrdinalType>;  // row, col
+    using CoordComp = std::function<bool(
+        const Coord&, const Coord&)>;  // type that can order Coords
+    using Entry     = std::pair<Coord, ScalarType>;  // (row, col), val
+    using Blocks    = std::map<Coord, std::vector<Entry>,
+                            CoordComp>;  // map a block to its non-zeros, sorted
+                                            // by row, then col
 
-    //
-    // Wrap the raw pointers in unmanaged host Views
-    // Note that the inputs are in coordinate format.
-    // So unman_rows and unman_cols have the same type.
-    //
-    typename values_type::HostMirror unman_val(val, annz);
-    typename index_type::HostMirror unman_rows(rows, annz);
-    typename index_type::HostMirror unman_cols(cols, annz);
+    numCols_             = ncols / blockDim_;
+    ordinal_type numRows = nrows / blockDim_;
+    size_type numBlocks  = annz / (blockDim_ * blockDim_);
 
-    typename row_map_type::non_const_type tmp_row_map(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"),
-        tmp_num_rows + 1);
-    auto row_map_host = Kokkos::create_mirror_view(tmp_row_map);
-    Kokkos::deep_copy(row_map_host, 0);
+    // device data
+    typename row_map_type::non_const_type row_map_device(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_device"),
+        numRows + 1);
+    index_type entries_device("entries_device", numBlocks);
+    Kokkos::resize(values, annz);
 
-    if (annz > 0) {
-      ordinal_type iblock = 0;
-      std::set<ordinal_type> set_blocks;
-      for (size_type ii = 0; ii <= annz; ++ii) {
-        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > iblock)) {
-          // Flush the stored entries
-          row_map_host(iblock + 1) = set_blocks.size();
-          if (ii == annz) break;
-          set_blocks.clear();
-          iblock = unman_rows(ii) / blockDim_;
-        }
-        ordinal_type tmp_jblock = unman_cols(ii) / blockDim_;
-        set_blocks.insert(tmp_jblock);
+    // mirror views on host
+    auto row_map_host = Kokkos::create_mirror_view(row_map_device);
+    auto entries_host = Kokkos::create_mirror_view(entries_device);
+    auto values_host  = Kokkos::create_mirror_view(values);
+
+    auto coord_by_row_col = [](const Coord& a, const Coord& b) {
+      const auto& arow = std::get<0>(a);
+      const auto& brow = std::get<0>(b);
+      const auto& acol = std::get<1>(a);
+      const auto& bcol = std::get<1>(b);
+      if (arow < brow) {
+        return true;
+      } else if (arow > brow) {
+        return false;
+      } else {
+        return acol < bcol;
+      }
+    };
+
+    auto entry_by_row_col = [coord_by_row_col](const Entry& a, const Entry& b) {
+      return coord_by_row_col(std::get<0>(a), std::get<0>(b));
+    };
+
+    // organize all blocks and their entries
+    Blocks blocks(coord_by_row_col);
+    for (size_type i = 0; i < annz; ++i) {
+      const ordinal_type row = rows[i];
+      const ordinal_type col = cols[i];
+      const ScalarType val   = vals[i];
+      const Coord block      = Coord(row / blockDim_, col / blockDim_);
+      const Entry entry(Coord(row, col), val);
+
+      // add entry to the correct block
+      auto it = blocks.find(block);
+      if (it == blocks.end()) {
+        std::vector<Entry> entries = {entry};
+        entries.reserve(blockDim_ * blockDim_);
+        blocks[block] = std::move(entries);  // new block with entry
+      } else {
+        it->second.push_back(entry);  // add entry to block
       }
     }
 
-    for (size_type ii = 0; ii < annz; ++ii)
-      row_map_host(ii + 1) += row_map_host(ii);
+    // write block data out to BSR format
+    ordinal_type row = 0;      // current row we're in
+    size_t bi        = 0;      // how many blocks so far
+    for (auto& kv : blocks) {  // iterating through blocks in row/col order
+      const Coord& block = kv.first;   // block's position
+      auto& entries      = kv.second;  // non-zeros in the block
 
-    Kokkos::deep_copy(tmp_row_map, row_map_host);
-
-    // Create temporary Views for row_map and entries
-    // because the StaticCrsGraph ctor requires View inputs
-    index_type tmp_entries("tmp_entries", row_map_host(tmp_num_rows));
-    auto tmp_entries_host = Kokkos::create_mirror_view(tmp_entries);
-
-    Kokkos::resize(values, row_map_host(tmp_num_rows) * blockDim_ * blockDim_);
-    auto values_host = Kokkos::create_mirror_view(values);
-    Kokkos::deep_copy(values_host, 0);
-
-    if (annz > 0) {
-      //--- Fill tmp_entries
-      ordinal_type cur_block = 0;
-      std::set<ordinal_type> set_blocks;
-      for (size_type ii = 0; ii <= annz; ++ii) {
-        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > cur_block)) {
-          // Flush the stored entries
-          ordinal_type ipos = row_map_host(cur_block);
-          for (auto jblock : set_blocks) tmp_entries_host(ipos++) = jblock;
-          if (ii == annz) break;
-          set_blocks.clear();
-          cur_block = unman_rows(ii) / blockDim_;
-        }
-        ordinal_type tmp_jblock = unman_cols(ii) / blockDim_;
-        set_blocks.insert(tmp_jblock);
+      if (OrdinalType(entries.size()) != blockDim_ * blockDim_) {
+        std::stringstream ss;
+        ss << "BsrMatrix: block " << block.first << "," << block.second
+           << " had only " << entries.size() << " non-zeros, expected "
+           << blockDim_ * blockDim_;
+        KokkosKernels::Impl::throw_runtime_exception(ss.str());
       }
-      //--- Fill numerical values
-      for (size_type ii = 0; ii < annz; ++ii) {
-        const auto ilocal = unman_rows(ii) % blockDim_;
-        const auto jblock = unman_cols(ii) / blockDim_;
-        const auto jlocal = unman_cols(ii) % blockDim_;
-        for (auto jj = row_map_host(jblock); jj < row_map_host(jblock + 1);
-             ++jj) {
-          if (tmp_entries_host(jj) == jblock) {
-            const auto shift =
-                jj * blockDim_ * blockDim_ + ilocal * blockDim_ + jlocal;
-            values_host(shift) = unman_val(ii);
-            break;
-          }
-        }
+
+      // update row-map if block is in a new row
+      for (; row < block.first; ++row) {
+        row_map_host(row + 1) = bi;  // `row` ends at bi
       }
+
+      // record column of block
+      entries_host(bi) = block.second;  // block's column
+
+      // add contiguous entries of block sorted by row/col
+      std::sort(entries.begin(), entries.end(), entry_by_row_col);
+      for (size_type ei = 0; ei < size_type(entries.size()); ++ei) {
+        values_host(bi * blockDim_ * blockDim_ + ei) = std::get<1>(entries[ei]);
+      }
+
+      // next block
+      ++bi;
+    }
+    // complete row map if last blocks are empty
+    for (; row < numRows + 1; ++row) {
+      row_map_host(row) = bi;
     }
 
-    Kokkos::deep_copy(tmp_entries, tmp_entries_host);
+    // move graph data to the requested device
+    Kokkos::deep_copy(row_map_device, row_map_host);
+    Kokkos::deep_copy(entries_device, entries_host);
     Kokkos::deep_copy(values, values_host);
 
-    // Initialize graph using the temp entries and row_map Views
-    graph = staticcrsgraph_type(tmp_entries, tmp_row_map);
+    graph = staticcrsgraph_type(entries_device, row_map_device);
   }
 
-  /// \brief Constructor that accepts a row map, column indices, and
-  ///   values.
-  ///
-  /// The matrix will store and use the row map, indices, and values
-  /// directly (by view, not by deep copy).
-  ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param nrows [in] The number of rows.
-  /// \param ncols [in] The number of columns.
-  /// \param annz [in] The number of entries.
-  /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
-  ///   data in each row).
-  /// \param cols [in/out] The column indices.
-  BsrMatrix(const std::string& /*label*/, const OrdinalType nrows,
-            const OrdinalType ncols, const size_type /*annz*/,
-            const values_type& vals, const row_map_type& rows,
-            const index_type& cols, const OrdinalType blockDimIn)
+/// \brief Constructor that accepts a row map, column indices, and
+///   values.
+///
+/// The matrix will store and use the row map, indices, and values
+/// directly (by view, not by deep copy).
+///
+/// \param label
+/// \param nrows [in] The number of rows.
+/// \param ncols [in] The number of columns.
+/// \param annz  [in] Filler for annz.
+/// \param vals [in/out] The entries.
+/// \param rows [in/out] The row map (containing the offsets to the
+///   data in each row).
+/// \param cols [in/out] The column indices.
+/// \param blockDimIn [in] The block dimensions.
+#if defined(DOXY)
+  BsrMatrix([[maybe_unused]] const std::string& label,
+#else
+  // Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81429.
+  BsrMatrix(const std::string& label [[maybe_unused]],
+#endif
+            const OrdinalType nrows, const OrdinalType ncols,
+            [[maybe_unused]] const size_type annz, const values_type& vals,
+            const row_map_type& rows, const index_type& cols,
+            const OrdinalType blockDimIn)
       : graph(cols, rows),
         values(vals),
         numCols_(ncols),
@@ -641,11 +688,10 @@ class BsrMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param[in] label  The sparse matrix's label.
-  /// \param[in] ncols  The number of columns.
-  /// \param[in] vals   The entries.
-  /// \param[in] graph_ The graph between the blocks.
-  /// \param[in] blockDimIn  The block size.
+  /// \param ncols [in]  The number of columns.
+  /// \param vals [in]   The entries.
+  /// \param graph_ [in] The graph between the blocks.
+  /// \param blockDimIn [in]  The block dimensions.
   BsrMatrix(const std::string& /*label*/, const OrdinalType& ncols,
             const values_type& vals, const staticcrsgraph_type& graph_,
             const OrdinalType& blockDimIn)
@@ -775,17 +821,19 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, sum the values into corresponding
   ///        block in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol  is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be summed
-  /// into ncol entries
-  /// \param[in] vals[] array containing 'block' of values
+  /// \param rowi   [in] is a block-row index
+  /// \param cols[] [in] are block colidxs within the block-row to be summed
+  ///               into ncol entries
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
+  /// \param vals[] [in] array containing 'block' of values
   ///        ncol*block_size*block_size entries
   ///        assume vals block is provided in 'LayoutRight' or 'Row Major'
   ///        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
   ///        1d array as [a b c d] Assume that each block is stored contiguously
   ///        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i
   ///        in [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType sumIntoValues(const OrdinalType rowi, const OrdinalType cols[],
                             const OrdinalType ncol, const ScalarType vals[],
@@ -797,17 +845,20 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, replace the values of corresponding
   ///        blocks in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be summed
+  /// \param rowi   [in]    is a block-row index
+  /// \param cols[] [in] are block colidxs within the block-row to be summed
   /// into ncol entries
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
   /// \param vals[] [in] array containing 'block' of values
-  //        ncol*block_size*block_size entries
-  //        assume vals block is provided in 'LayoutRight' or 'Row Major'
-  //        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
-  //        1d array as [a b c d] Assume that each block is stored contiguously
-  //        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i in
-  //        [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  ///               ncol*block_size*block_size entries
+  ///               assume vals block is provided in 'LayoutRight' or 'Row
+  ///               Major' format, that is e.g. 2x2 block [ a b ; c d ] provided
+  ///               as flattened 1d array as [a b c d] Assume that each block is
+  ///               stored contiguously in vals: [a b; c d] [e f; g h] -> [a b c
+  ///               d e f g h] If so, then i in [0, ncols) for cols[] maps to
+  ///               i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType replaceValues(const OrdinalType rowi, const OrdinalType cols[],
                             const OrdinalType ncol, const ScalarType vals[],
@@ -942,17 +993,21 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, operate on the values of corresponding
   ///        blocks in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be op-ed
+  /// \param op
+  /// \param rowi   [in]    is a block-row index
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
+  /// \param cols[] [in] are block colidxs within the block-row to be op-ed
   /// into ncol entries
   /// \param vals[] [in] array containing 'block' of values
-  //        ncol*block_size*block_size entries
-  //        assume vals block is provided in 'LayoutRight' or 'Row Major'
-  //        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
-  //        1d array as [a b c d] Assume that each block is stored contiguously
-  //        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i in
-  //        [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  ///               ncol*block_size*block_size entries
+  ///               assume vals block is provided in 'LayoutRight' or 'Row
+  ///               Major' format, that is e.g. 2x2 block [ a b ; c d ] provided
+  ///               as flattened 1d array as [a b c d] Assume that each block is
+  ///               stored contiguously in vals: [a b; c d] [e f; g h] -> [a b c
+  ///               d e f g h] If so, then i in [0, ncols) for cols[] maps to
+  ///               i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType operateValues(const BsrMatrix::valueOperation op,
                             const OrdinalType rowi, const OrdinalType cols[],
@@ -971,7 +1026,7 @@ class BsrMatrix {
       // + 1] (not global offset) colidx_ and values_ are already offset to the
       // beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if (blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max()) {
+      if (blk_offset != Kokkos::ArithTraits<ordinal_type>::max()) {
         ordinal_type offset_into_vals =
             i * block_size *
             block_size;  // stride == 1 assumed between elements

@@ -17,7 +17,10 @@
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
+#include <type_traits>
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include <rocm_version.h>
 #include "rocsparse/rocsparse.h"
 
 namespace KokkosSparse {
@@ -149,20 +152,31 @@ inline rocsparse_datatype rocsparse_compute_type<Kokkos::complex<double>>() {
   return rocsparse_datatype_f64_c;
 }
 
-template <typename Scalar>
-struct kokkos_to_rocsparse_type {
-  using type = Scalar;
+template <typename T, typename E = void>
+struct kokkos_to_rocsparse_type;
+
+// for floats, rocsparse uses c++ builtin types
+template <typename T>
+struct kokkos_to_rocsparse_type<T,
+                                std::enable_if_t<std::is_floating_point_v<T>>> {
+  using type = T;
 };
 
+// translate complex float
 template <>
 struct kokkos_to_rocsparse_type<Kokkos::complex<float>> {
   using type = rocsparse_float_complex;
 };
 
+// translate complex double
 template <>
 struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
   using type = rocsparse_double_complex;
 };
+
+// e.g. 5.4 -> 50400
+#define KOKKOSSPARSE_IMPL_ROCM_VERSION \
+  ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
 
 }  // namespace Impl
 

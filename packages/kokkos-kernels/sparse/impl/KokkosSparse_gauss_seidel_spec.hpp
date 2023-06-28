@@ -509,8 +509,5 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle, format, a_size_view_t_, a_lno_view_t,
       false, true>;
 
 #include <KokkosSparse_gauss_seidel_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_symbolic_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_numeric_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_gauss_seidel_apply_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

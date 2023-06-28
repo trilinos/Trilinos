@@ -24,38 +24,13 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_abs(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
-
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
-      ScalarB * [2],
-      typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typename AT::mag_type eps = AT::epsilon() * 10;
 
-  BaseTypeA b_x("X", N);
-  BaseTypeB b_y("Y", N);
-  BaseTypeB b_org_y("Org_Y", N);
-
-  ViewTypeA x                        = Kokkos::subview(b_x, Kokkos::ALL(), 0);
-  ViewTypeB y                        = Kokkos::subview(b_y, Kokkos::ALL(), 0);
-  typename ViewTypeA::const_type c_x = x;
-
-  typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-  typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y, Kokkos::ALL(), 0);
+  view_stride_adapter<ViewTypeA> x("X", N);
+  view_stride_adapter<ViewTypeB> y("Y", N);
+  view_stride_adapter<ViewTypeB> org_y("Org_Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -63,33 +38,34 @@ void impl_test_abs(int N) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
     Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(b_org_y, b_y);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
 
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   // Run with nonconst input
-  KokkosBlas::abs(y, x);
+  KokkosBlas::abs(y.d_view, x.d_view);
   // Copy result to host (h_y is subview of h_b_y)
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(h_y(i), AT::abs(h_x(i)), eps * AT::abs(h_x(i)));
+    EXPECT_NEAR_KK(y.h_view(i), AT::abs(x.h_view(i)),
+                   eps * AT::abs(x.h_view(i)));
   }
   // Run with const input
   // Reset output
-  Kokkos::deep_copy(b_y, b_org_y);
-  KokkosBlas::abs(y, c_x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  KokkosBlas::abs(y.d_view, x.d_view_const);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(h_y(i), AT::abs(h_x(i)), eps * AT::abs(h_x(i)));
+    EXPECT_NEAR_KK(y.h_view(i), AT::abs(x.h_view(i)),
+                   eps * AT::abs(x.h_view(i)));
   }
 }
 
@@ -97,26 +73,11 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_abs_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-
-  typename vfA_type::BaseType b_x("A", N, K);
-  typename vfB_type::BaseType b_y("B", N, K);
-  typename vfB_type::BaseType b_org_y("B", N, K);
-
-  ViewTypeA x = vfA_type::view(b_x);
-  ViewTypeB y = vfB_type::view(b_y);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-
-  typename h_vfA_type::BaseType h_b_x = Kokkos::create_mirror_view(b_x);
-  typename h_vfB_type::BaseType h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
-  typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
+  view_stride_adapter<ViewTypeA> x("X", N, K);
+  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -124,38 +85,38 @@ void impl_test_abs_mv(int N, int K) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
     Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(b_org_y, b_y);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
 
-  Kokkos::deep_copy(h_b_x, b_x);
-
-  typename ViewTypeA::const_type c_x = x;
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   typename AT::mag_type eps = AT::epsilon() * 10;
 
   // Test and verify non-const input
-  KokkosBlas::abs(y, x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  KokkosBlas::abs(y.d_view, x.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(h_y(i, j), AT::abs(h_x(i, j)), eps * AT::abs(h_x(i, j)));
+      EXPECT_NEAR_KK(y.h_view(i, j), AT::abs(x.h_view(i, j)),
+                     eps * AT::abs(x.h_view(i, j)));
     }
   }
   // Test and verify const input
   // Reset y
-  Kokkos::deep_copy(b_y, b_org_y);
-  KokkosBlas::abs(y, c_x);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  KokkosBlas::abs(y.d_view, x.d_view_const);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(h_y(i, j), AT::abs(h_x(i, j)), eps * AT::abs(h_x(i, j)));
+      EXPECT_NEAR_KK(y.h_view(i, j), AT::abs(x.h_view(i, j)),
+                     eps * AT::abs(x.h_view(i, j)));
     }
   }
 }
@@ -185,8 +146,7 @@ int test_abs() {
   // Test::impl_test_abs<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -229,8 +189,7 @@ int test_abs_mv() {
   // Test::impl_test_abs_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;

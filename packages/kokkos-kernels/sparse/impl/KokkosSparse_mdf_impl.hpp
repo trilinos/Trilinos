@@ -17,8 +17,22 @@
 #ifndef KOKKOSSPARSE_MDF_IMPL_HPP_
 #define KOKKOSSPARSE_MDF_IMPL_HPP_
 
+#include <Kokkos_Core.hpp>
+#include <type_traits>
+#include "Kokkos_ArithTraits.hpp"
+
 namespace KokkosSparse {
 namespace Impl {
+
+template <typename crs_matrix_type>
+struct MDF_types {
+  using scalar_type     = typename crs_matrix_type::value_type;
+  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
+  using scalar_mag_type = typename KAS::mag_type;
+  using values_mag_type = Kokkos::View<scalar_mag_type*, Kokkos::LayoutRight,
+                                       typename crs_matrix_type::device_type,
+                                       typename crs_matrix_type::memory_traits>;
+};
 
 template <class crs_matrix_type>
 struct MDF_count_lower {
@@ -54,27 +68,28 @@ struct MDF_discarded_fill_norm {
   using static_crs_graph_type = typename crs_matrix_type::StaticCrsGraphType;
   using col_ind_type =
       typename static_crs_graph_type::entries_type::non_const_type;
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
-  using scalar_type  = typename crs_matrix_type::value_type;
-  using KAS          = typename Kokkos::ArithTraits<scalar_type>;
-
-  const scalar_type zero = KAS::zero();
+  using values_type     = typename crs_matrix_type::values_type::non_const_type;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
+  using size_type       = typename crs_matrix_type::size_type;
+  using ordinal_type    = typename crs_matrix_type::ordinal_type;
+  using scalar_type     = typename crs_matrix_type::value_type;
+  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
+  using scalar_mag_type = typename KAS::mag_type;
+  using KAM             = typename Kokkos::ArithTraits<scalar_mag_type>;
 
   crs_matrix_type A, At;
   ordinal_type factorization_step;
   col_ind_type permutation;
 
-  values_type discarded_fill;
+  values_mag_type discarded_fill;
   col_ind_type deficiency;
   int verbosity;
 
   MDF_discarded_fill_norm(crs_matrix_type A_, crs_matrix_type At_,
                           ordinal_type factorization_step_,
                           col_ind_type permutation_,
-                          values_type discarded_fill_, col_ind_type deficiency_,
-                          int verbosity_)
+                          values_mag_type discarded_fill_,
+                          col_ind_type deficiency_, int verbosity_)
       : A(A_),
         At(At_),
         factorization_step(factorization_step_),
@@ -85,10 +100,11 @@ struct MDF_discarded_fill_norm {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type i) const {
-    ordinal_type rowIdx      = permutation(i);
-    scalar_type discard_norm = zero, diag_val = zero;
-    bool entryIsDiscarded       = true;
-    ordinal_type numFillEntries = 0;
+    ordinal_type rowIdx          = permutation(i);
+    scalar_mag_type discard_norm = KAM::zero();
+    scalar_type diag_val         = KAS::zero();
+    bool entryIsDiscarded        = true;
+    ordinal_type numFillEntries  = 0;
     for (size_type alphaIdx = At.graph.row_map(rowIdx);
          alphaIdx < At.graph.row_map(rowIdx + 1); ++alphaIdx) {
       ordinal_type fillRowIdx = At.graph.entries(alphaIdx);
@@ -125,13 +141,15 @@ struct MDF_discarded_fill_norm {
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx));
               if (verbosity > 1) {
-                KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-                    "Adding value A[%d,%d]=%f to discard norm of row %d\n",
-                    int(At.graph.entries(alphaIdx)),
-                    int(A.graph.entries(betaIdx)),
-                    KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
-                        KAS::abs(At.values(alphaIdx) * A.values(betaIdx)),
-                    int(rowIdx));
+                if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+                  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                      "Adding value A[%d,%d]=%f to discard norm of row %d\n",
+                      int(At.graph.entries(alphaIdx)),
+                      int(A.graph.entries(betaIdx)),
+                      KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
+                          KAS::abs(At.values(alphaIdx) * A.values(betaIdx)),
+                      int(rowIdx));
+                }
               }
             }
           }
@@ -139,25 +157,34 @@ struct MDF_discarded_fill_norm {
       } else if (fillRowIdx == rowIdx) {
         diag_val = At.values(alphaIdx);
         if (verbosity > 1) {
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-              "Row %d diagonal value dected, values(%d)=%f\n", int(rowIdx),
-              int(alphaIdx), At.values(alphaIdx));
+          if constexpr (std::is_arithmetic_v<scalar_type>) {
+            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                "Row %d diagonal value detected, values(%d)=%f\n", int(rowIdx),
+                int(alphaIdx), At.values(alphaIdx));
+          } else if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                "Row %d diagonal value detected, |values(%d)|=%f\n",
+                int(rowIdx), int(alphaIdx), KAS::abs(At.values(alphaIdx)));
+          }
         }
       }
     }
 
     // TODO add a check on `diag_val == zero`
-    discard_norm           = discard_norm / (diag_val * diag_val);
+    discard_norm           = discard_norm / KAS::abs(diag_val * diag_val);
     discarded_fill(rowIdx) = discard_norm;
     deficiency(rowIdx)     = numFillEntries;
-    if (verbosity > 0) {
-      const ordinal_type degree = ordinal_type(A.graph.row_map(rowIdx + 1) -
-                                               A.graph.row_map(rowIdx) - 1);
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "Row %d has discarded fill of %f, deficiency of %d and degree %d\n",
-          static_cast<int>(rowIdx),
-          static_cast<double>(KAS::sqrt(discard_norm)),
-          static_cast<int>(deficiency(rowIdx)), static_cast<int>(degree));
+
+    if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+      if (verbosity > 0) {
+        const ordinal_type degree = ordinal_type(A.graph.row_map(rowIdx + 1) -
+                                                 A.graph.row_map(rowIdx) - 1);
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "Row %d has discarded fill of %f, deficiency of %d and degree %d\n",
+            static_cast<int>(rowIdx),
+            static_cast<double>(KAM::sqrt(discard_norm)),
+            static_cast<int>(deficiency(rowIdx)), static_cast<int>(degree));
+      }
     }
   }
 
@@ -168,20 +195,21 @@ struct MDF_selective_discarded_fill_norm {
   using static_crs_graph_type = typename crs_matrix_type::StaticCrsGraphType;
   using col_ind_type =
       typename static_crs_graph_type::entries_type::non_const_type;
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
-  using scalar_type  = typename crs_matrix_type::value_type;
-  using KAS          = typename Kokkos::ArithTraits<scalar_type>;
-
-  const scalar_type zero = KAS::zero();
+  using values_type     = typename crs_matrix_type::values_type::non_const_type;
+  using size_type       = typename crs_matrix_type::size_type;
+  using ordinal_type    = typename crs_matrix_type::ordinal_type;
+  using scalar_type     = typename crs_matrix_type::value_type;
+  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
+  using scalar_mag_type = typename KAS::mag_type;
+  using KAM             = typename Kokkos::ArithTraits<scalar_mag_type>;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
 
   crs_matrix_type A, At;
   ordinal_type factorization_step;
   col_ind_type permutation;
   col_ind_type update_list;
 
-  values_type discarded_fill;
+  values_mag_type discarded_fill;
   col_ind_type deficiency;
   int verbosity;
 
@@ -189,7 +217,7 @@ struct MDF_selective_discarded_fill_norm {
                                     ordinal_type factorization_step_,
                                     col_ind_type permutation_,
                                     col_ind_type update_list_,
-                                    values_type discarded_fill_,
+                                    values_mag_type discarded_fill_,
                                     col_ind_type deficiency_, int verbosity_)
       : A(A_),
         At(At_),
@@ -202,10 +230,11 @@ struct MDF_selective_discarded_fill_norm {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type i) const {
-    ordinal_type rowIdx      = permutation(update_list(i));
-    scalar_type discard_norm = zero, diag_val = zero;
-    bool entryIsDiscarded       = true;
-    ordinal_type numFillEntries = 0;
+    ordinal_type rowIdx          = permutation(update_list(i));
+    scalar_mag_type discard_norm = KAM::zero();
+    scalar_type diag_val         = KAS::zero();
+    bool entryIsDiscarded        = true;
+    ordinal_type numFillEntries  = 0;
     for (size_type alphaIdx = At.graph.row_map(rowIdx);
          alphaIdx < At.graph.row_map(rowIdx + 1); ++alphaIdx) {
       ordinal_type fillRowIdx = At.graph.entries(alphaIdx);
@@ -242,14 +271,16 @@ struct MDF_selective_discarded_fill_norm {
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx));
               if (verbosity > 1) {
-                KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-                    "Adding value A[%d,%d]=%f to discard norm of row %d\n",
-                    static_cast<int>(At.graph.entries(alphaIdx)),
-                    static_cast<int>(A.graph.entries(betaIdx)),
-                    static_cast<double>(
-                        KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
-                        KAS::abs(At.values(alphaIdx) * A.values(betaIdx))),
-                    static_cast<int>(rowIdx));
+                if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+                  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                      "Adding value A[%d,%d]=%f to discard norm of row %d\n",
+                      static_cast<int>(At.graph.entries(alphaIdx)),
+                      static_cast<int>(A.graph.entries(betaIdx)),
+                      static_cast<double>(
+                          KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
+                          KAS::abs(At.values(alphaIdx) * A.values(betaIdx))),
+                      static_cast<int>(rowIdx));
+                }
               }
             }
           }
@@ -257,26 +288,36 @@ struct MDF_selective_discarded_fill_norm {
       } else if (fillRowIdx == rowIdx) {
         diag_val = At.values(alphaIdx);
         if (verbosity > 1) {
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-              "Row %d diagonal value dected, values(%d)=%f\n",
-              static_cast<int>(rowIdx), static_cast<int>(alphaIdx),
-              static_cast<double>(At.values(alphaIdx)));
+          if constexpr (std::is_arithmetic_v<scalar_type>) {
+            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                "Row %d diagonal value dected, values(%d)=%f\n",
+                static_cast<int>(rowIdx), static_cast<int>(alphaIdx),
+                static_cast<double>(At.values(alphaIdx)));
+          } else if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                "Row %d diagonal value dected, |values(%d)|=%f\n",
+                static_cast<int>(rowIdx), static_cast<int>(alphaIdx),
+                static_cast<double>(KAS::abs(At.values(alphaIdx))));
+          }
         }
       }
     }
 
     // TODO add a check on `diag_val == zero`
-    discard_norm           = discard_norm / (diag_val * diag_val);
+    discard_norm           = discard_norm / KAS::abs(diag_val * diag_val);
     discarded_fill(rowIdx) = discard_norm;
     deficiency(rowIdx)     = numFillEntries;
-    if (verbosity > 0) {
-      const ordinal_type degree = ordinal_type(A.graph.row_map(rowIdx + 1) -
-                                               A.graph.row_map(rowIdx) - 1);
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "Row %d has discarded fill of %f, deficiency of %d and degree %d\n",
-          static_cast<int>(rowIdx),
-          static_cast<double>(KAS::sqrt(discard_norm)),
-          static_cast<int>(deficiency(rowIdx)), static_cast<int>(degree));
+
+    if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+      if (verbosity > 0) {
+        const ordinal_type degree = ordinal_type(A.graph.row_map(rowIdx + 1) -
+                                                 A.graph.row_map(rowIdx) - 1);
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "Row %d has discarded fill of %f, deficiency of %d and degree %d\n",
+            static_cast<int>(rowIdx),
+            static_cast<double>(KAM::sqrt(discard_norm)),
+            static_cast<int>(deficiency(rowIdx)), static_cast<int>(degree));
+      }
     }
   }
 
@@ -289,23 +330,24 @@ struct MDF_select_row {
       entries_type::non_const_type;
   using row_map_type =
       typename crs_matrix_type::StaticCrsGraphType::row_map_type;
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
-  using scalar_type  = typename crs_matrix_type::value_type;
+  using size_type       = typename crs_matrix_type::size_type;
+  using ordinal_type    = typename crs_matrix_type::ordinal_type;
+  using scalar_type     = typename crs_matrix_type::value_type;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
 
   // type used to perform the reduction
   // do not confuse it with scalar_type!
   using value_type = typename crs_matrix_type::ordinal_type;
 
   value_type factorization_step;
-  values_type discarded_fill;
+  values_mag_type discarded_fill;
   col_ind_type deficiency;
   row_map_type row_map;
   col_ind_type permutation;
 
-  MDF_select_row(value_type factorization_step_, values_type discarded_fill_,
-                 col_ind_type deficiency_, row_map_type row_map_,
-                 col_ind_type permutation_)
+  MDF_select_row(value_type factorization_step_,
+                 values_mag_type discarded_fill_, col_ind_type deficiency_,
+                 row_map_type row_map_, col_ind_type permutation_)
       : factorization_step(factorization_step_),
         discarded_fill(discarded_fill_),
         deficiency(deficiency_),
@@ -399,10 +441,12 @@ struct MDF_factorize_row {
       row_map_type::non_const_type;
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
       entries_type::non_const_type;
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
-  using size_type    = typename crs_matrix_type::size_type;
-  using value_type   = typename crs_matrix_type::value_type;
+  using values_type     = typename crs_matrix_type::values_type::non_const_type;
+  using ordinal_type    = typename crs_matrix_type::ordinal_type;
+  using size_type       = typename crs_matrix_type::size_type;
+  using value_type      = typename crs_matrix_type::value_type;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
+  using value_mag_type  = typename values_mag_type::value_type;
 
   crs_matrix_type A, At;
 
@@ -415,7 +459,7 @@ struct MDF_factorize_row {
   values_type valuesU;
 
   col_ind_type permutation, permutation_inv;
-  values_type discarded_fill;
+  values_mag_type discarded_fill;
   col_ind_type factored;
   ordinal_type selected_row_idx, factorization_step;
 
@@ -426,7 +470,7 @@ struct MDF_factorize_row {
                     values_type valuesL_, row_map_type row_mapU_,
                     col_ind_type entriesU_, values_type valuesU_,
                     col_ind_type permutation_, col_ind_type permutation_inv_,
-                    values_type discarded_fill_, col_ind_type factored_,
+                    values_mag_type discarded_fill_, col_ind_type factored_,
                     ordinal_type selected_row_idx_,
                     ordinal_type factorization_step_, int verbosity_)
       : A(A_),
@@ -448,7 +492,7 @@ struct MDF_factorize_row {
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type /* idx */) const {
     const ordinal_type selected_row = permutation(selected_row_idx);
-    discarded_fill(selected_row)    = Kokkos::ArithTraits<value_type>::max();
+    discarded_fill(selected_row) = Kokkos::ArithTraits<value_mag_type>::max();
 
     // Swap entries in permutation vectors
     permutation(selected_row_idx)   = permutation(factorization_step);
@@ -481,32 +525,34 @@ struct MDF_factorize_row {
       }
     }
     row_mapU(factorization_step + 1) = U_entryIdx;
+    if constexpr (std::is_arithmetic_v<value_type>) {
+      if (verbosity > 0) {
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("Diagonal values of row %d is %f\n",
+                                      static_cast<int>(selected_row),
+                                      static_cast<double>(diag));
+      }
 
-    if (verbosity > 0) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("Diagonal values of row %d is %f\n",
-                                    static_cast<int>(selected_row),
-                                    static_cast<double>(diag));
-    }
-
-    if (verbosity > 2) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("U, row_map={ ");
-      for (ordinal_type rowIdx = 0; rowIdx < factorization_step + 1; ++rowIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
-                                      static_cast<int>(row_mapU(rowIdx)));
+      if (verbosity > 2) {
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("U, row_map={ ");
+        for (ordinal_type rowIdx = 0; rowIdx < factorization_step + 1;
+             ++rowIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
+                                        static_cast<int>(row_mapU(rowIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, entries={ ");
+        for (size_type entryIdx = row_mapU(0);
+             entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
+                                        static_cast<int>(entriesU(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
+        for (size_type entryIdx = row_mapU(0);
+             entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
+                                        static_cast<double>(valuesU(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
       }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, entries={ ");
-      for (size_type entryIdx = row_mapU(0);
-           entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
-                                      static_cast<int>(entriesU(entryIdx)));
-      }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
-      for (size_type entryIdx = row_mapU(0);
-           entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
-                                      static_cast<double>(valuesU(entryIdx)));
-      }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
 
     // Insert the lower part of the selected column of A
@@ -526,26 +572,28 @@ struct MDF_factorize_row {
     }
     row_mapL(factorization_step + 1) = L_entryIdx;
 
-    if (verbosity > 2) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "L(%d), [row_map(%d), row_map(%d)[ = [%d, %d[, entries={ ",
-          static_cast<int>(factorization_step),
-          static_cast<int>(factorization_step),
-          static_cast<int>(factorization_step + 1),
-          static_cast<int>(row_mapL(factorization_step)),
-          static_cast<int>(row_mapL(factorization_step + 1)));
-      for (size_type entryIdx = row_mapL(factorization_step);
-           entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
-                                      static_cast<int>(entriesL(entryIdx)));
+    if constexpr (std::is_arithmetic_v<value_type>) {
+      if (verbosity > 2) {
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "L(%d), [row_map(%d), row_map(%d)[ = [%d, %d[, entries={ ",
+            static_cast<int>(factorization_step),
+            static_cast<int>(factorization_step),
+            static_cast<int>(factorization_step + 1),
+            static_cast<int>(row_mapL(factorization_step)),
+            static_cast<int>(row_mapL(factorization_step + 1)));
+        for (size_type entryIdx = row_mapL(factorization_step);
+             entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ",
+                                        static_cast<int>(entriesL(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
+        for (size_type entryIdx = row_mapL(factorization_step);
+             entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
+                                        static_cast<double>(valuesL(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
       }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
-      for (size_type entryIdx = row_mapL(factorization_step);
-           entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
-                                      static_cast<double>(valuesL(entryIdx)));
-      }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
 
     // If this was the last row no need to update A and At!
@@ -599,13 +647,14 @@ struct MDF_factorize_row {
               if (A.graph.entries(entryIdx) == fillColIdx) {
                 A.values(entryIdx) -=
                     At.values(alphaIdx) * A.values(betaIdx) / diag_val;
-
-                if (verbosity > 1) {
-                  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-                      "A[%d, %d] -= %f\n", static_cast<int>(fillRowIdx),
-                      static_cast<int>(fillColIdx),
-                      static_cast<double>(At.values(alphaIdx) *
-                                          A.values(betaIdx) / diag_val));
+                if constexpr (std::is_arithmetic_v<value_type>) {
+                  if (verbosity > 1) {
+                    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                        "A[%d, %d] -= %f\n", static_cast<int>(fillRowIdx),
+                        static_cast<int>(fillColIdx),
+                        static_cast<double>(At.values(alphaIdx) *
+                                            A.values(betaIdx) / diag_val));
+                  }
                 }
               }
             }
@@ -624,19 +673,21 @@ struct MDF_factorize_row {
 
     factored(selected_row) = 1;
 
-    if (verbosity > 0) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in A: { ");
-      for (size_type entryIdx = 0; entryIdx < A.nnz(); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
-                                      static_cast<double>(A.values(entryIdx)));
+    if constexpr (std::is_arithmetic_v<value_type>) {
+      if (verbosity > 0) {
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in A: { ");
+        for (size_type entryIdx = 0; entryIdx < A.nnz(); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+              "%f ", static_cast<double>(A.values(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in At: { ");
+        for (size_type entryIdx = 0; entryIdx < At.nnz(); ++entryIdx) {
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+              "%f ", static_cast<double>(At.values(entryIdx)));
+        }
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
       }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in At: { ");
-      for (size_type entryIdx = 0; entryIdx < At.nnz(); ++entryIdx) {
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ",
-                                      static_cast<double>(At.values(entryIdx)));
-      }
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
   }  // operator()
 

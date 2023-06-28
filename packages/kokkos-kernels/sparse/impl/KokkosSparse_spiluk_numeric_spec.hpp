@@ -31,10 +31,10 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
+template <class ExecutionSpace, class KernelHandle, class ARowMapType,
+          class AEntriesType, class AValuesType, class LRowMapType,
+          class LEntriesType, class LValuesType, class URowMapType,
+          class UEntriesType, class UValuesType>
 struct spiluk_numeric_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -47,6 +47,7 @@ struct spiluk_numeric_eti_spec_avail {
     MEM_SPACE_TYPE)                                                            \
   template <>                                                                  \
   struct spiluk_numeric_eti_spec_avail<                                        \
+      EXEC_SPACE_TYPE,                                                         \
       KokkosKernels::Experimental::KokkosKernelsHandle<                        \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,            \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
@@ -99,18 +100,18 @@ namespace Impl {
 // Unification layer
 /// \brief Implementation of KokkosSparse::spiluk_numeric
 
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType,
+template <class ExecutionSpace, class KernelHandle, class ARowMapType,
+          class AEntriesType, class AValuesType, class LRowMapType,
+          class LEntriesType, class LValuesType, class URowMapType,
+          class UEntriesType, class UValuesType,
           bool tpl_spec_avail = spiluk_numeric_tpl_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value,
+              ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
+              AValuesType, LRowMapType, LEntriesType, LValuesType, URowMapType,
+              UEntriesType, UValuesType>::value,
           bool eti_spec_avail = spiluk_numeric_eti_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value>
+              ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
+              AValuesType, LRowMapType, LEntriesType, LValuesType, URowMapType,
+              UEntriesType, UValuesType>::value>
 struct SPILUK_NUMERIC {
   static void spiluk_numeric(
       KernelHandle *handle,
@@ -119,18 +120,30 @@ struct SPILUK_NUMERIC {
       const AValuesType &A_values, LRowMapType &L_row_map,
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
       UEntriesType &U_entries, UValuesType &U_values);
+  static void spiluk_numeric_streams(
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<ARowMapType> &A_row_map_v,
+      const std::vector<AEntriesType> &A_entries_v,
+      const std::vector<AValuesType> &A_values_v,
+      const std::vector<LRowMapType> &L_row_map_v,
+      const std::vector<LEntriesType> &L_entries_v,
+      std::vector<LValuesType> &L_values_v,
+      const std::vector<URowMapType> &U_row_map_v,
+      const std::vector<UEntriesType> &U_entries_v,
+      std::vector<UValuesType> &U_values_v);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of spiluk_numeric
 // Unification layer
-template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
-struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
-                      LRowMapType, LEntriesType, LValuesType, URowMapType,
-                      UEntriesType, UValuesType, false,
+template <class ExecutionSpace, class KernelHandle, class ARowMapType,
+          class AEntriesType, class AValuesType, class LRowMapType,
+          class LEntriesType, class LValuesType, class URowMapType,
+          class UEntriesType, class UValuesType>
+struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
+                      AValuesType, LRowMapType, LEntriesType, LValuesType,
+                      URowMapType, UEntriesType, UValuesType, false,
                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void spiluk_numeric(
       KernelHandle *handle,
@@ -145,6 +158,30 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
     Experimental::iluk_numeric(*spiluk_handle, A_row_map, A_entries, A_values,
                                L_row_map, L_entries, L_values, U_row_map,
                                U_entries, U_values);
+  }
+
+  static void spiluk_numeric_streams(
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<ARowMapType> &A_row_map_v,
+      const std::vector<AEntriesType> &A_entries_v,
+      const std::vector<AValuesType> &A_values_v,
+      const std::vector<LRowMapType> &L_row_map_v,
+      const std::vector<LEntriesType> &L_entries_v,
+      std::vector<LValuesType> &L_values_v,
+      const std::vector<URowMapType> &U_row_map_v,
+      const std::vector<UEntriesType> &U_entries_v,
+      std::vector<UValuesType> &U_values_v) {
+    std::vector<typename KernelHandle::SPILUKHandleType *> spiluk_handle_v(
+        execspace_v.size());
+    for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
+      spiluk_handle_v[i] = handle_v[i].get_spiluk_handle();
+    }
+
+    Experimental::iluk_numeric_streams(execspace_v, spiluk_handle_v,
+                                       A_row_map_v, A_entries_v, A_values_v,
+                                       L_row_map_v, L_entries_v, L_values_v,
+                                       U_row_map_v, U_entries_v, U_values_v);
   }
 };
 
@@ -163,6 +200,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
   extern template struct SPILUK_NUMERIC<                                    \
+      EXEC_SPACE_TYPE,                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -208,6 +246,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
   template struct SPILUK_NUMERIC<                                           \
+      EXEC_SPACE_TYPE,                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -250,6 +289,5 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       false, true>;
 
 #include <KokkosSparse_spiluk_numeric_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spiluk_numeric_eti_spec_decl.hpp>
 
 #endif
