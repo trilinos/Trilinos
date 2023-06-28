@@ -398,6 +398,17 @@ public:
     static void setJacobianInv( Data<PointScalar,DeviceType> & jacobianInv,
                                const Data<PointScalar,DeviceType> & jacobian);
     
+    /** \brief  Multiplies the Jacobian with shape (C,P,D,D) by the reciprocals of the determinants, with shape (C,P), entrywise.
+
+        \param  jacobianDividedByDet   [out]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobian   [in]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobianDetInv          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDividedByDet( Data<PointScalar,DeviceType> & jacobianDividedByDet,
+                                        const Data<PointScalar,DeviceType> & jacobian,
+                                        const Data<PointScalar,DeviceType> & jacobianDetInv);
+    
     //============================================================================================//
     //                                                                                            //
     //                     Node information                                                       //

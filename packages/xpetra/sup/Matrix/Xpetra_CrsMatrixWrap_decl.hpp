@@ -135,6 +135,10 @@ public:
 
   CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null);
 
+  CrsMatrixWrap(const RCP<const CrsGraph>& graph, 
+                typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, 
+                const RCP<ParameterList>& paramList = Teuchos::null);
+
   //! Destructor
   virtual ~CrsMatrixWrap();
 

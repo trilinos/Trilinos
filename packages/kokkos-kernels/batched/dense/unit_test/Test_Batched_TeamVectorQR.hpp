@@ -78,7 +78,7 @@ struct Functor_TestBatchedTeamVectorQR {
     member.team_barrier();
 
     /// xx = bb;
-    TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, bb, xx);
+    TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, bb, xx);
     member.team_barrier();
 
     /// xx = Q^{T}xx;
@@ -110,7 +110,7 @@ template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename WorkViewType, typename AlgoTagType>
 void impl_test_batched_qr(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
   const value_type one(1);
   /// randomized input testing views
   MatrixViewType a("a", N, BlkSize, BlkSize);

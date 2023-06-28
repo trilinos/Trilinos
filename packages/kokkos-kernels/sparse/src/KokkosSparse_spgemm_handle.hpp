@@ -385,10 +385,8 @@ class SPGEMMHandle {
     num_used_colors  = num_used_colors_;
   }
 
-  /**
-   * \brief sets the result nnz size.
-   * \param result_nnz_size: size of the output matrix.
-   */
+  /// \brief sets the result nnz size.
+  /// \param result_nnz_size_ size of the output matrix.
   void set_c_nnz(size_type result_nnz_size_) {
     this->result_nnz_size = result_nnz_size_;
   }
@@ -778,6 +776,70 @@ class SPGEMMHandle {
   }
 
   bool get_compression_step() { return is_compression_single_step; }
+
+ private:
+  // An SpGEMM handle can be reused for multiple products C = A*B, but only if
+  // the sparsity patterns of A and B do not change. Enforce this (in debug
+  // builds only) by recording hashes of the graphs, and then checking they
+  // match in later calls.
+  bool computedInputHashes = false;
+  uint32_t a_graph_hash    = 0U;
+  uint32_t b_graph_hash    = 0U;
+
+ public:
+  template <typename a_rowptrs_t, typename a_entries_t, typename b_rowptrs_t,
+            typename b_entries_t>
+  bool checkMatrixIdentitiesSymbolic(const a_rowptrs_t &a_rowptrsIn,
+                                     const a_entries_t &a_entriesIn,
+                                     const b_rowptrs_t &b_rowptrsIn,
+                                     const b_entries_t &b_entriesIn) {
+#ifndef NDEBUG
+    // If this is the first symbolic call, assign the handle's CRS pointers to
+    // check against later
+    if (!computedInputHashes) {
+      a_graph_hash = KokkosKernels::Impl::hashView(a_rowptrsIn) ^
+                     KokkosKernels::Impl::hashView(a_entriesIn);
+      b_graph_hash = KokkosKernels::Impl::hashView(b_rowptrsIn) ^
+                     KokkosKernels::Impl::hashView(b_entriesIn);
+      computedInputHashes = true;
+    } else {
+      if (a_graph_hash != (KokkosKernels::Impl::hashView(a_rowptrsIn) ^
+                           KokkosKernels::Impl::hashView(a_entriesIn)))
+        return false;
+      if (b_graph_hash != (KokkosKernels::Impl::hashView(b_rowptrsIn) ^
+                           KokkosKernels::Impl::hashView(b_entriesIn)))
+        return false;
+    }
+#else
+    (void)a_rowptrsIn;
+    (void)a_entriesIn;
+    (void)b_rowptrsIn;
+    (void)b_entriesIn;
+#endif
+    return true;
+  }
+
+  template <typename a_rowptrs_t, typename a_entries_t, typename b_rowptrs_t,
+            typename b_entries_t>
+  bool checkMatrixIdentitiesNumeric(const a_rowptrs_t &a_rowptrsIn,
+                                    const a_entries_t &a_entriesIn,
+                                    const b_rowptrs_t &b_rowptrsIn,
+                                    const b_entries_t &b_entriesIn) {
+#ifndef NDEBUG
+    if (a_graph_hash != (KokkosKernels::Impl::hashView(a_rowptrsIn) ^
+                         KokkosKernels::Impl::hashView(a_entriesIn)))
+      return false;
+    if (b_graph_hash != (KokkosKernels::Impl::hashView(b_rowptrsIn) ^
+                         KokkosKernels::Impl::hashView(b_entriesIn)))
+      return false;
+#else
+    (void)a_rowptrsIn;
+    (void)a_entriesIn;
+    (void)b_rowptrsIn;
+    (void)b_entriesIn;
+#endif
+    return true;
+  }
 };
 
 inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {

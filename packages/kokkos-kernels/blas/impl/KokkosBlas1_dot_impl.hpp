@@ -30,9 +30,9 @@ namespace Impl {
 /// \tparam YVector Type of the second vector y; 1-D View
 /// \tparam SizeType Type of the row index used in the dot product.
 ///   For best performance, use int instead of size_t here.
-template <class AV, class XVector, class YVector, typename SizeType>
+template <class execution_space, class AV, class XVector, class YVector,
+          typename SizeType>
 struct DotFunctor {
-  typedef typename XVector::execution_space execution_space;
   typedef SizeType size_type;
   typedef typename AV::non_const_value_type avalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<avalue_type> IPT;
@@ -43,8 +43,9 @@ struct DotFunctor {
 
   DotFunctor(const XVector& x, const YVector& y) : m_x(x), m_y(y) {}
 
-  void run(const char* label, AV result) {
-    Kokkos::RangePolicy<execution_space, size_type> policy(0, m_x.extent(0));
+  void run(const char* label, const execution_space& space, AV result) {
+    Kokkos::RangePolicy<execution_space, size_type> policy(space, 0,
+                                                           m_x.extent(0));
     Kokkos::parallel_reduce(label, policy, *this, result);
   }
 
@@ -56,7 +57,7 @@ struct DotFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::Details::ArithTraits<value_type>::zero();
+    update = Kokkos::ArithTraits<value_type>::zero();
   }
 
   KOKKOS_INLINE_FUNCTION void join(value_type& update,

@@ -29,26 +29,28 @@ struct Parameters {
   int multi_color_scale;
   int shmemsize;
   int team_size;
-  int use_dynamic_scheduling;
-  int verbose;
+  bool use_dynamic_scheduling;
+  bool verbose;
   int spgemm_step;
   int vector_size;
-  int check_output;
+  bool check_output;
   int mkl_sort_option;
   int mkl_keep_output;
-  int calculate_read_write_cost;
-  char *coloring_input_file;
-  char *coloring_output_file;
+  bool calculate_read_write_cost;
+  std::string coloring_input_file;
+  std::string coloring_output_file;
 
   int minhashscale;
   int use_threads;
   int use_openmp;
   int use_cuda;
   int use_hip;
+  int use_sycl;
+  int use_openmptarget;
   int use_serial;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
-  char *a_mtx_bin_file, *b_mtx_bin_file, *c_mtx_bin_file;
+  std::string a_mtx_bin_file, b_mtx_bin_file, c_mtx_bin_file;
   bool compression2step;
   int left_lower_triangle, right_lower_triangle;
   int left_sort, right_sort;
@@ -62,7 +64,7 @@ struct Parameters {
   int cache_flush;
   double first_level_hash_cut_off;
   double compression_cut_off;
-  size_t MaxColDenseAcc;
+  int MaxColDenseAcc;
   // 0 - no flush
   // 1 - soft flush
   // 2 - hard flush with rand.
@@ -74,24 +76,26 @@ struct Parameters {
     multi_color_scale         = 1;
     shmemsize                 = 16128;
     team_size                 = -1;
-    use_dynamic_scheduling    = 0;
-    verbose                   = 0;
+    use_dynamic_scheduling    = false;
+    verbose                   = false;
     spgemm_step               = '0';
     vector_size               = -1;
-    check_output              = 0;
+    check_output              = false;
     mkl_sort_option           = 7;
     mkl_keep_output           = 1;
-    calculate_read_write_cost = 0;
-    coloring_input_file       = NULL;
-    coloring_output_file      = NULL;
+    calculate_read_write_cost = false;
+    coloring_input_file       = "";
+    coloring_output_file      = "";
     minhashscale              = 1;
     use_threads               = 0;
     use_openmp                = 0;
     use_cuda                  = 0;
     use_hip                   = 0;
+    use_sycl                  = 0;
+    use_openmptarget          = 0;
     use_serial                = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
-    a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
+    a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = "";
     compression2step                                 = true;
 
     left_lower_triangle  = 0;

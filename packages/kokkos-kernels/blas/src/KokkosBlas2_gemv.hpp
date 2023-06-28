@@ -16,7 +16,7 @@
 #ifndef KOKKOSBLAS2_GEMV_HPP_
 #define KOKKOSBLAS2_GEMV_HPP_
 
-/// \file Kokkos_Blas2_MV.hpp
+/// \file KokkosBlas2_gemv.hpp
 /// \brief BLAS 2 kernels specifically optimized for typical
 ///   Tpetra::MultiVector use cases.
 
@@ -49,23 +49,47 @@ namespace KokkosBlas {
 /// \param x [in] Input vector, as a 1-D Kokkos::View
 /// \param beta [in] Input coefficient of y
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
-template <class AViewType, class XViewType, class YViewType>
-void gemv(const typename AViewType::execution_space& space, const char trans[],
+template <class execution_space, class AViewType, class XViewType,
+          class YViewType>
+void gemv(const execution_space& space, const char trans[],
           typename AViewType::const_value_type& alpha, const AViewType& A,
           const XViewType& x, typename YViewType::const_value_type& beta,
           const YViewType& y) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::gemv: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
+                "KokkosBlas::gemv: AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
-                "XViewType must be a Kokkos::View.");
+                "KokkosBlas::gemv: XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
-                "YViewType must be a Kokkos::View.");
+                "KokkosBlas::gemv: YViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
+                "KokkosBlas::gemv: AViewType must have rank 2.");
   static_assert(static_cast<int>(XViewType::rank) == 1,
-                "XViewType must have rank 1.");
+                "KokkosBlas::gemv: XViewType must have rank 1.");
   static_assert(static_cast<int>(YViewType::rank) == 1,
-                "YViewType must have rank 1.");
+                "KokkosBlas::gemv: YViewType must have rank 1.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: AViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: XViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: YViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
+                                 typename AViewType::memory_space>::assignable,
+      "KokkosBlas::gemv: AViewType must be assignable to YViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
+                                 typename XViewType::memory_space>::assignable,
+      "KokkosBlas::gemv: XViewType must be assignable to YViewType");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
@@ -175,9 +199,7 @@ template <class AViewType, class XViewType, class YViewType>
 void gemv(const char trans[], typename AViewType::const_value_type& alpha,
           const AViewType& A, const XViewType& x,
           typename YViewType::const_value_type& beta, const YViewType& y) {
-  const typename AViewType::execution_space space =
-      typename AViewType::execution_space();
-  gemv(space, trans, alpha, A, x, beta, y);
+  gemv(typename AViewType::execution_space{}, trans, alpha, A, x, beta, y);
 }
 
 namespace Experimental {

@@ -725,26 +725,27 @@ struct Reverse_Map_Functor {
   }
 };
 
-/**
- * \brief Utility function to obtain a reverse map given a map.
- * Input is a map with the number of elements within the map.
- * forward_map[c] = i, where c is a forward element and forward_map has a size
- * of num_forward_elements. i is the value that c is mapped in the forward map,
- * and the range of that is num_reverse_elements. Output is the reverse_map_xadj
- * and reverse_map_adj such that, all c, forward_map[c] = i, will appear in
- * reverse_map_adj[ reverse_map_xadj[i]: reverse_map_xadj[i+1]) \param:
- * num_forward_elements: the number of elements in the forward map, the size of
- * the forward map. \param: num_reverse_elements: the number of elements that
- * forward map is mapped to. It is the value of max i. \param: forward_map:
- * input forward_map, where forward_map[c] = i. \param: reverse_map_xadj:
- * reverse map xadj, that is it will hold the beginning and end indices on
- * reverse_map_adj such that all values mapped to i will be [
- * reverse_map_xadj[i]: reverse_map_xadj[i+1]) its size will be
- * num_reverse_elements + 1. NO NEED TO INITIALIZE. \param: reverse_map_adj:
- * reverse map adj, holds the values of reverse maps. Its size is
- * num_forward_elements.
- *
- */
+/// \brief Utility function to obtain a reverse map given a map.
+/// Input is a map with the number of elements within the map.
+/// forward_map[c] = i, where c is a forward element and forward_map has a size
+/// of num_forward_elements. i is the value that c is mapped in the forward map,
+/// and the range of that is num_reverse_elements. Output is the
+/// reverse_map_xadj and reverse_map_adj such that, all c, forward_map[c] = i,
+/// will appear in reverse_map_adj[ reverse_map_xadj[i]: reverse_map_xadj[i+1])
+
+/// \param num_forward_elements the number of elements in the forward map,
+///        the size of the forward map.
+/// \param num_reverse_elements the number of elements that
+///        forward map is mapped to. It is the value of max i.
+/// \param forward_map input forward_map, where forward_map[c] = i.
+/// \param reverse_map_xadj
+///          reverse map xadj, that is it will hold the beginning and
+///          end indices on reverse_map_adj such that all values mapped
+///          to i will be [reverse_map_xadj[i]: reverse_map_xadj[i+1])
+//           its size will be num_reverse_elements + 1.
+///          NO NEED TO INITIALIZE.
+/// \param reverse_map_adj reverse map adj, holds the values of reverse
+///        maps. Its size is num_forward_elements.
 template <typename forward_array_type, typename reverse_array_type,
           typename MyExecSpace>
 void kk_create_reverse_map(
@@ -906,25 +907,13 @@ struct ColorChecker {
   }
 };
 
-/**
- * \brief given a graph and a coloring function returns true or false if
- distance-1 coloring is valid or not.
- * \param num_rows: num rows in input graph
- * \param num_cols: num cols in input graph
- * \param xadj: row pointers of the input graph
- * \param adj: column indices of the input graph
- * \param t_xadj: output, the row indices of the output graph. MUST BE
- INITIALIZED WITH ZEROES.
-
- * \param vector_size: suggested vector size, optional. if -1, kernel will
- decide.
- * \param suggested_team_size: suggested team size, optional. if -1, kernel will
- decide.
- * \param team_work_chunk_size: suggested work size of a team, optional. if -1,
- kernel will decide.
- * \param use_dynamic_scheduling: whether to use dynamic scheduling. Default is
- true.
- */
+/// \brief given a graph and a coloring function returns true or false if
+///        distance-1 coloring is valid or not.
+///
+/// \param num_rows num rows in input graph
+/// \param xadj     row pointers of the input graph
+/// \param adj      column indices of the input graphw
+/// \param v_colors The colors at each vertex in the graph.
 template <typename in_row_view_t, typename in_nnz_view_t,
           typename in_color_view_t, typename MyExecSpace>
 inline size_t kk_is_d1_coloring_valid(

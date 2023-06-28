@@ -28,7 +28,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class RMV, class XMV, int rank = RMV::rank>
+template <class execution_space, class RMV, class XMV, int rank = RMV::rank>
 struct abs_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -45,6 +45,7 @@ struct abs_eti_spec_avail {
 #define KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                 \
   struct abs_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                             \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<const SCALAR*, LAYOUT,                                     \
@@ -65,6 +66,7 @@ struct abs_eti_spec_avail {
                                           MEM_SPACE)                        \
   template <>                                                               \
   struct abs_eti_spec_avail<                                                \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
@@ -83,20 +85,22 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class RMV, class XMV, int rank = RMV::rank,
-          bool tpl_spec_avail = abs_tpl_spec_avail<RMV, XMV>::value,
-          bool eti_spec_avail = abs_eti_spec_avail<RMV, XMV>::value>
+template <
+    class execution_space, class RMV, class XMV, int rank = RMV::rank,
+    bool tpl_spec_avail = abs_tpl_spec_avail<execution_space, RMV, XMV>::value,
+    bool eti_spec_avail = abs_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct Abs {
-  static void abs(const RMV& R, const XMV& X);
+  static void abs(const execution_space& space, const RMV& R, const XMV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Abs for single vectors (1-D Views).
-template <class RMV, class XMV>
-struct Abs<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  typedef typename XMV::size_type size_type;
+template <class execution_space, class RMV, class XMV>
+struct Abs<execution_space, RMV, XMV, 1, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  using size_type = typename XMV::size_type;
 
-  static void abs(const RMV& R, const XMV& X) {
+  static void abs(const execution_space& space, const RMV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Abs<1-D>: RMV is not a Kokkos::View.");
@@ -125,20 +129,21 @@ struct Abs<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      V_Abs_Generic<RMV, XMV, index_type>(R, X);
+      V_Abs_Generic<execution_space, RMV, XMV, index_type>(space, R, X);
     } else {
       typedef std::int64_t index_type;
-      V_Abs_Generic<RMV, XMV, index_type>(R, X);
+      V_Abs_Generic<execution_space, RMV, XMV, index_type>(space, R, X);
     }
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <class RMV, class XMV>
-struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  typedef typename XMV::size_type size_type;
+template <class execution_space, class RMV, class XMV>
+struct Abs<execution_space, RMV, XMV, 2, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  using size_type = typename XMV::size_type;
 
-  static void abs(const RMV& R, const XMV& X) {
+  static void abs(const execution_space& space, const RMV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Abs<2-D>: RMV is not a Kokkos::View.");
@@ -169,10 +174,10 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      MV_Abs_Generic<RMV, XMV, index_type>(R, X);
+      MV_Abs_Generic<execution_space, RMV, XMV, index_type>(space, R, X);
     } else {
       typedef std::int64_t index_type;
-      MV_Abs_Generic<RMV, XMV, index_type>(R, X);
+      MV_Abs_Generic<execution_space, RMV, XMV, index_type>(space, R, X);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -191,6 +196,7 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_ABS_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct Abs<                                                \
+      EXEC_SPACE,                                                            \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<const SCALAR*, LAYOUT,                                    \
@@ -205,6 +211,7 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_ABS_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template struct Abs<                                                       \
+      EXEC_SPACE,                                                            \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<const SCALAR*, LAYOUT,                                    \
@@ -222,6 +229,7 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_ABS_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,        \
                                          MEM_SPACE)                         \
   extern template struct Abs<                                               \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
@@ -237,6 +245,7 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_ABS_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,        \
                                          MEM_SPACE)                         \
   template struct Abs<                                                      \
+      EXEC_SPACE,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
@@ -245,7 +254,5 @@ struct Abs<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       2, false, true>;
 
 #include <KokkosBlas1_abs_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_abs_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_abs_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
