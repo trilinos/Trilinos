@@ -94,10 +94,8 @@ SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE
 # Set up C++ language standard selection
 include(SetTrilinosCxxStandard)
 
-# Define empty macro to allow Kokkos and KokkosKernels to keep working until
-# updated versions after Kokkos 4.1 are snapshotted in.
-macro(tribits_exclude_autotools_files)
-endmacro()
+# Some CMake and TriBiTS tweaks just for Trilinos
+include(TrilinosTweaks)
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
