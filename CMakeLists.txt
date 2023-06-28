@@ -70,19 +70,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 PROJECT(${PROJECT_NAME} NONE)
 
 # Set up to use ccache
-if($ENV{CCACHE_NODISABLE})
-  find_program(CCACHE_PROGRAM ccache)
-  if(CCACHE_PROGRAM)
-      if(CMAKE_GENERATOR STREQUAL "Xcode")
-        message(FATAL_ERROR "ccache not supported with Xcode in Trilinos")
-      else()
-        set(CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PROGRAM}")
-        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-      endif()
-  else()
-      message(FATAL_ERROR "ccache requested but not found")
-  endif()
-endif()
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/UseCCache.cmake")
 
 # Set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
