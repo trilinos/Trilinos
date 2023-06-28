@@ -147,6 +147,8 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
       MPI_INFO_NULL /*info*/, 0 /*reorder*/, &mpixComm);
 
   // allocate send/recv bufs
+  // displs are in elements, so the displs are correct since MPI_BYTE 
+  // matches type in bufs, alltoallv calls as calculated above
   std::vector<char> sbuf(sdispl), exp(rdispl), act(rdispl);
 
   // fill send buf
@@ -188,27 +190,27 @@ static MPI_Comm tpetra_default_comm_as_mpi_comm() {
   }
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, AllToAllV_nothing) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, false, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, AllToAllV_nothing_null) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_null) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, true, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, AllToAllV_nothing_same) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_same) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, false, true, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, AllToAllV_nothing_nullsame) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_nullsame) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, true, true, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, AllToAllV_random) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_random) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_random(comm, 42, out, success);
 }

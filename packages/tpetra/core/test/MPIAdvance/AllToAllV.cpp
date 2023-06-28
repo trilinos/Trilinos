@@ -108,6 +108,8 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   MPIX_Comm_init(&mpixComm, comm);
 
   // allocate send/recv bufs
+  // displs are in elements, so the displs are correct since MPI_BYTE 
+  // matches type in bufs, alltoallv calls as calculated above
   std::vector<char> sbuf(sdispl), exp(rdispl), act(rdispl);
 
   // fill send buf
