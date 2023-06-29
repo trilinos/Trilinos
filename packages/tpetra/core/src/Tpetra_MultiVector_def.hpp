@@ -262,7 +262,7 @@ namespace { // (anonymous)
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
                const std::pair<size_t, size_t>& rowRng,
-               const Kokkos::Impl::ALL_t& colRng)
+               const Kokkos::ALL_t& colRng)
 
   {
     // The bug we saw below should be harder to trigger here.
@@ -272,7 +272,7 @@ namespace { // (anonymous)
   template<class WrappedDualViewType>
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
-               const Kokkos::Impl::ALL_t& rowRng,
+               const Kokkos::ALL_t& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
     using DualViewType = typename WrappedDualViewType::DVT;
