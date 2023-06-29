@@ -22,7 +22,7 @@
     Passes if it does not crash or error out
 */
 void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
-                  bool nullTypes, Teuchos::FancyOStream &out, bool &success) {
+                  bool emptyTypes, Teuchos::FancyOStream &out, bool &success) {
 
   int size, rank;
   MPI_Comm_size(comm, &size);
@@ -39,7 +39,7 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
   std::vector<MPI_Aint> nbrrecvdispls(size, 0);
   
   MPI_Datatype type;
-  if (nullTypes) {
+  if (emptyTypes) {
     MPI_Type_contiguous(0, MPI_BYTE, &type);
     MPI_Type_commit(&type);
   } else {
@@ -86,7 +86,7 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
   // we just require that we got this far
   success = true;
 
-  if (nullTypes) {
+  if (emptyTypes) {
     MPI_Type_free(&type);
   }
 }
@@ -266,7 +266,7 @@ TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing) {
   test_nothing(comm, false, false, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nulltypes) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_emptytypes) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, false, false, true, out, success);
 }
@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_null) {
   test_nothing(comm, true, false, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullnulltypes) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullemptytypes) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, true, false, true, out, success);
 }
@@ -286,7 +286,7 @@ TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_same) {
   test_nothing(comm, false, true, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_samenulltypes) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_sameemptytypes) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, false, true, true, out, success);
 }
@@ -296,7 +296,7 @@ TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullsame) {
   test_nothing(comm, true, true, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullsamenulltypes) {
+TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullsameemptytypes) {
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
   test_nothing(comm, true, true, true, out, success);
 }
