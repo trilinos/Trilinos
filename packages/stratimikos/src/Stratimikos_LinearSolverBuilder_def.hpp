@@ -178,7 +178,7 @@ void LinearSolverBuilder<Scalar>::setPreconditioningStrategyFactory(
       validPfNames_(), precStrategyName);
   if (existingNameIdx >= 0) {
     validPfNames_[existingNameIdx] = precStrategyName;
-    pfArray_[existingNameIdx] = precStrategyFactory;
+    pfArray_[existingNameIdx-1] = precStrategyFactory; // We offset by -1 since "None" is first!
   }
   else {
     validPfNames_.push_back(precStrategyName);
