@@ -2150,6 +2150,7 @@ public:
     row_ptrs_device_view_type rowPtrsPacked_dev_;
     mutable row_ptrs_host_view_type rowPtrsPacked_host_;
 
+    //! Whether the unpacked and packed row pointers hvae identical contents
     bool packedUnpackedRowPtrsMatch_ = false;
 
   protected:
