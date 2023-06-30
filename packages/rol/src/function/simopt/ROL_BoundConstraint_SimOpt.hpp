@@ -107,6 +107,25 @@ public:
       BoundConstraint<Real>::deactivate();
   }
 
+  /** \brief Constructor for single bound constraint.
+
+      Construct a SimOpt bound constraint with either a bound on
+      the Sim or Opt variables.
+      @param[in]     bnd is the bound constraint.
+      @param[in]     x is a Sim variable if optBnd, an Opt variable otherwise.
+      @param[in]     optBnd is true if the bound is on the Opt variable.
+  */
+  BoundConstraint_SimOpt(const Ptr<BoundConstraint<Real>> &bnd,
+                         const Vector<Real> &x,
+                         bool optBnd = true)
+    : bnd1_(optBnd ? makePtr<BoundConstraint<Real>>(x) : bnd),
+      bnd2_(optBnd ? bnd : makePtr<BoundConstraint<Real>>(x)) {
+    if ( bnd1_->isActivated() || bnd2_->isActivated() )
+      BoundConstraint<Real>::activate();
+    else
+      BoundConstraint<Real>::deactivate();
+  }
+
   /** \brief Project optimization variables onto the bounds.
 
       This function implements the projection of \f$x\f$ onto the bounds, i.e.,
