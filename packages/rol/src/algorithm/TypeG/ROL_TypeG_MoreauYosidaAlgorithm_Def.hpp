@@ -67,16 +67,19 @@ MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list, const Pt
   updateMultiplier_  = steplist.get("Update Multiplier",                   true);
   print_             = steplist.sublist("Subproblem").get("Print History", false);
   // Set parameters for step subproblem
-  Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",  oem8);
-  Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance", oem8);
-  int maxit = steplist.sublist("Subproblem").get("Iteration Limit",       1000);
-  Real stol = oem6*std::min(gtol,ctol);
-  list_.sublist("Status Test").set("Gradient Tolerance",   gtol);
-  list_.sublist("Status Test").set("Constraint Tolerance", ctol);
-  list_.sublist("Status Test").set("Step Tolerance",       stol);
-  list_.sublist("Status Test").set("Iteration Limit",      maxit);
+  Real gtol   = steplist.sublist("Subproblem").get("Optimality Tolerance",    oem8);
+  Real ctol   = steplist.sublist("Subproblem").get("Feasibility Tolerance",   oem8);
+  int maxit   = steplist.sublist("Subproblem").get("Iteration Limit",         1000);
+  bool reltol = steplist.sublist("Subproblem").get("Use Relative Tolerances", true);
+  Real stol   = oem6*std::min(gtol,ctol);
+  list_.sublist("Status Test").set("Gradient Tolerance",      gtol);
+  list_.sublist("Status Test").set("Constraint Tolerance",    ctol);
+  list_.sublist("Status Test").set("Step Tolerance",          stol);
+  list_.sublist("Status Test").set("Iteration Limit",         maxit);
+  list_.sublist("Status Test").set("Use Relative Tolerances", reltol);
   // Get step name from parameterlist
   stepname_ = steplist.sublist("Subproblem").get("Step Type","Augmented Lagrangian");
+  list_.sublist("Step").set("Type",stepname_);
 
   // Output settings
   verbosity_    = list.sublist("General").get("Output Level", 0);
@@ -208,10 +211,8 @@ void MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
     updateState(x,emul,myobj,bnd,econ,*pwa,*dwa);
 
     // Update multipliers
-    if (updatePenalty_) {
-      state_->searchSize *= tau_;
-      state_->searchSize  = std::min(state_->searchSize,maxPenalty_);
-    }
+    if (updatePenalty_)
+      state_->searchSize = std::min(tau_*state_->searchSize,maxPenalty_);
     myobj.updateMultipliers(state_->searchSize,x);
 
     // Update Output
