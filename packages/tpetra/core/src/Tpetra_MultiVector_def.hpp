@@ -318,7 +318,7 @@ namespace { // (anonymous)
     // method yet, but its Views do.
     // NOTE: dv.stride() returns a vector of length one
     // more than its rank
-    size_t strides[WrappedOrNotDualViewType::t_dev::Rank+1];
+    size_t strides[WrappedOrNotDualViewType::t_dev::rank+1];
     dv.stride(strides);
     const size_t LDA = strides[1];
     const size_t numRows = dv.extent (0);
