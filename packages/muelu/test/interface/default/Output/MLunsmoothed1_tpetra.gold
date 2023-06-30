@@ -7,6 +7,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 1
 Build (MueLu::TentativePFactory)
@@ -40,6 +41,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 2
 Build (MueLu::TentativePFactory)
@@ -75,6 +77,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 3
 Build (MueLu::TentativePFactory)
@@ -110,6 +113,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 4
 Build (MueLu::TentativePFactory)

@@ -135,6 +135,9 @@ namespace MueLu {
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
 
+    // Do we want an Ifpack2 apply timer?
+    precList->set("timer for apply", this->IsPrint(Timings));
+
     if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
        !precList->isParameter("partitioner: local parts")) {
       LO matrixBlockSize = 1;

@@ -8,6 +8,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -67,6 +68,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -126,6 +128,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3

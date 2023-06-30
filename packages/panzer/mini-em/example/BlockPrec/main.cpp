@@ -238,7 +238,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       if (dt <= 0.) {
         if (mesh_pl.get<std::string>("Source") == "Exodus File" || meshFile != "") {
           RCP<Teuchos::ParameterList> input_pl = rcp(new Teuchos::ParameterList(mesh_pl.sublist("Exodus File")));
-          dt = input_pl->get<double>("dt");
+          if (input_pl->isType<double>("dt"))
+            dt = input_pl->get<double>("dt");
+          if (input_pl->isType<int>("num time steps"))
+            numTimeSteps = input_pl->get<int>("num time steps");
+          if (input_pl->isType<double>("final time"))
+            finalTime = input_pl->get<double>("final time");
         } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") {
           Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
           dt = pamgen_pl.get<double>("dt");
