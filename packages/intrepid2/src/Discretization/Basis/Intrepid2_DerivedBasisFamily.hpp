@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -85,7 +84,7 @@ namespace Intrepid2
    
    At present, only hypercube topologies (line, quadrilateral, hexahedron) are supported, but other topologies will be supported in the future.
   */
-  template<class LineBasisHGRAD, class LineBasisHVOL, class TriangleBasisFamily = EmptyBasisFamily, class TetrahedronBasisFamily = EmptyBasisFamily>
+  template<class LineBasisHGRAD, class LineBasisHVOL, class TriangleBasisFamily = EmptyBasisFamily, class TetrahedronBasisFamily = EmptyBasisFamily, class PyramidBasisFamily = EmptyBasisFamily>
   class DerivedBasisFamily
   {
   public:
@@ -130,6 +129,13 @@ namespace Intrepid2
     using HCURL_WEDGE = Basis_Derived_HCURL_WEDGE<HGRAD_TRI, HCURL_TRI, HGRAD_LINE, HVOL_LINE>;
     using HDIV_WEDGE  = Basis_Derived_HDIV_WEDGE < HDIV_TRI, HVOL_TRI,  HGRAD_LINE, HVOL_LINE>;
     using HVOL_WEDGE  = Basis_Derived_HVOL_WEDGE < HVOL_TRI, HVOL_LINE>;
+    
+    
+    // pyramid bases
+    using HGRAD_PYR = typename PyramidBasisFamily::HGRAD;
+    using HCURL_PYR = typename PyramidBasisFamily::HCURL;
+    using HDIV_PYR  = typename PyramidBasisFamily::HDIV;
+    using HVOL_PYR  = typename PyramidBasisFamily::HVOL;
   };
   
   /** \brief  Factory method for line bases in the given family.
@@ -386,6 +392,26 @@ namespace Intrepid2
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_WEDGE(polyOrder_xy, polyOrder_z, pointType));
       case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder_xy, polyOrder_z, pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_WEDGE(polyOrder_xy, polyOrder_z, pointType));
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
+    }
+  }
+
+  /** \brief  Factory method for pyramid bases in the given family.
+      \param [in] fs          - the function space for the basis.
+      \param [in] polyOrder   - the polynomial order of the basis.
+      \param [in] pointType   - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getPyramidBasis(Intrepid2::EFunctionSpace fs, ordinal_type polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    switch (fs)
+    {
+//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_PYR (polyOrder, pointType));
+//      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_PYR(polyOrder, pointType));
+//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_PYR (polyOrder, pointType));
+      case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_PYR(polyOrder, pointType));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
