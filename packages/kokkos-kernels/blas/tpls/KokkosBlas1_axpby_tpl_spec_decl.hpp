@@ -43,7 +43,7 @@ namespace Impl {
 #define KOKKOSBLAS1_DAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)              \
   template <class ExecSpace>                                                   \
   struct Axpby<                                                                \
-      double,                                                                  \
+      ExecSpace, double,                                                       \
       Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       double,                                                                  \
@@ -60,8 +60,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         YV;                                                                    \
                                                                                \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,            \
-                      const YV& Y) {                                           \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X,    \
+                      const BV& beta, const YV& Y) {                           \
       Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,double]");     \
       if ((X.extent(0) < INT_MAX) && (beta == 1.0)) {                          \
         axpby_print_specialization<AV, XV, BV, YV>();                          \
@@ -69,8 +69,8 @@ namespace Impl {
         int one = 1;                                                           \
         HostBlas<double>::axpy(N, alpha, X.data(), one, Y.data(), one);        \
       } else                                                                   \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(         \
-            alpha, X, beta, Y);                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                      \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -78,7 +78,7 @@ namespace Impl {
 #define KOKKOSBLAS1_SAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)             \
   template <class ExecSpace>                                                  \
   struct Axpby<                                                               \
-      float,                                                                  \
+      ExecSpace, float,                                                       \
       Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       float,                                                                  \
@@ -95,8 +95,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
         YV;                                                                   \
                                                                               \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,           \
-                      const YV& Y) {                                          \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X,   \
+                      const BV& beta, const YV& Y) {                          \
       Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,float]");     \
       if ((X.extent(0) < INT_MAX) && (beta == 1.0f)) {                        \
         axpby_print_specialization<AV, XV, BV, YV>();                         \
@@ -104,94 +104,94 @@ namespace Impl {
         int one = 1;                                                          \
         HostBlas<float>::axpy(N, alpha, X.data(), one, Y.data(), one);        \
       } else                                                                  \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(        \
-            alpha, X, beta, Y);                                               \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                     \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);               \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };
 
-#define KOKKOSBLAS1_ZAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)         \
-  template <class ExecSpace>                                              \
-  struct Axpby<Kokkos::complex<double>,                                   \
-               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,       \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,          \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-               Kokkos::complex<double>,                                   \
-               Kokkos::View<Kokkos::complex<double>*, LAYOUT,             \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,          \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-               1, true, ETI_SPEC_AVAIL> {                                 \
-    typedef Kokkos::complex<double> AV;                                   \
-    typedef Kokkos::complex<double> BV;                                   \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,          \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >        \
-        XV;                                                               \
-    typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT,                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >        \
-        YV;                                                               \
-                                                                          \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,       \
-                      const YV& Y) {                                      \
-      Kokkos::Profiling::pushRegion(                                      \
-          "KokkosBlas::axpby[TPL_BLAS,complex<double>]");                 \
-      if ((X.extent(0) < INT_MAX) && (beta == 1.0f)) {                    \
-        axpby_print_specialization<AV, XV, BV, YV>();                     \
-        int N                                = X.extent(0);               \
-        int one                              = 1;                         \
-        const std::complex<double> alpha_val = alpha;                     \
-        HostBlas<std::complex<double> >::axpy(                            \
-            N, alpha_val,                                                 \
-            reinterpret_cast<const std::complex<double>*>(X.data()), one, \
-            reinterpret_cast<std::complex<double>*>(Y.data()), one);      \
-      } else                                                              \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(    \
-            alpha, X, beta, Y);                                           \
-      Kokkos::Profiling::popRegion();                                     \
-    }                                                                     \
+#define KOKKOSBLAS1_ZAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)           \
+  template <class ExecSpace>                                                \
+  struct Axpby<ExecSpace, Kokkos::complex<double>,                          \
+               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,         \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               Kokkos::complex<double>,                                     \
+               Kokkos::View<Kokkos::complex<double>*, LAYOUT,               \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               1, true, ETI_SPEC_AVAIL> {                                   \
+    typedef Kokkos::complex<double> AV;                                     \
+    typedef Kokkos::complex<double> BV;                                     \
+    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,            \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XV;                                                                 \
+    typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT,                  \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YV;                                                                 \
+                                                                            \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X, \
+                      const BV& beta, const YV& Y) {                        \
+      Kokkos::Profiling::pushRegion(                                        \
+          "KokkosBlas::axpby[TPL_BLAS,complex<double>]");                   \
+      if ((X.extent(0) < INT_MAX) && (beta == 1.0f)) {                      \
+        axpby_print_specialization<AV, XV, BV, YV>();                       \
+        int N                                = X.extent(0);                 \
+        int one                              = 1;                           \
+        const std::complex<double> alpha_val = alpha;                       \
+        HostBlas<std::complex<double> >::axpy(                              \
+            N, alpha_val,                                                   \
+            reinterpret_cast<const std::complex<double>*>(X.data()), one,   \
+            reinterpret_cast<std::complex<double>*>(Y.data()), one);        \
+      } else                                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                   \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);             \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
-#define KOKKOSBLAS1_CAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)        \
-  template <class ExecSpace>                                             \
-  struct Axpby<Kokkos::complex<float>,                                   \
-               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,       \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,         \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-               Kokkos::complex<float>,                                   \
-               Kokkos::View<Kokkos::complex<float>*, LAYOUT,             \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,         \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-               1, true, ETI_SPEC_AVAIL> {                                \
-    typedef Kokkos::complex<float> AV;                                   \
-    typedef Kokkos::complex<float> BV;                                   \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,          \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,            \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >       \
-        XV;                                                              \
-    typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT,                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,            \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >       \
-        YV;                                                              \
-                                                                         \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,      \
-                      const YV& Y) {                                     \
-      Kokkos::Profiling::pushRegion(                                     \
-          "KokkosBlas::axpby[TPL_BLAS,complex<float>]");                 \
-      if ((X.extent(0) < INT_MAX) && (beta == 1.0f)) {                   \
-        axpby_print_specialization<AV, XV, BV, YV>();                    \
-        int N                               = X.extent(0);               \
-        int one                             = 1;                         \
-        const std::complex<float> alpha_val = alpha;                     \
-        HostBlas<std::complex<float> >::axpy(                            \
-            N, alpha_val,                                                \
-            reinterpret_cast<const std::complex<float>*>(X.data()), one, \
-            reinterpret_cast<std::complex<float>*>(Y.data()), one);      \
-      } else                                                             \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(   \
-            alpha, X, beta, Y);                                          \
-      Kokkos::Profiling::popRegion();                                    \
-    }                                                                    \
+#define KOKKOSBLAS1_CAXPBY_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)           \
+  template <class ExecSpace>                                                \
+  struct Axpby<ExecSpace, Kokkos::complex<float>,                           \
+               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,          \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               Kokkos::complex<float>,                                      \
+               Kokkos::View<Kokkos::complex<float>*, LAYOUT,                \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               1, true, ETI_SPEC_AVAIL> {                                   \
+    typedef Kokkos::complex<float> AV;                                      \
+    typedef Kokkos::complex<float> BV;                                      \
+    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,             \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XV;                                                                 \
+    typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT,                   \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YV;                                                                 \
+                                                                            \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X, \
+                      const BV& beta, const YV& Y) {                        \
+      Kokkos::Profiling::pushRegion(                                        \
+          "KokkosBlas::axpby[TPL_BLAS,complex<float>]");                    \
+      if ((X.extent(0) < INT_MAX) && (beta == 1.0f)) {                      \
+        axpby_print_specialization<AV, XV, BV, YV>();                       \
+        int N                               = X.extent(0);                  \
+        int one                             = 1;                            \
+        const std::complex<float> alpha_val = alpha;                        \
+        HostBlas<std::complex<float> >::axpy(                               \
+            N, alpha_val,                                                   \
+            reinterpret_cast<const std::complex<float>*>(X.data()), one,    \
+            reinterpret_cast<std::complex<float>*>(Y.data()), one);         \
+      } else                                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                   \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);             \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
 KOKKOSBLAS1_DAXPBY_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
@@ -225,7 +225,7 @@ namespace Impl {
 #define KOKKOSBLAS1_DAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)            \
   template <class ExecSpace>                                                   \
   struct Axpby<                                                                \
-      double,                                                                  \
+      ExecSpace, double,                                                       \
       Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       double,                                                                  \
@@ -243,8 +243,8 @@ namespace Impl {
         YV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,            \
-                      const YV& Y) {                                           \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X,    \
+                      const BV& beta, const YV& Y) {                           \
       Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,double]");   \
       const size_type numElems = X.extent(0);                                  \
       if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0)) {     \
@@ -253,10 +253,14 @@ namespace Impl {
         constexpr int one = 1;                                                 \
         KokkosBlas::Impl::CudaBlasSingleton& s =                               \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-        cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one);        \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasSetStream(s.handle, space.cuda_stream()));                   \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one));   \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));         \
       } else                                                                   \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(         \
-            alpha, X, beta, Y);                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                      \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -264,7 +268,7 @@ namespace Impl {
 #define KOKKOSBLAS1_SAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)           \
   template <class ExecSpace>                                                  \
   struct Axpby<                                                               \
-      float,                                                                  \
+      ExecSpace, float,                                                       \
       Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       float,                                                                  \
@@ -282,8 +286,8 @@ namespace Impl {
         YV;                                                                   \
     typedef typename XV::size_type size_type;                                 \
                                                                               \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,           \
-                      const YV& Y) {                                          \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X,   \
+                      const BV& beta, const YV& Y) {                          \
       Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,float]");   \
       const size_type numElems = X.extent(0);                                 \
       if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0f)) {   \
@@ -292,101 +296,112 @@ namespace Impl {
         constexpr int one = 1;                                                \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one);       \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
+            cublasSetStream(s.handle, space.cuda_stream()));                  \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
+            cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one));  \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));        \
       } else                                                                  \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(        \
-            alpha, X, beta, Y);                                               \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                     \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);               \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };
 
-#define KOKKOSBLAS1_ZAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)          \
-  template <class ExecSpace>                                                 \
-  struct Axpby<Kokkos::complex<double>,                                      \
-               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,          \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-               Kokkos::complex<double>,                                      \
-               Kokkos::View<Kokkos::complex<double>*, LAYOUT,                \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-               1, true, ETI_SPEC_AVAIL> {                                    \
-    typedef Kokkos::complex<double> AV;                                      \
-    typedef Kokkos::complex<double> BV;                                      \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,             \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        XV;                                                                  \
-    typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT,                   \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        YV;                                                                  \
-    typedef typename XV::size_type size_type;                                \
-                                                                             \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,          \
-                      const YV& Y) {                                         \
-      Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::axpby[TPL_CUBLAS,complex<double>]");                  \
-      const size_type numElems = X.extent(0);                                \
-      if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0f)) {  \
-        axpby_print_specialization<AV, XV, BV, YV>();                        \
-        const int N       = static_cast<int>(numElems);                      \
-        constexpr int one = 1;                                               \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                             \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
-        cublasZaxpy(s.handle, N,                                             \
-                    reinterpret_cast<const cuDoubleComplex*>(&alpha),        \
-                    reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
-                    reinterpret_cast<cuDoubleComplex*>(Y.data()), one);      \
-      } else                                                                 \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(       \
-            alpha, X, beta, Y);                                              \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+#define KOKKOSBLAS1_ZAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)         \
+  template <class ExecSpace>                                                \
+  struct Axpby<ExecSpace, Kokkos::complex<double>,                          \
+               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,         \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               Kokkos::complex<double>,                                     \
+               Kokkos::View<Kokkos::complex<double>*, LAYOUT,               \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               1, true, ETI_SPEC_AVAIL> {                                   \
+    typedef Kokkos::complex<double> AV;                                     \
+    typedef Kokkos::complex<double> BV;                                     \
+    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,            \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XV;                                                                 \
+    typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT,                  \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YV;                                                                 \
+    typedef typename XV::size_type size_type;                               \
+                                                                            \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X, \
+                      const BV& beta, const YV& Y) {                        \
+      Kokkos::Profiling::pushRegion(                                        \
+          "KokkosBlas::axpby[TPL_CUBLAS,complex<double>]");                 \
+      const size_type numElems = X.extent(0);                               \
+      if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0f)) { \
+        axpby_print_specialization<AV, XV, BV, YV>();                       \
+        const int N       = static_cast<int>(numElems);                     \
+        constexpr int one = 1;                                              \
+        KokkosBlas::Impl::CudaBlasSingleton& s =                            \
+            KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
+            cublasSetStream(s.handle, space.cuda_stream()));                \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZaxpy(                           \
+            s.handle, N, reinterpret_cast<const cuDoubleComplex*>(&alpha),  \
+            reinterpret_cast<const cuDoubleComplex*>(X.data()), one,        \
+            reinterpret_cast<cuDoubleComplex*>(Y.data()), one));            \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));      \
+      } else                                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                   \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);             \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
-#define KOKKOSBLAS1_CAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)          \
-  template <class ExecSpace>                                                 \
-  struct Axpby<Kokkos::complex<float>,                                       \
-               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,           \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-               Kokkos::complex<float>,                                       \
-               Kokkos::View<Kokkos::complex<float>*, LAYOUT,                 \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-               1, true, ETI_SPEC_AVAIL> {                                    \
-    typedef Kokkos::complex<float> AV;                                       \
-    typedef Kokkos::complex<float> BV;                                       \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,              \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        XV;                                                                  \
-    typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT,                    \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        YV;                                                                  \
-    typedef typename XV::size_type size_type;                                \
-                                                                             \
-    static void axpby(const AV& alpha, const XV& X, const BV& beta,          \
-                      const YV& Y) {                                         \
-      Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::axpby[TPL_CUBLAS,complex<float>]");                   \
-      const size_type numElems = X.extent(0);                                \
-      if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0f)) {  \
-        axpby_print_specialization<AV, XV, BV, YV>();                        \
-        const int N       = static_cast<int>(numElems);                      \
-        constexpr int one = 1;                                               \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                             \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
-        cublasCaxpy(s.handle, N, reinterpret_cast<const cuComplex*>(&alpha), \
-                    reinterpret_cast<const cuComplex*>(X.data()), one,       \
-                    reinterpret_cast<cuComplex*>(Y.data()), one);            \
-      } else                                                                 \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(       \
-            alpha, X, beta, Y);                                              \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+#define KOKKOSBLAS1_CAXPBY_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)         \
+  template <class ExecSpace>                                                \
+  struct Axpby<ExecSpace, Kokkos::complex<float>,                           \
+               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,          \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               Kokkos::complex<float>,                                      \
+               Kokkos::View<Kokkos::complex<float>*, LAYOUT,                \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+               1, true, ETI_SPEC_AVAIL> {                                   \
+    typedef Kokkos::complex<float> AV;                                      \
+    typedef Kokkos::complex<float> BV;                                      \
+    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,             \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XV;                                                                 \
+    typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT,                   \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YV;                                                                 \
+    typedef typename XV::size_type size_type;                               \
+                                                                            \
+    static void axpby(const ExecSpace& space, const AV& alpha, const XV& X, \
+                      const BV& beta, const YV& Y) {                        \
+      Kokkos::Profiling::pushRegion(                                        \
+          "KokkosBlas::axpby[TPL_CUBLAS,complex<float>]");                  \
+      const size_type numElems = X.extent(0);                               \
+      if ((numElems < static_cast<size_type>(INT_MAX)) && (beta == 1.0f)) { \
+        axpby_print_specialization<AV, XV, BV, YV>();                       \
+        const int N       = static_cast<int>(numElems);                     \
+        constexpr int one = 1;                                              \
+        KokkosBlas::Impl::CudaBlasSingleton& s =                            \
+            KokkosBlas::Impl::CudaBlasSingleton::singleton();               \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
+            cublasSetStream(s.handle, space.cuda_stream()));                \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasCaxpy(                           \
+            s.handle, N, reinterpret_cast<const cuComplex*>(&alpha),        \
+            reinterpret_cast<const cuComplex*>(X.data()), one,              \
+            reinterpret_cast<cuComplex*>(Y.data()), one));                  \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));      \
+      } else                                                                \
+        Axpby<ExecSpace, AV, XV, BV, YV, YV::rank, false,                   \
+              ETI_SPEC_AVAIL>::axpby(space, alpha, X, beta, Y);             \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
 KOKKOSBLAS1_DAXPBY_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)

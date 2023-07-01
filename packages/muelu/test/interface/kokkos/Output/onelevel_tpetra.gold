@@ -1,7 +1,9 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
+ timer for apply = 0
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

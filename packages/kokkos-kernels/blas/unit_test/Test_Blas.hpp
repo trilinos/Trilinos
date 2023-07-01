@@ -61,6 +61,7 @@
 
 // Blas 2
 #include "Test_Blas2_gemv.hpp"
+#include "Test_Blas2_ger.hpp"
 
 // Serial Blas 2
 #include "Test_Blas2_serial_gemv.hpp"

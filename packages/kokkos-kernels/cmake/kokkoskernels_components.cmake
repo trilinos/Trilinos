@@ -44,6 +44,12 @@ KOKKOSKERNELS_ADD_OPTION(
         BOOL
         "Whether to build the graph component. Default: OFF"
 )
+KOKKOSKERNELS_ADD_OPTION(
+       "ENABLE_COMPONENT_ODE"
+        OFF
+        BOOL
+        "Whether to build the ode component. Default: OFF"
+)
 
 
 # Graph depends on everything else because it depends
@@ -70,6 +76,7 @@ IF (KokkosKernels_ENABLE_ALL_COMPONENTS)
   SET(KokkosKernels_ENABLE_COMPONENT_BLAS ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_SPARSE ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_GRAPH ON CACHE BOOL "" FORCE)
+  SET(KokkosKernels_ENABLE_COMPONENT_ODE ON CACHE BOOL "" FORCE)
 ENDIF()
 
 # KOKKOSKERNELS_ALL_COMPONENTS_ENABLED says whether all components are on,
@@ -79,7 +86,8 @@ ENDIF()
 IF (    KokkosKernels_ENABLE_COMPONENT_BATCHED 
     AND KokkosKernels_ENABLE_COMPONENT_BLAS
     AND KokkosKernels_ENABLE_COMPONENT_GRAPH 
-    AND KokkosKernels_ENABLE_COMPONENT_SPARSE)
+    AND KokkosKernels_ENABLE_COMPONENT_SPARSE
+    AND KokkosKernels_ENABLE_COMPONENT_ODE)
   SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED ON CACHE BOOL "" FORCE)
 ELSE()
   SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED OFF CACHE BOOL "" FORCE)

@@ -81,7 +81,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using value_type      = typename ViewType::value_type;
-  using ats             = Kokkos::Details::ArithTraits<value_type>;
+  using ats             = Kokkos::ArithTraits<value_type>;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5);

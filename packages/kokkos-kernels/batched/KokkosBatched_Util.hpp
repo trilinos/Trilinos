@@ -69,13 +69,12 @@ struct is_vector : public std::false_type {};
 
 template <typename Ta, typename Tb>
 struct is_same_mag_type {
-  static const bool is_specialized =
-      (Kokkos::Details::ArithTraits<Ta>::is_specialized &&
-       Kokkos::Details::ArithTraits<Tb>::is_specialized);
+  static const bool is_specialized = (Kokkos::ArithTraits<Ta>::is_specialized &&
+                                      Kokkos::ArithTraits<Tb>::is_specialized);
 
   static const bool is_mag_type_same =
-      std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
-                   typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
+      std::is_same<typename Kokkos::ArithTraits<Ta>::mag_type,
+                   typename Kokkos::ArithTraits<Tb>::mag_type>::value;
 
   static const bool value = is_specialized && is_mag_type_same;
 };
@@ -625,6 +624,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
                                             const Trans::NoTranspose) {
   return subview_wrapper(v, i1, i2, i3, layout_tag);
 }
+#if KOKKOS_VERSION < 40099
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
                                             Kokkos::Impl::ALL_t i2,
@@ -635,6 +635,17 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
 
   return transpose_2d_view(sv_nt, layout_tag);
 }
+#else
+template <class ViewType, class IdxType1>
+KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
+                                            Kokkos::ALL_t i2, Kokkos::ALL_t i3,
+                                            const BatchLayout::Left &layout_tag,
+                                            const Trans::Transpose) {
+  auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+  return transpose_2d_view(sv_nt, layout_tag);
+}
+#endif
 template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
                                             IdxType2 i2, IdxType3 i3,
@@ -658,6 +669,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
     const BatchLayout::Right &layout_tag, const Trans::NoTranspose &) {
   return subview_wrapper(v, i1, i2, i3, layout_tag);
 }
+#if KOKKOS_VERSION < 40099
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(
     ViewType v, IdxType1 i1, Kokkos::Impl::ALL_t i2, Kokkos::Impl::ALL_t i3,
@@ -666,6 +678,16 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
 
   return transpose_2d_view(sv_nt, layout_tag);
 }
+#else
+template <class ViewType, class IdxType1>
+KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+    ViewType v, IdxType1 i1, Kokkos::ALL_t i2, Kokkos::ALL_t i3,
+    const BatchLayout::Right &layout_tag, const Trans::Transpose &) {
+  auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+  return transpose_2d_view(sv_nt, layout_tag);
+}
+#endif
 template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(
     ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,

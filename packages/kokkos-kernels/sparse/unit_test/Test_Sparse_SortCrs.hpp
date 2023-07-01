@@ -32,9 +32,19 @@
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 
+namespace SortCrsTest {
+enum : int {
+  Instance,      // Passing in an instance, and deducing template args
+  ExplicitType,  // Using default instance, but specifying type with template
+                 // arg
+  ImplicitType   // Using default instance, and deducing type based on view
+};
+}
+
 template <typename exec_space>
 void testSortCRS(default_lno_t numRows, default_lno_t numCols,
-                 default_size_type nnz, bool doValues, bool doStructInterface) {
+                 default_size_type nnz, bool doValues, bool doStructInterface,
+                 int howExecSpecified) {
   using scalar_t  = default_scalar;
   using lno_t     = default_lno_t;
   using size_type = default_size_type;
@@ -42,9 +52,6 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols,
   using device_t  = Kokkos::Device<exec_space, mem_space>;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
-  using rowmap_t  = typename crsMat_t::row_map_type;
-  using entries_t = typename crsMat_t::index_type;
-  using values_t  = typename crsMat_t::values_type;
   // Create a random matrix on device
   // IMPORTANT: kk_generate_sparse_matrix does not sort the rows, if it did this
   // wouldn't test anything
@@ -89,17 +96,52 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols,
   // call the actual sort routine being tested
   if (doValues) {
     if (doStructInterface) {
-      KokkosSparse::sort_crs_matrix(A);
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_matrix(exec_space(), A);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType: KokkosSparse::sort_crs_matrix(A);
+      }
     } else {
-      KokkosSparse::sort_crs_matrix<exec_space, rowmap_t, entries_t, values_t>(
-          A.graph.row_map, A.graph.entries, A.values);
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_matrix(exec_space(), A.graph.row_map,
+                                        A.graph.entries, A.values);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_crs_matrix<exec_space>(A.graph.row_map,
+                                                    A.graph.entries, A.values);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_matrix(A.graph.row_map, A.graph.entries,
+                                        A.values);
+      }
     }
   } else {
     if (doStructInterface) {
-      KokkosSparse::sort_crs_graph(A.graph);
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_graph(exec_space(), A.graph);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType: KokkosSparse::sort_crs_graph(A.graph);
+      }
     } else {
-      KokkosSparse::sort_crs_graph<exec_space, rowmap_t, entries_t>(
-          A.graph.row_map, A.graph.entries);
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_graph(exec_space(), A.graph.row_map,
+                                       A.graph.entries);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_crs_graph<exec_space>(A.graph.row_map,
+                                                   A.graph.entries);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_graph(A.graph.row_map, A.graph.entries);
+      }
     }
   }
   // Copy to host and compare
@@ -166,7 +208,8 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
 }
 
 template <typename exec_space>
-void testSortAndMerge() {
+void testSortAndMerge(bool justGraph, int howExecSpecified,
+                      bool doStructInterface, int testCase) {
   using size_type = default_size_type;
   using lno_t     = default_lno_t;
   using scalar_t  = default_scalar;
@@ -174,109 +217,303 @@ void testSortAndMerge() {
   using device_t  = Kokkos::Device<exec_space, mem_space>;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
+  using graph_t   = typename crsMat_t::staticcrsgraph_type;
   using rowmap_t  = typename crsMat_t::row_map_type::non_const_type;
   using entries_t = typename crsMat_t::index_type;
   using values_t  = typename crsMat_t::values_type;
   using Kokkos::HostSpace;
   using Kokkos::MemoryTraits;
   using Kokkos::Unmanaged;
-  // Create a small CRS matrix on host
-  std::vector<size_type> inRowmap = {0, 4, 4, 5, 7, 10};
-  std::vector<lno_t> inEntries    = {
-      4, 3, 5, 3,  // row 0
-                   // row 1 has no entries
-      6,           // row 2
-      2, 2,        // row 3
-      0, 1, 2      // row 4
-  };
-  // note: choosing values that can be represented exactly by float
-  std::vector<scalar_t> inValues = {
-      1.5, 4, 1, -3,  // row 0
-                      // row 1
-      2,              // row 2
-      -1, -2,         // row 3
-      0, 3.5, -2.25   // row 4
-  };
-  lno_t nrows   = 5;
-  lno_t ncols   = 7;
+  // Select a test case: matrices and correct ouptut are hardcoded for each
+  std::vector<size_type> inRowmap;
+  std::vector<lno_t> inEntries;
+  std::vector<scalar_t> inValues;
+  std::vector<size_type> goldRowmap;
+  std::vector<lno_t> goldEntries;
+  std::vector<scalar_t> goldValues;
+  lno_t nrows = 0;
+  lno_t ncols = 0;
+  switch (testCase) {
+    case 0: {
+      // Two merges take place, and one depends on sorting being done correctly
+      nrows     = 5;
+      ncols     = 7;
+      inRowmap  = {0, 4, 4, 5, 7, 10};
+      inEntries = {
+          4, 3, 5, 3,  // row 0
+                       // row 1 has no entries
+          6,           // row 2
+          2, 2,        // row 3
+          0, 1, 2      // row 4
+      };
+      // note: choosing values that can be represented exactly by float
+      inValues = {
+          1.5, 4, 1, -3,  // row 0
+                          // row 1
+          2,              // row 2
+          -1, -2,         // row 3
+          0, 3.5, -2.25   // row 4
+      };
+      // Expect 2 merges to have taken place
+      goldRowmap  = {0, 3, 3, 4, 5, 8};
+      goldEntries = {
+          3, 4, 5,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      goldValues = {
+          1, 1.5, 1,     // row 0
+                         // row 1
+          2,             // row 2
+          -3,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      break;
+    }
+    case 1: {
+      // Same as above, but no merges take place
+      nrows     = 5;
+      ncols     = 7;
+      inRowmap  = {0, 3, 3, 4, 5, 8};
+      inEntries = {
+          4, 5, 3,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      inValues = {
+          1.5, 4, 1,     // row 0
+                         // row 1
+          2,             // row 2
+          -1,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      // Expect 2 merges to have taken place
+      goldRowmap  = {0, 3, 3, 4, 5, 8};
+      goldEntries = {
+          3, 4, 5,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      goldValues = {
+          1, 1.5, 4,     // row 0
+                         // row 1
+          2,             // row 2
+          -1,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      break;
+    }
+    case 2: {
+      // Nonzero dimensions but no entries
+      nrows      = 5;
+      ncols      = 7;
+      inRowmap   = {0, 0, 0, 0, 0, 0};
+      goldRowmap = inRowmap;
+      break;
+    }
+    case 3: {
+      // Zero rows, length-zero rowmap
+      break;
+    }
+    case 4: {
+      // Zero rows, length-one rowmap
+      inRowmap   = {0};
+      goldRowmap = {0};
+      break;
+    }
+  }
   size_type nnz = inEntries.size();
   Kokkos::View<size_type*, HostSpace, MemoryTraits<Unmanaged>> hostInRowmap(
-      inRowmap.data(), nrows + 1);
+      inRowmap.data(), inRowmap.size());
   Kokkos::View<lno_t*, HostSpace, MemoryTraits<Unmanaged>> hostInEntries(
       inEntries.data(), nnz);
   Kokkos::View<scalar_t*, HostSpace, MemoryTraits<Unmanaged>> hostInValues(
       inValues.data(), nnz);
-  rowmap_t devInRowmap("", nrows + 1);
-  entries_t devInEntries("", nnz);
-  values_t devInValues("", nnz);
+  rowmap_t devInRowmap("in rowmap", inRowmap.size());
+  entries_t devInEntries("in entries", nnz);
+  values_t devInValues("in values", nnz);
   Kokkos::deep_copy(devInRowmap, hostInRowmap);
   Kokkos::deep_copy(devInEntries, hostInEntries);
   Kokkos::deep_copy(devInValues, hostInValues);
   crsMat_t input("Input", nrows, ncols, nnz, devInValues, devInRowmap,
                  devInEntries);
-  crsMat_t output = KokkosSparse::sort_and_merge_matrix(input);
-  exec_space().fence();
-  EXPECT_EQ(output.numRows(), nrows);
-  EXPECT_EQ(output.numCols(), ncols);
+  crsMat_t output;
+  if (justGraph) {
+    graph_t outputGraph;
+    // Testing sort_and_merge_graph
+    if (doStructInterface) {
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          outputGraph =
+              KokkosSparse::sort_and_merge_graph(exec_space(), input.graph);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          outputGraph = KokkosSparse::sort_and_merge_graph(input.graph);
+      }
+    } else {
+      rowmap_t devOutRowmap;
+      entries_t devOutEntries;
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_and_merge_graph(exec_space(), input.graph.row_map,
+                                             input.graph.entries, devOutRowmap,
+                                             devOutEntries);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_and_merge_graph<exec_space>(
+              input.graph.row_map, input.graph.entries, devOutRowmap,
+              devOutEntries);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_and_merge_graph(input.graph.row_map,
+                                             input.graph.entries, devOutRowmap,
+                                             devOutEntries);
+      }
+      outputGraph = graph_t(devOutEntries, devOutRowmap);
+    }
+    // Construct output using the output graph, leaving values zero-initialized
+    output = crsMat_t("Output", outputGraph, ncols);
+  } else {
+    // Testing sort_and_merge_matrix
+    if (doStructInterface) {
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          output = KokkosSparse::sort_and_merge_matrix(input);
+      }
+    } else {
+      rowmap_t devOutRowmap;
+      entries_t devOutEntries;
+      values_t devOutValues;
+      switch (howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_and_merge_matrix(
+              exec_space(), input.graph.row_map, input.graph.entries,
+              input.values, devOutRowmap, devOutEntries, devOutValues);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_and_merge_matrix<exec_space>(
+              input.graph.row_map, input.graph.entries, input.values,
+              devOutRowmap, devOutEntries, devOutValues);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_and_merge_matrix(
+              input.graph.row_map, input.graph.entries, input.values,
+              devOutRowmap, devOutEntries, devOutValues);
+      }
+      // and then construct output from views
+      output = crsMat_t("Output", nrows, ncols, devOutValues.extent(0),
+                        devOutValues, devOutRowmap, devOutEntries);
+    }
+    EXPECT_EQ(output.numRows(), nrows);
+    EXPECT_EQ(output.numCols(), ncols);
+  }
   auto outRowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                        output.graph.row_map);
   auto outEntries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                         output.graph.entries);
   auto outValues =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), output.values);
-  // Expect 2 merges to have taken place
-  std::vector<size_type> goldRowmap = {0, 3, 3, 4, 5, 8};
-  std::vector<lno_t> goldEntries    = {
-      3, 4, 5,  // row 0
-                // row 1 has no entries
-      6,        // row 2
-      2,        // row 3
-      0, 1, 2   // row 4
-  };
-  // note: choosing values that can be represented exactly by float
-  std::vector<scalar_t> goldValues = {
-      1, 1.5, 1,     // row 0
-                     // row 1
-      2,             // row 2
-      -3,            // row 3
-      0, 3.5, -2.25  // row 4
-  };
   EXPECT_EQ(goldRowmap.size(), outRowmap.extent(0));
   EXPECT_EQ(goldEntries.size(), outEntries.extent(0));
-  EXPECT_EQ(goldValues.size(), outValues.extent(0));
-  EXPECT_EQ(goldValues.size(), output.nnz());
-  for (lno_t i = 0; i < nrows + 1; i++) EXPECT_EQ(goldRowmap[i], outRowmap(i));
-  for (size_type i = 0; i < output.nnz(); i++) {
+  if (!justGraph) {
+    EXPECT_EQ(goldValues.size(), outValues.extent(0));
+    EXPECT_EQ(goldValues.size(), output.nnz());
+  }
+  for (size_t i = 0; i < goldRowmap.size(); i++)
+    EXPECT_EQ(goldRowmap[i], outRowmap(i));
+  for (size_t i = 0; i < goldEntries.size(); i++) {
     EXPECT_EQ(goldEntries[i], outEntries(i));
-    EXPECT_EQ(goldValues[i], outValues(i));
+    if (!justGraph) {
+      EXPECT_EQ(goldValues[i], outValues(i));
+    }
   }
 }
 
 TEST_F(TestCategory, common_sort_crsgraph) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface);
-    testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface);
-    testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface);
+    for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+      // If using the struct interface (StaticCrsGraph), cannot use ExplicitType
+      // because the exec space type is determined from the graph.
+      if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+        continue;
+      testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface,
+                                 howExecSpecified);
+      testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface,
+                                 howExecSpecified);
+      testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface,
+                                 howExecSpecified);
+    }
     testSortCRSUnmanaged<TestExecSpace>(false, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crsmatrix) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface);
-    testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface);
-    testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface);
+    // howExecSpecified: Instance, ExplicitType, ImplicitType
+    for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+      // If using the struct interface (CrsMatrix), cannot use ExplicitType
+      // because the exec space type is determined from the matrix.
+      if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+        continue;
+      testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface,
+                                 howExecSpecified);
+      testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface,
+                                 howExecSpecified);
+      testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface,
+                                 howExecSpecified);
+    }
     testSortCRSUnmanaged<TestExecSpace>(true, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crs_longrows) {
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false);
+  // Matrix/graph with one very long row
+  // Just test this once with graph, and once with matrix
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false,
+                             SortCrsTest::ImplicitType);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false,
+                             SortCrsTest::ImplicitType);
 }
 
 TEST_F(TestCategory, common_sort_merge_crsmatrix) {
-  testSortAndMerge<TestExecSpace>();
+  for (int testCase = 0; testCase < 5; testCase++) {
+    for (int doStructInterface = 0; doStructInterface < 2;
+         doStructInterface++) {
+      for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+        if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+          continue;
+        testSortAndMerge<TestExecSpace>(false, howExecSpecified,
+                                        doStructInterface, testCase);
+      }
+    }
+  }
+}
+
+TEST_F(TestCategory, common_sort_merge_crsgraph) {
+  for (int testCase = 0; testCase < 5; testCase++) {
+    for (int doStructInterface = 0; doStructInterface < 2;
+         doStructInterface++) {
+      for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+        if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+          continue;
+        testSortAndMerge<TestExecSpace>(true, howExecSpecified,
+                                        doStructInterface, testCase);
+      }
+    }
+  }
 }
 
 #endif  // KOKKOSSPARSE_SORTCRSTEST_HPP

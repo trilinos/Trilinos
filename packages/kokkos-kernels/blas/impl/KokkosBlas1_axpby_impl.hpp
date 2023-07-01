@@ -54,7 +54,7 @@ template <class AV, class XV, class BV, class YV, int scalar_x, int scalar_y,
 struct Axpby_Functor {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;
@@ -75,10 +75,10 @@ struct Axpby_Functor {
                   "KokkosBlas::Impl::Axpby_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YV::Rank == (int)XV::Rank,
+    static_assert((int)YV::rank == (int)XV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X and Y must have the same rank.");
-    static_assert(YV::Rank == 1,
+    static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor: "
                   "XV and YV must have rank 1.");
 
@@ -188,7 +188,7 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                      SizeType> {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;
@@ -211,10 +211,10 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                   "KokkosBlas::Impl::Axpby_Functor: R is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YV::Rank == (int)XV::Rank,
+    static_assert((int)YV::rank == (int)XV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X and Y must have the same rank.");
-    static_assert(YV::Rank == 1,
+    static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor: "
                   "XV and YV must have rank 1.");
   }
@@ -302,9 +302,11 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 //
 // This takes the starting column, so that if av and bv are both 1-D
 // Views, then the functor can take a subview if appropriate.
-template <class AV, class XV, class BV, class YV, class SizeType>
-void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
-                   const SizeType startingColumn, int a = 2, int b = 2) {
+template <class execution_space, class AV, class XV, class BV, class YV,
+          class SizeType>
+void Axpby_Generic(const execution_space& space, const AV& av, const XV& x,
+                   const BV& bv, const YV& y, const SizeType startingColumn,
+                   int a = 2, int b = 2) {
   static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X is not a Kokkos::View.");
@@ -316,16 +318,15 @@ void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
                 "KokkosBlas::Impl::Axpby_Generic: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YV::Rank == (int)XV::Rank,
+  static_assert((int)YV::rank == (int)XV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X and Y must have the same rank.");
-  static_assert(YV::Rank == 1,
+  static_assert(YV::rank == 1,
                 "KokkosBlas::Impl::Axpby_Generic: "
                 "XV and YV must have rank 1.");
 
-  typedef typename YV::execution_space execution_space;
   const SizeType numRows = x.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0 && b == 0) {
     Axpby_Functor<AV, XV, BV, YV, 0, 0, SizeType> op(x, y, av, bv,

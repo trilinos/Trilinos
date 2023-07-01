@@ -163,27 +163,6 @@ namespace Intrepid2 {
     };
   }
 
-
-/*
-  template<typename DeviceType>
-  template<typename physPointValueType,   class ...physPointProperties,
-           typename refPointValueType,    class ...refPointProperties,
-           typename worksetCellValueType, class ...worksetCellProperties>
-  void
-  CellTools<DeviceType>::
-  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
-                      const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
-                      const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                      const shards::CellTopology cellTopo ) {
-
-   auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
-   mapToPhysicalFrame(physPoints,
-                      refPoints,
-                      worksetCell,
-                      basis);
-  }
-*/
-
   template<typename DeviceType>
   template<typename physPointValueType,   class ...physPointProperties,
            typename refPointValueType,    class ...refPointProperties,

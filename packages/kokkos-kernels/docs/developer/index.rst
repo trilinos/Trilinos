@@ -8,3 +8,5 @@ Developer Manual
    Building the Documentation <build_doc.rst>
    Code Style Guide <style.rst>
    Contributing <contrib.rst>
+   Profiling <profiling.rst>
+   
