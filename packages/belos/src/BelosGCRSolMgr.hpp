@@ -43,7 +43,7 @@
 #define BELOS_GCR_SOLMGR_HPP
 
 /*! \file BelosGCRSolMgr.hpp
- *  \brief The Belos::GCRSolMgr provides a solver manager for the BiCGStab linear solver.
+ *  \brief The Belos::GCRSolMgr provides a solver manager for the Generalized Conjugate Residual (GCR) linear solver.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -52,7 +52,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
-#include "BelosBiCGStabIter.hpp"
+#include "BelosGCRIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -62,39 +62,39 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BiCGStab/BiCGStabExFile.cpp
-    This is an example of how to use the Belos::BiCGStabSolMgr solver manager.
+/** \example GCR/GCRExFile.cpp
+    This is an example of how to use the Belos::GCRSolMgr solver manager.
 */
-/** \example BiCGStab/PrecBiCGStabExFile.cpp
-    This is an example of how to use the Belos::BiCGStabSolMgr solver manager with an Ifpack preconditioner.
+/** \example GCR/PrecGCRExFile.cpp
+    This is an example of how to use the Belos::GCRSolMgr solver manager with an Ifpack preconditioner.
 */
 
-/*! \class Belos::BiCGStabSolMgr
+/*! \class Belos::GCRSolMgr
  *
- *  \brief The Belos::BiCGStabSolMgr provides a powerful and fully-featured solver manager over the pseudo-block BiCGStab iteration.
+ *  \brief The Belos::GCRSolMgr provides a powerful and fully-featured solver manager over the pseudo-block GCR iteration.
 
  \ingroup belos_solver_framework
 
- \author Alicia Klinvex
+ \author Vinh Dang
  */
 
 namespace Belos {
 
-  //! @name BiCGStabSolMgr Exceptions
+  //! @name GCRSolMgr Exceptions
   //@{
 
-  /** \brief BiCGStabSolMgrLinearProblemFailure is thrown when the linear problem is
+  /** \brief GCRSolMgrLinearProblemFailure is thrown when the linear problem is
    * not setup (i.e. setProblem() was not called) when solve() is called.
    *
-   * This std::exception is thrown from the BiCGStabSolMgr::solve() method.
+   * This std::exception is thrown from the GCRSolMgr::solve() method.
    *
    */
-  class BiCGStabSolMgrLinearProblemFailure : public BelosError {public:
-    BiCGStabSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
+  class GCRSolMgrLinearProblemFailure : public BelosError {public:
+    GCRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   template<class ScalarType, class MV, class OP>
-  class BiCGStabSolMgr : public SolverManager<ScalarType,MV,OP> {
+  class GCRSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -108,14 +108,14 @@ namespace Belos {
     //! @name Constructors/Destructor
     //@{
 
-    /*! \brief Empty constructor for BiCGStabSolMgr.
+    /*! \brief Empty constructor for GCRSolMgr.
      * This constructor takes no arguments and sets the default values for the solver.
      * The linear problem must be passed in using setProblem() before solve() is called on this object.
      * The solver values can be changed using setParameters().
      */
-    BiCGStabSolMgr();
+    GCRSolMgr();
 
-    /*! \brief Basic constructor for BiCGStabSolMgr.
+    /*! \brief Basic constructor for GCRSolMgr.
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
@@ -124,15 +124,15 @@ namespace Belos {
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
-    BiCGStabSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                         const Teuchos::RCP<Teuchos::ParameterList> &pl );
+    GCRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+               const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
-    virtual ~BiCGStabSolMgr() {};
+    virtual ~GCRSolMgr() {};
 
     //! clone for Inverted Injection (DII)
     Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new BiCGStabSolMgr<ScalarType,MV,OP>);
+      return Teuchos::rcp(new GCRSolMgr<ScalarType,MV,OP>);
     }
     //@}
 
@@ -214,10 +214,10 @@ namespace Belos {
      * until the problem has been solved (as decided by the solver manager) or the solver manager decides to
      * quit.
      *
-     * This method calls BiCGStabIter::iterate(), which will return either because a specially constructed status test evaluates to
+     * This method calls GCRIter::iterate(), which will return either because a specially constructed status test evaluates to
      * ::Passed or an std::exception is thrown.
      *
-     * A return from BiCGStabIter::iterate() signifies one of the following scenarios:
+     * A return from GCRIter::iterate() signifies one of the following scenarios:
      *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
      *      will be placed in the linear problem and return ::Unconverged.
      *    - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
@@ -234,7 +234,7 @@ namespace Belos {
     /** \name Overridden from Teuchos::Describable */
     //@{
 
-    /** \brief Method to return description of the block BiCGStab solver manager */
+    /** \brief Method to return description of the block GCR solver manager */
     std::string description() const override;
 
     //@}
@@ -290,7 +290,7 @@ namespace Belos {
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-BiCGStabSolMgr<ScalarType,MV,OP>::BiCGStabSolMgr() :
+GCRSolMgr<ScalarType,MV,OP>::GCRSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
@@ -307,9 +307,9 @@ BiCGStabSolMgr<ScalarType,MV,OP>::BiCGStabSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-BiCGStabSolMgr<ScalarType,MV,OP>::
-BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
+GCRSolMgr<ScalarType,MV,OP>::
+GCRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+           const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
@@ -326,7 +326,7 @@ BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     problem_.is_null (), std::invalid_argument,
-    "Belos::BiCGStabSolMgr two-argument constructor: "
+    "Belos::GCRSolMgr two-argument constructor: "
     "'problem' is null.  You must supply a non-null Belos::LinearProblem "
     "instance when calling this constructor.");
 
@@ -337,7 +337,7 @@ BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 }
 
 template<class ScalarType, class MV, class OP>
-void BiCGStabSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void GCRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -370,7 +370,7 @@ void BiCGStabSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      std::string solveLabel = label_ + ": BiCGStabSolMgr total solve time";
+      std::string solveLabel = label_ + ": GCRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
@@ -533,14 +533,14 @@ void BiCGStabSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
-    std::string solverDesc = " Pseudo Block BiCGStab ";
+    std::string solverDesc = " Pseudo Block GCR ";
     outputTest_->setSolverDesc( solverDesc );
 
   }
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    std::string solveLabel = label_ + ": BiCGStabSolMgr total solve time";
+    std::string solveLabel = label_ + ": GCRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
@@ -553,7 +553,7 @@ void BiCGStabSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
-BiCGStabSolMgr<ScalarType,MV,OP>::getValidParameters() const
+GCRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -608,7 +608,7 @@ BiCGStabSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 
 template<class ScalarType, class MV, class OP>
-ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
+ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
 {
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -618,15 +618,15 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION
-    (! problem_->isProblemSet (), BiCGStabSolMgrLinearProblemFailure,
-     "Belos::BiCGStabSolMgr::solve: Linear problem is not ready.  "
+    (! problem_->isProblemSet (), GCRSolMgrLinearProblemFailure,
+     "Belos::GCRSolMgr::solve: Linear problem is not ready.  "
      "You must call setProblem() on the LinearProblem before you may solve it.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (problem_->isLeftPrec (), std::logic_error, "Belos::BiCGStabSolMgr::solve: "
+    (problem_->isLeftPrec (), std::logic_error, "Belos::GCRSolMgr::solve: "
      "The left-preconditioned case has not yet been implemented.  Please use "
      "right preconditioning for now.  If you need to use left preconditioning, "
      "please contact the Belos developers.  Left preconditioning is more "
-     "interesting in BiCGStab because whether it works depends on the initial "
+     "interesting in GCR because whether it works depends on the initial "
      "guess (e.g., an initial guess of all zeros might NOT work).");
 
   // Create indices for the linear systems to be solved.
@@ -654,10 +654,10 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   bool isConverged = true;
 
   //////////////////////////////////////////////////////////////////////////////////////
-  // Pseudo-Block BiCGStab solver
+  // Pseudo-Block GCR solver
 
-  Teuchos::RCP<BiCGStabIter<ScalarType,MV,OP> > bicgstab_iter
-    = Teuchos::rcp( new BiCGStabIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
+  Teuchos::RCP<GCRIter<ScalarType,MV,OP> > gcr_iter
+    = Teuchos::rcp( new GCRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations
   {
@@ -673,7 +673,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
       currRHSIdx.resize(numCurrRHS);
 
       // Reset the number of iterations.
-      bicgstab_iter->resetNumIters();
+      gcr_iter->resetNumIters();
 
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
@@ -682,16 +682,16 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
       Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Get a new state struct and initialize the solver.
-      BiCGStabIterationState<ScalarType,MV> newState;
+      GCRIterationState<ScalarType,MV> newState;
       newState.R = R_0;
-      bicgstab_iter->initializeBiCGStab(newState);
+      gcr_iter->initializeGCR(newState);
 
       while(1) {
 
         // tell block_gmres_iter to iterate
         try {
 
-          bicgstab_iter->iterate();
+          gcr_iter->iterate();
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
@@ -706,7 +706,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
             if (convIdx.size() == currRHSIdx.size())
-              break;  // break from while(1){bicgstab_iter->iterate()}
+              break;  // break from while(1){gcr_iter->iterate()}
 
             // Inform the linear problem that we are finished with this current linear system.
             problem_->setCurrLS();
@@ -735,13 +735,13 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 
             // Get the current residual vector.
             std::vector<MagnitudeType> norms;
-            R_0 = MVT::CloneCopy( *(bicgstab_iter->getNativeResiduals(&norms)),currIdx2 );
+            R_0 = MVT::CloneCopy( *(gcr_iter->getNativeResiduals(&norms)),currIdx2 );
             for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
             // Set the new state and initialize the solver.
-            BiCGStabIterationState<ScalarType,MV> defstate;
+            GCRIterationState<ScalarType,MV> defstate;
             defstate.R = R_0;
-            bicgstab_iter->initializeBiCGStab(defstate);
+            gcr_iter->initializeGCR(defstate);
           }
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -752,7 +752,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
             isConverged = false;
-            break;  // break from while(1){bicgstab_iter->iterate()}
+            break;  // break from while(1){gcr_iter->iterate()}
           }
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -762,12 +762,12 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           //
           ////////////////////////////////////////////////////////////////////////////////////
 
-          else if ( bicgstab_iter->breakdownDetected() ) {
+          else if ( gcr_iter->breakdownDetected() ) {
             // we don't have convergence
             isConverged = false;
             printer_->stream(Warnings) <<
-              "Belos::BiCGStabSolMgr::solve(): Warning! Solver has experienced a breakdown!" << std::endl;
-            break;  // break from while(1){bicgstab_iter->iterate()}
+              "Belos::GCRSolMgr::solve(): Warning! Solver has experienced a breakdown!" << std::endl;
+            break;  // break from while(1){gcr_iter->iterate()}
           } 
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -779,12 +779,12 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "Belos::BiCGStabSolMgr::solve(): Invalid return from BiCGStabIter::iterate().");
+                               "Belos::GCRSolMgr::solve(): Invalid return from GCRIter::iterate().");
           }
         }
         catch (const std::exception &e) {
-          printer_->stream(Errors) << "Error! Caught std::exception in BiCGStabIter::iterate() at iteration "
-                                   << bicgstab_iter->getNumIters() << std::endl
+          printer_->stream(Errors) << "Error! Caught std::exception in GCRIter::iterate() at iteration "
+                                   << gcr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
           throw;
         }
@@ -840,17 +840,17 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 
 
   if (!isConverged ) {
-    return Unconverged; // return from BiCGStabSolMgr::solve()
+    return Unconverged; // return from GCRSolMgr::solve()
   }
-  return Converged; // return from BiCGStabSolMgr::solve()
+  return Converged; // return from GCRSolMgr::solve()
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string BiCGStabSolMgr<ScalarType,MV,OP>::description() const
+std::string GCRSolMgr<ScalarType,MV,OP>::description() const
 {
   std::ostringstream oss;
-  oss << "Belos::BiCGStabSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+  oss << "Belos::GCRSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
   oss << "}";
   return oss.str();
@@ -860,4 +860,4 @@ std::string BiCGStabSolMgr<ScalarType,MV,OP>::description() const
 
 } // end Belos namespace
 
-#endif /* BELOS_BICGSTAB_SOLMGR_HPP */
+#endif /* BELOS_GCR_SOLMGR_HPP */

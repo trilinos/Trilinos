@@ -43,7 +43,7 @@
 #define BELOS_GCR_ITER_HPP
 
 /*! \file BelosGCRIter.hpp
-    \brief Belos concrete class for performing the pseudo-block BiCGStab iteration.
+    \brief Belos concrete class for performing the pseudo-block GCR iteration.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -64,27 +64,27 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 /*!
-  \class Belos::BiCGStabIter
+  \class Belos::GCRIter
 
-  \brief This class implements the pseudo-block BiCGStab iteration, where the basic BiCGStab
+  \brief This class implements the pseudo-block GCR iteration, where the basic GCR
   algorithm is performed on all of the linear systems simultaneously.
 
   \ingroup belos_solver_framework
 
-  \author Alicia Klinvex
+  \author Vinh Dang
 */
 
 namespace Belos {
 
-  //! @name BiCGStabIteration Structures
+  //! @name GCRIteration Structures
   //@{
 
-  /** \brief Structure to contain pointers to BiCGStabIteration state variables.
+  /** \brief Structure to contain pointers to GCRIteration state variables.
    *
-   * This struct is utilized by BiCGStabIteration::initialize() and BiCGStabIteration::getState().
+   * This struct is utilized by GCRIteration::initialize() and GCRIteration::getState().
    */
   template <class ScalarType, class MV>
-  struct BiCGStabIterationState {
+  struct GCRIterationState {
 
     /*! \brief The current residual. */
     Teuchos::RCP<const MV> R;
@@ -100,7 +100,7 @@ namespace Belos {
 
     std::vector<ScalarType> rho_old, alpha, omega;
 
-    BiCGStabIterationState() : R(Teuchos::null), Rhat(Teuchos::null),
+    GCRIterationState() : R(Teuchos::null), Rhat(Teuchos::null),
                     P(Teuchos::null), V(Teuchos::null)
     {
       rho_old.clear();
@@ -110,7 +110,7 @@ namespace Belos {
   };
 
   template<class ScalarType, class MV, class OP>
-  class BiCGStabIter : virtual public Iteration<ScalarType,MV,OP> {
+  class GCRIter : virtual public Iteration<ScalarType,MV,OP> {
 
   public:
 
@@ -126,31 +126,31 @@ namespace Belos {
     //! @name Constructors/Destructor
     //@{
 
-    /*! \brief %BiCGStabIter constructor with linear problem, solver utilities, and parameter list of solver options.
+    /*! \brief %GCRIter constructor with linear problem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the linear solver, in addition
      * to a parameter list of options for the linear solver.
      */
-    BiCGStabIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                          const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                          Teuchos::ParameterList &params );
+    GCRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+             Teuchos::ParameterList &params );
 
     //! Destructor.
-    virtual ~BiCGStabIter() {};
+    virtual ~GCRIter() {};
     //@}
 
 
     //! @name Solver methods
     //@{
 
-    /*! \brief This method performs BiCGStab iterations on each linear system until the status
+    /*! \brief This method performs GCR iterations on each linear system until the status
      * test indicates the need to stop or an error occurs (in which case, an
      * std::exception is thrown).
      *
      * iterate() will first determine whether the solver is initialized; if
      * not, it will call initialize() using default arguments. After
-     * initialization, the solver performs BiCGStab iterations until the
+     * initialization, the solver performs GCR iterations until the
      * status test evaluates as ::Passed, at which point the method returns to
      * the caller.
      *
@@ -161,7 +161,7 @@ namespace Belos {
 
     /*! \brief Initialize the solver to an iterate, providing a complete state.
      *
-     * The %BiCGStabIter contains a certain amount of state, consisting of the current
+     * The %GCRIter contains a certain amount of state, consisting of the current
      * direction vectors and residuals.
      *
      * initialize() gives the user the opportunity to manually set these,
@@ -179,26 +179,26 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeBiCGStab(BiCGStabIterationState<ScalarType,MV>& newstate);
+    void initializeGCR(GCRIterationState<ScalarType,MV>& newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
      */
     void initialize()
     {
-      BiCGStabIterationState<ScalarType,MV> empty;
-      initializeBiCGStab(empty);
+      GCRIterationState<ScalarType,MV> empty;
+      initializeGCR(empty);
     }
 
     /*! \brief Get the current state of the linear solver.
      *
      * The data is only valid if isInitialized() == \c true.
      *
-     * \returns A BiCGStabIterationState object containing const pointers to the current
+     * \returns A GCRIterationState object containing const pointers to the current
      * solver state.
      */
-    BiCGStabIterationState<ScalarType,MV> getState() const {
-      BiCGStabIterationState<ScalarType,MV> state;
+    GCRIterationState<ScalarType,MV> getState() const {
+      GCRIterationState<ScalarType,MV> state;
       state.R = R_;
       state.Rhat = Rhat_;
       state.P = P_;
@@ -249,7 +249,7 @@ namespace Belos {
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
       TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
-                         "Belos::BiCGStabIter::setBlockSize(): Cannot use a block size that is not one.");
+                         "Belos::GCRIter::setBlockSize(): Cannot use a block size that is not one.");
     }
 
     //! States whether the solver has been initialized or not.
@@ -310,10 +310,10 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  BiCGStabIter<ScalarType,MV,OP>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                                                               const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                               Teuchos::ParameterList &/* params */ ):
+  GCRIter<ScalarType,MV,OP>::GCRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                                     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                     Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -328,13 +328,13 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::initializeBiCGStab(BiCGStabIterationState<ScalarType,MV>& newstate)
+  void GCRIter<ScalarType,MV,OP>::initializeGCR(GCRIterationState<ScalarType,MV>& newstate)
   {
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
     TEUCHOS_TEST_FOR_EXCEPTION((lhsMV==Teuchos::null && rhsMV==Teuchos::null),std::invalid_argument,
-                       "Belos::BiCGStabIter::initialize(): Cannot initialize state storage!");
+                       "Belos::GCRIter::initialize(): Cannot initialize state storage!");
 
     // Get the multivector that is not null.
     Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
@@ -359,9 +359,9 @@ namespace Belos {
     // Reset breakdown to false before initializing iteration
     breakdown_ = false;
 
-    // NOTE:  In BiCGStabIter R_, the initial residual, is required!!!
+    // NOTE:  In GCRIter R_, the initial residual, is required!!!
     //
-    std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
+    std::string errstr("Belos::BlockPseudoGCRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     // Create convenience variable for one.
     const ScalarType one = SCT::one();
@@ -447,7 +447,7 @@ namespace Belos {
     else {
 
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
-                         "Belos::BiCGStabIter::initialize(): BiCGStabStateIterState does not have initial residual.");
+                         "Belos::GCRIter::initialize(): GCRStateIterState does not have initial residual.");
     }
 
     // The solver is initialized
@@ -458,7 +458,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
   template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::iterate()
+  void GCRIter<ScalarType,MV,OP>::iterate()
   {
     using Teuchos::RCP;
 
@@ -621,8 +621,8 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
   template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::axpy(const ScalarType alpha, const MV & A,
-                                            const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus)
+  void GCRIter<ScalarType,MV,OP>::axpy(const ScalarType alpha, const MV & A,
+                                       const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus)
   {
     Teuchos::RCP<const MV> A1, B1;
     Teuchos::RCP<MV> mv1;
@@ -644,4 +644,4 @@ namespace Belos {
 
 } // end Belos namespace
 
-#endif /* BELOS_BICGSTAB_ITER_HPP */
+#endif /* BELOS_GCR_ITER_HPP */
