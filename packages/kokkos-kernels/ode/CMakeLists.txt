@@ -11,5 +11,8 @@ ENDIF()
 
 
 # Adding unit-tests
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ode)
+# Note BMK: Since ODE has no auto-generated ETI files, this directory does not exist in a build without unit tests.
+# This causes configure errors when building an app against a Trilinos install, and the unit test build dir doesn't contain any headers that need to be found.
+# But uncomment the next line if ETI headers are ever added.
+# KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ode)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/ode)
