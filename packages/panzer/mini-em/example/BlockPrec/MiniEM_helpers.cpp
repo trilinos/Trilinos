@@ -167,6 +167,10 @@ namespace mini_em {
             if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
               updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
+              updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
+#endif
           } else {
             updateParams("solverMueLuRefMaxwellEpetra.xml", lin_solver_pl, comm, out);
 
@@ -179,6 +183,11 @@ namespace mini_em {
             updateParams("solverMueLuMaxwellHO.xml", lin_solver_pl, comm, out);
 #ifdef KOKKOS_ENABLE_CUDA
             if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name()) {
+              updateParams("solverMueLuMaxwellHOCuda.xml", lin_solver_pl, comm, out);
+            }
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name()) {
               updateParams("solverMueLuMaxwellHOCuda.xml", lin_solver_pl, comm, out);
             }
 #endif

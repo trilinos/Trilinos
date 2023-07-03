@@ -7,6 +7,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -54,6 +55,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -131,6 +133,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -154,6 +157,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
