@@ -4529,7 +4529,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       );
       this->checkInternalState ();
     }
-  }
+  } //fillComplete(domainMap, rangeMap, params)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -7695,6 +7695,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const bool verbose = Behavior::verbose("CrsMatrix");
     int MyPID = getComm ()->getRank ();
 
+    std::cout << "JHU HERE" << std::endl;
+
     std::unique_ptr<std::string> verbosePrefix;
     if (verbose) {
       verbosePrefix =
@@ -8445,11 +8447,57 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     }
 
-    /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
+
+    destMat->numImportPacketsPerLID_.modify_host();  //JHU Chris Siefert told me to do this.
+
+    {
+    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+    comm->barrier();
+    int mypid = this->getComm()->getRank();
+    printf("COMMON [in Tpetra_CrsMatrix_def.hpp] PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
+        mypid, destMat->numImportPacketsPerLID_.extent(0));
+    comm->barrier();
+
+    destMat->numImportPacketsPerLID_.sync_host ();
+    {
+      Teuchos::ArrayView<const size_t> numImportPacketsPerLID = getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+
+      comm->barrier();
+      comm->barrier();
+      for (int ii=0; ii<comm->getSize(); ii++) {
+        if (ii==comm->getRank()) {
+          for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
+            printf("COMMON PID %d: numImportPacketsPerLID[%d]=%lu\n",ii,jj,numImportPacketsPerLID[jj]);
+          std::cout << std::endl;
+        }
+        comm->barrier();
+      }
+    }
+
+    auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
+    Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
+    printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_host=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_host());
+    printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_device=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_device());
+    {
+      comm->barrier();
+      comm->barrier();
+      for (int ii=0; ii<comm->getSize(); ii++) {
+        if (ii==comm->getRank()) {
+          for (int jj=0; jj<mirror.size(); jj++)
+            printf("COMMON PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
+          std::cout << std::endl;
+        }
+        comm->barrier();
+      }
+    }
+    }
+
+
+
 #define TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
 #ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
 
@@ -8457,11 +8505,34 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
 #endif
     destMat->numImportPacketsPerLID_.sync_host ();
+    int mypid = this->getComm()->getRank();
+    printf("[in Tpetra_CrsMatrix_def.hpp] OLD OLD PID %d: destMat->numImportPacketsPerLID_.extent(0)=%d\n",
+        mypid, destMat->numImportPacketsPerLID_.extent(0));
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
     destMat->imports_.sync_host ();
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
+
+{
+    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+    comm->barrier();
+    if (comm->getRank()==0)
+      std::cout << "JHU: in TPETRA_CRS_MATRIX_DEF" << std::endl;
+    comm->barrier();
+    for (int ii=0; ii<comm->getSize(); ii++) {
+      if (ii==comm->getRank()) {
+        std::cout << "PID " << comm->getRank() << ":" << std::endl;
+        for (int jj=0; jj<hostImports.size(); jj++)
+          printf("hostImports[%d]=%d\n",jj,hostImports[jj]);
+        std::cout << std::endl;
+        for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
+          printf("numImportPacketsPerLID[%d]=%d\n",jj,numImportPacketsPerLID[jj]);
+        std::cout << std::endl;
+      }
+      comm->barrier();
+    }
+}
 
     if (verbose) {
       std::ostringstream os;
@@ -8469,6 +8540,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << std::endl;
       std::cerr << os.str ();
     }
+    printf("JHU: calling unpackAndCombineWithOwningPIDsCount\n"); fflush(stdout);
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount (*this,
                                            RemoteLIDs,
@@ -8479,6 +8551,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                            NumSameIDs,
                                            PermuteToLIDs,
                                            PermuteFromLIDs);
+    std::cout << "JHU: unpackAndCombineWithOwningPIDsCount returned mynnz=" << mynnz << std::endl;
     if (verbose) {
       std::ostringstream os;
       os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
@@ -8545,27 +8618,49 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ArrayRCP<LO> CSR_colind_LID;
     ArrayRCP<Scalar> CSR_vals;
 
+    //JHU Attempting to resolve Tpetra unit test issues.
+    destMat->imports_.sync_device ();
+    destMat->numImportPacketsPerLID_.sync_device ();
+
+{
+    auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
+    Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
+    {
+      RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      comm->barrier();
+      comm->barrier();
+      for (int ii=0; ii<comm->getSize(); ii++) {
+        if (ii==comm->getRank()) {
+          for (int jj=0; jj<mirror.size(); jj++)
+            printf("NEW NEW PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
+          std::cout << std::endl;
+        }
+        comm->barrier();
+      }
+    }
+}
+
+    int mypid = this->getComm()->getRank();
+    printf("[in Tpetra_CrsMatrix_def.hpp] NEW NEW PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
+        //mypid, destMat->numImportPacketsPerLID_.size());
+        mypid, destMat->numImportPacketsPerLID_.extent(0));
+
     size_t N = BaseRowMap->getLocalNumElements ();
 
 #if 0
-    Details::unpackAndCombineIntoCrsArrays_test(
-                                   *this, 
-                                   RemoteLIDs,
-                                   destMat->imports_.view_device(),                //hostImports
-                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
-                                   NumSameIDs,
-                                   PermuteToLIDs,
-                                   PermuteFromLIDs,
-                                   N,
-                                   MyPID,
-                                   CSR_rowptr,
-                                   CSR_colind_GID,
-                                   //Teuchos::arcp_reinterpret_cast<impl_scalar_type>(CSR_vals)
-                                   CSR_vals,
-                                   SourcePids(),
-                                   TargetPids
-                                   );
+    auto num_packets_per_lid_d = destMat->numImportPacketsPerLID_.view_device();
+    Kokkos::parallel_for("print num_packets_per_lid_d",
+       Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, num_packets_per_lid_d.size()),
+       KOKKOS_LAMBDA(const LocalOrdinal i) {
+         printf("(in Tpetra_CrsMatrix_def.hpp) num_packets_per_lid_d[%d]=%lu\n",i,num_packets_per_lid_d[i]);
+       });
 #endif
+    TEUCHOS_TEST_FOR_EXCEPTION
+        (destMat->numImportPacketsPerLID_.need_sync_device(), std::logic_error, "The "
+         "input Kokkos::DualView was most recently modified on host, but TAFC "
+         "needs the device view of the data to be the most recently modified.");
+
+
 
     Details::unpackAndCombineIntoCrsArrays_new(
                                    *this, 
@@ -8595,6 +8690,28 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CSR_colind_LID.resize (CSR_colind_GID.size());
     size_t mynnz = CSR_vals.size();
 #endif //ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE ... else
+
+    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+    comm->barrier();
+    if (comm->getRank()==0)
+      std::cout << "JHU: in TPETRA_TAFC_UNPACK_AND_COMBINE" << std::endl;
+    comm->barrier();
+    for (int ii=0; ii<comm->getSize(); ii++) {
+      if (ii==comm->getRank()) {
+        std::cout << "PID " << comm->getRank() << ":" << std::endl;
+        std::cout << "rows:";
+        for (int jj=0; jj<CSR_rowptr.size(); jj++)
+          std::cout << "  " << CSR_rowptr[jj] ;
+        std::cout << std::endl << "cols:";
+        for (int jj=0; jj<CSR_colind_GID.size(); jj++)
+          std::cout << "  " << CSR_colind_GID[jj] ;
+        std::cout << std::endl << "vals:";
+        for (int jj=0; jj<CSR_vals.size(); jj++)
+          std::cout << "  " << CSR_vals[jj] ;
+        std::cout << std::endl;
+      }
+      comm->barrier();
+    }
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
