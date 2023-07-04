@@ -220,30 +220,30 @@ namespace MueLu {
 
       // check type of X vector
       if (bX.is_null() == true) {
-        RCP<MultiVector> test = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedDomainMap(), rcpX));
-        rcpX.swap(test);
+        RCP<MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedDomainMap(), rcpX));
+        rcpX.swap(vectorWithBlockedMap);
         bCopyResultX = true;
         bReorderX = true;
       }
 
       // check type of B vector
       if (bB.is_null() == true) {
-        RCP<const MultiVector> test = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedRangeMap(), rcpB));
-        rcpB.swap(test);
+        RCP<const MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedRangeMap(), rcpB));
+        rcpB.swap(vectorWithBlockedMap);
         bReorderB = true;
       }
     }
     else {
       // A is a BlockedCrsMatrix and uses a plain blocked map
       if (bX.is_null() == true) {
-        RCP<MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedDomainMap(), rcpX));
-        rcpX.swap(test);
+        RCP<MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedDomainMap(), rcpX));
+        rcpX.swap(vectorWithBlockedMap);
         bCopyResultX = true;
       }
 
       if(bB.is_null() == true) {
-        RCP<const MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedRangeMap(),rcpB));
-        rcpB.swap(test);
+        RCP<const MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedRangeMap(),rcpB));
+        rcpB.swap(vectorWithBlockedMap);
       }
     }
 
@@ -259,14 +259,14 @@ namespace MueLu {
       // check type of X vector
       if(bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps() || bReorderX) {
         // X is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<MultiVector> test = buildReorderedBlockedMultiVector(brm, bX);
-        rcpX.swap(test);
+        Teuchos::RCP<MultiVector> reorderedBlockedVector = buildReorderedBlockedMultiVector(brm, bX);
+        rcpX.swap(reorderedBlockedVector);
       }
 
       if(bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps() || bReorderB) {
         // B is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<const MultiVector> test = buildReorderedBlockedMultiVector(brm, bB);
-        rcpB.swap(test);
+        Teuchos::RCP<const MultiVector> reorderedBlockedVector = buildReorderedBlockedMultiVector(brm, bB);
+        rcpB.swap(reorderedBlockedVector);
       }
     }
 
