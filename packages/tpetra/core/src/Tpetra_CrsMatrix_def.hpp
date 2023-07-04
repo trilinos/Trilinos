@@ -8452,49 +8452,54 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Backwards compatibility measure.  We'll use this again below.
 
-    destMat->numImportPacketsPerLID_.modify_host();  //JHU Chris Siefert told me to do this.
+    // TODO JHU need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
+    // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
+    // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
+    destMat->numImportPacketsPerLID_.modify_host(); //FIXME
 
-    {
-    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-    comm->barrier();
-    int mypid = this->getComm()->getRank();
-    printf("COMMON [in Tpetra_CrsMatrix_def.hpp] PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
-        mypid, destMat->numImportPacketsPerLID_.extent(0));
-    comm->barrier();
+    //FIXME START OF DEBUGGING CODE
+    //{
+    //RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+    //comm->barrier();
+    //int mypid = this->getComm()->getRank();
+    //printf("COMMON [in Tpetra_CrsMatrix_def.hpp] PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
+    //    mypid, destMat->numImportPacketsPerLID_.extent(0));
+    //comm->barrier();
 
-    destMat->numImportPacketsPerLID_.sync_host ();
-    {
-      Teuchos::ArrayView<const size_t> numImportPacketsPerLID = getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+    //destMat->numImportPacketsPerLID_.sync_host ();
+    //{
+    //  Teuchos::ArrayView<const size_t> numImportPacketsPerLID = getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
 
-      comm->barrier();
-      comm->barrier();
-      for (int ii=0; ii<comm->getSize(); ii++) {
-        if (ii==comm->getRank()) {
-          for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
-            printf("COMMON PID %d: numImportPacketsPerLID[%d]=%lu\n",ii,jj,numImportPacketsPerLID[jj]);
-          std::cout << std::endl;
-        }
-        comm->barrier();
-      }
-    }
+    //  comm->barrier();
+    //  comm->barrier();
+    //  for (int ii=0; ii<comm->getSize(); ii++) {
+    //    if (ii==comm->getRank()) {
+    //      for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
+    //        printf("COMMON PID %d: numImportPacketsPerLID[%d]=%lu\n",ii,jj,numImportPacketsPerLID[jj]);
+    //      std::cout << std::endl;
+    //    }
+    //    comm->barrier();
+    //  }
+    //}
 
-    auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
-    Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
-    printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_host=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_host());
-    printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_device=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_device());
-    {
-      comm->barrier();
-      comm->barrier();
-      for (int ii=0; ii<comm->getSize(); ii++) {
-        if (ii==comm->getRank()) {
-          for (int jj=0; jj<mirror.size(); jj++)
-            printf("COMMON PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
-          std::cout << std::endl;
-        }
-        comm->barrier();
-      }
-    }
-    }
+    //auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
+    //Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
+    //printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_host=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_host());
+    //printf("COMMON PID %d: destMat->numImportPacketsPerLID_.need_sync_device=%d\n",comm->getRank(),(destMat->numImportPacketsPerLID_).need_sync_device());
+    //{
+    //  comm->barrier();
+    //  comm->barrier();
+    //  for (int ii=0; ii<comm->getSize(); ii++) {
+    //    if (ii==comm->getRank()) {
+    //      for (int jj=0; jj<mirror.size(); jj++)
+    //        printf("COMMON PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
+    //      std::cout << std::endl;
+    //    }
+    //    comm->barrier();
+    //  }
+    //}
+    //}
+    //FIXME END OF DEBUGGING CODE
 
 
 
@@ -8514,25 +8519,27 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
 
-{
-    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-    comm->barrier();
-    if (comm->getRank()==0)
-      std::cout << "JHU: in TPETRA_CRS_MATRIX_DEF" << std::endl;
-    comm->barrier();
-    for (int ii=0; ii<comm->getSize(); ii++) {
-      if (ii==comm->getRank()) {
-        std::cout << "PID " << comm->getRank() << ":" << std::endl;
-        for (int jj=0; jj<hostImports.size(); jj++)
-          printf("hostImports[%d]=%d\n",jj,hostImports[jj]);
-        std::cout << std::endl;
-        for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
-          printf("numImportPacketsPerLID[%d]=%d\n",jj,numImportPacketsPerLID[jj]);
-        std::cout << std::endl;
-      }
-      comm->barrier();
-    }
-}
+//FIXME START OF DEBUGGING CODE
+//{
+//    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+//    comm->barrier();
+//    if (comm->getRank()==0)
+//      std::cout << "JHU: in TPETRA_CRS_MATRIX_DEF" << std::endl;
+//    comm->barrier();
+//    for (int ii=0; ii<comm->getSize(); ii++) {
+//      if (ii==comm->getRank()) {
+//        std::cout << "PID " << comm->getRank() << ":" << std::endl;
+//        for (int jj=0; jj<hostImports.size(); jj++)
+//          printf("hostImports[%d]=%d\n",jj,hostImports[jj]);
+//        std::cout << std::endl;
+//        for (int jj=0; jj<numImportPacketsPerLID.size(); jj++)
+//          printf("numImportPacketsPerLID[%d]=%d\n",jj,numImportPacketsPerLID[jj]);
+//        std::cout << std::endl;
+//      }
+//      comm->barrier();
+//    }
+//}
+//FIXME END OF DEBUGGING CODE
 
     if (verbose) {
       std::ostringstream os;
@@ -8540,7 +8547,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << std::endl;
       std::cerr << os.str ();
     }
-    printf("JHU: calling unpackAndCombineWithOwningPIDsCount\n"); fflush(stdout);
+    //printf("JHU: calling unpackAndCombineWithOwningPIDsCount\n"); fflush(stdout);
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount (*this,
                                            RemoteLIDs,
@@ -8551,7 +8558,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                            NumSameIDs,
                                            PermuteToLIDs,
                                            PermuteFromLIDs);
-    std::cout << "JHU: unpackAndCombineWithOwningPIDsCount returned mynnz=" << mynnz << std::endl;
+    //std::cout << "JHU: unpackAndCombineWithOwningPIDsCount returned mynnz=" << mynnz << std::endl;
     if (verbose) {
       std::ostringstream os;
       os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
@@ -8622,28 +8629,29 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     destMat->imports_.sync_device ();
     destMat->numImportPacketsPerLID_.sync_device ();
 
-{
-    auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
-    Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
-    {
-      RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-      comm->barrier();
-      comm->barrier();
-      for (int ii=0; ii<comm->getSize(); ii++) {
-        if (ii==comm->getRank()) {
-          for (int jj=0; jj<mirror.size(); jj++)
-            printf("NEW NEW PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
-          std::cout << std::endl;
-        }
-        comm->barrier();
-      }
-    }
-}
+//FIXME START OF DEBUGGING CODE
+//{
+//    auto mirror = Kokkos::create_mirror_view(destMat->numImportPacketsPerLID_.view_device());
+//    Kokkos::deep_copy(mirror, destMat->numImportPacketsPerLID_.view_device());
+//    {
+//      RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+//      comm->barrier();
+//      comm->barrier();
+//      for (int ii=0; ii<comm->getSize(); ii++) {
+//        if (ii==comm->getRank()) {
+//          for (int jj=0; jj<mirror.size(); jj++)
+//            printf("NEW NEW PID %d: (host mirror) numImportPacketsPerLID[%d]=%lu\n",ii,jj,mirror(jj));
+//          std::cout << std::endl;
+//        }
+//        comm->barrier();
+//      }
+//    }
+//}
 
-    int mypid = this->getComm()->getRank();
-    printf("[in Tpetra_CrsMatrix_def.hpp] NEW NEW PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
-        //mypid, destMat->numImportPacketsPerLID_.size());
-        mypid, destMat->numImportPacketsPerLID_.extent(0));
+//    int mypid = this->getComm()->getRank();
+//    printf("[in Tpetra_CrsMatrix_def.hpp] NEW NEW PID %d: destMat->numImportPacketsPerLID_.extent(0)=%lu\n",
+//        mypid, destMat->numImportPacketsPerLID_.extent(0));
+//FIXME END OF DEBUGGING CODE
 
     size_t N = BaseRowMap->getLocalNumElements ();
 
@@ -8691,27 +8699,29 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     size_t mynnz = CSR_vals.size();
 #endif //ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE ... else
 
-    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-    comm->barrier();
-    if (comm->getRank()==0)
-      std::cout << "JHU: in TPETRA_TAFC_UNPACK_AND_COMBINE" << std::endl;
-    comm->barrier();
-    for (int ii=0; ii<comm->getSize(); ii++) {
-      if (ii==comm->getRank()) {
-        std::cout << "PID " << comm->getRank() << ":" << std::endl;
-        std::cout << "rows:";
-        for (int jj=0; jj<CSR_rowptr.size(); jj++)
-          std::cout << "  " << CSR_rowptr[jj] ;
-        std::cout << std::endl << "cols:";
-        for (int jj=0; jj<CSR_colind_GID.size(); jj++)
-          std::cout << "  " << CSR_colind_GID[jj] ;
-        std::cout << std::endl << "vals:";
-        for (int jj=0; jj<CSR_vals.size(); jj++)
-          std::cout << "  " << CSR_vals[jj] ;
-        std::cout << std::endl;
-      }
-      comm->barrier();
-    }
+//FIXME START OF DEBUGGING CODE
+//    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+//    comm->barrier();
+//    if (comm->getRank()==0)
+//      std::cout << "JHU: in TPETRA_TAFC_UNPACK_AND_COMBINE" << std::endl;
+//    comm->barrier();
+//    for (int ii=0; ii<comm->getSize(); ii++) {
+//      if (ii==comm->getRank()) {
+//        std::cout << "PID " << comm->getRank() << ":" << std::endl;
+//        std::cout << "rows:";
+//        for (int jj=0; jj<CSR_rowptr.size(); jj++)
+//          std::cout << "  " << CSR_rowptr[jj] ;
+//        std::cout << std::endl << "cols:";
+//        for (int jj=0; jj<CSR_colind_GID.size(); jj++)
+//          std::cout << "  " << CSR_colind_GID[jj] ;
+//        std::cout << std::endl << "vals:";
+//        for (int jj=0; jj<CSR_vals.size(); jj++)
+//          std::cout << "  " << CSR_vals[jj] ;
+//        std::cout << std::endl;
+//      }
+//      comm->barrier();
+//    }
+//FIXME END OF DEBUGGING CODE
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
