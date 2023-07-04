@@ -1711,33 +1711,6 @@ unpackAndCombineIntoCrsArrays (
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-unpackAndCombineIntoCrsArrays_test (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-    const Teuchos::ArrayView<const char>& imports,
-    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t /* constantNumPackets */,
-    const CombineMode /* combineMode */,
-    const size_t numSameIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-    size_t TargetNumRows,
-    size_t TargetNumNonzeros,
-    const int MyTargetPID,
-    const Teuchos::ArrayView<size_t>& CRS_rowptr,
-    const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
-    const Teuchos::ArrayView<int>& SourcePids
-    /*
-    Teuchos::Array<int>& TargetPids
-    */
-    )
-{
-  std::cout << "JHU!!!!" << std::endl;
-} //unpackAndCombineIntoCrsArrays_test (Teuchos::Array version)
-
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
 unpackAndCombineIntoCrsArrays_new (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
@@ -1751,7 +1724,6 @@ unpackAndCombineIntoCrsArrays_new (
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
     Teuchos::ArrayRCP<GlobalOrdinal>& CRS_colind,
     Teuchos::ArrayRCP<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
-    //Teuchos::ArrayRCP<Scalar>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
 {
@@ -1776,34 +1748,7 @@ unpackAndCombineIntoCrsArrays_new (
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays_new: ";
 
-  /////////////////////////////////////////////////////////////////////
-  //JHU: guts of "unpackAndCombineWithOwningPIDsCount"
   using Kokkos::MemoryUnmanaged;
-
-//FIXME START OF DEBUGGING CODE
-//  int mypid;
-//  {
-//    Teuchos::RCP<const Teuchos::Comm<int> > comm = sourceMatrix.getComm();
-//    comm->barrier();
-//    mypid = comm->getRank();
-//    if (comm->getRank()==0)
-//      std::cout << "JHU: in TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE" << std::endl;
-//  }
-//
-//      Kokkos::parallel_for("print imports_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, imports_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("imports_d[%d]=%d\n",i,imports_d[i]);
-//         });
-//
-//     printf("PID %d: num_packets_per_lid_d.size()=%d\n",mypid,num_packets_per_lid_d.size());
-//  
-//      Kokkos::parallel_for("print num_packets_per_lid_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, num_packets_per_lid_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("num_packets_per_lid_d[%d]=%lu\n",i,num_packets_per_lid_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
@@ -1815,10 +1760,6 @@ unpackAndCombineIntoCrsArrays_new (
   TEUCHOS_TEST_FOR_EXCEPTION
     (! locallyIndexed, std::invalid_argument, prefix << "The input "
     "CrsMatrix 'sourceMatrix' must be locally indexed.");
-  //TEUCHOS_TEST_FOR_EXCEPTION
-  //  (importLIDs.size () != numPacketsPerLID.size (), std::invalid_argument,
-  //   prefix << "importLIDs.size() = " << importLIDs.size () << " != "
-  //   "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
     (importLIDs.size () != num_packets_per_lid_d.size (), std::invalid_argument,
      prefix << "importLIDs.size() = " << importLIDs.size () << " != "
@@ -1831,48 +1772,15 @@ unpackAndCombineIntoCrsArrays_new (
                                             permuteFromLIDs.size (), true,
                                             "permute_from_lids");
 
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print permute_from_lids_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, permute_from_lids_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("permute_from_lids_d[%d]=%d\n",i,permute_from_lids_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
-
-  //auto imports_d =
-  //  create_mirror_view_from_raw_host_array (DT (),
-  //                                          imports.getRawPtr (),
-  //                                          imports.size (), true,
-  //                                          "imports");
-  //auto num_packets_per_lid_d =
-  //  create_mirror_view_from_raw_host_array (DT (),
-  //                                          numPacketsPerLID.getRawPtr (),
-  //                                          numPacketsPerLID.size (), true,
-  //                                          "num_packets_per_lid");
-
-  // TargetNumNonzeros is "mynnz" in Tpetra::CrsMatrix
+  // TargetNumNonzeros is number of nonzeros in local matrix.
   size_t TargetNumNonzeros =
      UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
       local_matrix, permute_from_lids_d, imports_d,
       num_packets_per_lid_d, numSameIDs);
 
-//FIXME START OF DEBUGGING CODE
-//{
-//  Teuchos::RCP<const Teuchos::Comm<int> > comm = sourceMatrix.getComm();
-//  printf("PID %d: TargetNumNonzeros=%lu\n",comm->getRank(),TargetNumNonzeros);
-//}
-//FIXME END OF DEBUGGING CODE
-
-  /////////////////////////////////////////////////////////////////////
-  // JHU: Allocations previously done during Tpetra::CrsMatrix::transferAndFillComplete
-  //CRS_rowptr = Teuchos::ArrayRCP<size_t>(TargetNumNonzeros+1);
-  //CRS_colind = Teuchos::ArrayRCP<GlobalOrdinal>(TargetNumNonzeros+1);
-  //CRS_vals = Teuchos::ArrayRCP<Scalar>(TargetNumNonzeros+1);
-  //CRS_rowptr = Teuchos::ArrayRCP<size_t>(TargetNumNonzeros);
   CRS_rowptr.resize (TargetNumRows+1);
   CRS_colind.resize(TargetNumNonzeros);
   CRS_vals.resize(TargetNumNonzeros);
-  /////////////////////////////////////////////////////////////////////
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
@@ -1895,59 +1803,17 @@ unpackAndCombineIntoCrsArrays_new (
     create_mirror_view_from_raw_host_array(outputDevice, importLIDs.getRawPtr(),
         importLIDs.size(), true, "import_lids");
 
-
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print import_lids_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, import_lids_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("import_lids_d[%d]=%d\n",i,import_lids_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
-
   auto permute_to_lids_d =
     create_mirror_view_from_raw_host_array(outputDevice, permuteToLIDs.getRawPtr(),
         permuteToLIDs.size(), true, "permute_to_lids");
-
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print permute_to_lids_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, permute_to_lids_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("permute_to_lids_d[%d]=%d\n",i,permute_to_lids_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
 
   auto crs_rowptr_d =
     create_mirror_view_from_raw_host_array(outputDevice, CRS_rowptr.getRawPtr(),
         CRS_rowptr.size(), true, "crs_rowptr");
 
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print crs_rowptr_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, crs_rowptr_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("crs_rowptr_d[%d]=%lu\n",i,crs_rowptr_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
   auto crs_colind_d =
     create_mirror_view_from_raw_host_array(outputDevice, CRS_colind.getRawPtr(),
         CRS_colind.size(), true, "crs_colidx");
-
-//FIXME START OF DEBUGGING CODE
-//{
-//  Teuchos::RCP<const Teuchos::Comm<int> > comm = sourceMatrix.getComm();
-//  comm->barrier();
-//  for (int ii=0; ii<comm->getSize(); ii++) {
-//    if (ii==comm->getRank()) {
-//      printf("PID %d: print crs_colind_d\n",comm->getRank());
-//      Kokkos::parallel_for("print crs_colind_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, crs_colind_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("crs_colind_d[%d]=%lld\n",i,crs_colind_d[i]);
-//         });
-//    }
-//    comm->barrier();
-//  }
-//}
-//FIXME END OF DEBUGGING CODE
 
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   static_assert (! std::is_same<
@@ -1965,14 +1831,6 @@ unpackAndCombineIntoCrsArrays_new (
     create_mirror_view_from_raw_host_array(outputDevice, CRS_vals.getRawPtr(),
         CRS_vals.size(), true, "crs_vals");
 
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print crs_vals_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, crs_vals_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("crs_vals_d[%d]=%lf\n",i,crs_vals_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
-
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   static_assert (! std::is_same<
       typename decltype (crs_vals_d)::non_const_value_type,
@@ -1985,25 +1843,9 @@ unpackAndCombineIntoCrsArrays_new (
     create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
         SourcePids.size(), true, "src_pids");
 
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print src_pids_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, src_pids_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("src_pids_d[%d]=%d\n",i,src_pids_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
-
   auto tgt_pids_d =
     create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
         TargetPids.size(), true, "tgt_pids");
-
-//FIXME START OF DEBUGGING CODE
-//      Kokkos::parallel_for("print tgt_pids_d",
-//         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, tgt_pids_d.size()),
-//         KOKKOS_LAMBDA(const LocalOrdinal i) {
-//           printf("tgt_pids_d[%d]=%d\n",i,tgt_pids_d[i]);
-//         });
-//FIXME END OF DEBUGGING CODE
 
   size_t bytes_per_value = 0;
   if (PackTraits<ST>::compileTimeSize) {
@@ -2068,33 +1910,6 @@ unpackAndCombineIntoCrsArrays_new (
       TargetPids.getRawPtr(), TargetPids.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
-
-
-// FIXME DEBUGGING CODE
-//    {
-//    Teuchos::RCP<const Teuchos::Comm<int> > comm = sourceMatrix.getComm();
-//    comm->barrier();
-//    if (comm->getRank()==0)
-//      std::cout << "JHU: in TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE" << std::endl;
-//    comm->barrier();
-//    for (int ii=0; ii<comm->getSize(); ii++) {
-//      if (ii==comm->getRank()) {
-//        std::cout << "PID " << comm->getRank() << ":" << std::endl;
-//        std::cout << "rows:";
-//        for (int jj=0; jj<CRS_rowptr.size(); jj++)
-//          std::cout << "  " << CRS_rowptr[jj] ;
-//        std::cout << std::endl << "cols:";
-//        for (int jj=0; jj<CRS_colind.size(); jj++)
-//          std::cout << "  " << CRS_colind[jj] ;
-//        std::cout << std::endl << "vals:";
-//        for (int jj=0; jj<CRS_vals.size(); jj++)
-//          std::cout << "  " << CRS_vals[jj] ;
-//        std::cout << std::endl;
-//      }
-//      comm->barrier();
-//    }
-//    }
-//FIXME END OF DEBUGGING CODE
 
 } //unpackAndCombineIntoCrsArrays_new
 
@@ -2164,72 +1979,5 @@ unpackAndCombineIntoCrsArrays_new (
     Teuchos::ArrayRCP<CrsMatrix<ST, LO, GO, NT>::impl_scalar_type>&, \
     const Teuchos::ArrayView<const int>&, \
     Teuchos::Array<int>&);
-/*
-  template void \
-  Details::unpackAndCombineIntoCrsArrays_test<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT> &, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const char>&, \
-    const Teuchos::ArrayView<const size_t>&, \
-    const size_t, \
-    const CombineMode, \
-    const size_t, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const LO>&, \
-    size_t, \
-    size_t, \
-    const int, \
-    const Teuchos::ArrayView<size_t>&, \
-    const Teuchos::ArrayView<GO>&, \
-    const Teuchos::ArrayView<CrsMatrix<ST, LO, GO, NT>::impl_scalar_type>&, \
-    const Teuchos::ArrayView<int>& \
-    ); \
-*/
-/*
-    Teuchos::ArrayRCP<ST>&, \
-    const Teuchos::ArrayView<const int>&, \
-    Teuchos::Array<int>&);
-*/
-
-/*
-*/
-
-
-#if 0
-  template void \
-  Details::unpackAndCombineIntoCrsArrays_test<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT> &, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Kokkos::View<const char*, typename NT::device_type>&, \
-    const Kokkos::View<const size_t*, typename NT::device_type>&, \
-    const size_t, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const LO>&, \
-    size_t, \
-    const int, \
-    Teuchos::ArrayRCP<size_t>&, \
-    Teuchos::ArrayRCP<GO>&, \
-    Teuchos::ArrayRCP<ST>&, \
-    const Teuchos::ArrayView<const int>&, \
-    Teuchos::Array<int>&);
-#endif
-/*
-  template void \
-  Details::unpackAndCombineIntoCrsArrays_new<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT> &, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Kokkos::View<const char*, typename NT::device_type>&, \
-    const Kokkos::View<const size_t*, typename NT::device_type>&, \
-    const size_t, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const LO>&, \
-    size_t, \
-    const int, \
-    Teuchos::ArrayRCP<size_t>&, \
-    Teuchos::ArrayRCP<GO>&, \
-    Teuchos::ArrayRCP<CrsMatrix<ST, LO, GO, NT>::impl_scalar_type>&, \
-    const Teuchos::ArrayView<const int>&, \
-    Teuchos::Array<int>&);
-*/
 
 #endif // TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP
