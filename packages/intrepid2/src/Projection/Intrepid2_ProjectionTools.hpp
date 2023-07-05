@@ -635,21 +635,22 @@ public:
     ordinal_type srcBasisCardinality = srcBasis->getCardinality();
     ordinal_type fieldDimension = (srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HCURL || srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HDIV) ? dim : 1;
 
-    Kokkos::DynRankView<typename srcBasisType::scalarType, DeviceType> evaluationPoints("evaluationPoints", numCells, numPoints, dim);
+    typename Kokkos::DynRankView<typename srcBasisType::PointValueType, DeviceType> evaluationPoints("evaluationPoints", numCells, numPoints, dim);
     getL2EvaluationPoints(evaluationPoints,
         cellOrientations,
         dstBasis,
         &projStruct);
 
-    srcViewType srcAtEvalPoints, refBasisAtEvalPoints, basisAtEvalPoints;
+    using outViewType = Kokkos::DynRankView<typename srcBasisType::OutputValueType, DeviceType>;
+    outViewType srcAtEvalPoints, refBasisAtEvalPoints, basisAtEvalPoints;
     if(fieldDimension == dim) {
-      srcAtEvalPoints = srcViewType("srcAtEvalPoints", numCells, numPoints, dim);
-      refBasisAtEvalPoints = srcViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
-      basisAtEvalPoints = srcViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
+      srcAtEvalPoints = outViewType("srcAtEvalPoints", numCells, numPoints, dim);
+      refBasisAtEvalPoints = outViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
+      basisAtEvalPoints = outViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
     } else {
-      srcAtEvalPoints = srcViewType("srcAtEvalPoints", numCells, numPoints);
-      refBasisAtEvalPoints = srcViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
-      basisAtEvalPoints = srcViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
+      srcAtEvalPoints = outViewType("srcAtEvalPoints", numCells, numPoints);
+      refBasisAtEvalPoints = outViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
+      basisAtEvalPoints = outViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
     }
     
     for(ordinal_type icell  = 0; icell < numCells; ++icell)

@@ -445,7 +445,10 @@ int ProjectFields(const bool verbose) {
 
       //project from source to destination basis
       DynRankView dstBasisCoeffs("dstBasisCoeffs", numElems, dstBasisPtr->getCardinality());
-      pts::projectField(dstBasisCoeffs, dstBasisPtr.get(), srcBasisCoeffs, srcBasisPtr.get(), elemOrts);
+
+      //Note, no need to create subviews. This is only to test that projectField works with subviews.
+      auto range = std::make_pair(0,numElems);
+      pts::projectField(Kokkos::subview(dstBasisCoeffs, range, Kokkos::ALL()), dstBasisPtr.get(), Kokkos::subview(srcBasisCoeffs, range, Kokkos::ALL()), srcBasisPtr.get(), Kokkos::subview(elemOrts, range));
 
       //project back
       DynRankView srcBasisCoeffs2("srcBasisCoeffs2", numElems, srcBasisPtr->getCardinality());
