@@ -132,6 +132,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
 
   // displs are in bytes
   std::uniform_int_distribution<int> soffsetdist(0, 150);
+  rng.seed(seed + rank); // different seed -> different displs per rank
   int initsdispl = soffsetdist(rng);
   int sdispl = initsdispl;
   int nbrsdispl = initsdispl;
@@ -166,8 +167,8 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
 
   // displs are in bytes
   std::uniform_int_distribution<int> roffsetdist(0, 150);
-  rng.seed(seed + 1);
-  int initrdispl = roffsetdist(rng); // different seed -> different displs
+  rng.seed(seed + size + rank); // different seed -> different displs (also per rank)
+  int initrdispl = roffsetdist(rng);
   int rdispl = initrdispl;
   int nbrrdispl = initrdispl;
   for (int source = 0; source < size; ++source) {
