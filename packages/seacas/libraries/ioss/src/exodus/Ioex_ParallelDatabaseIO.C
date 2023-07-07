@@ -331,8 +331,6 @@ namespace {
   size_t get_all_block_field_data_size(const std::string      &field_name,
                                        const std::vector<T *> &entity_container)
   {
-    size_t num_blocks = entity_container.size();
-
     size_t total_data_size = 0;
 
     for (T *entity : entity_container) {

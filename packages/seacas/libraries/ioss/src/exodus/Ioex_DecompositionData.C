@@ -948,8 +948,6 @@ namespace Ioex {
     std::vector<size_t> offset(el_blocks.size() + 1, 0);
 
     for (size_t blk_seq = 0; blk_seq < el_blocks.size(); blk_seq++) {
-      const Ioss::BlockDecompositionData &blk = el_blocks[blk_seq];
-
       // Determine number of file decomp elements are in this block and the offset into the block.
       size_t count = get_block_element_count(blk_seq);
 

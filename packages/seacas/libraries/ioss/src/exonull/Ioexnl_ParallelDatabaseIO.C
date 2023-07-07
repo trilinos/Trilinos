@@ -83,9 +83,6 @@
 namespace {
   const size_t max_line_length = MAX_LINE_LENGTH;
 
-  const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
-  const std::array<std::string, 2> complex_suffix{".re", ".im"};
-
   void check_node_owning_processor_data(const Ioss::IntVector &nop, size_t file_node_count)
   {
     // Verify that the nop (NodeOwningProcessor) vector is not empty and is of the correct size.
@@ -348,7 +345,7 @@ namespace Ioexnl {
                                                     void                       *data) const
   {
     int64_t     num_entity = ge->entity_count();
-    int64_t     offset     = field.get_index();
+    IOSS_MAYBE_UNUSED int64_t     offset     = field.get_index();
 
     assert(offset > 0);
     assert(offset - 1 + field.get_component_count(Ioss::Field::InOut::OUTPUT) <=
@@ -1116,9 +1113,6 @@ namespace Ioexnl {
             fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
             IOSS_ERROR(errmsg);
           }
-          int var_index = var_iter->second;
-          assert(var_index > 0);
-
           // var is a [count,comp,re_im] array;  re_im = 1(real) or 2(complex)
           // beg_offset = (re_im*i)+complex_comp
           // number_values = count

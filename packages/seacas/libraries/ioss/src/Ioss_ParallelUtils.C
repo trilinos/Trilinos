@@ -446,7 +446,7 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED T &my_value, IOSS_MAYBE_UNUSED int root) const
+void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);
@@ -653,7 +653,7 @@ template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_
                                                      std::vector<char> &my_values,
                                                      std::vector<char> &result) const;
 template <typename T>
-int Ioss::ParallelUtils::gather(int num_vals, IOSS_MAYBE_UNUSED int size_per_val,
+int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                 std::vector<T> &my_values, std::vector<T> &result) const
 {
   IOSS_PAR_UNUSED(size_per_val);

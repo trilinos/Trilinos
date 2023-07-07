@@ -2823,13 +2823,12 @@ namespace Ioss {
   {
     const Ioss::ElementBlockContainer &elem_blocks = get_element_blocks();
 
-    Field::RoleType role =
-        verify_field_exists_on_any_entity_group(field_name, *this, elem_blocks, "input");
+    verify_field_exists_on_any_entity_group(field_name, *this, elem_blocks, "input");
+
     size_t field_count = get_all_block_field_data_count(field_name, elem_blocks);
-
     field_data.resize(field_count);
-    size_t data_size = field_count * sizeof(T);
 
+    size_t data_size = field_count * sizeof(T);
     std::vector<size_t> offsets =
         internal_get_all_block_field_data(field_name, field_data.data(), data_size);
 
