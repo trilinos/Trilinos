@@ -2714,6 +2714,14 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
    }
 
+   printf("CMS: after phase 2a = ");
+   for(int i=0; i<nvertices; i++)
+     printf("%d ",aggr_index[i]);
+   printf("\n");  
+
+
+
+
    agg_incremented = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1));
                                 /* This guarantees that array will be long */
                                 /* enough even for newly created aggregates. */
@@ -3008,6 +3016,13 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        printf("Aggregation(%s) : Phase 3 - leftovers = %d and singletons = %d\n",label ,Nleftover, Nsingle);
      }
    }
+
+
+   printf("CMS: after phase 2b = ");
+   for(int i=0; i<nvertices; i++)
+     printf("%d ",aggr_index[i]);
+   printf("\n");  
+
   if (input_bdry == NULL) ML_free(bdry);
   if (rowi_col != NULL) ML_free(rowi_col);
   if (rowi_val != NULL) ML_free(rowi_val);

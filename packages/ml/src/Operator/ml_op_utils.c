@@ -1371,7 +1371,7 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
   if ((matrix->data_destroy == NULL) || (matrix->data == NULL))
     return 1;
 
-
+  printf("CMS: Changing operator to single precision\n");
   /* first count how many nonzeros are in the old matrix */
 
   Nnz = 0;

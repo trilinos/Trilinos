@@ -2242,8 +2242,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if(AMGSolver_ != ML_CLASSICAL_FAMILY) 
     ML_CHK_ERR(SetupCoordinates());
 
-  if (List_.get("RAP: sort columns",0))                                     //
+  if (List_.get("RAP: sort columns",0)){                                     //
     ml_->sortColumnsAfterRAP = 1;
+    if(ml_nodes_) ml_nodes_->sortColumnsAfterRAP = 1;
+    printf("CMS: MLP is trying to set ml_->sortColumnsAfterRAP\n");
+  }
   // ========================================================================//
   //               Setting Repartitioning                                    //
   // ========================================================================//
@@ -2883,6 +2886,23 @@ Print(int level)
         ML_Operator_Print_UsingGlobalOrdering(ml_nodes_->Rmat+LevelID_[i], name, NULL,NULL);
 
       }
+      
+      // For the Maxwell preconditioner w/ Hiptmair Smoothing, the Amat_nodes is what we aggregate on, not
+      // what we smooth on.  We need to print that as well. 
+      /*
+      for( int i=0 ; i<NumLevels_-1; ++i ) {
+        ML_Sm_Hiptmair_Data * data = ml_->pre_smoother
+          ? (ML_Sm_Hiptmair_Data *)(ml_->pre_smoother[i].smoother->data) 
+          : (ML_Sm_Hiptmair_Data *)(ml_->post_smoother[i].smoother->data);
+        
+        printf("CMS DEBUG2:  data->TtATmat->invec_leng = %d\n", (data && data->TtATmat) ? data->TtATmat->invec_leng : -1);
+        
+        sprintf(name,"Amat_nodes_smoo_%d", LevelID_[i]);
+        if(data && data->TtATmat) 
+          ML_Operator_Print_UsingGlobalOrdering(data->TtATmat,name,NULL,NULL);
+      }
+      */
+
     }
 
   } //if-then-else
