@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cfloat>
-#include <cime>
+#include <ctime>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
