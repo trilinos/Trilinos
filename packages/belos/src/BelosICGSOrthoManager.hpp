@@ -1170,7 +1170,7 @@ namespace Belos {
       }
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
-      if (!addVec) {
+      if (!addVec) { //TODO: Should be done with subviews and add
         for (int i=0; i<numX; i++) {
           DMT::Value(*B,i,j) = DMT::Value(*product,i,0);
         }

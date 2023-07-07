@@ -56,6 +56,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   // Convenience typedefs
   //
   typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+  typedef DenseMatTraits<ScalarType,DM> DMT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -74,7 +75,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
    */
   BlockFGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                    Teuchos::ParameterList &params );
 
@@ -245,7 +246,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
   const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
 
   //
@@ -286,13 +287,13 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   // Projected matrices
   // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
   //
-  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
+  Teuchos::RCP<DM> H_;
   //
   // QR decomposition of Projected matrices for solving the least squares system HY = B.
   // R_: Upper triangular reduction of H
   // z_: Q applied to right-hand side of the least squares system
-  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
-  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_;
+  Teuchos::RCP<DM> R_;
+  Teuchos::RCP<DM> z_;
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,7 +302,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   BlockFGmresIter<ScalarType,MV,OP,DM>::
   BlockFGmresIter (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                    Teuchos::ParameterList &params ):
     lp_(problem),
@@ -361,7 +362,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
 
     if (! stateStorageInitialized_) {
       // Check if there is any multivector to clone from.
@@ -428,20 +428,20 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
         // Generate H_ only if it doesn't exist, otherwise resize it.
         if (H_ == Teuchos::null) {
-          H_ = rcp (new SDM (newsd, newsd-blockSize_));
+          H_ = DMT::Create(newsd, newsd-blockSize_);
         }
         else {
-          H_->shapeUninitialized (newsd, newsd - blockSize_);
+          DMT::Reshape(*H_, newsd, newsd - blockSize_);
         }
 
         // TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
         //R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
         // Generate z_ only if it doesn't exist, otherwise resize it.
         if (z_ == Teuchos::null) {
-          z_ = rcp (new SDM (newsd, blockSize_));
+          z_ = DMT::Create(newsd, blockSize_);
         }
         else {
-          z_->shapeUninitialized (newsd, blockSize_);
+          DMT::Reshape(*z_, newsd, blockSize_);
         }
 
         // State storage has now been initialized.
@@ -455,8 +455,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   Teuchos::RCP<MV>
   BlockFGmresIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   {
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
-
     Teuchos::RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_ == 0) {
       // If this is the first iteration of the Arnoldi factorization,
@@ -471,12 +469,14 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       currentUpdate = MVT::Clone (*Z_, blockSize_);
 
       // Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
-      SDM y (Teuchos::Copy, *z_, curDim_, blockSize_);
+      Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, blockSize_);
 
       // Solve the least squares problem.
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                 H_->values (), H_->stride (), y.values (), y.stride ());
+                 DMT::GetRawHostPtr(*H_), DMT::GetStride(*H_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
+                 //TODO: Should one of H_ or y have a const ptr?
+                 //TODO: Add data mod specifiers?
 
       // Compute the current update.
       std::vector<int> index (curDim_);
@@ -484,7 +484,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         index[i] = i;
       }
       Teuchos::RCP<const MV> Zjp1 = MVT::CloneView (*Z_, index);
-      MVT::MvTimesMatAddMv (one, *Zjp1, y, zero, *currentUpdate);
+      MVT::MvTimesMatAddMv (one, *Zjp1, *y, zero, *currentUpdate);
     }
     return currentUpdate;
   }
@@ -503,7 +503,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     if (norms != NULL) {
       Teuchos::BLAS<int, ScalarType> blas;
       for (int j = 0; j < blockSize_; ++j) {
-        (*norms)[j] = blas.NRM2 (blockSize_, &(*z_)(curDim_, j), 1);
+        (*norms)[j] = blas.NRM2 (blockSize_, &DMT::Value(*z_, curDim_, j), 1);
       }
     }
 
@@ -520,7 +520,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     using Teuchos::rcp;
     using std::endl;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
     const ScalarType ZERO = STS::zero ();
     const ScalarType ONE = STS::one ();
 
@@ -558,7 +557,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
       // check size of Z
       TEUCHOS_TEST_FOR_EXCEPTION(
-        newstate.z->numRows() < curDim_ || newstate.z->numCols() < blockSize_,
+        DMT::GetNumRows(*newstate.z) < curDim_ || DMT::GetNumCols(*newstate.z) < blockSize_,
         std::invalid_argument, errstr);
 
       // copy basis vectors from newstate into V
@@ -586,11 +585,10 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
       // put data into z_, make sure old information is not still hanging around.
       if (newstate.z != z_) {
-        z_->putScalar();
-        SDM newZ (Teuchos::View, *newstate.z, curDim_ + blockSize_, blockSize_);
-        RCP<SDM> lclz;
-        lclz = rcp (new SDM (Teuchos::View, *z_, curDim_ + blockSize_, blockSize_));
-        lclz->assign (newZ);
+        DMT::PutScalar(*z_);
+        RCP<const DM> newZ = DMT::SubviewConst(*newstate.z, curDim_ + blockSize_, blockSize_);
+        RCP<DM> lclz = DMT::Subview(*z_, curDim_ + blockSize_, blockSize_);
+        DMT::Assign(*lclz, *newZ);
         lclz = Teuchos::null; // done with local pointers
       }
     }
@@ -612,12 +610,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   template <class ScalarType, class MV, class OP, class DM>
   void BlockFGmresIter<ScalarType,MV,OP,DM>::iterate()
   {
-    using Teuchos::Array;
-    using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using Teuchos::View;
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
 
     // Allocate/initialize data structures
     if (initialized_ == false) {
@@ -652,11 +646,11 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
       // Compute the next (multi)vector in the Krylov basis:  Znext = M*Vprev
       lp_->applyRightPrec (*Vprev, *Znext);
-      Vprev = null;
+      Vprev = Teuchos::null;
 
       // Compute the next (multi)vector in the Krylov basis:  Vnext = A*Znext
       lp_->applyOp (*Znext, *Vnext);
-      Znext = null;
+      Znext = Teuchos::null;
 
       // Remove all previous Krylov basis vectors from Vnext
       // Get a view of all the previous vectors
@@ -665,15 +659,15 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         prevind[i] = i;
       }
       Vprev = MVT::CloneView (*V_, prevind);
-      Array<RCP<const MV> > AVprev (1, Vprev);
+      Teuchos::Array<RCP<const MV> > AVprev (1, Vprev);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-      RCP<SDM> subH = rcp (new SDM (View, *H_, lclDim, blockSize_, 0, curDim_));
-      Array<RCP<SDM> > AsubH;
+      RCP<DM> subH = DMT::Subview(*H_, lclDim, blockSize_, 0, curDim_);
+      Teuchos::Array<RCP<DM> > AsubH;
       AsubH.append (subH);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-      RCP<SDM> subR = rcp (new SDM (View, *H_, blockSize_, blockSize_, lclDim, curDim_));
+      RCP<DM> subR = DMT::Subview(*H_, blockSize_, blockSize_, lclDim, curDim_);
       const int rank = ortho_->projectAndNormalize (*Vnext, AsubH, subR, AVprev);
       TEUCHOS_TEST_FOR_EXCEPTION(
         rank != blockSize_, GmresIterationOrthoFailure,
@@ -691,7 +685,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       // Update basis dim and release all pointers.
       //
-      Vnext = null;
+      Vnext = Teuchos::null;
       curDim_ += blockSize_;
     } // end while (statusTest == false)
   }
@@ -726,60 +720,63 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // QR factorization of upper Hessenberg matrix using Givens rotations
       for (int i = 0; i < curDim; ++i) {
         // Apply previous Givens rotations to new column of Hessenberg matrix
-        blas.ROT (1, &(*H_)(i, curDim), 1, &(*H_)(i+1, curDim), 1, &cs[i], &sn[i]);
+        blas.ROT (1, &DMT::Value(*H_,i, curDim), 1, &DMT::Value(*H_,i+1, curDim), 1, &cs[i], &sn[i]);
       }
+      //TODO: Check host/device/const semantics here?
+
       // Calculate new Givens rotation
-      blas.ROTG (&(*H_)(curDim, curDim), &(*H_)(curDim+1, curDim), &cs[curDim], &sn[curDim]);
-      (*H_)(curDim+1, curDim) = zero;
+      blas.ROTG (&DMT::Value(*H_,curDim, curDim), &DMT::Value(*H_,curDim+1, curDim), &cs[curDim], &sn[curDim]);
+      DMT::Value(*H_,curDim+1, curDim) = zero;
 
       // Update RHS w/ new transformation
-      blas.ROT (1, &(*z_)(curDim,0), 1, &(*z_)(curDim+1,0), 1, &cs[curDim], &sn[curDim]);
+      blas.ROT (1, &DMT::Value(*z_,curDim,0), 1, &DMT::Value(*z_,curDim+1,0), 1, &cs[curDim], &sn[curDim]);
+      //TODO: Check host/device/const semantics here?
     }
     else {
       // QR factorization of least-squares system using Householder reflectors.
       for (int j = 0; j < blockSize_; ++j) {
         // Apply previous Householder reflectors to new block of Hessenberg matrix
         for (int i = 0; i < curDim + j; ++i) {
-          sigma = blas.DOT (blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-          sigma += (*H_)(i,curDim+j);
+          sigma = blas.DOT (blockSize_, &DMT::Value(*H_,i+1,i), 1, &DMT::Value(*H_,i+1,curDim+j), 1);
+          sigma += DMT::Value(*H_,i,curDim+j);
           sigma *= beta[i];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-          (*H_)(i,curDim+j) -= sigma;
+          blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*H_,i+1,i), 1, &DMT::Value(*H_,i+1,curDim+j), 1);
+          DMT::Value(*H_,i,curDim+j) -= sigma;
         }
 
         // Compute new Householder reflector
-        const int maxidx = blas.IAMAX (blockSize_+1, &(*H_)(curDim+j,curDim+j), 1);
-        maxelem = (*H_)(curDim + j + maxidx - 1, curDim + j);
+        const int maxidx = blas.IAMAX (blockSize_+1, &DMT::Value(*H_,curDim+j,curDim+j), 1);
+        maxelem = DMT::Value(*H_,curDim + j + maxidx - 1, curDim + j);
         for (int i = 0; i < blockSize_ + 1; ++i) {
-          (*H_)(curDim+j+i,curDim+j) /= maxelem;
+          DMT::Value(*H_,curDim+j+i,curDim+j) /= maxelem;
         }
-        sigma = blas.DOT (blockSize_, &(*H_)(curDim + j + 1, curDim + j), 1,
-                          &(*H_)(curDim + j + 1, curDim + j), 1);
+        sigma = blas.DOT (blockSize_, &DMT::Value(*H_,curDim + j + 1, curDim + j), 1,
+                          &DMT::Value(*H_,curDim + j + 1, curDim + j), 1);
         if (sigma == zero) {
           beta[curDim + j] = zero;
         } else {
-          mu = STS::squareroot ((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
-          if (STS::real ((*H_)(curDim + j, curDim + j)) < STM::zero ()) {
-            vscale = (*H_)(curDim+j,curDim+j) - mu;
+          mu = STS::squareroot (DMT::Value(*H_,curDim+j,curDim+j)*DMT::Value(*H_,curDim+j,curDim+j)+sigma);
+          if (STS::real (DMT::Value(*H_,curDim + j, curDim + j)) < STM::zero ()) {
+            vscale = DMT::Value(*H_,curDim+j,curDim+j) - mu;
           } else {
-            vscale = -sigma / ((*H_)(curDim+j, curDim+j) + mu);
+            vscale = -sigma / (DMT::Value(*H_,curDim+j, curDim+j) + mu);
           }
           beta[curDim+j] = two * vscale * vscale / (sigma + vscale*vscale);
-          (*H_)(curDim+j, curDim+j) = maxelem*mu;
+          DMT::Value(*H_,curDim+j, curDim+j) = maxelem*mu;
           for (int i = 0; i < blockSize_; ++i) {
-            (*H_)(curDim+j+1+i,curDim+j) /= vscale;
+            DMT::Value(*H_,curDim+j+1+i,curDim+j) /= vscale;
           }
         }
 
         // Apply new Householder reflector to the right-hand side.
         for (int i = 0; i < blockSize_; ++i) {
-          sigma = blas.DOT (blockSize_, &(*H_)(curDim+j+1,curDim+j),
-                            1, &(*z_)(curDim+j+1,i), 1);
-          sigma += (*z_)(curDim+j,i);
+          sigma = blas.DOT (blockSize_, &DMT::Value(*H_,curDim+j+1,curDim+j),
+                            1, &DMT::Value(*z_,curDim+j+1,i), 1);
+          sigma += DMT::Value(*z_,curDim+j,i);
           sigma *= beta[curDim+j];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(curDim+j+1,curDim+j),
-                     1, &(*z_)(curDim+j+1,i), 1);
-          (*z_)(curDim+j,i) -= sigma;
+          blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*H_,curDim+j+1,curDim+j),
+                     1, &DMT::Value(*z_,curDim+j+1,i), 1);
+          DMT::Value(*z_,curDim+j,i) -= sigma;
         }
       }
     } // end if (blockSize_ == 1)

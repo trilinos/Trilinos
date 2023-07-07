@@ -158,7 +158,7 @@ namespace Belos {
     getDefaultParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	return Belos::getDGKSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getDGKSDefaultParameters<Scalar, MV, OP, DM> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
@@ -170,7 +170,7 @@ namespace Belos {
 	return Belos::getICGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
-	return Belos::getIMGSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getIMGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
 	SimpleOrthoManager<Scalar, MV> orthoMan;
@@ -206,7 +206,7 @@ namespace Belos {
     getFastParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	return Belos::getDGKSFastParameters<Scalar, MV, OP> ();
+	return Belos::getDGKSFastParameters<Scalar, MV, OP, DM> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
@@ -218,7 +218,7 @@ namespace Belos {
 	return Belos::getICGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
-	return Belos::getIMGSFastParameters<Scalar, MV, OP> ();
+	return Belos::getIMGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
 	SimpleOrthoManager<Scalar, MV> orthoMan;
@@ -273,7 +273,7 @@ namespace Belos {
       using Teuchos::rcp;
 
       if (ortho == "DGKS") {
-	typedef DGKSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef DGKSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
 #ifdef HAVE_BELOS_TSQR
@@ -287,7 +287,7 @@ namespace Belos {
 	return rcp (new ortho_type (params, label, M));
       }
       else if (ortho == "IMGS") {
-	typedef IMGSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef IMGSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       } 
       else if (ortho == "Simple") {

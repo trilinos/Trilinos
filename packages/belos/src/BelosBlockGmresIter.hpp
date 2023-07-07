@@ -77,7 +77,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
    */
   BlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                   Teuchos::ParameterList &params );
 
@@ -258,7 +258,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
   const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
 
   //
@@ -321,7 +321,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   template<class ScalarType, class MV, class OP, class DM>
   BlockGmresIter<ScalarType,MV,OP,DM>::BlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                                    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                                                    Teuchos::ParameterList &params ):
     lp_(problem),
@@ -579,7 +579,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       int lclDim = MVT::GetNumberVecs(*newstate.V);
 
       // check size of Z
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < blockSize_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(DMT::GetNumRows(*newstate.z) < curDim_ || DMT::GetNumCols(*newstate.z) < blockSize_, std::invalid_argument, errstr);
 
 
       // copy basis vectors from newstate into V
@@ -691,7 +691,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
       Teuchos::RCP<DM> subH2 = DMT::Subview(*H_,blockSize_,blockSize_,lclDim,curDim_);
-      subH2->putScalar();  // Initialize subdiagonal to zero
+      DMT::PutScalar(*subH2);  // Initialize subdiagonal to zero
       
       // TODO
       // Make an abstract dense matrix that holds the data of subH2 (an RCP of serialDense.)

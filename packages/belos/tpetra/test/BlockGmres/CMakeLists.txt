@@ -50,6 +50,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_BlockGMRES_hb_test
+  SOURCES test_kokkos_bl_gmres.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
 ASSERT_DEFINED(Belos_ENABLE_TSQR)
 IF (Belos_ENABLE_TSQR)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
