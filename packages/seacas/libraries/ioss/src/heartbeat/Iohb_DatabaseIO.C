@@ -330,7 +330,7 @@ namespace Iohb {
       legend_.reset();
     }
 
-    *logStream << *legend_ << '\n';
+    *logStream << *layout_ << '\n';
     layout_.reset();
 
     // Flush the buffer to disk...
