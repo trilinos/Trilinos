@@ -284,10 +284,8 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int bnd_number) con
       if (number_edges() > 1) {
         return edge_connectivity(bnd_number);
       }
-      else {
-        // Spring-type element -- has node as boundary.
-        return Ioss::IntVector{bnd_number - 1};
-      }
+      // Spring-type element -- has node as boundary.
+      return Ioss::IntVector{bnd_number - 1};
     }
   }
   else {
@@ -330,10 +328,8 @@ Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) cons
       if (number_edges() > 1) {
         return edge_type(bnd_number);
       }
-      else {
-        // Spring-type element -- has node as boundary.
-        return Ioss::ElementTopology::factory("node");
-      }
+      // Spring-type element -- has node as boundary.
+      return Ioss::ElementTopology::factory("node");
     }
   }
   else {
@@ -351,7 +347,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) cons
 
 bool Ioss::ElementTopology::equal_(const Ioss::ElementTopology &rhs, bool quiet) const
 {
-  if (this->name_.compare(rhs.name_) != 0) {
+  if (this->name_ == rhs.name_) {
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "Element Topology: NAME mismatch ({} vs. {})\n",
                  this->name_.c_str(), rhs.name_.c_str());
@@ -359,7 +355,7 @@ bool Ioss::ElementTopology::equal_(const Ioss::ElementTopology &rhs, bool quiet)
     return false;
   }
 
-  if (this->masterElementName_.compare(rhs.masterElementName_) != 0) {
+  if (this->masterElementName_ == rhs.masterElementName_) {
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "Element Topology: MASTER ELEMENT NAME mismatch ({} vs. {})\n",
                  this->masterElementName_.c_str(), rhs.masterElementName_.c_str());
@@ -387,7 +383,7 @@ bool Ioss::ElementTopology::equal(const Ioss::ElementTopology &rhs) const
 
 Ioss::ElementPermutation *Ioss::ElementTopology::permutation() const
 {
-  auto perm = Ioss::ElementPermutation::factory(base_topology_permutation_name());
+  auto *perm = Ioss::ElementPermutation::factory(base_topology_permutation_name());
   assert(perm != nullptr);
   if (validate_permutation_nodes()) {
     if (static_cast<int>(perm->num_permutation_nodes()) != number_corner_nodes()) {

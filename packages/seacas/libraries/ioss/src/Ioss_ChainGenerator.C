@@ -1,4 +1,4 @@
-// Copyright(C) 2022 National Technology & Engineering Solutions
+// Copyright(C) 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -50,7 +50,7 @@ namespace {
     auto                          selected_surfaces = Ioss::tokenize(surface_list, ",");
     std::vector<std::string>      adjacent_blocks;
     const Ioss::SideSetContainer &fss = region.get_sidesets();
-    for (auto &fs : fss) {
+    for (const auto &fs : fss) {
       if (surface_list == "ALL" || std::find(selected_surfaces.begin(), selected_surfaces.end(),
                                              fs->name()) != selected_surfaces.end()) {
         // Save a list of all blocks that are adjacent to the surfaces...
@@ -83,7 +83,7 @@ namespace {
     auto selected_surfaces = Ioss::tokenize(surface_list, ",");
     // Now find the facesets that have faces on this block...
     const Ioss::SideSetContainer &fss = region.get_sidesets();
-    for (auto &fs : fss) {
+    for (const auto &fs : fss) {
       if (surface_list == "ALL" || std::find(selected_surfaces.begin(), selected_surfaces.end(),
                                              fs->name()) != selected_surfaces.end()) {
         std::vector<std::string> blocks;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -16,17 +16,17 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cfloat>
+#include <cime>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
-#include <float.h>
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <limits.h>
 #include <map>
 #include <set>
 #include <string>
-#include <time.h>
 #include <vector>
 
 namespace Iopg {
@@ -838,402 +838,685 @@ namespace Iopg {
 #else
             if (true) {
 #endif
-            int my_side_count = (*I).second;
+              int my_side_count = (*I).second;
 
-            std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
-            if (side_set_name == "universal_sideset") {
-              side_block_name = side_set_name;
-            }
-            else {
-              if (sid == "")
-                side_block_name = Ioss::Utils::encode_entity_name(side_block_name, id);
+              std::string side_block_name =
+                  "surface_" + topo_or_block_name + "_" + side_topo->name();
+              if (side_set_name == "universal_sideset") {
+                side_block_name = side_set_name;
+              }
               else {
-                side_block_name += "_";
-                side_block_name += sid;
+                if (sid == "")
+                  side_block_name = Ioss::Utils::encode_entity_name(side_block_name, id);
+                else {
+                  side_block_name += "_";
+                  side_block_name += sid;
+                }
               }
-            }
 
-            Ioss::ElementBlock *block = nullptr;
-            // Need to get elem_topo....
-            const Ioss::ElementTopology *elem_topo = nullptr;
-            if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
-              elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
-            }
-            else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
-              block = get_region()->get_element_block(topo_or_block_name);
-              if (block == nullptr) {
-                std::ostringstream errmsg;
-                errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
-                       << "' Something is wrong in the Iopg::DatabaseIO class. Please report.\n";
-                IOSS_ERROR(errmsg);
+              Ioss::ElementBlock *block = nullptr;
+              // Need to get elem_topo....
+              const Ioss::ElementTopology *elem_topo = nullptr;
+              if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
+                elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
               }
-              elem_topo = block->topology();
-            }
-            if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
-              // Most likely this is "unknown", but can be a true
-              // topology if there is only a single element block in
-              // the model.
-              elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
-            }
-            assert(elem_topo != nullptr);
+              else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
+                block = get_region()->get_element_block(topo_or_block_name);
+                if (block == nullptr) {
+                  std::ostringstream errmsg;
+                  errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name
+                         << "' Something is wrong in the Iopg::DatabaseIO class. Please report.\n";
+                  IOSS_ERROR(errmsg);
+                }
+                elem_topo = block->topology();
+              }
+              if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
+                // Most likely this is "unknown", but can be a true
+                // topology if there is only a single element block in
+                // the model.
+                elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
+              }
+              assert(elem_topo != nullptr);
 
-            Ioss::SideBlock *side_block = new Ioss::SideBlock(
-                this, side_block_name, side_topo->name(), elem_topo->name(), my_side_count);
-            side_set->add(side_block);
+              Ioss::SideBlock *side_block = new Ioss::SideBlock(
+                  this, side_block_name, side_topo->name(), elem_topo->name(), my_side_count);
+              side_set->add(side_block);
 
-            // Note that all sideblocks within a specific
-            // sideset might have the same id.
-            assert(side_block != nullptr);
-            side_block->property_add(Ioss::Property("id", id));
-            side_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
+              // Note that all sideblocks within a specific
+              // sideset might have the same id.
+              assert(side_block != nullptr);
+              side_block->property_add(Ioss::Property("id", id));
+              side_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
 
-            // If splitting by element block, need to set the
-            // element block member on this side block.
-            if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
-              side_block->set_parent_element_block(block);
-            }
+              // If splitting by element block, need to set the
+              // element block member on this side block.
+              if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
+                side_block->set_parent_element_block(block);
+              }
 
-            // If we calculated whether the element side is
-            // consistent for all faces in this block, then
-            // tell the block which side it is, or that they are
-            // inconsistent. If it wasn't calculated above, then it
-            // will be calculated on the fly when/if requested.
-            // This is to avoid reading the sideset bulk data in
-            // cases where we don't need to read it, but if we are
-            // already reading it (to split the sidesets), then use
-            // the data when we have it.
-            if (!side_map.empty()) {
-              // Set a property indicating which element side
-              // (1-based) all faces in this block are applied to.
-              // If they are not all assigned to the same element
-              // side, indicate this with a side equal to 0.
-              //
-              // (note: 'i' has already been incremented earlier in
-              // the loop.  We need previous value here...)
-              int side = global_side_counts[i - 1 + topo_map.size()];
-              if (side == 999)
-                side = 0;
-              assert(side <= elem_topo->number_boundaries());
-              side_block->set_consistent_side_number(side);
-            }
+              // If we calculated whether the element side is
+              // consistent for all faces in this block, then
+              // tell the block which side it is, or that they are
+              // inconsistent. If it wasn't calculated above, then it
+              // will be calculated on the fly when/if requested.
+              // This is to avoid reading the sideset bulk data in
+              // cases where we don't need to read it, but if we are
+              // already reading it (to split the sidesets), then use
+              // the data when we have it.
+              if (!side_map.empty()) {
+                // Set a property indicating which element side
+                // (1-based) all faces in this block are applied to.
+                // If they are not all assigned to the same element
+                // side, indicate this with a side equal to 0.
+                //
+                // (note: 'i' has already been incremented earlier in
+                // the loop.  We need previous value here...)
+                int side = global_side_counts[i - 1 + topo_map.size()];
+                if (side == 999)
+                  side = 0;
+                assert(side <= elem_topo->number_boundaries());
+                side_block->set_consistent_side_number(side);
+              }
 
-            // Add an alias...
-            get_region()->add_alias(side_block);
+              // Add an alias...
+              get_region()->add_alias(side_block);
 
-            if (split_type != Ioss::SPLIT_BY_DONT_SPLIT && side_set_name != "universal_sideset") {
-              std::string storage = "Real[";
-              storage += std::to_string(side_topo->number_nodes());
-              storage += "]";
-              side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage,
-                                                Ioss::Field::MESH, my_side_count));
-            }
+              if (split_type != Ioss::SPLIT_BY_DONT_SPLIT && side_set_name != "universal_sideset") {
+                std::string storage = "Real[";
+                storage += std::to_string(side_topo->number_nodes());
+                storage += "]";
+                side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL,
+                                                  storage, Ioss::Field::MESH, my_side_count));
+              }
 
-            if (side_set_name == "universal_sideset") {
-              side_block->field_add(Ioss::Field("side_ids", Ioss::Field::INTEGER, "scalar",
-                                                Ioss::Field::MESH, my_side_count));
+              if (side_set_name == "universal_sideset") {
+                side_block->field_add(Ioss::Field("side_ids", Ioss::Field::INTEGER, "scalar",
+                                                  Ioss::Field::MESH, my_side_count));
+              }
             }
           }
+          ++I;
         }
-        ++I;
       }
     }
-  }
-} // namespace Iopg
+  } // namespace Iopg
 
-bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
-bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
-                                       void *data, size_t data_size) const
-{
-  size_t num_to_get = field.verify(data_size);
-  if (num_to_get > 0) {
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
 
-    Ioss::Field::RoleType role = field.get_role();
-    if (role == Ioss::Field::MESH) {
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
 
-      if ((field.get_name() == "mesh_model_coordinates_x") ||
-          (field.get_name() == "mesh_model_coordinates_y") ||
-          (field.get_name() == "mesh_model_coordinates_z")) {
+        if ((field.get_name() == "mesh_model_coordinates_x") ||
+            (field.get_name() == "mesh_model_coordinates_y") ||
+            (field.get_name() == "mesh_model_coordinates_z")) {
 
-        std::vector<double> x(num_to_get);
-        std::vector<double> y(num_to_get);
-        std::vector<double> z;
-        if (spatialDimension == 3)
-          z.resize(num_to_get);
+          std::vector<double> x(num_to_get);
+          std::vector<double> y(num_to_get);
+          std::vector<double> z;
+          if (spatialDimension == 3)
+            z.resize(num_to_get);
 
-        double *rdata = static_cast<double *>(data);
+          double *rdata = static_cast<double *>(data);
 
-        int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
-        if (ierr < 0) {
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+          int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
+          if (ierr < 0) {
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+          }
+          size_t index = 0;
+
+          if (field.get_name() == "mesh_model_coordinates_x") {
+            for (size_t i = 0; i < num_to_get; i++) {
+              rdata[index++] = x[i];
+            }
+          }
+          else if (field.get_name() == "mesh_model_coordinates_y") {
+            for (size_t i = 0; i < num_to_get; i++) {
+              rdata[index++] = y[i];
+            }
+          }
+          else {
+            for (size_t i = 0; i < num_to_get; i++) {
+              if (spatialDimension == 3)
+                rdata[index++] = z[i];
+            }
+          }
         }
-        size_t index = 0;
 
-        if (field.get_name() == "mesh_model_coordinates_x") {
+        else if (field.get_name() == "mesh_model_coordinates") {
+          // Data required by upper classes store x0, y0, z0, ... xn,
+          // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
+          // ..., yn, z0, ..., zn so we have to allocate some scratch
+          // memory to read in the data and then map into supplied
+          // 'data'
+          std::vector<double> x(num_to_get);
+          std::vector<double> y(num_to_get);
+          std::vector<double> z;
+          if (spatialDimension == 3)
+            z.resize(num_to_get);
+
+          // Cast 'data' to correct size -- double
+          double *rdata = static_cast<double *>(data);
+
+          int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+          size_t index = 0;
           for (size_t i = 0; i < num_to_get; i++) {
             rdata[index++] = x[i];
-          }
-        }
-        else if (field.get_name() == "mesh_model_coordinates_y") {
-          for (size_t i = 0; i < num_to_get; i++) {
             rdata[index++] = y[i];
-          }
-        }
-        else {
-          for (size_t i = 0; i < num_to_get; i++) {
             if (spatialDimension == 3)
               rdata[index++] = z[i];
           }
         }
-      }
 
-      else if (field.get_name() == "mesh_model_coordinates") {
-        // Data required by upper classes store x0, y0, z0, ... xn,
-        // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
-        // ..., yn, z0, ..., zn so we have to allocate some scratch
-        // memory to read in the data and then map into supplied
-        // 'data'
-        std::vector<double> x(num_to_get);
-        std::vector<double> y(num_to_get);
-        std::vector<double> z;
-        if (spatialDimension == 3)
-          z.resize(num_to_get);
-
-        // Cast 'data' to correct size -- double
-        double *rdata = static_cast<double *>(data);
-
-        int ierr = im_ex_get_coord(get_file_pointer(), x.data(), y.data(), z.data());
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-        size_t index = 0;
-        for (size_t i = 0; i < num_to_get; i++) {
-          rdata[index++] = x[i];
-          rdata[index++] = y[i];
-          if (spatialDimension == 3)
-            rdata[index++] = z[i];
+        // NOTE: The implicit_ids field is ONLY provided for backward-
+        // compatibility and should not be used unless absolutely
+        // required. For generated mesh, the implicit_ids and ids are the same.
+        else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
+          // Map the local ids in this node block
+          // (1...node_count) to global node ids.
+          get_node_map().map_implicit_data(data, field, num_to_get, 0);
         }
-      }
+        else if (field.get_name() == "connectivity") {
+          // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+        }
+        else if (field.get_name() == "owning_processor") {
+          if (isParallel) {
+            Ioss::CommSet *css   = get_region()->get_commset("commset_node");
+            int           *idata = static_cast<int *>(data);
+            for (size_t i = 0; i < num_to_get; i++) {
+              idata[i] = myProcessor;
+            }
 
-      // NOTE: The implicit_ids field is ONLY provided for backward-
-      // compatibility and should not be used unless absolutely
-      // required. For generated mesh, the implicit_ids and ids are the same.
-      else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
-        // Map the local ids in this node block
-        // (1...node_count) to global node ids.
-        get_node_map().map_implicit_data(data, field, num_to_get, 0);
-      }
-      else if (field.get_name() == "connectivity") {
-        // Do nothing, just handles an idiosyncrasy of the GroupingEntity
-      }
-      else if (field.get_name() == "owning_processor") {
-        if (isParallel) {
-          Ioss::CommSet *css   = get_region()->get_commset("commset_node");
-          int           *idata = static_cast<int *>(data);
-          for (size_t i = 0; i < num_to_get; i++) {
-            idata[i] = myProcessor;
+            std::vector<int> ent_proc;
+            css->get_field_data("entity_processor_raw", ent_proc);
+            for (size_t i = 0; i < ent_proc.size(); i += 2) {
+              int node = ent_proc[i + 0];
+              int proc = ent_proc[i + 1];
+              if (proc < myProcessor) {
+                idata[node - 1] = proc;
+              }
+            }
           }
-
-          std::vector<int> ent_proc;
-          css->get_field_data("entity_processor_raw", ent_proc);
-          for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int node = ent_proc[i + 0];
-            int proc = ent_proc[i + 1];
-            if (proc < myProcessor) {
-              idata[node - 1] = proc;
+          else {
+            // Serial case...
+            int *idata = static_cast<int *>(data);
+            for (int64_t i = 0; i < nodeCount; i++) {
+              idata[i] = 0;
             }
           }
         }
         else {
-          // Serial case...
-          int *idata = static_cast<int *>(data);
-          for (int64_t i = 0; i < nodeCount; i++) {
-            idata[i] = 0;
-          }
+          num_to_get = Ioss::Utils::field_warning(nb, field, "input");
         }
-      }
-      else {
-        num_to_get = Ioss::Utils::field_warning(nb, field, "input");
-      }
-    }
-  }
-  return num_to_get;
-}
-
-int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
-                                       void *data, size_t data_size) const
-{
-  size_t num_to_get = field.verify(data_size);
-  if (num_to_get > 0) {
-
-    int                   id               = eb->get_property("id").get_int();
-    int                   my_element_count = eb->entity_count();
-    Ioss::Field::RoleType role             = field.get_role();
-
-    if (role == Ioss::Field::MESH) {
-      // Handle the MESH fields required for an ExodusII file model.
-      // (The 'genesis' portion)
-
-      if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
-        int element_nodes = eb->topology()->number_nodes();
-        assert(field.raw_storage()->component_count() == element_nodes);
-
-        // The connectivity is stored in a 1D array.
-        // The element_node index varies fastet
-        if (my_element_count > 0) {
-          int ierr = im_ex_get_elem_conn(get_file_pointer(), id, static_cast<int *>(data));
-          if (ierr < 0)
-            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-          // Now, map the nodes in the connectivity from local to global ids
-          if (field.get_name() == "connectivity") {
-            get_node_map().map_data(data, field, num_to_get * element_nodes);
-          }
-        }
-      }
-      else if (field.get_name() == "ids") {
-        // Map the local ids in this element block
-        // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-        get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
-      }
-      else {
-        num_to_get = Ioss::Utils::field_warning(eb, field, "input");
-      }
-    }
-
-    else if (role == Ioss::Field::ATTRIBUTE) {
-      // ERROR: Pamgen doesn't support elements with attributes...
-    }
-    else if (role == Ioss::Field::TRANSIENT) {
-      // ERROR: Pamgen doesn't support transient data...
-    }
-    else if (role == Ioss::Field::REDUCTION) {
-      num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
-    }
-  }
-  return num_to_get;
-}
-
-int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
-                                       void *data, size_t data_size) const
-{
-  {
-    Ioss::SerializeIO serializeIO__(this);
-
-    size_t num_to_get = field.verify(data_size);
-
-    if (num_to_get > 0) {
-      int entity_count = cs->entity_count();
-
-      // Return the <entity (node or side), processor> pair
-      if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
-
-        // Check type -- node or side
-        std::string type = cs->get_property("entity_type").get_string();
-
-        // Allocate temporary storage space
-        Ioss::IntVector entities(num_to_get);
-        Ioss::IntVector procs(num_to_get);
-
-        if (type == "node") {
-          int cm_offset = 0;
-          int i;
-          for (i = 0; i < commsetNodeCount; i++) {
-            int ierr = im_ne_get_node_cmap(get_file_pointer(), nodeCmapIds[i], &entities[cm_offset],
-                                           &procs[cm_offset], myProcessor);
-            if (ierr < 0)
-              pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-            cm_offset += nodeCmapNodeCnts[i];
-          }
-          assert(cm_offset == entity_count);
-
-          // Convert local node id to global node id and store in 'data'
-          int *entity_proc = static_cast<int *>(data);
-          if (field.get_name() == "entity_processor") {
-            const Ioss::MapContainer &map = get_node_map().map();
-
-            int j = 0;
-            for (i = 0; i < entity_count; i++) {
-              int local_id     = entities[i];
-              entity_proc[j++] = map[local_id];
-              entity_proc[j++] = procs[i];
-            }
-          }
-          else {
-            int j = 0;
-            for (i = 0; i < entity_count; i++) {
-              entity_proc[j++] = entities[i];
-              entity_proc[j++] = procs[i];
-            }
-          }
-        }
-        else if (type == "side") {
-          Ioss::IntVector sides(entity_count);
-          int             cm_offset = 0;
-          int             i;
-          for (i = 0; i < commsetElemCount; i++) {
-            int ierr = im_ne_get_elem_cmap(get_file_pointer(), elemCmapIds[i], &entities[cm_offset],
-                                           &sides[cm_offset], &procs[cm_offset], myProcessor);
-            if (ierr < 0)
-              pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-            cm_offset += elemCmapElemCnts[i];
-          }
-          assert(cm_offset == entity_count);
-
-          int *entity_proc = static_cast<int *>(data);
-          if (field.get_name() == "entity_processor") {
-            const Ioss::MapContainer &map = get_element_map().map();
-
-            int j = 0;
-            for (i = 0; i < entity_count; i++) {
-              int local_id     = entities[i];
-              entity_proc[j++] = map[local_id];
-              entity_proc[j++] = sides[i];
-              entity_proc[j++] = procs[i];
-            }
-          }
-          else {
-            int j = 0;
-            for (i = 0; i < entity_count; i++) {
-              entity_proc[j++] = entities[i];
-              entity_proc[j++] = sides[i];
-              entity_proc[j++] = procs[i];
-            }
-          }
-        }
-        else {
-          std::ostringstream errmsg;
-          errmsg << "Invalid commset type " << type;
-          IOSS_ERROR(errmsg);
-        }
-      }
-      else if (field.get_name() == "ids") {
-        // Do nothing, just handles an idiosyncrasy of the GroupingEntity
-      }
-      else {
-        num_to_get = Ioss::Utils::field_warning(cs, field, "input");
       }
     }
     return num_to_get;
   }
-}
 
-int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
-                                       void *data, size_t data_size) const
-{
-  size_t num_to_get = field.verify(data_size);
-  if (num_to_get > 0) {
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
 
-    int    id           = fb->get_property("id").get_int();
-    size_t entity_count = fb->entity_count();
-    if (num_to_get != entity_count) {
-      std::ostringstream errmsg;
-      errmsg << "Partial field input not yet implemented for side blocks";
-      IOSS_ERROR(errmsg);
+      int                   id               = eb->get_property("id").get_int();
+      int                   my_element_count = eb->entity_count();
+      Ioss::Field::RoleType role             = field.get_role();
+
+      if (role == Ioss::Field::MESH) {
+        // Handle the MESH fields required for an ExodusII file model.
+        // (The 'genesis' portion)
+
+        if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
+          int element_nodes = eb->topology()->number_nodes();
+          assert(field.raw_storage()->component_count() == element_nodes);
+
+          // The connectivity is stored in a 1D array.
+          // The element_node index varies fastet
+          if (my_element_count > 0) {
+            int ierr = im_ex_get_elem_conn(get_file_pointer(), id, static_cast<int *>(data));
+            if (ierr < 0)
+              pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+            // Now, map the nodes in the connectivity from local to global ids
+            if (field.get_name() == "connectivity") {
+              get_node_map().map_data(data, field, num_to_get * element_nodes);
+            }
+          }
+        }
+        else if (field.get_name() == "ids") {
+          // Map the local ids in this element block
+          // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
+          get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
+        }
+        else {
+          num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+        }
+      }
+
+      else if (role == Ioss::Field::ATTRIBUTE) {
+        // ERROR: Pamgen doesn't support elements with attributes...
+      }
+      else if (role == Ioss::Field::TRANSIENT) {
+        // ERROR: Pamgen doesn't support transient data...
+      }
+      else if (role == Ioss::Field::REDUCTION) {
+        num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+      }
+    }
+    return num_to_get;
+  }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    {
+      Ioss::SerializeIO serializeIO__(this);
+
+      size_t num_to_get = field.verify(data_size);
+
+      if (num_to_get > 0) {
+        int entity_count = cs->entity_count();
+
+        // Return the <entity (node or side), processor> pair
+        if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
+
+          // Check type -- node or side
+          std::string type = cs->get_property("entity_type").get_string();
+
+          // Allocate temporary storage space
+          Ioss::IntVector entities(num_to_get);
+          Ioss::IntVector procs(num_to_get);
+
+          if (type == "node") {
+            int cm_offset = 0;
+            int i;
+            for (i = 0; i < commsetNodeCount; i++) {
+              int ierr = im_ne_get_node_cmap(get_file_pointer(), nodeCmapIds[i],
+                                             &entities[cm_offset], &procs[cm_offset], myProcessor);
+              if (ierr < 0)
+                pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+              cm_offset += nodeCmapNodeCnts[i];
+            }
+            assert(cm_offset == entity_count);
+
+            // Convert local node id to global node id and store in 'data'
+            int *entity_proc = static_cast<int *>(data);
+            if (field.get_name() == "entity_processor") {
+              const Ioss::MapContainer &map = get_node_map().map();
+
+              int j = 0;
+              for (i = 0; i < entity_count; i++) {
+                int local_id     = entities[i];
+                entity_proc[j++] = map[local_id];
+                entity_proc[j++] = procs[i];
+              }
+            }
+            else {
+              int j = 0;
+              for (i = 0; i < entity_count; i++) {
+                entity_proc[j++] = entities[i];
+                entity_proc[j++] = procs[i];
+              }
+            }
+          }
+          else if (type == "side") {
+            Ioss::IntVector sides(entity_count);
+            int             cm_offset = 0;
+            int             i;
+            for (i = 0; i < commsetElemCount; i++) {
+              int ierr =
+                  im_ne_get_elem_cmap(get_file_pointer(), elemCmapIds[i], &entities[cm_offset],
+                                      &sides[cm_offset], &procs[cm_offset], myProcessor);
+              if (ierr < 0)
+                pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+              cm_offset += elemCmapElemCnts[i];
+            }
+            assert(cm_offset == entity_count);
+
+            int *entity_proc = static_cast<int *>(data);
+            if (field.get_name() == "entity_processor") {
+              const Ioss::MapContainer &map = get_element_map().map();
+
+              int j = 0;
+              for (i = 0; i < entity_count; i++) {
+                int local_id     = entities[i];
+                entity_proc[j++] = map[local_id];
+                entity_proc[j++] = sides[i];
+                entity_proc[j++] = procs[i];
+              }
+            }
+            else {
+              int j = 0;
+              for (i = 0; i < entity_count; i++) {
+                entity_proc[j++] = entities[i];
+                entity_proc[j++] = sides[i];
+                entity_proc[j++] = procs[i];
+              }
+            }
+          }
+          else {
+            std::ostringstream errmsg;
+            errmsg << "Invalid commset type " << type;
+            IOSS_ERROR(errmsg);
+          }
+        }
+        else if (field.get_name() == "ids") {
+          // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+        }
+        else {
+          num_to_get = Ioss::Utils::field_warning(cs, field, "input");
+        }
+      }
+      return num_to_get;
+    }
+  }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      int    id           = fb->get_property("id").get_int();
+      size_t entity_count = fb->entity_count();
+      if (num_to_get != entity_count) {
+        std::ostringstream errmsg;
+        errmsg << "Partial field input not yet implemented for side blocks";
+        IOSS_ERROR(errmsg);
+      }
+
+      int number_sides;
+      int number_distribution_factors;
+      int ierr = im_ex_get_side_set_param(get_file_pointer(), id, &number_sides,
+                                          &number_distribution_factors);
+      if (ierr < 0)
+        pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+
+        // In exodusII, we may have split the sideset into multiple
+        // side blocks if there are multiple side  topologies in the
+        // sideset.  Because of this, the passed in 'data' may not be
+        // large enough to hold the data residing in the sideset and we
+        // may need to allocate a temporary array...  This can be checked
+        // by comparing the size of the sideset with the 'my_side_count' of
+        // the side block.
+
+        if (field.get_name() == "side_ids") {}
+
+        else if (field.get_name() == "ids") {
+          // In exodusII, the 'side set' is stored as a sideset.  A
+          // sideset has a list of elements and a corresponding local
+          // element side (1-based) The side id is: side_id =
+          // 10*element_id + local_side_number This assumes that all
+          // sides in a sideset are boundary sides.  Since we
+          // only have a single array, we need to allocate an extra array
+          // to store all of the data.  Note also that the element_id is
+          // the global id but only the local id is stored so we need to
+          // map from local_to_global prior to generating the side  id...
+
+          // Get the element number map (1-based)...
+          const Ioss::MapContainer &map = get_element_map().map();
+
+          // Allocate space for local side number, use 'data' as temporary
+          // storage for element numbers and overwrite with the side
+          // numbers.
+          Ioss::IntVector sides;
+          int            *element = nullptr;
+          int            *ids     = static_cast<int *>(data);
+          if (number_sides == static_cast<int>(entity_count)) {
+            // Only 1 side block in this sideset
+            sides.resize(entity_count);
+            element = static_cast<int *>(data);
+          }
+          else {
+            // Multiple side blocks in sideset. Need to allocate memory to
+            // store sideset
+            sides.resize(number_sides);
+            element = new int[number_sides];
+          }
+
+          ierr = im_ex_get_side_set(get_file_pointer(), id, element, sides.data());
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+          if (number_sides == static_cast<int>(entity_count)) {
+            for (size_t iel = 0; iel < entity_count; iel++) {
+              int new_id = 10 * map[element[iel]] + sides[iel];
+              ids[iel]   = new_id;
+            }
+          }
+          else {
+            Ioss::IntVector is_valid_side;
+            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, sides.data(),
+                                                        number_sides, get_region());
+            size_t ieb = 0;
+            for (int iel = 0; iel < number_sides; iel++) {
+              if (is_valid_side[iel] == 1) {
+                int new_id = 10 * map[element[iel]] + sides[iel];
+                ids[ieb++] = new_id;
+              }
+            }
+            assert(ieb == entity_count);
+          }
+
+          if (number_sides != static_cast<int>(entity_count))
+            delete[] element;
+        }
+        else if (field.get_name() == "element_side") {
+          // In exodusII, the 'side set' is stored as a sideset.  A sideset
+          // has a list of elements and a corresponding local element side
+          // (1-based)
+
+          // Since we only have a single array, we need to allocate an extra
+          // array to store all of the data.  Note also that the element_id
+          // is the global id but only the local id is stored so we need to
+          // map from local_to_global prior to generating the side  id...
+
+          // Get the element number map (1-based)...
+          const Ioss::MapContainer &map = get_element_map().map();
+
+          // Allocate space for local side number and element numbers
+          // numbers.
+          int *element_side = static_cast<int *>(data);
+
+          Ioss::IntVector element(number_sides);
+          Ioss::IntVector sides(number_sides);
+
+          ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), sides.data());
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+          if (number_sides == static_cast<int>(entity_count)) {
+            size_t index = 0;
+            for (size_t iel = 0; iel < entity_count; iel++) {
+              element_side[index++] = map[element[iel]];
+              element_side[index++] = sides[iel];
+            }
+            assert(index / 2 == entity_count);
+          }
+          else {
+            Ioss::IntVector is_valid_side;
+            Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(),
+                                                        sides.data(), number_sides, get_region());
+
+            size_t index = 0;
+            for (int iel = 0; iel < number_sides; iel++) {
+              if (is_valid_side[iel] == 1) {
+                // This side  belongs in the side block
+                element_side[index++] = map[element[iel]];
+                element_side[index++] = sides[iel];
+              }
+            }
+            assert(index / 2 == entity_count);
+          }
+        }
+        else if (field.get_name() == "connectivity") {
+          // The side  connectivity needs to be generated 'on-the-fly' from
+          // the element number and local side  of that element. A sideset
+          // can span multiple element blocks, and contain multiple side
+          // types; the side block contains side of similar topology.
+          ierr = get_side_connectivity(fb, id, entity_count, static_cast<int *>(data),
+                                       data_size / sizeof(int));
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        }
+        else if (field.get_name() == "distribution_factors") {
+          ierr = get_side_distributions(fb, id, entity_count, static_cast<double *>(data),
+                                        data_size / sizeof(double));
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        }
+        else {
+          num_to_get = Ioss::Utils::field_warning(fb, field, "input");
+        }
+      }
+      else if (role == Ioss::Field::TRANSIENT) {
+        unsupported("side set transient fields");
+      }
+    }
+    return num_to_get;
+  }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      int                   id   = ns->get_property("id").get_int();
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+
+        if (field.get_name() == "ids") {
+          int ierr = im_ex_get_node_set(get_file_pointer(), id, static_cast<int *>(data));
+          if (ierr < 0)
+            pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+          // Convert the local node ids to global ids
+          get_node_map().map_data(data, field, num_to_get);
+        }
+        else if (field.get_name() == "distribution_factors") {
+          // Not supported by pamgen.  Fill data with '1'
+          double *rdata = static_cast<double *>(data);
+          for (size_t i = 0; i < num_to_get; i++)
+            rdata[i] = 1.0;
+        }
+        else {
+          num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+        }
+      }
+      else if (role == Ioss::Field::TRANSIENT) {
+        unsupported("transient nodeset fields");
+      }
+    }
+    return num_to_get;
+  }
+
+  const Ioss::Map &DatabaseIO::get_node_map() const
+  {
+    // Allocate space for node number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (nodeMap.map().empty()) {
+      nodeMap.set_size(nodeCount);
+
+      if (is_input()) {
+        std::vector<int> node_map(nodeMap.map().size() - 1);
+        int              error = im_ex_get_node_num_map(get_file_pointer(), node_map.data());
+        if (error < 0) {
+          // Clear out the vector...
+          Ioss::MapContainer().swap(nodeMap.map());
+          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        }
+        nodeMap.set_map(node_map.data(), node_map.size(), 0, true);
+      }
+      else {
+        unsupported("output nodal id map");
+      }
+    }
+    return nodeMap;
+  }
+
+  const Ioss::Map &DatabaseIO::get_element_map() const
+  {
+    // Allocate space for element number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (elemMap.map().empty()) {
+      elemMap.set_size(elementCount);
+
+      if (is_input()) {
+        std::vector<int> elem_map(elemMap.map().size() - 1);
+        int              error = im_ex_get_elem_num_map(get_file_pointer(), elem_map.data());
+        if (error < 0) {
+          // Clear out the vector...
+          Ioss::MapContainer().swap(elemMap.map());
+          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        }
+        elemMap.set_map(elem_map.data(), elem_map.size(), 0, true);
+      }
+      else {
+        unsupported("output element map");
+      }
+    }
+    return elemMap;
+  }
+
+  void DatabaseIO::compute_block_membership__(Ioss::SideBlock          *sideblock,
+                                              std::vector<std::string> &block_membership) const
+  {
+    Ioss::IntVector block_ids(elementBlockCount);
+    if (elementBlockCount == 1) {
+      block_ids[0] = 1;
+    }
+    else {
+      Ioss::IntVector element_side;
+      sideblock->get_field_data("element_side", element_side);
+
+      size_t              number_sides = element_side.size() / 2;
+      Ioss::ElementBlock *block        = nullptr;
+      for (size_t iel = 0; iel < number_sides; iel++) {
+        int elem_id = element_side[2 * iel]; // Vector contains both element and side.
+        elem_id     = element_global_to_local(elem_id);
+        if (block == nullptr || !block->contains(elem_id)) {
+          block = get_region()->get_element_block(elem_id);
+          assert(block != nullptr);
+          int block_order        = block->get_property("original_block_order").get_int();
+          block_ids[block_order] = 1;
+        }
+      }
     }
 
+    // Synchronize among all processors....
+    if (isParallel) {
+      util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
+    }
+
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
+
+    for (int i = 0; i < elementBlockCount; i++) {
+      if (block_ids[i] == 1) {
+        Ioss::ElementBlock *block = element_blocks[i];
+        block_membership.push_back(block->name());
+      }
+    }
+  }
+
+  int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, int *fconnect,
+                                        size_t /* data_size */) const
+  {
+    // Get size of data stored on the file...
     int number_sides;
     int number_distribution_factors;
     int ierr = im_ex_get_side_set_param(get_file_pointer(), id, &number_sides,
@@ -1241,373 +1524,92 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
     if (ierr < 0)
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
-    Ioss::Field::RoleType role = field.get_role();
-    if (role == Ioss::Field::MESH) {
+    // Allocate space for element and local side number
+    assert(number_sides > 0);
+    //----
+    Ioss::IntVector element(number_sides);
+    Ioss::IntVector side(number_sides);
 
-      // In exodusII, we may have split the sideset into multiple
-      // side blocks if there are multiple side  topologies in the
-      // sideset.  Because of this, the passed in 'data' may not be
-      // large enough to hold the data residing in the sideset and we
-      // may need to allocate a temporary array...  This can be checked
-      // by comparing the size of the sideset with the 'my_side_count' of
-      // the side block.
+    ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), side.data());
+    if (ierr < 0)
+      pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+    //----
 
-      if (field.get_name() == "side_ids") {}
+    Ioss::IntVector is_valid_side;
+    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(), side.data(),
+                                                number_sides, get_region());
 
-      else if (field.get_name() == "ids") {
-        // In exodusII, the 'side set' is stored as a sideset.  A
-        // sideset has a list of elements and a corresponding local
-        // element side (1-based) The side id is: side_id =
-        // 10*element_id + local_side_number This assumes that all
-        // sides in a sideset are boundary sides.  Since we
-        // only have a single array, we need to allocate an extra array
-        // to store all of the data.  Note also that the element_id is
-        // the global id but only the local id is stored so we need to
-        // map from local_to_global prior to generating the side  id...
+    Ioss::IntVector     elconnect;
+    int                 elconsize  = 0;       // Size of currently allocated connectivity block
+    Ioss::ElementBlock *conn_block = nullptr; // Block that we currently
+    // have connectivity for
 
-        // Get the element number map (1-based)...
-        const Ioss::MapContainer &map = get_element_map().map();
+    Ioss::ElementBlock *block = nullptr;
 
-        // Allocate space for local side number, use 'data' as temporary
-        // storage for element numbers and overwrite with the side
-        // numbers.
-        Ioss::IntVector sides;
-        int            *element = nullptr;
-        int            *ids     = static_cast<int *>(data);
-        if (number_sides == static_cast<int>(entity_count)) {
-          // Only 1 side block in this sideset
-          sides.resize(entity_count);
-          element = static_cast<int *>(data);
-        }
-        else {
-          // Multiple side blocks in sideset. Need to allocate memory to
-          // store sideset
-          sides.resize(number_sides);
-          element = new int[number_sides];
-        }
+    Ioss::IntVector side_elem_map; // Maps the side into the elements
+    // connectivity array
+    int current_side = -1;
+    int nelnode      = 0;
+    int nfnodes      = 0;
+    int ieb          = 0;
+    int offset       = 0;
+    for (int iel = 0; iel < number_sides; iel++) {
+      if (is_valid_side[iel] == 1) {
 
-        ierr = im_ex_get_side_set(get_file_pointer(), id, element, sides.data());
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        int elem_id = element[iel];
 
-        if (number_sides == static_cast<int>(entity_count)) {
-          for (size_t iel = 0; iel < entity_count; iel++) {
-            int new_id = 10 * map[element[iel]] + sides[iel];
-            ids[iel]   = new_id;
-          }
-        }
-        else {
-          Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, sides.data(),
-                                                      number_sides, get_region());
-          size_t ieb = 0;
-          for (int iel = 0; iel < number_sides; iel++) {
-            if (is_valid_side[iel] == 1) {
-              int new_id = 10 * map[element[iel]] + sides[iel];
-              ids[ieb++] = new_id;
-            }
-          }
-          assert(ieb == entity_count);
-        }
-
-        if (number_sides != static_cast<int>(entity_count))
-          delete[] element;
-      }
-      else if (field.get_name() == "element_side") {
-        // In exodusII, the 'side set' is stored as a sideset.  A sideset
-        // has a list of elements and a corresponding local element side
-        // (1-based)
-
-        // Since we only have a single array, we need to allocate an extra
-        // array to store all of the data.  Note also that the element_id
-        // is the global id but only the local id is stored so we need to
-        // map from local_to_global prior to generating the side  id...
-
-        // Get the element number map (1-based)...
-        const Ioss::MapContainer &map = get_element_map().map();
-
-        // Allocate space for local side number and element numbers
-        // numbers.
-        int *element_side = static_cast<int *>(data);
-
-        Ioss::IntVector element(number_sides);
-        Ioss::IntVector sides(number_sides);
-
-        ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), sides.data());
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-        if (number_sides == static_cast<int>(entity_count)) {
-          size_t index = 0;
-          for (size_t iel = 0; iel < entity_count; iel++) {
-            element_side[index++] = map[element[iel]];
-            element_side[index++] = sides[iel];
-          }
-          assert(index / 2 == entity_count);
-        }
-        else {
-          Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(),
-                                                      sides.data(), number_sides, get_region());
-
-          size_t index = 0;
-          for (int iel = 0; iel < number_sides; iel++) {
-            if (is_valid_side[iel] == 1) {
-              // This side  belongs in the side block
-              element_side[index++] = map[element[iel]];
-              element_side[index++] = sides[iel];
-            }
-          }
-          assert(index / 2 == entity_count);
-        }
-      }
-      else if (field.get_name() == "connectivity") {
-        // The side  connectivity needs to be generated 'on-the-fly' from
-        // the element number and local side  of that element. A sideset
-        // can span multiple element blocks, and contain multiple side
-        // types; the side block contains side of similar topology.
-        ierr = get_side_connectivity(fb, id, entity_count, static_cast<int *>(data),
-                                     data_size / sizeof(int));
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      else if (field.get_name() == "distribution_factors") {
-        ierr = get_side_distributions(fb, id, entity_count, static_cast<double *>(data),
-                                      data_size / sizeof(double));
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      else {
-        num_to_get = Ioss::Utils::field_warning(fb, field, "input");
-      }
-    }
-    else if (role == Ioss::Field::TRANSIENT) {
-      unsupported("side set transient fields");
-    }
-  }
-  return num_to_get;
-}
-
-int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
-                                       void *data, size_t data_size) const
-{
-  size_t num_to_get = field.verify(data_size);
-  if (num_to_get > 0) {
-
-    int                   id   = ns->get_property("id").get_int();
-    Ioss::Field::RoleType role = field.get_role();
-    if (role == Ioss::Field::MESH) {
-
-      if (field.get_name() == "ids") {
-        int ierr = im_ex_get_node_set(get_file_pointer(), id, static_cast<int *>(data));
-        if (ierr < 0)
-          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-        // Convert the local node ids to global ids
-        get_node_map().map_data(data, field, num_to_get);
-      }
-      else if (field.get_name() == "distribution_factors") {
-        // Not supported by pamgen.  Fill data with '1'
-        double *rdata = static_cast<double *>(data);
-        for (size_t i = 0; i < num_to_get; i++)
-          rdata[i] = 1.0;
-      }
-      else {
-        num_to_get = Ioss::Utils::field_warning(ns, field, "input");
-      }
-    }
-    else if (role == Ioss::Field::TRANSIENT) {
-      unsupported("transient nodeset fields");
-    }
-  }
-  return num_to_get;
-}
-
-const Ioss::Map &DatabaseIO::get_node_map() const
-{
-  // Allocate space for node number map and read it in...
-  // Can be called multiple times, allocate 1 time only
-  if (nodeMap.map().empty()) {
-    nodeMap.set_size(nodeCount);
-
-    if (is_input()) {
-      std::vector<int> node_map(nodeMap.map().size() - 1);
-      int              error = im_ex_get_node_num_map(get_file_pointer(), node_map.data());
-      if (error < 0) {
-        // Clear out the vector...
-        Ioss::MapContainer().swap(nodeMap.map());
-        pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      nodeMap.set_map(node_map.data(), node_map.size(), 0, true);
-    }
-    else {
-      unsupported("output nodal id map");
-    }
-  }
-  return nodeMap;
-}
-
-const Ioss::Map &DatabaseIO::get_element_map() const
-{
-  // Allocate space for element number map and read it in...
-  // Can be called multiple times, allocate 1 time only
-  if (elemMap.map().empty()) {
-    elemMap.set_size(elementCount);
-
-    if (is_input()) {
-      std::vector<int> elem_map(elemMap.map().size() - 1);
-      int              error = im_ex_get_elem_num_map(get_file_pointer(), elem_map.data());
-      if (error < 0) {
-        // Clear out the vector...
-        Ioss::MapContainer().swap(elemMap.map());
-        pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      elemMap.set_map(elem_map.data(), elem_map.size(), 0, true);
-    }
-    else {
-      unsupported("output element map");
-    }
-  }
-  return elemMap;
-}
-
-void DatabaseIO::compute_block_membership__(Ioss::SideBlock          *sideblock,
-                                            std::vector<std::string> &block_membership) const
-{
-  Ioss::IntVector block_ids(elementBlockCount);
-  if (elementBlockCount == 1) {
-    block_ids[0] = 1;
-  }
-  else {
-    Ioss::IntVector element_side;
-    sideblock->get_field_data("element_side", element_side);
-
-    size_t              number_sides = element_side.size() / 2;
-    Ioss::ElementBlock *block        = nullptr;
-    for (size_t iel = 0; iel < number_sides; iel++) {
-      int elem_id = element_side[2 * iel]; // Vector contains both element and side.
-      elem_id     = element_global_to_local(elem_id);
-      if (block == nullptr || !block->contains(elem_id)) {
+        // ensure we have correct connectivity
         block = get_region()->get_element_block(elem_id);
         assert(block != nullptr);
-        int block_order        = block->get_property("original_block_order").get_int();
-        block_ids[block_order] = 1;
-      }
-    }
-  }
+        assert(block->topology() != nullptr);
 
-  // Synchronize among all processors....
-  if (isParallel) {
-    util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
-  }
-
-  const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
-
-  for (int i = 0; i < elementBlockCount; i++) {
-    if (block_ids[i] == 1) {
-      Ioss::ElementBlock *block = element_blocks[i];
-      block_membership.push_back(block->name());
-    }
-  }
-}
-
-int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, int *fconnect,
-                                      size_t /* data_size */) const
-{
-  // Get size of data stored on the file...
-  int number_sides;
-  int number_distribution_factors;
-  int ierr =
-      im_ex_get_side_set_param(get_file_pointer(), id, &number_sides, &number_distribution_factors);
-  if (ierr < 0)
-    pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-  // Allocate space for element and local side number
-  assert(number_sides > 0);
-  //----
-  Ioss::IntVector element(number_sides);
-  Ioss::IntVector side(number_sides);
-
-  ierr = im_ex_get_side_set(get_file_pointer(), id, element.data(), side.data());
-  if (ierr < 0)
-    pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-  //----
-
-  Ioss::IntVector is_valid_side;
-  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element.data(), side.data(),
-                                              number_sides, get_region());
-
-  Ioss::IntVector     elconnect;
-  int                 elconsize  = 0;       // Size of currently allocated connectivity block
-  Ioss::ElementBlock *conn_block = nullptr; // Block that we currently
-  // have connectivity for
-
-  Ioss::ElementBlock *block = nullptr;
-
-  Ioss::IntVector side_elem_map; // Maps the side into the elements
-  // connectivity array
-  int current_side = -1;
-  int nelnode      = 0;
-  int nfnodes      = 0;
-  int ieb          = 0;
-  int offset       = 0;
-  for (int iel = 0; iel < number_sides; iel++) {
-    if (is_valid_side[iel] == 1) {
-
-      int elem_id = element[iel];
-
-      // ensure we have correct connectivity
-      block = get_region()->get_element_block(elem_id);
-      assert(block != nullptr);
-      assert(block->topology() != nullptr);
-
-      if (conn_block != block) {
-        int nelem = block->entity_count();
-        nelnode   = block->topology()->number_nodes();
-        // Used to map element number into position in connectivity array.
-        // E.g., element 97 is the (97-offset)th element in this block and
-        // is stored in array index (97-offset-1).
-        offset = block->get_offset() + 1;
-        if (elconsize < nelem * nelnode) {
-          elconsize = nelem * nelnode;
-          elconnect.resize(elconsize);
+        if (conn_block != block) {
+          int nelem = block->entity_count();
+          nelnode   = block->topology()->number_nodes();
+          // Used to map element number into position in connectivity array.
+          // E.g., element 97 is the (97-offset)th element in this block and
+          // is stored in array index (97-offset-1).
+          offset = block->get_offset() + 1;
+          if (elconsize < nelem * nelnode) {
+            elconsize = nelem * nelnode;
+            elconnect.resize(elconsize);
+          }
+          get_field_internal(block, block->get_field("connectivity"), elconnect.data(),
+                             nelem * nelnode * sizeof(int));
+          conn_block   = block;
+          current_side = -1;
         }
-        get_field_internal(block, block->get_field("connectivity"), elconnect.data(),
-                           nelem * nelnode * sizeof(int));
-        conn_block   = block;
-        current_side = -1;
-      }
 
-      // NOTE: Element connectivity is returned with nodes in global id space
-      if (current_side != side[iel]) {
-        int side_id   = side[iel];
-        side_elem_map = block->topology()->boundary_connectivity(side_id);
-        current_side  = side[iel];
-        assert(block->topology()->boundary_type(side[iel]) != nullptr);
-        nfnodes = block->topology()->boundary_type(side[iel])->number_nodes();
-      }
-      for (int inode = 0; inode < nfnodes; inode++) {
-        int global_node = elconnect[(elem_id - offset) * nelnode + side_elem_map[inode]];
-        fconnect[ieb++] = global_node;
+        // NOTE: Element connectivity is returned with nodes in global id space
+        if (current_side != side[iel]) {
+          int side_id   = side[iel];
+          side_elem_map = block->topology()->boundary_connectivity(side_id);
+          current_side  = side[iel];
+          assert(block->topology()->boundary_type(side[iel]) != nullptr);
+          nfnodes = block->topology()->boundary_type(side[iel])->number_nodes();
+        }
+        for (int inode = 0; inode < nfnodes; inode++) {
+          int global_node = elconnect[(elem_id - offset) * nelnode + side_elem_map[inode]];
+          fconnect[ieb++] = global_node;
+        }
       }
     }
+    return ierr;
   }
-  return ierr;
-}
 
-// Get distribution factors for the specified side block
-int DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int id, int my_side_count,
-                                       double *dist_fact, size_t /* data_size */) const
-{
-  // NOTE: In pamgen, all distribution factors are 1.0
-  const Ioss::ElementTopology *ftopo   = fb->topology();
-  int                          nfnodes = ftopo->number_nodes();
-  for (int i = 0; i < nfnodes * my_side_count; i++)
-    dist_fact[i] = 1.0;
-  return 0;
-}
+  // Get distribution factors for the specified side block
+  int DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int id, int my_side_count,
+                                         double *dist_fact, size_t /* data_size */) const
+  {
+    // NOTE: In pamgen, all distribution factors are 1.0
+    const Ioss::ElementTopology *ftopo   = fb->topology();
+    int                          nfnodes = ftopo->number_nodes();
+    for (int i = 0; i < nfnodes * my_side_count; i++)
+      dist_fact[i] = 1.0;
+    return 0;
+  }
 
-//------------------------------------------------------------------------
+  //------------------------------------------------------------------------
 } // namespace Iopg
 namespace {
   void separate_surface_element_sides(Ioss::IntVector &element, Ioss::IntVector &sides,

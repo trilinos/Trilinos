@@ -5,14 +5,13 @@
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_Utils.h>
+#include <heartbeat/Iohb_DatabaseIO.h>
+
 #include <cassert>
 #include <cstddef>
 #include <ctime>
+#include <fmt/ostream.h>
 #include <fstream>
-#include <heartbeat/Iohb_DatabaseIO.h>
-#include <heartbeat/Iohb_Layout.h>
-#include <iostream>
 #include <string>
 
 #include <vector>
@@ -21,7 +20,6 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
@@ -29,6 +27,7 @@
 #include "Ioss_State.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
+#include <heartbeat/Iohb_Layout.h>
 
 namespace Ioss {
   class CommSet;
@@ -47,7 +46,7 @@ namespace Ioss {
 namespace {
   std::string time_stamp(const std::string &format)
   {
-    if (format == "") {
+    if (format.empty()) {
       return std::string("");
     }
     const int   length = 256;
@@ -185,7 +184,7 @@ namespace Iohb {
 
         if (new_this->logStream == nullptr) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Could not create heartbeat file '" << get_filename() << "'\n";
+          fmt::print(errmsg, "ERROR: Could not create heartbeat file '{}'\n", get_filename());
           IOSS_ERROR(errmsg);
         }
       }
@@ -249,10 +248,6 @@ namespace Iohb {
       if (properties.exists("FIELD_WIDTH")) {
         new_this->fieldWidth_ = properties.get("FIELD_WIDTH").get_int();
       }
-      else {
-        // +1.xxxxxxe+00 The x count is the precision the "+1.e+00" is the 7
-        new_this->fieldWidth_ = precision_ + 7;
-      }
 
       Ioss::Utils::check_set_bool_property(properties, "SHOW_LABELS", new_this->showLabels);
 
@@ -302,7 +297,7 @@ namespace Iohb {
     initialize();
 
     layout_ = std::make_unique<Layout>(showLabels, precision_, separator_, fieldWidth_);
-    if (tsFormat != "") {
+    if (!tsFormat.empty()) {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
       layout_->add_literal(" ");
@@ -327,15 +322,16 @@ namespace Iohb {
     if (legend_ != nullptr) {
       if (fileFormat == Iohb::Format::SPYHIS) {
         time_t calendar_time = time(nullptr);
-        *logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
-        *logStream << *legend_ << '\n'; // Legend output twice for SPYHIS
+        // ctime include \n; the legend is output twice for SPYHIS.
+        fmt::print(*logStream, "% Sierra SPYHIS Output {}{}\n", ctime(&calendar_time),
+                   legend_->layout()); // ctime includes \n
       }
 
-      *logStream << *legend_ << '\n';
+      fmt::print(*logStream, "{}\n", legend_->layout());
       legend_.reset();
     }
 
-    *logStream << *layout_ << '\n';
+    fmt::print(*logStream, "{}\n", layout_->layout());
     layout_.reset();
 
     // Flush the buffer to disk...
@@ -387,7 +383,7 @@ namespace Iohb {
           layout.add_literal(" ");
           layout.add_literal(*reinterpret_cast<std::string *>(data));
           if (logStream != nullptr) {
-            *logStream << layout << '\n';
+            fmt::print(*logStream, "{}\n", layout.layout());
           }
         }
         else {
@@ -397,7 +393,7 @@ namespace Iohb {
       else {
         if (layout_ == nullptr) {
           std::ostringstream errmsg;
-          errmsg << "INTERNAL ERROR: Unexpected nullptr layout.\n";
+          fmt::print(errmsg, "INTERNAL ERROR: Unexpected nullptr layout.\n");
           IOSS_ERROR(errmsg);
         }
         if (field.get_type() == Ioss::Field::INTEGER) {
@@ -422,7 +418,8 @@ namespace Iohb {
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
+      fmt::print(errmsg,
+                 "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n");
       IOSS_ERROR(errmsg);
     }
     return num_to_get;
