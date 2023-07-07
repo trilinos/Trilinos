@@ -123,7 +123,7 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined debug status test.
   virtual void setDebugStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* debugStatusTest */
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &/* debugStatusTest */
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setDebugStatusTest() has not been"
