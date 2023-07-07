@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,10 +34,12 @@
 #include "matio.h"         // for matvar_t, Mat_VarFree, etc
 #include "matio_pubconf.h" // for MATIO_VERSION
 #include <SL_tokenize.h>   // for tokenize
-#include <cstddef>         // for size_t
-#include <cstring>         // for strtok, memcpy, strlen, etc
-#include <exodusII.h>      // for ex_put_variable_param, etc
-#include <numeric>         // for accumulate
+
+#include <array>
+#include <cstddef>    // for size_t
+#include <cstring>    // for strtok, memcpy, strlen, etc
+#include <exodusII.h> // for ex_put_variable_param, etc
+#include <numeric>    // for accumulate
 #include <smart_assert.h>
 #include <string> // for char_traits, string
 #include <vector> // for vector
@@ -50,11 +52,9 @@
 mat_t *mat_file = nullptr; /* file for binary .mat input */
 
 /**********************************************************************/
-static const char *qainfo[] = {
-    "mat2exo",
-    "2021/09/27",
-    "4.06",
-};
+namespace {
+  std::array<std::string, 3> qainfo{"mat2exo", "2021/09/27", "4.06"};
+}
 
 /**********************************************************************/
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name);
