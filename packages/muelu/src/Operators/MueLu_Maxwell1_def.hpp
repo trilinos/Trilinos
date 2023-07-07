@@ -112,6 +112,10 @@ namespace MueLu {
       newList.sublist("maxwell1: 11list").set("tentative: constant column sums", false);
       newList.sublist("maxwell1: 11list").set("tentative: calculate qr", false);
 
+      newList.sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol",true);
+
+
       if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
         newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
       else

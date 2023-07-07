@@ -63,6 +63,9 @@
 #include <MueLu_InverseApproximationFactory.hpp>
 #include <MueLu_Utilities.hpp>
 
+#include <Xpetra_BlockReorderManager.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
+#include <Xpetra_ReorderedBlockedMultiVector.hpp>
 
 namespace MueLuTests {
 
@@ -926,6 +929,238 @@ namespace MueLuTests {
       TEST_EQUALITY(n22[0], Teuchos::as<Scalar>(v10->getGlobalLength() * 0.5));
       TEUCHOS_TEST_COMPARE(n33[0], <, v11->getGlobalLength() * 0.33333334, out, success);
       TEUCHOS_TEST_COMPARE(n33[0], >, v11->getGlobalLength() * 0.33333333, out, success);
+
+    } // end UseTpetra
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedII30II12II_BGS_Setup_Apply2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+      int noBlocks = 4;
+      Teuchos::RCP<const BlockedCrsMatrix> bop = CreateBlockDiagonalExampleMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,TpetraMap>(noBlocks, *comm);
+      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+      Teuchos::RCP<      Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ [ 3 0 ] [1 2] ]")));
+
+      //////////////////////////////////////////////////////////////////////
+      // global level
+      RCP<BlockedGaussSeidelSmoother> smootherPrototype = rcp( new BlockedGaussSeidelSmoother() );
+      smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+      smootherPrototype->SetFactory("A", rAFact);
+
+      for(int k = 0; k < 2; k++ ) {
+        Teuchos::RCP<SubBlockAFactory> sA = Teuchos::rcp(new SubBlockAFactory());
+        sA->SetFactory("A",rAFact);
+        sA->SetParameter("block row",Teuchos::ParameterEntry(k)); // local block indices relative to size of blocked operator
+        sA->SetParameter("block col",Teuchos::ParameterEntry(k));
+
+        Teuchos::RCP<BlockedGaussSeidelSmoother> sP = Teuchos::rcp( new BlockedGaussSeidelSmoother() );
+        sP->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+        sP->SetFactory("A", sA);
+
+        for(int l = 0; l < 2; l++) {
+          std::string strInfo = std::string("{ 1 }");
+          Teuchos::RCP<SubBlockAFactory> ssA = rcp(new SubBlockAFactory());
+          ssA->SetFactory("A",sA);
+          ssA->SetParameter("block row",Teuchos::ParameterEntry(l)); // local block indices relative to size of blocked operator
+          ssA->SetParameter("block col",Teuchos::ParameterEntry(l));
+          ssA->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+          ssA->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+          RCP<SmootherPrototype> ssP = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+          ssP->SetFactory("A", ssA);
+          Teuchos::RCP<SmootherFactory> ssF = Teuchos::rcp(new SmootherFactory(ssP));
+          Teuchos::RCP<FactoryManager> ssM = Teuchos::rcp(new FactoryManager());
+          ssM->SetFactory("A", ssA);
+          ssM->SetFactory("Smoother", ssF);
+          ssM->SetIgnoreUserData(true);
+          sP->AddFactoryManager(ssM,l);
+        }
+
+        Teuchos::RCP<SmootherFactory> sF = Teuchos::rcp(new SmootherFactory(sP));
+        Teuchos::RCP<FactoryManager> sM = Teuchos::rcp(new FactoryManager());
+        sM->SetFactory("A", sA);
+        sM->SetFactory("Smoother", sF);
+        sM->SetIgnoreUserData(true);
+        smootherPrototype->AddFactoryManager(sM,k);
+      }
+
+      // create master smoother factory
+      RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+
+      // main factory manager
+      FactoryManager M;
+      M.SetFactory("A", rAFact);
+      M.SetFactory("Smoother",     smootherFact);
+
+      MueLu::SetFactoryManager SFM (Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+      // request BGS smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+      level.Request("Smoother", smootherFact.get());
+      level.Request("PreSmoother", smootherFact.get());
+      level.Request("PostSmoother", smootherFact.get());
+
+      smootherFact->Build(level);
+
+      RCP<SmootherBase> bgsSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<ReorderedBlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<ReorderedBlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      RCP<BlockedMultiVector> bX   = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), 1, true));
+      RCP<BlockedMultiVector> bRHS = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedRangeMap(), 1, true));
+
+      RCP<MultiVector> X = bX->Merge();
+      RCP<MultiVector> RHS = bRHS->Merge();
+
+      // Random X
+      X->putScalar(0.0);
+      RHS->putScalar(1.0);
+
+      bgsSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*reorderedA, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+
+      Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
+
+      {
+        RCP<BlockedMultiVector> test = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), X));
+        bX.swap(test);
+
+        Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [0 1] [2 3] ]");
+        test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bX));
+        bX.swap(test);
+      }
+
+      Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(bX,0);
+      Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(bX,1);
+
+      Teuchos::RCP<BlockedMultiVector> bv0 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v0);
+      Teuchos::RCP<BlockedMultiVector> bv1 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v1);
+      TEST_EQUALITY(bv0.is_null(),false);
+      TEST_EQUALITY(bv1.is_null(),false);
+
+      Teuchos::RCP<MultiVector> bv00 = bv0->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv01 = bv0->getMultiVector(1,false);
+      Teuchos::RCP<MultiVector> bv10 = bv1->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv11 = bv1->getMultiVector(1,false);
+
+      TEST_EQUALITY((bv00->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv01->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv10->getData(0))[0], Teuchos::as<Scalar>(0.25));
+
+      Teuchos::Array<magnitude_type> n0(1); v0->norm1(n0);
+      Teuchos::Array<magnitude_type> n1(1); v1->norm1(n1);
+
+      TEST_EQUALITY(n0[0], Teuchos::as<Scalar>(comm->getSize() * 2.5));
+      TEUCHOS_TEST_COMPARE(n1[0], <, comm->getSize() * 13.34, out, success);
+      TEUCHOS_TEST_COMPARE(n1[0], >, comm->getSize() * 13.33, out, success);
+
+      TEST_EQUALITY(v0->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v0->getMap()->getMaxLocalIndex(), 9);
+      TEST_EQUALITY(v0->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v0->getMap()->getMinGlobalIndex(), comm->getRank() * 40);
+      TEST_EQUALITY(v0->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 9);
+      TEST_EQUALITY(v0->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 31);
+
+      TEST_EQUALITY(v1->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v1->getMap()->getMaxLocalIndex(), 29);
+      TEST_EQUALITY(v1->getMap()->getMinAllGlobalIndex(), 10);
+      TEST_EQUALITY(v1->getMap()->getMinGlobalIndex(), comm->getRank() * 40 + 10);
+      TEST_EQUALITY(v1->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 39);
+      TEST_EQUALITY(v1->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+
+      Teuchos::RCP<BlockedCrsMatrix> b00 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(0,0));
+      TEST_EQUALITY(b00->Rows(), 2);
+      TEST_EQUALITY(b00->Cols(), 2);
+
+      Teuchos::RCP<const MapExtractor> me00 = b00->getDomainMapExtractor();
+      Teuchos::RCP<MultiVector> v00 = me00->ExtractVector(v0,0);
+      Teuchos::RCP<MultiVector> v01 = me00->ExtractVector(v0,1);
+      TEST_EQUALITY((v00->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((v01->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY(v00->getLocalLength(), 5);
+      TEST_EQUALITY(v01->getLocalLength(), 5);
+      TEST_EQUALITY(v00->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
+      TEST_EQUALITY(v01->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
+
+      TEST_EQUALITY(v00->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v00->getMap()->getMaxLocalIndex(), 4);
+      TEST_EQUALITY(v00->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v00->getMap()->getMinGlobalIndex(), comm->getRank() * 40);
+      TEST_EQUALITY(v00->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 4);
+      TEST_EQUALITY(v00->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 36);
+
+      TEST_EQUALITY(v01->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v01->getMap()->getMaxLocalIndex(), 4);
+      TEST_EQUALITY(v01->getMap()->getMinAllGlobalIndex(), 5);
+      TEST_EQUALITY(v01->getMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
+      TEST_EQUALITY(v01->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 9);
+      TEST_EQUALITY(v01->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 31);
+
+
+      Teuchos::RCP<BlockedCrsMatrix> b11 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(1,1));
+      TEST_EQUALITY(b11->Rows(), 2);
+      TEST_EQUALITY(b11->Cols(), 2);
+
+      Teuchos::RCP<const MapExtractor> me11 = b11->getDomainMapExtractor();
+      Teuchos::RCP<MultiVector> v10 = me11->ExtractVector(v1,0);
+      Teuchos::RCP<MultiVector> v11 = me11->ExtractVector(v1,1);
+      TEST_EQUALITY((v10->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY(v10->getLocalLength(), 10);
+      TEST_EQUALITY(v11->getLocalLength(), 20);
+      TEST_EQUALITY(v10->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 10));
+      TEST_EQUALITY(v11->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 20));
+
+      TEST_EQUALITY(v10->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v10->getMap()->getMaxLocalIndex(), 9);
+      TEST_EQUALITY(v10->getMap()->getMinAllGlobalIndex(), 10);
+      TEST_EQUALITY(v10->getMap()->getMinGlobalIndex(), comm->getRank() * 40 + 10);
+      TEST_EQUALITY(v10->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 19);
+      TEST_EQUALITY(v10->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 21);
+
+      TEST_EQUALITY(v11->getMap()->getMinLocalIndex(), 0);
+      TEST_EQUALITY(v11->getMap()->getMaxLocalIndex(), 19);
+      TEST_EQUALITY(v11->getMap()->getMinAllGlobalIndex(), 20);
+      TEST_EQUALITY(v11->getMap()->getMinGlobalIndex(), comm->getRank() * 40 + 20);
+      TEST_EQUALITY(v11->getMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 39);
+      TEST_EQUALITY(v11->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+
+      Teuchos::Array<magnitude_type> n00(1); v00->norm1(n00);
+      Teuchos::Array<magnitude_type> n11(1); v01->norm1(n11);
+      Teuchos::Array<magnitude_type> n22(1); v10->norm1(n22);
+      Teuchos::Array<magnitude_type> n33(1); v11->norm1(n33);
+
+      TEST_EQUALITY(n00[0], Teuchos::as<Scalar>(v00->getGlobalLength() * 0.25));
+      TEST_EQUALITY(n11[0], Teuchos::as<Scalar>(v01->getGlobalLength() * 0.25));
+      TEST_EQUALITY(n22[0], Teuchos::as<Scalar>(v10->getGlobalLength() * 0.25));
+      TEUCHOS_TEST_COMPARE(n33[0], <, v11->getGlobalLength() * 0.54167, out, success);
+      TEUCHOS_TEST_COMPARE(n33[0], >, v11->getGlobalLength() * 0.54166, out, success);
 
     } // end UseTpetra
   }
@@ -1811,8 +2046,200 @@ namespace MueLuTests {
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I01II_SIMPLE_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    // TODO test only Tpetra because of Ifpack2 smoother!
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CreateBlockDiagonalExampleMatrix(lib,3, comm);
+      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+      Teuchos::RCP<      Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ 2 [0 1]]")));
+
+      //////////////////////////////////////////////////////////////////////
+      // Smoothers
+      RCP<SimpleSmoother> smootherPrototype     = rcp( new SimpleSmoother() );
+      smootherPrototype->SetFactory("A",rAFact);
+      smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
+      smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+      smootherPrototype->SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(false));
+
+      std::vector<RCP<SubBlockAFactory> > sA (1, Teuchos::null);
+      std::vector<RCP<SmootherFactory> >  sF (2, Teuchos::null);
+      std::vector<RCP<FactoryManager> >   sM (2, Teuchos::null);
+
+      // prediction
+      std::string strInfo = std::string("{ 1 }");
+      sA[0] = rcp(new SubBlockAFactory());
+      sA[0]->SetFactory("A",rAFact);
+      sA[0]->SetParameter("block row",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("block col",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+      sA[0]->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+
+      RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+      smoProtoCorrect->SetFactory("A", sA[0]);
+      sF[0] = rcp( new SmootherFactory(smoProtoCorrect) );
+
+      sM[0] = rcp(new FactoryManager());
+      sM[0]->SetFactory("A", sA[0]);
+      sM[0]->SetFactory("Smoother", sF[0]);
+      sM[0]->SetIgnoreUserData(true);
+
+      smootherPrototype->SetVelocityPredictionFactoryManager(sM[0]);
+
+      // correction
+      // define SchurComplement Factory
+      // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
+      // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
+      // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
+      RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+      SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
+      SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
+
+      // create a 2x2 SIMPLE for the prediction eq.
+      RCP<SimpleSmoother> smoProtoPredict = Teuchos::rcp( new SimpleSmoother() );
+      smoProtoPredict->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+      smoProtoPredict->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+      smoProtoPredict->SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(false));
+      smoProtoPredict->SetFactory("A", SFact);
+
+      for(int l = 0; l < 2; l++) {
+        Teuchos::RCP<SubBlockAFactory> ssA = rcp(new SubBlockAFactory());
+        ssA->SetFactory("A",SFact);
+        ssA->SetParameter("block row",Teuchos::ParameterEntry(l)); // local block indices relative to size of blocked operator
+        ssA->SetParameter("block col",Teuchos::ParameterEntry(l));
+        ssA->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+        ssA->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+        RCP<SmootherPrototype> ssP = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+        ssP->SetFactory("A", ssA);
+        Teuchos::RCP<SmootherFactory> ssF = Teuchos::rcp(new SmootherFactory(ssP));
+        Teuchos::RCP<FactoryManager> ssM = Teuchos::rcp(new FactoryManager());
+        ssM->SetFactory("A", ssA);
+        ssM->SetFactory("Smoother", ssF);
+        ssM->SetIgnoreUserData(true);
+        if(l == 0) smoProtoPredict->SetVelocityPredictionFactoryManager(ssM);
+        else smoProtoPredict->SetSchurCompFactoryManager(ssM);
+      }
+
+      sF[1] = rcp( new SmootherFactory(smoProtoPredict) );
+
+      sM[1] = rcp(new FactoryManager());
+      sM[1]->SetFactory("A", SFact);
+      sM[1]->SetFactory("Smoother", sF[1]);
+      sM[1]->SetIgnoreUserData(true);
+
+      smootherPrototype->SetSchurCompFactoryManager(sM[1]);
+
+      RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+
+      // main factory manager
+      FactoryManager M;
+      M.SetFactory("Smoother",     smootherFact);
+      M.SetFactory("A",            rAFact);
+
+      MueLu::SetFactoryManager SFM (Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+      // request BGS smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+      level.Request("Smoother", smootherFact.get());
+      level.Request("PreSmoother", smootherFact.get());
+      level.Request("PostSmoother", smootherFact.get());
+
+      //smootherFact->DeclareInput(level);
+      smootherFact->Build(level);
+
+      level.print(std::cout, Teuchos::VERB_EXTREME);
+
+      RCP<SmootherBase> simpleSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<BlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      RCP<MultiVector> X   = MultiVectorFactory::Build(reorderedA->getDomainMap(),1);
+      RCP<MultiVector> RHS = MultiVectorFactory::Build(reorderedA->getRangeMap(),1);
+
+      // apply simple smoother
+      RHS->putScalar((SC) 1.0);
+      X->putScalar((SC) 0.0);
+
+      // solve system
+      simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
+      bool bCheck = true;
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
+        if (i< 10) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+        if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
+        if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+      }
+      TEST_EQUALITY(bCheck, true);
+
+      // Random X
+      X->setSeed(846930886);
+      X->randomize();
+
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      reorderedA->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->describe(out, Teuchos::VERB_EXTREME);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*reorderedA, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+    }// end useTpetra
+  }
+
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I01II_SIMPLE_Setup_Apply2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
     {
-  #   include <MueLu_UseShortNames.hpp>
+#   include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
       MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       // TODO test only Tpetra because of Ifpack2 smoother!
@@ -1936,13 +2363,16 @@ namespace MueLuTests {
         RCP<SmootherBase> simpleSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
 
         RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
-        RCP<BlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedA);
+        RCP<ReorderedBlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<ReorderedBlockedCrsMatrix>(reorderedA);
 
         TEST_EQUALITY(reorderedbA->Rows(), 2);
         TEST_EQUALITY(reorderedbA->Cols(), 2);
 
-        RCP<MultiVector> X   = MultiVectorFactory::Build(reorderedA->getDomainMap(),1);
-        RCP<MultiVector> RHS = MultiVectorFactory::Build(reorderedA->getRangeMap(),1);
+        RCP<BlockedMultiVector> bX   = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), 1, true));
+        RCP<BlockedMultiVector> bRHS = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedRangeMap(), 1, true));
+
+        RCP<MultiVector> X = bX->Merge();
+        RCP<MultiVector> RHS = bRHS->Merge();
 
         // apply simple smoother
         RHS->putScalar((SC) 1.0);
@@ -1950,21 +2380,31 @@ namespace MueLuTests {
 
         // solve system
         simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-        RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
-        TEST_EQUALITY(bX.is_null(), false);
-        RCP<MultiVector> XX = bX->Merge();
-        Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
+
+        Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
         bool bCheck = true;
-        for(size_t i=0; i<XX->getLocalLength(); i++) {
-          if (i< 10) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
-          if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
-          if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+        for(size_t i=0; i<X->getLocalLength(); i++) {
+          if (i < 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
+          if (i>=5 && i< 10) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+          if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
         }
         TEST_EQUALITY(bCheck, true);
 
         // Random X
-        X->setSeed(846930886);
-        X->randomize();
+        {
+          Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 2 [0 1]]");
+          RCP<BlockedMultiVector> test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bX));
+          bX.swap(test);
+          test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bRHS));
+          bRHS.swap(test);
+        }
+
+        bRHS->putScalar((SC) 1.0);
+        bX->setSeed(846930886);
+        bX->randomize();
+
+        RHS = bRHS->Merge();
+        X = bX->Merge();
 
         typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
@@ -1973,7 +2413,7 @@ namespace MueLuTests {
         X->scale(1/norms[0]);
 
         // Compute RHS corresponding to X
-        reorderedA->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        bop->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
         // Reset X to 0
         X->putScalar((SC) 0.0);
@@ -1998,7 +2438,6 @@ namespace MueLuTests {
         TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
       }// end useTpetra
     }
-
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedII20I1I_Thyra_SIMPLE_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -3149,6 +3588,178 @@ namespace MueLuTests {
     }// end useTpetra
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I10II_BS_Setup_Apply2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    // TODO test only Tpetra because of Ifpack2 smoother!
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CreateBlockDiagonalExampleMatrix(lib,3, comm);
+      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+      Teuchos::RCP<      Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ 2 [ 1 0 ]]")));
+
+      //////////////////////////////////////////////////////////////////////
+      // Smoothers
+      RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+      smootherPrototype->SetFactory("A",rAFact);
+      smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
+      smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+
+      std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
+      std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
+
+      // correction
+      // define SchurComplement Factory
+      // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
+      // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
+      // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
+      RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+      SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
+      SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
+
+      RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
+      smoProtoCorrect->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+      smoProtoCorrect->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+      smoProtoCorrect->SetFactory("A", SFact);
+
+      std::string strInfo = std::string("{ 1 }");
+      Teuchos::RCP<SubBlockAFactory> ssA = rcp(new SubBlockAFactory());
+      ssA->SetFactory("A",SFact);
+      ssA->SetParameter("block row",Teuchos::ParameterEntry(1)); // local block indices relative to size of blocked operator
+      ssA->SetParameter("block col",Teuchos::ParameterEntry(1));
+      ssA->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+      ssA->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+      RCP<SmootherPrototype> ssP = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+      ssP->SetFactory("A", ssA);
+      Teuchos::RCP<SmootherFactory> ssF = Teuchos::rcp(new SmootherFactory(ssP));
+      Teuchos::RCP<FactoryManager> ssM = Teuchos::rcp(new FactoryManager());
+      ssM->SetFactory("A", ssA);
+      ssM->SetFactory("Smoother", ssF);
+      ssM->SetIgnoreUserData(true);
+      smoProtoCorrect->AddFactoryManager(ssM,0);
+
+      sF[0] = rcp( new SmootherFactory(smoProtoCorrect) );
+
+      sM[0] = rcp(new FactoryManager());
+      sM[0]->SetFactory("A", SFact);
+      sM[0]->SetFactory("Smoother", sF[0]);
+      sM[0]->SetIgnoreUserData(true);
+
+      smootherPrototype->AddFactoryManager(sM[0],0);
+
+      RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+
+      // main factory manager
+      FactoryManager M;
+      M.SetFactory("Smoother",     smootherFact);
+      M.SetFactory("A",            rAFact);
+
+      MueLu::SetFactoryManager SFM (Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+      // request BGS smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+      level.Request("Smoother", smootherFact.get());
+      level.Request("PreSmoother", smootherFact.get());
+      level.Request("PostSmoother", smootherFact.get());
+
+      smootherFact->Build(level);
+
+      RCP<SmootherBase> bsSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<ReorderedBlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<ReorderedBlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      RCP<BlockedMultiVector> bX   = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), 1, true));
+      RCP<BlockedMultiVector> bRHS = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedRangeMap(), 1, true));
+
+      RCP<MultiVector> X = bX->Merge();
+      RCP<MultiVector> RHS = bRHS->Merge();
+
+      // apply simple smoother
+      RHS->putScalar((SC) 1.0);
+      X->putScalar((SC) 0.0);
+
+      // solve system
+      bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      bool bCheck = true;
+      for(size_t i=0; i<X->getLocalLength(); i++) {
+        if (i < 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
+        if (i>=5 && i< 10) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+        if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+      }
+      TEST_EQUALITY(bCheck, true);
+
+      // Random X
+      {
+        Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 2 [0 1]]");
+        RCP<BlockedMultiVector> test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bX));
+        bX.swap(test);
+        test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bRHS));
+        bRHS.swap(test);
+      }
+
+      bRHS->putScalar((SC) 1.0);
+      bX->setSeed(846930886);
+      bX->randomize();
+
+      RHS = bRHS->Merge();
+      X = bX->Merge();
+
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      bop->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*reorderedbA, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+    }// end useTpetra
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedII02I1I_Thyra_BS_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -4077,7 +4688,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
       AinvFact->SetFactory("A",rAFact);
-  
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
       SFact->SetFactory("A",rAFact);
@@ -4176,6 +4787,206 @@ namespace MueLuTests {
 
       // Compute RHS corresponding to X
       reorderedA->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*reorderedA, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+    }// end useTpetra
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I01II_Uzawa_Setup_Apply2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    // TODO test only Tpetra because of Ifpack2 smoother!
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CreateBlockDiagonalExampleMatrix(lib,3, comm);
+      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+      Teuchos::RCP<      Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ 2 [0 1]]")));
+
+      //////////////////////////////////////////////////////////////////////
+      // Smoothers
+      RCP<UzawaSmoother> smootherPrototype     = rcp( new UzawaSmoother() );
+      smootherPrototype->SetFactory("A",rAFact);
+      smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
+      smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+
+      std::vector<RCP<SubBlockAFactory> > sA (1, Teuchos::null);
+      std::vector<RCP<SmootherFactory> >  sF (2, Teuchos::null);
+      std::vector<RCP<FactoryManager> >   sM (2, Teuchos::null);
+
+      // prediction
+      std::string strInfo = std::string("{ 1 }");
+      sA[0] = rcp(new SubBlockAFactory());
+      sA[0]->SetFactory("A",rAFact);
+      sA[0]->SetParameter("block row",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("block col",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+      sA[0]->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+
+      RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+      smoProtoCorrect->SetFactory("A", sA[0]);
+      sF[0] = rcp( new SmootherFactory(smoProtoCorrect) );
+
+      sM[0] = rcp(new FactoryManager());
+      sM[0]->SetFactory("A", sA[0]);
+      sM[0]->SetFactory("Smoother", sF[0]);
+      sM[0]->SetIgnoreUserData(true);
+
+      smootherPrototype->AddFactoryManager(sM[0],0);
+
+      // correction
+      // define SchurComplement Factory
+      // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
+      // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
+      // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
+      RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+      SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
+      SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
+
+      // create a 2x2 SIMPLE for the prediction eq.
+      RCP<UzawaSmoother> smoProtoPredict = Teuchos::rcp( new UzawaSmoother() );
+      smoProtoPredict->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+      smoProtoPredict->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+      smoProtoPredict->SetFactory("A", SFact);
+
+      for(int l = 0; l < 2; l++) {
+        Teuchos::RCP<SubBlockAFactory> ssA = rcp(new SubBlockAFactory());
+        ssA->SetFactory("A",SFact);
+        ssA->SetParameter("block row",Teuchos::ParameterEntry(l)); // local block indices relative to size of blocked operator
+        ssA->SetParameter("block col",Teuchos::ParameterEntry(l));
+        ssA->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+        ssA->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+        RCP<SmootherPrototype> ssP = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+        ssP->SetFactory("A", ssA);
+        Teuchos::RCP<SmootherFactory> ssF = Teuchos::rcp(new SmootherFactory(ssP));
+        Teuchos::RCP<FactoryManager> ssM = Teuchos::rcp(new FactoryManager());
+        ssM->SetFactory("A", ssA);
+        ssM->SetFactory("Smoother", ssF);
+        ssM->SetIgnoreUserData(true);
+        smoProtoPredict->AddFactoryManager(ssM,l);
+      }
+
+      sF[1] = rcp( new SmootherFactory(smoProtoPredict) );
+
+      sM[1] = rcp(new FactoryManager());
+      sM[1]->SetFactory("A", SFact);
+      sM[1]->SetFactory("Smoother", sF[1]);
+      sM[1]->SetIgnoreUserData(true);
+
+      smootherPrototype->AddFactoryManager(sM[1],1);
+
+      RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+
+      // main factory manager
+      FactoryManager M;
+      M.SetFactory("Smoother",     smootherFact);
+      M.SetFactory("A",            rAFact);
+
+      MueLu::SetFactoryManager SFM (Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+      // request BGS smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+      level.Request("Smoother", smootherFact.get());
+      level.Request("PreSmoother", smootherFact.get());
+      level.Request("PostSmoother", smootherFact.get());
+
+      //smootherFact->DeclareInput(level);
+      smootherFact->Build(level);
+
+      level.print(std::cout, Teuchos::VERB_EXTREME);
+
+      RCP<SmootherBase> simpleSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<ReorderedBlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<ReorderedBlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      RCP<BlockedMultiVector> bX   = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), 1, true));
+      RCP<BlockedMultiVector> bRHS = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedRangeMap(), 1, true));
+
+      RCP<MultiVector> X = bX->Merge();
+      RCP<MultiVector> RHS = bRHS->Merge();
+
+      // apply simple smoother
+      RHS->putScalar((SC) 1.0);
+      X->putScalar((SC) 0.0);
+
+      // solve system
+      simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      bool bCheck = true;
+      X->describe(out, Teuchos::VERB_EXTREME);
+      for(size_t i=0; i<X->getLocalLength(); i++) {
+        if (i < 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
+        if (i>=5 && i< 10) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+        if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+      }
+      TEST_EQUALITY(bCheck, true);
+
+      // Random X
+      {
+        Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 2 [0 1]]");
+        RCP<BlockedMultiVector> test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bX));
+        bX.swap(test);
+        test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bRHS));
+        bRHS.swap(test);
+      }
+
+      bRHS->putScalar((SC) 1.0);
+      bX->setSeed(846930886);
+      bX->randomize();
+
+      RHS = bRHS->Merge();
+      X = bX->Merge();
+
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      bop->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
       // Reset X to 0
       X->putScalar((SC) 0.0);
@@ -5031,6 +5842,205 @@ namespace MueLuTests {
     }// end useTpetra
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I01II_Indef_Setup_Apply2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    // TODO test only Tpetra because of Ifpack2 smoother!
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      Teuchos::RCP<const BlockedCrsMatrix> bop = TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CreateBlockDiagonalExampleMatrix(lib,3, comm);
+      Teuchos::RCP<const Matrix> Aconst = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+      Teuchos::RCP<      Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ 2 [0 1]]")));
+
+      //////////////////////////////////////////////////////////////////////
+      // Smoothers
+      RCP<IndefBlockedDiagonalSmoother> smootherPrototype     = rcp( new IndefBlockedDiagonalSmoother() );
+      smootherPrototype->SetFactory("A",rAFact);
+      smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
+      smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+
+      std::vector<RCP<SubBlockAFactory> > sA (1, Teuchos::null);
+      std::vector<RCP<SmootherFactory> >  sF (2, Teuchos::null);
+      std::vector<RCP<FactoryManager> >   sM (2, Teuchos::null);
+
+      // prediction
+      std::string strInfo = std::string("{ 1 }");
+      sA[0] = rcp(new SubBlockAFactory());
+      sA[0]->SetFactory("A",rAFact);
+      sA[0]->SetParameter("block row",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("block col",Teuchos::ParameterEntry(0));
+      sA[0]->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+      sA[0]->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+
+      RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+      smoProtoCorrect->SetFactory("A", sA[0]);
+      sF[0] = rcp( new SmootherFactory(smoProtoCorrect) );
+
+      sM[0] = rcp(new FactoryManager());
+      sM[0]->SetFactory("A", sA[0]);
+      sM[0]->SetFactory("Smoother", sF[0]);
+      sM[0]->SetIgnoreUserData(true);
+
+      smootherPrototype->AddFactoryManager(sM[0],0);
+
+      // correction
+      // define SchurComplement Factory
+      // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
+      // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
+      // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
+      RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+      SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
+      SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
+
+      // create a 2x2 block smoother for the prediction eq.
+      RCP<IndefBlockedDiagonalSmoother> smoProtoPredict = Teuchos::rcp( new IndefBlockedDiagonalSmoother() );
+      smoProtoPredict->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
+      smoProtoPredict->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
+      smoProtoPredict->SetFactory("A", SFact);
+
+      for(int l = 0; l < 2; l++) {
+        Teuchos::RCP<SubBlockAFactory> ssA = rcp(new SubBlockAFactory());
+        ssA->SetFactory("A",SFact);
+        ssA->SetParameter("block row",Teuchos::ParameterEntry(l)); // local block indices relative to size of blocked operator
+        ssA->SetParameter("block col",Teuchos::ParameterEntry(l));
+        ssA->SetParameter("Range map: Striding info", Teuchos::ParameterEntry(strInfo));
+        ssA->SetParameter("Domain map: Striding info", Teuchos::ParameterEntry(strInfo));
+        RCP<SmootherPrototype> ssP = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
+        ssP->SetFactory("A", ssA);
+        Teuchos::RCP<SmootherFactory> ssF = Teuchos::rcp(new SmootherFactory(ssP));
+        Teuchos::RCP<FactoryManager> ssM = Teuchos::rcp(new FactoryManager());
+        ssM->SetFactory("A", ssA);
+        ssM->SetFactory("Smoother", ssF);
+        ssM->SetIgnoreUserData(true);
+        smoProtoPredict->AddFactoryManager(ssM,l);
+      }
+
+      sF[1] = rcp( new SmootherFactory(smoProtoPredict) );
+
+      sM[1] = rcp(new FactoryManager());
+      sM[1]->SetFactory("A", SFact);
+      sM[1]->SetFactory("Smoother", sF[1]);
+      sM[1]->SetIgnoreUserData(true);
+
+      smootherPrototype->AddFactoryManager(sM[1],1);
+
+      RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+
+      // main factory manager
+      FactoryManager M;
+      M.SetFactory("Smoother",     smootherFact);
+      M.SetFactory("A",            rAFact);
+
+      MueLu::SetFactoryManager SFM (Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+      // request block smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+      level.Request("Smoother", smootherFact.get());
+      level.Request("PreSmoother", smootherFact.get());
+      level.Request("PostSmoother", smootherFact.get());
+
+      //smootherFact->DeclareInput(level);
+      smootherFact->Build(level);
+
+      level.print(std::cout, Teuchos::VERB_EXTREME);
+
+      RCP<SmootherBase> inSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<ReorderedBlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<ReorderedBlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      RCP<BlockedMultiVector> bX   = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedDomainMap(), 1, true));
+      RCP<BlockedMultiVector> bRHS = Teuchos::rcp(new BlockedMultiVector(bop->getBlockedRangeMap(), 1, true));
+
+      RCP<MultiVector> X = bX->Merge();
+      RCP<MultiVector> RHS = bRHS->Merge();
+
+      // apply simple smoother
+      RHS->putScalar((SC) 1.0);
+      X->putScalar((SC) 0.0);
+
+      // solve system
+      inSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      bool bCheck = true;
+      for(size_t i=0; i<X->getLocalLength(); i++) {
+        if (i < 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
+        if (i>=5 && i< 10) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+        if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+      }
+      TEST_EQUALITY(bCheck, true);
+
+      // Random X
+      {
+        Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 2 [0 1]]");
+        RCP<BlockedMultiVector> test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bX));
+        bX.swap(test);
+        test = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(buildReorderedBlockedMultiVector(brm, bRHS));
+        bRHS.swap(test);
+      }
+
+      bRHS->putScalar((SC) 1.0);
+      bX->setSeed(846930886);
+      bX->randomize();
+
+      RHS = bRHS->Merge();
+      X = bX->Merge();
+
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      bop->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      inSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*reorderedA, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+    }// end useTpetra
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, NestedI2I01II_Thyra_Indef_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -5621,12 +6631,14 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,BGS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Reordered_BGS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII30II12II_BGS_Setup_Apply,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII30II12II_BGS_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Thyra_BGS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Thyra_Nested_BGS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Thyra_Nested_BGS_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,SIMPLE_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII20I1I_SIMPLE_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_SIMPLE_Setup_Apply,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_SIMPLE_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII20I1I_Thyra_SIMPLE_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Thyra_SIMPLE_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII01I2I_Thyra_SIMPLE_Setup_Apply2,SC,LO,GO,NO) \
@@ -5634,6 +6646,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,BS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII20I1I_BS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I10II_BS_Setup_Apply,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I10II_BS_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII02I1I_Thyra_BS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Thyra_BS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I10II_Thyra_BS_Setup_Apply,SC,LO,GO,NO) \
@@ -5641,11 +6654,13 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI0I21II_Thyra_BS_Setup_Apply3,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Uzawa_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Uzawa_Setup_Apply,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Uzawa_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Thyra_Uzawa_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII01I2I_Thyra_Uzawa_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI0I21II_Thyra_Uzawa_Setup_Apply3,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Indef_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Indef_Setup_Apply,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Indef_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Thyra_Indef_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII01I2I_Thyra_Indef_Setup_Apply2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI0I21II_Thyra_Indef_Setup_Apply3,SC,LO,GO,NO) \

@@ -1090,6 +1090,8 @@ namespace MueLu {
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: row sum drop tol",        double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: use ml scaling of drop tol",   bool, dropParams);
+
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet",          bool, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);

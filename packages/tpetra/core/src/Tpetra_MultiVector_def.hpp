@@ -262,7 +262,7 @@ namespace { // (anonymous)
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
                const std::pair<size_t, size_t>& rowRng,
-               const Kokkos::Impl::ALL_t& colRng)
+               const Kokkos::ALL_t& colRng)
 
   {
     // The bug we saw below should be harder to trigger here.
@@ -272,7 +272,7 @@ namespace { // (anonymous)
   template<class WrappedDualViewType>
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
-               const Kokkos::Impl::ALL_t& rowRng,
+               const Kokkos::ALL_t& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
     using DualViewType = typename WrappedDualViewType::DVT;
@@ -318,7 +318,7 @@ namespace { // (anonymous)
     // method yet, but its Views do.
     // NOTE: dv.stride() returns a vector of length one
     // more than its rank
-    size_t strides[WrappedOrNotDualViewType::t_dev::Rank+1];
+    size_t strides[WrappedOrNotDualViewType::t_dev::rank+1];
     dv.stride(strides);
     const size_t LDA = strides[1];
     const size_t numRows = dv.extent (0);
