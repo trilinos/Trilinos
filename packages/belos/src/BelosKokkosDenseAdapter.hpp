@@ -79,7 +79,7 @@ namespace Belos {
     \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     */
     static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> Create() { 
-      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView"));
+      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView",0,0));
     }     
 
     /*! \brief Creates a new empty \c Kokkos::DualView<IST**,Kokkos::LayoutLeft> containing 

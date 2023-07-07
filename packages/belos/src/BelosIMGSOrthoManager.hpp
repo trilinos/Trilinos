@@ -643,7 +643,7 @@ namespace Belos {
     }
 
     // check size of B
-    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( DMT::GetNumRows(*B) != xc || DMT::GetNumCols(*B) != xc, std::invalid_argument,
                         "Belos::IMGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
     // check size of X and MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
@@ -945,7 +945,7 @@ namespace Belos {
       // Make storage for these Gram-Schmidt iterations.
       // TODO What about these?
       Teuchos::SerialDenseVector<int,ScalarType> product(numX);
-      Teuchos::SerialDenseVector<int,ScalarType> P2(1);
+      Teuchos::RCP<DM> P2 = DMT::Create(1,1);
       Teuchos::RCP<const MV> prevX, prevMX;
 
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
@@ -978,7 +978,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*Xj,MXj,P2);
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*Xj,MXj,*P2);
           }
 
           // Xj <- Xj - prevX prevX^T MXj
@@ -987,7 +987,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
+            MVT::MvTimesMatAddMv( -ONE, *prevX, *P2, ONE, *Xj );
           }
 
           // Update MXj
@@ -998,14 +998,14 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
+            MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *MXj );
           }
 
           // Set coefficients
           if ( i==0 )
-            product[ii] = P2[0];
+            product[ii] = DMT::Value(*P2,0,0);
           else
-            product[ii] += P2[0];
+            product[ii] += DMT::Value(*P2,0,0);
 
         } // for (int i=0; i<max_ortho_steps_; ++i)
 
@@ -1066,26 +1066,26 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-                MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*tempXj,tempMXj,P2);
+                MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*tempXj,tempMXj,*P2);
               }
               {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-                MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *tempXj );
+                MVT::MvTimesMatAddMv( -ONE, *prevX, *P2, ONE, *tempXj );
               }
               if (this->_hasOp) {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-                MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *tempMXj );
+                MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *tempMXj );
               }
 
               // Set coefficients
               if ( num_orth==0 )
-                product[ii] = P2[0];
+                product[ii] = DMT::Value(*P2,0,0);
               else
-                product[ii] += P2[0];
+                product[ii] += DMT::Value(*P2,0,0);
             }
           }
 
@@ -1310,7 +1310,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd( *tempQ, X, MX, *tempC);
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd( *tempQ, X, MX, *tempC);
         }
         // Multiply by Q and subtract the result in X
         {
@@ -1513,7 +1513,7 @@ namespace Belos {
             Teuchos::RCP tempC2 = DMT::Subview(*C2, 1, 1, ii);
 
             // Apply another step of modified Gram-Schmidt
-            MatOrthoManager<ScalarType,MV,OP>::innerProd( *tempQ, *Xj, MXj, *tempC2);
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd( *tempQ, *Xj, MXj, *tempC2);
             MVT::MvTimesMatAddMv( -ONE, *tempQ, *tempC2, ONE, *Xj );
           }
 

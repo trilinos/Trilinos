@@ -47,13 +47,13 @@ namespace Belos {
      * projection of problem->getOperator() by the first \c curDim vectors in V. 
      */
 
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+    Teuchos::RCP<const DM> H;
     /*! \brief The current upper-triangular matrix from the QR reduction of H. */
 
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
+    Teuchos::RCP<const DM> R;
     /*! \brief The current right-hand side of the least squares system RY = Z. */
 
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > z;
+    Teuchos::RCP<const DM> z;
     
 
     GmresIterationState() : curDim(0), V(Teuchos::null), Z(Teuchos::null),
