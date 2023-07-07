@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -21,10 +21,10 @@
 void bucketsort1(struct vtx_data **graph,       /* graph data structure */
                  int               vtx,         /* vertex being added to lists */
                  struct bilist ****buckets,     /* array of lists for bucket sort */
-                 struct bilist **  listspace,   /* list data structure for each vertex */
-                 int **            dvals,       /* d-values for each vertex for removing */
-                 int *             sets,        /* processor each vertex is assigned to */
-                 float *           term_wgts[], /* weights for terminal propagation */
+                 struct bilist   **listspace,   /* list data structure for each vertex */
+                 int             **dvals,       /* d-values for each vertex for removing */
+                 int              *sets,        /* processor each vertex is assigned to */
+                 float            *term_wgts[], /* weights for terminal propagation */
                  int               maxdval,     /* maximum possible dvalue for a vertex */
                  int               nsets,       /* number of sets being divided into */
                  int (*hops)[MAXSETS],          /* hop cost between sets */
@@ -33,8 +33,8 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
 {
   extern double  CUT_TO_HOP_COST; /* if term_prop, cut/hop importance */
   struct bilist *lptr  = NULL;    /* pointer to an element in listspace */
-  float *        ewptr = NULL;    /* loops through edge weights */
-  int *          edges = NULL;    /* edge list for a vertex */
+  float         *ewptr = NULL;    /* loops through edge weights */
+  int           *edges = NULL;    /* edge list for a vertex */
   int            myset;           /* set that current vertex belongs to */
   int            newset;          /* set current vertex could move to */
   int            set;             /* set that neighboring vertex belongs to */
@@ -45,7 +45,6 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
   double         hop_cost;        /* relative hop/cut importance */
   int            myhop;           /* hops associated with current vertex */
   int            j, l;            /* loop counters */
-  void           add2bilist();
 
   /* Compute d-vals by seeing which sets neighbors belong to. */
   cut_cost = hop_cost = 1;

@@ -189,9 +189,9 @@ EXODUS_EXPORT int indent;
   } while (0)
 #else
 #define EX_FUNC_ENTER()                                                                            \
-  {                                                                                                \
+  do {                                                                                             \
     ex__reset_error_status();                                                                      \
-  }
+  } while (0)
 #define EX_FUNC_ENTER_INT()
 #define EX_FUNC_LEAVE(error) return error
 #define EX_FUNC_VOID()       return

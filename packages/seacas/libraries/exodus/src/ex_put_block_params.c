@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -53,9 +53,6 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   const char *dnnpe       = NULL;
   const char *dnepe       = NULL;
   const char *dnfpe       = NULL;
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   if (block_count == 0) {
     return (EX_NOERR);
@@ -403,9 +400,8 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-#if NC_HAS_HDF5
+      int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, att_name_varid, 0, &fill);
-#endif
     }
 
     conn_int_type = NC_INT;

@@ -25,15 +25,19 @@ class TestExodus(unittest.TestCase):
         input_dir = os.path.dirname(__file__)
         self.tempdir = tempfile.TemporaryDirectory()
         self.temp_exo_path = os.path.join(self.tempdir.name, "temp-test-assembly.exo")
-        with exo.exodus(
-            os.path.join(input_dir, "test-assembly.exo"), mode="r"
-        ) as exofile:
+        with exo.exodus(os.path.join(input_dir, "test-assembly.exo"), mode="r") as exofile:
             self.exofile = exofile
             with self.exofile.copy(self.temp_exo_path, True) as temp_exofile:
                 self.temp_exofile = temp_exofile
 
     def tearDown(self):
         self.tempdir.cleanup()
+
+    def test_getExodusVersion(self):
+        self.assertNotEqual(0, exo.getExodusVersion())
+
+    def test_parse_exodus_version(self):
+        self.assertEqual(124, exo._parse_exodus_version('#define EXODUS_VERSION       "1.24"'))
 
     def test_ex_obj_to_inq(self):
         self.assertEqual("EX_INQ_ASSEMBLY", exo.ex_obj_to_inq("EX_ASSEMBLY"))
@@ -115,9 +119,7 @@ class TestExodus(unittest.TestCase):
     def test_get_assembly(self):
         with exo.exodus(self.temp_exo_path) as temp_exofile:
             assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
-            assemblies = [
-                temp_exofile.get_assembly(assembly) for assembly in assembly_ids
-            ]
+            assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         root = exo.assembly(name="Root", type="EX_ASSEMBLY", id=100)
         root.entity_list = [200, 300, 400]
         self.assertEqual(str(root), str(assemblies[0]))
@@ -347,24 +349,6 @@ class TestExodusUtilities(unittest.TestCase):
     def test_basename(self):
         self.assertEqual("test", exo.basename("test.e"))
         self.assertEqual("fake/path/to/test", exo.basename("fake/path/to/test.e"))
-
-    def test_getExodusVersion(self):
-        include_path = os.path.join(self.tempdir.name, "include")
-        os.makedirs(include_path)
-        with open(os.path.join(include_path, "exodusII.h"), "w") as fptr:
-            fptr.write("#define EXODUS_VERSION_MAJOR 1\n")
-            fptr.write("#define EXODUS_VERSION_MINOR 22\n")
-        with swap_ACCESS_value(self.tempdir.name):
-            self.assertEqual(122, exo.getExodusVersion())
-
-    def test_getExodusVersion_not_found(self):
-        include_path = os.path.join(self.tempdir.name, "include")
-        os.makedirs(include_path)
-        with open(os.path.join(include_path, "exodusII.h"), "w") as fptr:
-            fptr.write("#define NOT_EXODUS_VERSION 1\n")
-            fptr.write("#define ALSO_NOT_EXODUS_VERSION 22\n")
-        with swap_ACCESS_value(self.tempdir.name):
-            self.assertEqual(0, exo.getExodusVersion())
 
 
 @contextmanager

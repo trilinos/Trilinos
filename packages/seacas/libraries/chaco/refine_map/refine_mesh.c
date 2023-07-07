@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,18 +19,18 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
                 int               cube_or_mesh, /* number of dimensions in mesh */
                 int               mesh_dims[3], /* dimensions of mesh */
                 double            maxdesire,    /* largest possible desire to flip an edge */
-                int *             vtx2node,     /* mapping from comm_graph vtxs to mesh nodes */
-                int *             node2vtx      /* mapping from mesh nodes to comm_graph vtxs */
+                int              *vtx2node,     /* mapping from comm_graph vtxs to mesh nodes */
+                int              *node2vtx      /* mapping from mesh nodes to comm_graph vtxs */
 )
 {
-  struct refine_vdata * vdata = NULL;      /* desire data for all vertices */
-  struct refine_vdata * vptr;              /* loops through vdata */
-  struct refine_edata * edata = NULL;      /* desire data for all edges */
-  struct refine_edata * eguy;              /* one element in edata array */
+  struct refine_vdata  *vdata = NULL;      /* desire data for all vertices */
+  struct refine_vdata  *vptr;              /* loops through vdata */
+  struct refine_edata  *edata = NULL;      /* desire data for all edges */
+  struct refine_edata  *eguy;              /* one element in edata array */
   struct refine_edata **desire_ptr = NULL; /* array of desire buckets */
-  double *              desires    = NULL; /* each edge's inclination to flip */
-  int *                 indices    = NULL; /* sorted list of desire values */
-  int *                 space      = NULL; /* used for sorting disire values */
+  double               *desires    = NULL; /* each edge's inclination to flip */
+  int                  *indices    = NULL; /* sorted list of desire values */
+  int                  *space      = NULL; /* used for sorting disire values */
   double                best_desire;       /* highest desire of edge to flip */
   int                   imax;              /* maxdesire rounded up */
   int                   nsets_tot;         /* total number of sets/processors */
@@ -43,12 +43,6 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   int                   loc1, loc2;        /* location of vtxs in flipping dimension */
   int                   error;             /* out of space? */
   int                   i, j, k;           /* loop counter */
-  double                find_maxdeg();
-  double                compute_mesh_edata();
-
-  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
-  void compute_mesh_vdata(), init_mesh_edata();
-  void update_mesh_vdata(), update_mesh_edata();
 
   error = 1;
 
