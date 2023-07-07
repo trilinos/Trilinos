@@ -496,8 +496,8 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<T> &my_value,
-                                    IOSS_MAYBE_UNUSED int             root) const
+void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value,
+                                    int             root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);

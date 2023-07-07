@@ -1026,7 +1026,6 @@ namespace Ioex {
     }
 
     std::vector<size_t> file_conn_offset = get_all_block_file_offset_impl(block_component_count);
-    size_t              file             = Ioss::get_all_block_ioss_element_size(el_blocks);
 
     m_decomposition.show_progress("\tex_get_partial_var (elem)");
 
