@@ -452,6 +452,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     local[0] = ml_->Amat[currentLevel].invec_leng;
     local[1] = ml_->Amat[currentLevel].N_nonzeros;
 
+
     if (minSizeForCoarse != -1) {
        // check if the coarsest grid is larger than some user specified value
        // (which might happen if ML aborted its coarsening process). In this
@@ -1702,6 +1703,37 @@ myaztecParams = m_smootherAztecParams;
                                 MassMatrix_array,TtATMatrixML_,
                                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                                 hiptmair_type);
+
+
+      // Get the row / nonzero counts for the nodel hierarchy      
+      long int nodes_local[2];
+      long int nodes_global[2];
+      ML_Sm_Hiptmair_Data * data = ml_->pre_smoother
+        ? (ML_Sm_Hiptmair_Data *)(ml_->pre_smoother[currentLevel].smoother->data) 
+        : (ML_Sm_Hiptmair_Data *)(ml_->post_smoother[currentLevel].smoother->data);
+    
+      nodes_local[0] = (data && data->TtATmat) ? data->TtATmat->invec_leng : 0;
+      nodes_local[1] = (data && data->TtATmat) ? data->TtATmat->N_nonzeros : 0;
+      if(data && data->TtATmat) {
+        printf("CMS DEBUG:  data->TtATmat->invec_leng = %d\n",data->TtATmat->invec_leng);
+        char name[80];
+        sprintf(name,"A_nodes_smoo_%d",currentLevel);
+        ML_Operator_Print_UsingGlobalOrdering(data->TtATmat,name,NULL,NULL);
+      }
+
+      Comm().SumAll(nodes_local,nodes_global,2);
+      
+      if (verbose_) {
+        int i = std::cout.precision(0);
+        std::cout.setf(std::ios::fixed);
+        std::cout << msg << "# nodal global rows = " << nodes_global[0]
+             << ", # nodal estim. global nnz = " << nodes_global[1];
+        std::cout.precision(2);
+        std::cout << ", # nnz per row = " << ((double)nodes_global[1]) / ((double) nodes_global[0]) << std::endl;
+        std::cout.precision(i);
+        std::cout.unsetf(std::ios::fixed);
+      }
+
 
       ML_Smoother_Arglist_Delete(&nodal_args_);
       ML_Smoother_Arglist_Delete(&edge_args_);
