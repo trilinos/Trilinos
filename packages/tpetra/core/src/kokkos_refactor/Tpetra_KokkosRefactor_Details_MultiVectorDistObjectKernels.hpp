@@ -1643,8 +1643,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   };
 
 // clang-format on
-// To do:  Add enable_if<> restrictions on DstView::Rank == 1,
-// SrcView::Rank == 2
+// To do:  Add enable_if<> restrictions on DstView::rank == 1,
+// SrcView::rank == 2
 template <typename ExecutionSpace, typename DstView, typename SrcView,
           typename DstIdxView, typename SrcIdxView, typename Op>
 void permute_array_multi_column(const ExecutionSpace &space, const DstView &dst,
@@ -1657,8 +1657,8 @@ void permute_array_multi_column(const ExecutionSpace &space, const DstView &dst,
 }
 // clang-format off
 
-  // To do:  Add enable_if<> restrictions on DstView::Rank == 1,
-  // SrcView::Rank == 2
+  // To do:  Add enable_if<> restrictions on DstView::rank == 1,
+  // SrcView::rank == 2
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView, typename Op>
   void permute_array_multi_column(const DstView& dst,
@@ -1738,8 +1738,8 @@ void permute_array_multi_column(const ExecutionSpace &space, const DstView &dst,
   };
 
 // clang-format on
-// To do:  Add enable_if<> restrictions on DstView::Rank == 1,
-// SrcView::Rank == 2
+// To do:  Add enable_if<> restrictions on DstView::rank == 1,
+// SrcView::rank == 2
 template <typename ExecutionSpace, typename DstView, typename SrcView,
           typename DstIdxView, typename SrcIdxView, typename DstColView,
           typename SrcColView, typename Op>
@@ -1756,8 +1756,8 @@ void permute_array_multi_column_variable_stride(
 }
 // clang-format off
 
-  // To do:  Add enable_if<> restrictions on DstView::Rank == 1,
-  // SrcView::Rank == 2
+  // To do:  Add enable_if<> restrictions on DstView::rank == 1,
+  // SrcView::rank == 2
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView,
             typename DstColView, typename SrcColView, typename Op>

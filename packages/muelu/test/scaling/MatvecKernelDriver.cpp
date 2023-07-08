@@ -166,12 +166,14 @@ void report_performance_models(const Teuchos::RCP<const Matrix> & A, int nrepeat
 
   if(A->hasCrsGraph()) {
     auto importer = A->getCrsGraph()->getImporter();
-    size_t recv_size = importer->getRemoteLIDs().size() * sizeof(SC);
-    size_t send_size = importer->getExportLIDs().size() * sizeof(SC);
-    int local_log_max = ceil(log(std::max(send_size,recv_size)) / log(2))+1;
-    int global_log_max=local_log_max;
-    Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_MAX,1,&local_log_max,&global_log_max);
-    PM.halopong_make_table(nrepeat,global_log_max, importer);   
+    if(!importer.is_null()) {
+      size_t recv_size = importer->getRemoteLIDs().size() * sizeof(SC);
+      size_t send_size = importer->getExportLIDs().size() * sizeof(SC);
+      int local_log_max = ceil(log(std::max(send_size,recv_size)) / log(2))+1;
+      int global_log_max=local_log_max;
+      Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_MAX,1,&local_log_max,&global_log_max);
+      PM.halopong_make_table(nrepeat,global_log_max, importer);   
+    }
   }
 
   if(verbose && rank == 0) {

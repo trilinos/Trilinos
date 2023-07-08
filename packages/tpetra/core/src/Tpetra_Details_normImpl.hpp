@@ -119,13 +119,13 @@ lclNormImpl (const RV& normsOut,
   using Kokkos::subview;
   using mag_type = typename RV::non_const_value_type;
 
-  static_assert (static_cast<int> (RV::Rank) == 1,
+  static_assert (static_cast<int> (RV::rank) == 1,
                  "Tpetra::MultiVector::lclNormImpl: "
                  "The first argument normsOut must have rank 1.");
   static_assert (Kokkos::is_view<XMV>::value,
                  "Tpetra::MultiVector::lclNormImpl: "
                  "The second argument X is not a Kokkos::View.");
-  static_assert (static_cast<int> (XMV::Rank) == 2,
+  static_assert (static_cast<int> (XMV::rank) == 2,
                  "Tpetra::MultiVector::lclNormImpl: "
                  "The second argument X must have rank 2.");
 

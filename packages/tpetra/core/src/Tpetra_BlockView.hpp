@@ -233,7 +233,7 @@ struct SCAL<ViewType, CoefficientType, IndexType, true, rank> {
   {
     using x_value_type = typename std::decay<decltype (*x.data()) >::type;
     const IndexType span = static_cast<IndexType> (x.span());
-    x_value_type *__restrict__ x_ptr(x.data()); 
+    x_value_type *__restrict x_ptr(x.data()); 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -395,8 +395,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, true, rank> {
       using x_value_type = typename std::decay<decltype (*x.data()) >::type;
       using y_value_type = typename std::decay<decltype (*y.data()) >::type;
       const IndexType span = static_cast<IndexType> (y.span());
-      const x_value_type *__restrict__ x_ptr(x.data()); 
-      y_value_type *__restrict__ y_ptr(y.data()); 
+      const x_value_type *__restrict x_ptr(x.data()); 
+      y_value_type *__restrict y_ptr(y.data()); 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -468,8 +468,8 @@ struct COPY<ViewType1, ViewType2, IndexType, true, rank> {
     const IndexType span = static_cast<IndexType> (x.span());
     using x_value_type = typename std::decay<decltype (*x.data()) >::type;
     using y_value_type = typename std::decay<decltype (*y.data()) >::type;
-    const x_value_type *__restrict__  x_ptr(x.data()); 
-    y_value_type *__restrict__        y_ptr(y.data()); 
+    const x_value_type *__restrict  x_ptr(x.data()); 
+    y_value_type *__restrict        y_ptr(y.data()); 
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -530,16 +530,16 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutLef
     const IndexType numRows = static_cast<IndexType> (A.extent (0));
     const IndexType numCols = static_cast<IndexType> (A.extent (1));
     
-    const A_value_type *__restrict__ A_ptr(A.data()); const IndexType as1(A.stride(1)); 
-    const x_value_type *__restrict__ x_ptr(x.data()); 
-    y_value_type *__restrict__ y_ptr(y.data()); 
+    const A_value_type *__restrict A_ptr(A.data()); const IndexType as1(A.stride(1)); 
+    const x_value_type *__restrict x_ptr(x.data()); 
+    y_value_type *__restrict y_ptr(y.data()); 
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (IndexType j=0;j<numCols;++j) {
       const x_value_type x_at_j = alpha*x_ptr[j];
-      const A_value_type *__restrict__ A_at_j = A_ptr + j*as1;
+      const A_value_type *__restrict A_at_j = A_ptr + j*as1;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -572,9 +572,9 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutRig
     const IndexType numRows = static_cast<IndexType> (A.extent (0));
     const IndexType numCols = static_cast<IndexType> (A.extent (1));
     
-    const A_value_type *__restrict__ A_ptr(A.data()); const IndexType as0(A.stride(0));
-    const x_value_type *__restrict__ x_ptr(x.data()); 
-    y_value_type *__restrict__ y_ptr(y.data()); 
+    const A_value_type *__restrict A_ptr(A.data()); const IndexType as0(A.stride(0));
+    const x_value_type *__restrict x_ptr(x.data()); 
+    y_value_type *__restrict y_ptr(y.data()); 
     
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
