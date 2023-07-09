@@ -111,7 +111,7 @@ namespace Test {
           hVertexCoord(ivertex,0) = leftX + (double)i*hx;
           hVertexCoord(ivertex,1) = leftY + (double)j*hy;
           hVertexCoord(ivertex,2) = leftZ + (double)k*hz;
-          ++;
+          ivertex++;
         }
       }
     }
