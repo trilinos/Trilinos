@@ -105,14 +105,13 @@ namespace Test {
     // Get nodal coordinates
     vertexCoords = ViewType("vertexCoords", numVertices, dim);
     auto hVertexCoord = Kokkos::create_mirror_view(vertexCoords);
-    ordinal_type ivertex = 0;
-    for (ordinal_type k=0; k<NZ+1; k++) {
+    for (ordinal_type ivertex=0, k=0; k<NZ+1; k++) {
       for (ordinal_type j=0; j<NY+1; j++) {
         for (ordinal_type i=0; i<NX+1; i++) {
           hVertexCoord(ivertex,0) = leftX + (double)i*hx;
           hVertexCoord(ivertex,1) = leftY + (double)j*hy;
           hVertexCoord(ivertex,2) = leftZ + (double)k*hz;
-          ivertex++;
+          ++;
         }
       }
     }
