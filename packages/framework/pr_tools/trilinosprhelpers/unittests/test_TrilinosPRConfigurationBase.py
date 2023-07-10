@@ -165,7 +165,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     Test TrilinsoPRConfigurationBase class
     """
     def setUp(self):
-        #os.environ["TRILINOS_SOURCE_BRANCH"]  = "trilinos_source_branch_value"
         #os.environ["TRILINOS_SOURCE_REPO"]    = "trilinos_source_repo_value"
         #os.environ["TRILINOS_SOURCE_SHA"]     = "trilinos_source_sha_value"
         #os.environ["TRILINOS_TARGET_BRANCH"]  = "trilinos_target_branch_value"
@@ -209,7 +208,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
@@ -275,7 +273,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "master_merge_20200101_000000"
         return args
 
 
@@ -286,7 +283,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "invalid_source_branch_name"
         return args
 
 

@@ -48,7 +48,6 @@ class Test_parse_args(unittest.TestCase):
                                                                    'dev',
                                                                    'null',
                                                                    'source_repo'),
-                                                      '--source-branch-name', 'foobar',
                                                       '--target-repo-url',
                                                       os.path.join(os.path.sep,
                                                                    'dev',
@@ -63,7 +62,6 @@ class Test_parse_args(unittest.TestCase):
                                                       '--jenkins-job-number', '2424'])
 
         self.default_options = Namespace(source_repo_url='/dev/null/source_repo',
-                                         source_branch_name='foobar',
                                          target_repo_url='/dev/null/target_repo',
                                          target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
@@ -89,7 +87,6 @@ class Test_parse_args(unittest.TestCase):
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
-                | - [R] source-branch-name          : foobar
                 | - [R] target_repo_url             : /dev/null/target_repo
                 | - [R] target_branch_name          : real_trash
                 | - [R] pullrequest-build-name      : Some_odd_compiler
@@ -115,8 +112,7 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --source-branch-name
-                                   SOURCE_BRANCH_NAME --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
                                    --target-branch-name TARGET_BRANCH_NAME
                                    --pullrequest-build-name PULLREQUEST_BUILD_NAME
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
@@ -145,8 +141,6 @@ class Test_parse_args(unittest.TestCase):
                 Required Arguments:
                   --source-repo-url SOURCE_REPO_URL
                                         Repo with the new changes
-                  --source-branch-name SOURCE_BRANCH_NAME
-                                        Branch with the new changes
                   --target-repo-url TARGET_REPO_URL
                                         Repo to merge into
                   --target-branch-name TARGET_BRANCH_NAME
@@ -218,8 +212,7 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.usage_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --source-branch-name
-                                   SOURCE_BRANCH_NAME --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
                                    --target-branch-name TARGET_BRANCH_NAME
                                    --pullrequest-build-name PULLREQUEST_BUILD_NAME
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
@@ -239,7 +232,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run]
-                programName: error: the following arguments are required: --source-repo-url, --source-branch-name, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
+                programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 
         self.m_cwd = mock.patch('PullRequestLinuxDriverTest.os.getcwd',

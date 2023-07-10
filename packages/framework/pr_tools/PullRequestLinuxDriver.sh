@@ -172,7 +172,6 @@ print_banner "Launch the Test Driver"
 # Prepare the command for the TEST operation
 test_cmd_options=(
     --source-repo-url=${TRILINOS_SOURCE_REPO:?}
-    --source-branch-name=${TRILINOS_SOURCE_BRANCH:?}
     --target-repo-url=${TRILINOS_TARGET_REPO:?}
     --target-branch-name=${TRILINOS_TARGET_BRANCH:?}
     --pullrequest-build-name=${JOB_BASE_NAME:?}
