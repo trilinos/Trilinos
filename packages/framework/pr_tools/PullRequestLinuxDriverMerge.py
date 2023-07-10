@@ -145,6 +145,10 @@ def merge_branch(source_url, target_branch, sourceSHA):
         check_call_wrapper(['git', 'remote', 'rm', 'source_remote'])
 
     check_call_wrapper(['git', 'remote', 'add', 'source_remote', source_url])
+    check_call_wrapper(['git', 'prune'])
+    if os.path.isfile(os.path.join('.git', 'gc.log')):
+        os.remove(os.path.join('.git', 'gc.log'))
+    check_call_wrapper(['git', 'gc'])
 
     fetch_succeeded = False
     for i in range(3):
@@ -162,7 +166,7 @@ def merge_branch(source_url, target_branch, sourceSHA):
     check_call_wrapper(['git', 'fetch', 'origin', target_branch])
     check_call_wrapper(['git', 'reset', '--hard', 'HEAD'])
     check_call_wrapper(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
-    check_call_wrapper(['git', 'merge', '--no-edit', 'source_remote/' + sourceSHA]),
+    check_call_wrapper(['git', 'merge', '--no-edit', sourceSHA]),
 
     return 0
 
