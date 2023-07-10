@@ -60,7 +60,7 @@ namespace panzer_stk {
 template<typename EvalT,typename Traits>
 ProjectField<EvalT, Traits>::
 ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
-             Teuchos::RCP<panzer::PureBasis> dst, 
+             Teuchos::RCP<panzer::PureBasis> dst, const size_t workset_size,
              std::string outName):
   srcBasis_(src), dstBasis_(dst)
 { 
@@ -83,6 +83,9 @@ ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
 
   this->setName("Project Field");
 
+  // storage for local (to the workset) orientations
+  local_orts_ = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",workset_size);
+
 }
 
 // **********************************************************************
@@ -91,6 +94,7 @@ void ProjectField<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData  d, 
 		      PHX::FieldManager<Traits>& /* fm */)
 {
+  // coming from the orientations interface, this includes all orts for the process
   orientations_ = d.orientations_;
 }
 
@@ -107,30 +111,33 @@ evaluateFields(typename Traits::EvalData workset)
 
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
-  // First, need to copy orientations to device
-  auto numCells = source_.extent(0);
-  auto orts = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",numCells);
-  auto orts_host = Kokkos::create_mirror_view(orts);
+  size_t numCells = workset.num_cells;
+  const auto cell_range = std::pair<int,int>(0,numCells);
+  // local_orts_ may be too large for final workset so we do the standard subview trick
+  auto sub_local_orts = Kokkos::subview(local_orts_,cell_range);
+  auto orts_host = Kokkos::create_mirror_view(sub_local_orts);
 
+  // First, need to copy orientations to device
   if (orientations_ == Teuchos::null) {
     // If your bases don't require orientations, pass the default (0,0) orientation
-    for (size_t i=0; i < orts_host.extent(0); ++i)
+    for (int i=0; i < numCells; ++i)
       orts_host(i) = Intrepid2::Orientation();
-  } else if (orientations_->size() == numCells) {
-    for (size_t i=0; i < orts_host.extent(0); ++i)
-      orts_host(i) = orientations_->at(i);
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ERROR: Orientations set, but incorrectly!");
-  }
-  
-  Kokkos::deep_copy(orts,orts_host);
+    for (int i=0; i < numCells; ++i) // grab orientations for this workset
+      orts_host(i) = orientations_->at(workset.cell_local_ids[i]);
+  }   
+  Kokkos::deep_copy(sub_local_orts,orts_host);
 
   // TODO BWR Revisit this... maybe we don't need pure basis upstream?
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > dstBasis = dstBasis_->getIntrepid2Basis();
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
 
-  pts::projectField(result_.get_view(),dstBasis.get(),
-                    source_.get_view(),srcBasis.get(),orts);
+  // Same here, need subviews
+  auto sub_result = Kokkos::subview(result_.get_view(),cell_range,Kokkos::ALL());
+  auto sub_source = Kokkos::subview(source_.get_view(),cell_range,Kokkos::ALL());
+
+  pts::projectField(sub_result,dstBasis.get(),
+                    sub_source,srcBasis.get(),sub_local_orts);
 
 }
 

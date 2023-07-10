@@ -57,7 +57,8 @@ struct WorksetsAndOrts {
 Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::ParameterList> pl);
 WorksetsAndOrts getWorksetsAndOrtsForFields(
   Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-  std::map<std::string,panzer::BasisDescriptor> fmap);
+  std::map<std::string,panzer::BasisDescriptor> fmap,
+  const int workset_size=-1);
 template <typename EvalType> 
 bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
                      std::map<std::string,panzer::BasisDescriptor> & fmap,
@@ -124,7 +125,8 @@ class GetCoeffsEvaluator
   public:
 
     GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis, 
-                       std::string & eShape /*, Functor ??*/);
+                       std::string & eShape, const size_t workset_size,
+                       const size_t numNodesPerElem, const size_t dim /*, Functor ??*/);
 
     void
     evaluateFields(
@@ -140,6 +142,12 @@ class GetCoeffsEvaluator
     Teuchos::RCP<panzer::PureBasis> basis;
     PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> coeffs;
     Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orts;
+    Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> local_orts;
+    Kokkos::DynRankView<double,PHX::Device> local_nodes;
+    //DynRankView local_linearBasisValuesAtEvalPoint;
+    //DynRankView local_jacobian, local_jacobian_inv, local_jacobian_det;
+    //DynRankView local_evaluationPoints, local_physEvalPoints;
+    //DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
     ElemShape elemShape;
   
 }; // end of class
@@ -147,7 +155,8 @@ class GetCoeffsEvaluator
 template<typename EvalT, typename Traits>
 GetCoeffsEvaluator<EvalT, Traits>::
 GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
-                   std::string & eShape /*, Functor ?? */) 
+                   std::string & eShape, const size_t workset_size, 
+                   const size_t numNodesPerElem, const size_t dim /*, Functor ?? */) 
   : basis(basis)
 {
 
@@ -172,6 +181,27 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
       "ERROR: Element shape not supported!");
   }
 
+  // storage for local (to the workset) orientations and cell nodes
+  local_orts  = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",workset_size);
+  local_nodes = Kokkos::DynRankView<double,PHX::Device>("cellNodes",workset_size,numNodesPerElem,dim);
+
+  // storage for local everything else needed
+  //auto numPoints = 4;
+  //local_linearBasisValuesAtEvalPoint = DynRankView("linearBasisValuesAtEvalPoint",workset_size,numNodesPerElem);
+  //local_evaluationPoints = DynRankView("evaluationPoints",workset_size,4,dim);
+  //local_physEvalPoints = DynRankView("physEvalPoints",workset_size,4,dim);
+  //local_jacobian = DynRankView("jacobian", workset_size, numPoints, dim, dim);
+  //local_jacobian_det = DynRankView("jacobian_det", workset_size, numPoints);
+  //local_jacobian_inv = DynRankView("jacobian_inv", workset_size, numPoints, dim, dim);
+ 
+  //if (basis->isVectorBasis()) {
+  //  local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
+  //  local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
+  //} else {
+  //  local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
+  //  local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
+  //}
+
 }
 
 template<typename EvalT,typename Traits>
@@ -193,34 +223,56 @@ evaluateFields(
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // FYI, this all relies on a first-order mesh
-  auto cellNodes = workset.getCellVertices().get_view(); // TODO BWR UPDATE WHEN DEPRECATED
-  auto numNodesPerElem = cellNodes.extent(1);
-
-  auto numOwnedElems = cellNodes.extent(0);
-  TEUCHOS_ASSERT(numOwnedElems==orts->size());
+  auto cellNodesAll = workset.getCellVertices(); // TODO BWR UPDATE WHEN DEPRECATED
+  size_t numOwnedElems = workset.num_cells;
+  std::cout << "OWNED " << numOwnedElems << " VS " << local_orts.extent(0) << std::endl;
+  TEUCHOS_ASSERT(local_nodes.extent(0)==local_orts.extent(0));
 
   auto dim = basis->dimension();
+  auto numNodesPerElem = local_nodes.extent(1);
 
-  // First, need to copy orientations to device
-  auto orts_dev = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts_dev",orts->size());
-  auto orts_host = Kokkos::create_mirror_view(orts_dev);
-  for (size_t i=0; i < orts_host.extent(0); ++i)
-    orts_host(i) = orts->at(i);
-  Kokkos::deep_copy(orts_dev,orts_host);
+  // Get subview of local data in case num_cells doesn't match workset_size,
+  // as can happen for the final workset
+  const auto cell_range = std::pair<int,int>(0,numOwnedElems);
+  auto sub_local_nodes = Kokkos::subview(local_nodes,cell_range,Kokkos::ALL(),Kokkos::ALL());
+  auto sub_local_orts  = Kokkos::subview(local_orts,cell_range);
+  auto sub_coeffs      = Kokkos::subview(coeffs.get_view(),cell_range,Kokkos::ALL());
+
+  // First, need to copy orientations to device and grab local nodes
+  auto orts_host = Kokkos::create_mirror_view(sub_local_orts);
+  // subselect
+  // TODO does this, e.g., zero out data? Will that produce correct behavior?
+  auto nodes_host = Kokkos::create_mirror_view(sub_local_nodes);
+  auto nodesAll_host = Kokkos::create_mirror_view(cellNodesAll.get_view());
+  for (int i=0; i < numOwnedElems; ++i) {
+    orts_host(i) = orts->at(workset.cell_local_ids[i]);
+    for (int j=0; j < numNodesPerElem; ++j)
+      for (int k=0; k < dim; ++k)
+        nodes_host(i,j,k) = nodesAll_host(workset.cell_local_ids[i],j,k);
+  }
+  Kokkos::deep_copy(sub_local_orts,orts_host);
+  Kokkos::deep_copy(sub_local_nodes,nodes_host);
 
   auto it2basis = basis->template getIntrepid2Basis<PHX::exec_space,double,double>();
   auto functionSpace = it2basis->getFunctionSpace();
   auto cell_topology = it2basis->getBaseCellTopology(); // See note above
+
+  std::cout << " DONE HERE " << std::endl;
+
+  // TODO HERE HERE PROBABLY NEED TO DO ALL MEMORY ALLOCS IN CONSTRUCTOR !
+  // TODO ASK ROGER WHAT EXACTLY IS GOING ON... WHEN CAN WE HAVE HELPER DYNRANKVIEWS?
 
   {
     Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
     projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
 
     int numPoints = projStruct.getNumTargetEvalPoints();
+    std::cout << numPoints << " POINTS " << std::endl;
     DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
+    //auto evaluationPoints = Kokkos::subview(local_evaluationPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     pts::getL2EvaluationPoints(evaluationPoints,
-        orts_dev,
+        sub_local_orts,
         it2basis.get(),
         &projStruct);
 
@@ -232,15 +284,26 @@ evaluateFields(
       refTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
       physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
     }
+    //auto refTargetAtEvalPoints = Kokkos::subview(local_refTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    //auto physTargetAtEvalPoints = Kokkos::subview(local_physTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+
+    std::cout << " EVAL POINTS " << std::endl;
 
     auto eShape = elemShape;
     DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
+    //auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    std::cout << "physeval" <<std::endl;
     {
       DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
+      //auto sub_LBVAEP = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
+      std::cout << " linearbasis" << std::endl;
+
+      // TODO comment out different parts of this... Intrepid call? Subview? Whole thing?
 
       Kokkos::parallel_for(Kokkos::RangePolicy<typename PHX::exec_space>(0,numOwnedElems),
           KOKKOS_LAMBDA (const int &i) {
         auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+        //auto basisValuesAtEvalPoint = Kokkos::subview(sub_LBVAEP,i,Kokkos::ALL());
         for(int j=0; j<numPoints; ++j){
           auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
           switch (eShape) {
@@ -259,25 +322,34 @@ evaluateFields(
           }
           for(size_t k=0; k<numNodesPerElem; ++k)
             for(int d=0; d<dim; ++d)
-              physEvalPoints(i,j,d) += cellNodes(i,k,d)*basisValuesAtEvalPoint(k);
+              physEvalPoints(i,j,d) += sub_local_nodes(i,k,d)*basisValuesAtEvalPoint(k);
         }
       });
+      std::cout << " OUT OF LOOP " << std::endl;
       Kokkos::fence();
     }
+    std::cout << " GOOD " << std::endl;
 
     // transform the target function and its derivative to the reference element (inverse of pullback operator)
     DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
     DynRankView jacobian_det("jacobian_det", numOwnedElems, numPoints);
     DynRankView jacobian_inv("jacobian_inv", numOwnedElems, numPoints, dim, dim);
-    ct::setJacobian(jacobian, evaluationPoints, cellNodes, cell_topology);
+    //auto jacobian = Kokkos::subview(local_jacobian,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    //auto jacobian_det = Kokkos::subview(local_jacobian_det,cell_range,Kokkos::ALL());
+    //auto jacobian_inv = Kokkos::subview(local_jacobian_inv,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    ct::setJacobian(jacobian, evaluationPoints, sub_local_nodes, cell_topology);
     ct::setJacobianDet (jacobian_det, jacobian);
     ct::setJacobianInv (jacobian_inv, jacobian);
 
+    // TODO BWR DOES THIS CAUSE ISSUES?
+    // TODO ASK ROGER 
+    
     EvalSolFunctor<DynRankView> functor;
     functor.funAtPoints = physTargetAtEvalPoints;
     functor.points = physEvalPoints;
     Kokkos::parallel_for("loop for evaluating function in phys space", numOwnedElems, functor);
     Kokkos::fence();
+    
 
     switch (functionSpace) {
     case Intrepid2::FUNCTION_SPACE_HGRAD:
@@ -295,13 +367,14 @@ evaluateFields(
     default: {}
     }
 
-    pts::getL2BasisCoeffs(coeffs.get_view(),
+    pts::getL2BasisCoeffs(sub_coeffs,
         refTargetAtEvalPoints,
         evaluationPoints,
-        orts_dev,
+        sub_local_orts,
         it2basis.get(),
         &projStruct);
   }
+  std::cout << " L2 proj " << std::endl;
 
   return;
 }
@@ -483,10 +556,14 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
 
   // set up worksets and orientations
 
-  // For now, we make our lives easier and return one workset
-  auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap);
+  // return worksets and orientations and get relevant sizes
+  auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap,2);
   auto worksets = wkstsAndOrts.worksets;
   auto orientations = wkstsAndOrts.orientations;
+  auto wkstSize = (*worksets)[0].num_cells; // TODO BWR worksets should be all the same size, but the last one can be smaller ???
+  auto numNodesPerElem = (*worksets)[0].getCellVertices().extent(0);
+  // TODO BWR is it true that the first one will always be the "correct" size? Probably but ask!
+  std::cout << "NUM SETS :: " << worksets->size() << std::endl;
 
   auto numCells = orientations->size();
 
@@ -494,6 +571,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   // this essentially matches the intrepid2 test, but we've
   // wrapped things in an evaluator, etc.
   auto topo = mesh->getCellTopology(eblocks[0]);
+  auto dim = topo->getDimension();
   Teuchos::RCP<panzer::PureBasis> sourceBasis = Teuchos::rcp(new panzer::PureBasis(type,1,numCells,topo));
   Teuchos::RCP<panzer::PureBasis> targetBasis = Teuchos::rcp(new panzer::PureBasis(type,2,numCells,topo));
 
@@ -504,7 +582,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   ///////////////////////////////////////////////////
   {
     RCP<panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits>(fname,sourceBasis,eShape)
+      rcp(new panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits>(fname,sourceBasis,eShape,wkstSize,numNodesPerElem,dim)
       );
 
     fm->registerEvaluator<EvalType>(e);
@@ -518,7 +596,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   ///////////////////////////////////////////////////
   {
     RCP<panzer_stk::ProjectField<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,sourceBasis,targetBasis));
+      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,sourceBasis,targetBasis,wkstSize));
 
     fm->registerEvaluator<EvalType>(e);
 
@@ -528,7 +606,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   {
     std::string outName = fname+"_final"; // otherwise we'd have two fields with same name
     RCP<panzer_stk::ProjectField<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,outName));
+      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,wkstSize,outName));
 
     fm->registerEvaluator<EvalType>(e);
 
@@ -565,6 +643,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   bool matched = true;
   for (size_t ncell=0;ncell<numCells;++ncell){
     for (int idx_pt=0;idx_pt<sourceBasis->cardinality();++idx_pt){
+      std::cout << s_h(ncell,idx_pt) << " " << t_h(ncell,idx_pt) << std::endl;
         if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
     }
   }
@@ -603,9 +682,11 @@ Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::P
 }
 
 // TODO BWR move outside of test
+// TODO BWR workset_size -1 is ALL_ELEMENTS
 WorksetsAndOrts getWorksetsAndOrtsForFields(
   Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-  std::map<std::string,panzer::BasisDescriptor> fmap)
+  std::map<std::string,panzer::BasisDescriptor> fmap,
+  const int workset_size)
 {
 
   WorksetsAndOrts wksOrts;
@@ -659,7 +740,7 @@ WorksetsAndOrts getWorksetsAndOrtsForFields(
   auto workset_container = Teuchos::rcp(new panzer::WorksetContainer(factory, needs_map));
   workset_container->setGlobalIndexer(dof_manager);
   wksOrts.worksets = workset_container->getWorksets(panzer::WorksetDescriptor(eblocks[0],
-                                                    panzer::WorksetSizeType::ALL_ELEMENTS, false, true));
+                                                    workset_size, false, true));
 
   wksOrts.orientations = workset_container->getOrientations();
 
