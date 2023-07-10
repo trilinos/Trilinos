@@ -45,7 +45,7 @@
     \brief  Test for checking the correctness of function ProjectionTools::projectField.  
 
     The test considers a uniform and structured mesh of the hypercube [-1,1]^dim, with dim=2 or 3.
-    The hypercube is meshed with Hex, Tets (in 3d) and Quad and Tri (in 2d).
+    The hypercube is meshed with Hex, Tets, Wedges (in 3d) and Quad and Tri (in 2d).
 
     A finite element field is defined on the mesh and it is initialized with an analytic function.
     The field is the projected to an higher-order finite element space and then it is projected back to the original space.
@@ -67,6 +67,8 @@
 #include "Intrepid2_ProjectionTools.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
@@ -162,7 +164,7 @@ int ProjectFields(const bool verbose) {
   typedef Experimental::ProjectionTools<DeviceType> pts;
 
   using basisPtrType = BasisPtr<DeviceType,ValueType,ValueType>;
-  using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
+  using CG_NBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
 
   *outStream
   << "===============================================================================\n"
@@ -243,6 +245,37 @@ int ProjectFields(const bool verbose) {
       Teuchos::rcp(new Basis_HVOL_C0_FEM<DeviceType,ValueType,ValueType>(shards::getCellTopologyData<shards::Tetrahedron<4>>())), Teuchos::rcp(new typename  CG_NBasis::HVOL_TET(1))));
 
 
+    //WEDGE HGRAD
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HGRAD_WEDGE(1))));
+
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HGRAD_WEDGE(2))));
+
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HGRAD_WEDGE(2))));
+
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HGRAD_WEDGE(3))));
+
+    //WEDGE HCURL
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HCURL_WEDGE_I1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HCURL_WEDGE(1))));
+
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HCURL_WEDGE_I1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HCURL_WEDGE(2))));
+
+    //WEDGE HDIV
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HDIV_WEDGE_I1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HDIV_WEDGE(1))));
+
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HDIV_WEDGE_I1_FEM<DeviceType,ValueType,ValueType>()), Teuchos::rcp(new typename  CG_NBasis::HDIV_WEDGE(2))));
+
+    //WEDGE HVOL
+    basis_pair_set.push_back(std::make_pair(
+      Teuchos::rcp(new Basis_HVOL_C0_FEM<DeviceType,ValueType,ValueType>(shards::getCellTopologyData<shards::Wedge<6>>())), Teuchos::rcp(new typename  CG_NBasis::HVOL_WEDGE(1))));
+      
 
     //QUAD HGRAD
     basis_pair_set.push_back(std::make_pair(
@@ -391,6 +424,18 @@ int ProjectFields(const bool verbose) {
                     physEvalPoints(i,j,d) += nodeCoords(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
               }
             });
+          } else if(cellTopo.getKey() == shards::Wedge<6>::key) {
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+            KOKKOS_LAMBDA (const ordinal_type &i) {
+              auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j){
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_WEDGE_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalPoints(i,j,d) += nodeCoords(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
+              }
+            });
           } else if(cellTopo.getKey() == shards::Quadrilateral<4>::key) {
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
             KOKKOS_LAMBDA (const ordinal_type &i) {
@@ -445,7 +490,10 @@ int ProjectFields(const bool verbose) {
 
       //project from source to destination basis
       DynRankView dstBasisCoeffs("dstBasisCoeffs", numElems, dstBasisPtr->getCardinality());
-      pts::projectField(dstBasisCoeffs, dstBasisPtr.get(), srcBasisCoeffs, srcBasisPtr.get(), elemOrts);
+
+      //Note, no need to create subviews. This is only to test that projectField works with subviews.
+      auto range = std::make_pair(0,numElems);
+      pts::projectField(Kokkos::subview(dstBasisCoeffs, range, Kokkos::ALL()), dstBasisPtr.get(), Kokkos::subview(srcBasisCoeffs, range, Kokkos::ALL()), srcBasisPtr.get(), Kokkos::subview(elemOrts, range));
 
       //project back
       DynRankView srcBasisCoeffs2("srcBasisCoeffs2", numElems, srcBasisPtr->getCardinality());
