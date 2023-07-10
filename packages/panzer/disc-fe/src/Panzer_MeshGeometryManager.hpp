@@ -88,14 +88,20 @@ namespace panzer {
 
   public:
 
-    MeshGeometryManager(const Teuchos::RCP<const shards::CellTopology> & ct)
+    /** \brief Constructs a MeshGeometryManager
+     * 
+     * @param[in] ct  shards::CellTopology associated with this manager
+     * @param[in] mesh_order  Order of the mesh associated with this manager
+    */
+
+    MeshGeometryManager(const Teuchos::RCP<const shards::CellTopology> & ct, const size_t & mesh_order)
       : cell_topo_(ct)
     {
       // Create a "mesh basis", or the HGrad basis consistent with the mesh geometry
       // (as defined by the extended cell topology)
 
       mesh_basis_ = createHGradBasis<double,double>(*ct);
-      basis_descriptor_ = createBasisDescriptor(*ct);
+      basis_descriptor_ = createBasisDescriptor(mesh_order);
 
     }
  
@@ -110,10 +116,9 @@ namespace panzer {
     //! Get HGrad PureBasis associated with the mesh geometry
     Teuchos::RCP<const panzer::PureBasis> getMeshPureBasis(const int & num_cells) const 
     { return Teuchos::rcp(new panzer::PureBasis(basis_descriptor_,cell_topo_,num_cells)); }
-
-    //! 
     
-    // TODO BWR Also will want HCURL and HDIV bases consistent with the mesh
+    // TODO BWR Also will want HCURL and HDIV bases consistent with the mesh but that would be down the line
+    // TODO BWR right now, there is no ability to do this even for first order (I believe)
 
     // TODO BWR be careful about storing information that is housed in worksets
     // TODO BWR there is a lot of memory management happening and dont want lingering
@@ -186,46 +191,7 @@ namespace panzer {
     /* @brief Given the mesh cell topology, make a \ref panzer::BasisDescriptor 
     *         required to create a \ref panzer::PureBasis
     */
-    panzer::BasisDescriptor createBasisDescriptor( const shards::CellTopology & cellTopo ) {
-
-      int order = 1;
-
-      switch (cellTopo.getKey()) {
-      case shards::Line<2>::key:          order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM   <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Line<3>::key:          order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_LINE_C2_FEM   <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Triangle<3>::key:      order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<4>::key: order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM   <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<4>::key:   order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<8>::key:    order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Wedge<6>::key:         order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM  <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Pyramid<5>::key:       order = 1; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_PYR_C1_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-
-      case shards::Triangle<6>::key:      order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<9>::key: order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM   <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<10>::key:  order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C2_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      //case shards::Tetrahedron<11>::key:  order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_COMP12_FEM<PHX::exec_space,outputValueType,pointValueType>()); break;
-        //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<27>::key:   order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-        //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <PHX::exec_space,outputValueType,pointValueType>()); break;
-      case shards::Wedge<18>::key:        order = 2; r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_WEDGE_C2_FEM  <PHX::exec_space,outputValueType,pointValueType>()); break;
-        //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <PHX::exec_space,outputValueType,pointValueType>()); break;
-
-      case shards::Quadrilateral<8>::key: 
-      case shards::Beam<2>::key:
-      case shards::Beam<3>::key:
-      case shards::ShellLine<2>::key:
-      case shards::ShellLine<3>::key:
-      case shards::ShellTriangle<3>::key:
-      case shards::ShellTriangle<6>::key:
-      case shards::ShellQuadrilateral<4>::key:
-      case shards::ShellQuadrilateral<8>::key:
-      case shards::ShellQuadrilateral<9>::key: 
-      default: {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                                   ">>> ERROR MeshGeometryManager: Cell topology not supported.");
-      }
-      }
-
+    panzer::BasisDescriptor createBasisDescriptor( const size_t & order ) {
       return panzer::BasisDescriptor(order,"HGrad");
     }
   };
