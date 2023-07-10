@@ -130,10 +130,11 @@ computeLocalPrec()
 {
   //update values in local prec (until compute(), values aren't needed)
   localPrec_->setValues(this->localValues_);
+  localPrec2_->setValues(this->localValues2_);
   localPrec_->compute();
+  localPrec2_->compute();
   this->computeTime_ = localPrec_->getComputeTime();
 
-  localPrec2_->compute();
   localPrec_->verify(*localPrec2_);
   std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
 }

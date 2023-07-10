@@ -53,64 +53,12 @@
 #include <Kokkos_Timer.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <stdexcept>
+#include <shylu_fastilu.hpp> // Remove this later
 
 namespace Ifpack2
 {
 namespace Details
 {
-
-template <typename View1, typename View2, typename View3>
-std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
-  const View1& row_map,
-  const View2& entries,
-  const View3& values,
-  const int block_size)
-{
-  using size_type = typename View1::non_const_value_type;
-  using lno_t     = typename View2::non_const_value_type;
-  using scalar_t  = typename View3::non_const_value_type;
-
-  const size_type nrows = row_map.extent(0) - 1;
-  std::vector<std::vector<scalar_t>> result;
-  result.resize(nrows);
-  for (auto& row : result) {
-    row.resize(nrows, 0.0);
-  }
-
-  std::cout << "cols: " << entries.extent(0) << std::endl;
-
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    const size_type row_nnz_begin = row_map(row_idx);
-    const size_type row_nnz_end   = row_map(row_idx + 1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx      = entries(row_nnz);
-      const scalar_t value     = values.extent(0) > 0 ? values(row_nnz) : 1;
-      result[row_idx][col_idx] = value;
-    }
-  }
-
-  return result;
-}
-
-template <typename scalar_t>
-void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
-  for (const auto& row : matrix) {
-    for (const auto& item : row) {
-      std::printf("%.2f ", item);
-    }
-    std::cout << std::endl;
-  }
-}
-
-template <typename View>
-void print_view(const View& view, const std::string& name)
-{
-  std::cout << name << "(" << view.extent(0) << "): ";
-  for (size_t i = 0; i < view.extent(0); ++i) {
-    std::cout << view(i) << ", ";
-  }
-  std::cout << std::endl;
-}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -230,9 +178,6 @@ initialize()
     auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    print_view(localRowPtrs_, "rowptrs");
-    print_view(localColInds_, "colids");
-    print_view(localValues_,  "localValues_");
     print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
 
     localRowPtrsHost2_ = localRowPtrsHost_;
@@ -249,35 +194,42 @@ initialize()
     LocalOrdinal new_nnz_count = 0;
     const auto block_size = params_.blockCrsSize;
     const auto blocks_per_row = nrows / block_size; // assumes square matrix
-    std::vector<bool> row_block_active(blocks_per_row, false);
+    std::vector<std::vector<bool> > row_block_active;
     assert(nrows % block_size == 0);
-    // Sizing
+    // Block active
     for (size_t row = 0; row < nrows; ++row) {
-      local_new_rowmap[row] = new_nnz_count;
       LocalOrdinal row_itr = localRowPtrs_(row);
+      LocalOrdinal row_end = localRowPtrs_(row+1);
 
       if (row % block_size == 0) {
         // We are starting a fresh sequence of blocks in the vertical
-        row_block_active.assign(row_block_active.size(), false);
+        row_block_active.push_back(std::vector<bool>(blocks_per_row, false));
       }
+
+      auto& curr_active_row = row_block_active[row_block_active.size()-1];
 
       for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
         const LocalOrdinal first_possible_col_in_block      = row_block_idx * block_size;
         const LocalOrdinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
         LocalOrdinal curr_nnz_col = localColInds_(row_itr);
-        if (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block) {
+        while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
           // This block has at least one nnz in this row
-          row_block_active[row_block_idx] = true;
+          curr_active_row[row_block_idx] = true;
+          ++row_itr;
+          curr_nnz_col = localColInds_(row_itr);
         }
-        if (row_block_active[row_block_idx]) {
+      }
+    }
+
+    // Sizing
+    for (size_t row = 0; row < nrows; ++row) {
+      local_new_rowmap[row] = new_nnz_count;
+
+      auto& curr_active_row = row_block_active[row / block_size];
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        if (curr_active_row[row_block_idx]) {
           new_nnz_count += block_size;
-          for (LocalOrdinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col) {
-            curr_nnz_col = localColInds_(row_itr);
-            if (possible_col == curr_nnz_col) {
-              // Already a non-zero entry, skip
-              ++row_itr;
-            }
-          }
         }
       }
     }
@@ -291,23 +243,15 @@ initialize()
       LocalOrdinal row_end = localRowPtrs_(row+1);
       LocalOrdinal row_itr_new = local_new_rowmap[row];
 
-      if (row % block_size == 0) {
-        // We are starting a fresh sequence of blocks in the vertical
-        row_block_active.assign(row_block_active.size(), false);
-      }
+      auto& curr_active_row = row_block_active[row / block_size];
 
       for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
         const LocalOrdinal first_possible_col_in_block      = row_block_idx * block_size;
         const LocalOrdinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
-        LocalOrdinal curr_nnz_col = localColInds_(row_itr);
-        if (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block) {
-          // This block has at least one nnz in this row
-          row_block_active[row_block_idx] = true;
-        }
-        if (row_block_active[row_block_idx]) {
+        if (curr_active_row[row_block_idx]) {
           for (LocalOrdinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
             local_col_ids_to_insert[row_itr_new] = possible_col;
-            curr_nnz_col = localColInds_(row_itr);
+            LocalOrdinal curr_nnz_col = localColInds_(row_itr);
             if (possible_col == curr_nnz_col && row_itr < row_end) {
               // Already a non-zero entry
               local_vals_to_insert[row_itr_new] = localValues_(row_itr);
@@ -328,9 +272,9 @@ initialize()
     std::cout << "JGF after filling:" << std::endl;
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    print_view(localRowPtrs_, "rowptrs");
-    print_view(localColInds_, "colids");
-    print_view(localValues_,  "localValues_");
+    print_view("localRows", localRowPtrs_);
+    print_view("localCols", localColInds_);
+    print_view("localVals", localValues_);
     print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
 
     auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(crs_matrix_block_filled, params_.blockCrsSize);
@@ -339,10 +283,7 @@ initialize()
     std::cout << "JGF after conversion:" << std::endl;
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    print_view(localRowPtrs_, "rowptrs");
-    print_view(localColInds_, "colids");
-    print_view(localValues_,  "localValues_");
-    print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, 1));
+    print_matrix(decompress_matrix(localRowPtrs_, localColInds_, localValues_, params_.blockCrsSize));
 
     // std::cout << "JGF after converting back:" << std::endl;
     // mat_ = Tpetra::convertToCrsMatrix(*bcrs_matrix);
