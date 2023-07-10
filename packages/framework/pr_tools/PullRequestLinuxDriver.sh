@@ -96,7 +96,6 @@ message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
 # Prepare the command for the MERGE operation
 merge_cmd_options=(
     ${TRILINOS_SOURCE_REPO:?}
-    ${TRILINOS_SOURCE_BRANCH:?}
     ${TRILINOS_TARGET_REPO:?}
     ${TRILINOS_TARGET_BRANCH:?}
     ${TRILINOS_SOURCE_SHA:?}
