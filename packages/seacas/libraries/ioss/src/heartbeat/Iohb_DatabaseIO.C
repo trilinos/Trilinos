@@ -327,7 +327,7 @@ namespace Iohb {
         time_t calendar_time = time(nullptr);
         // ctime include \n; the legend is output twice for SPYHIS.
         *logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
-	*logStream << *legend_ << '\n'; // Legend output twice for SPYHIS
+        *logStream << *legend_ << '\n'; // Legend output twice for SPYHIS
       }
 
       *logStream << *legend_ << '\n';
@@ -386,7 +386,7 @@ namespace Iohb {
           layout.add_literal(" ");
           layout.add_literal(*reinterpret_cast<std::string *>(data));
           if (logStream != nullptr) {
-	    *logStream << layout << '\n';
+            *logStream << layout << '\n';
           }
         }
         else {
