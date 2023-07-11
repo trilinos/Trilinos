@@ -123,11 +123,9 @@ class Test_parsing(unittest.TestCase):
     def test_parseInsufficientArgs_fails(self):
         test_namespace = Namespace()
         setattr(test_namespace, 'sourceRepo', '/dev/null/source/Trilinos.git')
-        expected_output = '''usage: programName [-h]
-                   sourceRepo targetRepo targetBranch sourceSHA
-                   workspaceDir
+        expected_output = '''usage: programName [-h] sourceRepo targetRepo targetBranch sourceSHA workspaceDir
 programName: error: the following arguments are required: sourceRepo, \
-sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
+targetRepo, targetBranch, sourceSHA, workspaceDir
 '''
         if sys.version_info.major != 3:
             expected_output = '''usage: programName [-h]
@@ -161,14 +159,13 @@ class Test_mergeBranch(unittest.TestCase):
                                                                   'Trilinos.git'),
                                                     'fake_develop',
                                                     'df324ae')
-        m_check_out.assert_has_calls([mock.call(['git', 'remote', '-v']),
-                                      mock.call(['git', 'rev-parse',
-                                                 'source_remote/neverland'])])
+        m_check_out.assert_has_calls([mock.call(['git', 'remote', '-v'])])
 
         m_check_call.assert_has_calls([mock.call(['git', 'remote', 'add', 'source_remote', '/dev/null/source/Trilinos.git']),
-                                       mock.call(['git', 'fetch', 'source_remote', 'df324ae']),
                                        mock.call(['git', 'prune']),
                                        mock.call(['git', 'gc']),
+                                       mock.call(['git', 'fetch', 'source_remote', 'df324ae']),
+                                       mock.call(['git', 'fetch', 'origin', 'fake_develop']),
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
                                        mock.call(['git', 'merge', '--no-edit', 'df324ae']),
@@ -191,14 +188,13 @@ class Test_mergeBranch(unittest.TestCase):
 
         expected_calls = []
         expected_calls.append( mock.call(['git', 'remote', '-v']) )
-        expected_calls.append( mock.call(['git', 'rev-parse', 'source_remote/neverland']) )
         m_check_out.assert_has_calls(expected_calls)
 
         m_check_call.assert_has_calls([mock.call(['git', 'remote', 'rm', 'source_remote']),
                                        mock.call(['git', 'remote', 'add', 'source_remote', '/dev/null/source/Trilinos.git']),
-                                       mock.call(['git', 'fetch', 'source_remote', 'df324ae']),
                                        mock.call(['git', 'prune']),
                                        mock.call(['git', 'gc']),
+                                       mock.call(['git', 'fetch', 'source_remote', 'df324ae']),
                                        mock.call(['git', 'fetch', 'origin', 'fake_develop']),
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
@@ -218,6 +214,8 @@ class Test_mergeBranch(unittest.TestCase):
 
         side_effect_list = [
             None,
+            None,
+            None,
             CalledProcessError(-1, 'cmd'),
             CalledProcessError(-2, 'cmd'),
             CalledProcessError(-3, 'cmd')
@@ -233,6 +231,8 @@ class Test_mergeBranch(unittest.TestCase):
 
         expected_calls = []
         expected_calls.append(mock.call(['git', 'remote', 'add', 'source_remote', '/dev/null/source/Trilinos.git']))
+        expected_calls.append(mock.call(['git', 'prune']))
+        expected_calls.append(mock.call(['git', 'gc']))
         expected_calls.append(mock.call(['git', 'fetch', 'source_remote', 'df324ae']))
         expected_calls.append(mock.call(['git', 'fetch', 'source_remote', 'df324ae']))
         expected_calls.append(mock.call(['git', 'fetch', 'source_remote', 'df324ae']))
@@ -254,7 +254,6 @@ class Test_mergeBranch(unittest.TestCase):
 
         expected_calls = []
         expected_calls.append( mock.call(['git', 'remote', '-v']) )
-        expected_calls.append( mock.call(['git', 'rev-parse', 'source_remote/neverland']) )
         m_check_out.assert_has_calls(expected_calls)
 
         expected_calls = []
@@ -296,7 +295,6 @@ class Test_run(unittest.TestCase):
         m_writeHeader.assert_called_once_with()
         m_echoJenkins.assert_called_once_with(m_parser().workspaceDir)
         m_mergeBranch.assert_called_once_with(m_parser().sourceRepo,
-                                              m_parser().sourceBranch,
                                               m_parser().targetBranch,
                                               m_parser().sourceSHA)
 
