@@ -104,11 +104,12 @@ importSquareMatrixFromImporter(RCP<const CrsMatrix> inputMatrix,
 /****************************************************************************************************/
 /****************************************************************************************************/
 
+#ifdef AINT_WORKING_YET
 template<class OutputOffsetsViewType,
          class CountsViewType,
          class InputOffsetsViewType,
-         const InputColIndicesViewType,
-         const InputColMapViewType,
+         class InputColIndicesViewType,
+         class InputColMapViewType,
          class InputLocalRowIndicesViewType,
          class InputLocalRowPidsViewType,
          class AllowedColumnsViewType,
@@ -124,7 +125,7 @@ class NumPacketsAndOffsetsFunctorRestricted {
 public:
   typedef typename OutputOffsetsViewType::non_const_value_type output_offset_type;
   typedef typename CountsViewType::non_const_value_type count_type;
-  typedef typename input_offset_type::data_type input_offset_data_type;
+  typedef typename InputOffsetsViewType::data_type input_offset_data_type;
   typedef typename InputLocalRowIndicesViewType::non_const_value_type local_row_index_type;
   typedef typename InputLocalRowPidsViewType::non_const_value_type local_row_pid_type;  
   // output Views drive where execution happens.
@@ -146,7 +147,7 @@ public:
                  "The type of each entry of CountsViewType must be a built-in integer type.");
   static_assert (Kokkos::is_view<InputOffsetsViewType>::value,
                  "InputOffsetsViewType must be a Kokkos::View.");
-  static_assert (std::is_integral<input_offset_type>::value,
+  static_assert (std::is_integral<input_offset_data_type>::value,
                  "The type of each entry of InputOffsetsViewType must be a built-in integer type.");
   static_assert (Kokkos::is_view<InputLocalRowIndicesViewType>::value,
                  "InputLocalRowIndicesViewType must be a Kokkos::View.");
@@ -517,6 +518,9 @@ packCrsMatrixRestricted (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // If we got this far, we succeeded.
 }
 
+#endif
+
+
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraFunctions<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
@@ -529,10 +533,14 @@ importSquareMatrixFromImporter4(RCP<const CrsMatrix> inputMatrix,
 
 
   // This will need to get Kokkos-ified later, but for now this is fine
+  /*
   std::vector<GO> restrictedColGIDs;
   std::vector<LO> restrictedColGIDsBegin;
   communicateRowMap(outputRowMap, distributor, targetColGIDs, targetColGIDsBegin);
+  */
 
+  
+  throw std::runtime_error("Implementation not yet complete");
 
 
 
