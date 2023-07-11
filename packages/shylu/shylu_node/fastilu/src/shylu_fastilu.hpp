@@ -1618,6 +1618,7 @@ class FastILUPrec
 
   void verify(const FastPrec& rhs, const bool initialize_only=false)
   {
+    std::cout << "JGF Verifying level:" << level << std::endl;
     // verify a this using brs and a rhs using crs
     assert(nRows*blockCrsSize == rhs.nRows);
     assert(guessFlag == rhs.guessFlag);
@@ -1635,9 +1636,9 @@ class FastILUPrec
 
     assert(compare_matrices(aRowMapIn, aColIdxIn, aValIn, blockCrsSize, rhs.aRowMapIn, rhs.aColIdxIn, rhs.aValIn, rhs.blockCrsSize, "Ain"));
 
-    assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
-
     if (!initialize_only) {
+      assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
+
       assert(compare_views(diagFact, rhs.diagFact, "diagFact"));
       assert(compare_views(diagElems, rhs.diagElems, "diagElems"));
 
@@ -2357,7 +2358,7 @@ class FastILUFunctor
                     {
                         lCol = _Li[lptr];
                         uCol = _Ui[uptr];
-                        std::cout << "    JGF1 L(" << i << ")(" << lCol << ") U(" << j << ")(" << uCol << ")" << std::endl;
+                        std::cout << "    JGF1 L(" << i << ")(" << lCol << ")="<< _Lx[lptr] << " U(" << j << ")(" << uCol << ")=" << _Ux[uptr] << std::endl;
                         lAdd = zero;
                         if (lCol == uCol)
                         {
@@ -2395,7 +2396,7 @@ class FastILUFunctor
                         assert(lCol == j);
                         val = (val-acc_val) / _Ux[_Up[j+1]-1];
                         _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
-                        std::cout << "    JGF1 setting Lx(" << lptr-1 << ") row=" << i << " col="  << lCol << std::endl;
+                        std::cout << "    JGF1 setting Lx(" << lptr-1 << ") row=" << i << " col="  << lCol << " " << _Lx[lptr-1] << std::endl;
                     }
                     else
                     {
@@ -2407,7 +2408,7 @@ class FastILUFunctor
                           std::cout << "    JGF1 setting diag(" << j << ") = " << val << std::endl;
                         }
                         _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
-                        std::cout << "    JGF1 setting Ux(" << uptr-1 << ") row=" << j << " col="  << uCol << std::endl;
+                        std::cout << "    JGF1 setting Ux(" << uptr-1 << ") row=" << j << " col="  << uCol <<" " << _Ux[uptr-1] << std::endl;
                     }
                 }
         }
@@ -2422,7 +2423,7 @@ class FastILUFunctor
            for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++) {
               Ordinal i = _Ai[nz_index]; // row of this nnz in A
               Ordinal j = _Aj[nz_index]; // col of this nnz in A
-              std::vector<Scalar> acc_val(blockItems, zero);
+              std::vector<Scalar> acc_val(_blockCrsSize, zero);
               std::vector<Scalar> lastU(_blockCrsSize, zero);
               Ordinal lptr = _Lp[i]; // lptr= curr col of row i
               Ordinal uptr = _Up[j]; // uptr= curr col of row j
@@ -2449,9 +2450,9 @@ class FastILUFunctor
                       const Scalar uVal = _Ux[u_offset + blockOffset]; // tranpose offset?
                       std::cout << "    JGF2 CHECKING: lVal=" << lVal << " uVal=" << uVal << " bi=" << bi << " bj=" << bj << " diag_block=" << diag_block << std::endl;
                       if (lVal != zero && uVal != zero && !(diag_block && bi == bj)) {
-                        const Scalar curr_val = _Lx[l_offset + blockOffset] * _Ux[u_offset + blockOffset];
-                        acc_val[blockOffset] += curr_val;
-                        std::cout << "      JGF2 ACCUM " << lCol << " (" << i*_blockCrsSize + bi << ") (" << lCol*_blockCrsSize + bj << ")"<< curr_val << std::endl;
+                        const Scalar curr_val = lVal * uVal;
+                        acc_val[bi] += curr_val;
+                        std::cout << "      JGF2 ACCUM " << lCol << " (" << i*_blockCrsSize + bi << ") (" << lCol*_blockCrsSize + bj << ") (bi:" << blockOffset << ")" << curr_val << " " << acc_val[bi]  << std::endl;
                       }
                     }
                   }
@@ -2483,88 +2484,43 @@ class FastILUFunctor
               std::cout << "  JGF2 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << std::endl;
               for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
                 std::cout << "    JGF2 urowend(" << bi << ") = " << lastU[bi] << std::endl;
-                for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
-                  const Ordinal blockOffset = _blockCrsSize*bi + bj;
-                  std::cout << "    JGF2  acc_val(" << blockOffset << ") = " << acc_val[blockOffset] << std::endl;
-                }
+                std::cout << "    JGF2  acc_val(" << bi << ") = " << acc_val[bi] << std::endl;
               }
 
               // Place the value into L or U
-              if (i > j)
-              {
-                Ordinal lCol = _Li[lptr-1];
-                assert(lCol == j);
-                const Ordinal a_offset = blockItems*nz_index;
-                const Ordinal l_offset = blockItems*(lptr-1);
-                for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                  for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
-                    const Ordinal blockOffset = _blockCrsSize*bi + bj;
-                    Scalar val = _Ax[a_offset + blockOffset];
-                    if (val != zero) {
-                      val = (val-acc_val[blockOffset]) / lastU[bj];
-                      _Lx[l_offset + blockOffset] = ((one - _omega) * _Lx[l_offset + blockOffset]) + (_omega * val);
-                      std::cout << "    JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i*_blockCrsSize + bi << " col="  << lCol*_blockCrsSize + bj << std::endl;
-                    }
-                  }
-                }
-              }
-              else if (i < j)
-              {
-                Ordinal uCol = _Ui[uptr-1];
-                assert(uCol == i);
-                const Ordinal a_offset = blockItems*nz_index;
-                const Ordinal u_offset = blockItems*(uptr-1);
+              Ordinal lCol = _Ui[lptr-1];
+              Ordinal uCol = _Ui[uptr-1];
+              std::cout << "  JGF2 Doing segment for i=" << i << " j=" << j << std::endl;
+              const Ordinal a_offset = blockItems*nz_index;
+              const Ordinal l_offset = blockItems*(lptr-1);
+              const Ordinal u_offset = blockItems*(uptr-1);
                 for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
                   for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
                     const Ordinal blockOffset = _blockCrsSize*bi + bj;
                     const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
+                    std::cout << "    JGF2 Checking bi=" << bi << " bj=" << bj << " blockOffset=" << blockOffset << std::endl;
                     Scalar val = _Ax[a_offset + blockOffset];
                     if (val != zero) {
-                      val = (val-acc_val[blockOffset]);
-                      _Ux[u_offset + blockOffsetT] = ((one - _omega) * _Ux[u_offset + blockOffsetT]) + (_omega * val);
-                      std::cout << "    JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j*_blockCrsSize + bi << " col="  << uCol*_blockCrsSize + bj << std::endl;
-                    }
-                  }
-                }
-              }
-              else
-              {
-                Ordinal lCol = _Ui[lptr-1];
-                Ordinal uCol = _Ui[uptr-1];
-                assert(i == j);
-                assert(uCol == i);
-                assert(uCol == lCol);
-
-                const Ordinal a_offset = blockItems*nz_index;
-                const Ordinal l_offset = blockItems*(lptr-1);
-                const Ordinal u_offset = blockItems*(uptr-1);
-                for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                  for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
-                    const Ordinal blockOffset = _blockCrsSize*bi + bj;
-                    const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
-                    Scalar val = _Ax[a_offset + blockOffset];
-                    if (val != zero) {
-                      if (bi > bj) {
-                        val = (val-acc_val[blockOffset]) / lastU[bj];
+                      std::cout << "      JGF2 val!=0: " << val << " acc_val=" << acc_val[bi] << std::endl;
+                      if ( (i == j && bi > bj) || i > j) {
+                        val = (val-acc_val[bi]) / lastU[bj];
                         _Lx[l_offset + blockOffset] = ((one - _omega) * _Lx[l_offset + blockOffset]) + (_omega * val);
-                        std::cout << "    JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i*_blockCrsSize + bi << " col="  << lCol*_blockCrsSize + bj << std::endl;
+                        std::cout << "      JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i*_blockCrsSize + bi << " col="  << lCol*_blockCrsSize + bj << " " << _Lx[l_offset + blockOffset] << std::endl;
                       }
                       else {
-                        if (bi == bj) {
+                        val = (val-acc_val[bi]);
+                        if (i == j && bi == bj) {
                           _diag[j*_blockCrsSize + bj] = val;
-                          std::cout << "    JGF2 setting diag(" << j*_blockCrsSize + bj << ") = " << val << std::endl;
+                          std::cout << "      JGF2 setting diag(" << j*_blockCrsSize + bj << ") = " << val << std::endl;
                         }
-                        val = (val-acc_val[blockOffset]);
                         _Ux[u_offset + blockOffsetT] = ((one - _omega) * _Ux[u_offset + blockOffsetT]) + (_omega * val);
-                        std::cout << "    JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j*_blockCrsSize + bi << " col="  << uCol*_blockCrsSize + bj << std::endl;
+                        std::cout << "      JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j*_blockCrsSize + bi << " col="  << uCol*_blockCrsSize + bj << " " << _Ux[u_offset + blockOffsetT] << std::endl;
                       }
                     }
                   }
                 }
               }
             }
-
-        }
 
         Ordinal nnz, blk_size;
         ordinal_array_type _Ap, _Ai, _Aj, _Lp, _Li, _Up, _Ui;
