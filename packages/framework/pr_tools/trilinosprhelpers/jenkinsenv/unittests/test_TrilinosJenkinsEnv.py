@@ -67,7 +67,6 @@ class TrilinosJenkinsEnvTest(TestCase):
 
 
     def tearDown(self):
-        del os.environ["TRILINOS_SOURCE_BRANCH"]
         del os.environ["TRILINOS_SOURCE_REPO"]
         del os.environ["TRILINOS_SOURCE_SHA"]
         del os.environ["TRILINOS_TARGET_BRANCH"]
