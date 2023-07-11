@@ -123,7 +123,8 @@ class Test_parsing(unittest.TestCase):
     def test_parseInsufficientArgs_fails(self):
         test_namespace = Namespace()
         setattr(test_namespace, 'sourceRepo', '/dev/null/source/Trilinos.git')
-        expected_output = '''usage: programName [-h] sourceRepo targetRepo targetBranch sourceSHA workspaceDir
+        expected_output = '''usage: programName [-h]
+                   sourceRepo targetRepo targetBranch sourceSHA workspaceDir
 programName: error: the following arguments are required: sourceRepo, \
 targetRepo, targetBranch, sourceSHA, workspaceDir
 '''

@@ -112,8 +112,8 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
-                                   --target-branch-name TARGET_BRANCH_NAME
+                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url
+                                   TARGET_REPO_URL --target-branch-name TARGET_BRANCH_NAME
                                    --pullrequest-build-name PULLREQUEST_BUILD_NAME
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
