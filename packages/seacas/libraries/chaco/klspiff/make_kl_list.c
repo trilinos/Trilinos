@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,20 +10,20 @@
 #include <stdio.h>   // for NULL
 
 int make_kl_list(struct vtx_data **graph,     /* data structure for graph */
-                 struct bilist *   movelist,  /* list of vtxs to be moved */
+                 struct bilist    *movelist,  /* list of vtxs to be moved */
                  struct bilist ****buckets,   /* array of lists for bucket sort */
-                 struct bilist **  listspace, /* list data structure for each vertex */
-                 int *             sets,      /* processor each vertex is assigned to */
+                 struct bilist   **listspace, /* list data structure for each vertex */
+                 int              *sets,      /* processor each vertex is assigned to */
                  int               nsets,     /* number of sets divided into */
-                 int *             bspace,    /* list of active vertices for bucketsort */
-                 int **            dvals,     /* d-values for each transition */
+                 int              *bspace,    /* list of active vertices for bucketsort */
+                 int             **dvals,     /* d-values for each transition */
                  int               maxdval    /* maximum d-value for a vertex */
 )
 {
   struct bilist **list;        /* bucket to erase element from */
-  struct bilist * vptr;        /* loops through movelist */
-  int *           bptr;        /* loops through bspace */
-  int *           iptr;        /* loops through edge list */
+  struct bilist  *vptr;        /* loops through movelist */
+  int            *bptr;        /* loops through bspace */
+  int            *iptr;        /* loops through edge list */
   int             vtx;         /* vertex that was moved */
   int             neighbor;    /* neighbor of a vertex */
   int             myset;       /* set a vertex is in */
@@ -31,7 +31,6 @@ int make_kl_list(struct vtx_data **graph,     /* data structure for graph */
   int             list_length; /* number of values put in bspace */
   int             size;        /* array spacing */
   int             i, l;        /* loop counter */
-  void            removebilist();
 
   /* First push all the moved vertices onto list, so they can be flagged. */
   /* They've already been removed from buckets, so want to avoid them. */

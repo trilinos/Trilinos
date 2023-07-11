@@ -5,10 +5,10 @@
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
-#include <Ioss_MemoryUtils.h>
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -100,7 +100,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
 {
   IOSS_PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
-  char             *result_string = nullptr;
+  char *result_string = nullptr;
 
   int string_length = 0;
 
@@ -418,33 +418,32 @@ T Ioss::ParallelUtils::global_minmax(T                 local_minmax,
 }
 
 /// \relates Ioss::ParallelUtils::broadcast
-template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(double &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(double &my_value, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int &my_value, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int64_t &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int64_t &my_value, int) const;
 
 namespace Ioss {
-template <>
-void ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::string &my_str,
-                              IOSS_MAYBE_UNUSED int          root) const
-{
-  IOSS_PAR_UNUSED(my_str);
-  IOSS_PAR_UNUSED(root);
+  template <>
+  void ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::string &my_str,
+                                IOSS_MAYBE_UNUSED int          root) const
+  {
+    IOSS_PAR_UNUSED(my_str);
+    IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
-  if (parallel_size() > 1) {
-    const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
-                                  MPI_CHAR, root, communicator_);
-    if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-      IOSS_ERROR(errmsg);
+    if (parallel_size() > 1) {
+      const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
+                                    MPI_CHAR, root, communicator_);
+      if (success != MPI_SUCCESS) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
+        IOSS_ERROR(errmsg);
+      }
     }
-  }
 #endif
-}
+  }
 } // namespace Ioss
-
 
 template <typename T>
 void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
@@ -475,25 +474,25 @@ template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<long long> 
 template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<char> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
 namespace Ioss {
-template <>
-IOSS_EXPORT void
-ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<std::pair<int, int>> &my_value,
-                         IOSS_MAYBE_UNUSED int                               root) const
-{
-  IOSS_PAR_UNUSED(my_value);
-  IOSS_PAR_UNUSED(root);
+  template <>
+  IOSS_EXPORT void
+  ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<std::pair<int, int>> &my_value,
+                           IOSS_MAYBE_UNUSED int                               root) const
+  {
+    IOSS_PAR_UNUSED(my_value);
+    IOSS_PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
-  if (parallel_size() > 1) {
-    const int success =
-        MPI_Bcast(my_value.data(), (int)my_value.size() * 2, mpi_type(int(0)), root, communicator_);
-    if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-      IOSS_ERROR(errmsg);
+    if (parallel_size() > 1) {
+      const int success = MPI_Bcast(my_value.data(), (int)my_value.size() * 2, mpi_type(int(0)),
+                                    root, communicator_);
+      if (success != MPI_SUCCESS) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
+        IOSS_ERROR(errmsg);
+      }
     }
-  }
 #endif
-}
+  }
 } // namespace Ioss
 
 template <typename T>

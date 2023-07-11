@@ -2101,7 +2101,8 @@ void
 void F2C(EXGPEM)(int *idexo, entity_id *map_id, void_int *start, void_int *count,
                  void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2192,7 +2193,8 @@ void F2C(EXPEM)(int *idexo, entity_id *map_id, void_int *elem_map, int *ierr)
 void F2C(EXPPEM)(int *idexo, entity_id *map_id, void_int *start, void_int *count,
                  void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2539,7 +2541,8 @@ void F2C(EXPEBIG)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnts, int *i
 void F2C(EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                  void_int *ss_elem_list, void_int *ss_side_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2563,7 +2566,8 @@ void F2C(EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
 void F2C(EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                  void_int *ss_elem_list, void_int *ss_side_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2587,7 +2591,8 @@ void F2C(EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
 void F2C(EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count, real *ss_df,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2611,7 +2616,8 @@ void F2C(EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
 void F2C(EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count, real *ss_df,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2635,7 +2641,8 @@ void F2C(EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
 void F2C(EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                  void_int *ns_node_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2659,7 +2666,8 @@ void F2C(EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
 void F2C(EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                  void_int *ns_node_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2683,7 +2691,8 @@ void F2C(EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
 void F2C(EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count, real *ns_df,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2707,7 +2716,8 @@ void F2C(EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
 void F2C(EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count, real *ns_df,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2731,7 +2741,8 @@ void F2C(EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
 void F2C(EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, real *y_coor,
                   real *z_coor, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2755,7 +2766,8 @@ void F2C(EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, rea
 void F2C(EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, real *y_coor,
                   real *z_coor, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2779,7 +2791,8 @@ void F2C(EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, rea
 void F2C(EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                  void_int *connect, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2803,7 +2816,8 @@ void F2C(EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *c
 void F2C(EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                  void_int *connect, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2827,7 +2841,8 @@ void F2C(EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *c
 void F2C(EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count, real *attrib,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2851,7 +2866,8 @@ void F2C(EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *
 void F2C(EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count, real *attrib,
                   int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2910,7 +2926,8 @@ void F2C(EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_id *elem
                  void_int *num_elem_this_blk, void_int *start, void_int *count, real *elem_var_vals,
                  int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2935,7 +2952,8 @@ void F2C(EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_id *elem
 void F2C(EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_id *elem_blk_id,
                  void_int *start, void_int *count, real *elem_var_vals, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2960,7 +2978,8 @@ void F2C(EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_id *elem
 void F2C(EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_int *start, void_int *count,
                  real *nodal_vars, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2984,7 +3003,8 @@ void F2C(EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_int *star
 void F2C(EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_int *start, void_int *count,
                  real *nodal_var_vals, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3008,7 +3028,8 @@ void F2C(EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_int *star
  */
 void F2C(EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)starte;
     cnt = *(int64_t *)num_ent;
@@ -3031,7 +3052,8 @@ void F2C(EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem
  */
 void F2C(EXPNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)starte;
     cnt = *(int64_t *)num_ent;
@@ -3054,7 +3076,8 @@ void F2C(EXPNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem
  */
 void F2C(EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_int *node_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)startn;
     cnt = *(int64_t *)num_ent;
@@ -3077,7 +3100,8 @@ void F2C(EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_int *node
  */
 void F2C(EXPNNNM)(int *idne, void_int *startn, void_int *num_ent, void_int *node_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)startn;
     cnt = *(int64_t *)num_ent;

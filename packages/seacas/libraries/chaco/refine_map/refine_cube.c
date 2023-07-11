@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -18,20 +18,20 @@
 int refine_cube(struct vtx_data **comm_graph, /* graph for communication requirements */
                 int               ndims_tot,  /* dimensionality of hypercube */
                 double            maxdesire,  /* largest possible desire to flip an edge */
-                int *             vtx2node,   /* mapping from comm_graph vtxs to processors */
-                int *             node2vtx    /* mapping from processors to comm_graph vtxs */
+                int              *vtx2node,   /* mapping from comm_graph vtxs to processors */
+                int              *node2vtx    /* mapping from processors to comm_graph vtxs */
 )
 {
-  struct refine_vdata * vdata = NULL;      /* desire data for vertices */
-  struct refine_vdata * vptr;              /* loops through vdata */
-  struct refine_edata * edata = NULL;      /* desire data for edges */
-  struct refine_edata * eptr;              /* loops through edata */
-  struct refine_edata * eguy;              /* one element in edata array */
+  struct refine_vdata  *vdata = NULL;      /* desire data for vertices */
+  struct refine_vdata  *vptr;              /* loops through vdata */
+  struct refine_edata  *edata = NULL;      /* desire data for edges */
+  struct refine_edata  *eptr;              /* loops through edata */
+  struct refine_edata  *eguy;              /* one element in edata array */
   struct refine_edata **desire_ptr = NULL; /* array of desire buckets */
-  double *              desires    = NULL; /* each edge's inclination to flip */
-  double *              dptr;              /* loops through desire */
-  int *                 indices = NULL;    /* sorted list of desire values */
-  int *                 space   = NULL;    /* used for sorting disire values */
+  double               *desires    = NULL; /* each edge's inclination to flip */
+  double               *dptr;              /* loops through desire */
+  int                  *indices = NULL;    /* sorted list of desire values */
+  int                  *space   = NULL;    /* used for sorting disire values */
   double                best_desire;       /* desire of max edge to flip */
   int                   imax;              /* maxdesire rounded up */
   int                   nsets_tot;         /* total number of sets/processors */
@@ -46,12 +46,6 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
   int                   vtx1, vtx2;        /* corresponding vertices in comm_graph */
   int                   error;             /* out of space? */
   int                   i, j, k;           /* loop counter */
-  double                find_maxdeg();
-  double                compute_cube_edata();
-
-  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
-  void compute_cube_vdata(), init_cube_edata();
-  void update_cube_vdata(), update_cube_edata();
 
   nsets_tot = 1 << ndims_tot;
   error     = 1;

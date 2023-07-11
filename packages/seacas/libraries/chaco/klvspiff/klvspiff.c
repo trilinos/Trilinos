@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,7 +15,23 @@
 
 int VERTEX_SEPARATOR = FALSE;
 
-static void free_klv();
+static void free_klv(
+    /* Free everything malloc'd for KLV. */
+    struct bilist **lbuckets,   /* space for bucket sorts */
+    struct bilist **rbuckets,   /* space for bucket sorts */
+    struct bilist  *llistspace, /* space for all bidirectional elements */
+    struct bilist  *rlistspace, /* space for all bidirectional elements */
+    int            *ldvals,     /* change in penalty for each possible move */
+    int            *rdvals      /* change in penalty for each possible move */
+)
+{
+  sfree(rlistspace);
+  sfree(llistspace);
+  sfree(rdvals);
+  sfree(ldvals);
+  sfree(rbuckets);
+  sfree(lbuckets);
+}
 
 void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex */
               int               nvtxs,     /* number of vertices in graph */
@@ -44,9 +60,6 @@ void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex
   int             maxdval;     /* largest transition cost for all vertices */
   int             error;       /* out of space? */
   int             i, j;        /* loop counters */
-  double          seconds(void);
-  int             klv_init(), nway_klv();
-  void            countup_vtx_sep();
 
   time = seconds();
 
@@ -107,22 +120,4 @@ void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex
   free_klv(lbuckets, rbuckets, llistspace, rlistspace, ldvals, rdvals);
 
   kl_total_time += seconds() - time;
-}
-
-static void free_klv(
-    /* Free everything malloc'd for KLV. */
-    struct bilist **lbuckets,   /* space for bucket sorts */
-    struct bilist **rbuckets,   /* space for bucket sorts */
-    struct bilist  *llistspace, /* space for all bidirectional elements */
-    struct bilist  *rlistspace, /* space for all bidirectional elements */
-    int            *ldvals,     /* change in penalty for each possible move */
-    int            *rdvals      /* change in penalty for each possible move */
-)
-{
-  sfree(rlistspace);
-  sfree(llistspace);
-  sfree(rdvals);
-  sfree(ldvals);
-  sfree(rbuckets);
-  sfree(lbuckets);
 }
