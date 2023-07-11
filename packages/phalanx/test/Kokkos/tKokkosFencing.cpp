@@ -103,7 +103,7 @@ int main (int argc, char** argv)
                                          {
                                            std::cout << "In tools setting, PRE  fencing=" << settings->requires_global_fencing << "\n";
                                            settings->requires_global_fencing = true;
-                                           std::cout << "ROGER in tools setting, POST fencing=" << settings->requires_global_fencing << "\n";
+                                           std::cout << "In tools setting, POST fencing=" << settings->requires_global_fencing << "\n";
                                          });
 
     Kokkos::Tools::Experimental::set_begin_fence_callback((beginFunction)(kokkosp_begin_fence));
@@ -118,7 +118,16 @@ int main (int argc, char** argv)
   Kokkos::initialize(argc,argv);
 
   {
-    auto streams = Kokkos::Experimental::partition_space(Kokkos::DefaultExecutionSpace(),1,1,1);
+    std::vector<Kokkos::DefaultExecutionSpace> streams;
+    if (Kokkos::DefaultExecutionSpace().concurrency() >= 3) {
+      std::cout << "Using partition_space, concurrency=" << Kokkos::DefaultExecutionSpace().concurrency() << std::endl;
+      streams = Kokkos::Experimental::partition_space(Kokkos::DefaultExecutionSpace(),1,1,1);
+    }
+    else {
+      std::cout << "NOT using partition_space, concurrency=" << Kokkos::DefaultExecutionSpace().concurrency() << std::endl;
+      for (int i=0; i < 3; ++i)
+        streams.push_back(Kokkos::DefaultExecutionSpace());
+    }
 
     std::cout << "Default exec space=" << Kokkos::DefaultExecutionSpace().name() << std::endl;
     Kokkos::DefaultExecutionSpace().print_configuration(std::cout,true);

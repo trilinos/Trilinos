@@ -258,16 +258,25 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  auto streams = Kokkos::Experimental::partition_space(Kokkos::DefaultExecutionSpace(),1,1,1,1);
+  std::vector<PHX::Device> streams;
+  if (PHX::Device().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+  }
+  else {
+    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    for (int i=0; i < 4; ++i)
+      streams.push_back(PHX::Device());
+  }
 
   Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> c(Kokkos::view_alloc(streams[2],"c"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> d(Kokkos::view_alloc(streams[3],"d"),num_cells,num_pts,num_equations);
 
-  Kokkos::deep_copy(a,2.0);
-  Kokkos::deep_copy(b,3.0);
-  Kokkos::deep_copy(c,4.0);
+  Kokkos::deep_copy(streams[0],a,2.0);
+  Kokkos::deep_copy(streams[1],b,3.0);
+  Kokkos::deep_copy(streams[2],c,4.0);
 
   streams[0].fence();
   streams[1].fence();
@@ -320,16 +329,25 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  auto streams = Kokkos::Experimental::partition_space(Kokkos::DefaultExecutionSpace(),1,1,1,1);
+  std::vector<PHX::Device> streams;
+  if (PHX::Device().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+  }
+  else {
+    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    for (int i=0; i < 4; ++i)
+      streams.push_back(PHX::Device());
+  }
 
   Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> c(Kokkos::view_alloc(streams[2],"c"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> d(Kokkos::view_alloc(streams[3],"d"),num_cells,num_pts,num_equations);
 
-  Kokkos::deep_copy(a,2.0);
-  Kokkos::deep_copy(b,3.0);
-  Kokkos::deep_copy(c,4.0);
+  Kokkos::deep_copy(streams[0],a,2.0);
+  Kokkos::deep_copy(streams[1],b,3.0);
+  Kokkos::deep_copy(streams[2],c,4.0);
 
   streams[0].fence();
   streams[1].fence();
