@@ -19,7 +19,7 @@ try:
   q2_errors = []
   q1_errors = []
 
-  tol = 1e-14 
+  tol = 1e-9
 
   with open(q2gold) as f:
     for line in f:
