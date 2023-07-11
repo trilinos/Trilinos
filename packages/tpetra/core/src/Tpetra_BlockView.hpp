@@ -97,7 +97,7 @@ struct AbsMax<ViewType1, ViewType2, 2> {
     typedef typename std::decay<decltype (X(0,0)) >::type STX;
     static_assert(  std::is_same<STX, STY>::value,
       "AbsMax: The type of each entry of X and Y must be the same.");
-    typedef Kokkos::Details::ArithTraits<STY> KAT;
+    typedef Kokkos::ArithTraits<STY> KAT;
 
     const int numCols = Y.extent (1);
     const int numRows = Y.extent (0);
@@ -138,7 +138,7 @@ struct AbsMax<ViewType1, ViewType2, 1> {
     typedef typename std::remove_const<typename std::remove_reference<decltype (X(0)) >::type>::type STX;
     static_assert(  std::is_same<STX, STY>::value,
       "AbsMax: The type of each entry of X and Y must be the same.");
-    typedef Kokkos::Details::ArithTraits<STY> KAT;
+    typedef Kokkos::ArithTraits<STY> KAT;
 
     const int numRows = Y.extent (0);
     for (int i = 0; i < numRows; ++i) {
@@ -335,7 +335,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 1> {
        const ViewType1& x,
        const ViewType2& y)
   {
-    using Kokkos::Details::ArithTraits;
+    using Kokkos::ArithTraits;
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: x and y must have the same rank.");
 
@@ -361,7 +361,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 2> {
        const ViewType1& X,
        const ViewType2& Y)
   {
-    using Kokkos::Details::ArithTraits;
+    using Kokkos::ArithTraits;
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: X and Y must have the same rank.");
     const IndexType numRows = static_cast<IndexType> (Y.extent (0));
@@ -387,7 +387,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, true, rank> {
        const ViewType1& x,
        const ViewType2& y)
   {
-    using Kokkos::Details::ArithTraits;
+    using Kokkos::ArithTraits;
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: x and y must have the same rank.");
 
@@ -736,7 +736,7 @@ GEMM (const char transA[],
   static_assert (ViewType3::rank == 2, "GEMM: C must have rank 2 (be a matrix).");
 
   typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::ArithTraits<Scalar> STS;
   const Scalar ZERO = STS::zero();
   const Scalar ONE = STS::one();
 
@@ -873,7 +873,7 @@ GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
   static_assert (! std::is_const<std::remove_reference<decltype (ipiv(0))>>::value,
                  "GETF2: ipiv must not be a const View (or LittleBlock).");
   static_assert (LittleBlockType::rank == 2, "GETF2: A must have rank 2 (be a matrix).");
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::ArithTraits<Scalar> STS;
   const Scalar ZERO = STS::zero();
 
   const IndexType numRows = static_cast<IndexType> (A.extent (0));
@@ -978,7 +978,7 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
     static_assert (LittleIntVectorType::rank == 1, "GETRS: ipiv must have rank 1.");
     static_assert (LittleScalarVectorType::rank == 1, "GETRS: For this specialization, B must have rank 1.");
 
-    typedef Kokkos::Details::ArithTraits<Scalar> STS;
+    typedef Kokkos::ArithTraits<Scalar> STS;
     const Scalar ZERO = STS::zero();
     const IndexType numRows = static_cast<IndexType> (A.extent (0));
     const IndexType numCols = static_cast<IndexType> (A.extent (1));
@@ -1142,7 +1142,7 @@ GETRI (const LittleBlockType& A,
   static_assert (! std::is_const<std::remove_reference<decltype (work(0))>>::value,
                  "GETRI: work must not be a const View (or LittleBlock).");
   static_assert (LittleBlockType::rank == 2, "GETRI: A must have rank 2 (be a matrix).");
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::ArithTraits<Scalar> STS;
   const Scalar ZERO = STS::zero();
   const Scalar ONE = STS::one();
 
