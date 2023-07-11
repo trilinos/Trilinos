@@ -42,7 +42,7 @@ import argparse
 import os
 import sys
 
-#import trilinosprhelpers
+import trilinosprhelpers
 
 
 
