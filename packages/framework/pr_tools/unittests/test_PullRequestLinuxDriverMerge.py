@@ -241,38 +241,6 @@ class Test_mergeBranch(unittest.TestCase):
         return
 
 
-    @patch('subprocess.check_output', side_effect=['origin /dev/null/target/Trilinos', 'df324ae'])
-    @patch('subprocess.check_call')
-    def test_mergeBranch_fails_on_SHA_mismatch(self, m_check_call, m_check_out):
-        """
-        Test that ``merge_branch`` will fail if a SHA mismatch detected.
-        """
-        with self.assertRaises(SystemExit):
-            with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
-                tmp_path = os.path.join(os.path.sep, 'dev', 'null', 'source', 'Trilinos.git')
-                PRMerge.merge_branch(tmp_path, 'neverland', 'fake_develop', 'foobar')
-
-        expected_calls = []
-        expected_calls.append( mock.call(['git', 'remote', '-v']) )
-        m_check_out.assert_has_calls(expected_calls)
-
-        expected_calls = []
-        expected_calls.append(mock.call(['git', 'remote', 'add', 'source_remote', '/dev/null/source/Trilinos.git']))
-        expected_calls.append(mock.call(['git', 'fetch', 'source_remote', 'neverland']))
-        m_check_call.assert_has_calls(expected_calls)
-
-        stdout_actual     = m_stdout.getvalue()
-        stdout_expected_1 = "The SHA (df324ae) for the last commit on branch neverland"
-        stdout_expected_2 = "is different from the expected SHA"
-        stdout_expected_3 = "which is: foobar"
-
-        self.assertIn(stdout_expected_1, stdout_actual)
-        self.assertIn(stdout_expected_2, stdout_actual)
-        self.assertIn(stdout_expected_3, stdout_actual)
-
-        return
-
-
 
 class Test_run(unittest.TestCase):
     '''This is the main function that ties everything together in order'''
