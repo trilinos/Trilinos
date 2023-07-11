@@ -1004,7 +1004,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiply test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1054,7 +1054,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1074,7 +1074,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1094,7 +1094,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1116,7 +1116,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1140,7 +1140,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1162,7 +1162,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1267,7 +1267,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
@@ -1329,7 +1329,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiplyLg test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1379,7 +1379,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1399,7 +1399,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1419,7 +1419,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1441,7 +1441,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1465,7 +1465,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1487,7 +1487,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1592,7 +1592,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
