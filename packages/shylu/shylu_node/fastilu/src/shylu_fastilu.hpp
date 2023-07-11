@@ -2421,105 +2421,108 @@ class FastILUFunctor
 
            const Ordinal blockItems = _blockCrsSize*_blockCrsSize;
            for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++) {
-              Ordinal i = _Ai[nz_index]; // row of this nnz in A
-              Ordinal j = _Aj[nz_index]; // col of this nnz in A
-              std::vector<Scalar> acc_val(_blockCrsSize, zero);
-              std::vector<Scalar> lastU(_blockCrsSize, zero);
-              Ordinal lptr = _Lp[i]; // lptr= curr col of row i
-              Ordinal uptr = _Up[j]; // uptr= curr col of row j
+              Ordinal i = _Ai[nz_index]; // row of this nnz block in A
+              Ordinal j = _Aj[nz_index]; // col of this nnz block in A
+              std::vector<Scalar> acc_val_l(_blockCrsSize, zero);
+              std::vector<Scalar> acc_val_u(_blockCrsSize, zero);
+              Scalar lastU;
 
               const bool lower = i > j;
               std::cout << "  JGF2 A(" << i << ")(" << j << ")" << (lower ? "lower" : "upper") << std::endl;
 
-              // Looking at rows i,j for all matching columns, multiply and add all matches
-              // except for the last match (diagonal)
-              while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
-              {
-                Ordinal lCol = _Li[lptr];
-                Ordinal uCol = _Ui[uptr];
-                std::cout << "    JGF2 L(" << i << ")(" << lCol << ") U(" << j << ")(" << uCol << ")" << std::endl;
-                if (lCol == uCol) {
-                  const bool diag_block = lCol == i || uCol == j;
-                  const Ordinal l_offset = blockItems*lptr;
-                  const Ordinal u_offset  = blockItems*uptr;
-                  for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                    for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
-                      const Ordinal blockOffset = _blockCrsSize*bi + bj;
-                      //const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
-                      const Scalar lVal = _Lx[l_offset + blockOffset];
-                      const Scalar uVal = _Ux[u_offset + blockOffset]; // tranpose offset?
-                      std::cout << "    JGF2 CHECKING: lVal=" << lVal << " uVal=" << uVal << " bi=" << bi << " bj=" << bj << " diag_block=" << diag_block << std::endl;
-                      if (lVal != zero && uVal != zero && !(diag_block && bi == bj)) {
-                        const Scalar curr_val = lVal * uVal;
-                        acc_val[bi] += curr_val;
-                        std::cout << "      JGF2 ACCUM " << lCol << " (" << i*_blockCrsSize + bi << ") (" << lCol*_blockCrsSize + bj << ") (bi:" << blockOffset << ")" << curr_val << " " << acc_val[bi]  << std::endl;
+              const Ordinal a_offset = blockItems*nz_index;
+              // A[i][j] has non-zero entries
+              for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
+                for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
+                  const Ordinal blockOffset = _blockCrsSize*bi + bj;
+                  Scalar val = _Ax[a_offset + blockOffset];
+                  if (val != zero) {
+                    Scalar acc_val = zero;
+                    Ordinal lptr = _Lp[i]; // lptr= curr col of row i
+                    Ordinal uptr = _Up[j]; // uptr= curr col of row j
+
+                    // Iterate over bi row of L
+                    // Iterate over bj row of U
+                    while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
+                    {
+                      Ordinal lCol = _Li[lptr];
+                      Ordinal uCol = _Ui[uptr];
+                      //std::cout << "    JGF2 L(" << i << ")(" << lCol << ") U(" << j << ")(" << uCol << ")" << std::endl;
+                      if (lCol == uCol) {
+                        const bool diag_block = lCol == i || uCol == j;
+                        if (!(diag_block && bi == bj)) {
+                          const Ordinal l_offset = blockItems*lptr;
+                          const Ordinal u_offset  = blockItems*uptr;
+                          for (Ordinal bjj = 0; bjj < _blockCrsSize; ++bjj) {
+                            const Ordinal blockOffsetL = _blockCrsSize*bi + bjj;
+                            const Ordinal blockOffsetU = _blockCrsSize*bj + bjj;
+                            const Scalar lVal = _Lx[l_offset + blockOffsetL];
+                            const Scalar uVal = _Ux[u_offset + blockOffsetU];
+                            //std::cout << "    JGF2 CHECKING: lVal=" << lVal << " uVal=" << uVal << " bi=" << bi << " bj=" << bj << " diag_block=" << diag_block << std::endl;
+                            if (lVal != zero && uVal != zero) {
+                              const Scalar curr_val = lVal * uVal;
+                              acc_val += curr_val;
+                              //std::cout << "      JGF2 ACCUM " << lCol << " (" << i*_blockCrsSize + bi << ") (" << lCol*_blockCrsSize + bj << ") (bi:" << bi << ")" << curr_val  << std::endl;
+                            }
+                          }
+                        }
+                      }
+                      if (lCol <= uCol)
+                      {
+                        lptr++;
+                      }
+                      if (lCol >= uCol)
+                      {
+                        uptr++;
                       }
                     }
-                  }
-                }
-                if (lCol <= uCol)
-                {
-                  lptr++;
-                }
-                if (lCol >= uCol)
-                {
-                  uptr++;
-                }
-              }
 
-              // Find the last values in this block of rows
-              for (Ordinal uitr = _Up[j]; uitr < _Up[j+1]; ++uitr) {
-                const Ordinal u_offset  = blockItems*uitr;
-                for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                  for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
-                    const Ordinal blockOffset = _blockCrsSize*bi + bj;
-                    const Scalar uVal = _Ux[u_offset + blockOffset];
-                    if (uVal != zero) {
-                      lastU[bi] = uVal;
+                    // Find the last values in this block of rows
+                    for (Ordinal uitr = _Up[j]; uitr < _Up[j+1]; ++uitr) {
+                      const Ordinal u_offset  = blockItems*uitr;
+                      for (Ordinal bjj = 0; bjj < _blockCrsSize; ++bjj) {
+                        const Ordinal blockOffset = _blockCrsSize*bi + bjj;
+                        const Scalar uVal = _Ux[u_offset + blockOffset];
+                        if (uVal != zero) {
+                          lastU = uVal;
+                        }
+                      }
                     }
-                  }
-                }
-              }
 
-              std::cout << "  JGF2 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << std::endl;
-              for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                std::cout << "    JGF2 urowend(" << bi << ") = " << lastU[bi] << std::endl;
-                std::cout << "    JGF2  acc_val(" << bi << ") = " << acc_val[bi] << std::endl;
-              }
+                    //std::cout << "  JGF2 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << std::endl;
+                    //for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
+              //std::cout << "    JGF2 urowend(" << bi << ") = " << lastU[bi] << std::endl;
+                      //std::cout << "    JGF2  acc_val(" << bi << ") = " << acc_val[bi] << std::endl;
+                    //}
 
-              // Place the value into L or U
-              Ordinal lCol = _Ui[lptr-1];
-              Ordinal uCol = _Ui[uptr-1];
-              std::cout << "  JGF2 Doing segment for i=" << i << " j=" << j << std::endl;
-              const Ordinal a_offset = blockItems*nz_index;
-              const Ordinal l_offset = blockItems*(lptr-1);
-              const Ordinal u_offset = blockItems*(uptr-1);
-                for (Ordinal bi = 0; bi < _blockCrsSize; ++bi) {
-                  for (Ordinal bj = 0; bj < _blockCrsSize; ++bj) {
+                    // Place the value into L or U
+                    Ordinal lCol = _Ui[lptr-1];
+                    Ordinal uCol = _Ui[uptr-1];
+                    std::cout << "  JGF2 Doing segment for i=" << i << " j=" << j << std::endl;
+                    const Ordinal l_offset = blockItems*(lptr-1);
+                    const Ordinal u_offset = blockItems*(uptr-1);
                     const Ordinal blockOffset = _blockCrsSize*bi + bj;
                     const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
                     std::cout << "    JGF2 Checking bi=" << bi << " bj=" << bj << " blockOffset=" << blockOffset << std::endl;
-                    Scalar val = _Ax[a_offset + blockOffset];
-                    if (val != zero) {
-                      std::cout << "      JGF2 val!=0: " << val << " acc_val=" << acc_val[bi] << std::endl;
-                      if ( (i == j && bi > bj) || i > j) {
-                        val = (val-acc_val[bi]) / lastU[bj];
-                        _Lx[l_offset + blockOffset] = ((one - _omega) * _Lx[l_offset + blockOffset]) + (_omega * val);
-                        std::cout << "      JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i*_blockCrsSize + bi << " col="  << lCol*_blockCrsSize + bj << " " << _Lx[l_offset + blockOffset] << std::endl;
+                    //std::cout << "      JGF2 val!=0: " << val << " acc_val=" << acc_val[bi] << std::endl;
+                    if ( (i == j && bi > bj) || i > j) {
+                      val = (val-acc_val) / lastU;
+                      _Lx[l_offset + blockOffset] = ((one - _omega) * _Lx[l_offset + blockOffset]) + (_omega * val);
+                      std::cout << "      JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i*_blockCrsSize + bi << " col="  << lCol*_blockCrsSize + bj << " " << _Lx[l_offset + blockOffset] << std::endl;
+                    }
+                    else {
+                      val = (val-acc_val);
+                      if (i == j && bi == bj) {
+                        _diag[j*_blockCrsSize + bj] = val;
+                        std::cout << "      JGF2 setting diag(" << j*_blockCrsSize + bj << ") = " << val << std::endl;
                       }
-                      else {
-                        val = (val-acc_val[bi]);
-                        if (i == j && bi == bj) {
-                          _diag[j*_blockCrsSize + bj] = val;
-                          std::cout << "      JGF2 setting diag(" << j*_blockCrsSize + bj << ") = " << val << std::endl;
-                        }
-                        _Ux[u_offset + blockOffsetT] = ((one - _omega) * _Ux[u_offset + blockOffsetT]) + (_omega * val);
-                        std::cout << "      JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j*_blockCrsSize + bi << " col="  << uCol*_blockCrsSize + bj << " " << _Ux[u_offset + blockOffsetT] << std::endl;
-                      }
+                      _Ux[u_offset + blockOffsetT] = ((one - _omega) * _Ux[u_offset + blockOffsetT]) + (_omega * val);
+                      std::cout << "      JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j*_blockCrsSize + bi << " col="  << uCol*_blockCrsSize + bj << " " << _Ux[u_offset + blockOffsetT] << std::endl;
                     }
                   }
                 }
               }
+            }
             }
 
         Ordinal nnz, blk_size;
