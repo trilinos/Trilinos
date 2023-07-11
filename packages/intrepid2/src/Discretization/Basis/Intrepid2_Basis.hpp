@@ -57,9 +57,9 @@
 #include "Intrepid2_BasisValues.hpp"
 #include "Intrepid2_CellTopologyTags.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Kokkos_Vector.hpp"
 #include "Shards_CellTopology.hpp"
 #include <Teuchos_RCPDecl.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <vector>
 
