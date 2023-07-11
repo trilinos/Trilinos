@@ -24,6 +24,7 @@ try:
 except ImportError:  # pragma nocover
     import unittest.mock as mock
 
+import re
 
 from argparse import Namespace
 
@@ -301,7 +302,7 @@ class Test_parse_args(unittest.TestCase):
         with mock.patch.object(sys, 'argv', ['programName', '--usage']), self.assertRaises(SystemExit), self.stderrRedirect as m_stderr:
             PullRequestLinuxDriverTest.parse_args()
 
-        self.assertIn(self.usage_output, m_stderr.getvalue())
+        self.assertEqual(re.sub("\s+", " ", self.usage_output, flags=re.DOTALL), re.sub("\s+", " ", m_stderr.getvalue(), flags=re.DOTALL))
         return
 
 
