@@ -4,6 +4,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosViewOfViews.hpp"
+#include "Phalanx_Kokkos_Tools_CheckStreams.hpp"
 #include <vector>
 
 // ********************************
@@ -269,6 +270,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
       streams.push_back(PHX::Device());
   }
 
+  PHX::set_enforce_no_default_stream_use();
+
   Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> c(Kokkos::view_alloc(streams[2],"c"),num_cells,num_pts,num_equations);
@@ -314,6 +317,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
 
   streams[3].fence();
 
+  PHX::unset_enforce_no_default_stream_use();
+
   auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
 
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
@@ -339,6 +344,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
     for (int i=0; i < 4; ++i)
       streams.push_back(PHX::Device());
   }
+
+  PHX::set_enforce_no_default_stream_use();
 
   Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
   Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
@@ -387,6 +394,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
 
   streams[3].fence();
 
+  PHX::unset_enforce_no_default_stream_use();
+
   auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
 
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
@@ -395,6 +404,15 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
       for (int eq=0; eq < num_equations; ++eq) {
         TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
       }
+}
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
+  PHX::set_enforce_no_default_stream_use();
+  // Checks are only active for CUDA and HIP backends
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  TEST_THROW(PHX::Device().fence(),std::runtime_error);
+#endif
+  PHX::unset_enforce_no_default_stream_use();
 }
 
 // Make sure that an uninitialized ViewOviews3 can be default
@@ -641,7 +659,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
 
   for (int i=0; i < 2; ++i) {
     vov = createVoV();
-    
+
     auto Mat_h = vov.getViewHost();
     auto a = Mat_h(0,0);
     auto b = Mat_h(0,1);
@@ -655,12 +673,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
       a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
       b(cell,pt).val() = double(cell);
       b(cell,pt).fastAccessDx(0) = 0.0;
-      b(cell,pt).fastAccessDx(1) = 0.0;      
+      b(cell,pt).fastAccessDx(1) = 0.0;
     });
     PHX::Device::execution_space().fence();
 
     // Compute c using device vov
-    auto Mat = vov.getViewDevice(); 
+    auto Mat = vov.getViewDevice();
     const bool use_hierarchic = true;
     if (use_hierarchic) {
       Kokkos::TeamPolicy<PHX::exec_space> policy(a.extent(0),Kokkos::AUTO());
@@ -750,7 +768,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
   }
 
   PHX::exec_space().fence();
-  
+
   auto b_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),b);
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
   for (size_t cell=0; cell < a.extent(0); ++cell) {
