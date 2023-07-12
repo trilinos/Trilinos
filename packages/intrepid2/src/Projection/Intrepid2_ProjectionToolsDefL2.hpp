@@ -377,8 +377,6 @@ ProjectionTools<DeviceType>::getL2EvaluationPoints(typename BasisType::ScalarVie
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
     const EvalPointsType ePointType) {
-  typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,ortProperties...> ScalarViewType;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
   ordinal_type dim = cellTopo.getDimension();
@@ -400,8 +398,6 @@ ProjectionTools<DeviceType>::getL2EvaluationPoints(typename BasisType::ScalarVie
     subcellParamFace = RefSubcellParametrization<DeviceType>::get(faceDim, cellTopo.getKey());
 
   auto refTopologyKey = projStruct->getTopologyKey();
-
-  ScalarViewType workView("workView", numCells, projStruct->getMaxNumEvalPoints(ePointType), dim-1);
 
   if(numVertices>0) {
     for(ordinal_type iv=0; iv<numVertices; ++iv) {

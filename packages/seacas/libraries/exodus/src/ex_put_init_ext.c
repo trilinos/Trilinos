@@ -58,10 +58,8 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
       return (status); /* exit define mode and return */
     }
     ex__set_compact_storage(exoid, varid);
-#if NC_HAS_HDF5
     int fill = NC_FILL_CHAR;
     nc_def_var_fill(exoid, varid, 0, &fill);
-#endif
   }
   return (NC_NOERR);
 }

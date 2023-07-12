@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,10 +55,10 @@
 #define vdloge vdloge_
 #define vberrh vberrh_
 #define vdmoni vdmoni_
-#define vbpkg vbpkg_
+#define vbpkg  vbpkg_
 #define vbiqpk vbiqpk_
 #define vbiqdv vbiqdv_
-#define vbdev vbdev_
+#define vbdev  vbdev_
 #endif
 
 /* The following ifdefs redefine entry points for use of this X driver
@@ -108,7 +108,7 @@
 #define viinit wx11ii
 #define viterm wx11it
 #define vinwpg wx11ig
-#define vcjob vcjob
+#define vcjob  vcjob
 #define vberrh wx11er
 #define vdloge wx11le
 #define cdrwfs wx11wf
@@ -126,8 +126,8 @@
 #define btkbuf wx11bf
 #define nmtbuf wx11bf
 #define vbimbf wx11ib
-#define vbpkg wx11pk
-#define vbdev wx11dv
+#define vbpkg  wx11pk
+#define vbdev  wx11dv
 #define vdiqrs wx11qr
 #define vdstmp wx11mp
 #define vdstrs wx11rs
@@ -152,7 +152,7 @@
 #define vcscal wx1110
 #define vcddim wx1111
 #define vipoly wx1112
-#define vbout wx1113
+#define vbout  wx1113
 #define cgixxx cgix11
 #endif
 
@@ -201,7 +201,7 @@
 #define viterm WX11IT
 #define vinwpg WX11IG
 #define cdrcom CDRCOM
-#define vcjob VCJOB
+#define vcjob  VCJOB
 #define vconod VCONOD
 #define vberrh WX11ER
 #define vdloge WX11LE
@@ -220,8 +220,8 @@
 #define btkbuf WX11BF
 #define nmtbuf WX11BF
 #define vbimbf WX11IB
-#define vbpkg WX11PK
-#define vbdev WX11DV
+#define vbpkg  WX11PK
+#define vbdev  WX11DV
 #define vdiqrs WX11QR
 #define vdstmp WX11MP
 #define vdstrs WX11RS
@@ -246,7 +246,7 @@
 #define vcscal WX1110
 #define vcddim WX1111
 #define vipoly WX1112
-#define vbout WX1113
+#define vbout  WX1113
 #define wx11zz WX11ZZ
 #define cgixxx CGIX11
 #endif
@@ -296,7 +296,7 @@
 #define viterm wx11it_
 #define vinwpg wx11ig_
 #define cdrcom cdrcom_
-#define vcjob vcjob_
+#define vcjob  vcjob_
 #define vconod vconod_
 #define vberrh wx11er_
 #define vdloge wx11le_
@@ -315,8 +315,8 @@
 #define btkbuf wx11bf_
 #define nmtbuf wx11bf_
 #define vbimbf wx11ib_
-#define vbpkg wx11pk_
-#define vbdev wx11dv_
+#define vbpkg  wx11pk_
+#define vbdev  wx11dv_
 #define vdiqrs wx11qr_
 #define vdstmp wx11mp_
 #define vdstrs wx11rs_
@@ -341,7 +341,7 @@
 #define vcscal wx1110_
 #define vcddim wx1111_
 #define vipoly wx1112_
-#define vbout wx1113_
+#define vbout  wx1113_
 #define wx11bf wx11bf_
 #define wx11zz wx11zz_
 #define cgixxx cgix11_
@@ -424,13 +424,10 @@ void vbstmp(void);
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <X11/Xatom.h>
 #include <X11/Xlib.h>
-#include <X11/Xos.h>
-#include <X11/Xresource.h>
 #include <X11/Xutil.h>
-#include <X11/keysym.h>
 
 /* svdi state */
 /* attributes
@@ -484,7 +481,7 @@ static float ycp = 0.;
  *  33. Device pixel aspect                                      */
 
 #define MAX_DEV_CAP 33
-#define VBUF_SIZE 1024
+#define VBUF_SIZE   1024
 static float dev_cap[MAX_DEV_CAP] = {4., 1., 1.,  256., 1.,
                                      3., 1., 1.,  1.,   1.,
                                      1., 1., 2.,  0.,   0.,
@@ -530,9 +527,9 @@ static Pixmap pixmap_id;            /* pixmap identifier (for drawing
                                     */
 static int          buf_pic    = 0; /* buffer picture off-screen flag */
 static int          all_colors = 0; /* full access to color map flag */
-static Display *    display;
+static Display     *display;
 static int          screen;
-static Screen *     screen_pnt;
+static Screen      *screen_pnt;
 static GC           gc; /* graphics context */
 static GContext     gcontext;
 static XPoint       vlist[VBUF_SIZE]; /* vertex buffer (polyline, polygon) */
@@ -541,7 +538,7 @@ static unsigned int x_width, x_height; /* window size */
 static int          x_depth;           /* window depth */
 static unsigned int line_width;        /* line width in device coord. */
 static Colormap     cmap;              /* color map */
-static Visual *     visual;
+static Visual      *visual;
 static int          ncolors;   /* number of colors supported */
 static int          f_color;   /* device foreground color */
 static int          b_color;   /* device background color */
@@ -582,13 +579,12 @@ void x11_vflush(void)
   x11_nvert = 0;
 }
 
-void viinit(aspect, justif) float *aspect;
-int *justif;
+void viinit(float *aspect, int *justif)
 {
   int                  i, j, xpos, ypos, depth;
   unsigned long        valuemask;
   unsigned int         d_width, d_height;
-  char *               geometry = NULL, *bufferpic = NULL, *allcolors = NULL;
+  char                *geometry = NULL, *bufferpic = NULL, *allcolors = NULL;
   XSetWindowAttributes setwinattr;
   XWindowAttributes    winattr;
   XWMHints             wmhints;
@@ -977,7 +973,7 @@ void x_dynamics(int init)
 
 void vifram(int *type) {}
 
-void viterm()
+void viterm(void)
 {
   x11_vflush(); /* flush polyline buffer */
 
@@ -996,7 +992,7 @@ void vdiqdc(int *index, float *value)
   }
 }
 
-void vinwpg()
+void vinwpg(void)
 {
   x11_vflush();     /* flush polyline buffer */
   x_check_window(); /* check window change */
@@ -1014,13 +1010,13 @@ void vinwpg()
   }
 }
 
-void vdbell()
+void vdbell(void)
 {
   x11_vflush(); /* flush polyline buffer */
   XBell(display, 100);
 }
 
-void vdwait()
+void vdwait(void)
 {
   XEvent x_event;
   vdbufl();
@@ -1030,7 +1026,7 @@ void vdwait()
   XWindowEvent(display, window_id, KeyPressMask | ButtonPressMask, &x_event);
 }
 
-void vdbufl()
+void vdbufl(void)
 {
   x11_vflush(); /* flush polyline buffer */
   /* if buffer picture mode is turned on, then flush pixmap to window */
@@ -1589,7 +1585,7 @@ void vdloge(int *errnum, int *errsev) {}
 void vberrh(int *errnum, int *errsev) {}
 void vdlina(float *x, float *y) { vilina(x, y); }
 void vdpoly(float xarray[], float yarray[], int *npts) { vipoly(xarray, yarray, npts); }
-void vdterm() { viterm(); }
+void vdterm(void) { viterm(); }
 void vdinit(float *aspect, int *justif) { viinit(aspect, justif); }
 void vdtext(int *length, int char_array[]) { vitext(length, char_array); }
 void vdfram(int *type) { vifram(type); }
@@ -1600,28 +1596,28 @@ void vbiqdv(char dev[]) {}
 
 /* null entry points for raster */
 
-void vdiqrs() {}
+void vdiqrs(void) {}
 
-void vdstmp() {}
+void vdstmp(void) {}
 
-void vdstrs() {}
+void vdstrs(void) {}
 
-void vdstrv() {}
+void vdstrv(void) {}
 
-void vdbrgb() {}
+void vdbrgb(void) {}
 
-void vdfrgb() {}
+void vdfrgb(void) {}
 
-void vdpixl() {}
+void vdpixl(void) {}
 
-void vdpixi() {}
+void vdpixi(void) {}
 
-void vdrpix() {}
+void vdrpix(void) {}
 
-void vdrpxi() {}
+void vdrpxi(void) {}
 
-void vdrscl() {}
+void vdrscl(void) {}
 
-void vdiqci() {}
+void vdiqci(void) {}
 
-void vbstmp() {}
+void vbstmp(void) {}

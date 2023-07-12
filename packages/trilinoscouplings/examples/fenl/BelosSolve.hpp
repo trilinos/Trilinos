@@ -124,8 +124,8 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-  const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
-    Kokkos::Details::ArithTraits<SV>::epsilon())
+  const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
+    Kokkos::ArithTraits<SV>::epsilon())
 {
   typedef Tpetra::Operator<SM,LO,GO,N> OperatorType;
   typedef Tpetra::MultiVector<SV,LO,GO,N> VectorType;
@@ -267,8 +267,8 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-  const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
-    Kokkos::Details::ArithTraits<SV>::epsilon())
+  const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
+    Kokkos::ArithTraits<SV>::epsilon())
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                              "Belos solver requested but not compiled!");

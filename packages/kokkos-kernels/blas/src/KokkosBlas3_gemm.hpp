@@ -38,12 +38,13 @@ namespace Impl {
 // This case must be intercepted here rather than impl in order to call TPL
 // GEMV instead of TPL GEMM. This codepath was measured to be profitable with
 // cuBLAS.
-template <class AViewType, class BViewType, class CViewType>
+template <class execution_space, class AViewType, class BViewType,
+          class CViewType>
 bool gemv_based_gemm(
-    const typename CViewType::execution_space& space, const char transA[],
-    const char transB[], typename AViewType::const_value_type& alpha,
-    const AViewType& A, const BViewType& B,
-    typename CViewType::const_value_type& beta, const CViewType& C,
+    const execution_space& space, const char transA[], const char transB[],
+    typename AViewType::const_value_type& alpha, const AViewType& A,
+    const BViewType& B, typename CViewType::const_value_type& beta,
+    const CViewType& C,
     typename std::enable_if<!std::is_same<typename BViewType::array_layout,
                                           Kokkos::LayoutStride>::value &&
                             !std::is_same<typename CViewType::array_layout,
@@ -107,24 +108,48 @@ bool gemv_based_gemm(
 /// \param B [in] Input matrix, as a 2-D Kokkos::View
 /// \param beta [in] Input coefficient of C
 /// \param C [in/out] Output vector, as a nonconst 2-D Kokkos::View
-template <class AViewType, class BViewType, class CViewType>
-void gemm(const typename CViewType::execution_space& space, const char transA[],
+template <class execution_space, class AViewType, class BViewType,
+          class CViewType>
+void gemm(const execution_space& space, const char transA[],
           const char transB[], typename AViewType::const_value_type& alpha,
           const AViewType& A, const BViewType& B,
           typename CViewType::const_value_type& beta, const CViewType& C) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::gemm: execution_space must be a valid Kokkos "
+                "execution space");
   static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
+                "KokkosBlas::gemm: AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value,
-                "BViewType must be a Kokkos::View.");
+                "KokkosBlas::gemm: BViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<CViewType>::value,
-                "CViewType must be a Kokkos::View.");
+                "KokkosBlas::gemm: CViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
+                "KokkosBlas::gemm: AViewType must have rank 2.");
   static_assert(static_cast<int>(BViewType::rank) == 2,
-                "BViewType must have rank 2.");
+                "KokkosBlas::gemm: BViewType must have rank 2.");
   static_assert(static_cast<int>(CViewType::rank) == 2,
-                "CViewType must have rank 2.");
+                "KokkosBlas::gemm: CViewType must have rank 2.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AViewType::memory_space>::accessible,
+      "KokkosBlas::gemm: AViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename BViewType::memory_space>::accessible,
+      "KokkosBlas::gemm: BViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename CViewType::memory_space>::accessible,
+      "KokkosBlas::gemm: CViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename CViewType::memory_space,
+                                 typename AViewType::memory_space>::assignable,
+      "KokkosBlas::gemm: CViewType must be assignable by AViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename CViewType::memory_space,
+                                 typename BViewType::memory_space>::assignable,
+      "KokkosBlas::gemm: CViewType must be assignable by BViewType");
 
   // Check validity of transpose argument
   bool valid_transA = (transA[0] == 'N') || (transA[0] == 'n') ||
@@ -197,7 +222,7 @@ void gemm(const typename CViewType::execution_space& space, const char transA[],
                        typename CViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       CVT;
-  typedef Impl::GEMM<AVT, BVT, CVT> impl_type;
+  typedef Impl::GEMM<execution_space, AVT, BVT, CVT> impl_type;
   impl_type::gemm(space, transA, transB, alpha, A, B, beta, C);
 }
 
@@ -223,9 +248,8 @@ void gemm(const char transA[], const char transB[],
           typename AViewType::const_value_type& alpha, const AViewType& A,
           const BViewType& B, typename CViewType::const_value_type& beta,
           const CViewType& C) {
-  const typename CViewType::execution_space space =
-      typename CViewType::execution_space();
-  gemm(space, transA, transB, alpha, A, B, beta, C);
+  gemm(typename CViewType::execution_space{}, transA, transB, alpha, A, B, beta,
+       C);
 }
 
 }  // namespace KokkosBlas

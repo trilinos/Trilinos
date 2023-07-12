@@ -180,7 +180,8 @@ inline bool intersects(Sphere<T> const& a, Point<T> const& b)
 
 // intersects: Point,Box
 template <typename T>
-inline bool intersects(Point<T> const& a, Box<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Point<T> const& a, Box<T> const& b)
 {
   return b.min_corner()[0] <= a[0] && a[0] <= b.max_corner()[0]
       && b.min_corner()[1] <= a[1] && a[1] <= b.max_corner()[1]

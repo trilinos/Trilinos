@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@ namespace Ioss {
 namespace Ioex {
   using EntityIdSet = std::set<std::pair<int64_t, int64_t>>;
   using SideSetSet  = std::set<std::string>;
-  using SideSetMap  = std::map<std::string, const std::string, std::less<const std::string>>;
+  using SideSetMap  = std::map<std::string, const std::string, std::less<>>;
 
   using NameTopoKey = std::pair<std::string, const Ioss::ElementTopology *>;
   struct IOEX_EXPORT NameTopoKeyCompare
@@ -71,7 +71,8 @@ namespace Ioex {
 #endif
 
   IOEX_EXPORT const char *Version();
-  IOEX_EXPORT bool        check_processor_info(const std::string &filename, int exodusFilePtr, int processor_count, int processor_id);
+  IOEX_EXPORT bool        check_processor_info(const std::string &filename, int exodusFilePtr,
+                                               int processor_count, int processor_id);
 
   IOEX_EXPORT Ioss::EntityType map_exodus_type(ex_entity_type type);
   IOEX_EXPORT ex_entity_type   map_exodus_type(Ioss::EntityType type);
@@ -84,30 +85,32 @@ namespace Ioex {
   IOEX_EXPORT bool    set_id(const Ioss::GroupingEntity *entity, Ioex::EntityIdSet *idset);
   IOEX_EXPORT int64_t get_id(const Ioss::GroupingEntity *entity, Ioex::EntityIdSet *idset);
   IOEX_EXPORT void    decode_surface_name(Ioex::SideSetMap &fs_map, Ioex::SideSetSet &fs_set,
-                              const std::string &name);
+                                          const std::string &name);
   IOEX_EXPORT void    fix_bad_name(char *name);
 
   IOEX_EXPORT void exodus_error(int exoid, int lineno, const char *function, const char *filename);
   IOEX_EXPORT void exodus_error(int exoid, int lineno, const char *function, const char *filename,
-                    const std::string &extra);
+                                const std::string &extra);
 
   IOEX_EXPORT int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
-                     size_t name_length);
+                                 size_t name_length);
 
   IOEX_EXPORT void add_coordinate_frames(int exoid, Ioss::Region *region);
   IOEX_EXPORT void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
 
-  IOEX_EXPORT bool find_displacement_field(Ioss::NameList &fields, const Ioss::GroupingEntity *block, int ndim,
-                               std::string *disp_name);
+  IOEX_EXPORT bool find_displacement_field(Ioss::NameList             &fields,
+                                           const Ioss::GroupingEntity *block, int ndim,
+                                           std::string *disp_name);
 
   IOEX_EXPORT std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
-                              const std::string &basename, int length, bool &db_has_name);
+                                          const std::string &basename, int length,
+                                          bool &db_has_name);
 
   IOEX_EXPORT void filter_element_list(Ioss::Region *region, Ioss::Int64Vector &elements,
-                           Ioss::Int64Vector &sides, bool remove_omitted_elements);
+                                       Ioss::Int64Vector &sides, bool remove_omitted_elements);
 
   IOEX_EXPORT bool filter_node_list(Ioss::Int64Vector                &nodes,
-                        const std::vector<unsigned char> &node_connectivity_status);
+                                    const std::vector<unsigned char> &node_connectivity_status);
 
   template <typename T>
   void filter_node_list(T *data, std::vector<T> &dbvals,
@@ -119,15 +122,16 @@ namespace Ioex {
   }
 
   IOEX_EXPORT void filter_element_list(Ioss::Region *region, Ioss::Int64Vector &elements,
-                           Ioss::Int64Vector &sides, bool remove_omitted_elements);
+                                       Ioss::Int64Vector &sides, bool remove_omitted_elements);
 
-  IOEX_EXPORT void separate_surface_element_sides(Ioss::Int64Vector &element, Ioss::Int64Vector &sides,
-                                      Ioss::Region *region, Ioex::TopologyMap &topo_map,
-                                      Ioex::TopologyMap     &side_map,
-                                      Ioss::SurfaceSplitType split_type,
-                                      const std::string     &surface_name);
+  IOEX_EXPORT void separate_surface_element_sides(Ioss::Int64Vector &element,
+                                                  Ioss::Int64Vector &sides, Ioss::Region *region,
+                                                  Ioex::TopologyMap     &topo_map,
+                                                  Ioex::TopologyMap     &side_map,
+                                                  Ioss::SurfaceSplitType split_type,
+                                                  const std::string     &surface_name);
 
-  IOEX_EXPORT void                       write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge);
+  IOEX_EXPORT void           write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge);
   template <typename T> void write_reduction_attributes(int exoid, const std::vector<T *> &entities)
   {
     // For the entity, write all "reduction attributes"

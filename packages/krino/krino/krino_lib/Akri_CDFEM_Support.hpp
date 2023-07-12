@@ -90,6 +90,8 @@ public:
   void set_global_ids_are_NOT_parallel_consistent() { myGlobalIDsAreParallelConsistent = false; }
   void set_snapping_sharp_feature_angle_in_degrees(const double snappingSharpFeatureAngleInDegrees) { mySnappingSharpFeatureAngleInDegrees = snappingSharpFeatureAngleInDegrees; }
   double get_snapping_sharp_feature_angle_in_degrees() const { return mySnappingSharpFeatureAngleInDegrees; }
+  void set_is_transient(const bool isTransient) { myFlagIsTransient = isTransient; }
+  bool get_is_transient() const { return myFlagIsTransient; }
 
   void create_parts();
 
@@ -102,6 +104,7 @@ public:
   void set_cdfem_snap_displacement_field(const FieldRef field) { myCDFEMSnapDisplacementsField = field; }
   void add_ale_prolongation_field(const FieldRef field);
   void add_interpolation_field(const FieldRef field);
+  void add_edge_interpolation_field(const FieldRef field);
 
   void set_coords_field(const FieldRef coords_field) { my_coords_field = coords_field; }
   const FieldRef get_coords_field() const { return my_coords_field; }
@@ -109,6 +112,7 @@ public:
   const FieldRef get_cdfem_snap_displacements_field() const { return myCDFEMSnapDisplacementsField; }
   const FieldSet & get_ale_prolongation_fields() const { return my_ale_prolongation_fields; }
   const FieldSet & get_interpolation_fields() const { return my_interpolation_fields; }
+  const FieldSet & get_edge_interpolation_fields() const { return my_edge_interpolation_fields; }
   const FieldSet & get_zeroed_fields() const { return my_zeroed_fields; }
   const FieldSet & get_element_fields() const { return my_element_fields; }
   const FieldSet & get_snap_fields() const { return mySnapFields; }
@@ -127,8 +131,9 @@ public:
 
   stk::mesh::Selector get_post_cdfem_refinement_selector() const;
 
-  stk::mesh::Part & get_child_edge_node_part() const { return *my_child_edge_node_part; }
-  FieldRef get_parent_node_ids_field() const { return my_parent_node_ids_field; }
+  stk::mesh::Part & get_child_node_part() const { return *myChildNodePart; }
+  FieldRef get_parent_node_ids_field() const { return myParentNodeIdsField; }
+  FieldRef get_parent_node_weights_field() const { return myParentNodeWtsField; }
 
   void activate_fully_coupled_cdfem() { my_fully_coupled_cdfem = true; }
   bool fully_coupled_cdfem() const { return my_fully_coupled_cdfem; }
@@ -147,6 +152,10 @@ public:
   {
     return (my_interpolation_fields.find(field) != my_interpolation_fields.end());
   }
+  bool is_edge_interpolation_field(const FieldRef field) const
+  {
+    return (my_edge_interpolation_fields.find(field) != my_edge_interpolation_fields.end());
+  }
 
   void use_nonconformal_element_size(bool flag) { my_flag_use_nonconformal_element_size = flag; }
   bool use_nonconformal_element_size() const { return my_flag_use_nonconformal_element_size; }
@@ -161,8 +170,10 @@ public:
 
   void set_cdfem_edge_tol( const double tol ) { my_cdfem_snapper.set_edge_tolerance(tol); }
   const CDFEM_Snapper & get_snapper() const { return my_cdfem_snapper; }
-  const double & get_cdfem_dof_edge_tol() const { return my_cdfem_dof_edge_tol; }
+  double get_cdfem_dof_edge_tol() const { return my_cdfem_dof_edge_tol; }
   void set_cdfem_dof_edge_tol( const double tol ) { my_cdfem_dof_edge_tol = tol; }
+  double get_max_edge_snap() const { return myMaxEdgeSnap; }
+  void set_max_edge_snap( const double snap ) { myMaxEdgeSnap = snap; }
   bool use_internal_face_stabilization() const { return my_internal_face_stabilization_multiplier > 0.0; }
   double get_internal_face_stabilization_multiplier() const { return my_internal_face_stabilization_multiplier; }
   void set_internal_face_stabilization_multiplier( const double mult ) { my_internal_face_stabilization_multiplier = mult; }
@@ -210,6 +221,7 @@ private:
   std::vector<std::string> my_force_ale_prolongation_fields;
   FieldSet my_ale_prolongation_fields;
   FieldSet my_interpolation_fields;
+  FieldSet my_edge_interpolation_fields;
   FieldSet my_zeroed_fields;
   FieldSet my_element_fields;
   FieldSet mySnapFields;
@@ -220,8 +232,9 @@ private:
   stk::mesh::Part * my_parent_part;
   stk::mesh::Part * my_child_part;
   stk::mesh::Part * my_internal_side_part;
-  stk::mesh::Part * my_child_edge_node_part;
-  FieldRef my_parent_node_ids_field;
+  stk::mesh::Part * myChildNodePart;
+  FieldRef myParentNodeIdsField;
+  FieldRef myParentNodeWtsField;
   bool my_fully_coupled_cdfem;
   int my_num_initial_decomposition_cycles;
   bool myGlobalIDsAreParallelConsistent;
@@ -230,6 +243,7 @@ private:
   Edge_Degeneracy_Handling my_cdfem_edge_degeneracy_handling;
   CDFEM_Snapper my_cdfem_snapper;
   double my_cdfem_dof_edge_tol;
+  double myMaxEdgeSnap{1.0};
   double my_internal_face_stabilization_multiplier;
   double mySnappingSharpFeatureAngleInDegrees;
   Interface_CFL_Length_Scale myLengthScaleTypeForInterfaceCFL;
@@ -241,6 +255,7 @@ private:
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
   bool myFlagUseInterpolationToUnsnapMesh{false};
   bool myFlagPerformVolumeCorrectionAfterLsSolve{false};
+  bool myFlagIsTransient{false};
   mutable stk::diag::Timer my_timer_cdfem;
   std::set<std::string> my_user_prolongation_field_names;
 };

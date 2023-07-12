@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,21 +17,20 @@ static int  offset    = 0;           /* offset into line for next data */
 static int  break_pnt = LINE_LENGTH; /* place in sequence to pause */
 static int  save_pnt;                /* place in sequence to save */
 
-static void flush_line();
+static void flush_line(FILE *infile);
 
 double read_val(FILE *infile,  /* file to read value from */
-                int * end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
+                int  *end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
 )
 {
   double val;         /* return value */
-  char * ptr;         /* ptr to next string to read */
-  char * ptr2;        /* ptr to next string to read */
+  char  *ptr;         /* ptr to next string to read */
+  char  *ptr2;        /* ptr to next string to read */
   int    length;      /* length of line to read */
   int    length_left; /* length of line still around */
   int    white_seen;  /* have I detected white space yet? */
   int    done;        /* checking for end of scan */
   int    i;           /* loop counter */
-  double strtod();
 
   *end_flag = 0;
 
@@ -115,7 +114,7 @@ double read_val(FILE *infile,  /* file to read value from */
 }
 
 int read_int(FILE *infile,  /* file to read value from */
-             int * end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
+             int  *end_flag /* 0 => OK, 1 => EOL, -1 => EOF */
 )
 {
   int   val;         /* return value */

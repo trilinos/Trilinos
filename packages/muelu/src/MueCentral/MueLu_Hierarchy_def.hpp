@@ -80,7 +80,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
+      doPRrebalance_(GetDefaultPRrebalance()), doPRViaCopyrebalance_(false), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
@@ -99,7 +99,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
+      doPRrebalance_(GetDefaultPRrebalance()), doPRViaCopyrebalance_(false), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {

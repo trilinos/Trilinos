@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -382,10 +382,8 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
     }
   }
   ex__set_compact_storage(exoid, variable);
-#if NC_HAS_HDF5
   int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, variable, 0, &fill);
-#endif
   return (status);
 }
 

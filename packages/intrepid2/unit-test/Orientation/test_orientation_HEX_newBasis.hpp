@@ -267,19 +267,24 @@ int OrientationHexNewBasis(const bool verbose) {
   class TestResults
   {
   private:
-    const DynRankView basisCoeffs, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords;
+    const DynRankView basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords;
+    const Kokkos::DynRankView<Orientation,DeviceType> elemOrts;
     const basisType* basis;
 
 
   public:
 
     TestResults(const DynRankView basisCoeffs_,
-        const DynRankView transformedBasisValuesAtRefCoordsOriented_,
-        const DynRankView funAtPhysRefCoords_,
-        const basisType* basis_) :
+                const DynRankView transformedBasisValuesAtRefCoords_,
+                const DynRankView transformedBasisValuesAtRefCoordsOriented_,
+                const DynRankView funAtPhysRefCoords_,
+                const Kokkos::DynRankView<Orientation,DeviceType> elemOrts_,
+                const basisType* basis_) :
           basisCoeffs(basisCoeffs_),
+          transformedBasisValuesAtRefCoords(transformedBasisValuesAtRefCoords_),
           transformedBasisValuesAtRefCoordsOriented(transformedBasisValuesAtRefCoordsOriented_),
           funAtPhysRefCoords(funAtPhysRefCoords_),
+          elemOrts(elemOrts_),
           basis(basis_){}
 
     //check that fun values are consistent at the common vertexes
@@ -404,6 +409,46 @@ int OrientationHexNewBasis(const bool verbose) {
             *outStream  << ")";
           }
           *outStream << std::endl;
+        }
+      }
+      
+      // check that global (oriented) basis coefficients contracted with the transformed oriented basis values agrees with the transpose-oriented basis coefficients contracted with the unoriented transformed basis values
+      DynRankView ConstructWithLabel(localBasisCoeffs, numCells, basisCardinality);
+      OrientationTools<DeviceType>::modifyBasisByOrientationTranspose(localBasisCoeffs,
+                                                                      basisCoeffs,
+                                                                      elemOrts,
+                                                                      basis);
+      
+      DynRankView ConstructWithLabel(basisCoeffsModified, numCells, basisCardinality);
+      OrientationTools<DeviceType>::modifyBasisByOrientation(basisCoeffsModified,
+                                                             basisCoeffs,
+                                                             elemOrts,
+                                                             basis);
+      
+      
+      for(ordinal_type ic=0; ic<numCells; ++ic) {
+        ValueType error=0;
+        for(ordinal_type j=0; j<numRefCoords; ++j) {
+          for (int d=0; d<transformedBasisValuesAtRefCoords.extent_int(3); d++)
+          {
+            ValueType globalValue_d = 0; // oriented/global
+            ValueType localValue_d  = 0; // unoriented/local
+            for(ordinal_type k=0; k<basisCardinality; ++k)
+            {
+              auto orientedBasisValue = transformedBasisValuesAtRefCoordsOriented(ic,k,j,d);
+              auto basisValue         = transformedBasisValuesAtRefCoords        (ic,k,j,d);
+              
+              globalValue_d += basisCoeffs(ic,k)      * orientedBasisValue;
+              localValue_d  += localBasisCoeffs(ic,k) * basisValue;
+            }
+            error = std::max(std::abs( globalValue_d - localValue_d), error);
+          }
+        }
+
+        if(error>100*tol) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "global values do not agree with local on cell " << ic << "\n";
         }
       }
     }
@@ -563,6 +608,7 @@ int OrientationHexNewBasis(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords);
             DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoords, numCells, basisCardinality, numRefCoords);
 
             DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords);
             basis.getValues(basisValuesAtRefCoords, refPoints);
@@ -572,8 +618,9 @@ int OrientationHexNewBasis(const bool verbose) {
                 basisValuesAtRefCoords,
                 elemOrts,
                 &basis);
-
+            
             // transform basis values
+            fst::HGRADtransformVALUE(transformedBasisValuesAtRefCoords, basisValuesAtRefCoords);
             deep_copy(transformedBasisValuesAtRefCoordsOriented,
                 basisValuesAtRefCoordsOriented);
 
@@ -590,7 +637,7 @@ int OrientationHexNewBasis(const bool verbose) {
               }
             }
 
-            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, basisPtr);
+            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, elemOrts, basisPtr);
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }
@@ -624,6 +671,7 @@ int OrientationHexNewBasis(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
             DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoords, numCells, basisCardinality, numRefCoords, dim);
             DynRankView basisValuesAtRefCoordsCells("inValues", numCells, basisCardinality, numRefCoords, dim);
 
 
@@ -645,6 +693,9 @@ int OrientationHexNewBasis(const bool verbose) {
             fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
                 jacobianAtRefCoords_inv,
                 basisValuesAtRefCoordsOriented);
+            fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoords,
+                jacobianAtRefCoords_inv,
+                basisValuesAtRefCoords);
 
             BasisFunctionsSystem  basisFunctionsSystem(basisCardinality, numRefCoords, dim);
             auto info = basisFunctionsSystem.computeBasisCoeffs(basisCoeffs, errorFlag, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords);
@@ -657,7 +708,7 @@ int OrientationHexNewBasis(const bool verbose) {
               }
             }
 
-            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, basisPtr);
+            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, elemOrts, basisPtr);
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }
@@ -688,6 +739,7 @@ int OrientationHexNewBasis(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
             DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoords, numCells, basisCardinality, numRefCoords, dim);
             DynRankView basisValuesAtRefCoordsCells("inValues", numCells, basisCardinality, numRefCoords, dim);
 
             DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
@@ -709,6 +761,10 @@ int OrientationHexNewBasis(const bool verbose) {
                 jacobianAtRefCoords,
                 jacobianAtRefCoords_det,
                 basisValuesAtRefCoordsOriented);
+            fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoords,
+                jacobianAtRefCoords,
+                jacobianAtRefCoords_det,
+                basisValuesAtRefCoords);
 
             DynRankView ConstructWithLabel(basisCoeffs, numCells, basisCardinality);
 
@@ -724,7 +780,7 @@ int OrientationHexNewBasis(const bool verbose) {
               }
             }
 
-            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, basisPtr);
+            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, elemOrts, basisPtr);
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }

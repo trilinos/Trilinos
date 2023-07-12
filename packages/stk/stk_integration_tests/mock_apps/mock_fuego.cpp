@@ -4,12 +4,11 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/Version.hpp>
 #include <stk_util/parallel/CouplingVersions.hpp>
 #include <stk_util/parallel/CouplingVersions_impl.hpp>
+#include <stk_util/Version.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "MockMeshUtils.hpp"

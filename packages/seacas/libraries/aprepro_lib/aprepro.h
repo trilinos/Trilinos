@@ -149,7 +149,7 @@ namespace SEAMS {
     /** Get the string interactive flag, which indicates if we are in
      * the middle of parsing a string in an interactive manner.
      */
-    bool string_interactive() { return stringInteractive; }
+    bool string_interactive() const { return stringInteractive; }
 
     /** Invoke the scanner and parser on a file. Use parse_stream with a
      * std::ifstream if detection of file reading errors is required.

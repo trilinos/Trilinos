@@ -271,4 +271,4 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, createTimeEventRange)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

@@ -17,6 +17,10 @@
 #ifndef KOKKOSPARSE_SPMV_TPL_SPEC_AVAIL_HPP_
 #define KOKKOSPARSE_SPMV_TPL_SPEC_AVAIL_HPP_
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#include <mkl.h>
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
@@ -214,8 +218,9 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)                \
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
-      const SCALAR, const int, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int, const SCALAR*,       \
+      const SCALAR, const MKL_INT,                                             \
+      Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT, const SCALAR*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \

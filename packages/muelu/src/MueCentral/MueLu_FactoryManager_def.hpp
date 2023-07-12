@@ -228,6 +228,7 @@ namespace MueLu {
 #endif
 
       // NOTE: These are user data, but we might want to print them, so they need a default factory
+      if (varName == "Pnodal")                        return NoFactory::getRCP();
       if (varName == "NodeMatrix")                    return NoFactory::getRCP();
       if (varName == "NodeAggMatrix")                 return NoFactory::getRCP();
 

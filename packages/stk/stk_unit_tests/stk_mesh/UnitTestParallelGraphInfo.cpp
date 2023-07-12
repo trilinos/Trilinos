@@ -98,7 +98,7 @@ public:
   {
     for(const auto& item : parallelPartInfo)
     {
-      const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
+      const stk::mesh::impl::PartOrdinals &partOrdinals = item.second.elementPartOrdinals;
       EXPECT_TRUE(!std::binary_search(partOrdinals.begin(), partOrdinals.end(), airPart->mesh_meta_data_ordinal()));
       EXPECT_TRUE(!std::binary_search(partOrdinals.begin(), partOrdinals.end(), skinPart->mesh_meta_data_ordinal()));
     }
@@ -127,7 +127,7 @@ public:
     for(const auto& item : parallelPartInfo)
     {
       const stk::mesh::impl::LocalId elemOnOtherProc = item.first;
-      const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
+      const stk::mesh::impl::PartOrdinals &partOrdinals = item.second.elementPartOrdinals;
 
       if(elemOnOtherProc%2 == 0)
       {

@@ -333,6 +333,9 @@ Relaxation<MatrixType>::getValidParameters () const
     const int long_row_threshold = 0;
     pl->set("relaxation: long row threshold", long_row_threshold);
 
+    const bool timer_for_apply = true;
+    pl->set("timer for apply", timer_for_apply);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -370,6 +373,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
   const bool is_matrix_structurally_symmetric = pl.get<bool> ("relaxation: symmetric matrix structure");
   const bool ifpack2_dump_matrix = pl.get<bool> ("relaxation: ifpack2 dump matrix");
+  const bool timer_for_apply = pl.get<bool> ("timer for apply");
   int cluster_size = 1;
   if(pl.isParameter ("relaxation: mtgs cluster size")) //optional parameter
     cluster_size = pl.get<int> ("relaxation: mtgs cluster size");
@@ -455,6 +459,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   InnerSpTrsv_           = innerSpTrsv;
   InnerDampingFactor_    = innerDampingFactor;
   CompactForm_           = compactForm;
+  TimerForApply_         = timer_for_apply;
 }
 
 
@@ -613,15 +618,23 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     "Ifpack2::Relaxation::apply: beta = " << beta << " != 0 case not "
     "implemented.");
 
+  Teuchos::RCP<Teuchos::Time> timer;
   const std::string timerName ("Ifpack2::Relaxation::apply");
-  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
-  if (timer.is_null ()) {
-    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  if (TimerForApply_) {
+    timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+    if (timer.is_null ()) {
+      timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+    }
   }
 
-  double startTime = timer->wallTime();
+  Teuchos::Time time = Teuchos::Time(timerName);
+  double startTime = time.wallTime();
+
   {
-    Teuchos::TimeMonitor timeMon (*timer);
+    Teuchos::RCP<Teuchos::TimeMonitor> timeMon;
+    if (TimerForApply_)
+      timeMon = Teuchos::rcp(new Teuchos::TimeMonitor(*timer));
+
     // Special case: alpha == 0.
     if (alpha == STS::zero ()) {
       // No floating-point operations, so no need to update a count.
@@ -677,7 +690,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       }
     }
   }
-  ApplyTime_ += (timer->wallTime() - startTime);
+  ApplyTime_ += (time.wallTime() - startTime);
   ++NumApply_;
 }
 

@@ -14,13 +14,13 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS3_GEMV_TPL_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS3_GEMV_TPL_SPEC_AVAIL_HPP_
+#ifndef KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_HPP_
 
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AT, class XT, class YT>
+template <class execution_space, class AT, class XT, class YT>
 struct gemm_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -32,6 +32,7 @@ struct gemm_tpl_spec_avail {
                                              LAYOUTC, MEMSPACE)            \
   template <class ExecSpace>                                               \
   struct gemm_tpl_spec_avail<                                              \
+      ExecSpace,                                                           \
       Kokkos::View<const SCALAR**, LAYOUTA,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -78,6 +79,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
                                                LAYOUTC, MEMSPACE)          \
   template <class ExecSpace>                                               \
   struct gemm_tpl_spec_avail<                                              \
+      ExecSpace,                                                           \
       Kokkos::View<const SCALAR**, LAYOUTA,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -149,6 +151,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE) \
   template <class ExecSpace>                                              \
   struct gemm_tpl_spec_avail<                                             \
+      ExecSpace,                                                          \
       Kokkos::View<const SCALAR**, LAYOUT,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \

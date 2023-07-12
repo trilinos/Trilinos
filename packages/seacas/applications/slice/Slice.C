@@ -640,7 +640,7 @@ namespace {
       // Get all element blocks and cycle through each reading the
       // values for the processor...
       const auto &blocks   = region.get_element_blocks();
-      auto        c_region = (Ioss::Region *)(&region);
+      auto       *c_region = (Ioss::Region *)(&region);
       c_region->begin_state(1);
       for (const auto &block : blocks) {
         if (!block->field_exists(elem_variable)) {
@@ -787,7 +787,7 @@ namespace {
         if (tokens.empty()) {
           break;
         }
-        else if (tokens.size() == 1) {
+        if (tokens.size() == 1) {
           // Just a processor specification for the next element...
           proc = std::stoi(tokens[0]);
           elem_to_proc.push_back(proc);
@@ -920,12 +920,12 @@ namespace {
     // and defines corresponding sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ss        = region.get_sidesets();
-    size_t set_count = ss.size();
+    const auto &ss        = region.get_sidesets();
+    size_t      set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
-      auto *gss     = ss[s];
-      auto &ss_name = gss->name();
+      auto       *gss     = ss[s];
+      const auto &ss_name = gss->name();
 
       std::vector<Ioss::SideSet *> sset(proc_count);
       for (size_t p = 0; p < proc_count; p++) {
@@ -933,8 +933,8 @@ namespace {
         proc_region[p]->add(sset[p]);
       }
 
-      auto &side_blocks = gss->get_side_blocks();
-      for (auto &gsb : side_blocks) {
+      const auto &side_blocks = gss->get_side_blocks();
+      for (const auto &gsb : side_blocks) {
         std::vector<INT> ss_elems;
         gsb->get_field_data("element_side_raw", ss_elems);
 
@@ -945,9 +945,9 @@ namespace {
           pss[p]++;
         }
 
-        auto &name      = gsb->name();
-        auto &side_type = gsb->topology()->name();
-        auto &elem_type = gsb->parent_element_topology()->name();
+        const auto &name      = gsb->name();
+        const auto &side_type = gsb->topology()->name();
+        const auto &elem_type = gsb->parent_element_topology()->name();
 
         for (size_t p = 0; p < proc_count; p++) {
           auto *side_block = new Ioss::SideBlock(proc_region[p]->get_database(), name, side_type,
@@ -968,24 +968,24 @@ namespace {
     // and outputs the sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ss        = region.get_sidesets();
-    size_t set_count = ss.size();
+    const auto &ss        = region.get_sidesets();
+    size_t      set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
       if (debug_level & 4) {
         progress("\tSideset " + std::to_string(s + 1));
       }
       Ioss::SideSet *gss     = ss[s];
-      auto          &ss_name = gss->name();
+      const auto    &ss_name = gss->name();
 
       std::vector<Ioss::SideSet *> proc_ss(proc_count);
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         proc_ss[p] = proc_region[p]->get_sideset(ss_name);
       }
 
-      auto &side_blocks = gss->get_side_blocks();
-      for (auto &gsb : side_blocks) {
-        auto &sb_name = gsb->name();
+      const auto &side_blocks = gss->get_side_blocks();
+      for (const auto &gsb : side_blocks) {
+        const auto &sb_name = gsb->name();
 
         std::vector<Ioss::SideBlock *> proc_sb(proc_count);
         std::vector<std::vector<INT>>  psb_elems(proc_count);
@@ -1061,7 +1061,7 @@ namespace {
     progress("border_node_proc_map fully populated");
     size_t proc_count = proc_region.size();
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-      auto &commset = proc_region[p]->get_commsets()[0];
+      const auto &commset = proc_region[p]->get_commsets()[0];
       commset->put_field_data("entity_processor", border_node_proc_map[p - proc_begin]);
       border_node_proc_map[p - proc_begin].clear();
       proc_progress(p, proc_count);
@@ -1163,8 +1163,8 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ns        = region.get_nodesets();
-    size_t set_count = ns.size();
+    const auto &ns        = region.get_nodesets();
+    size_t      set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
       std::vector<INT> pns(proc_count);
@@ -1183,7 +1183,7 @@ namespace {
         }
       }
 
-      auto &name = ns[s]->name();
+      const auto &name = ns[s]->name();
       if (debug_level & 2) {
         fmt::print(stderr, "\tNodeset {}--", name);
       }
@@ -1211,8 +1211,8 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ns        = region.get_nodesets();
-    size_t set_count = ns.size();
+    const auto &ns        = region.get_nodesets();
+    size_t      set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
       if (debug_level & 4) {

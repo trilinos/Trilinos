@@ -787,17 +787,6 @@ public:
       return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0);
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_mesh_info() from DumpMeshInfo.hpp instead")
-  void dump_all_mesh_info(std::ostream& out) const;
-
-  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_per_proc() from DumpMeshInfo.hpp instead")
-  void dump_mesh_per_proc(const std::string& fileNamePrefix) const;
-
-  STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_bucket_info() from DumpMeshInfo.hpp instead")
-  void dump_mesh_bucket_info(std::ostream& out, Bucket* bucket) const;
-#endif
-
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
 

@@ -40,7 +40,7 @@ namespace Ionull {
   {
   }
 
-  DatabaseIO::~DatabaseIO() {}
+  DatabaseIO::~DatabaseIO() = default;
 
   void DatabaseIO::read_meta_data__() {}
 

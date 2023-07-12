@@ -37,7 +37,7 @@ struct SerialHessenbergQR_WithShiftInternal {
       /* */ ValueType *HH, const int hs0, const int hs1, const ValueType shift,
       /* */ Kokkos::pair<ValueType, ValueType> *GG, const bool request_schur) {
     typedef ValueType value_type;
-    // typedef Kokkos::Details::ArithTraits<value_type> ats;
+    // typedef Kokkos::ArithTraits<value_type> ats;
 
     const int hs = hs0 + hs1;
     const value_type zero(0), one(1);

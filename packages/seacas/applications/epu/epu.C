@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "copy_string_cpp.h"
 #include "format_time.h"
 #include "open_file_limit.h"
 #include "sys_info.h"
@@ -235,7 +234,7 @@ namespace {
     return pos;
   }
 
-  template <typename T> static void uniquify(std::vector<T> &vec)
+  template <typename T> void uniquify(std::vector<T> &vec)
   {
 
 #if USE_STD_SORT
@@ -485,7 +484,7 @@ int main(int argc, char *argv[])
     int part_count = interFace.part_count();
     if (part_count <= 1) {
       fmt::print("INFO: Only one processor or part, no concatenation needed.\n");
-      return (EXIT_SUCCESS);
+      return EXIT_SUCCESS;
     }
 
     int error = 0;
@@ -674,7 +673,7 @@ int main(int argc, char *argv[])
     if (rank == 0) {
       add_to_log(argv[0], static_cast<int>(end_time - begin_time));
     }
-    return (error);
+    return error;
   }
   catch (std::exception &e) {
     fmt::print(stderr, "{}\n", e.what());
@@ -695,7 +694,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
   }
   int p; // file counter p=0..part_count-1
 
-  auto mytitle = new char[MAX_LINE_LENGTH + 1];
+  auto *mytitle = new char[MAX_LINE_LENGTH + 1];
   memset(mytitle, '\0', MAX_LINE_LENGTH + 1);
 
   Mesh global;
@@ -1657,7 +1656,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
              "END *******\n",
              seacas_timer() - execution_time,
              fmt::group_digits((get_hwm_memory_info() + 1024 * 1024 - 1) / (1024 * 1024)));
-  return (0);
+  return 0;
 }
 
 namespace {
@@ -1717,9 +1716,9 @@ namespace {
     int error = 0;
 
     // I. Get and store info strings, if they exist
-    int  num_info_records = ex_inquire_int(id, EX_INQ_INFO);
-    auto info_records     = new char *[num_info_records + 1];
-    int  info_string_len  = MAX_LINE_LENGTH;
+    int   num_info_records = ex_inquire_int(id, EX_INQ_INFO);
+    auto *info_records     = new char *[num_info_records + 1];
+    int   info_string_len  = MAX_LINE_LENGTH;
 
     {
       for (int i = 0; i < num_info_records + 1; i++) {
@@ -1756,8 +1755,8 @@ namespace {
       char *qa_record[1][4];
     };
 
-    int  num_qa_records = ex_inquire_int(id, EX_INQ_QA);
-    auto qaRecord       = new qa_element[num_qa_records + 1];
+    int   num_qa_records = ex_inquire_int(id, EX_INQ_QA);
+    auto *qaRecord       = new qa_element[num_qa_records + 1];
     for (int i = 0; i < num_qa_records + 1; i++) {
       for (int j = 0; j < 4; j++) {
         qaRecord[i].qa_record[0][j]    = new char[MAX_STR_LENGTH + 1];
@@ -3150,7 +3149,7 @@ namespace {
       // element blocks...
       std::string var_name;
       int         var_count = 0;
-      for (auto &elem : variable_list) {
+      for (const auto &elem : variable_list) {
         if (var_name == elem.first) {
           continue;
         }
@@ -3778,12 +3777,12 @@ namespace {
 
         edgeblocks[p][b].id = edgeblock_id[b];
         if (name[0] != '\0') {
-          edgeblocks[p][b].name_ = &name[0];
+          edgeblocks[p][b].name_ = name.data();
         }
         if (p == 0) {
           glob_edgeblocks[b].id = edgeblock_id[b];
           if (name[0] != '\0') {
-            glob_edgeblocks[b].name_ = &name[0];
+            glob_edgeblocks[b].name_ = name.data();
           }
         }
 
@@ -4155,12 +4154,12 @@ namespace {
 
         faceblocks[p][b].id = faceblock_id[b];
         if (name[0] != '\0') {
-          faceblocks[p][b].name_ = &name[0];
+          faceblocks[p][b].name_ = name.data();
         }
         if (p == 0) {
           glob_faceblocks[b].id = faceblock_id[b];
           if (name[0] != '\0') {
-            glob_faceblocks[b].name_ = &name[0];
+            glob_faceblocks[b].name_ = name.data();
           }
         }
 
@@ -4568,7 +4567,7 @@ namespace {
 
     std::string var_name;
     int         out_position = -1;
-    for (auto &variable_name : variable_names) {
+    for (const auto &variable_name : variable_names) {
       if (variable_name.second > 0) {
         if (var_name != variable_name.first) {
           var_name = variable_name.first;
@@ -4616,9 +4615,7 @@ namespace {
                      variable_name.first, variable_name.second);
           throw std::runtime_error(errmsg.str());
         }
-        else {
-          global.truthTable[static_cast<int>(vars.objectType)][truth_table_loc] = 1;
-        }
+        global.truthTable[static_cast<int>(vars.objectType)][truth_table_loc] = 1;
       }
     }
 
@@ -4721,7 +4718,7 @@ namespace {
     const char *c2 = s2;
     for (;;) {
       if (::toupper(*c1) != ::toupper(*c2)) {
-        return (::toupper(*c1) - ::toupper(*c2));
+        return ::toupper(*c1) - ::toupper(*c2);
       }
       if (*c1 == '\0') {
         return 0;
@@ -4745,7 +4742,7 @@ namespace {
   inline bool is_whitespace(char c)
   {
     static char white_space[] = {' ', '\t', '\n', '\r', ',', '\0'};
-    return (strchr(white_space, c) != nullptr);
+    return strchr(white_space, c) != nullptr;
   }
 
   void compress_white_space(char *str)

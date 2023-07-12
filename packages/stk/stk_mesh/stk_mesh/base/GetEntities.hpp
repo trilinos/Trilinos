@@ -70,11 +70,19 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank,
                    std::vector< Entity> & entities,
                    bool sortByGlobalId = true);
 
+std::vector<Entity> get_entities(const BulkData & mesh, EntityRank entity_rank,
+                                 bool sortByGlobalId = true);
+
 void get_entities( const BulkData& bulk,
                    const EntityRank rank,
                    const Selector & selector ,
                    std::vector< Entity> & entities ,
                    bool sortByGlobalId = false );
+
+std::vector<Entity> get_entities(const BulkData& bulk,
+                                 const EntityRank rank,
+                                 const Selector & selector,
+                                 bool sortByGlobalId = false);
 
 /** \brief  Count entities in selected buckets (selected by the
  *          given selector instance)

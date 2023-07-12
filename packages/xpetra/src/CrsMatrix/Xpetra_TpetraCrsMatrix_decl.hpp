@@ -109,6 +109,10 @@ namespace Xpetra {
     //! Constructor specifying a previously constructed graph.
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
+    //! Constructor specifying a previously constructed graph and values array.
+    TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values,const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
+
+
     //! Constructor for a fused import
     TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,

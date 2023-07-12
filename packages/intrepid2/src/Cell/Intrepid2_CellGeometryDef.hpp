@@ -961,8 +961,6 @@ namespace Intrepid2
     ScalarView<Orientation, DeviceType> orientationsView("orientations", numOrientations);
     auto orientationsHost = Kokkos::create_mirror_view(typename HostExecSpace::memory_space(), orientationsView);
     
-    ScalarView<PointScalar, HostExecSpace> cellNodesHost("cellNodesHost",numOrientations,nodesPerCell); // (C,N) -- where C = numOrientations
-    
     DataVariationType cellVariationType;
     
     if (isGridType)
@@ -970,6 +968,7 @@ namespace Intrepid2
       // then there are as many distinct orientations possible as there are there are cells per grid cell
       // fill cellNodesHost with sample nodes from grid cell 0
       const int numSubdivisions = numCellsPerGridCell(subdivisionStrategy_); // can be up to 6
+      ScalarView<PointScalar, HostExecSpace> cellNodesHost("cellNodesHost",numOrientations,nodesPerCell); // (C,N) -- where C = numOrientations
       
 #if defined(INTREPID2_COMPILE_DEVICE_CODE)
       /// do not compile host only code with device
@@ -983,14 +982,14 @@ namespace Intrepid2
       });
 #endif
       cellVariationType = (numSubdivisions == 1) ? CONSTANT : MODULAR;
+      OrientationTools<HostExecSpace>::getOrientation(orientationsHost,cellNodesHost,this->cellTopology());
     }
     else
     {
       cellVariationType = GENERAL;
-      auto cellToNodesHost = Kokkos::create_mirror_view_and_copy(typename HostExecSpace::memory_space(), cellToNodes_);
+      auto cellNodesHost = Kokkos::create_mirror_view_and_copy(typename HostExecSpace::memory_space(), cellToNodes_);
+      OrientationTools<HostExecSpace>::getOrientation(orientationsHost,cellNodesHost,this->cellTopology());
     }
-    
-    OrientationTools<HostExecSpace>::getOrientation(orientationsHost,cellNodesHost,this->cellTopology());
     Kokkos::deep_copy(orientationsView,orientationsHost);
     
     const int orientationsRank = 1; // shape (C)
@@ -1337,6 +1336,21 @@ namespace Intrepid2
     }
   }
   
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::orientations(ScalarView<Orientation,DeviceType> orientationsView, const int &startCell, const int &endCell)
+  {
+    auto orientationsData = getOrientations();
+    const int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
+    
+    using ExecutionSpace = typename DeviceType::execution_space;
+    auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,numCellsWorkset);
+    Kokkos::parallel_for("copy orientations", policy, KOKKOS_LAMBDA(const int cellOrdinal)
+    {
+      orientationsView(cellOrdinal) = orientationsData(cellOrdinal);
+    });
+    ExecutionSpace().fence();
+  }
+
   template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
   int CellGeometry<PointScalar,spaceDim,DeviceType>::uniformJacobianModulus() const

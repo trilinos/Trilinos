@@ -31,8 +31,8 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class KernelHandle, class RowMapType, class EntriesType,
-          class ValuesType, class BType, class XType>
+template <class ExecutionSpace, class KernelHandle, class RowMapType,
+          class EntriesType, class ValuesType, class BType, class XType>
 struct sptrsv_solve_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -45,6 +45,7 @@ struct sptrsv_solve_eti_spec_avail {
     MEM_SPACE_TYPE)                                                         \
   template <>                                                               \
   struct sptrsv_solve_eti_spec_avail<                                       \
+      EXEC_SPACE_TYPE,                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -83,29 +84,39 @@ namespace Impl {
 #endif
 
 // Unification layer
-/// \brief Implementation of KokkosSparse::sptrsv_solve
+/// \brief Implementations of KokkosSparse::sptrsv_solve and
+/// \brief KokkosSparse::sptrsv_solve_streams
 
-template <class KernelHandle, class RowMapType, class EntriesType,
-          class ValuesType, class BType, class XType,
-          bool tpl_spec_avail =
-              sptrsv_solve_tpl_spec_avail<KernelHandle, RowMapType, EntriesType,
-                                          ValuesType, BType, XType>::value,
-          bool eti_spec_avail =
-              sptrsv_solve_eti_spec_avail<KernelHandle, RowMapType, EntriesType,
-                                          ValuesType, BType, XType>::value>
+template <class ExecutionSpace, class KernelHandle, class RowMapType,
+          class EntriesType, class ValuesType, class BType, class XType,
+          bool tpl_spec_avail = sptrsv_solve_tpl_spec_avail<
+              ExecutionSpace, KernelHandle, RowMapType, EntriesType, ValuesType,
+              BType, XType>::value,
+          bool eti_spec_avail = sptrsv_solve_eti_spec_avail<
+              ExecutionSpace, KernelHandle, RowMapType, EntriesType, ValuesType,
+              BType, XType>::value>
 struct SPTRSV_SOLVE {
   static void sptrsv_solve(KernelHandle *handle, const RowMapType row_map,
                            const EntriesType entries, const ValuesType values,
                            BType b, XType x);
+
+  static void sptrsv_solve_streams(
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<RowMapType> &row_map_v,
+      const std::vector<EntriesType> &entries_v,
+      const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v,
+      std::vector<XType> &x_v);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//! Full specialization of sptrsv_solve
+//! Full specialization of sptrsv_solve and sptrsv_solve_streams
 // Unification layer
-template <class KernelHandle, class RowMapType, class EntriesType,
-          class ValuesType, class BType, class XType>
-struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
-                    XType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class ExecutionSpace, class KernelHandle, class RowMapType,
+          class EntriesType, class ValuesType, class BType, class XType>
+struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
+                    ValuesType, BType, XType, false,
+                    KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void sptrsv_solve(KernelHandle *handle, const RowMapType row_map,
                            const EntriesType entries, const ValuesType values,
                            BType b, XType x) {
@@ -155,6 +166,48 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
     }
     Kokkos::Profiling::popRegion();
   }
+
+  static void sptrsv_solve_streams(
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<RowMapType> &row_map_v,
+      const std::vector<EntriesType> &entries_v,
+      const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v,
+      std::vector<XType> &x_v) {
+    // Call specific algorithm type
+    // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
+    //       Assume streams have the same either lower or upper matrix type
+    std::vector<typename KernelHandle::SPTRSVHandleType *> sptrsv_handle_v(
+        execspace_v.size());
+    for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
+      sptrsv_handle_v[i] = handle_v[i].get_sptrsv_handle();
+    }
+    Kokkos::Profiling::pushRegion(sptrsv_handle_v[0]->is_lower_tri()
+                                      ? "KokkosSparse_sptrsv[lower]"
+                                      : "KokkosSparse_sptrsv[upper]");
+    if (sptrsv_handle_v[0]->is_lower_tri()) {
+      for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
+        if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
+          Experimental::lower_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i],
+                                           entries_v[i]);
+        }
+      }
+      Experimental::lower_tri_solve_streams(execspace_v, sptrsv_handle_v,
+                                            row_map_v, entries_v, values_v, b_v,
+                                            x_v);
+    } else {
+      for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
+        if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
+          Experimental::upper_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i],
+                                           entries_v[i]);
+        }
+      }
+      Experimental::upper_tri_solve_streams(execspace_v, sptrsv_handle_v,
+                                            row_map_v, entries_v, values_v, b_v,
+                                            x_v);
+    }
+    Kokkos::Profiling::popRegion();
+  }
 };
 
 #endif
@@ -172,6 +225,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
   extern template struct SPTRSV_SOLVE<                                      \
+      EXEC_SPACE_TYPE,                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -200,6 +254,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
   template struct SPTRSV_SOLVE<                                             \
+      EXEC_SPACE_TYPE,                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -225,6 +280,5 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
       false, true>;
 
 #include <KokkosSparse_sptrsv_solve_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_sptrsv_solve_eti_spec_decl.hpp>
 
 #endif

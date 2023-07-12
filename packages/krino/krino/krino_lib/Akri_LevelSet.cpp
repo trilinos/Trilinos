@@ -767,6 +767,7 @@ void LevelSet::redistance() { redistance(my_meta.universal_part()); }
 void
 LevelSet::redistance(const stk::mesh::Selector & volumeSelector)
 {
+  stk::diag::TimeBlock timer__(my_redistance_timer);
 
   STK_ThrowErrorMsgIf(!my_time_of_arrival_element_speed_field_name.empty(), "Redistancing a time-of-arrival field will corrupt it.");
 
@@ -834,7 +835,7 @@ static void append_facets_from_triangle_side(const stk::mesh::BulkData & mesh, c
 {
   const std::array<stk::mesh::Entity,3> orientedSideNodes = get_oriented_triangle_side_nodes(mesh, negativeSideElementSelector, side);
 
-  const std::array<Vector3d,3> sideNodeCoords{{Vector3d(field_data<double>(coords, orientedSideNodes[0]), 3), Vector3d(field_data<double>(coords, orientedSideNodes[1]), 3), Vector3d(field_data<double>(coords, orientedSideNodes[2]), 3)}};
+  const std::array<stk::math::Vector3d,3> sideNodeCoords{{stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[0]), 3), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[1]), 3), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[2]), 3)}};
   std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2] );
   facets.add( std::move(facet) );
 }
@@ -853,7 +854,7 @@ static void append_facets_from_line_side(const stk::mesh::BulkData & mesh, const
 {
   const std::array<stk::mesh::Entity,2> orientedSideNodes = get_oriented_line_side_nodes(mesh, negativeSideElementSelector, side);
 
-  const std::array<Vector3d,2> sideNodeCoords{{Vector3d(field_data<double>(coords, orientedSideNodes[0]), 2), Vector3d(field_data<double>(coords, orientedSideNodes[1]), 2)}};
+  const std::array<stk::math::Vector3d,2> sideNodeCoords{{stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[0]), 2), stk::math::Vector3d(field_data<double>(coords, orientedSideNodes[1]), 2)}};
   std::unique_ptr<Facet> facet = std::make_unique<Facet2d>(sideNodeCoords[0], sideNodeCoords[1]);
   facets.add( std::move(facet) );
 }
@@ -926,7 +927,7 @@ LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bo
     else
       krinolog << "Redistancing the level set field using a fast marching method..." << stk::diag::dendl;
 
-    Fast_Marching fm(*this, selector, get_timer());
+    Fast_Marching fm(*this, selector, my_redistance_timer);
     fm.redistance();
   }
   else
@@ -943,7 +944,12 @@ LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bo
       krinolog << "Redistancing the level set field using a fast iterative method..." << stk::diag::dendl;
     }
 
-    FastIterativeMethod fim(mesh(), selector, get_coordinates_field(), get_distance_field(), get_interface_speed, get_timer());
+    FastIterativeMethod fim(mesh(),
+        selector,
+        get_coordinates_field(),
+        get_distance_field(),
+        get_interface_speed,
+        my_redistance_timer);
     fim.redistance();
     STK_ThrowAssertMsg(fim.check_converged_solution(), "Fast iterative method did not fully converge.");
   }
@@ -1128,7 +1134,7 @@ LevelSet::compute_continuous_gradient() const
 void
 LevelSet::compute_nodal_bbox( const stk::mesh::Selector & selector,
     BoundingBox & node_bbox,
-    const Vector3d & displacement ) const
+    const stk::math::Vector3d & displacement ) const
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::compute_nodal_bbox( BoundingBox & node_bboxes, const double & deltaTime ) const"); /* %TRACE% */
 
   // find the local nodal bounding box
@@ -1150,7 +1156,7 @@ LevelSet::compute_nodal_bbox( const stk::mesh::Selector & selector,
     for (size_t i = 0; i < length; ++i)
     {
 
-      Vector3d x_bw(Vector3d::ZERO);
+      stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
       for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
       {
         int index = i*spatial_dimension+dim;
@@ -1177,7 +1183,7 @@ LevelSet::prepare_to_compute_distance( const double & deltaTime, const stk::mesh
   // nodes on that proc plus the narrow_band size
 
   BoundingBox node_bbox;
-  const Vector3d displacement = deltaTime * get_extension_velocity();
+  const stk::math::Vector3d displacement = deltaTime * get_extension_velocity();
   compute_nodal_bbox( selector, node_bbox, displacement );
 
   facets_old->prepare_to_compute(node_bbox, my_narrow_band_size);
@@ -1193,7 +1199,7 @@ LevelSet::compute_distance_semilagrangian( const double & deltaTime, const stk::
 
   const FieldRef xField = get_coordinates_field();
   const FieldRef dField = get_distance_field();
-  const Vector3d extv = get_extension_velocity();
+  const stk::math::Vector3d extv = get_extension_velocity();
 
   const stk::mesh::Selector active_field_selector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(dField);
   stk::mesh::BucketVector const& buckets = mesh().get_buckets(stk::topology::NODE_RANK, active_field_selector);
@@ -1215,7 +1221,7 @@ LevelSet::compute_distance_semilagrangian( const double & deltaTime, const stk::
     {
       for (size_t i = 0; i < length; ++i)
       {
-        Vector3d x_node(Vector3d::ZERO);
+        stk::math::Vector3d x_node(stk::math::Vector3d::ZERO);
         for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
         {
           int index = i*spatial_dimension+dim;
@@ -1238,7 +1244,7 @@ LevelSet::compute_distance_semilagrangian( const double & deltaTime, const stk::
     {
       for (size_t i = 0; i < length; ++i)
       {
-        Vector3d x_bw(Vector3d::ZERO);
+        stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
         for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
         {
           int index = i*spatial_dimension+dim;
@@ -1264,7 +1270,7 @@ LevelSet::compute_distance( stk::mesh::Entity n,
 
   const FieldRef xField = get_coordinates_field();
   const FieldRef dField = get_distance_field();
-  const Vector3d extv = get_extension_velocity();
+  const stk::math::Vector3d extv = get_extension_velocity();
 
   double *x = field_data<double>( xField , n);
   double *d = field_data<double>( dField , n);
@@ -1275,7 +1281,7 @@ LevelSet::compute_distance( stk::mesh::Entity n,
   // for regular semilagrangian advancement).
   if ( deltaTime == 0. )
   {
-    Vector3d x_node(Vector3d::ZERO);
+    stk::math::Vector3d x_node(stk::math::Vector3d::ZERO);
     for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
     {
       x_node[dim] = x[dim];
@@ -1286,7 +1292,7 @@ LevelSet::compute_distance( stk::mesh::Entity n,
   }
   else
   {
-    Vector3d x_bw(Vector3d::ZERO);
+    stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
     for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
     {
       x_bw[dim] = x[dim] - extv[dim] * deltaTime;
@@ -1300,7 +1306,7 @@ LevelSet::compute_distance( stk::mesh::Entity n,
 //-----------------------------------------------------------------------------------
 
 double
-LevelSet::distance( const Vector3d & x,
+LevelSet::distance( const stk::math::Vector3d & x,
 		    const int previous_sign,
 		    const bool enforce_sign ) const
 { /* %TRACE% */  /* %TRACE% */
@@ -1451,10 +1457,10 @@ LevelSet::remove_wall_features() const
           if(std::fabs(dist[n]) > my_max_feature_size) continue;
 
           ContourElement ls_elem( mesh(), elem, coordinates_field, dField );
-          const Vector3d p_coords(1/3., 1/3., 1/3.);
-          const Vector3d grad_dist_vec = ls_elem.distance_gradient(p_coords);
+          const stk::math::Vector3d p_coords(1/3., 1/3., 1/3.);
+          const stk::math::Vector3d grad_dist_vec = ls_elem.distance_gradient(p_coords);
 
-          Vector3d face_normal;
+          stk::math::Vector3d face_normal;
 
           //assume linear tet or tri elements!
           if(spatial_dimension == 2)
@@ -1469,7 +1475,7 @@ LevelSet::remove_wall_features() const
               if(elem_nodes[j] != side_nodes[0] && elem_nodes[j] != side_nodes[spatial_dimension-1])
               {
                 double *coord = field_data<double>(coordinates_field,elem_nodes[j]);
-                const Vector3d vec_check(coord[0]-coords[0][0], coord[1]-coords[0][1], 0);
+                const stk::math::Vector3d vec_check(coord[0]-coords[0][0], coord[1]-coords[0][1], 0);
 
                 if(Dot(face_normal, vec_check) < 0)
                 {
@@ -1481,8 +1487,8 @@ LevelSet::remove_wall_features() const
           }
           else
           {
-            const Vector3d x1 (coords[1][0]-coords[0][0], coords[1][1]-coords[0][1],coords[1][2]-coords[0][2]);
-            const Vector3d x2 (coords[2][0]-coords[0][0], coords[2][1]-coords[0][1],coords[2][2]-coords[0][2]);
+            const stk::math::Vector3d x1 (coords[1][0]-coords[0][0], coords[1][1]-coords[0][1],coords[1][2]-coords[0][2]);
+            const stk::math::Vector3d x2 (coords[2][0]-coords[0][0], coords[2][1]-coords[0][1],coords[2][2]-coords[0][2]);
             face_normal = -1.0*Cross(x1,x2);
           }
 
@@ -1909,30 +1915,30 @@ LevelSet::build(
 }
 
 //--------------------------------------------------------------------------------
-LevelSet::LevelSet(
-    stk::mesh::MetaData & in_meta,
+LevelSet::LevelSet(stk::mesh::MetaData & in_meta,
     const std::string & in_name,
-    const stk::diag::Timer & parent_timer ) :
-    my_meta(in_meta),
-    my_aux_meta(AuxMetaData::get(in_meta)),
-    my_identifier(Surface_Manager::get(in_meta).get_identifier(in_name)),
-    my_name(Surface_Manager::get(in_meta).get_name(my_identifier)),
-    my_parent_timer(parent_timer),
-    my_timer("LevelSet", parent_timer),
-    spatial_dimension(in_meta.spatial_dimension()),
-    my_narrow_band_multiplier(0.0),
-    my_narrow_band_size(0.0),
-    my_max_feature_size(-1.0),
-    my_ic_offset(0.0),
-    my_ic_scale(1.0),
-    my_perform_initial_redistance(false),
-    my_keep_IC_surfaces(false),
-    my_threshold(0.0),
-    my_redistance_method(CLOSEST_POINT),
-    epsilon(1.0e-16),
-    trackIsoSurface(false),
-    my_facetFileIndex(1),
-    my_needs_reinitialize_every_step(false)
+    const stk::diag::Timer & parent_timer)
+    : my_meta(in_meta),
+      my_aux_meta(AuxMetaData::get(in_meta)),
+      my_identifier(Surface_Manager::get(in_meta).get_identifier(in_name)),
+      my_name(Surface_Manager::get(in_meta).get_name(my_identifier)),
+      my_parent_timer(parent_timer),
+      my_timer("LevelSet", parent_timer),
+      my_redistance_timer("Redistance", my_timer),
+      spatial_dimension(in_meta.spatial_dimension()),
+      my_narrow_band_multiplier(0.0),
+      my_narrow_band_size(0.0),
+      my_max_feature_size(-1.0),
+      my_ic_offset(0.0),
+      my_ic_scale(1.0),
+      my_perform_initial_redistance(false),
+      my_keep_IC_surfaces(false),
+      my_threshold(0.0),
+      my_redistance_method(CLOSEST_POINT),
+      epsilon(1.0e-16),
+      trackIsoSurface(false),
+      my_facetFileIndex(1),
+      my_needs_reinitialize_every_step(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::LevelSet(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
   my_coordinates_field = my_aux_meta.get_current_coordinates();
 

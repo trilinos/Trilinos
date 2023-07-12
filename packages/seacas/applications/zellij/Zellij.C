@@ -264,7 +264,7 @@ namespace {
         }
         break;
       }
-      else if (in_lattice) {
+      if (in_lattice) {
         // TODO: Currently assumes that each row in the lattice is defined on a single row;
         //       This will need to be relaxed since a lattice of 5000x5000 would result in
         //       lines that are too long and would be easier to split a row over multiple lines...

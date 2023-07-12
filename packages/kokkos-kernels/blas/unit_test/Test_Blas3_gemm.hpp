@@ -19,6 +19,8 @@
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
@@ -33,7 +35,7 @@ struct gemm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -91,7 +93,8 @@ void build_matrices(const int M, const int N, const int K,
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
   // Trilinos issue #6418
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   Kokkos::fill_random(A, rand_pool,
                       Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
@@ -139,7 +142,7 @@ struct DiffGEMM {
   ViewTypeC C, C2;
 
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   KOKKOS_INLINE_FUNCTION
@@ -174,7 +177,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   double machine_eps = APT::epsilon();
@@ -184,7 +187,8 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   ViewTypeC C("C", M, N);
   ViewTypeC C2("C", M, N);
 
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
@@ -253,16 +257,15 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   }
 }
 
-template <typename Scalar, typename Layout>
-void impl_test_stream_gemm(const int M, const int N, const int K,
-                           const Scalar alpha, const Scalar beta) {
-  using execution_space = TestExecSpace;
-  using ViewTypeA       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeB       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeC       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ScalarC         = typename ViewTypeC::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarC>;
-  using mag_type        = typename APT::mag_type;
+template <typename Scalar, typename Layout, typename execution_space>
+void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
+                                 const Scalar alpha, const Scalar beta) {
+  using ViewTypeA = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ViewTypeB = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ViewTypeC = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ScalarC   = typename ViewTypeC::value_type;
+  using APT       = Kokkos::ArithTraits<ScalarC>;
+  using mag_type  = typename APT::mag_type;
 
   const char tA[]          = {"N"};
   const char tB[]          = {"N"};
@@ -368,12 +371,17 @@ void test_gemm() {
       }
     }
   }
-  Test::impl_test_stream_gemm<Scalar, Layout>(53, 42, 17, 4.5,
-                                              3.0);  // General code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(
-      13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(7, 13, 17, 4.5,
-                                              3.0);  // dot based gemm code path
+  auto pool_size = TestExecSpace().concurrency();
+  if (pool_size >= 2) {
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestExecSpace>(
+        53, 42, 17, 4.5,
+        3.0);  // General code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestExecSpace>(
+        13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestExecSpace>(
+        7, 13, 17, 4.5,
+        3.0);  // dot based gemm code path
+  }
 }
 
 template <typename Scalar>
