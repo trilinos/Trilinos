@@ -44,6 +44,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
@@ -1747,6 +1748,10 @@ unpackAndCombineIntoCrsArrays_new (
   typedef typename ArrayView<const LO>::size_type size_type;
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays_new: ";
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+   using Teuchos::TimeMonitor;
+   Teuchos::RCP<TimeMonitor> tm;
+#  endif
 
   using Kokkos::MemoryUnmanaged;
 
@@ -1773,14 +1778,26 @@ unpackAndCombineIntoCrsArrays_new (
                                             "permute_from_lids");
 
   // TargetNumNonzeros is number of nonzeros in local matrix.
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineWithOwningPIDsCount"))));
+# endif
   size_t TargetNumNonzeros =
      UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
       local_matrix, permute_from_lids_d, imports_d,
       num_packets_per_lid_d, numSameIDs);
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::null;
+# endif
 
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("resize CRS pointers"))));
+# endif
   CRS_rowptr.resize (TargetNumRows+1);
   CRS_colind.resize(TargetNumNonzeros);
   CRS_vals.resize(TargetNumNonzeros);
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::null;
+# endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
@@ -1797,7 +1814,10 @@ unpackAndCombineIntoCrsArrays_new (
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
-  // Convert input arrays to Kokkos::View
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("create mirror views from inputs"))));
+# endif
+  // Convert input arrays to Kokkos::Views
   DT outputDevice;
   auto import_lids_d =
     create_mirror_view_from_raw_host_array(outputDevice, importLIDs.getRawPtr(),
@@ -1847,6 +1867,10 @@ unpackAndCombineIntoCrsArrays_new (
     create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
         TargetPids.size(), true, "tgt_pids");
 
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::null;
+# endif
+
   size_t bytes_per_value = 0;
   if (PackTraits<ST>::compileTimeSize) {
     // assume that ST is default constructible
@@ -1883,14 +1907,23 @@ unpackAndCombineIntoCrsArrays_new (
     "never happen, since std::complex does not work in Kokkos::View objects.");
 #endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineIntoCrsArrays"))));
+# endif
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
       local_matrix, local_col_map, import_lids_d, imports_d,
       num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
       crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, tgt_pids_d,
       numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
       bytes_per_value);
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::null;
+# endif
 
   // Copy outputs back to host
+# ifdef HAVE_TPETRA_MMM_TIMINGS
+  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
+# endif
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
