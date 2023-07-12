@@ -87,6 +87,7 @@ tribits_add_advanced_test(reduced_tarball
   OVERALL_WORKING_DIRECTORY TEST_NAME
   HOSTTYPE Linux
   EXCLUDE_IF_NOT_TRUE ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE
+    ${CMAKE_PROJECT_NAME}_ENABLE_Kokkos
 
   TEST_0
     MESSAGE "Create the reduced tarball for the enabled packages"
@@ -123,12 +124,18 @@ tribits_add_advanced_test(reduced_tarball
 
   )
 # NOTE: The above test makes sure that you can create the reduced tarball for
-# the given set of enabled packages.  We only add the test of the
-# configuration options are passed through a
+# the given set of enabled packages.
+#
+# NOTE: We only add the test if the configuration options are passed through a
 # ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE file.  (Does not work if you to
 # include them with -C <cache-file>.cmake.  You can only pass through
 # configure options through ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE since
 # the CMake project knows these.)
+#
+# NOTE: Since the configuration of Trilinos requires the existence of some
+# files under packages/kokkos/ so we don't try to bother creating a reduced
+# Trilinos tarball when Kokkos is not enabled.  Otherwise, the configuration
+# of the untarred Trilinos directory will fail since it is missing Kokkos.
 
 
 ################################################################################
