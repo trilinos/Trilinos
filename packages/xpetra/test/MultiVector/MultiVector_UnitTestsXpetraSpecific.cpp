@@ -127,7 +127,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, XpetraSpecific_GetHostLocalView, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     using Teuchos::RCP;
     using Teuchos::rcp;
 
@@ -197,7 +196,6 @@ namespace {
 
     // delete vector
     mv = Teuchos::null;
-#endif // HAVE_XPETRA_KOKKOS_REFACTOR
   }
 
 

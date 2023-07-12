@@ -552,8 +552,6 @@ struct SolutionSet {
         auto host_lro_input_tensor_rank = create_mirror_view(_lro_input_tensor_rank);
 
         int total_offset = 0; // need total offset
-        int output_offset = 0;
-        int input_offset = 0;
 
         for (size_t i=0; i<_lro.size(); ++i) {
             host_lro_total_offsets(i) = total_offset;
@@ -568,8 +566,6 @@ struct SolutionSet {
             host_lro_input_tile_size(i) = input_tile_size;
 
             total_offset += input_tile_size * output_tile_size;
-            output_offset += output_tile_size;
-            input_offset += input_tile_size;
 
             // the target functional output rank is based on the output rank of the sampling
             // functional used

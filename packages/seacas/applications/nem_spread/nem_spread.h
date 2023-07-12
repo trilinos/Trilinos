@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef NEM_SPREAD_H
-#define NEM_SPREAD_H
+#pragma once
 
 #include "globals.h"
 #include "nem_spread.h"        // for NemSpread, etc
@@ -163,5 +162,3 @@ public:
 
   ~NemSpread() { safe_free((void **)&GM_Elem_Types); }
 };
-
-#endif

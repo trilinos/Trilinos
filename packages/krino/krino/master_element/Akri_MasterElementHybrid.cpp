@@ -52,6 +52,7 @@ MasterElementHybrid::MasterElementHybrid(
   m_refPoints.resize(m_numIntgPts*m_numElemDims);
   m_refWeights.resize(m_numIntgPts);
   m_refCoords.resize(m_numNodes*m_numElemDims);
+  m_refVolume = m_Basis->parametric_volume();
 
   // retrieve the cubature points and weights
   std::vector<int> refPointsDims = {m_numIntgPts, m_numElemDims};

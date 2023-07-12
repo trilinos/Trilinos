@@ -320,9 +320,8 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
 
   {//CMS
-    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    *out<<"***** A *****"<<std::endl;
-    crsmatrix->describe(*out,Teuchos::VERB_EXTREME);
+    out<<"***** A *****"<<std::endl;
+    crsmatrix->describe(out,Teuchos::VERB_EXTREME);
   }
 
   //----------------Default trisolver----------------//
@@ -343,13 +342,12 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     prec.compute();
    
   {//CMS
-    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    *out<<"***** Test L *****"<<std::endl;
-    prec.getL().describe(*out,Teuchos::VERB_EXTREME);
-    *out<<"***** Test U *****"<<std::endl;
-    prec.getU().describe(*out,Teuchos::VERB_EXTREME);
-    *out<<"***** Test D *****"<<std::endl;
-    prec.getD().describe(*out,Teuchos::VERB_EXTREME);
+    out<<"***** Test L *****"<<std::endl;
+    prec.getL().describe(out,Teuchos::VERB_EXTREME);
+    out<<"***** Test U *****"<<std::endl;
+    prec.getU().describe(out,Teuchos::VERB_EXTREME);
+    out<<"***** Test D *****"<<std::endl;
+    prec.getD().describe(out,Teuchos::VERB_EXTREME);
   }
 
  

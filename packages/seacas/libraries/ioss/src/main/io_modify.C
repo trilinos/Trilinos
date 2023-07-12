@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -146,7 +146,7 @@ namespace {
                                   const std::vector<int> &filter);
   void rotate_filtered_coordinates(Ioss::Region &region, real rotation_matrix[3][3],
                                    const std::vector<int> &filter);
-  void update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle);
+  bool update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle);
 
   void set_db_properties(const Modify::Interface &interFace, Ioss::DatabaseIO *dbi);
 
@@ -328,12 +328,12 @@ int main(int argc, char *argv[])
     std::string input;
     if (from_term) {
       fmt::print(fg(fmt::terminal_color::magenta), "\n");
-      const char *cinput = io_getline_int("COMMAND> ");
+      const char *cinput = Ioss::getline_int("COMMAND> ");
       if (cinput && cinput[0] == '\0') {
         break;
       }
       if (cinput) {
-        io_gl_histadd(cinput);
+        Ioss::gl_histadd(cinput);
       }
       input = cinput;
     }
@@ -1256,7 +1256,7 @@ namespace {
       idx++;
       while (!(Ioss::Utils::str_equal(tokens[idx], "x") ||
                Ioss::Utils::str_equal(tokens[idx], "y") ||
-               Ioss::Utils::str_equal(tokens[idx], "x"))) {
+               Ioss::Utils::str_equal(tokens[idx], "z"))) {
         auto  name = tokens[idx++];
         auto *ge   = region.get_entity(name, Ioss::ELEMENTBLOCK);
         if (ge == nullptr) {
@@ -1308,7 +1308,10 @@ namespace {
       do {
         std::string axis  = tokens[idx++];
         double      angle = std::stod(tokens[idx++]);
-        update_rotation_matrix(rotation_matrix, axis, angle);
+        auto        ok    = update_rotation_matrix(rotation_matrix, axis, angle);
+        if (!ok) {
+          return false;
+        }
       } while (idx < tokens.size());
 
       // Do the rotation...
@@ -1649,7 +1652,7 @@ namespace {
       std::string       out_file  = interFace.filename() + ".mod";
       std::string       file_type = interFace.type();
       Ioss::DatabaseIO *dbo       = Ioss::IOFactory::create(
-                file_type, out_file, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
+          file_type, out_file, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
 
       if (dbo == nullptr || !dbo->ok(true)) {
         std::exit(EXIT_FAILURE);
@@ -1797,7 +1800,7 @@ namespace {
     nb->put_field_data("mesh_model_coordinates", coord);
   }
 
-  void update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle)
+  bool update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle)
   {
     int n1 = 0;
     int n2 = 0;
@@ -1817,6 +1820,12 @@ namespace {
       n1 = 0;
       n2 = 1;
       n3 = 2;
+    }
+    else {
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: Requested rotation axis '{}' is not valid.  Must be 'x', 'y', or 'z'\n",
+                 axis);
+      return false;
     }
 
     static real degang  = std::atan2(0.0L, -1.0L) / 180.0;
@@ -1850,6 +1859,7 @@ namespace {
         rotation_matrix[i][j] = res[i][j];
       }
     }
+    return true;
   }
 
   void modify_time(Ioss::Region &region, double scale, double offset)

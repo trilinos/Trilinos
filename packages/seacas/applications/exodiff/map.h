@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef EXODIFF_MAP_H
-#define EXODIFF_MAP_H
+#pragma once
 #include "exoII_read.h"
 
 enum class MapType { FILE_ORDER = 0, PARTIAL, USE_FILE_IDS, DISTANCE };
@@ -32,5 +31,3 @@ bool Check_Maps(const std::vector<INT> &node_map, const std::vector<INT> &elmt_m
 template <typename INT>
 bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
                   const std::vector<INT> &elmt_map, bool partial_flag);
-
-#endif

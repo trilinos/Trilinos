@@ -84,6 +84,9 @@ if SmartGetLocalProcessId() == 0:
 #def UseDataSetupMapB(inDataSetupMapB):
 #  PhactoriScript.UseDataSetupMapB_ps(inDataSetupMapB)
 
+global gMyInitialUpdateFrequencies
+gMyInitialUpdateFrequencies = {}
+
 def CreateCoProcessor():
   def _CreatePipeline(coprocessor, datadescription):
     class Pipeline:
@@ -102,7 +105,7 @@ def CreateCoProcessor():
 #reuse same coprocesor instance (?), then have LocalWriteImages3 only do the images for a given output results bloxk:q
 
       #PhactoriScript.CreatePipeline(datadescription)
-
+    
     return Pipeline()
 
   class CoProcessor(coprocessing.CoProcessor):
@@ -115,11 +118,29 @@ def CreateCoProcessor():
     def LocalExportOperationsData3(self, datadescription, rescale_lookuptable=False):
       ExportOperationsDataForCurrentPipeAndViewsState(datadescription)
 
-
+    def SetInitialUpdateFrequences(self, datadescription):
+      global gMyInitialUpdateFrequencies
+      freqsChanged = False
+      numInputGrids = datadescription.GetNumberOfInputDescriptions()
+      for ii in range(0,numInputGrids):
+        oneGridName = datadescription.GetInputDescriptionName(ii)
+        if PhactoriDbg():
+          myDebugPrint3("SetInitialUpdateFrequences " + str(ii) + " " + str(oneGridName) + "\n")
+        if oneGridName not in gMyInitialUpdateFrequencies:
+          gMyInitialUpdateFrequencies[oneGridName] = [1]
+          freqsChanged = True
+      if PhactoriDbg():
+        if freqsChanged:
+          myDebugPrint3("gMyInitialUpdateFrequencies changed:\n")
+        else:
+          myDebugPrint3("gMyInitialUpdateFrequencies not changed:\n")
+        myDebugPrint3(str(gMyInitialUpdateFrequencies) + "\n")
+      if freqsChanged:
+        self.SetUpdateFrequencies(gMyInitialUpdateFrequencies)
 
   coprocessor = CoProcessor()
-  freqs = {'input': [1]}
-  coprocessor.SetUpdateFrequencies(freqs)
+  #freqs = {'input': [1]}
+  #coprocessor.SetUpdateFrequencies(freqs)
   return coprocessor
 
 
@@ -233,7 +254,7 @@ def compareTearDeath(tList, dList):
   myDebugPrint2('compareTearDeath entered\n')
   myDebugPrint2('compareTearDeath returning\n')
 #end tear/death persistence; not used now but may be useful later
-
+   
 
 # ---------------------- Data Selection method ----------------------
 
@@ -249,19 +270,24 @@ gCatchAllExceptionsAndPassUpFlag = True
 
 def RequestDataDescription(datadescription):
   myDebugPrint3("PhactoriDriver.RequestDataDescription entered: " + str(gDoCoProcessingCount)+ "\n");
+  if PhactoriDbg():
+    numInputGrids = datadescription.GetNumberOfInputDescriptions()
+    for ii in range(0,numInputGrids):
+      oneGridName = datadescription.GetInputDescriptionName(ii)
+      myDebugPrint3("RequestDataDescription " + str(ii) + " " + str(oneGridName) + "\n")
 
   TestUserDataForBypassScript(datadescription)
 
   if GetBypassUserDataFlag() == False:
     fd = datadescription.GetUserData()
-
+ 
     if fd == None:
       myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
 
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag:
+  if gCatchAllExceptionsAndPassUpFlag: 
     try:
       return RequestDataDescriptionSub(datadescription)
     except:
@@ -279,7 +305,7 @@ def RequestDataDescriptionSub(datadescription):
 
     if GetBypassUserDataFlag() == False:
       fd = datadescription.GetUserData()
-
+ 
       if fd == None:
         myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
@@ -297,8 +323,11 @@ def RequestDataDescriptionSub(datadescription):
         gSkipCountdown = gSkipCountdown - 1
         return 0
       coprocessor = CreateCoProcessor()
+      coprocessor.SetInitialUpdateFrequences(datadescription)
       coprocessor.EnableLiveVisualization(False)
       gFirstTimeInDoCoProcessing = False
+    else:
+      coprocessor.SetInitialUpdateFrequences(datadescription)
 
     #import pdb
     #pdb.set_trace()
@@ -331,17 +360,23 @@ gDoCoProcessingCount = 0
 
 def DoCoProcessing(datadescription):
   myDebugPrint3("PhactoriDriver.DoCoProcessing entered: " + str(gDoCoProcessingCount)+ "\n");
+  if PhactoriDbg():
+    numInputGrids = datadescription.GetNumberOfInputDescriptions()
+    for ii in range(0,numInputGrids):
+      oneGridName = datadescription.GetInputDescriptionName(ii)
+      myDebugPrint3("DoCoProcessing " + str(ii) + " " + str(oneGridName) + "\n")
+
 
   fd = datadescription.GetUserData()
-
+ 
   if GetBypassUserDataFlag() == False:
     if fd == None:
       myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
-
+ 
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag:
+  if gCatchAllExceptionsAndPassUpFlag: 
     try:
       DoCoProcessingSub(datadescription)
     except:
@@ -361,13 +396,13 @@ def DoCoProcessingSub(datadescription):
 
 
     fd = datadescription.GetUserData()
-
+ 
     if GetBypassUserDataFlag() == False:
       if fd == None:
         myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
         return returnViewMapC
-
+ 
     global coprocessor
     global gFirstTimeInDoCoProcessing
     global gSkipCountdown
@@ -378,8 +413,11 @@ def DoCoProcessingSub(datadescription):
       if gSkipCountdown > 0:
         return
       coprocessor = CreateCoProcessor()
+      coprocessor.SetInitialUpdateFrequences(datadescription)
       coprocessor.EnableLiveVisualization(False)
       gFirstTimeInDoCoProcessing = False
+    else:
+      coprocessor.SetInitialUpdateFrequences(datadescription)
 
     #import pdb
     #pdb.set_trace()
@@ -437,7 +475,7 @@ def DoCoProcessingSub(datadescription):
     coprocessor.WriteData(datadescription)
 
     coprocessor.LocalExportOperationsData3(datadescription)
-
+   
     # Write image capture (Last arg: rescale lookup table), if appropriate.
     coprocessor.LocalWriteImages3(datadescription,
         rescale_lookuptable=False)
@@ -472,3 +510,4 @@ def DoCoProcessingSub(datadescription):
 
     # Live Visualization, if enabled.
     coprocessor.DoLiveVisualization(datadescription, "localhost", 22222)
+

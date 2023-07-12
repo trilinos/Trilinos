@@ -29,7 +29,7 @@ public:
   template <typename T>
   void execute(Value& value)
   {
-    m_buffer.pack(Teuchos::any_cast<T>(value.value));
+    m_buffer.pack(std::any_cast<T>(value.value));
   }
 
 private:

@@ -9,8 +9,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -33,6 +31,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
@@ -55,8 +55,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -79,6 +77,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
@@ -96,6 +96,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

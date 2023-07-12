@@ -1,11 +1,11 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
@@ -133,15 +133,13 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     COMM serial mpi
     )
 
-  IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      TogglePFactory_driver
-      NAME "Driver_TogglePFactory_semi_tent_kokkos_Tpetra"
-      ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_tent_kokkos.xml --linAlgebra=Tpetra"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
-  ENDIF()
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    TogglePFactory_driver
+    NAME "Driver_TogglePFactory_semi_tent_kokkos_Tpetra"
+    ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_tent_kokkos.xml --linAlgebra=Tpetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+  )
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ToggleDriver_cp

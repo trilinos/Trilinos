@@ -50,9 +50,9 @@ class TestPhactoriVtkCellOperations(unittest.TestCase):
     points.InsertNextPoint(pointList[5])
     points.InsertNextPoint(pointList[6])
     points.InsertNextPoint(pointList[7])
-
+ 
     # Create a hexahedron from the points
-    hex = vtk.vtkHexahedron()
+    hex = vtk.vtkHexahedron() 
     hex.GetPointIds().SetId(0,0)
     hex.GetPointIds().SetId(1,1)
     hex.GetPointIds().SetId(2,2)
@@ -61,11 +61,11 @@ class TestPhactoriVtkCellOperations(unittest.TestCase):
     hex.GetPointIds().SetId(5,5)
     hex.GetPointIds().SetId(6,6)
     hex.GetPointIds().SetId(7,7)
-
+ 
     # Add the hexahedron to a cell array
     hexs = vtk.vtkCellArray()
     hexs.InsertNextCell(hex)
-
+ 
     # Add the points and hexahedron to an unstructured grid
     uGrid = vtk.vtkUnstructuredGrid()
     uGrid.SetPoints(points)
@@ -268,9 +268,7 @@ class TestPhactoriVtkCellOperations(unittest.TestCase):
     self.assertEqual(testStatus, 12)
     testStatus = PhactoriFindSurfaceStatusForOneCellUsingFaceInfo(wv1grid, 20, cellsTouchingEachFace)
     counts1 = cellsTouchingEachFace.GetNumberOfCellsTouchingEachFaceOfOneCell(20)
-    print(20, counts1)
     extList1 = cellsTouchingEachFace.GetListOfExteriorFacesOnCellByIndex(20)
-    print(20, extList1)
     self.assertEqual(testStatus, 6)
     testStatus = PhactoriFindSurfaceStatusForOneCellUsingFaceInfo(wv1grid, (20*20*20-1)-1, cellsTouchingEachFace)
     self.assertEqual(testStatus, 12)
@@ -431,12 +429,12 @@ class TestPhactoriVtkCellOperations(unittest.TestCase):
     self.assertEqual(testEdgeVec, [0.0, 0.0, 4.0])
     testEdgeVec = PhactoriGetCellEdgeVector(testugrid1, testhex1, 11)
     self.assertEqual(testEdgeVec, [0.0, 0.0, 3.0])
-
+    
   def test_PhactoriFindCellEdgeAngleMetricsForOneCell(self):
     testugrid1 = self.MakeOneHexahdronGrid1()
     testAngle, testHeight = PhactoriFindCellEdgeAngleMetricsForOneCell(testugrid1, 0, True, 0)
     self.assertEqual(testAngle, 67.38013505195958)
-    self.assertEqual(testHeight, 3.692307692307693)
+    self.assertEqual(testHeight, 3.692307692307693) 
     testugrid2 = self.MakeOneFlatHexahdronGrid1()
     testAngle, testHeight = PhactoriFindCellEdgeAngleMetricsForOneCell(testugrid2, 0, True, 0)
     self.assertEqual(testAngle, 10.024987862075733)
@@ -450,3 +448,5 @@ if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
+
+

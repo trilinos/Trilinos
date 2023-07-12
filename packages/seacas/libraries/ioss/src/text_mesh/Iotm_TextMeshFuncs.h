@@ -6,8 +6,8 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <ctype.h>                                   // for toupper
-#include <stddef.h>                                  // for size_t
+#include <cctype>                                   // for toupper
+#include <cstddef>                                  // for size_t
 #include <algorithm>                                 // for remove, etc
 #include <iterator>                                  // for insert_iterator
 #include <map>

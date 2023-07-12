@@ -59,7 +59,7 @@
 
 #include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_AmesosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_HierarchyManager.hpp>
@@ -73,7 +73,7 @@
 #include <MueLu_DirectSolver.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace MueLuTests {
 
@@ -210,18 +210,18 @@ namespace MueLuTests {
     H.SetMaxCoarseSize(1);
     H.GetLevel(0)->Set("Coordinates", coordinates);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
     FactoryManager M;
     M.SetKokkosRefactor(false);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
 
-    H.GetLevel(0)->Keep("Aggregates", CoupledAggFact.get());
+    H.GetLevel(0)->Keep("Aggregates", UncoupledAggFact.get());
     H.Setup(M, 0, 2);
 
     for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
-      TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", CoupledAggFact.get()), true);
+      TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", UncoupledAggFact.get()), true);
     }
 
   } //FullPopulate_KeepAggregates
@@ -271,11 +271,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -299,7 +298,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -379,11 +378,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -407,7 +405,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -486,11 +484,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("Coordinates", coordinates);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
@@ -516,7 +513,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -1592,11 +1589,13 @@ namespace MueLuTests {
     // Write matrices out, read fine A back in, and check that the read was ok
     // by using a matvec with a random vector.
     char t[] = "XXXXXX";
+    int filedescriptor = 0;
     if (comm->getRank() == 0)
-      mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
-                  //the suffix for the various data files produced by Hierarchy::Write().
-                  //A better solution would be to write to a file stream, but this would
-                  //involve writing new interfaces to Epetra's file I/O capabilities.
+      filedescriptor = mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
+                       //the suffix for the various data files produced by Hierarchy::Write().
+                       //A better solution would be to write to a file stream, but this would
+                       //involve writing new interfaces to Epetra's file I/O capabilities.
+    TEST_INEQUALITY(filedescriptor, -1); // if the file descriptor is -1, it failed
     std::string tname(t);
     Teuchos::broadcast<int, char>(*comm, 0, tname.size(), &tname[0]);
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();

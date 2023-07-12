@@ -138,14 +138,14 @@ void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos
          }
 
          // inserting inverse factory into vector
-         std::string invStr = pl.get<std::string>(fieldName);
-         Teko_DEBUG_MSG("GSPrecFact: Building inverse " << position << " \"" << invStr << "\"",5);
+         std::string invStr2 = pl.get<std::string>(fieldName);
+         Teko_DEBUG_MSG("GSPrecFact: Building inverse " << position << " \"" << invStr2 << "\"",5);
          if(position>(int) inverses.size()) {
             inverses.resize(position,defaultInverse);
-            inverses[position-1] = invLib->getInverseFactory(invStr);
+            inverses[position-1] = invLib->getInverseFactory(invStr2);
          }
          else
-            inverses[position-1] = invLib->getInverseFactory(invStr);
+            inverses[position-1] = invLib->getInverseFactory(invStr2);
       }
    }
 

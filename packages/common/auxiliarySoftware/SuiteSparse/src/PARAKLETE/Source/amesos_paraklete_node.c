@@ -94,7 +94,7 @@ static void paraklete_send_to_parent
     LUnode->PK_STATUS = status ;
 
     ok = TRUE ;
-    if (parent_id != EMPTY && parent_id != Common->myid)
+    if (parent_id != TRILINOS_CHOLMOD_EMPTY && parent_id != Common->myid)
     {
 	/* send header to process that owns the parent node (parent_id) */
 	PR1 ((Common->file, "proc "ID" sends header parent proc "ID"\n",
@@ -127,7 +127,7 @@ static void paraklete_send_to_parent
 	}
     }
 
-    if (!ok || parent_id == EMPTY || parent_id != Common->myid)
+    if (!ok || parent_id == TRILINOS_CHOLMOD_EMPTY || parent_id != Common->myid)
     {
 	/* free the Schur complement of node c if a failure occured, if node
 	 * c has no parent, or if the Schur complement was sent to a
@@ -198,7 +198,7 @@ Int amesos_paraklete_factorize_node
     Sched  = LUsymbolic->Sched ;
     parent = LUsymbolic->Cparent [c] ;
     myid = Common->myid ;
-    parent_id = (parent == EMPTY) ? EMPTY : Sched [parent] ;
+    parent_id = (parent == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : Sched [parent] ;
 
     PR0 ((Common->file, "proc "ID" at node "ID", clnz: "ID"\n", myid, c, clnz)) ;
 
@@ -660,7 +660,7 @@ Int amesos_paraklete_factorize_node
 	    LUnode->PK_NPIV - LUnode->PK_NFOUND)) ;
 
     /* TODO ensure the kernel does this */
-    cm->mark = EMPTY ;
+    cm->mark = TRILINOS_CHOLMOD_EMPTY ;
     /* CHOLMOD (clear_flag) (cm) ; */
     CHOLMOD_CLEAR_FLAG (cm) 
 

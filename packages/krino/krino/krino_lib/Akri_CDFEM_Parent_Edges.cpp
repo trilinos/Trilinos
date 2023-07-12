@@ -148,11 +148,18 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
   }
 }
 
+bool is_cdfem_use_case(const Phase_Support & phaseSupport)
+{
+  return !(phaseSupport.get_all_decomposed_blocks_selector() == stk::mesh::Selector());
+}
+
 static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const stk::mesh::Entity node_or_elem,
     const LS_Field & lsField )
 {
+  ThrowAssert(is_cdfem_use_case(phaseSupport));
+
   for(auto && part_ptr : mesh.bucket(node_or_elem).supersets())
   {
     if (!(stk::io::is_part_io_part(*part_ptr) || phaseSupport.is_nonconformal(part_ptr))) continue;
@@ -168,6 +175,14 @@ static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
   }
 
   return false;
+}
+
+static bool has_levelset_registered(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity node_or_elem,
+    const LS_Field & lsField )
+{
+  const stk::mesh::Selector fieldSelector(lsField.isovar.field());
+  return fieldSelector(mesh.bucket(node_or_elem));
 }
 
 static bool
@@ -226,7 +241,9 @@ static bool node_has_real_ls_value(const stk::mesh::BulkData & mesh,
       !node_touches_alive_block(mesh, phaseSupport, node, lsField) )
     return false;
 
-  return in_block_decomposed_by_ls(mesh, phaseSupport, node, lsField);
+  return (is_cdfem_use_case(phaseSupport)) ?
+      in_block_decomposed_by_ls(mesh, phaseSupport, node, lsField) :
+      has_levelset_registered(mesh, node, lsField);
 }
 
 static void debug_print_edge_info(const stk::mesh::BulkData & mesh,
@@ -372,7 +389,7 @@ static void find_parent_edge_crossings(const stk::mesh::BulkData & mesh,
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << stk::diag::dendl;
 }
 
-stk::mesh::Selector get_parent_element_selector(const stk::mesh::Part & activePart,
+stk::mesh::Selector get_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
 {
@@ -383,27 +400,12 @@ stk::mesh::Selector get_parent_element_selector(const stk::mesh::Part & activePa
   return parentElementSelector;
 }
 
-stk::mesh::Selector get_owned_parent_element_selector(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
-{
-  stk::mesh::Selector parentElementSelector =
-      (cdfemSupport.get_parent_part() | (activePart & !cdfemSupport.get_child_part())) &
-      phaseSupport.get_all_decomposed_blocks_selector() &
-      mesh.mesh_meta_data().locally_owned_part();
-
-  return parentElementSelector;
-}
-
 std::vector<stk::mesh::Entity> get_owned_parent_elements(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
+    const stk::mesh::Selector & parentElementSelector)
 {
-  const stk::mesh::Selector parentElementSelector = get_owned_parent_element_selector(mesh, activePart, cdfemSupport, phaseSupport);
+  const stk::mesh::Selector ownedParentElementSelector = parentElementSelector & mesh.mesh_meta_data().locally_owned_part();
   std::vector<stk::mesh::Entity> parentElements;
-  stk::mesh::get_selected_entities( parentElementSelector, mesh.get_buckets(stk::topology::ELEMENT_RANK, parentElementSelector), parentElements, false );
+  stk::mesh::get_selected_entities( ownedParentElementSelector, mesh.buckets(stk::topology::ELEMENT_RANK), parentElements, false );
   return parentElements;
 }
 
@@ -411,15 +413,14 @@ ParentEdgeMap
 build_parent_edges(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
     const bool shouldLinearizeEdges,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
+    const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
 {
   std::vector<stk::mesh::Entity> elements;
   stk::mesh::get_entities( mesh, stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part(), elements, false);
 
-  return build_parent_edges_using_elements(mesh, parentsToChildMapper, shouldLinearizeEdges, elements, activePart, cdfemSupport, phaseSupport, LSFields);
+  return build_parent_edges_using_elements(mesh, parentsToChildMapper, shouldLinearizeEdges, elements, parentElementSelector, phaseSupport, LSFields);
 }
 
 ParentEdgeMap
@@ -427,13 +428,10 @@ build_parent_edges_using_elements(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
     const bool shouldLinearizeEdges,
     const std::vector<stk::mesh::Entity> & elements,
-    const stk::mesh::Part & activePart,
-    const CDFEM_Support & cdfemSupport,
+    const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
 {
-  const stk::mesh::Selector parentElementSelector = get_owned_parent_element_selector(mesh, activePart, cdfemSupport, phaseSupport);
-
   ParentEdgeMap parentEdges;
 
   for (auto && elem : elements)

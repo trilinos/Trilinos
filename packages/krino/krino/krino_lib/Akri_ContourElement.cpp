@@ -14,28 +14,26 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
+#include "Akri_LevelSet.hpp"
 
 namespace krino{
 
 ContourElement::ContourElement( const stk::mesh::BulkData & mesh,
-		  stk::mesh::Entity in_mesh_obj,
+		  stk::mesh::Entity element,
 		  const FieldRef coords_field,
                   const FieldRef dist_field,
 		  const double iso_dist )
-    : my_mesh( mesh ),
-    my_entity( in_mesh_obj ),
-    my_spatial_dim( mesh.mesh_meta_data().spatial_dimension() ),
-    my_coords_master_elem(MasterElementDeterminer::getMasterElement(mesh.bucket(in_mesh_obj), coords_field)),
-    my_dist_master_elem(MasterElementDeterminer::getMasterElement(mesh.bucket(in_mesh_obj), dist_field)),
-    my_coords_field( coords_field ),
-    my_dist_field( dist_field ),
+    : my_spatial_dim( mesh.mesh_meta_data().spatial_dimension() ),
+    my_coords_master_elem(MasterElementDeterminer::getMasterElement(mesh.bucket(element), coords_field)),
+    my_dist_master_elem(MasterElementDeterminer::getMasterElement(mesh.bucket(element), dist_field)),
+    my_sign(0),
     my_length_scale(-1.0),
     my_edge_linear_tolerance(-1.0),
     my_edge_nonlinear_tolerance(-1.0)
 { /* %TRACE% */  /* %TRACE% */
 
   //
-  // Gather obj's coordinates, distance, and velocity into ArrayContainer's.
+  // Gather element's coordinates and distance into ArrayContainer's.
   //
 
   const int dim = my_spatial_dim;
@@ -46,11 +44,11 @@ ContourElement::ContourElement( const stk::mesh::BulkData & mesh,
   my_coords.resize( dim, npe_coords );
   my_dist.resize( npe_dist );
 
-  const stk::mesh::Entity* elem_nodes = mesh.begin_nodes(my_entity);
+  const stk::mesh::Entity* elem_nodes = mesh.begin_nodes(element);
 
   for ( int i = 0; i < npe_coords; ++i )
   {
-    double * var = field_data<double>( my_coords_field, elem_nodes[i]);
+    double * var = field_data<double>( coords_field, elem_nodes[i]);
     for ( int d = 0; d < dim; d++ )
     {
       my_coords(d,i) = var[d];
@@ -59,27 +57,18 @@ ContourElement::ContourElement( const stk::mesh::BulkData & mesh,
 
   for ( int i = 0; i < npe_dist; ++i )
   {
-    double * var = field_data<double>( my_dist_field, elem_nodes[i]);
+    double * var = field_data<double>( dist_field, elem_nodes[i]);
     my_dist(i) = *var - iso_dist;
-  }
-
-  // the interpolate master element methods require the transpose?!?
-  my_coords_transpose.resize( npe_coords, dim );
-  for (int i = 0; i < npe_coords; i++)
-  {
-    for (int d = 0; d < dim; d++)
-    {
-      my_coords_transpose(i,d) = my_coords(d,i);
-    }
   }
 }
 
 ContourElement::~ContourElement() {}
 
-std::ostream &
-ContourElement::put( std::ostream& os ) const
+std::string
+ContourElement::debug_output() const
 { /* %TRACE% */  /* %TRACE% */
   const int dim = my_spatial_dim;
+  std::ostringstream os;
 
   os << "Element description:" << std::endl
      << "  Coordinates topolology is " << coord_topology().name()
@@ -88,39 +77,22 @@ ContourElement::put( std::ostream& os ) const
   int lnn = 0;
   int coord_counter = 0;
   int dist_counter = 0;
-  const unsigned num_nodes = my_mesh.num_nodes(my_entity);
-  const stk::mesh::Entity* nodes = my_mesh.begin_nodes(my_entity);
-  for (unsigned node_index=0; node_index<num_nodes; ++node_index)
+  const unsigned npe_coords = my_coords_master_elem.get_topology().num_nodes();
+  for (unsigned node_index=0; node_index<npe_coords; ++node_index)
   {
-    stk::mesh::Entity node = nodes[node_index];
-    os << "  Node #" << lnn++ << ", Global Node #" << my_mesh.identifier(node);
-    double * var = field_data<double>(my_coords_field, node);
-    if ( NULL != var )
-    {
-      Vector3d coords(Vector3d::ZERO);
-      for ( int d = 0; d < dim; d++ )
-        coords[d] = my_coords(d,coord_counter);
-      os << ", coords = (" << coords[0] << ","
-         << coords[1] << ","
-         << coords[2] << ")";
-      coord_counter++;
-    }
+    os << "  Node #" << lnn++;
+    Vector3d coords(Vector3d::ZERO);
+    for ( int d = 0; d < dim; d++ )
+      coords[d] = my_coords(d,coord_counter);
+    os << ", coords = (" << coords[0] << ","
+       << coords[1] << ","
+       << coords[2] << ")";
+    coord_counter++;
 
-    var = field_data<double>(my_dist_field, node);
-    if ( NULL != var )
-    {
-      os << ", dist = " << my_dist(dist_counter++);
-    }
+    os << ", dist = " << my_dist(dist_counter++);
     os << std::endl;
   }
-  return os ;
-}
-
-bool
-ContourElement::have_interface_sides() const
-{
-  ThrowAssert(my_base_subelement);
-  return my_base_subelement->have_interface_sides();
+  return os.str();
 }
 
 double
@@ -138,6 +110,47 @@ ContourElement::coordinates( const Vector3d & p_coords ) const
     my_coords_master_elem.interpolate_point(my_spatial_dim, p_coords.data(), my_spatial_dim, my_coords.ptr(), coords.data());
     return coords;
   }
+
+double ContourElement::compute_domain_integral(const sierra::ArrayContainer<double, DIM, NINT> & intgPtLocations,
+    const sierra::ArrayContainer<double, NINT> & intgWeights,
+    const sierra::ArrayContainer<double, NINT> &  determinants)
+{
+  const int numIntgPts = intgWeights.dimension<0>();
+  double domainIntegral = 0.;
+  for (int ip = 0; ip < numIntgPts; ++ip)
+    domainIntegral += intgWeights(ip) * determinants(ip);
+  return domainIntegral;
+}
+
+double ContourElement::compute_domain_integral(const int signOfDomain) const // 0=interface, -1=negVol, 1=posVol
+{
+  if (my_sign != 0)
+  {
+    if (my_sign == signOfDomain)
+    {
+      return volume();
+    }
+    return 0;
+  }
+  ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
+
+  if (signOfDomain == 0)
+  {
+    return my_base_subelement->compute_area_of_interface();
+  }
+
+  return my_base_subelement->compute_relative_signed_volume(signOfDomain) * volume() / my_coords_master_elem.parametric_volume();
+}
+
+double ContourElement::compute_area_of_interface() const
+{
+  return compute_domain_integral(0);
+}
+
+double ContourElement::compute_signed_volume(const int signOfVolume) const
+{
+  return compute_domain_integral(signOfVolume);
+}
 
 double
 ContourElement::determinant( const Vector3d & p_coords ) const
@@ -163,29 +176,6 @@ ContourElement::determinant( const Vector3d & p_coords ) const
         &detJ,                // Determinant of the transformation Jacobian for each element (output)
         &detJ_error );        // Determinant error (output)
     return detJ;
-  }
-
-Vector3d
-ContourElement::continuous_distance_gradient( const Vector3d & p_coords ) const
-  { /* %TRACE% */  /* %TRACE% */
-    // gather continuous distance gradient
-    sierra::ArrayContainer<double,DIM,NPE_VAR> grad_distance;
-    const int npe = dist_topology().num_nodes();
-    grad_distance.resize( my_spatial_dim, npe );
-    stk::mesh::FieldBase* field_ptr = my_mesh.mesh_meta_data().get_field(stk::topology::NODE_RANK, "CONT_GRAD");
-    ThrowRequireMsg(nullptr != field_ptr, "Field CONT_GRAD not found.");
-    const FieldRef contGradField(field_ptr);
-    const stk::mesh::Entity* elem_nodes = my_mesh.begin_nodes(my_entity);
-    for ( int i = 0; i < npe; ++i )
-    {
-      double * var = field_data<double>(contGradField, elem_nodes[i]);
-      for(int d = 0; d < my_spatial_dim; ++d)
-        grad_distance(d,i) = var[d];
-    }
-
-    Vector3d grad_dist(Vector3d::ZERO);
-    my_vel_master_elem->interpolate_point(my_spatial_dim, p_coords.data(), my_spatial_dim, grad_distance.ptr(), grad_dist.data());
-    return grad_dist;
   }
 
 Vector3d
@@ -289,34 +279,121 @@ ContourElement::compute_distance_gradient( const sierra::Array<const double,DIM,
 	grad_dist.ptr() );      // Gradient of distance at integration pts (output)
   }
 
+template<int NDIM, int NNODES>
+std::array<Vector3d,NNODES> get_nodal_parametric_coords_array(const MasterElement & me)
+{
+  std::array<Vector3d,NNODES> paramCoords;
+  const double * paramCoordsArray = me.nodal_parametric_coordinates();
+  int paramCoordsCounter = 0;
+  for ( int i = 0; i < NNODES; ++i )
+  {
+    for ( int j = 0; j < NDIM; j++ )
+      paramCoords[i][j] = paramCoordsArray[paramCoordsCounter++];
+    for ( int j = NDIM; j < 3; j++ )
+      paramCoords[i][j] = 0.;
+  }
+  return paramCoords;
+}
+
+template<int NSIDES>
+std::array<int,NSIDES> get_side_ids_array()
+{
+  std::array<int,NSIDES> sideIds;
+  for ( int i = 0; i < NSIDES; ++i )
+    sideIds[i] = i;
+  return sideIds;
+}
+
+int ContourElement::compute_conservative_nonlinear_distance_sign(const double snapTol, const unsigned numDist, const double * dist)
+{
+  // For a nonlinear distance function, estimate that interpolated values within
+  // the element lie between min-variation < values < max+variation
+  // where min and max are min and max nodal values and varation = max-min.
+
+  // TODO: Could probably be less conservative, by shrinking the range in this nonlinear estimate.
+  //       But what is the range of the interpolant in a quadratic element?
+
+  double maxDist = dist[0];
+  double minDist = dist[0];
+  for ( unsigned n = 1; n < numDist; n++ )
+  {
+    if (dist[n] < minDist) minDist = dist[n];
+    if (dist[n] > maxDist) maxDist = dist[n];
+  }
+
+  // Incorporate snapping into range over element
+  if (minDist > 0. && minDist < snapTol) minDist = 0.;
+  if (maxDist < 0. && -maxDist < snapTol) maxDist = 0.;
+
+  const double variation = maxDist - minDist;
+
+  const double estimatedMinInterpolant = minDist - variation;
+  const double estimatedMaxInterpolant = maxDist + variation;
+
+  const bool all_hi = estimatedMinInterpolant > 0.0;
+  const bool all_lo = estimatedMaxInterpolant < 0.0;
+
+  if (all_hi || all_lo)
+  {
+    return LevelSet::sign(minDist);
+  }
+
+  return 0;
+}
+
+int ContourElement::compute_linear_distance_sign(const double snapTol, const unsigned numDist, const double * dist)
+{
+  // Here "linear" means that the extrema within the element matches the extrema of the nodal values,
+  // which is true for bilinear quads (and hex) as well as truly linear tets and tris.
+
+  bool hasNeg = false;
+  bool hasPos = false;
+  for ( unsigned n = 0; n < numDist; n++ )
+  {
+    const double nodeDist = (std::abs(dist[n]) < snapTol) ? 0. : dist[n];
+    if (LevelSet::sign(nodeDist) < 0)
+    {
+      if (hasPos)
+        return 0;
+      hasNeg = true;
+    }
+    else
+    {
+      if (hasNeg)
+        return 0;
+      hasPos = true;
+    }
+  }
+  ThrowAssert(!(hasNeg && hasPos));
+  return (hasNeg ? -1 : 1);
+}
+
+int ContourElement::compute_conservative_distance_sign(const double snapTol, const stk::topology distTopology, const double * dist)
+{
+  // Here "linear" means that the extrema within the element matches the extrema of the nodal values,
+  // which is true for bilinear quads (and hex) as well as truly linear tets and tris.
+  const unsigned numDist = distTopology.num_nodes();
+  if (distTopology.base() == distTopology)
+    return compute_linear_distance_sign(snapTol, numDist, dist);
+  return compute_conservative_nonlinear_distance_sign(snapTol, numDist, dist);
+}
+
 void
-ContourElement::compute_subelement_decomposition(const double in_length_scale, const double in_edge_linear_tolerance, const double in_edge_nonlinear_tolerance) const
+ContourElement::compute_subelement_decomposition(const double in_length_scale, const double in_edge_linear_tolerance, const double in_edge_nonlinear_tolerance)
   { /* %TRACE% */  /* %TRACE% */
+    stk::topology topology = dist_topology();
+
+    const double snapTol = in_length_scale * in_edge_linear_tolerance;
+
+    my_sign = compute_conservative_distance_sign(snapTol, topology, my_dist.ptr());
+    if (my_sign != 0)
+    {
+      return;
+    }
+
     my_length_scale = in_length_scale;
     my_edge_linear_tolerance = in_edge_linear_tolerance;
     my_edge_nonlinear_tolerance = in_edge_nonlinear_tolerance;
-
-    stk::topology topology = dist_topology();
-    const int num_sides = topology.num_sides();
-    std::vector<int> side_ids(num_sides);
-    for (int i=0; i<num_sides; ++i)
-      side_ids[i] = i;
-
-    // Generate my_dist_p_coords, a vector of Vector3d's of the parametric coordinates
-    // at each node where the distance is defined.  We need this because this is the topology
-    // that our base subelement will have.
-    const int npe_dist = dist_topology().num_nodes();
-    my_dist_p_coords.reserve( npe_dist );
-    const double * p_coords_array = my_dist_master_elem.nodal_parametric_coordinates();
-    int p_coords_array_counter = 0;
-
-    for ( int i = 0; i < npe_dist; ++i )
-      {
-	Vector3d p_coords(Vector3d::ZERO);
-	for ( int j = 0; j < my_spatial_dim; j++ )
-	  p_coords[j] = p_coords_array[p_coords_array_counter++];
-	my_dist_p_coords.push_back( p_coords );
-      }
 
     // Now create our base subelement.  This is the subelement that has the same
     // topology as the distance field.  This involves recursive calls that will continue
@@ -324,39 +401,39 @@ ContourElement::compute_subelement_decomposition(const double in_length_scale, c
 
     if (stk::topology::HEXAHEDRON_8 == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Hex_8>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Hex_8>( get_nodal_parametric_coords_array<3,8>(my_dist_master_elem), get_side_ids_array<6>(), this );
     }
     else if (stk::topology::HEXAHEDRON_27 == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Hex_27>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Hex_27>( get_nodal_parametric_coords_array<3,27>(my_dist_master_elem), get_side_ids_array<6>(), this );
     }
     else if (stk::topology::TETRAHEDRON_4 == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Tet_4>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Tet_4>( get_nodal_parametric_coords_array<3,4>(my_dist_master_elem), get_side_ids_array<4>(), this );
     }
     else if (stk::topology::TETRAHEDRON_10 == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Tet_10>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Tet_10>( get_nodal_parametric_coords_array<3,10>(my_dist_master_elem), get_side_ids_array<4>(), this );
     }
     else if (stk::topology::WEDGE_6 == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Wedge_6>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Wedge_6>( get_nodal_parametric_coords_array<3,6>(my_dist_master_elem), get_side_ids_array<5>(), this );
     }
     else if (stk::topology::QUADRILATERAL_4_2D == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Quad_4>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Quad_4>( get_nodal_parametric_coords_array<2,4>(my_dist_master_elem), get_side_ids_array<4>(), this );
     }
     else if (stk::topology::QUADRILATERAL_9_2D == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Quad_9>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Quad_9>( get_nodal_parametric_coords_array<2,9>(my_dist_master_elem), get_side_ids_array<4>(), this );
     }
     else if (stk::topology::TRIANGLE_3_2D == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Tri_3>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Tri_3>( get_nodal_parametric_coords_array<2,3>(my_dist_master_elem), get_side_ids_array<3>(), this );
     }
     else if (stk::topology::TRIANGLE_6_2D == topology)
     {
-      my_base_subelement = std::make_unique<ContourSubElement_Tri_6>( my_dist_p_coords, side_ids, this );
+      my_base_subelement = std::make_unique<ContourSubElement_Tri_6>( get_nodal_parametric_coords_array<2,6>(my_dist_master_elem), get_side_ids_array<3>(), this );
     }
     ThrowErrorMsgIf(!my_base_subelement, "Element with topology " << topology.name() << " not supported.");
 
@@ -373,9 +450,27 @@ ContourElement::compute_subelement_decomposition(const double in_length_scale, c
       }
   }
 
+static double tet_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
+{
+  const double * arrayData = coords.ptr();
+  const std::array<Vector3d,4> tetNodeCoords = {Vector3d(arrayData), Vector3d(arrayData+3), Vector3d(arrayData+6), Vector3d(arrayData+9)};
+  return compute_tet_volume(tetNodeCoords);
+}
+
+static double tri_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
+{
+  const double * arrayData = coords.ptr();
+  const std::array<Vector2d,3> triNodeCoords = {Vector2d(arrayData), Vector2d(arrayData+2), Vector2d(arrayData+4)};
+  return compute_tri_volume(triNodeCoords);
+}
+
 double
 ContourElement::volume() const
   { /* %TRACE% */  /* %TRACE% */
+    if (coord_topology() == stk::topology::TETRAHEDRON_4)
+      return tet_volume(my_coords);
+    if (coord_topology() == stk::topology::TRIANGLE_3_2D)
+      return tri_volume(my_coords);
 
     sierra::Array<const double,DIM,NINT> intg_pt_locations;
     sierra::Array<const double,NINT> intg_weights;
@@ -427,45 +522,60 @@ ContourElement::elem_size() const
 void
 ContourElement::dump_subelement_structure() const
   { /* %TRACE% */  /* %TRACE% */
-    ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_structure().");
-
-    krinolog << "***********************************************" << stk::diag::dendl;
-    krinolog << *this;
-    krinolog << "Subelement structure:" << stk::diag::dendl;
-    my_base_subelement->dump_structure();
-    krinolog << "***********************************************" << stk::diag::dendl;
+    if (my_sign == 0)
+    {
+      ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_structure().");
+      krinolog << "***********************************************\n";
+      krinolog << *this;
+      krinolog << "Subelement structure:\n";
+      my_base_subelement->dump_structure();
+      krinolog << "***********************************************" << stk::diag::dendl;
+    }
   }
 
 void
 ContourElement::dump_subelement_details() const
   { /* %TRACE% */  /* %TRACE% */
-    ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_details().");
-
-    krinolog << "***********************************************" << stk::diag::dendl;
-    krinolog << *this;
-    krinolog << "Subelement details:" << stk::diag::dendl;
-    my_base_subelement->dump_details();
-    krinolog << "***********************************************" << stk::diag::dendl;
+    if (my_sign == 0)
+    {
+      ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_details().");
+      krinolog << "***********************************************\n";
+      krinolog << *this;
+      krinolog << "Subelement details:\n";
+      my_base_subelement->dump_details();
+      krinolog << "***********************************************" << stk::diag::dendl;
+    }
   }
 
-int
+void
 ContourElement::build_subelement_facets( Faceted_Surface & facets )
 {
-  ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling build_subelement_facets(...).");
-  return my_base_subelement->build_facets( facets );
+  if (my_sign == 0)
+  {
+    ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling build_subelement_facets().");
+    my_base_subelement->build_facets( facets );
+  }
 }
 
 int
 ContourElement::gather_intg_pts( const int intg_pt_sign,
 			  sierra::ArrayContainer<double,DIM,NINT> & intg_pt_locations,
 			  sierra::ArrayContainer<double,NINT> & intg_weights,
-			  sierra::ArrayContainer<double,NINT> & determinants,
-			  const bool map_to_real_coords )
+			  sierra::ArrayContainer<double,NINT> & determinants ) const
 {
-  ThrowErrorMsgIf(0 == intg_pt_sign && !map_to_real_coords,
-      "\nSubelement decomposition can currently only provide the surface integration with the overall determinant.");
-  ThrowErrorMsgIf(!my_base_subelement,
-      "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts(...).");
+  if (my_sign != 0)
+  {
+    if (my_sign == intg_pt_sign)
+    {
+      return std_intg_pts(intg_pt_locations, intg_weights, determinants);
+    }
+
+    intg_pt_locations.resize(my_spatial_dim,0);
+    intg_weights.resize(0u);
+    determinants.resize(0u);
+    return 0;
+  }
+  ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
 
   const int num_intg_pts = my_base_subelement->num_intg_pts(intg_pt_sign);
 
@@ -478,7 +588,7 @@ ContourElement::gather_intg_pts( const int intg_pt_sign,
 				       intg_weights,
 				       determinants );
 
-  if ( 0 != intg_pt_sign && map_to_real_coords )
+  if ( 0 != intg_pt_sign )
     {
       //
       // Include the determinant from element to real space
@@ -512,6 +622,31 @@ ContourElement::gather_intg_pts( const int intg_pt_sign,
     }
 
   return( num_intg_pts );
+}
+
+int
+ContourElement::std_intg_pts( sierra::ArrayContainer<double,DIM,NINT> & intg_pt_locations,
+    sierra::ArrayContainer<double,NINT> & intg_weights,
+    sierra::ArrayContainer<double,NINT> & determinants,
+    const MasterElement & me ) const
+{
+  sierra::Array<const double,DIM,NINT> std_intg_pt_locations;
+  sierra::Array<const double,NINT> std_intg_weights;
+  std_intg_pts(std_intg_pt_locations, std_intg_weights, determinants, me);
+
+  const int num_intg_pts = determinants.dimension<0>();
+
+  intg_pt_locations.resize(my_spatial_dim,num_intg_pts);
+  intg_weights.resize(num_intg_pts);
+
+  const double * stdIntgPtLocData = std_intg_pt_locations.ptr();
+  double * intgPtLocData = intg_pt_locations.ptr();
+  for ( int i=0; i<num_intg_pts*my_spatial_dim; ++i )
+    intgPtLocData[i] = stdIntgPtLocData[i];
+  for ( int i=0; i<num_intg_pts; ++i )
+    intg_weights(i) = std_intg_weights(i);
+
+  return num_intg_pts;
 }
 
 int

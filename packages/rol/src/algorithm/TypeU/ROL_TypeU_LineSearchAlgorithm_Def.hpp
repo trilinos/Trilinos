@@ -52,6 +52,7 @@ namespace TypeU {
 
 template<typename Real>
 LineSearchAlgorithm<Real>::LineSearchAlgorithm( ParameterList &parlist,
+                              const Ptr<Secant<Real>> &secant,
                               const Ptr<DescentDirection_U<Real>> &descent,
                               const Ptr<LineSearch_U<Real>> &lineSearch )
   : Algorithm<Real>(), desc_(descent), lineSearch_(lineSearch),
@@ -81,7 +82,7 @@ LineSearchAlgorithm<Real>::LineSearchAlgorithm( ParameterList &parlist,
     ParameterList& dlist = Llist.sublist("Descent Method");
     descentName_ = dlist.get("Type","Quasi-Newton Method");
     edesc_ = StringToEDescentU(descentName_);
-    desc_  = DescentDirectionUFactory<Real>(parlist);
+    desc_  = DescentDirectionUFactory<Real>(parlist,secant);
   }
   else {
     descentName_ = Llist.sublist("Descent Method").get("User Defined Descent Direction Name","Unspecified User Defined Descent Direction");

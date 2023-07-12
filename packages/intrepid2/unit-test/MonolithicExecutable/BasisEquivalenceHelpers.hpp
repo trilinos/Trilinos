@@ -393,7 +393,6 @@ namespace Intrepid2
       }
       else
       {
-        int spaceDim = basis1Values.extent_int(2);
         Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
         {
           // we could use hierarchical parallelism to speed this up
@@ -472,25 +471,25 @@ namespace Intrepid2
           out << "checking subcells of dimension " << subcellDim << std::endl;
           // if there are no dofs for this subcell dimension and greater, then getAllDofOrdinal() won't have
           // an entry for subcellDim.  The following guards against that:
-          if (basis1.getAllDofOrdinal().extent_int(0) <= subcellDim)
+          if (basis1AllDofOrdinal.extent_int(0) <= subcellDim)
           {
             // basis1 has no dofs for this subcell dim.  Check that basis2 also does not, at least among the members that form the sub-basis corresponding to basis1:
             if (reverseOrdinalMapHost.size() == 0) // basis2 and basis1 are supposed to be equivalent
             {
-              TEST_ASSERT(basis2.getAllDofOrdinal().extent_int(0) <= subcellDim);
+              TEST_ASSERT(basis2AllDofOrdinal.extent_int(0) <= subcellDim);
             }
             else // basis1 corresponds to a non-trivial sub-basis of basis2
             {
-              if (basis2.getAllDofOrdinal().extent_int(0) > subcellDim)
+              if (basis2AllDofOrdinal.extent_int(0) > subcellDim)
               {
                 const int subcellCount = cellTopo->getSubcellCount(subcellDim);
                 for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
                 {
-                  const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+                  const int basis2FirstDofOrdinal = basis2AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
                   const int basis2SubcellCardinality = basis2.getDofTag(basis2FirstDofOrdinal)(3);
                   for (int subcellDofOrdinal=0; subcellDofOrdinal<basis2SubcellCardinality; subcellDofOrdinal++)
                   {
-                    const int basis2DofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
+                    const int basis2DofOrdinal = basis2AllDofOrdinal(subcellDim, subcellOrdinal, subcellDofOrdinal);
                     TEST_ASSERT(reverseOrdinalMapHost(basis2DofOrdinal) == -1); // indicates that basis2DofOrdinal corresponds to basis 2 member that lies outside the span of basis 1
                   }
                 }
@@ -498,9 +497,6 @@ namespace Intrepid2
             }
             break; // we've already checked all subcell dimensions that have any dofs associated with them
           }
-          
-          auto basis1AllDofOrdinal = basis1.getAllDofOrdinal();
-          auto basis2AllDofOrdinal = basis2.getAllDofOrdinal();
           
           const int subcellCount = cellTopo->getSubcellCount(subcellDim);
           for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)

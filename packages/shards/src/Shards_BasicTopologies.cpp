@@ -400,14 +400,20 @@ struct Descriptor<
     };
 };
 
-template<>
+template< unsigned Number_Node , unsigned Number_Vertex>
 struct Descriptor<
-  CellTopologyTraits< 0 , 0 , 0 ,
+  CellTopologyTraits< 0 , Number_Node , Number_Vertex ,
                       TypeListEnd , TypeListEnd ,
                       TypeListEnd , TypeListEnd ,
                       TypeListEnd > >
 {
-  typedef CellTopologyTraits< 0 , 0 , 0 ,
+  // Two cases: Nodes=Vertices=0 for topo=Node, and Nodes=Vertices=1 for topo=Particle
+  static_assert (Number_Node==0 || Number_Node==1,
+      "Invalid number of nodes for 0-dimensional topology.");
+  static_assert (Number_Node==Number_Vertex,
+      "Incompatible number of nodes/vertices for 0-dimensional topology.");
+
+  typedef CellTopologyTraits< 0 , Number_Node , Number_Vertex ,
                               TypeListEnd , TypeListEnd ,
                               TypeListEnd , TypeListEnd ,
                               TypeListEnd > Traits ;
@@ -425,8 +431,8 @@ struct Descriptor<
       top.name              = name ;
       top.key               = Traits::key ;
       top.dimension         = 0 ;
-      top.vertex_count      = 0 ;
-      top.node_count        = 0 ;
+      top.vertex_count      = Number_Vertex ;
+      top.node_count        = Number_Node ;
       top.edge_count        = 0 ;
       top.side_count        = 0 ;
       top.permutation_count = 0 ;

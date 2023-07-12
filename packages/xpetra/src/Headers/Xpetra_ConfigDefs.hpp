@@ -84,7 +84,7 @@
 
 #include <Xpetra_config.hpp>
 #include <Teuchos_ConfigDefs.hpp>
-#include <Kokkos_ConfigDefs.hpp>
+#include <TpetraCore_config.h>
 
 #if defined(HAVE_XPETRA_TPETRA)
     #include <Tpetra_ConfigDefs.hpp>

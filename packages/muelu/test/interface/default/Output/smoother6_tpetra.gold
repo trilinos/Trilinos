@@ -1,8 +1,10 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
  [empty list]
+
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -35,6 +37,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
  [empty list]
+
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -67,6 +70,8 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

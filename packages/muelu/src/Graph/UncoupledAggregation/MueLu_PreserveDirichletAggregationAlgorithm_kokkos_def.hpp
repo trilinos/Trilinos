@@ -46,14 +46,12 @@
 #ifndef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
@@ -119,5 +117,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

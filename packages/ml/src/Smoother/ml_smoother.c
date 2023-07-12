@@ -492,7 +492,7 @@ int ML_Smoother_Jacobi(ML_Smoother *sm,int inlen,double x[],int outlen,double rh
    double *res,omega, *diagonal, *vals, *tdiag, *res2 = NULL;
    double r_z_dot, p_ap_dot;
    ML_Smoother  *smooth_ptr;
-
+   
 #ifdef ML_DEBUG_SMOOTHER
    ML_Comm      *comm;
    double res_norm;
@@ -1292,6 +1292,14 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
    if (!mypid) printf("\t||x|| = %15.10e\n", ttt);
    ttt = sqrt((ML_gdot(Nrows, rhs, rhs, Tmat_trans->comm)));
    if (!mypid) printf("\t||rhs|| = %15.10e\n", ttt);
+   ttt=ML_Operator_FroNorm(Ke_mat,ML_FALSE);
+   if (!mypid) printf("\t||A|| = %15.10e\n", ttt);
+   if (Ke_mat->diagonal)
+     ttt = sqrt((ML_gdot(Nrows, Ke_mat->diagonal->VecData, Ke_mat->diagonal->VecData, Tmat_trans->comm)));
+   else 
+     ttt = -1;
+   if (!mypid) printf("\t||diag(A)|| = %15.10e\n", ttt);
+   printf("A->getrow->func_ptr = %p\n",(void*)TtATmat->getrow->func_ptr);
    fflush(stdout);
 #endif
 
@@ -1365,6 +1373,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
       if (!mypid) printf("\t||x|| = %15.10e\n", ttt);
       ttt= sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm));
       if (!mypid) printf("\t||res|| = %15.10e\n", ttt);
+
 #endif
 
       /****************************
@@ -1395,6 +1404,23 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
       ttt= sqrt(ML_gdot(Tmat_trans->outvec_leng,
                         rhs_nodal,rhs_nodal,Tmat_trans->comm));
       if (!mypid)printf("\t||rhs_nodal|| = %15.10e\n", ttt);
+      ttt=ML_Operator_FroNorm(TtATmat,ML_FALSE);
+      if (!mypid) printf("\t||An|| = %15.10e\n", ttt);
+      if (TtATmat->diagonal)
+        ttt = sqrt((ML_gdot(Nrows, TtATmat->diagonal->VecData, TtATmat->diagonal->VecData, Tmat_trans->comm)));
+      else 
+        ttt = -1;
+      if (!mypid) printf("\t||diag(An)|| = %15.10e\n", ttt);
+      printf("An->getrow->func_ptr = %p\n",(void*)TtATmat->getrow->func_ptr);
+      /* CMS  hackery */
+      static int dumpme=9;
+      if(dumpme > 7 ){
+        char str[80];
+        sprintf(str,"An_hiptmair_%d",dumpme);
+        ML_Operator_Dump(TtATmat,0,0,str,1);
+        dumpme--;
+      }
+
 #endif
 
       ML_Smoother_Apply(&(dataptr->ml_nodal->pre_smoother[0]),
@@ -3891,6 +3917,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 	}
       }
    }
+
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
@@ -4186,6 +4213,12 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
      dataptr->sm_nodal->my_level->Amat = dataptr->TtATmat;
      dataptr->sm_nodal->my_level->comm = dataptr->TtATmat->comm;
    }
+
+   if (dataptr->TtATmat->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+    {
+      printf("Kn: Total nonzeros = %d (Nrows = %d)\n",dataptr->TtATmat->N_nonzeros,
+		    dataptr->TtATmat->invec_leng);
+    }
 
    ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),dataptr->TtATmat,
                                           nodal_smoother, nodal_args,

@@ -601,7 +601,7 @@ namespace Iotm {
 
       bool has_any_shell_connection_on_side(size_t thisIndex, int thisSide)
       {
-        Criterion criterion = [&](const Topology &topo1, const Topology &topo2) {
+        Criterion criterion = [&](const Topology & /* topo1 */, const Topology &topo2) {
           return topo2.is_shell();
         };
 

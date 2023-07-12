@@ -36,16 +36,20 @@
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Quality.hpp>
 #include <Akri_RefinementInterface.hpp>
+#include <Akri_RefinementSupport.hpp>
 
-namespace krino {
+namespace krino
+{
 
 class LevelSet;
 
-namespace {
-  template <class DECOMP_FIXTURE>
+namespace
+{
+template <class DECOMP_FIXTURE>
 void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
     stk::mesh::Part & elem_part,
-    const int parallel_rank, const int parallel_size)
+    const int parallel_rank,
+    const int parallel_size)
 {
   stk::mesh::BulkData & mesh = fixture.fixture.bulk_data();
   stk::mesh::MetaData & meta = fixture.fixture.meta_data();
@@ -63,7 +67,7 @@ void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
     std::vector<stk::mesh::EntityId> elem_nodes = {1, 2, 3, 4};
 
     stk::mesh::Entity element;
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       elem_parts[0] = &elem_part;
       element = fixture.create_element(elem_parts, 1, elem_nodes);
@@ -71,9 +75,11 @@ void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
   }
   mesh.modification_end();
 
-  if(parallel_rank == 0)
+  if (parallel_rank == 0)
   {
-    EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
+    EXPECT_EQ(1u,
+        stk::mesh::count_selected_entities(
+            meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
 
     const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
     const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -90,28 +96,32 @@ void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
     double * node3_coords = field_data<double>(fixture.coord_field, node3);
     double * node4_coords = field_data<double>(fixture.coord_field, node4);
 
-    node1_coords[0] =  1.;
-    node1_coords[1] =  1.;
-    node1_coords[2] =  1.;
+    node1_coords[0] = 1.;
+    node1_coords[1] = 1.;
+    node1_coords[2] = 1.;
 
     node2_coords[0] = -1.;
-    node2_coords[1] =  1.;
+    node2_coords[1] = 1.;
     node2_coords[2] = -1.;
 
-    node3_coords[0] =  1.;
+    node3_coords[0] = 1.;
     node3_coords[1] = -1.;
     node3_coords[2] = -1.;
 
     node4_coords[0] = -1.;
     node4_coords[1] = -1.;
-    node4_coords[2] =  1.;
+    node4_coords[2] = 1.;
   }
 }
 
 template <class DECOMP_FIXTURE>
 void build_two_tet4_mesh_np2(DECOMP_FIXTURE & fixture,
-    stk::mesh::Part & elem1_part, stk::mesh::Part & elem2_part, stk::mesh::Part & surface_part,
-    const int parallel_rank, const int parallel_size, const bool add_side = true,
+    stk::mesh::Part & elem1_part,
+    stk::mesh::Part & elem2_part,
+    stk::mesh::Part & surface_part,
+    const int parallel_rank,
+    const int parallel_size,
+    const bool add_side = true,
     const bool build_all_on_P0 = false)
 {
   stk::mesh::BulkData & mesh = fixture.fixture.bulk_data();
@@ -134,48 +144,53 @@ void build_two_tet4_mesh_np2(DECOMP_FIXTURE & fixture,
     std::vector<stk::mesh::EntityId> elem2_nodes = {1, 2, 3, 5};
 
     stk::mesh::Entity element;
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       elem_parts[0] = &elem1_part;
       element = fixture.create_element(elem_parts, 1, elem1_nodes);
     }
-    if((parallel_rank == 1 && !build_all_on_P0) || (parallel_rank == 0 && build_all_on_P0) ||
+    if ((parallel_rank == 1 && !build_all_on_P0) || (parallel_rank == 0 && build_all_on_P0) ||
         parallel_size == 1)
     {
       elem_parts[0] = &elem2_part;
       element = fixture.create_element(elem_parts, 2, elem2_nodes);
     }
 
-    if(parallel_size > 1 && !build_all_on_P0)
+    if (parallel_size > 1 && !build_all_on_P0)
     {
       const int opp_rank = parallel_rank == 0 ? 1 : 0;
-      for(auto i=1; i <= 3; ++i)
+      for (auto i = 1; i <= 3; ++i)
       {
         const auto node = mesh.get_entity(stk::topology::NODE_RANK, i);
         mesh.add_node_sharing(node, opp_rank);
       }
     }
 
-    if(add_side && (parallel_rank == 0 || !build_all_on_P0))
+    if (add_side && (parallel_rank == 0 || !build_all_on_P0))
     {
       sideEntity = mesh.declare_solo_side(7, {&surface_part});
-      for(auto i=1; i <= 3; ++i)
+      for (auto i = 1; i <= 3; ++i)
       {
         auto side_node = mesh.get_entity(stk::topology::NODE_RANK, i);
-        mesh.declare_relation(sideEntity, side_node, i-1);
+        mesh.declare_relation(sideEntity, side_node, i - 1);
       }
       attach_entity_to_elements(mesh, sideEntity);
     }
   }
   mesh.modification_end();
 
-  if(parallel_rank == 0 || !build_all_on_P0)
+  if (parallel_rank == 0 || !build_all_on_P0)
   {
-    EXPECT_EQ(2u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
-    if(add_side)
+    EXPECT_EQ(2u,
+        stk::mesh::count_selected_entities(
+            meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
+    if (add_side)
     {
-      EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(meta.side_rank())));
-      EXPECT_EQ(1u, stk::mesh::count_selected_entities(surface_part, mesh.buckets(meta.side_rank())));
+      EXPECT_EQ(1u,
+          stk::mesh::count_selected_entities(
+              meta.universal_part(), mesh.buckets(meta.side_rank())));
+      EXPECT_EQ(
+          1u, stk::mesh::count_selected_entities(surface_part, mesh.buckets(meta.side_rank())));
 
       EXPECT_EQ(2u, mesh.num_connectivity(sideEntity, stk::topology::ELEMENT_RANK));
     }
@@ -222,8 +237,12 @@ void build_two_tet4_mesh_np2(DECOMP_FIXTURE & fixture,
 
 template <class DECOMP_FIXTURE>
 void build_two_tri3_mesh_np2(DECOMP_FIXTURE & fixture,
-    stk::mesh::Part & elem1_part, stk::mesh::Part & elem2_part, stk::mesh::Part & surface_part,
-    const int parallel_rank, const int parallel_size, const bool add_side = true,
+    stk::mesh::Part & elem1_part,
+    stk::mesh::Part & elem2_part,
+    stk::mesh::Part & surface_part,
+    const int parallel_rank,
+    const int parallel_size,
+    const bool add_side = true,
     const bool build_all_on_P0 = false)
 {
   stk::mesh::BulkData & mesh = fixture.fixture.bulk_data();
@@ -246,48 +265,53 @@ void build_two_tri3_mesh_np2(DECOMP_FIXTURE & fixture,
     std::vector<stk::mesh::EntityId> elem2_nodes = {1, 2, 4};
 
     stk::mesh::Entity element;
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       elem_parts[0] = &elem1_part;
       element = fixture.create_element(elem_parts, 1, elem1_nodes);
     }
-    if((parallel_rank == 1 && !build_all_on_P0) || (parallel_rank == 0 && build_all_on_P0) ||
+    if ((parallel_rank == 1 && !build_all_on_P0) || (parallel_rank == 0 && build_all_on_P0) ||
         parallel_size == 1)
     {
       elem_parts[0] = &elem2_part;
       element = fixture.create_element(elem_parts, 2, elem2_nodes);
     }
 
-    if(parallel_size > 1 && !build_all_on_P0)
+    if (parallel_size > 1 && !build_all_on_P0)
     {
       const int opp_rank = parallel_rank == 0 ? 1 : 0;
-      for(auto i=1; i <= 2; ++i)
+      for (auto i = 1; i <= 2; ++i)
       {
         const auto node = mesh.get_entity(stk::topology::NODE_RANK, i);
         mesh.add_node_sharing(node, opp_rank);
       }
     }
 
-    if(add_side && (parallel_rank == 0 || !build_all_on_P0))
+    if (add_side && (parallel_rank == 0 || !build_all_on_P0))
     {
       sideEntity = mesh.declare_solo_side(7, {&surface_part});
-      for(auto i=1; i <= 2; ++i)
+      for (auto i = 1; i <= 2; ++i)
       {
         auto side_node = mesh.get_entity(stk::topology::NODE_RANK, i);
-        mesh.declare_relation(sideEntity, side_node, i-1);
+        mesh.declare_relation(sideEntity, side_node, i - 1);
       }
       attach_entity_to_elements(mesh, sideEntity);
     }
   }
   mesh.modification_end();
 
-  if(parallel_rank == 0 || !build_all_on_P0)
+  if (parallel_rank == 0 || !build_all_on_P0)
   {
-    EXPECT_EQ(2u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
-    if(add_side)
+    EXPECT_EQ(2u,
+        stk::mesh::count_selected_entities(
+            meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
+    if (add_side)
     {
-      EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(meta.side_rank())));
-      EXPECT_EQ(1u, stk::mesh::count_selected_entities(surface_part, mesh.buckets(meta.side_rank())));
+      EXPECT_EQ(1u,
+          stk::mesh::count_selected_entities(
+              meta.universal_part(), mesh.buckets(meta.side_rank())));
+      EXPECT_EQ(
+          1u, stk::mesh::count_selected_entities(surface_part, mesh.buckets(meta.side_rank())));
 
       EXPECT_EQ(2u, mesh.num_connectivity(sideEntity, stk::topology::ELEMENT_RANK));
     }
@@ -320,27 +344,32 @@ void build_two_tri3_mesh_np2(DECOMP_FIXTURE & fixture,
     node4_coords[1] = 0.;
   }
 }
-}
+} // namespace
 
 struct SingleLSPolicy
 {
-  void setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
+  void
+  setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     Phase_Support::get(meta).set_one_levelset_per_phase(false);
-    FieldRef ls_isovar = aux_meta.declare_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u);
+    FieldRef ls_isovar =
+        aux_meta.declare_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u);
     cdfem_support.add_interpolation_field(ls_isovar);
 
     LevelSet * ls_ptr = nullptr;
-    if(is_death)
+    if (is_death)
     {
       death_spec = std::unique_ptr<CDFEM_Inequality_Spec>(new CDFEM_Inequality_Spec("death_spec"));
     }
-    lsFieldPtr = std::make_unique<LS_Field>("LS", Surface_Identifier(0), ls_isovar, 0., ls_ptr, death_spec.get());
+    lsFieldPtr = std::make_unique<LS_Field>(
+        "LS", Surface_Identifier(0), ls_isovar, 0., ls_ptr, death_spec.get());
   }
 
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks, stk::mesh::MetaData & meta,
-      Block_Surface_Connectivity & block_surface_info, const bool register_fields)
+  void register_ls_on_blocks(const stk::mesh::PartVector & blocks,
+      stk::mesh::MetaData & meta,
+      Block_Surface_Connectivity & block_surface_info,
+      const bool register_fields)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     PhaseTag p, n;
@@ -349,7 +378,7 @@ struct SingleLSPolicy
     n.add(id0, -1);
     PhaseVec named_phases{{"A", p}, {"B", n}};
 
-    if(death_spec)
+    if (death_spec)
     {
       death_spec->set_phases(p, n);
     }
@@ -357,47 +386,63 @@ struct SingleLSPolicy
     Phase_Support & phase_support = Phase_Support::get(meta);
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     phase_support.register_blocks_for_level_set(id0, blocks);
-    std::vector<std::tuple<stk::mesh::PartVector, 
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    std::vector<
+        std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
+        ls_sets;
     auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
     phase_support.decompose_blocks(ls_sets);
 
-    for(auto && b : blocks)
+    for (auto && b : blocks)
     {
       auto conformal_A = phase_support.find_conformal_io_part(*b, p);
       auto conformal_B = phase_support.find_conformal_io_part(*b, n);
       ThrowRequire(conformal_A != nullptr);
       ThrowRequire(conformal_B != nullptr);
-      if(register_fields)
+      if (register_fields)
       {
         aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
-        aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_A);
-        aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_B);
+        aux_meta.register_field(
+            "LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_A);
+        aux_meta.register_field(
+            "LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_B);
       }
     }
   }
 
-  const FieldRef ls_isovar() const { ThrowRequire(lsFieldPtr); return lsFieldPtr->isovar; }
-  const LS_Field & ls_field() const { ThrowRequire(lsFieldPtr); return *lsFieldPtr; }
-  std::vector<LS_Field> ls_fields() const { ThrowRequire(lsFieldPtr); return std::vector<LS_Field>{*lsFieldPtr}; }
+  const FieldRef ls_isovar() const
+  {
+    ThrowRequire(lsFieldPtr);
+    return lsFieldPtr->isovar;
+  }
+  const LS_Field & ls_field() const
+  {
+    ThrowRequire(lsFieldPtr);
+    return *lsFieldPtr;
+  }
+  std::vector<LS_Field> ls_fields() const
+  {
+    ThrowRequire(lsFieldPtr);
+    return std::vector<LS_Field>{*lsFieldPtr};
+  }
 
   std::unique_ptr<LS_Field> lsFieldPtr;
   std::unique_ptr<CDFEM_Inequality_Spec> death_spec;
 };
 
-template <unsigned NUM_LS>
-struct LSPerPhasePolicy
+template <unsigned NUM_LS> struct LSPerPhasePolicy
 {
-  void setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
+  void
+  setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     Phase_Support::get(meta).set_one_levelset_per_phase(true);
     ThrowRequire(!is_death);
-    for(unsigned i=0; i < NUM_LS; ++i)
+    for (unsigned i = 0; i < NUM_LS; ++i)
     {
       const std::string isovar_name = "LS" + std::to_string(i);
-      FieldRef ls_isovar = aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
+      FieldRef ls_isovar =
+          aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
       cdfem_support.add_interpolation_field(ls_isovar);
 
       LevelSet * ls_ptr = nullptr;
@@ -405,12 +450,14 @@ struct LSPerPhasePolicy
     }
   }
 
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks, stk::mesh::MetaData & meta,
-      Block_Surface_Connectivity & block_surface_info, const bool register_fields)
+  void register_ls_on_blocks(const stk::mesh::PartVector & blocks,
+      stk::mesh::MetaData & meta,
+      Block_Surface_Connectivity & block_surface_info,
+      const bool register_fields)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     PhaseVec named_phases;
-    for(unsigned ls=0; ls < NUM_LS; ++ls)
+    for (unsigned ls = 0; ls < NUM_LS; ++ls)
     {
       PhaseTag tag;
       tag.add(Surface_Identifier(ls), -1);
@@ -419,28 +466,35 @@ struct LSPerPhasePolicy
 
     Phase_Support & phase_support = Phase_Support::get(meta);
     phase_support.set_input_block_surface_connectivity(block_surface_info);
-    for(unsigned ls=0; ls < NUM_LS; ++ls)
+    for (unsigned ls = 0; ls < NUM_LS; ++ls)
       phase_support.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-    std::vector<std::tuple<stk::mesh::PartVector, 
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    std::vector<
+        std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
+        ls_sets;
     auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
     phase_support.decompose_blocks(ls_sets);
 
-    for(auto && b : blocks)
+    for (auto && b : blocks)
     {
-      for( unsigned ls=0; ls < NUM_LS; ++ls )
+      for (unsigned ls = 0; ls < NUM_LS; ++ls)
       {
         auto conformal_part = phase_support.find_conformal_io_part(*b, named_phases[ls].tag());
         ThrowRequire(conformal_part != nullptr);
-        if(register_fields)
+        if (register_fields)
         {
           // Need to register every LS on every conformal part
-          for( unsigned ls2=0; ls2 < NUM_LS; ++ls2 )
+          for (unsigned ls2 = 0; ls2 < NUM_LS; ++ls2)
           {
-            aux_meta.register_field(myLSFields[ls2].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_part);
+            aux_meta.register_field(myLSFields[ls2].isovar.name(),
+                FieldType::REAL,
+                stk::topology::NODE_RANK,
+                1u,
+                1u,
+                *conformal_part);
           }
-          aux_meta.register_field(myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
+          aux_meta.register_field(
+              myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
         }
       }
     }
@@ -451,18 +505,19 @@ struct LSPerPhasePolicy
   std::vector<LS_Field> myLSFields;
 };
 
-template <unsigned NUM_LS>
-struct LSPerInterfacePolicy
+template <unsigned NUM_LS> struct LSPerInterfacePolicy
 {
-  void setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
+  void
+  setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     Phase_Support::get(meta).set_one_levelset_per_phase(false);
     ThrowRequire(!is_death);
-    for(unsigned i=0; i < NUM_LS; ++i)
+    for (unsigned i = 0; i < NUM_LS; ++i)
     {
       const std::string isovar_name = "LS" + std::to_string(i);
-      FieldRef ls_isovar = aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
+      FieldRef ls_isovar =
+          aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
       cdfem_support.add_interpolation_field(ls_isovar);
 
       LevelSet * ls_ptr = nullptr;
@@ -470,19 +525,21 @@ struct LSPerInterfacePolicy
     }
   }
 
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks, stk::mesh::MetaData & meta,
-      Block_Surface_Connectivity & block_surface_info, const bool register_fields)
+  void register_ls_on_blocks(const stk::mesh::PartVector & blocks,
+      stk::mesh::MetaData & meta,
+      Block_Surface_Connectivity & block_surface_info,
+      const bool register_fields)
   {
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
     PhaseVec named_phases;
-    const unsigned numPhases = 1<<NUM_LS;
-    for (unsigned phase=0; phase<numPhases; ++phase)
+    const unsigned numPhases = 1 << NUM_LS;
+    for (unsigned phase = 0; phase < numPhases; ++phase)
     {
       std::string phaseName = "P";
       PhaseTag tag;
-      for(unsigned ls=0; ls < NUM_LS; ++ls)
+      for (unsigned ls = 0; ls < NUM_LS; ++ls)
       {
-        const bool lsIsNeg = (phase>>ls)%2 == 0;
+        const bool lsIsNeg = (phase >> ls) % 2 == 0;
         const int lsSign = lsIsNeg ? -1 : 1;
         tag.add(Surface_Identifier(ls), lsSign);
         phaseName += (lsIsNeg ? "-" : "+");
@@ -492,27 +549,35 @@ struct LSPerInterfacePolicy
 
     Phase_Support & phase_support = Phase_Support::get(meta);
     phase_support.set_input_block_surface_connectivity(block_surface_info);
-    for(unsigned ls=0; ls < NUM_LS; ++ls)
+    for (unsigned ls = 0; ls < NUM_LS; ++ls)
       phase_support.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-    std::vector<std::tuple<stk::mesh::PartVector, 
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    std::vector<
+        std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
+        ls_sets;
     auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
     phase_support.decompose_blocks(ls_sets);
 
-    if(register_fields)
+    if (register_fields)
     {
-      for(auto && b : blocks)
+      for (auto && b : blocks)
       {
-        for( unsigned ls=0; ls < NUM_LS; ++ls )
+        for (unsigned ls = 0; ls < NUM_LS; ++ls)
         {
-          aux_meta.register_field(myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
+          aux_meta.register_field(
+              myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
 
-          for (unsigned phase=0; phase<numPhases; ++phase)
+          for (unsigned phase = 0; phase < numPhases; ++phase)
           {
-            auto conformal_part = phase_support.find_conformal_io_part(*b, named_phases[phase].tag());
+            auto conformal_part =
+                phase_support.find_conformal_io_part(*b, named_phases[phase].tag());
             ThrowRequire(conformal_part != nullptr);
-            aux_meta.register_field(myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *conformal_part);
+            aux_meta.register_field(myLSFields[ls].isovar.name(),
+                FieldType::REAL,
+                stk::topology::NODE_RANK,
+                1u,
+                1u,
+                *conformal_part);
           }
         }
       }
@@ -528,12 +593,17 @@ template <class MESH_FIXTURE, class LS_FIELD_POLICY>
 class CompleteDecompositionFixture : public ::testing::Test
 {
 public:
-  CompleteDecompositionFixture()
-  : fixture(), cdfemSupport(CDFEM_Support::get(fixture.meta_data()))
+  CompleteDecompositionFixture() : fixture(), cdfemSupport(CDFEM_Support::get(fixture.meta_data()))
   {
     AuxMetaData & aux_meta = AuxMetaData::get(fixture.meta_data());
-    auto & vec_type = fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
-    coord_field = aux_meta.register_field("coordinates", vec_type, stk::topology::NODE_RANK, 1u, 1u, fixture.meta_data().universal_part());
+    auto & vec_type =
+        fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
+    coord_field = aux_meta.register_field("coordinates",
+        vec_type,
+        stk::topology::NODE_RANK,
+        1u,
+        1u,
+        fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
     cdfemSupport.add_interpolation_field(coord_field);
     cdfemSupport.register_parent_node_ids_field();
@@ -546,9 +616,11 @@ public:
     ls_policy.setup_ls_field(is_death, fixture.meta_data(), cdfemSupport);
   }
 
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks, const bool register_fields = true)
+  void
+  register_ls_on_blocks(const stk::mesh::PartVector & blocks, const bool register_fields = true)
   {
-    ls_policy.register_ls_on_blocks(blocks, fixture.meta_data(), block_surface_info, register_fields);
+    ls_policy.register_ls_on_blocks(
+        blocks, fixture.meta_data(), block_surface_info, register_fields);
   }
 
   stk::mesh::Part & declare_input_block(const std::string & name, const stk::topology topo)
@@ -558,7 +630,9 @@ public:
     return block_part;
   }
 
-  stk::mesh::Part & declare_input_surface(const std::string & name, const stk::topology topo, const std::set<stk::mesh::PartOrdinal> & touching_blocks)
+  stk::mesh::Part & declare_input_surface(const std::string & name,
+      const stk::topology topo,
+      const std::set<stk::mesh::PartOrdinal> & touching_blocks)
   {
     auto & surface_part = fixture.meta_data().declare_part_with_topology(name, topo);
     stk::io::put_io_part_attribute(surface_part);
@@ -567,17 +641,19 @@ public:
     return surface_part;
   }
 
-  stk::mesh::PartVector declare_input_surfaces_touching_block(const unsigned numSurfaces, const stk::mesh::Part & touchingBlock)
+  stk::mesh::PartVector declare_input_surfaces_touching_block(
+      const unsigned numSurfaces, const stk::mesh::Part & touchingBlock)
   {
     const stk::topology topo = touchingBlock.topology().side_topology();
     stk::mesh::PartVector surfaces;
-    for (unsigned i=0; i<numSurfaces; ++i)
+    for (unsigned i = 0; i < numSurfaces; ++i)
     {
-      const std::string name = "InputSurface" + std::to_string(i+1);
+      const std::string name = "InputSurface" + std::to_string(i + 1);
       auto & surfacePart = fixture.meta_data().declare_part_with_topology(name, topo);
       stk::io::put_io_part_attribute(surfacePart);
 
-      block_surface_info.add_surface(surfacePart.mesh_meta_data_ordinal(), {touchingBlock.mesh_meta_data_ordinal()});
+      block_surface_info.add_surface(
+          surfacePart.mesh_meta_data_ordinal(), {touchingBlock.mesh_meta_data_ordinal()});
       surfaces.push_back(&surfacePart);
     }
 
@@ -601,57 +677,49 @@ public:
     }
     interfaceGeometry->prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
 
-    if(!krino_mesh->my_old_mesh)
-    {
-      krino_mesh->my_old_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
-      krino_mesh->my_old_mesh->generate_nonconformal_elements();
-    }
-
     krino_mesh->generate_nonconformal_elements();
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() ==
+        SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
       krino_mesh->snap_nearby_intersections_to_nodes(*interfaceGeometry, nodesToSnappedDomains);
     krino_mesh->set_phase_of_uncut_elements(*interfaceGeometry);
     krino_mesh->triangulate(*interfaceGeometry);
-    krino_mesh->my_old_mesh->stash_field_data(-1, *krino_mesh);
-
-
     krino_mesh->decompose(*interfaceGeometry);
+    krino_mesh->stash_field_data(-1);
     krino_mesh->modify_mesh();
     krino_mesh->prolongation();
 
-    if(krinolog.shouldPrint(LOG_DEBUG))
+    if (krinolog.shouldPrint(LOG_DEBUG))
     {
       krino_mesh->debug_output();
     }
   }
 
-  void debug_output()
-  {
-    krino_mesh->debug_output();
-  }
+  void debug_output() { krino_mesh->debug_output(); }
 
   void commit()
   {
-    krino_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
+    krino_mesh = std::make_unique<CDMesh>(fixture.bulk_data());
   }
 
-  stk::mesh::Entity create_element(stk::mesh::PartVector & elem_parts, stk::mesh::EntityId elem_id,
+  stk::mesh::Entity create_element(stk::mesh::PartVector & elem_parts,
+      stk::mesh::EntityId elem_id,
       std::vector<stk::mesh::EntityId> elem_nodes)
   {
-    auto elem = stk::mesh::declare_element( fixture.bulk_data(), elem_parts, elem_id, elem_nodes );
+    auto elem = stk::mesh::declare_element(fixture.bulk_data(), elem_parts, elem_id, elem_nodes);
     {
       const stk::mesh::Entity * const nodes = fixture.bulk_data().begin_nodes(elem);
-      for(unsigned i=0; i < elem_nodes.size(); ++i)
+      for (unsigned i = 0; i < elem_nodes.size(); ++i)
       {
         EXPECT_EQ(elem_nodes[i], fixture.bulk_data().identifier(nodes[i]));
         if (!fixture.bulk_data().bucket(nodes[i]).member(cdfemSupport.get_active_part()))
-          fixture.bulk_data().change_entity_parts(nodes[i], stk::mesh::ConstPartVector{&cdfemSupport.get_active_part()}, {});
+          fixture.bulk_data().change_entity_parts(
+              nodes[i], stk::mesh::ConstPartVector{&cdfemSupport.get_active_part()}, {});
       }
     }
     return elem;
   }
 
-  void run_rebalance_with(const std::string& decomp_method)
+  void run_rebalance_with(const std::string & decomp_method)
   {
     /* This is a 2 processor test to confirm that we can rebalance a mesh with CDFEM cut elements,
      * and then successfully cut the mesh again. We create an initial mesh with 2 tets both owned
@@ -678,32 +746,44 @@ public:
     const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
     auto & block1_part = declare_input_block("block_1", tet4);
     auto & block2_part = declare_input_block("block_2", tet4);
-    auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+    auto & surface_part = declare_input_surface("surface_1",
+        tet4.side_topology(),
+        {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
     register_ls_on_blocks({&block1_part, &block2_part});
 
-    FieldRef elem_weight_field =
-        aux_meta.register_field("element_weight", FieldType::REAL, stk::topology::ELEMENT_RANK,
-            1u, 1, fixture.meta_data().universal_part());
+    FieldRef elem_weight_field = aux_meta.register_field("element_weight",
+        FieldType::REAL,
+        stk::topology::ELEMENT_RANK,
+        1u,
+        1,
+        fixture.meta_data().universal_part());
 
     commit();
 
     const bool build_all_on_P0 = true;
-    build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank,
-        parallel_size, true, build_all_on_P0);
+    build_two_tet4_mesh_np2(*this,
+        block1_part,
+        block2_part,
+        surface_part,
+        parallel_rank,
+        parallel_size,
+        true,
+        build_all_on_P0);
 
-    stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+    stk::mesh::create_exposed_block_boundary_sides(
+        mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       auto & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-      for(auto && b_ptr : node_buckets)
+      for (auto && b_ptr : node_buckets)
       {
-        for(auto && node : *b_ptr)
+        for (auto && node : *b_ptr)
         {
           const double * coords = field_data<double>(coord_field, node);
           double * ls_data = field_data<double>(ls_policy.ls_isovar(), node);
-          if(ls_data) *ls_data = coords[1]-0.5;
+          if (ls_data) *ls_data = coords[1] - 0.5;
         }
       }
     }
@@ -711,19 +791,19 @@ public:
 
     ASSERT_NO_THROW(decompose_mesh());
 
-    if(parallel_rank == 1)
+    if (parallel_rank == 1)
     {
       EXPECT_EQ(0u, stk::mesh::get_num_entities(mesh));
     }
 
     const stk::mesh::Selector parent_selector = krino_mesh->get_parent_part();
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       auto & elem_buckets = mesh.buckets(stk::topology::ELEMENT_RANK);
-      for(auto && b_ptr : elem_buckets)
+      for (auto && b_ptr : elem_buckets)
       {
         const bool is_parent = parent_selector(*b_ptr);
-        for(auto && elem : *b_ptr)
+        for (auto && elem : *b_ptr)
         {
           double * weight = field_data<double>(elem_weight_field, elem);
           *weight = is_parent ? 1. : 0.;
@@ -741,23 +821,25 @@ public:
         decomp_method);
 
     // Both procs should now own 1 parent element and 4 children
-    EXPECT_EQ(1u, stk::mesh::count_selected_entities(
-        fixture.meta_data().locally_owned_part() & parent_selector,
-        mesh.buckets(stk::topology::ELEMENT_RANK)));
-    EXPECT_EQ(4u, stk::mesh::count_selected_entities(
-        fixture.meta_data().locally_owned_part() & krino_mesh->get_child_part(),
-        mesh.buckets(stk::topology::ELEMENT_RANK)));
+    EXPECT_EQ(1u,
+        stk::mesh::count_selected_entities(
+            fixture.meta_data().locally_owned_part() & parent_selector,
+            mesh.buckets(stk::topology::ELEMENT_RANK)));
+    EXPECT_EQ(4u,
+        stk::mesh::count_selected_entities(
+            fixture.meta_data().locally_owned_part() & krino_mesh->get_child_part(),
+            mesh.buckets(stk::topology::ELEMENT_RANK)));
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
 
     auto & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-    for(auto && b_ptr : node_buckets)
+    for (auto && b_ptr : node_buckets)
     {
-      for(auto && node : *b_ptr)
+      for (auto && node : *b_ptr)
       {
         const double * coords = field_data<double>(coord_field, node);
         double * ls_data = field_data<double>(ls_policy.ls_isovar(), node);
-        if(ls_data) *ls_data = coords[2]-0.5;
+        if (ls_data) *ls_data = coords[2] - 0.5;
       }
     }
 
@@ -782,16 +864,19 @@ public:
   MESH_FIXTURE fixture;
   FieldRef coord_field;
   CDFEM_Support & cdfemSupport;
-  std::shared_ptr<CDMesh> krino_mesh;
+  std::unique_ptr<CDMesh> krino_mesh;
   Block_Surface_Connectivity block_surface_info;
   LS_FIELD_POLICY ls_policy;
   LogRedirecter log;
 };
 
-namespace {
+namespace
+{
 template <class MESH_FIXTURE, class LS_FIELD_POLICY>
-void build_two_tri3_mesh_on_one_or_two_procs(CompleteDecompositionFixture<MESH_FIXTURE, LS_FIELD_POLICY> & fixture,
-    stk::mesh::Part & block_part, const int parallel_rank)
+void build_two_tri3_mesh_on_one_or_two_procs(
+    CompleteDecompositionFixture<MESH_FIXTURE, LS_FIELD_POLICY> & fixture,
+    stk::mesh::Part & block_part,
+    const int parallel_rank)
 {
   stk::mesh::BulkData & mesh = fixture.fixture.bulk_data();
   stk::mesh::MetaData & meta = fixture.fixture.meta_data();
@@ -812,10 +897,11 @@ void build_two_tri3_mesh_on_one_or_two_procs(CompleteDecompositionFixture<MESH_F
     std::vector<stk::mesh::EntityId> elem1_nodes = {1, 2, 4};
     std::vector<stk::mesh::EntityId> elem2_nodes = {2, 3, 4};
 
-    if(parallel_rank == 0) fixture.create_element(elem_parts, 1, elem1_nodes);
-    if(parallel_rank == 1 || parallel_size == 1) fixture.create_element(elem_parts, 2, elem2_nodes);
+    if (parallel_rank == 0) fixture.create_element(elem_parts, 1, elem1_nodes);
+    if (parallel_rank == 1 || parallel_size == 1)
+      fixture.create_element(elem_parts, 2, elem2_nodes);
 
-    if(parallel_size > 1)
+    if (parallel_size > 1)
     {
       const int opp_rank = parallel_rank == 0 ? 1 : 0;
       const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -826,7 +912,9 @@ void build_two_tri3_mesh_on_one_or_two_procs(CompleteDecompositionFixture<MESH_F
   }
   mesh.modification_end();
 
-  EXPECT_EQ(2u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
+  EXPECT_EQ(2u,
+      stk::mesh::count_selected_entities(
+          meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
 
   const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
   const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -857,8 +945,11 @@ void build_two_tri3_mesh_on_one_or_two_procs(CompleteDecompositionFixture<MESH_F
 }
 
 template <class MESH_FIXTURE, class LS_FIELD_POLICY>
-void build_two_tri3_mesh_on_one_or_two_procs_with_sides(CompleteDecompositionFixture<MESH_FIXTURE, LS_FIELD_POLICY> & fixture,
-    stk::mesh::Part & blockPart, const stk::mesh::PartVector & sideParts, const int parallel_rank)
+void build_two_tri3_mesh_on_one_or_two_procs_with_sides(
+    CompleteDecompositionFixture<MESH_FIXTURE, LS_FIELD_POLICY> & fixture,
+    stk::mesh::Part & blockPart,
+    const stk::mesh::PartVector & sideParts,
+    const int parallel_rank)
 {
   build_two_tri3_mesh_on_one_or_two_procs(fixture, blockPart, parallel_rank);
 
@@ -867,22 +958,24 @@ void build_two_tri3_mesh_on_one_or_two_procs_with_sides(CompleteDecompositionFix
   const int parallel_size = mesh.parallel_size();
 
   mesh.modification_begin();
-  if(parallel_rank == 0)
+  if (parallel_rank == 0)
   {
-    const auto element1 = mesh.get_entity(stk::topology::ELEMENT_RANK,1);
+    const auto element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
     mesh.declare_element_side(element1, 0, stk::mesh::PartVector{sideParts[0]});
     mesh.declare_element_side(element1, 2, stk::mesh::PartVector{sideParts[3]});
   }
-  if(parallel_rank == 1 || parallel_size == 1)
+  if (parallel_rank == 1 || parallel_size == 1)
   {
-    const auto element2 = mesh.get_entity(stk::topology::ELEMENT_RANK,2);
+    const auto element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
     mesh.declare_element_side(element2, 0, stk::mesh::PartVector{sideParts[1]});
     mesh.declare_element_side(element2, 1, stk::mesh::PartVector{sideParts[2]});
   }
   mesh.modification_end();
 }
 
-void check_two_tri3_snapped_mesh_np2(CompleteDecompositionFixture<SimpleStkFixture2d, SingleLSPolicy> & fixture, const int parallel_rank)
+void check_two_tri3_snapped_mesh_np2(
+    CompleteDecompositionFixture<SimpleStkFixture2d, SingleLSPolicy> & fixture,
+    const int parallel_rank)
 {
   stk::mesh::BulkData & mesh = fixture.fixture.bulk_data();
   stk::mesh::MetaData & meta = fixture.fixture.meta_data();
@@ -894,8 +987,9 @@ void check_two_tri3_snapped_mesh_np2(CompleteDecompositionFixture<SimpleStkFixtu
   EXPECT_EQ(4u, entities.size());
   mesh.get_entities(stk::topology::NODE_RANK, aux_meta.active_part(), entities);
   EXPECT_EQ(4u, entities.size());
-  mesh.get_entities(stk::topology::NODE_RANK, aux_meta.active_part() & meta.locally_owned_part(), entities);
-  if(parallel_rank == 0)
+  mesh.get_entities(
+      stk::topology::NODE_RANK, aux_meta.active_part() & meta.locally_owned_part(), entities);
+  if (parallel_rank == 0)
   {
     EXPECT_EQ(3u, entities.size());
   }
@@ -905,8 +999,10 @@ void check_two_tri3_snapped_mesh_np2(CompleteDecompositionFixture<SimpleStkFixtu
   }
 
   // Should be 1 interface edge
-  mesh.get_entities(stk::topology::EDGE_RANK, aux_meta.active_part() &
-      aux_meta.get_part("surface_block_1_A_B") & aux_meta.get_part("surface_block_1_B_A"), entities);
+  mesh.get_entities(stk::topology::EDGE_RANK,
+      aux_meta.active_part() & aux_meta.get_part("surface_block_1_A_B") &
+          aux_meta.get_part("surface_block_1_B_A"),
+      entities);
   EXPECT_EQ(1u, entities.size());
 
   // Should be 2 coincident subelements, no parents
@@ -922,7 +1018,7 @@ void check_two_tri3_snapped_mesh_np2(CompleteDecompositionFixture<SimpleStkFixtu
   EXPECT_EQ(1u, entities.size());
 }
 
-}
+} // namespace
 
 typedef CompleteDecompositionFixture<SimpleStkFixture2d, SingleLSPolicy> CDMeshTests2D;
 TEST_F(CDMeshTests2D, IsovariableNotDefinedOnDecomposedBlock)
@@ -939,7 +1035,8 @@ TEST_F(CDMeshTests2D, IsovariableNotDefinedOnDecomposedBlock)
 
   commit();
 
-  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(fixture.meta_data(), ls_policy.ls_fields(), true));
+  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
+      fixture.meta_data(), ls_policy.ls_fields(), true));
 }
 
 TEST_F(CDMeshTests2D, IsovariableNotDefinedOnBlock1)
@@ -964,14 +1061,13 @@ TEST_F(CDMeshTests2D, IsovariableNotDefinedOnBlock1)
 
   // Catch the case where the field exists on both conformal parts, but not
   // the initial un-decomposed part so we can't do the initial decomposition.
-  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK,
-      1u, 1u, *A_part);
-  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK,
-      1u, 1u, *B_part);
+  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *A_part);
+  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *B_part);
 
   commit();
 
-  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(fixture.meta_data(), ls_policy.ls_fields(), true));
+  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
+      fixture.meta_data(), ls_policy.ls_fields(), true));
 }
 
 TEST_F(CDMeshTests2D, IsovariableOnlyOnBlock1SteadyState)
@@ -989,12 +1085,12 @@ TEST_F(CDMeshTests2D, IsovariableOnlyOnBlock1SteadyState)
   auto & meta = fixture.meta_data();
   auto & aux_meta = AuxMetaData::get(meta);
 
-  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK,
-      1u, 1u, block_part);
+  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, block_part);
 
   commit();
 
-  EXPECT_NO_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(fixture.meta_data(), ls_policy.ls_fields(), false));
+  EXPECT_NO_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
+      fixture.meta_data(), ls_policy.ls_fields(), false));
 }
 
 TEST_F(CDMeshTests2D, DeathIsovariableNotDefinedOnDecomposedBlock)
@@ -1012,7 +1108,8 @@ TEST_F(CDMeshTests2D, DeathIsovariableNotDefinedOnDecomposedBlock)
 
   commit();
 
-  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(fixture.meta_data(), ls_policy.ls_fields(), true));
+  EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
+      fixture.meta_data(), ls_policy.ls_fields(), true));
 }
 
 TEST_F(CDMeshTests2D, DeathIsovariableNotDefinedOnDeadBlock)
@@ -1033,14 +1130,13 @@ TEST_F(CDMeshTests2D, DeathIsovariableNotDefinedOnDeadBlock)
   auto * alive_part = meta.get_part("block_1_A");
   ASSERT_TRUE(alive_part != nullptr);
 
-  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK,
-      1u, 1u, block_part);
-  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK,
-      1u, 1u, *alive_part);
+  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, block_part);
+  aux_meta.register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *alive_part);
 
   commit();
 
-  EXPECT_NO_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(fixture.meta_data(), ls_policy.ls_fields(), true));
+  EXPECT_NO_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
+      fixture.meta_data(), ls_policy.ls_fields(), true));
 }
 
 typedef CompleteDecompositionFixture<SimpleStkFixture2d, SingleLSPolicy> CDMeshTests2D;
@@ -1073,7 +1169,8 @@ TEST_F(CDMeshTests2D, Single_Tri3_Decomposition)
   }
   mesh.modification_end();
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
   const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -1116,8 +1213,10 @@ TEST_F(CDMeshTests2D, Single_Tri3_Decomposition)
   EXPECT_EQ(5u, entities.size());
 
   // Should be 1 interface edge
-  mesh.get_entities(stk::topology::EDGE_RANK, aux_meta.active_part() &
-      aux_meta.get_part("surface_block_1_A_B") & aux_meta.get_part("surface_block_1_B_A"), entities);
+  mesh.get_entities(stk::topology::EDGE_RANK,
+      aux_meta.active_part() & aux_meta.get_part("surface_block_1_A_B") &
+          aux_meta.get_part("surface_block_1_B_A"),
+      entities);
   EXPECT_EQ(1u, entities.size());
 
   // Should be 3 conformal elements plus the parent element
@@ -1154,7 +1253,8 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
 
   build_two_tri3_mesh_on_one_or_two_procs(*this, block_part, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   {
     const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
@@ -1181,8 +1281,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
     check_two_tri3_snapped_mesh_np2(*this, parallel_rank);
 
     std::vector<stk::mesh::Entity> entities;
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_A") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_A") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_TRUE(entities.empty());
     }
@@ -1190,8 +1292,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
     {
       EXPECT_EQ(1u, entities.size());
     }
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_B") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_B") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_EQ(1u, entities.size());
     }
@@ -1200,7 +1304,7 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
       EXPECT_TRUE(entities.empty());
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 
   // Swap the A and B elements
@@ -1229,8 +1333,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
     check_two_tri3_snapped_mesh_np2(*this, parallel_rank);
 
     std::vector<stk::mesh::Entity> entities;
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_A") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_A") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_EQ(1u, entities.size());
     }
@@ -1238,8 +1344,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Snapped_Interface_Decomposition_NP2)
     {
       EXPECT_TRUE(entities.empty());
     }
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_B") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_B") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_TRUE(entities.empty());
     }
@@ -1271,7 +1379,8 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2)
 
   build_two_tri3_mesh_on_one_or_two_procs(*this, block_part, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   {
     const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
@@ -1298,8 +1407,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2)
     check_two_tri3_snapped_mesh_np2(*this, parallel_rank);
 
     std::vector<stk::mesh::Entity> entities;
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_A") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_A") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_TRUE(entities.empty());
     }
@@ -1307,8 +1418,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2)
     {
       EXPECT_EQ(1u, entities.size());
     }
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_B") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_B") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_EQ(1u, entities.size());
     }
@@ -1340,7 +1453,8 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2_Opposit
 
   build_two_tri3_mesh_on_one_or_two_procs(*this, block_part, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   {
     const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
@@ -1367,8 +1481,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2_Opposit
     check_two_tri3_snapped_mesh_np2(*this, parallel_rank);
 
     std::vector<stk::mesh::Entity> entities;
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_A") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_A") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_EQ(1u, entities.size());
     }
@@ -1376,8 +1492,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Death_Snapped_Interface_Decomposition_NP2_Opposit
     {
       EXPECT_TRUE(entities.empty());
     }
-    mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_B") & meta.locally_owned_part(), entities);
-    if(parallel_rank == 0)
+    mesh.get_entities(stk::topology::ELEMENT_RANK,
+        aux_meta.get_part("block_1_B") & meta.locally_owned_part(),
+        entities);
+    if (parallel_rank == 0)
     {
       EXPECT_TRUE(entities.empty());
     }
@@ -1410,7 +1528,8 @@ TEST_F(CDMeshTests2D, Two_Tri3_Periodic)
 
   build_two_tri3_mesh_on_one_or_two_procs(*this, block_part, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
 
   {
     const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
@@ -1467,7 +1586,7 @@ TEST_F(CDMeshTests2D, Two_Tri3_PeriodicParallelNonSharedNode)
 
   commit();
 
-  const stk::mesh::EntityId starting_id = 1 + 3*parallel_rank;
+  const stk::mesh::EntityId starting_id = 1 + 3 * parallel_rank;
   mesh.modification_begin();
   {
     stk::mesh::PartVector elem_parts;
@@ -1480,9 +1599,12 @@ TEST_F(CDMeshTests2D, Two_Tri3_PeriodicParallelNonSharedNode)
   }
   mesh.modification_end();
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
+  EXPECT_EQ(1u,
+      stk::mesh::count_selected_entities(
+          meta.universal_part(), mesh.buckets(stk::topology::ELEMENT_RANK)));
 
   const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, starting_id);
   const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, starting_id + 1);
@@ -1506,13 +1628,14 @@ TEST_F(CDMeshTests2D, Two_Tri3_PeriodicParallelNonSharedNode)
   node3_coords[0] = x0 + 1.;
   node3_coords[1] = 1.;
 
-  // Going to add "periodic" constraint between node1 on P0 and P1, so ghost those nodes appropriately
+  // Going to add "periodic" constraint between node1 on P0 and P1, so ghost those nodes
+  // appropriately
   mesh.modification_begin();
   auto & ghosting = mesh.create_ghosting("test_ghosting");
   mesh.modification_end();
   stk::mesh::EntityProcVec add_send;
   const int mod = parallel_rank % 2;
-  if(mod == 0)
+  if (mod == 0)
   {
     add_send.push_back(std::make_pair(node1, parallel_rank + 1));
   }
@@ -1525,16 +1648,17 @@ TEST_F(CDMeshTests2D, Two_Tri3_PeriodicParallelNonSharedNode)
   mesh.modification_end();
 
   ASSERT_EQ(4u,
-      stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::NODE_RANK)));
+      stk::mesh::count_selected_entities(
+          meta.universal_part(), mesh.buckets(stk::topology::NODE_RANK)));
   {
-    // Procs with mod == 0 will setup isovars so that the 1-2 edge has a crossing within the snap tolerance
-    // of node 1. Procs with mod == 1 will have the crossing outside the snap tolerance
+    // Procs with mod == 0 will setup isovars so that the 1-2 edge has a crossing within the snap
+    // tolerance of node 1. Procs with mod == 1 will have the crossing outside the snap tolerance
     *field_data<double>(ls_policy.ls_isovar(), node1) = (mod == 0) ? -0.01 : -1.;
     *field_data<double>(ls_policy.ls_isovar(), node2) = 1.;
     *field_data<double>(ls_policy.ls_isovar(), node3) = 1.;
 
-    auto other_node1 = mesh.get_entity(stk::topology::NODE_RANK,
-        (mod == 0) ? starting_id + 3 : starting_id - 3);
+    auto other_node1 =
+        mesh.get_entity(stk::topology::NODE_RANK, (mod == 0) ? starting_id + 3 : starting_id - 3);
     krino_mesh->add_periodic_node_pair(node1, other_node1);
 
     try
@@ -1558,10 +1682,13 @@ TEST_F(CDMeshTests2D, Two_Tri3_PeriodicParallelNonSharedNode)
   }
 }
 
-void set_level_set(const stk::mesh::BulkData & mesh, FieldRef lsField, const std::vector<stk::mesh::EntityId> & nodeIds, const std::vector<double> & nodeLS)
+void set_level_set(const stk::mesh::BulkData & mesh,
+    FieldRef lsField,
+    const std::vector<stk::mesh::EntityId> & nodeIds,
+    const std::vector<double> & nodeLS)
 {
   ThrowRequire(nodeIds.size() == nodeLS.size());
-  for (size_t i=0; i<nodeIds.size(); ++i)
+  for (size_t i = 0; i < nodeIds.size(); ++i)
   {
     const auto node = mesh.get_entity(stk::topology::NODE_RANK, nodeIds[i]);
     ThrowRequire(mesh.is_valid(node));
@@ -1589,9 +1716,10 @@ TEST_F(CDMeshTests2D, Two_Tri3_Check_Compatibility_When_Snapping)
 
   build_two_tri3_mesh_on_one_or_two_procs(*this, block_part, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  set_level_set(mesh, ls_policy.ls_isovar(), {1,2,3,4} , {-1., -1., 1.e20, 1.});
+  set_level_set(mesh, ls_policy.ls_isovar(), {1, 2, 3, 4}, {-1., -1., 1.e20, 1.});
 
   try
   {
@@ -1610,24 +1738,28 @@ TEST_F(CDMeshTests2D, Two_Tri3_Check_Compatibility_When_Snapping)
   mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_B"), entities);
   EXPECT_EQ(1u, entities.size());
 
-  //fixture.write_results("Two_Tri3_Check_Compatibility_When_Snapping.e");
+  // fixture.write_results("Two_Tri3_Check_Compatibility_When_Snapping.e");
 }
 
-void set_level_sets(const stk::mesh::BulkData & mesh, const std::vector<LS_Field> & lsFields, const std::vector<stk::mesh::EntityId> & nodeIds, const std::vector<std::vector<double>> & nodeLS)
+void set_level_sets(const stk::mesh::BulkData & mesh,
+    const std::vector<LS_Field> & lsFields,
+    const std::vector<stk::mesh::EntityId> & nodeIds,
+    const std::vector<std::vector<double>> & nodeLS)
 {
   ThrowRequire(nodeIds.size() == nodeLS.size());
   const size_t numFields = lsFields.size();
-  for (size_t i=0; i<nodeIds.size(); ++i)
+  for (size_t i = 0; i < nodeIds.size(); ++i)
   {
     const auto node = mesh.get_entity(stk::topology::NODE_RANK, nodeIds[i]);
     ThrowRequire(mesh.is_valid(node));
     ThrowRequire(numFields == nodeLS[i].size());
-    for (size_t j=0; j<numFields; ++j)
+    for (size_t j = 0; j < numFields; ++j)
       *field_data<double>(lsFields[j].isovar, node) = nodeLS[i][j];
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture2d, LSPerPhasePolicy<3> > CDMeshTests2DLSPerPhase;
+typedef CompleteDecompositionFixture<SimpleStkFixture2d, LSPerPhasePolicy<3>>
+    CDMeshTests2DLSPerPhase;
 TEST_F(CDMeshTests2DLSPerPhase, Two_Tri3_Check_Compatibility_When_Snapping)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1636,7 +1768,8 @@ TEST_F(CDMeshTests2DLSPerPhase, Two_Tri3_Check_Compatibility_When_Snapping)
 
   if (parallel_size > 2) return;
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
   stk::mesh::BulkData & mesh = fixture.bulk_data();
   AuxMetaData & aux_meta = AuxMetaData::get(fixture.meta_data());
@@ -1654,10 +1787,14 @@ TEST_F(CDMeshTests2DLSPerPhase, Two_Tri3_Check_Compatibility_When_Snapping)
 
   build_two_tri3_mesh_on_one_or_two_procs_with_sides(*this, blockPart, sideParts, parallel_rank);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, fixture.meta_data().universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const double eps = 1.e-13;
-  set_level_sets(mesh, ls_policy.ls_fields(), {1,2,3,4} , {{-1.,1.,1.+eps}, {-1.,1.,1.+eps}, {1.e2,1.,-1.}, {1.,-1.,-1.+eps}});
+  set_level_sets(mesh,
+      ls_policy.ls_fields(),
+      {1, 2, 3, 4},
+      {{-1., 1., 1. + eps}, {-1., 1., 1. + eps}, {1.e2, 1., -1.}, {1., -1., -1. + eps}});
 
   try
   {
@@ -1670,7 +1807,7 @@ TEST_F(CDMeshTests2DLSPerPhase, Two_Tri3_Check_Compatibility_When_Snapping)
     ASSERT_TRUE(false);
   }
 
-  //std::cout << log.get_log() << std::endl;
+  // std::cout << log.get_log() << std::endl;
 
   std::vector<stk::mesh::Entity> entities;
   mesh.get_entities(stk::topology::NODE_RANK, fixture.meta_data().universal_part(), entities);
@@ -1682,7 +1819,7 @@ TEST_F(CDMeshTests2DLSPerPhase, Two_Tri3_Check_Compatibility_When_Snapping)
   mesh.get_entities(stk::topology::ELEMENT_RANK, aux_meta.get_part("block_1_P2"), entities);
   EXPECT_EQ(2u, entities.size());
 
-  //fixture.write_results("Two_Tri3_Check_Compatibility_When_Snapping_LSPerPhase.e");
+  // fixture.write_results("Two_Tri3_Check_Compatibility_When_Snapping_LSPerPhase.e");
 }
 
 typedef CompleteDecompositionFixture<SimpleStkFixture3d, SingleLSPolicy> CDMeshTests3D;
@@ -1697,11 +1834,14 @@ TEST_F(CDMeshTests3D, Write_Results_No_Side)
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size, false);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size, false);
 
   fixture.write_results("Write_Results_No_Side.e");
 }
@@ -1717,11 +1857,14 @@ TEST_F(CDMeshTests3D, Write_Results_With_Side)
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
   fixture.write_results("Write_Results_With_Side.e");
 }
@@ -1734,12 +1877,12 @@ void randomize_ls_field(const stk::mesh::BulkData & mesh,
     std::uniform_real_distribution<double> & dist)
 {
   auto & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-  for(auto && b_ptr : node_buckets)
+  for (auto && b_ptr : node_buckets)
   {
-    for(auto && node : *b_ptr)
+    for (auto && node : *b_ptr)
     {
       double * ls_data = field_data<double>(field, node);
-      if(ls_data) *ls_data = dist(mt);
+      if (ls_data) *ls_data = dist(mt);
     }
   }
 }
@@ -1749,17 +1892,17 @@ void set_ls_field_on_part(const stk::mesh::BulkData & mesh,
     const double ls_value)
 {
   auto & node_buckets = mesh.get_buckets(stk::topology::NODE_RANK, part);
-  for(auto && b_ptr : node_buckets)
+  for (auto && b_ptr : node_buckets)
   {
-    for(auto && node : *b_ptr)
+    for (auto && node : *b_ptr)
     {
       double * ls_data = field_data<double>(ls_field, node);
-      if(ls_data) *ls_data = ls_value;
+      if (ls_data) *ls_data = ls_value;
     }
   }
 }
 
-}
+} // namespace
 
 TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
 {
@@ -1770,7 +1913,6 @@ TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
   stk::mesh::BulkData & mesh = fixture.bulk_data();
   stk::mesh::MetaData & meta = fixture.meta_data();
   AuxMetaData & aux_meta = AuxMetaData::get(meta);
-
 
   if (parallel_size > 2) return;
 
@@ -1784,15 +1926,19 @@ TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -1801,9 +1947,9 @@ TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     randomize_ls_field(mesh, ls_policy.ls_isovar(), mt, dist);
     stk::mesh::communicate_field_data(mesh, {&ls_policy.ls_isovar().field(), &coord_field.field()});
@@ -1825,7 +1971,7 @@ TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
     EXPECT_TRUE(check_shared_entity_nodes(mesh));
     EXPECT_TRUE(krino_mesh->check_element_side_parts());
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       krino_mesh->debug_output();
@@ -1836,7 +1982,7 @@ TEST_F(CDMeshTests3D, Random_TwoTet4_InternalSideset)
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
@@ -1852,7 +1998,8 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 
   if (parallel_size > 2) return;
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
   setup_ls_field();
@@ -1861,19 +2008,20 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1.,1.,0.));
-  const double mesh_size = 1./3.;
+  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
   stk::mesh::BulkData & mesh = fixture.bulk_data();
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(),&aux_meta.active_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
   double overallMinEdgeLength = std::numeric_limits<double>::max();
   double overallMaxEdgeLength = -std::numeric_limits<double>::max();
   double overallMinVolume = std::numeric_limits<double>::max();
   double overallMaxVolume = -std::numeric_limits<double>::max();
-  const double expectedMinLength = mesh_size*approxMinRelativeSize;
-  const double expectedMinVol = std::pow(mesh_size*approxMinRelativeSize, 2.) / 2.;
+  const double expectedMinLength = mesh_size * approxMinRelativeSize;
+  const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 2.) / 2.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -1882,12 +2030,12 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
     randomize_ls_field(mesh, ls_policy.ls_isovar(), mt, dist);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_isovar(), 1.);
@@ -1918,16 +2066,15 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
     overallMaxVolume = std::max(overallMaxVolume, maxVolume);
 
     bool failedQuality = false;
-    if (minVolume < 0.5*expectedMinVol)
+    if (minVolume < 0.5 * expectedMinVol)
     {
       failedQuality = true;
       std::cout << "Failed quality requirements: minEdgeLength=" << minEdgeLength
-      << ", maxEdgeLength=" << maxEdgeLength
-      << ", minVolume=" << minVolume
-      << ", maxVolume=" << maxVolume << std::endl;
+                << ", maxEdgeLength=" << maxEdgeLength << ", minVolume=" << minVolume
+                << ", maxVolume=" << maxVolume << std::endl;
     }
 
-    if(HasNonfatalFailure() || failedQuality)
+    if (HasNonfatalFailure() || failedQuality)
     {
       std::cout << "Failure on iteration " << i << std::endl;
       krino_mesh->debug_output();
@@ -1938,14 +2085,15 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
       ASSERT_TRUE(false);
     }
   }
-  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength << ", minVolume~=" << expectedMinVol << std::endl;
+  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength
+            << ", minVolume~=" << expectedMinVol << std::endl;
   std::cout << "Quality results: minEdgeLength=" << overallMinEdgeLength
-      << ", maxEdgeLength=" << overallMaxEdgeLength
-      << ", minVolume=" << overallMinVolume
-      << ", maxVolume=" << overallMaxVolume << std::endl;
+            << ", maxEdgeLength=" << overallMaxEdgeLength << ", minVolume=" << overallMinVolume
+            << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
-typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerPhasePolicy<3>> CDMeshTestsBboxMesh2DLSPerPhase;
+typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerPhasePolicy<3>>
+    CDMeshTestsBboxMesh2DLSPerPhase;
 TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1957,7 +2105,8 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 
   if (parallel_size > 2) return;
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
   setup_ls_field();
@@ -1966,24 +2115,26 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1.,1.,0.));
-  const double mesh_size = 1./3.;
+  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
   fixture.create_domain_sides();
   stk::mesh::BulkData & mesh = fixture.bulk_data();
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(),&aux_meta.active_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
   const auto & lsFields = ls_policy.ls_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for(auto && lsField : lsFields) sync_fields.push_back(&lsField.isovar.field());
+  for (auto && lsField : lsFields)
+    sync_fields.push_back(&lsField.isovar.field());
 
   double overallMinEdgeLength = std::numeric_limits<double>::max();
   double overallMaxEdgeLength = -std::numeric_limits<double>::max();
   double overallMinVolume = std::numeric_limits<double>::max();
   double overallMaxVolume = -std::numeric_limits<double>::max();
-  const double expectedMinLength = mesh_size*approxMinRelativeSize;
-  const double expectedMinVol = std::pow(mesh_size*approxMinRelativeSize, 2.) / 2.;
+  const double expectedMinLength = mesh_size * approxMinRelativeSize;
+  const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 2.) / 2.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -1992,14 +2143,14 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
-    for(auto && lsField : lsFields)
+    for (auto && lsField : lsFields)
     {
       randomize_ls_field(mesh, lsField.isovar, mt, dist);
     }
@@ -2030,7 +2181,7 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
     overallMinVolume = std::min(overallMinVolume, minVolume);
     overallMaxVolume = std::max(overallMaxVolume, maxVolume);
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       krino_mesh->debug_output();
@@ -2041,11 +2192,11 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
       ASSERT_TRUE(false);
     }
   }
-  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength << ", minVolume~=" << expectedMinVol << std::endl;
+  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength
+            << ", minVolume~=" << expectedMinVol << std::endl;
   std::cout << "Quality results: minEdgeLength=" << overallMinEdgeLength
-      << ", maxEdgeLength=" << overallMaxEdgeLength
-      << ", minVolume=" << overallMinVolume
-      << ", maxVolume=" << overallMaxVolume << std::endl;
+            << ", maxEdgeLength=" << overallMaxEdgeLength << ", minVolume=" << overallMinVolume
+            << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
 typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, SingleLSPolicy> CDMeshTestsBboxMesh3D;
@@ -2060,7 +2211,8 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 
   if (parallel_size > 2) return;
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
   setup_ls_field();
@@ -2069,19 +2221,20 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1.,1.,1.));
-  const double mesh_size = 1./3.;
+  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
   stk::mesh::BulkData & mesh = fixture.bulk_data();
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(),&aux_meta.active_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
   double overallMinEdgeLength = std::numeric_limits<double>::max();
   double overallMaxEdgeLength = -std::numeric_limits<double>::max();
   double overallMinVolume = std::numeric_limits<double>::max();
   double overallMaxVolume = -std::numeric_limits<double>::max();
-  const double expectedMinLength = mesh_size*approxMinRelativeSize;
-  const double expectedMinVol = std::pow(mesh_size*approxMinRelativeSize, 3.) / 6.;
+  const double expectedMinLength = mesh_size * approxMinRelativeSize;
+  const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 3.) / 6.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2090,12 +2243,12 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 #else
   const int num_cases = 250;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%250 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
     randomize_ls_field(mesh, ls_policy.ls_isovar(), mt, dist);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_isovar(), 1.);
@@ -2126,16 +2279,15 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
     overallMaxVolume = std::max(overallMaxVolume, maxVolume);
 
     bool failedQuality = false;
-    if (minVolume < 0.5*expectedMinVol)
+    if (minVolume < 0.5 * expectedMinVol)
     {
       failedQuality = true;
       std::cout << "Failed quality requirements: minEdgeLength=" << minEdgeLength
-      << ", maxEdgeLength=" << maxEdgeLength
-      << ", minVolume=" << minVolume
-      << ", maxVolume=" << maxVolume << std::endl;
+                << ", maxEdgeLength=" << maxEdgeLength << ", minVolume=" << minVolume
+                << ", maxVolume=" << maxVolume << std::endl;
     }
 
-    if(HasNonfatalFailure() || failedQuality)
+    if (HasNonfatalFailure() || failedQuality)
     {
       std::cout << "Failure on iteration " << i << std::endl;
       krino_mesh->debug_output();
@@ -2146,11 +2298,11 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
       ASSERT_TRUE(false);
     }
   }
-  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength << ", minVolume~=" << expectedMinVol << std::endl;
+  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength
+            << ", minVolume~=" << expectedMinVol << std::endl;
   std::cout << "Actual quality results: minEdgeLength=" << overallMinEdgeLength
-      << ", maxEdgeLength=" << overallMaxEdgeLength
-      << ", minVolume=" << overallMinVolume
-      << ", maxVolume=" << overallMaxVolume << std::endl;
+            << ", maxEdgeLength=" << overallMaxEdgeLength << ", minVolume=" << overallMinVolume
+            << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
 typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, SingleLSPolicy> CDMeshTestsBboxMesh3DBCC;
@@ -2165,7 +2317,8 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 
   if (parallel_size > 2) return;
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
   setup_ls_field();
@@ -2174,21 +2327,23 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1.,1.,1.));
-  const double mesh_size = 1./3.;
+  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.set_mesh_structure_type(BCC_BOUNDING_BOX_MESH);
   fixture.populate_mesh();
   stk::mesh::BulkData & mesh = fixture.bulk_data();
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(),&aux_meta.active_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
-  const double BCCsize = std::sqrt(3.)/2.*mesh_size;
+  const double BCCsize = std::sqrt(3.) / 2. * mesh_size;
   double overallMinEdgeLength = std::numeric_limits<double>::max();
   double overallMaxEdgeLength = -std::numeric_limits<double>::max();
   double overallMinVolume = std::numeric_limits<double>::max();
   double overallMaxVolume = -std::numeric_limits<double>::max();
-  const double expectedMinLength = BCCsize*approxMinRelativeSize;
-  const double expectedMinVol = std::pow(BCCsize*approxMinRelativeSize, 3.) / (6.*std::sqrt(2.));
+  const double expectedMinLength = BCCsize * approxMinRelativeSize;
+  const double expectedMinVol =
+      std::pow(BCCsize * approxMinRelativeSize, 3.) / (6. * std::sqrt(2.));
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2197,12 +2352,12 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 #else
   const int num_cases = 250;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%250 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
     randomize_ls_field(mesh, ls_policy.ls_isovar(), mt, dist);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_isovar(), 1.);
@@ -2233,16 +2388,15 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
     overallMaxVolume = std::max(overallMaxVolume, maxVolume);
 
     bool failedQuality = false;
-    if (minVolume < 0.5*expectedMinVol)
+    if (minVolume < 0.5 * expectedMinVol)
     {
       failedQuality = true;
       std::cout << "Failed quality requirements: minEdgeLength=" << minEdgeLength
-      << ", maxEdgeLength=" << maxEdgeLength
-      << ", minVolume=" << minVolume
-      << ", maxVolume=" << maxVolume << std::endl;
+                << ", maxEdgeLength=" << maxEdgeLength << ", minVolume=" << minVolume
+                << ", maxVolume=" << maxVolume << std::endl;
     }
 
-    if(HasNonfatalFailure() || failedQuality)
+    if (HasNonfatalFailure() || failedQuality)
     {
       std::cout << "Failure on iteration " << i << std::endl;
       krino_mesh->debug_output();
@@ -2253,11 +2407,11 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
       ASSERT_TRUE(false);
     }
   }
-  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength << ", minVolume~=" << expectedMinVol << std::endl;
+  std::cout << "Expected quality: minEdgeLength~=" << expectedMinLength
+            << ", minVolume~=" << expectedMinVol << std::endl;
   std::cout << "Actual quality results: minEdgeLength=" << overallMinEdgeLength
-      << ", maxEdgeLength=" << overallMaxEdgeLength
-      << ", minVolume=" << overallMinVolume
-      << ", maxVolume=" << overallMaxVolume << std::endl;
+            << ", maxEdgeLength=" << overallMaxEdgeLength << ", minVolume=" << overallMinVolume
+            << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
 TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_SnappedTriplePoint)
@@ -2291,7 +2445,8 @@ TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_SnappedTriplePoint)
   }
   mesh.modification_end();
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
   const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -2345,14 +2500,20 @@ TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_SnappedTriplePoint)
   mesh.get_entities(stk::topology::NODE_RANK, aux_meta.active_part(), entities);
   EXPECT_EQ(5u, entities.size());
 
-  mesh.get_entities(stk::topology::EDGE_RANK, aux_meta.active_part() &
-      aux_meta.get_part("surface_block_1_P0_P1") & aux_meta.get_part("surface_block_1_P1_P0"), entities);
+  mesh.get_entities(stk::topology::EDGE_RANK,
+      aux_meta.active_part() & aux_meta.get_part("surface_block_1_P0_P1") &
+          aux_meta.get_part("surface_block_1_P1_P0"),
+      entities);
   EXPECT_EQ(1u, entities.size());
-  mesh.get_entities(stk::topology::EDGE_RANK, aux_meta.active_part() &
-      aux_meta.get_part("surface_block_1_P1_P2") & aux_meta.get_part("surface_block_1_P2_P1"), entities);
+  mesh.get_entities(stk::topology::EDGE_RANK,
+      aux_meta.active_part() & aux_meta.get_part("surface_block_1_P1_P2") &
+          aux_meta.get_part("surface_block_1_P2_P1"),
+      entities);
   EXPECT_EQ(1u, entities.size());
-  mesh.get_entities(stk::topology::EDGE_RANK, aux_meta.active_part() &
-      aux_meta.get_part("surface_block_1_P0_P2") & aux_meta.get_part("surface_block_1_P2_P0"), entities);
+  mesh.get_entities(stk::topology::EDGE_RANK,
+      aux_meta.active_part() & aux_meta.get_part("surface_block_1_P0_P2") &
+          aux_meta.get_part("surface_block_1_P2_P0"),
+      entities);
   EXPECT_EQ(0u, entities.size());
 
   // Should be 3 conformal elements plus the parent element
@@ -2401,7 +2562,8 @@ TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_TriplePointDebug)
   }
   mesh.modification_end();
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
   const auto node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
@@ -2422,15 +2584,15 @@ TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_TriplePointDebug)
 
   const auto & ls_fields = ls_policy.ls_fields();
   *field_data<double>(ls_fields[0].isovar, node1) = -0.2;
-  *field_data<double>(ls_fields[1].isovar, node1) =  0.1;
-  *field_data<double>(ls_fields[2].isovar, node1) =  0.6;
+  *field_data<double>(ls_fields[1].isovar, node1) = 0.1;
+  *field_data<double>(ls_fields[2].isovar, node1) = 0.6;
 
-  *field_data<double>(ls_fields[0].isovar, node2) =  0.7;
+  *field_data<double>(ls_fields[0].isovar, node2) = 0.7;
   *field_data<double>(ls_fields[1].isovar, node2) = -0.5;
-  *field_data<double>(ls_fields[2].isovar, node2) =  0.4;
+  *field_data<double>(ls_fields[2].isovar, node2) = 0.4;
 
-  *field_data<double>(ls_fields[0].isovar, node3) =  0.1;
-  *field_data<double>(ls_fields[1].isovar, node3) =  0.3;
+  *field_data<double>(ls_fields[0].isovar, node3) = 0.1;
+  *field_data<double>(ls_fields[1].isovar, node3) = 0.3;
   *field_data<double>(ls_fields[2].isovar, node3) = -0.5;
 
   try
@@ -2449,7 +2611,8 @@ TEST_F(CDMeshTests2DLSPerPhase, Tri3_3LS_TriplePointDebug)
   std::remove("debug_2d.e");
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture2d, LSPerPhasePolicy<3> > CDMeshTests2DLSPerPhase;
+typedef CompleteDecompositionFixture<SimpleStkFixture2d, LSPerPhasePolicy<3>>
+    CDMeshTests2DLSPerPhase;
 TEST_F(CDMeshTests2DLSPerPhase, Random_TwoTri3_InternalSideset_Snap)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -2462,26 +2625,32 @@ TEST_F(CDMeshTests2DLSPerPhase, Random_TwoTri3_InternalSideset_Snap)
   stk::mesh::MetaData & meta = fixture.meta_data();
   AuxMetaData & aux_meta = AuxMetaData::get(meta);
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
   setup_ls_field();
 
   const stk::topology tri3 = stk::topology::TRIANGLE_3_2D;
   auto & block1_part = declare_input_block("block_1", tri3);
   auto & block2_part = declare_input_block("block_2", tri3);
-  auto & surface_part = declare_input_surface("surface_1", tri3.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tri3.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
   commit();
 
-  build_two_tri3_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+  build_two_tri3_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto & ls_fields = ls_policy.ls_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for(auto && ls_field : ls_fields) sync_fields.push_back(&ls_field.isovar.field());
+  for (auto && ls_field : ls_fields)
+    sync_fields.push_back(&ls_field.isovar.field());
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2490,14 +2659,14 @@ TEST_F(CDMeshTests2DLSPerPhase, Random_TwoTri3_InternalSideset_Snap)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
-    for(auto && ls_field : ls_fields)
+    for (auto && ls_field : ls_fields)
     {
       randomize_ls_field(mesh, ls_field.isovar, mt, dist);
     }
@@ -2528,7 +2697,7 @@ TEST_F(CDMeshTests2DLSPerPhase, Random_TwoTri3_InternalSideset_Snap)
       fixture.write_results(fname.str());
     }
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       std::ostringstream fname;
@@ -2537,11 +2706,12 @@ TEST_F(CDMeshTests2DLSPerPhase, Random_TwoTri3_InternalSideset_Snap)
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3> > CDMeshTests3DLSPerInterface;
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3>>
+    CDMeshTests3DLSPerInterface;
 TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -2573,11 +2743,13 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
 
   build_one_tet4_mesh(*this, block1_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto & ls_fields = ls_policy.ls_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for(auto && ls_field : ls_fields) sync_fields.push_back(&ls_field.isovar.field());
+  for (auto && ls_field : ls_fields)
+    sync_fields.push_back(&ls_field.isovar.field());
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2586,14 +2758,14 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
-    for(auto && ls_field : ls_fields)
+    for (auto && ls_field : ls_fields)
     {
       randomize_ls_field(mesh, ls_field.isovar, mt, dist);
     }
@@ -2617,7 +2789,7 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
     EXPECT_TRUE(check_shared_entity_nodes(mesh));
     EXPECT_TRUE(krino_mesh->check_element_side_parts());
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << log.get_log() << std::endl;
       std::cout << "Failure on iteration " << i << std::endl;
@@ -2627,11 +2799,12 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3> > CDMeshTests3DLSPerInterface;
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3>>
+    CDMeshTests3DLSPerInterface;
 TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -2663,9 +2836,13 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 
   build_one_tet4_mesh(*this, block1_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const std::array<stk::mesh::Entity,4> nodes = {{ mesh.get_entity(stk::topology::NODE_RANK, 1), mesh.get_entity(stk::topology::NODE_RANK, 2), mesh.get_entity(stk::topology::NODE_RANK, 3), mesh.get_entity(stk::topology::NODE_RANK, 4) }};
+  const std::array<stk::mesh::Entity, 4> nodes = {{mesh.get_entity(stk::topology::NODE_RANK, 1),
+      mesh.get_entity(stk::topology::NODE_RANK, 2),
+      mesh.get_entity(stk::topology::NODE_RANK, 3),
+      mesh.get_entity(stk::topology::NODE_RANK, 4)}};
   const auto & ls_fields = ls_policy.ls_fields();
   *field_data<double>(ls_fields[0].isovar, nodes[0]) = -1;
   *field_data<double>(ls_fields[0].isovar, nodes[1]) = 1.;
@@ -2675,17 +2852,16 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
   commit();
   decompose_mesh();
 
-
   EXPECT_TRUE(check_induced_parts(mesh));
   EXPECT_TRUE(check_face_and_edge_ownership(mesh));
   EXPECT_TRUE(check_face_and_edge_relations(mesh));
   EXPECT_TRUE(check_shared_entity_nodes(mesh));
   EXPECT_TRUE(krino_mesh->check_element_side_parts());
 
-  EXPECT_EQ(1u+1u, mesh.num_elements(nodes[0]));
-  EXPECT_EQ(1u+1u, mesh.num_elements(nodes[1]));
-  EXPECT_EQ(2u+1u, mesh.num_elements(nodes[2]));
-  EXPECT_EQ(3u+1u, mesh.num_elements(nodes[3]));
+  EXPECT_EQ(1u + 1u, mesh.num_elements(nodes[0]));
+  EXPECT_EQ(1u + 1u, mesh.num_elements(nodes[1]));
+  EXPECT_EQ(2u + 1u, mesh.num_elements(nodes[2]));
+  EXPECT_EQ(3u + 1u, mesh.num_elements(nodes[3]));
 
   // regression test
   const ScaledJacobianQualityMetric qualityMetric;
@@ -2694,7 +2870,8 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
   EXPECT_GT(quality, goldQuality);
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerPhasePolicy<3> > CDMeshTests3DLSPerPhase;
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerPhasePolicy<3>>
+    CDMeshTests3DLSPerPhase;
 TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -2717,19 +2894,24 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto & ls_fields = ls_policy.ls_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for(auto && ls_field : ls_fields) sync_fields.push_back(&ls_field.isovar.field());
+  for (auto && ls_field : ls_fields)
+    sync_fields.push_back(&ls_field.isovar.field());
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2738,11 +2920,11 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
-    for(auto && ls_field : ls_fields)
+    for (auto && ls_field : ls_fields)
     {
       randomize_ls_field(mesh, ls_field.isovar, mt, dist);
     }
@@ -2766,7 +2948,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
     EXPECT_TRUE(check_shared_entity_nodes(mesh));
     EXPECT_TRUE(krino_mesh->check_element_side_parts());
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       std::ostringstream fname;
@@ -2775,7 +2957,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
@@ -2791,26 +2973,32 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
   stk::mesh::MetaData & meta = fixture.meta_data();
   AuxMetaData & aux_meta = AuxMetaData::get(meta);
 
-  cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfemSupport.set_cdfem_edge_degeneracy_handling(
+      SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
   setup_ls_field();
 
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
-  stk::mesh::create_exposed_block_boundary_sides(mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
   const auto & ls_fields = ls_policy.ls_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for(auto && ls_field : ls_fields) sync_fields.push_back(&ls_field.isovar.field());
+  for (auto && ls_field : ls_fields)
+    sync_fields.push_back(&ls_field.isovar.field());
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> dist(-1., 1.);
@@ -2819,14 +3007,14 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
 #else
   const int num_cases = 1000;
 #endif
-  for(int i=0; i < num_cases; ++i)
+  for (int i = 0; i < num_cases; ++i)
   {
-    if (i%1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
-    commit(); // new krino_mesh each time
+    commit();                                  // new krino_mesh each time
 
-    for(auto && ls_field : ls_fields)
+    for (auto && ls_field : ls_fields)
     {
       randomize_ls_field(mesh, ls_field.isovar, mt, dist);
     }
@@ -2850,7 +3038,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
     EXPECT_TRUE(check_shared_entity_nodes(mesh));
     EXPECT_TRUE(krino_mesh->check_element_side_parts());
 
-    if(HasNonfatalFailure())
+    if (HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       std::ostringstream fname;
@@ -2859,7 +3047,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
@@ -2946,7 +3134,7 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
     randomize_all_fields();
     run_decomp();
     krino::MeshClone::stash_or_restore_mesh(mesh, i);
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    krino_mesh = std::make_unique<CDMesh>(mesh);
 
     // Step 2.
     randomize_all_fields();
@@ -2954,8 +3142,8 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
     krino::MeshClone::stash_or_restore_mesh(mesh, i);
 
     // Step 3.
-    ASSERT_NO_THROW(krino_mesh->rebuild_after_rebalance());
-    krino_mesh = std::make_shared<CDMesh>(mesh, krino_mesh);
+    ASSERT_NO_THROW(krino_mesh->rebuild_after_rebalance_or_failed_step());
+    krino_mesh = std::make_unique<CDMesh>(mesh);
   }
 }
 
@@ -2966,7 +3154,8 @@ TEST_F(CDMeshTests3D, Rebalance_with_rcb)
 
 TEST_F(CDMeshTests3D, Rebalance_with_parmetis)
 {
-  run_rebalance_with("parmetis");
+  if (rebalance_utils::have_parmetis())
+    run_rebalance_with("parmetis");
 }
 
 typedef CompleteDecompositionFixture<SimpleStkFixture3d, SingleLSPolicy> NonconformalAdaptivityTest;
@@ -2990,46 +3179,42 @@ TEST_F(NonconformalAdaptivityTest, InternalSidePositivePermutationNonOwnedElemen
 
   stk::mesh::MetaData & meta = fixture.meta_data();
 
-  auto & aux_meta = AuxMetaData::get(fixture.meta_data());
-  auto & active_part = aux_meta.active_part();
-
-//  auto hadapt = [&meta](const std::string & markerFieldName, int debug_level)
-//    {
-//      HAdapt::do_adaptive_refinement(meta, markerFieldName);
-//    };
-//  auto & refinement = krino::PerceptRefinement::create(meta, hadapt);
   auto & refinement = krino::KrinoRefinement::create(meta);
-  cdfemSupport.set_non_interface_conforming_refinement(refinement);
+  RefinementSupport::get(meta).set_non_interface_conforming_refinement(refinement);
 
   setup_ls_field();
 
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
   FieldRef marker_field = refinement.get_marker_field();
 
-  stk::diag::TimerSet enabledTimerSet(0);
-  stk::diag::Timer root_timer = createRootTimer("test", enabledTimerSet);
-  HAdapt::setup(meta, active_part, root_timer);
-
   commit();
 
   const bool build_all_on_P0 = false;
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_part, parallel_rank,
-      parallel_size, true, build_all_on_P0);
+  build_two_tet4_mesh_np2(*this,
+      block1_part,
+      block2_part,
+      surface_part,
+      parallel_rank,
+      parallel_size,
+      true,
+      build_all_on_P0);
 
   auto elem_1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1u);
   int & elem_1_marker = *field_data<int>(marker_field, elem_1);
   elem_1_marker = 1;
 
-  if(parallel_size == 2)
+  if (parallel_size == 2)
   {
     stk::mesh::EntityProcVec changes;
-    if(parallel_rank == 0)
+    if (parallel_rank == 0)
     {
       changes.push_back(std::make_pair(mesh.get_entity(stk::topology::FACE_RANK, 7), 1));
     }
@@ -3058,16 +3243,21 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_1_part = declare_input_surface("surface_1", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
-  auto & surface_2_part = declare_input_surface("surface_2", tet4.side_topology(), {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_1_part = declare_input_surface("surface_1",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
+  auto & surface_2_part = declare_input_surface("surface_2",
+      tet4.side_topology(),
+      {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
   auto & aux_meta = AuxMetaData::get(fixture.meta_data());
-  aux_meta.register_field("side_field", FieldType::REAL, stk::topology::FACE_RANK,
-      1u, 1u, surface_1_part);
+  aux_meta.register_field(
+      "side_field", FieldType::REAL, stk::topology::FACE_RANK, 1u, 1u, surface_1_part);
 
   commit();
 
-  build_two_tet4_mesh_np2(*this, block1_part, block2_part, surface_1_part, parallel_rank, parallel_size);
+  build_two_tet4_mesh_np2(
+      *this, block1_part, block2_part, surface_1_part, parallel_rank, parallel_size);
 
   // Stash the initial mesh.
   ASSERT_NO_THROW(MeshClone::stash_or_restore_mesh(mesh, 0));
@@ -3077,7 +3267,7 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   const auto side_1 = mesh.get_entity(stk::topology::FACE_RANK, 7);
   const auto current_owner = mesh.parallel_owner_rank(side_1);
   stk::mesh::EntityProcVec owner_changes;
-  if(parallel_rank == current_owner)
+  if (parallel_rank == current_owner)
   {
     owner_changes.emplace_back(side_1, (current_owner + 1) % 2);
   }
@@ -3087,9 +3277,11 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   ASSERT_NE(new_owner, current_owner);
 
   mesh.modification_begin();
-  if(new_owner == parallel_rank)
+  if (new_owner == parallel_rank)
   {
-    mesh.change_entity_parts(side_1, stk::mesh::ConstPartVector{&surface_2_part}, stk::mesh::ConstPartVector{&surface_1_part});
+    mesh.change_entity_parts(side_1,
+        stk::mesh::ConstPartVector{&surface_2_part},
+        stk::mesh::ConstPartVector{&surface_1_part});
   }
   mesh.modification_end();
 
@@ -3108,9 +3300,11 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   // Change the shared face part back to surface_1, then restore from the stash and
   // confirm that the parts of the face are correct.
   mesh.modification_begin();
-  if(new_owner == parallel_rank)
+  if (new_owner == parallel_rank)
   {
-    mesh.change_entity_parts(side_1, stk::mesh::ConstPartVector{&surface_1_part}, stk::mesh::ConstPartVector{&surface_2_part});
+    mesh.change_entity_parts(side_1,
+        stk::mesh::ConstPartVector{&surface_1_part},
+        stk::mesh::ConstPartVector{&surface_2_part});
   }
   mesh.modification_end();
   ASSERT_TRUE(mesh.bucket(side_1).member(surface_1_part));
@@ -3120,4 +3314,4 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   EXPECT_FALSE(mesh.bucket(side_1_new).member(surface_1_part));
 }
 
-}
+} // namespace krino

@@ -126,7 +126,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<PHX::UnmanagedView<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<PHX::UnmanagedView<const ScalarT**>*>("DivBasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -189,9 +189,13 @@ namespace panzer
     using Kokkos::createDynRankView;
     using panzer::getBasisIndex;
 
+    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
+
     // Get the PHX::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
+
+    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
 
     // Allocate temporary if not using shared memory
     bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();

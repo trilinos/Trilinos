@@ -52,16 +52,14 @@
 
 #include <zoltan_cpp.h>
 
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

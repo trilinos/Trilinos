@@ -313,9 +313,9 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
    {
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(9,precOpFact));
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
+      RCP<Teko::InverseFactory> invFact2 = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
-      Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+      Teko::LinearOp prec = Teko::buildInverse(*invFact2,A);
 
       const bool result = tester.compare( *prec, *iP, Teuchos::ptrFromRef(out));
       if (!result) {
@@ -345,9 +345,9 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test_tpetra)
    {
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(9,precOpFact));
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
+      RCP<Teko::InverseFactory> invFact2 = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
-      Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+      Teko::LinearOp prec = Teko::buildInverse(*invFact2,A);
 
       const bool result = tester.compare( *prec, *iP, Teuchos::ptrFromRef(out));
       if (!result) {

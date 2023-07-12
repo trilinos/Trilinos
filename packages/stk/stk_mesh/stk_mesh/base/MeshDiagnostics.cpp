@@ -112,7 +112,7 @@ std::vector<std::string> get_messages_for_split_coincident_elements(const stk::m
 void throw_if_any_proc_has_false(MPI_Comm comm, bool is_all_ok_locally)
 {
     bool is_all_ok_globally = stk::is_true_on_all_procs(comm, is_all_ok_locally);
-    ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
+    STK_ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
 }
 
 stk::mesh::Selector get_owned_or_shared_selector(const stk::mesh::BulkData & bulkData)

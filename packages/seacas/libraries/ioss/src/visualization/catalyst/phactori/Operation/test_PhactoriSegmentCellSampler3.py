@@ -154,7 +154,7 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
         #myDebugPrint3('DoMethodPerBlock: pvClientSideData is None\n')
     #outstr3 = "num points in sphere: " + str(pvClientSideData.GetNumberOfPoints()) + "\n"
     #myDebugPrint3(outstr3)
-
+    
     PhactoriSegmentCellSampler3Instance = newOperationBlock.mOperationSpecifics
     PhactoriSegmentCellSampler3Instance.myCopyOfInputFilter = testSphere
     thisProcessNearestCellPointList, thisProcDistSqrdList = PhactoriSegmentCellSampler3Instance.\
@@ -327,8 +327,8 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
         localDataTuples.append(oneStructuredCell.dataTuple)
       self.assertEqual(localResultPoints, goldPoints[ii])
       #myDebugPrint3("end cell test points for segment k axis " + str(ii) + "\n")
-
-    #test j axis collection instead of k
+  
+    #test j axis collection instead of k 
     operationParams = {
       "filename":"dummyfilename",
       "cell center to segment test distance":0.5,
@@ -348,7 +348,7 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
     self.assertTrue(PhactoriSegmentCellSampler3Instance.ValidateJsonStructuredSeedCellList(testGeometryPointsJson))
     PhactoriSegmentCellSampler3Instance.CreateInternalStructuredSeedCellListFromJson(testGeometryPointsJson)
     testWavelet.UpdatePipeline()
-
+   
     perSegmentStructuredCellList = PhactoriSegmentCellSampler3Instance.GatherStructuredCellsFromSeedCells()
     self.assertEqual(len(perSegmentStructuredCellList),len(PhactoriSegmentCellSampler3Instance.StructuredNearbyCellPointList))
 
@@ -365,8 +365,8 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
         #myDebugPrint3(str(oneStructuredCell.cellTestPoint) + "\n")
       self.assertEqual(localResultPoints, goldPoints[ii])
       #myDebugPrint3("end cell test points for segment j axis " + str(ii) + "\n")
-
-    #test i axis collection instead of j or k
+  
+    #test i axis collection instead of j or k 
     operationParams = {
       "filename":"dummyfilename",
       "cell center to segment test distance":0.5,
@@ -375,7 +375,7 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
     }
 
     PhactoriSegmentCellSampler3Instance.ParseParametersFromJson(operationParams)
-
+   
     testGeometryPointsJson = [
       {"geometric seed point":[0.5,  0.5,  0.5],
        "collection axis":"i"},
@@ -386,7 +386,7 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
     self.assertTrue(PhactoriSegmentCellSampler3Instance.ValidateJsonStructuredSeedCellList(testGeometryPointsJson))
     PhactoriSegmentCellSampler3Instance.CreateInternalStructuredSeedCellListFromJson(testGeometryPointsJson)
     testWavelet.UpdatePipeline()
-
+   
     perSegmentStructuredCellList = PhactoriSegmentCellSampler3Instance.GatherStructuredCellsFromSeedCells()
     self.assertEqual(len(perSegmentStructuredCellList),len(PhactoriSegmentCellSampler3Instance.StructuredNearbyCellPointList))
 
@@ -509,7 +509,7 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
     testJson = json.load(ff)
     ff.close()
     self.assertEqual(goldJson, testJson)
-
+  
     #remove file that got made during test
     os.remove(testFileName)
 
@@ -847,9 +847,11 @@ class TestPhactoriSegmentCellSampler3(unittest.TestCase):
 
     #remove file that got made during test
     os.remove(testFileName)
-
-
+  
+    
 if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
+
+

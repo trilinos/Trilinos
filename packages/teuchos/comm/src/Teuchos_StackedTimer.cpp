@@ -759,6 +759,7 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
   const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
   const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
   const char* rawGitSHA = getenv("TRILINOS_GIT_SHA");
+  const char* rawBuildDateOverride = getenv("WATCHR_BUILD_DATE");
   //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
     return "";
@@ -778,10 +779,32 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     struct tm* tstruct;
     time(&t);
     tstruct = gmtime(&t);
-    strftime(buf, 256, "%Y_%m_%d", tstruct);
-    datestamp = buf;
-    strftime(buf, 256, "%FT%H:%M:%S", tstruct);
-    timestamp = buf;
+    if(rawBuildDateOverride)
+    {
+      //Parse the year, month, day
+      int year = 0, month = 0, day = 0;
+      sscanf(rawBuildDateOverride, "%d_%d_%d", &year, &month, &day);
+      //Sanity check the values
+      if(year <= 2000 || year > 2100)
+        throw std::invalid_argument("$WATCHR_BUILD_DATE has invalid year or is not in YYYY_MM_DD format.");
+      if(month < 1 || month > 12)
+        throw std::invalid_argument("$WATCHR_BUILD_DATE has invalid month or is not in YYYY_MM_DD format.");
+      if(day < 1 || day > 31)
+        throw std::invalid_argument("$WATCHR_BUILD_DATE has invalid day or is not in YYYY_MM_DD format.");
+      snprintf(buf, 256, "%04d_%02d_%02d", year, month, day);
+      datestamp = buf;
+      strftime(buf, 256, "T%H:%M:%S", tstruct);
+      std::string justTime = buf;
+      snprintf(buf, 256, "%04d-%02d-%02d", year, month, day);
+      timestamp = std::string(buf) + justTime;
+    }
+    else
+    {
+      strftime(buf, 256, "%Y_%m_%d", tstruct);
+      datestamp = buf;
+      strftime(buf, 256, "%FT%H:%M:%S", tstruct);
+      timestamp = buf;
+    }
   }
   flatten();
   merge(comm);

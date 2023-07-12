@@ -234,7 +234,7 @@ get_message_count(
 
 unsigned get_message_printed_count(unsigned messageType)
 {
-  ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
+  STK_ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
   unsigned totalPrinted = 0;
   for(auto& iter : s_messageIdMap) {
     totalPrinted += std::min(iter.second.m_count, iter.second.m_cutoff);

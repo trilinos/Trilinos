@@ -123,13 +123,14 @@ endmacro()
 # Takes the list ``<externalPkgName>_LIB_DEFINED_DEPENDENCIES`` and sets the
 # default entries of the non-cache var
 # ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES``.  However, if
-# ``${<externalPkgName>_LIB_DEFINED_DEPENDENCIES}`` is non-empty when this macro
-# is called, then it will not be changed.  That allows the user to override
-# the list of enabled TPL dependencies in the cache.  This also sets the
-# non-cache vars ``<externalPkgName>_ENABLE_<upstsreamPkgName>=ON`` for each
-# enabled package listed in ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES`` and
-# to ``OFF`` for each ``<upstsreamPkgName>`` listed in
-# ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES`` but not in
+# ``${<externalPkgName>_LIB_ENABLED_DEPENDENCIES`` is non-empty when this
+# macro is called, then it will not be changed.  That allows the user to
+# override the list of enabled TPL dependencies in the cache.  This also sets
+# the non-cache vars ``<externalPkgName>_ENABLE_<upstsreamPkgName>=ON`` for
+# each enabled package listed in
+# ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES`` and to ``OFF`` for each
+# ``<upstsreamPkgName>`` listed in
+# ``<externalPkgName>_LIB_DEFINED_DEPENDENCIES`` but not in
 # ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES``.
 #
 macro(tribits_extpkg_setup_enabled_dependencies  externalPkgName)
@@ -149,7 +150,7 @@ macro(tribits_extpkg_setup_enabled_dependencies  externalPkgName)
   endif()
 
   if ("${${externalPkgName}_LIB_ENABLED_DEPENDENCIES}" STREQUAL "")
-    # Only set of not already set as a cache var, for example
+    # Only set of not already set as a cache var, for example, by the user
     set(${externalPkgName}_LIB_ENABLED_DEPENDENCIES  ${libEnabledDependencies})
   endif()
 

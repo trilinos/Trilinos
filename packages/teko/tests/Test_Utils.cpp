@@ -305,9 +305,9 @@ const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix_tpetra(GO cnt,
 // declare static allocation
 std::list<std::pair<Teuchos::RCP<UnitTest>,std::string> > UnitTest::testList;
 #ifdef TEKO_HAVE_EPETRA
-Teuchos::RCP<const Epetra_Comm> UnitTest::comm;
+Teuchos::RCP<const Epetra_Comm> UnitTest::comm_;
 #endif
-Teuchos::RCP<const Teuchos::Comm<int> > UnitTest::comm_tpetra;
+Teuchos::RCP<const Teuchos::Comm<int> > UnitTest::comm_tpetra_;
 
 void UnitTest::AddTest(const Teuchos::RCP<UnitTest> & ut,const std::string & name)
 {
@@ -410,34 +410,34 @@ bool UnitTest::RunTests_tpetra(int verbosity, std::ostream & stdstrm,std::ostrea
 #ifdef TEKO_HAVE_EPETRA
 Teuchos::RCP<const Epetra_Comm> UnitTest::GetComm()
 {
-   return comm;
+   return comm_;
 }
 #endif
 
 Teuchos::RCP<const Teuchos::Comm<int> > UnitTest::GetComm_tpetra()
 {
-   return comm_tpetra;
+   return comm_tpetra_;
 }
 
 #ifdef TEKO_HAVE_EPETRA
 void UnitTest::SetComm(const Teuchos::RCP<const Epetra_Comm> & c)
 {
-   comm = c;
+   comm_ = c;
 }
 #endif
 
 void UnitTest::SetComm_tpetra(const Teuchos::RCP<const Teuchos::Comm<int> > & c)
 {
-   comm_tpetra = c;
+   comm_tpetra_ = c;
 }
 
 void UnitTest::ClearTests()
 {
   testList.clear();
 #ifdef TEKO_HAVE_EPETRA
-  comm = Teuchos::null;
+  comm_ = Teuchos::null;
 #endif
-  comm_tpetra = Teuchos::null;
+  comm_tpetra_ = Teuchos::null;
 }
 
 #ifdef TEKO_HAVE_EPETRA

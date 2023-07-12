@@ -11,9 +11,7 @@
  * exodusII.h - Exodus II API include file
  *
  *****************************************************************************/
-
-#ifndef EXODUSII_H
-#define EXODUSII_H
+#pragma once
 
 #include "exodus_config.h"
 
@@ -1827,6 +1825,4 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
-#endif
-
 #endif

@@ -14,6 +14,7 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
+#include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_Quality.hpp>
@@ -541,6 +542,162 @@ void snap_nodes(const stk::mesh::BulkData & mesh,
   stk::mesh::communicate_field_data(mesh, interpFieldVec);
 
   communicate_node_captured_domains_for_given_nodes(mesh, snapNodes, nodesToCapturedDomains);
+}
+
+static double interpolate_nodal_field_component(const stk::mesh::BulkData & mesh, const FieldRef field, const unsigned component, const stk::mesh::Entity node, const std::vector<stk::mesh::Entity> & interpNodes, const std::vector<double> & interpWeights)
+{
+  double interpVal = 0.;
+  double * val = field_data<double>(field, node);
+  if (nullptr != val)
+  {
+    for (size_t iInterpNode=0; iInterpNode<interpNodes.size(); ++iInterpNode)
+    {
+      const double * nodeVal = field_data<double>(field, interpNodes[iInterpNode]);
+      if (nullptr == nodeVal)
+      {
+        krinolog << "When unsnapping node " << mesh.identifier(node) << ", the field " << field.name() << " is missing on interpolating node " << mesh.identifier(interpNodes[iInterpNode]) << stk::diag::dendl;
+        krinolog << "Should the field " << field.name() << " be an interpolation field?" << stk::diag::dendl;
+        ThrowRequireMsg(false, "Interpolation field missing on interpolation node " << mesh.identifier(interpNodes[iInterpNode]));
+      }
+
+      interpVal += interpWeights[iInterpNode] * nodeVal[component];
+    }
+  }
+
+  return interpVal;
+}
+
+static void interpolate_field_component_on_potentially_conflicting_nodes(const stk::mesh::BulkData & mesh,
+    const FieldRef field,
+    const unsigned component,
+    const std::vector<stk::mesh::Entity> & snapNodes,
+    const std::vector<InterpolationPoint> & interpolationPoints,
+    std::vector<double> & scratch)
+{
+  scratch.resize(snapNodes.size());
+  for (size_t iSnapNode=0; iSnapNode<snapNodes.size(); ++iSnapNode)
+    scratch[iSnapNode] = interpolate_nodal_field_component(mesh, field, component, snapNodes[iSnapNode], interpolationPoints[iSnapNode].get_nodes(), interpolationPoints[iSnapNode].get_weights());
+
+  for (size_t iSnapNode=0; iSnapNode<snapNodes.size(); ++iSnapNode)
+  {
+    double * val = field_data<double>(field, snapNodes[iSnapNode]);
+    if (nullptr != val)
+    {
+      val[component] = scratch[iSnapNode];
+    }
+  }
+}
+
+static Vector3d compute_element_parametric_coords_at_location(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Entity element, const Vector3d & location)
+{
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+  std::vector<Vector3d> nodeCoords;
+
+  for (auto node : StkMeshEntities{mesh.begin_nodes(element), mesh.end_nodes(element)})
+    nodeCoords.emplace_back(field_data<double>(coordsField, node), dim);
+
+  return get_parametric_coordinates_of_point(nodeCoords, location);
+}
+
+static void fill_interpolation_nodes_in_element_at_parametric_coords(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity containingElem,
+    const Vector3d & containingElementParametricCoords,
+    std::vector<stk::mesh::Entity> & interpNodes,
+    std::vector<double> & interpWeights)
+{
+  const MasterElement & masterElem = MasterElementDeterminer::getMasterElement(mesh.bucket(containingElem).topology());
+
+  interpNodes.assign(mesh.begin_nodes(containingElem), mesh.end_nodes(containingElem));
+  interpWeights.assign(interpNodes.size(), 0.);
+  masterElem.shape_fcn(1, containingElementParametricCoords.data(), interpWeights.data());
+}
+
+static void fill_interplation_nodes_and_weights_at_location(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Part & activePart,
+    const FieldRef coordsField,
+    const stk::mesh::Entity node,
+    const Vector3d & location,
+    std::vector<stk::mesh::Entity> & interpNodes,
+    std::vector<double> & interpWeights)
+{
+  stk::mesh::Entity containingElem;
+  Vector3d containingElementParametricCoords;
+
+  double minSqrDist = std::numeric_limits<double>::max();
+  for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
+  {
+    if (mesh.bucket(elem).member(activePart))
+    {
+      const Vector3d elemParamCoords = compute_element_parametric_coords_at_location(mesh, coordsField, elem, location);
+      const double elemParamSqrDist = compute_parametric_square_distance(elemParamCoords);
+      if (elemParamSqrDist < minSqrDist)
+      {
+        minSqrDist = elemParamSqrDist;
+        containingElem = elem;
+        containingElementParametricCoords = elemParamCoords;
+      }
+    }
+  }
+
+  fill_interpolation_nodes_in_element_at_parametric_coords(mesh, containingElem, containingElementParametricCoords, interpNodes, interpWeights);
+}
+
+static std::vector<InterpolationPoint> build_interpolation_points(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField,  const FieldRef cdfemSnapField, const std::vector<stk::mesh::Entity> & snapNodes)
+{
+  FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  stk::mesh::Entity containingElem;
+  Vector3d containingElementParametricCoords;
+  std::vector<stk::mesh::Entity> interpNodes;
+  std::vector<double> interpWeights;
+
+  std::vector<InterpolationPoint> interpolationPoints;
+  interpolationPoints.reserve(snapNodes.size());
+
+  for (auto && node : snapNodes)
+  {
+    const Vector3d oldSnap(field_data<double>(oldSnapDisplacements, node), dim);
+    const Vector3d currentLoc(field_data<double>(coordsField, node), dim);
+    const Vector3d unsnappedLoc = currentLoc - oldSnap;
+    fill_interplation_nodes_and_weights_at_location(mesh, activePart, coordsField, node, unsnappedLoc, interpNodes, interpWeights);
+    interpolationPoints.emplace_back(interpNodes, interpWeights);
+  }
+
+  return interpolationPoints;
+}
+
+void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields)
+{
+  FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  std::vector<stk::mesh::Entity> ownedSnapNodes;
+
+  stk::mesh::Selector ownedWithField = stk::mesh::selectField(cdfemSnapField) & mesh.mesh_meta_data().locally_owned_part();
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, ownedWithField))
+  {
+    for(const auto & node : *bucketPtr)
+    {
+      const Vector3d oldSnap(field_data<double>(oldSnapDisplacements, node), dim);
+      if (oldSnap.length_squared() > 0)
+      {
+        ownedSnapNodes.push_back(node);
+      }
+    }
+  }
+
+  const std::vector<InterpolationPoint> interpolationPoints = build_interpolation_points(mesh, activePart, coordsField, cdfemSnapField, ownedSnapNodes);
+
+  std::vector<double> scratch;
+  for (auto && field : snapFields)
+    for (unsigned i=0; i<field.length(); ++i)
+      interpolate_field_component_on_potentially_conflicting_nodes(mesh, field, i, ownedSnapNodes, interpolationPoints, scratch);
+
+  std::vector<const stk::mesh::FieldBase *> const_fields;
+  for (auto && f : snapFields)
+    const_fields.push_back(&f.field());
+  stk::mesh::communicate_field_data(mesh, const_fields);
 }
 
 template<class INFO>

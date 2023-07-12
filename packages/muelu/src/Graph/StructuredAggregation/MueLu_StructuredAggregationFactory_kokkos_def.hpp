@@ -46,8 +46,6 @@
 #ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 // Xpetra includes
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -56,7 +54,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 // MueLu specific includes (kokkos version)
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -257,5 +254,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP */

@@ -1,6 +1,6 @@
 tribits_subpackage(StaticOnly)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 tribits_add_library(
   static_only_lib

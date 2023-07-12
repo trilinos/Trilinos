@@ -3,13 +3,10 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef EJ_Version_h
-#define EJ_Version_h
+#pragma once
 
 static char const *qainfo[] = {
     "ejoin",
     "2022/01/24",
     "1.5.7",
 };
-
-#endif

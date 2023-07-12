@@ -130,6 +130,13 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
+    RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
+    // If we don't have a valid P (e.g., # global aggregates is 0), skip this rebalancing. This level will
+    // ultimately be removed in MueLu_Hierarchy_defs.h via a resize() 
+    if (originalP == Teuchos::null) {
+      Set(coarseLevel, "P", originalP);
+      return;
+    }
     int implicit   = !pL.get<bool>("repartition: rebalance P and R");
     int writeStart = pL.get<int> ("write start");
     int writeEnd   = pL.get<int> ("write end");
@@ -162,7 +169,7 @@ namespace MueLu {
 
     std::string transferType = pL.get<std::string>("type");
     if (transferType == "Interpolation") {
-      RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
+      originalP = Get< RCP<Matrix> >(coarseLevel, "P");
 
       {
         // This line must be after the Get call

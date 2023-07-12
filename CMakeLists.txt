@@ -59,7 +59,7 @@
 
 # To be safe, define your minimum CMake version.  This may be newer than the
 # min required by TriBITS.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.23.0 FATAL_ERROR)
 
 # Must set the project name as a variable at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
@@ -69,39 +69,26 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
+# Set up to use ccache
 if($ENV{CCACHE_NODISABLE})
-# ccache must be requested explicitly by setting env-var CCACHE_NODISABLE
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    # Set up wrapper scripts
-    set(C_LAUNCHER   "${CCACHE_PROGRAM}")
-    set(CXX_LAUNCHER "${CCACHE_PROGRAM}")
-    configure_file(launch-c.in   launch-c)
-    configure_file(launch-cxx.in launch-cxx)
-    execute_process(COMMAND chmod a+rx
-                     "${CMAKE_BINARY_DIR}/launch-c"
-                     "${CMAKE_BINARY_DIR}/launch-cxx"
-    )
-
-    if(CMAKE_GENERATOR STREQUAL "Xcode")
-        # Set Xcode project attributes to route compilation and linking
-        # through our scripts
-        set(CMAKE_XCODE_ATTRIBUTE_CC         "${CMAKE_BINARY_DIR}/launch-c")
-        set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/launch-cxx")
-        set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/launch-c")
-        set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/launch-cxx")
-    else()
-        # Support Unix Makefiles and Ninja
-        set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_BINARY_DIR}/launch-c")
-        set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/launch-cxx")
-    endif()
-else()
-    message(WARNING "ccache requested but not found")
-endif()
+  find_program(CCACHE_PROGRAM ccache)
+  if(CCACHE_PROGRAM)
+      if(CMAKE_GENERATOR STREQUAL "Xcode")
+        message(FATAL_ERROR "ccache not supported with Xcode in Trilinos")
+      else()
+        set(CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PROGRAM}")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+      endif()
+  else()
+      message(FATAL_ERROR "ccache requested but not found")
+  endif()
 endif()
 
-## set an env so we know we are in configure
+# Set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
+
+# Don't define TriBITS override of include_directories()
+set(TRIBITS_HIDE_DEPRECATED_INCLUDE_DIRECTORIES_OVERRIDE TRUE)
 
 #
 # B) Pull in the TriBITS system and execute
@@ -117,8 +104,8 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
 # Set up C++ language standard selection (rest is handled by TriBITS)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 14)
-SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(14|17|20)")
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 17)
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(17|20|23)")
 ADVANCED_SET(CMAKE_CXX_STANDARD ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT}
   CACHE STRING
   "C++ standard number with values ${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED} (default ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT})")
@@ -127,9 +114,8 @@ IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOW
     "CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} is not in the allowed set "
     "${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}")
 ENDIF ()
-# ToDo: We may want to warn about using a non-default version of C++ but
-# really Trilinos should support bulding with every newer C++ standard so we
-# should just be doing that instead.
+
+message(STATUS "The Current CXX Standard is : " ${CMAKE_CXX_STANDARD})
 
 # Force off support for Makefile.export.* files while TriBITS is refactored to
 # remove this (#8498)

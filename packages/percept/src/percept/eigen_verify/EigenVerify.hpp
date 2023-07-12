@@ -15,7 +15,6 @@
 #include <iostream>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 

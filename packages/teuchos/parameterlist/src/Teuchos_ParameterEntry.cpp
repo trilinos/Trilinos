@@ -74,6 +74,27 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   return *this;
 }
 
+ParameterEntry::ParameterEntry(ParameterEntry&& other)
+  : val_(std::move(other.val_)),
+    isUsed_(other.isUsed_),
+    isDefault_(other.isDefault_),
+    docString_(std::move(other.docString_)),
+    validator_(std::move(other.validator_))
+{}
+
+ParameterEntry& ParameterEntry::operator=(ParameterEntry&& other)
+{
+  if(this != &other)
+  {
+    this->val_ = std::move(other.val_);
+    this->isUsed_ = other.isUsed_;
+    this->isDefault_ = other.isDefault_;
+    this->docString_ = std::move(other.docString_);
+    this->validator_ = std::move(other.validator_);
+  }
+  return *this;
+}
+
 void ParameterEntry::setAnyValue(
   const any &value_in, bool isDefault_in
   )
@@ -114,7 +135,7 @@ ParameterList& ParameterEntry::setList(
 
 bool ParameterEntry::isList() const
 {
-  return ( val_.empty() ? false : val_.type() == typeid(ParameterList) );
+  return ( !val_.has_value() ? false : val_.type() == typeid(ParameterList) );
 }
 
 std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const

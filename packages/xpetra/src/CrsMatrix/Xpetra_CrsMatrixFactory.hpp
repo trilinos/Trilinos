@@ -66,7 +66,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrixFactory {
   private:
     //! Private constructor. This is a static class.
@@ -234,7 +234,6 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -289,7 +288,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
     
     // Builds a BlockCrsMatrix
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
@@ -501,7 +499,6 @@ namespace Xpetra {
     }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -560,7 +557,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 
     //! Build a BlockCrsMatrix
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
@@ -769,7 +765,6 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -806,7 +801,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 
 
     //! Build a BlockCrsMatrix

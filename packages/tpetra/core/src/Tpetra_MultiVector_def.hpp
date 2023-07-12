@@ -235,7 +235,7 @@ namespace { // (anonymous)
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
     //
-    typedef typename Kokkos::Impl::if_c<
+    typedef typename std::conditional<
       Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,
@@ -2001,8 +2001,8 @@ namespace Tpetra {
 
       // This fixes GitHub Issue #4418.
       const bool use_atomic_updates = unpackOnHost ?
-        host_exec_space::concurrency () != 1 :
-        dev_exec_space::concurrency () != 1;
+        host_exec_space().concurrency () != 1 :
+        dev_exec_space().concurrency () != 1;
 
       if (printDebugOutput) {
         std::ostringstream os;

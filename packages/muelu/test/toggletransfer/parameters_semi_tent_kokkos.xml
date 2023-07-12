@@ -28,7 +28,7 @@
     </ParameterList>
 
     <ParameterList name="MyCoarseMap2">
-      <Parameter name="factory"                             type="string" value="CoarseMapFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
       <Parameter name="Aggregates"                             type="string" value="UncoupledAggregationFact2"/>
     </ParameterList>
 

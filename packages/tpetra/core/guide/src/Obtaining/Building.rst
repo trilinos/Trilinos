@@ -109,7 +109,7 @@ Tpetra also keeps a list of the Kokkos Device types (specializations of ``Kokkos
 Kokkos Execution Space Types
 ----------------------------
 
-If ``ETI`` is ``ON``, "using an execution space ``ExecutionSpace``" means that Tpetra objects with ``Node = Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace>`` will
+If ``ETI`` is ``ON``, "using an execution space ``ExecutionSpace``" means that Tpetra objects with ``Node = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecutionSpace>`` will
 
 1. get instantiated explicitly for that ``Node`` type, and
 

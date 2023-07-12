@@ -30,8 +30,12 @@ namespace coupling
 namespace impl 
 {
 
+SplitCommsImpl::SplitCommsImpl()
+{}
+
 SplitCommsImpl::SplitCommsImpl(MPI_Comm parentComm, int localColor)
   : m_parentComm(parentComm), m_splitComm(MPI_COMM_NULL), m_localColor(localColor),
+    m_finalizationDestructor([this](){free_comms_from_destructor();}),
     m_isInitialized(true)
 {
   stk::util::set_coupling_version(parentComm);
@@ -43,23 +47,19 @@ SplitCommsImpl::SplitCommsImpl(MPI_Comm parentComm, int localColor)
 
 SplitCommsImpl::~SplitCommsImpl()
 {
-  int isMPIFinalized;
-  MPI_Finalized(&isMPIFinalized);
-  if (m_isInitialized && !isMPIFinalized && get_free_comms_in_destructor()) {
-    free_comms_from_destructor();
-  }
+  m_finalizationDestructor.destructor();
 }
 
 
 MPI_Comm SplitCommsImpl::get_split_comm() const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_splitComm;
 }
 
 MPI_Comm SplitCommsImpl::get_parent_comm() const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_parentComm;
 }
 
@@ -156,9 +156,9 @@ bool SplitCommsImpl::is_initialized() const
 
 void SplitCommsImpl::free_comms()
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized."); 
-  ThrowRequireMsg(!m_haveFreedComms, "SplitCommsImpl has already freed the comms");
-  ThrowRequireMsg(!m_freeCommsInDestructor, std::string("SplitCommsImpl is going to free the comms in the destructor. ") +
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized."); 
+  STK_ThrowRequireMsg(!m_haveFreedComms, "SplitCommsImpl has already freed the comms");
+  STK_ThrowRequireMsg(!m_freeCommsInDestructor, std::string("SplitCommsImpl is going to free the comms in the destructor. ") +
                                             "Call set_free_comms_in_destructor(false) if you want to manage the memory manually");
   free_comms_impl();
 }
@@ -182,31 +182,31 @@ void SplitCommsImpl::initialize()
 
 MPI_Comm SplitCommsImpl::get_pairwise_comm(int otherColor) const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   auto iter = m_pairwiseComms.find(otherColor);
-  ThrowRequireMsg(iter != m_pairwiseComms.end(), "SplitCommsImpl with color " << m_localColor <<
+  STK_ThrowRequireMsg(iter != m_pairwiseComms.end(), "SplitCommsImpl with color " << m_localColor <<
                                                  " has no pairwise communicator with color: " << otherColor);
   return iter->second;
 }
 
 const std::vector<int>& SplitCommsImpl::get_other_colors() const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_otherColors;
 }
 
 int SplitCommsImpl::get_local_color() const
 {  
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_localColor;
 }
 
 
 PairwiseRanks SplitCommsImpl::get_pairwise_root_ranks(int otherColor) const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  STK_ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   auto otherColorIter = m_rootRanks.find(otherColor);
-  ThrowRequireMsg(otherColorIter != m_rootRanks.end(), "SplitCommsImpl with color " << m_localColor <<
+  STK_ThrowRequireMsg(otherColorIter != m_rootRanks.end(), "SplitCommsImpl with color " << m_localColor <<
                                                  " has no pairwise communicator with color: " << otherColor);
 
   return otherColorIter->second;
@@ -215,6 +215,9 @@ PairwiseRanks SplitCommsImpl::get_pairwise_root_ranks(int otherColor) const
 
 void SplitCommsImpl::free_comms_from_destructor()
 {
+  if (!get_free_comms_in_destructor())
+    return;
+
   if (!m_isInitialized) {
     std::cerr << "Warning: Cannot free communicators of uninitialized SplitCommsImpl" << std::endl;
     return;
@@ -230,6 +233,14 @@ void SplitCommsImpl::free_comms_from_destructor()
 
 void SplitCommsImpl::free_comms_impl()
 {
+  int isMPIFinalized;
+  MPI_Finalized(&isMPIFinalized);
+  if (isMPIFinalized) {
+    std::cerr << "Attempting to free commuicators after MPI was finalized."
+              << "  The communicators will not be freed, and you have leaked memory" << std::endl;
+    return;
+  }
+
   MPI_Comm_free(&m_splitComm);
 
   for (auto& item : m_pairwiseComms) {

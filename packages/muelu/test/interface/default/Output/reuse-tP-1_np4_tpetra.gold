@@ -10,8 +10,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -34,6 +32,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -63,8 +63,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -87,6 +85,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -237,6 +237,8 @@ Smoother (level 2) post : no smoother
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Reusing previous AP data
@@ -266,3 +268,5 @@ Replacing maps with a subcommunicator
 Setup Smoother (<Direct> solver interface)
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]

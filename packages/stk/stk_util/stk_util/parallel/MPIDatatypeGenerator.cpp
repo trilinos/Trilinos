@@ -9,9 +9,7 @@ const std::vector<MPI_Datatype> MPIDatatypeGenerator::m_candidateTypes = {MPI_LO
 const std::vector<size_t> MPIDatatypeGenerator::m_candidateSizes       = {sizeof(long long), sizeof(long), sizeof(int), sizeof(short), 1};
 const size_t MPIDatatypeGenerator::m_numTypesForContiguous = 3;
 
-MPIDatatypeGenerator::MPIDatatypeGenerator() :
-  m_destructor( [=](){destructor();} )
-{}
+MPIDatatypeGenerator::MPIDatatypeGenerator() : m_destructor([this]() { destructor(); }) {}
 
 MPIDatatypeGenerator::~MPIDatatypeGenerator() 
 { 
@@ -21,7 +19,7 @@ MPIDatatypeGenerator::~MPIDatatypeGenerator()
 
 MPI_Datatype MPIDatatypeGenerator::get_datatype(size_t size)
 {
-  ThrowRequireMsg(size > 0, "The sizeof(type) cannot return 0.  Where did you get this type from?");
+  STK_ThrowRequireMsg(size > 0, "The sizeof(type) cannot return 0.  Where did you get this type from?");
   if (m_datatypes.find(size) == m_datatypes.end())
   {
     generate_datatype(size);
@@ -33,7 +31,7 @@ MPI_Datatype MPIDatatypeGenerator::get_datatype(size_t size)
 
 void MPIDatatypeGenerator::generate_datatype(size_t size)
 {
-  ThrowAssertMsg(m_datatypes.find(size) == m_datatypes.end(), "Cannot create new datatype for size that already exists");
+  STK_ThrowAssertMsg(m_datatypes.find(size) == m_datatypes.end(), "Cannot create new datatype for size that already exists");
 
   MPI_Datatype newDatatype = generate_datatype_contiguous(size);
   if (newDatatype == MPI_DATATYPE_NULL)
@@ -85,7 +83,7 @@ MPI_Datatype MPIDatatypeGenerator::generate_datatype_struct(size_t size)
       displacements.push_back(size - size_remaining);
 
       size_t block_size = num_entries * m_candidateSizes[i];
-      ThrowRequireMsg(block_size <= size_remaining, "remaining size cannot be less than block size");
+      STK_ThrowRequireMsg(block_size <= size_remaining, "remaining size cannot be less than block size");
       size_remaining -= block_size;
     }
   }

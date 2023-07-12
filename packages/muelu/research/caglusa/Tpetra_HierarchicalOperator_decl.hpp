@@ -13,6 +13,10 @@
 namespace Tpetra {
 
     /*
+
+    A container class for hierarchical matrices of different types.
+    In particular, both H- and H2-matrices are supported.
+
     The unknowns of the kernel approximations are collected in the clusterMap.
     For H-matrices, this is just a concatenation.
     For H2-matrices, the map also contains the intermediate clusters that might be needed in upward/downward pass.
@@ -25,8 +29,10 @@ namespace Tpetra {
           ((I+transferMatrices[0]) * ... * (I+transferMatrices[K-1])) *
           basisMatrix^T
 
-   nearField and basisMatrix are CRS matrices.
+   nearField and basisMatrix are standard (point) CRS matrices.
    kernelApproximations and transferMatrices[.] are blocked CRS matrices
+
+   I is the identity matrix and is not explicitely saved.
 
    Maps:
    map (standard): domain and range of H;
@@ -37,7 +43,7 @@ namespace Tpetra {
 
 
    For H-matrices:
-   K = 0, i.e. no transfer matrices
+   K = 0, i.e. there are no transfer matrices
 
    For H2-matrices:
    upward and downward pass in the cluster hierarchy are encoded in transfer matrices
@@ -91,7 +97,8 @@ namespace Tpetra {
     HierarchicalOperator(const Teuchos::RCP<matrix_type>& nearField,
                          const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                          const Teuchos::RCP<matrix_type>& basisMatrix,
-                         std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices);
+                         std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
@@ -260,6 +267,10 @@ namespace Tpetra {
     }
 
     void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+      describe(out, verbLevel, true);
+    }
+
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel, const bool printHeader) const {
       using std::setw;
       using std::endl;
       const size_t numRows = nearField_->getRowMap()->getGlobalNumElements();
@@ -268,6 +279,7 @@ namespace Tpetra {
       const size_t nnzKernelApprox = kernelApproximations_->pointA_->getGlobalNumEntries();
       const size_t numClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
       const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
+      size_t numTransfers = transferMatrices_.size();
       size_t nnzTransfer = 0;
       for (size_t i = 0; i<transferMatrices_.size(); i++)
         nnzTransfer += transferMatrices_[i]->pointA_->getGlobalNumEntries();
@@ -275,22 +287,85 @@ namespace Tpetra {
       const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
       std::ostringstream oss;
       oss << std::left;
-      oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
-      oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis     << setw(15) << numClusterPairs  << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
+      if (printHeader)
+        oss << setw(9) << "rows"  << setw(12)
+            << "nnz(near)"  << setw(14)
+            << "nnz(near)/row" << setw(12)
+            << "nnz(basis)" << setw(15)
+            << "#cluster pairs" << setw(12)
+            << "nnz(kernel)"    << setw(14)
+            << "#transfers"    << setw(14)
+            << "nnz(transfer)" << setw(12)
+            << "nnz(total)" << setw(14)
+            << "nnz(total)/row" << endl;
+      oss << setw(9) << numRows << setw(12)
+          << nnzNearField << setw(14)
+          << nnzNearPerRow   << setw(12)
+          << nnzBasis     << setw(15)
+          << numClusterPairs  << setw(12)
+          << nnzKernelApprox << setw(14)
+          << numTransfers    << setw(14)
+          << nnzTransfer     << setw(12)
+          << nnzTotal     << setw(14)
+          << nnzTotalPerRow   << endl;
       out << oss.str();
+    }
+
+    bool hasFarField() const {
+      return kernelApproximations_->blockA_->getGlobalNumEntries() > 0;
+    }
+
+    bool hasTransferMatrices() const {
+      return transferMatrices_.size() > 0;
+    }
+
+    bool denserThanDenseMatrix() const {
+      const size_t numRows = nearField_->getRowMap()->getGlobalNumElements();
+      const size_t nnzNearField = nearField_->getGlobalNumEntries();
+      // const double nnzNearPerRow = Teuchos::as<double>(nnzNearField)/numRows;
+      const size_t nnzKernelApprox = kernelApproximations_->pointA_->getGlobalNumEntries();
+      // const size_t numClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
+      const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
+      size_t nnzTransfer = 0;
+      for (size_t i = 0; i<transferMatrices_.size(); i++)
+        nnzTransfer += transferMatrices_[i]->pointA_->getGlobalNumEntries();
+      const size_t nnzTotal = nnzNearField+nnzKernelApprox+nnzBasis+nnzTransfer;
+      const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
+
+      return (nnzTotalPerRow >= numRows);
     }
 
   private:
 
     void allocateMemory(size_t numVectors) const;
 
+    void applyWithTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                             Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+    void applyWithoutTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                                Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+    bool canApplyWithoutTransposes_;
+    std::string coarseningCriterion_;
+    bool debugOutput_;
+
     Teuchos::RCP<matrix_type> nearField_;
     Teuchos::RCP<blocked_matrix_type> kernelApproximations_;
     Teuchos::RCP<matrix_type> basisMatrix_;
+    Teuchos::RCP<matrix_type> basisMatrixT_;
     std::vector<Teuchos::RCP<blocked_matrix_type> > transferMatrices_;
+    std::vector<Teuchos::RCP<blocked_matrix_type> > transferMatricesT_;
     Teuchos::RCP<const map_type> clusterCoeffMap_;
     mutable Teuchos::RCP<mv_type> coefficients_, coefficients2_;
     mutable Teuchos::RCP<mv_type> X_colmap_, coefficients_colmap_;
+
+    Teuchos::RCP<Teuchos::ParameterList> params_;
   };
 }
 

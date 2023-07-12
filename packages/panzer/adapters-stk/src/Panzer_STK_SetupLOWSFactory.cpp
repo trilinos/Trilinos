@@ -54,7 +54,6 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
-#include "ml_rbm.h"
 #endif // PANZER_HAVE_EPETRA_STACK
 
 #include "Tpetra_Map.hpp"

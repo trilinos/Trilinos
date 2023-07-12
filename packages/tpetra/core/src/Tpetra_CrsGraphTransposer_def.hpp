@@ -294,7 +294,6 @@ namespace Tpetra {
       global_col_inds_array globalColindsSym;
 
       KokkosSparse::Experimental::spadd_symbolic
-        <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
         (&handle, rowptrs, colindsConverted, rowptrsT, colindsTConverted, rowptrsSym);
       globalColindsSym = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("global colinds sym"), addHandle->get_c_nnz());
 
@@ -326,10 +325,6 @@ namespace Tpetra {
       auto addHandle = handle.get_spadd_handle();
 
       KokkosSparse::Experimental::spadd_symbolic
-        <KKH_LO,
-         typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-         typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-         row_ptrs_array, col_inds_array>
         (&handle, rowptrs, colinds, rowptrsT, colindsT, rowptrsSym);
       colindsSym = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 

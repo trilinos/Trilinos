@@ -76,7 +76,7 @@
 #include "Stokhos_MueLu_QR_Interface_def.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 //#include <MueLu_UseShortNames.hpp>
 
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp

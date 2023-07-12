@@ -9,8 +9,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -33,6 +31,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -59,8 +59,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -83,6 +81,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -104,6 +104,8 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -136,8 +138,6 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -160,6 +160,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -186,8 +188,6 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -210,6 +210,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -230,6 +232,8 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -50,8 +50,6 @@
 
 #cmakedefine HAVE_MPI
 
-#cmakedefine HAVE_STK_CUDA
-
 #cmakedefine STK_VOLATILE_SIMD
 
 /* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See

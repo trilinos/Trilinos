@@ -63,6 +63,9 @@ local installed-developer-files =
   mock_salinas
   mock_fuego
   mock_sparc
+  mock_conservative_transfer_mpmd
+  mock_conservative_transfer_spmd
+  mock_nonconservative_transfer_spmd
   ;
 
 #
@@ -145,6 +148,8 @@ exe mock_sparc
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -156,6 +161,8 @@ exe mock_aria
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -167,6 +174,8 @@ exe mock_salinas
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -178,7 +187,44 @@ exe mock_fuego
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
+
+exe mock_conservative_transfer_mpmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_mpmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_conservative_transfer_spmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_spmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_nonconservative_transfer_spmd
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_nonconservative_transfer_spmd.cpp 
+    ]
+    /sierra/stk_middle_mesh//stk_middle_mesh
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
+    /sierra/stk_search//stk_search
+    /sierra/stk_util//stk_util_command_line
+  : <tag>@sierra-exec-tag
+  ;
+
 

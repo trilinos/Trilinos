@@ -11,10 +11,12 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conf.py DESTINATION ${CMAKE_CURRENT_BINARY
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.rst DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # Find all public headers in KokkosKernels and Kokkos::kokkos
-file(GLOB_RECURSE ${PROJECT_NAME}_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/src/*.hpp ${KOKKOS_INCLUDE_DIR}/*.hpp)
+file(GLOB_RECURSE ${PROJECT_NAME}_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/sparse/src/*.hpp
+                                                 ${PROJECT_SOURCE_DIR}/blas/src/*.hpp
+                                                 ${PROJECT_SOURCE_DIR}/batched/dense/src/*.hpp
+                                                 ${PROJECT_SOURCE_DIR}/batched/sparse/src/*.hpp
+                                                 ${KOKKOS_INCLUDE_DIR}/*.hpp)
 
-set(DOXYGEN_KOKKOSKERNELS_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
-set(DOXYGEN_KOKKOS_INPUT_DIR ${KOKKOS_INCLUDE_DIR})
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen/)
 set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/xml/index.xml)
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)

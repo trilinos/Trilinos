@@ -54,7 +54,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 namespace MueLu {
 
@@ -87,7 +86,7 @@ namespace MueLu {
   template <class Scalar = double,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class SmootherFactory : public SmootherFactoryBase {
   public:
     typedef Scalar scalar_type;

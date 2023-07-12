@@ -43,127 +43,127 @@
 #include "Ioss_EntityType.h"
 
 namespace Ioss {
-  class PropertyManager;
-  class GroupingEntity;
-  class Region;
-  class DatabaseIO;
+class PropertyManager;
+class GroupingEntity;
+class Region;
+class DatabaseIO;
 }
 
 namespace stk {
-  namespace mesh {
-    class MetaData;
-    class BulkData;
-    class Part;
+namespace mesh {
+class MetaData;
+class BulkData;
+class Part;
+}
+
+namespace io {
+class InputFile
+{
+public:
+  enum PeriodType {
+    CYCLIC,   /*< Cycles 0 1 2 0 1 2 0 1 2 ... */
+    REVERSING /*< Cycles 0 1 2 1 0 1 2 1 0 ... */
+  };
+
+  InputFile(std::string filename,
+            MPI_Comm communicator,
+            const std::string &type,
+            DatabasePurpose purpose,
+            Ioss::PropertyManager& property_manager);
+  InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
+
+  ~InputFile()
+  {delete m_multiStateSuffixes;}
+
+  void create_ioss_region();
+  FieldNameToPartVector get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta);
+  void add_input_field(const stk::io::MeshField &mesh_field);
+  void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
+  bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
+  double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missingFields,
+                                   stk::mesh::BulkData &bulk);
+  double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missingFields,
+                                   stk::mesh::BulkData &bulk);
+  double read_defined_input_fields_at_step(int step, std::vector<stk::io::MeshField> *missingFields,
+                                           stk::mesh::BulkData &bulk, bool useEntityListCache = false);
+  void get_global_variable_names(std::vector<std::string> &names);
+
+  void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
+
+  void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
+
+  Teuchos::RCP<Ioss::Region> get_input_io_region()
+  {
+    if (Teuchos::is_null(m_region) && !Teuchos::is_null(m_database)) {
+      create_ioss_region();
+    }
+    return m_region;
   }
 
-  namespace io {
-    class InputFile
-    {
-    public:
-      enum PeriodType {
-            CYCLIC,   /*< Cycles 0 1 2 0 1 2 0 1 2 ... */
-            REVERSING /*< Cycles 0 1 2 1 0 1 2 1 0 ... */
-      };
+  InputFile& set_offset_time(double offset_time);
+  InputFile& set_scale_time(double scale_time);
+  InputFile& set_periodic_time(double period_length, double startup_time = 0.0,
+                               PeriodType ptype = CYCLIC);
+  InputFile& set_start_time(double start_time);
+  InputFile& set_stop_time(double stop_time);
 
-      InputFile(std::string filename,
-                MPI_Comm communicator,
-                const std::string &type,
-                DatabasePurpose purpose,
-                Ioss::PropertyManager& property_manager);
-      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
+  // Only public so easier to test...
+  double map_analysis_to_db_time(double time) const;
 
-      ~InputFile()
-      {delete m_multiStateSuffixes;}
+  void set_surface_split_type(Ioss::SurfaceSplitType split_type) {
+    if(!Teuchos::is_null(m_database)) {
+      m_database->set_surface_split_type(split_type);
+    }
+  }
+  Ioss::SurfaceSplitType get_surface_split_type() const {
+    if(!Teuchos::is_null(m_database)) {
+      return m_database->get_surface_split_type();
+    }
 
-      void create_ioss_region();
-      FieldNameToPartVector get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta);
-      void add_input_field(const stk::io::MeshField &mesh_field);
-      void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
-      bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missingFields,
-				       stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missingFields,
-				       stk::mesh::BulkData &bulk);
-      double read_defined_input_fields_at_step(int step, std::vector<stk::io::MeshField> *missingFields,
-                                       stk::mesh::BulkData &bulk);
-      void get_global_variable_names(std::vector<std::string> &names);
+    return Ioss::SPLIT_INVALID;
+  }
 
-      void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
+  Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
+  {
+    return m_database;
+  }
 
-      void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
+  bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
+  {
+    if(nullptr != m_multiStateSuffixes) {
+      delete m_multiStateSuffixes;
+      m_multiStateSuffixes = nullptr;
+    }
 
-      Teuchos::RCP<Ioss::Region> get_input_io_region()
-      {
-	if (Teuchos::is_null(m_region) && !Teuchos::is_null(m_database)) {
-	  create_ioss_region();
-	}
-	return m_region;
-      }
+    m_multiStateSuffixes = new std::vector<std::string>(multiStateSuffixes);
+    return true;
+  }
 
-      InputFile& set_offset_time(double offset_time);
-      InputFile& set_scale_time(double scale_time);
-      InputFile& set_periodic_time(double period_length, double startup_time = 0.0,
-				   PeriodType ptype = CYCLIC);
-      InputFile& set_start_time(double start_time);
-      InputFile& set_stop_time(double stop_time);
-  
-      // Only public so easier to test...
-      double map_analysis_to_db_time(double time) const;
+private:
+  bool process_fields_for_grouping_entity(stk::io::MeshField &mesh_field,
+                                          const stk::mesh::Part &part,
+                                          Ioss::GroupingEntity *io_entity,
+                                          std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields_collector_ptr = nullptr);
 
-      void set_surface_split_type(Ioss::SurfaceSplitType split_type) {
-          if(!Teuchos::is_null(m_database)) {
-              m_database->set_surface_split_type(split_type);
-          }
-      }
-      Ioss::SurfaceSplitType get_surface_split_type() const {
-          if(!Teuchos::is_null(m_database)) {
-              return m_database->get_surface_split_type();
-          }
+  bool build_field_part_associations(stk::io::MeshField &mesh_field,
+                                     const stk::mesh::Part &part,
+                                     const stk::mesh::EntityRank rank,
+                                     Ioss::GroupingEntity *io_entity,
+                                     std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = nullptr);
 
-          return Ioss::SPLIT_INVALID;
-      }
+  void build_field_part_associations_for_part(Ioss::Region *region,
+                                              const stk::mesh::FieldBase *f,
+                                              const stk::mesh::Part * part,
+                                              stk::io::MeshField &mf);
 
-      Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
-      {
-	return m_database;
-      }
+  DatabasePurpose m_db_purpose;
+  Teuchos::RCP<Ioss::DatabaseIO> m_database;
+  Teuchos::RCP<Ioss::Region> m_region;
+  std::vector<stk::io::MeshField> m_fields;
 
-      bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes)
-      {
-          if(nullptr != m_multiStateSuffixes) {
-              delete m_multiStateSuffixes;
-              m_multiStateSuffixes = nullptr;
-          }
+  /*@{*/
 
-          m_multiStateSuffixes = new std::vector<std::string>(multiStateSuffixes);
-          return true;
-      }
-
-    private:
-      bool process_fields_for_grouping_entity(stk::io::MeshField &mesh_field,
-                                              const stk::mesh::Part &part,
-                                              Ioss::GroupingEntity *io_entity,
-                                              std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields_collector_ptr = nullptr);
-
-      bool build_field_part_associations(stk::io::MeshField &mesh_field,
-					 const stk::mesh::Part &part,
-					 const stk::mesh::EntityRank rank,
-					 Ioss::GroupingEntity *io_entity,
-					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = nullptr);
-
-      void build_field_part_associations_for_part(Ioss::Region *region,
-                                                  const stk::mesh::FieldBase *f,
-                                                  const stk::mesh::Part * part,
-                                                  stk::io::MeshField &mf);
-
-      DatabasePurpose m_db_purpose;
-      Teuchos::RCP<Ioss::DatabaseIO> m_database;
-      Teuchos::RCP<Ioss::Region> m_region;
-      std::vector<stk::io::MeshField> m_fields;
-
-      /*@{*/
-
-      /**
+  /**
        * The 'startupTime' and 'periodLength' are used to support input of periodic data.
        * The 'startupTime' specifies the length of time prior to the start of
        * the periodic behavior; if the application time is less than
@@ -189,42 +189,43 @@ namespace stk {
        *      tpm = mod(t_app-t_startup, 2*period_length)
        *      if (tpm <= period_length)
        *         t_db = t_startup + tpm
-       *      else 
+       *      else
        *         t_db = t_startup + (2*period_length - tpm)
        *    \endcode
        *
        * \code
        *  t_db = t_db * t_scale + t_offset
        * \endcode
-       *  
+       *
        */
-      double m_startupTime;
+  double m_startupTime;
 
-      /** See InputFile::startupTime */
-      double m_periodLength;
-      /** See InputFile::startupTime */
-      double m_scaleTime;
-      /** See InputFile::startupTime */
-      double m_offsetTime;
-      /** See InputFile::startupTime */
-      double m_startTime;
-      /** See InputFile::startupTime */
-      double m_stopTime;
-      /** See InputFile::startupTime */
-      PeriodType m_periodType;
-      
-      /*@}*/
+  /** See InputFile::startupTime */
+  double m_periodLength;
+  /** See InputFile::startupTime */
+  double m_scaleTime;
+  /** See InputFile::startupTime */
+  double m_offsetTime;
+  /** See InputFile::startupTime */
+  double m_startTime;
+  /** See InputFile::startupTime */
+  double m_stopTime;
+  /** See InputFile::startupTime */
+  PeriodType m_periodType;
 
-    public:
-      bool m_fieldsInitialized;
-      
-    private:
-      std::vector<std::string>* m_multiStateSuffixes = nullptr;
+  /*@}*/
 
-    private:
-      InputFile(const InputFile &);
-      const InputFile & operator=(const InputFile &);
-    };
-  } // namespace io
+public:
+  bool m_fieldsInitialized;
+
+private:
+  bool m_haveCachedEntityList;
+  std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
+private:
+  InputFile(const InputFile &);
+  const InputFile & operator=(const InputFile &);
+};
+} // namespace io
 } // namespace stk
 #endif

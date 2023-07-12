@@ -250,7 +250,7 @@ namespace Intrepid {
     for (int p=0;p<=deg;p++) {
       for (int q=0;q<=deg-p;q++) {
         for (int r=0;r<=deg-p-q;r++) {
-          int idxcur = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r);
+          idxcur = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r);
           Scalar scal = sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
           for (int i=0;i<np;i++) {
             outputValues(idxcur,i) *= scal;

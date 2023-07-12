@@ -133,13 +133,14 @@ double device_evaluate(const std::string & expression,
   auto & parsedEval = eval.get_parsed_eval();
 
   double result = 0.0;
-  Kokkos::parallel_reduce(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
-    stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
-    for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
-    }
-    localResult = parsedEval.evaluate(deviceVariableMap);
-  }, result);
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int& i, double& localResult) {
+        stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+        for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
+          deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
+        }
+        localResult = parsedEval.evaluate(deviceVariableMap);
+    }, result);
 
   return result;
 }
@@ -164,7 +165,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
     variableSizesHost(varIndex)   = 1;
-    ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
+    STK_ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
     }
@@ -173,7 +174,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
     variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
     variableSizesHost(varIndex + boundScalars.size())  = boundVectors[varIndex].varValues.size();
-    ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
+    STK_ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
         variableHostValues(threadIndex, varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[threadIndex][varComponent];
@@ -188,7 +189,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
-  Kokkos::parallel_for(numThreads, KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numThreads), KOKKOS_LAMBDA (const int& i) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
       deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(i, varIndex, 0), variableSizesDevice(varIndex), 1);
@@ -662,7 +663,7 @@ TEST(UnitTestEvaluator, deviceVariableMap_too_small)
   eval.parse();
 
   auto & parsedEval = eval.get_parsed_eval();
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& i) {
     EXPECT_ANY_THROW(stk::expreval::DeviceVariableMap<2> deviceVariableMap(parsedEval));
   });
 }

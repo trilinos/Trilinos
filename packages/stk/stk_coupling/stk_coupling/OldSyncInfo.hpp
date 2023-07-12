@@ -52,7 +52,7 @@ private:
   typename MapType::mapped_type get_value_from_map(const MapType& vals, const std::string& parameterName) const
   {
     typename MapType::const_iterator iter = vals.find(parameterName);
-    ThrowRequireMsg(iter != vals.end(), "OldSyncInfo::get_value didn't find parameterName " << parameterName);
+    STK_ThrowRequireMsg(iter != vals.end(), "OldSyncInfo::get_value didn't find parameterName " << parameterName);
     return iter->second;
   }
 

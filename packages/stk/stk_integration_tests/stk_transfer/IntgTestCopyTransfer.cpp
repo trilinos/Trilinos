@@ -33,7 +33,6 @@
 //
 
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData, etc
-#include "stk_mesh/base/CoordinateSystems.hpp" // for Cartesian2d, etc.
 #include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc
@@ -493,7 +492,10 @@ public:
 
   void add_shared_nodes_to_receiver() { receiverIncludesSharedNodes = true; }
 
-  virtual ~CopyTransferFixture() = default;
+  virtual ~CopyTransferFixture()
+  {
+    MPI_Comm_free(&pmSub);
+  }
 
 protected:
   stk::ParallelMachine pm;
@@ -714,6 +716,7 @@ TYPED_TEST(CopyTransferFixture, copy1T0_MPMD)
 
   this->check_target_fields();
 }
+
 namespace {
 stk::transfer::SearchById::KeyToTargetProcessor get_01T10_key_to_target_processor_gold(stk::ParallelMachine pm)
 {

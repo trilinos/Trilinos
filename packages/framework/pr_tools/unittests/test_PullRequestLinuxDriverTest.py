@@ -84,6 +84,7 @@ class Test_parse_args(unittest.TestCase):
                                          req_mem_per_core=3.0,
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
+                                         ccache_enable=False,
                                          dry_run=False)
 
         self.default_stdout = dedent('''\
@@ -101,6 +102,7 @@ class Test_parse_args(unittest.TestCase):
                 | - [R] ctest-drop-site             : testing.sandia.gov
                 |
                 | - [O] dry-run                     : False
+                | - [O] enable-ccache               : False
                 | - [O] filename-packageenables     : ../packageEnables.cmake
                 | - [O] max-cores-allowed           : 12
                 | - [O] num-concurrent-tests        : -1
@@ -132,7 +134,8 @@ class Test_parse_args(unittest.TestCase):
                                    [--test-mode TEST_MODE]
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
-                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS] [--dry-run]
+                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS]
+                                   [--enable-ccache] [--dry-run]
 
                 Parse the repo and build information
 
@@ -208,6 +211,8 @@ class Test_parse_args(unittest.TestCase):
                                         tests>`. If > 0 then this value is used, otherwise the
                                         value is calculated based on number_of_available_cores
                                         / max_test_parallelism Default = -1
+                  --enable-ccache       Enable ccache object caching to improve build times.
+                                        Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
                 ''')
@@ -232,7 +237,8 @@ class Test_parse_args(unittest.TestCase):
                                    [--test-mode TEST_MODE]
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
-                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS] [--dry-run]
+                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS]
+                                   [--enable-ccache] [--dry-run]
                 programName: error: the following arguments are required: --source-repo-url, --source-branch-name, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 

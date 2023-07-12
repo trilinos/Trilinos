@@ -5,8 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef PS_PARIO_CONST_H
-#define PS_PARIO_CONST_H
+#pragma once
 
 #include "rf_io_const.h"
 #include <string>
@@ -62,4 +61,3 @@ extern std::string Par_Nem_File_Name; /* The parallel nemesis file name */
 
 void        gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
 std::string gen_par_filename(const std::string &scalar_fname, int proc_for, int nprocs);
-#endif

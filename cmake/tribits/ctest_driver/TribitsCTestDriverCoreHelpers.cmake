@@ -249,8 +249,8 @@ macro(tribits_setup_packages)
   # Second, the extra repos do not even exist in the "driver" source
   # tree.
 
-  set(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-  set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+  set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  OFF)
+  set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES  FALSE)
   if (CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE)
     set(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
        "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
@@ -513,9 +513,9 @@ macro(enable_only_modified_packages)
     message("\nDirectly modified or failing non-disabled packages that need"
       " to be tested:  ALL_PACKAGES")
   else()
-    tribits_print_internal_package_list_enable_status(
+    tribits_print_package_list_enable_status(
       "\nDirectly modified or failing non-disabled packages that need to be tested"
-      ON FALSE )
+      INTERNAL ON NONEMPTY )
   endif()
 
 endmacro()

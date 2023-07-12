@@ -762,7 +762,6 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  using STS = Teuchos::ScalarTraits<scalar_type>;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,

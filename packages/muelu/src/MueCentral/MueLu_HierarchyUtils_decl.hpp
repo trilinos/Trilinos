@@ -132,6 +132,7 @@ namespace MueLu {
     @param nonSerialList Parameter list containing non-serializable data
     */
     static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);
+    static void CopyBetweenHierarchies(Hierarchy& fromHierarchy, Hierarchy& toHierarchy, const std::string fromLabel, const std::string toLabel, const std::string dataType);
   };
 
 

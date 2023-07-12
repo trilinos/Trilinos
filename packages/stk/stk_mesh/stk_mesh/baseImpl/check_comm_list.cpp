@@ -57,8 +57,8 @@ void pack_send_data(const stk::mesh::BulkData& mesh, int local_proc,
                     const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        ThrowAssert(commInfo.entity_comm != -1);
-        ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
+        STK_ThrowAssert(commInfo.entity_comm != -1);
+        STK_ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
         pack_key_and_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==local_proc,
                                commDB.comm(commInfo.entity_comm), comm);
     }
@@ -88,8 +88,8 @@ void fill_expected_recv_data(const stk::mesh::BulkData& mesh,
                              std::vector<KeyProcGhostId>& recv_data)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        ThrowAssert(commInfo.entity_comm != -1);
-        ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
+        STK_ThrowAssert(commInfo.entity_comm != -1);
+        STK_ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
         push_back_key_procs_ghost_ids(commInfo.key,
                                       mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(),
                                       commDB.comm(commInfo.entity_comm), recv_data);

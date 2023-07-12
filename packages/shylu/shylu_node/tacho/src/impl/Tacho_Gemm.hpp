@@ -35,7 +35,7 @@ namespace Tacho {
 template <typename ArgTransA, typename ArgTransB, typename ArgAlgo> struct Gemm;
 
 struct GemmAlgorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

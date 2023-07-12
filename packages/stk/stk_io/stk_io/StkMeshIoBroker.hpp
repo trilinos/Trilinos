@@ -201,7 +201,7 @@ namespace stk {
 
       void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
       {
-          ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
+          STK_ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
           m_sidesetFaceCreationBehavior = behavior;
       }
 
@@ -213,6 +213,11 @@ namespace stk {
       void set_auto_load_distribution_factor_per_nodeset(bool shouldAutoLoad)
       {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
+      }
+
+      void cache_entity_list_for_transient_steps(bool cacheEntityList)
+      {
+          m_cacheEntityListForTransientSteps = cacheEntityList;
       }
 
       bool get_filter_empty_input_entity_blocks() const;
@@ -464,6 +469,9 @@ namespace stk {
 				Ioss::PropertyManager &properties,
                                 double time,
                                 char const* type = "exodus", bool openFileImmediately = true);
+ 
+      // Free up memory by removing resouces associated with output files that will no longer be used by the run
+      void close_output_mesh(size_t output_file_index);
 
       void write_output_mesh(size_t output_file_index);
 
@@ -767,6 +775,7 @@ namespace stk {
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
+      bool m_cacheEntityListForTransientSteps;
       bool m_useSimpleFields;
     };
 
@@ -972,25 +981,25 @@ namespace stk {
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
   }

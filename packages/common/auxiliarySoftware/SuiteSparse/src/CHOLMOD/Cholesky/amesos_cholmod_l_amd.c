@@ -208,7 +208,7 @@ int CHOLMOD(amd)
     CHOLMOD(free_sparse) (&C, Common) ;
     for (j = 0 ; j <= n ; j++)
     {
-	Head [j] = EMPTY ;
+	Head [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
     return (TRUE) ;
 }

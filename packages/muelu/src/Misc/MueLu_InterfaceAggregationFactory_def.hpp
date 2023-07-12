@@ -53,7 +53,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 

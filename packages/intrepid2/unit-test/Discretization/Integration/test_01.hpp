@@ -425,7 +425,6 @@ namespace Intrepid2 {
 
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-      Kokkos::finalize();
       return errorFlag;
     }
 

@@ -46,8 +46,6 @@
 #ifndef MUELU_INDEXMANAGER_DEF_KOKKOS_HPP
 #define MUELU_INDEXMANAGER_DEF_KOKKOS_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <utility>
 
 #include "Teuchos_OrdinalTraits.hpp"
@@ -56,7 +54,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
-#include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_IndexManager_kokkos_decl.hpp>
 
@@ -232,6 +229,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #define MUELU_INDEXMANAGER_KOKKOS_SHORT
 #endif // MUELU_INDEXMANAGER_DEF_KOKKOS_HPP

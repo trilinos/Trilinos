@@ -105,13 +105,13 @@ ENDFUNCTION(IFPACK2_ORDINAL_MACRO_NAME)
 # name (all caps, with no white space and no punctuation other than
 # underscore).
 FUNCTION(IFPACK2_NODE_MACRO_NAME NAME_OUT NAME_IN)
-  STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
+  STRING(REGEX MATCH "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
   STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
   IF(DOES_NOT_MATCH)
-    MESSAGE(FATAL_ERROR "Ifpack2: Node $NAME_IN is not a supported Node type.")
+    MESSAGE(FATAL_ERROR "Ifpack2: Node ${NAME_IN} is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
-    STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
+    STRING(REGEX REPLACE "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
 
     # Special case: Threads.  The macro name unfortunately differs
     # from the execution space name in a way that doesn't fit the
@@ -188,7 +188,7 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
@@ -196,7 +196,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 # SupportGraph requires some TPLs and options to be enabled.
 IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Lemon AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Cholmod)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/supportgraph)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
   SET(HEADERS ${HEADERS}
     supportgraph/Ifpack2_SupportGraph_decl.hpp
     supportgraph/Ifpack2_SupportGraph_def.hpp
@@ -207,7 +207,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Lemon AND ${P
 ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_ETIHelperMacros.h )
@@ -389,6 +389,24 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
+
+  # ETI for the Kokkos::SYCL device.
+  IF (Tpetra_INST_SYCL)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_SYCL.tmpl
+      "Ifpack2_CLASS_FILE_NAME_SYCL.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_SYCL.tmpl
+      "Ifpack2_CLASS_FILE_NAME_SYCL.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+
 ENDIF()
 
 # Generate .cpp files for LinearSolverFactory registration,

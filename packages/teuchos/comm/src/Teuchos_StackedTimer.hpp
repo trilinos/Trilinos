@@ -728,7 +728,12 @@ public:
    * so that Watchr knows it is a different data series than runs of the same test from other builds.
    *
    * If \c $WATCHR_BUILD_NAME is not set or is empty, the filename is just \c name_$DATESTAMP.xml .
-   * DATESTAMP is calculated from the current UTC time, in the format YYYY_MM_DD.
+   * DATESTAMP is normally calculated from the current UTC time, in the format YYYY_MM_DD. DATESTAMP
+   * can be overridden by setting $WATCHR_BUILD_DATE to a date (also in YYYY_MM_DD format).
+   *
+   * Optionally, the environment variable \c $TRILINOS_GIT_SHA can be set to the Git revision hash. This
+   * is added to the performance report as metadata, and will appear in Watchr when mousing over a data point.
+   * Only the first 10 characters are output.
    *
    * In the filename, all spaces in will be replaced by underscores.
    *

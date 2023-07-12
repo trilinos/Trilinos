@@ -16,7 +16,6 @@
 #include <utility>
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -252,7 +251,7 @@ LinInterp<FROM,TO>::apply_from_elem_field (
   stk::mesh::Entity theNode)
 {
   stk::mesh::EntityRank toRank = ToPoints.toFields_[0]->entity_rank();
-  const unsigned from_field_size = FromElem.fromFields_[0]->max_size(stk::topology::ELEMENT_RANK);
+  const unsigned from_field_size = FromElem.fromFields_[0]->max_size();
   const double * fromField_data = (double *) stk::mesh::field_data(*(FromElem.fromFields_[0]), theElem);
   double         * toField_data = (double *) stk::mesh::field_data(*(ToPoints.toFields_[0]),  theNode);
 
@@ -320,7 +319,7 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   const std::vector<double> &isoParCoords)
 {
   const unsigned nDim = FromElem.fromMetaData_.spatial_dimension();
-  const unsigned from_field_size = FromElem.fromFields_[0]->max_size(stk::topology::NODE_RANK);
+  const unsigned from_field_size = FromElem.fromFields_[0]->max_size();
 
   const stk::mesh::BulkData &fromBulkData = FromElem.fromBulkData_;
 

@@ -691,8 +691,8 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
               int num_params = p_space->dim();
               auto p_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(p_space);
               bool p_dist = !p_space_plus->isLocallyReplicated();//p_space->DistributedGlobal();
-              Thyra::ModelEvaluatorBase::DerivativeSupport ds = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
-              if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+              Thyra::ModelEvaluatorBase::DerivativeSupport ds_dgdp = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
+              if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
                 auto dgdp_op =
                     this->getModel().create_DgDp_op(j,i);
                 TEUCHOS_TEST_FOR_EXCEPTION(
@@ -702,13 +702,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
                     std::endl);
                 modelOutArgs.set_DgDp(j,i,dgdp_op);
               }
-              else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
+              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
                 auto tmp_dgdp = createMembers(g_space, num_params);
                 Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
                 dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
                 modelOutArgs.set_DgDp(j,i,dmv_dgdp);
               }
-              else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
+              else if (ds_dgdp.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
                 auto tmp_dgdp = createMembers(p_space, num_responses);
                 Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
                 dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
@@ -919,28 +919,23 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     }
   } else if (computeAdjointSensitivities) {
 
-    bool explicitlyTransposeMatrix = appParams.isParameter("Enable Explicit Matrix Transpose") ?
-        appParams.get<bool>("Enable Explicit Matrix Transpose") :
-        false;
-
-    if(explicitlyTransposeMatrix)
-      appParams.sublist("Optimization Status").set("Compute Transposed Jacobian", true);
+    bool availableAdjointModel = Teuchos::nonnull(adjointModel_);
 
     // Create implicitly transpose Jacobian and preconditioner
-    Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory = model_->get_W_factory();
+    Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory = availableAdjointModel ?  adjointModel_->get_W_factory() : model_->get_W_factory();
     TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
-    Teuchos::RCP< Thyra::LinearOpBase<double> > lop = model_->create_W_op();
+    Teuchos::RCP< Thyra::LinearOpBase<double> > lop = availableAdjointModel ?  adjointModel_->create_W_op() : model_->create_W_op();
     Teuchos::RCP< const ::Thyra::DefaultLinearOpSource<double> > losb = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<double>(lop));
     Teuchos::RCP< ::Thyra::PreconditionerBase<double> > prec;
 
-    auto in_args = model_->createInArgs();
-    auto out_args = model_->createOutArgs();
+    auto in_args = availableAdjointModel ?  adjointModel_->createInArgs() : model_->createInArgs();
+    auto out_args = availableAdjointModel ?  adjointModel_->createOutArgs() : model_->createOutArgs();
 
     Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory =  lows_factory->getPreconditionerFactory();
     if (Teuchos::nonnull(prec_factory)) {
       prec = prec_factory->createPrec();
     } else if (out_args.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-      prec = model_->create_W_prec();
+      prec = availableAdjointModel ?  adjointModel_->create_W_prec() : model_->create_W_prec();
     }
 
     const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian =
@@ -950,7 +945,10 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::SteadyStateSolver::evalConvergedModelResponsesAndSensitivities::evalModel")));
       in_args.set_x(modelInArgs.get_x());
       out_args.set_W_op(lop);
-      model_->evalModel(in_args, out_args);
+      if(availableAdjointModel)
+        adjointModel_->evalModel(in_args, out_args);
+      else 
+        model_->evalModel(in_args, out_args);
       in_args.set_x(Teuchos::null);
       out_args.set_W_op(Teuchos::null);
     }
@@ -960,11 +958,14 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     else if ( Teuchos::nonnull(prec) && (out_args.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
       in_args.set_x(modelInArgs.get_x());
       out_args.set_W_prec(prec);
-      model_->evalModel(in_args, out_args);
+      if(availableAdjointModel)
+        adjointModel_->evalModel(in_args, out_args);
+      else
+        model_->evalModel(in_args, out_args);
     }
 
     if(Teuchos::nonnull(prec)) {
-      if(explicitlyTransposeMatrix) {
+      if(availableAdjointModel) {
         Thyra::initializePreconditionedOp<double>(*lows_factory,
           lop,
           prec,
@@ -976,7 +977,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
             jacobian.ptr());
       }
     } else {
-      if(explicitlyTransposeMatrix)
+      if(availableAdjointModel)
         Thyra::initializeOp<double>(*lows_factory, lop, jacobian.ptr());
       else
         Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(lop), jacobian.ptr());
@@ -1173,8 +1174,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
         }
       }
     }
-    if(explicitlyTransposeMatrix)
-      appParams.sublist("Optimization Status").set("Compute Transposed Jacobian", false);
   }
 }
 

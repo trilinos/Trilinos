@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef SDCGI_H
-#define SDCGI_H
+#pragma once
 
 #include "fortyp.h"
 
@@ -102,4 +100,3 @@ void crqlc_(f_integer *idev, f_real *timeout, f_integer *vstat, f_integer *rstat
 void cili_(f_integer *iclass, f_integer *idev);
 void cpxa_(f_real *x, f_real *y, f_integer *nx, f_integer *ny, f_integer *xscal, f_integer *yscal,
            f_integer *xdir, f_integer *ydir, f_integer *pxclrs);
-#endif

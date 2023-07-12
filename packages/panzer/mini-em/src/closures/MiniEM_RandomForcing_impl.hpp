@@ -8,6 +8,12 @@
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
+#include "Panzer_Traits.hpp"
+#include "Kokkos_Random.hpp"
+#include "MiniEM_Sacado_Kokkos_Random.hpp"
+#include "Kokkos_ArithTraits.hpp"
+
+
 namespace mini_em {
 
 //**********************************************************************
@@ -17,27 +23,37 @@ RandomForcing<EvalT,Traits>::RandomForcing(const std::string & name,
                                            const panzer::FieldLayoutLibrary & fl,
                                            const unsigned int & seed,
                                            const double & rangeMin,
-                                           const double & rangeMax)
+                                           const double & rangeMax,
+                                           const std::string& basisName)
 {
   using Teuchos::RCP;
 
-  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
-  ir_degree = ir.cubature_degree;
-  ir_dim = ir.spatial_dimension;
+  Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis(basisName);
 
-  current = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
-  this->addEvaluatedField(current);
+  vectorBasis_ = basis->isVectorBasis();
+  if (vectorBasis_) {
+    Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
+    ir_degree = ir.cubature_degree;
+    ir_dim = ir.spatial_dimension;
 
-  Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis("E_edge");
-  const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
-  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates);
-  this->addDependentField(coords);
+    forcingVector = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
+    this->addEvaluatedField(forcingVector);
+  } else {
+    Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+    ir_degree = ir.cubature_degree;
+    ir_dim = ir.spatial_dimension;
+
+    forcingScalar = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+    this->addEvaluatedField(forcingScalar);
+  }
 
   std::string n = "Random Forcing";
   this->setName(n);
-  std::srand(seed);
-  rangeShift_ = rangeMin;
-  rangeMult_ = rangeMax-rangeMin;
+
+  rangeMin_ = rangeMin;
+  rangeMax_ = rangeMax;
+
+  rand_pool_ = pool_type(seed);
 }
 
 //**********************************************************************
@@ -47,30 +63,21 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
   using panzer::index_t;
 
   // double time = workset.time;
-  auto current_h = Kokkos::create_mirror_view(current.get_static_view());
 
-  if (ir_dim == 3) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < current_h.extent_int(1); ++point) {
-        // const ScalarT& x = coords(cell,point,0);
-        // const ScalarT& y = coords(cell,point,1);
-        // const ScalarT& z = coords(cell,point,2);
-        current_h(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current_h(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current_h(cell,point,2) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-      }
-    }
+  using IST = typename Kokkos::Details::ArithTraits<ScalarT>::val_type;
+
+  const IST max = static_cast<IST>(rangeMin_);
+  const IST min = static_cast<IST>(rangeMax_);
+
+  if (vectorBasis_) {
+    auto tmp_forcing = forcingVector.get_static_view();
+
+    Kokkos::fill_random(tmp_forcing, rand_pool_, min, max);
   } else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < current_h.extent_int(1); ++point) {
-        // const ScalarT& x = coords(cell,point,0);
-        // const ScalarT& y = coords(cell,point,1);
-        current_h(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current_h(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-      }
-    }
+    auto tmp_forcing = forcingScalar.get_static_view();
+
+    Kokkos::fill_random(tmp_forcing, rand_pool_, min, max);
   }
-  Kokkos::deep_copy(current.get_static_view(), current_h);
 }
 
 //**********************************************************************

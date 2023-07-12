@@ -53,7 +53,6 @@
 
 #include "Xpetra_IO.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_decl.hpp"
 

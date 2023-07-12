@@ -85,7 +85,7 @@ Int TRILINOS_BTF(order)	    /* returns number of blocks found */
 	for (i = 0 ; i < n ; i++)
 	{
 	    j = Q [i] ;
-	    if (j != EMPTY)
+	    if (j != TRILINOS_BTF_EMPTY)
 	    {
 		/* row i and column j are matched to each other */
 		Flag [j] = 1 ;
@@ -107,7 +107,7 @@ Int TRILINOS_BTF(order)	    /* returns number of blocks found */
 	/* make an assignment for each unmatched row */
 	for (i = 0 ; i < n ; i++)
 	{
-	    if (Q [i] == EMPTY && nbadcol > 0)
+	    if (Q [i] == TRILINOS_BTF_EMPTY && nbadcol > 0)
 	    {
 		/* get an unmatched column j */
 		j = Work [--nbadcol] ;

@@ -38,7 +38,7 @@
 # @HEADER
 
 include(TribitsPackageSetupCompilerFlags)
-include(TribitsWriteClientExportFiles)
+include(TribitsInternalPackageWriteConfigFile)
 include(TribitsGeneralMacros)
 include(TribitsLibIsTestOnly)
 
@@ -407,6 +407,54 @@ macro(tribits_package_assert_call_context)
 endmacro()
 
 
+# @MACRO: tribits_disable_optional_dependency()
+#
+# Macro called to disable an optional dependency in the current package for an
+# optional (internal or external) upstream package.
+#
+# Usage::
+#
+#   tribits_disable_optional_dependency(<upstreamPackageName>  "<reasonStr>")
+#
+# This macro can be called from a top-level package's
+# ``<packageDir>/CMakeLists.txt`` file to disable an optional dependency that
+# may have been enabled by the user or through automated enable/disable logic.
+#
+# This is most useful in cases where multiple criteria must be considered
+# before support for some upstream dependency can really be supported.  In
+# that case, the dependency can be disabled in the current package and
+# telegraphed to all downstream packages.  See `How to tweak downstream
+# TriBITS "ENABLE" variables during package configuration`_ for more details.
+#
+macro(tribits_disable_optional_dependency  upstreamPackageName  reasonStr)
+  # Assert called in the correct context
+  if (NOT "${${PACKAGE_NAME}_PARENT_PACKAGE}" STREQUAL "")
+    message(FATAL_ERROR "ERROR: Calling tribits_disable_optional_dependency() from"
+      " a subpackage it not allowed.  It must be called from the parent package's"
+      " ${${PACKAGE_NAME}_PARENT_PACKAGE} CMakeLists.txt file")
+  endif()
+  if (NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${${PACKAGE_NAME}_SOURCE_DIR}")
+    message(FATAL_ERROR "ERROR: Calling tribits_disable_optional_dependency() from"
+      " a subdirectory CMakeLists.txt file under '${CMAKE_CURRENT_SOURCE_DIR}' is not allowed."
+      "  Instead, please call this from the package's base CMakeLists.txt file"
+      " '${${PACKAGE_NAME}_SOURCE_DIR}/CMakeLists.txt'" )
+  endif()
+  # Get the variable names that are going to be set assert they exist already
+  set(packageEnableVarName ${PACKAGE_NAME}_ENABLE_${upstreamPackageName})
+  assert_defined(${packageEnableVarName})
+  string(TOUPPER  ${upstreamPackageName}  upstreamPackageName_UC)
+  set(havePackageUpstreamPackageMacroVarName
+    HAVE_${PACKAGE_NAME_UC}_${upstreamPackageName_UC})
+  assert_defined(${havePackageUpstreamPackageMacroVarName})
+  # Set the variables to OFF in local and project-level scopes
+  if (NOT "${reasonStr}" STREQUAL "")
+    message("-- ${reasonStr}")
+  endif()
+  dual_scope_set(${packageEnableVarName} OFF)
+  dual_scope_set(${havePackageUpstreamPackageMacroVarName} OFF)
+endmacro()
+
+
 # @MACRO: tribits_add_test_directories()
 #
 # Macro called to add a set of test directories for an package.
@@ -545,10 +593,7 @@ endmacro()
 # up example directories any way one would like.
 #
 # Currently, all it does macro does is to call ``add_subdirectory(<diri>)`` if
-# ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
-# ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
-# be extended in the future in order to modify behavior related to adding
-# tests and examples in a uniform way.
+# `${PACKAGE_NAME}_ENABLE_EXAMPLES`_ ``= TRUE``.
 #
 macro(tribits_add_example_directories)
 

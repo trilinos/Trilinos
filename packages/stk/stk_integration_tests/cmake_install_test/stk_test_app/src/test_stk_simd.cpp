@@ -11,7 +11,7 @@ void test_stk_simd(stk::ParallelMachine comm)
   stk::simd::Double simdDouble2 = 2.0;
 
   for (int i=0; i<stk::simd::ndoubles; ++i) {
-    ThrowRequireMsg(simdDouble1[i] < simdDouble2[i],
+    STK_ThrowRequireMsg(simdDouble1[i] < simdDouble2[i],
                     "simdDouble1["<<i<<"] = "<<simdDouble1[i]<<" should be less than "
                     <<"simdDouble2["<<i<<"] = "<<simdDouble2[i]);
   }

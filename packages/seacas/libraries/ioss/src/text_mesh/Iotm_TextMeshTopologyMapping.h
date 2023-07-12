@@ -56,7 +56,8 @@ namespace Iotm {
       set_valid_spatial_dimensions({false, false, false, false});
     }
 
-    TopologyMapEntry(const TopologyMapEntry &topo) = default;
+    TopologyMapEntry(const TopologyMapEntry &topo)            = default;
+    TopologyMapEntry &operator=(const TopologyMapEntry &topo) = default;
 
     bool operator==(const Ioss::ElementTopology *topo) const { return topo == topology; }
 

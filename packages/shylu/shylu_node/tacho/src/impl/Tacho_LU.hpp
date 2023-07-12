@@ -36,7 +36,7 @@ namespace Tacho {
 template <typename ArgAlgo> struct LU;
 
 struct LU_Algorithm {
-  using type = ActiveAlgorithm::type;
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
 } // namespace Tacho

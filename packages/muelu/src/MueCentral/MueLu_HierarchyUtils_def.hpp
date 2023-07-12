@@ -53,8 +53,6 @@
 
 #include "MueLu_HierarchyUtils_decl.hpp"
 #include "MueLu_HierarchyManager.hpp"
-#include "MueLu_SmootherBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
@@ -64,6 +62,40 @@
 
 namespace MueLu {
 
+  // Copy object from one hierarchy to another calling AddNewLevel as appropriate.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenHierarchies(Hierarchy& fromHierarchy, Hierarchy& toHierarchy, const std::string fromLabel, const std::string toLabel, const std::string dataType) {
+
+    // add any necessary levels
+    for (int i = toHierarchy.GetNumLevels(); i < fromHierarchy.GetNumLevels(); i++)
+      toHierarchy.AddNewLevel();
+   
+    for (int i = 0; i < fromHierarchy.GetNumLevels(); i++) {
+      RCP<Level> fromLevel = fromHierarchy.GetLevel(i);
+      RCP<Level> toLevel   = toHierarchy.GetLevel(i);
+  
+      TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>"  && dataType != "RCP<const Import>"
+                                 , Exceptions::InvalidArgument,
+                                 std::string("MueLu::Utils::CopyBetweenHierarchies: unknown data type(") + dataType + ")");
+      if (fromLevel->IsAvailable(fromLabel)) {
+        if (dataType == "RCP<Matrix>" ) {
+          // Normally, we should only do 
+          //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
+          // The logic below is meant to handle a special case when we 
+          // repartition a processor away, leaving behind a RCP<Operator> on 
+          // on the level instead of an RCP<Matrix>
+
+          auto tempOp = fromLevel->Get<RCP<Operator> >(fromLabel);
+          auto tempMatrix  = rcp_dynamic_cast<Matrix>(tempOp);
+          if(!tempMatrix.is_null()) toLevel->Set(toLabel,tempMatrix);
+          else                      toLevel->Set(toLabel,tempOp);
+        }
+        if (dataType == "RCP<const Import>") {
+          toLevel->Set(toLabel,fromLevel->Get<RCP<const Import> >(fromLabel));
+        }
+      }
+    }
+  }
 
   // Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
   // calling AddNewLevel as appropriate.
@@ -94,7 +126,7 @@ namespace MueLu {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
-                                     name != "Pnodal" && name != "NodeMatrix" &&
+                                     name != "Pnodal" && name != "NodeMatrix" && name != "NodeAggMatrix" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
@@ -159,7 +191,7 @@ namespace MueLu {
               level->Set(name, mat, NoFactory::get());
             }
           }
-          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix") {
+          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             if (levelListEntry->second.isType<RCP<Operator> >())
               level->Set(name, Teuchos::getValue<RCP<Operator> >   (levelListEntry->second), NoFactory::get());

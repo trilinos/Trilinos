@@ -3,6 +3,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Tpetra_BlockedMap_decl.hpp>
+#include <Tpetra_BlockedMap_def.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_TpetraVector.hpp>

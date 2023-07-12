@@ -58,7 +58,6 @@
 
 #include "MueLu_StratimikosSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #ifdef MUELU_RECURMG
@@ -70,7 +69,6 @@
 #if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
-#include <Teuchos_ParameterList.hpp>
 #include <unordered_map>
 
 

@@ -70,8 +70,8 @@ template<> const CellTopologyData * getCellTopologyData< Node >();
 
 //----------------------------------------------------------------------
 
-/** \brief Topological traits: Dimension = 1, Vertices = 1, Nodes = 1. */
-struct Particle : public CellTopologyTraits<1,1,1>
+/** \brief Topological traits: Dimension = 0, Vertices = 1, Nodes = 1. */
+struct Particle : public CellTopologyTraits<0,1,1>
 {
 #ifndef DOXYGEN_COMPILE
   typedef Particle base ;

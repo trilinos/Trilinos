@@ -1494,7 +1494,7 @@ namespace Tpetra {
     /// For example, suppose you create a Tpetra::MultiVector for the
     /// Kokkos::Cuda device, like this:
     /// \code
-    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
+    /// typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
     /// typedef Tpetra::Map<int, int, node_type> map_type;
     /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
     ///

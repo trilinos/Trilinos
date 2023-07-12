@@ -39,9 +39,9 @@
 
 # Either the MPI compiler wrappers take care of these or the user has to set
 # the explicitly using basic compile flags and ${PROJECT_NAME}_EXTRA_LINK_FLAGS.
-global_set(TPL_MPI_INCLUDE_DIRS)
-global_set(TPL_MPI_LIBRARIES)
-global_set(TPL_MPI_LIBRARY_DIRS)
+global_set(TPL_MPI_INCLUDE_DIRS "")
+global_set(TPL_MPI_LIBRARIES "")
+global_set(TPL_MPI_LIBRARY_DIRS "")
 
 if(WIN32 AND TPL_ENABLE_MPI)
   find_package(MPI)

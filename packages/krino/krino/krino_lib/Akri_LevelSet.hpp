@@ -36,6 +36,7 @@ namespace sierra { namespace Sctl { class Event; } }
 namespace krino { class AuxMetaData; }
 namespace krino { class IC_Alg; }
 namespace krino { class ParallelErrorMessage; }
+namespace krino { class ContourElement; }
 
 namespace krino {
 
@@ -81,22 +82,26 @@ public:
     double * field);
 
   static double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
+  static double compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const stk::mesh::Selector & elementSelector);
   static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets);
   double compute_average_edge_length() const;
 
   void build_facets_locally(const stk::mesh::Selector & selector);
 
-  void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 );
+  void compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const;
+  void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 ) const;
+
   double gradient_magnitude_error();
   void compute_continuous_gradient() const;
 
   void compute_distance( stk::mesh::Entity n,
 			 const double & deltaTime ) const;
+
+  void increment_distance(const double increment, const bool enforce_sign = false, const double & signChangePurtubationTol = 0.5);
+
   void estimate_error();
 
-  // hack to dump facet list to exoii databse.
-  void facets_exoii();
-  void facets_exoii(Faceted_Surface & cs);
+  void write_facets();
 
   bool elem_on_interface(stk::mesh::Entity e) const;
 
@@ -198,8 +203,13 @@ public:
   void redistance(const stk::mesh::Selector & selector);
   void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
 
-  void set_initial_volume(const double v) { my_initial_neg_vol = v; }
-  double constrained_redistance(const bool use_initial_vol = false);
+  std::pair<double,double> get_conserved_negative_volume_and_time() const;
+  void set_conserved_negative_volume_and_time(const double vol, const double time);
+
+  double get_conserved_negative_volume() const { return myConservedNegVolume; }
+  void set_initial_volume(const double v) { myConservedNegVolume = v; }
+  double constrained_redistance(const bool use_initial_vol = false, const double & signChangePurtubationTol = 0.5);
+  void locally_conserved_redistance();
 
   void compute_nodal_bbox( const stk::mesh::Selector & selector,
     BoundingBox & node_bbox,
@@ -240,6 +250,8 @@ private:
   FieldRef my_old_distance_field;
   FieldRef my_isovar_field;
   FieldRef myTimeOfArrivalElementSpeedField;
+  FieldRef myDistanceCorrectionNumerator;
+  FieldRef myDistanceCorrectionDenominator;
 
   std::string my_distance_name;
   std::string my_isovar_name;
@@ -280,7 +292,8 @@ private:
   // used to increment file name for facet exoii database hack
   int my_facetFileIndex;
 
-  double my_initial_neg_vol;
+  double myConservedNegVolume{0.0};
+  double myConservedNegVolumeTime{0.0};
 
   bool my_needs_reinitialize_every_step;
 
@@ -289,7 +302,6 @@ private:
 
 
   void set_distance(const double & distance)  const;
-  void increment_distance(const double increment, const bool enforce_sign = false)  const;
   void scale_distance(const double scale)  const;
   void negate_distance()  const;
 

@@ -81,7 +81,7 @@ GLOBAL void TRILINOS_AMD_1
     ASSERT (iwlen >= pfree + n) ;
 
 #ifndef NDEBUG
-    for (p = 0 ; p < iwlen ; p++) Iw [p] = EMPTY ;
+    for (p = 0 ; p < iwlen ; p++) Iw [p] = TRILINOS_AMD_EMPTY ;
 #endif
 
     for (k = 0 ; k < n ; k++)

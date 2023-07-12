@@ -102,7 +102,6 @@ namespace Xpetra {
     {}
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
@@ -117,7 +116,6 @@ namespace Xpetra {
                                                                                indexBase,
                                                                                comm)))
     {}
-#endif
 #endif
 
 //! Destructor.
@@ -243,7 +241,6 @@ RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrd
 { return map_; }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -251,7 +248,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
 {
     return map_->getLocalMap();
 }
-#endif
 #endif
 
 
@@ -419,14 +415,12 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
       return local_map_type();
     }
-#endif
 #endif
 
     //@}
@@ -585,7 +579,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
@@ -593,7 +586,6 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
       // We will never be here, this is a stub class
       return local_map_type();
     }
-#endif
 #endif
 
     //@}

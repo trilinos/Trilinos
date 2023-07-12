@@ -190,12 +190,12 @@ void BlockUpperTriInverseOp::describe(Teuchos::FancyOStream & out_arg,
                 << ",cols=" <<  blockColCount(U_)
                 << "}\n";
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[U Operator] = ";
               *out << Teuchos::describe(*U_,verbLevel);
            }
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[invDiag Operators]:\n";
               tab.incrTab();
               for(int i=0;i<blockRowCount(U_);i++) {

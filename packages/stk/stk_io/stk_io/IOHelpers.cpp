@@ -67,7 +67,6 @@
 #include "ProcessSetsOrBlocks.hpp"             // for get_part_for_grouping_...
 #include "StkIoUtils.hpp"                      // for part_primary_entity_rank
 #include "Teuchos_RCP.hpp"                     // for RCP::operator->, RCP::...
-#include "Teuchos_any.hpp"                     // for any
 #include "stk_io/OutputParams.hpp"             // for OutputParams
 #include "stk_mesh/base/Bucket.hpp"            // for Bucket
 #include "stk_mesh/base/Entity.hpp"            // for Entity
@@ -80,7 +79,7 @@
 #include "stk_topology/topology.hpp"           // for topology, topology::NO...
 #include "stk_util/parallel/CommSparse.hpp"    // for CommSparse, pack_and_c...
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
-#include "stk_util/util/ParameterList.hpp"     // for STK_ANY_NAMESPACE, Par...
+#include "stk_util/util/ParameterList.hpp"     // for Par...
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -94,12 +93,12 @@ template <typename DataType>
 void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
                            DataType globalVarData)
 {
-    ThrowErrorMsgIf (Teuchos::is_null(output_region),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(output_region),
                      "There is no Output mesh region associated with this Mesh Data.");
-    ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+    STK_ThrowErrorMsgIf(output_region->get_state() != Ioss::STATE_TRANSIENT,
                      "The output region " << output_region->name() <<
                      " is not in the correct state for outputting data at this time.");
-    ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+    STK_ThrowErrorMsgIf(!output_region->field_exists(globalVarName),
                      "The field named '" << globalVarName << "' does not exist.");
     output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
 }
@@ -118,16 +117,16 @@ template <typename DataType>
 void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
                            std::vector<DataType> &globalVarData)
 {
-    ThrowErrorMsgIf (Teuchos::is_null(output_region),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(output_region),
                      "There is no Output mesh region associated with this Mesh Data.");
-    ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+    STK_ThrowErrorMsgIf(output_region->get_state() != Ioss::STATE_TRANSIENT,
                      "The output region " << output_region->name() <<
                      " is not in the correct state for outputting data at this time.");
-    ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+    STK_ThrowErrorMsgIf(!output_region->field_exists(globalVarName),
                      "The field named '" << globalVarName << "' does not exist "
                      "on output region "  << output_region->name());
     size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
-    ThrowErrorMsgIf (comp_count != globalVarData.size(),
+    STK_ThrowErrorMsgIf(comp_count != globalVarData.size(),
                      "On output region "  << output_region->name() <<
                      ", the field named '" << globalVarName << "' was registered with size "
                      << comp_count
@@ -148,7 +147,7 @@ void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::
 
 bool internal_has_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName)
 {
-  ThrowErrorMsgIf (Teuchos::is_null(input_region),
+  STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
                    "There is no Input mesh region associated with this Mesh Data.");
 
   return input_region->field_exists(globalVarName);
@@ -160,7 +159,7 @@ bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::st
                           DataType &globalVarData, Ioss::Field::BasicType iossType,
                           bool abort_if_not_found)
 {
-    ThrowErrorMsgIf (Teuchos::is_null(input_region),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
                      "There is no Input mesh region associated with this Mesh Data.");
 
     if (input_region->field_exists(globalVarName)) {
@@ -197,7 +196,7 @@ bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::st
                           std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
                           bool abort_if_not_found)
 {
-    ThrowErrorMsgIf (Teuchos::is_null(input_region),
+    STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
                      "There is no Input mesh region associated with this Mesh Data.");
 
     if (input_region->field_exists(globalVarName)) {
@@ -237,44 +236,44 @@ void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
 }
 
 void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const STK_ANY_NAMESPACE::any &any_value,
+                              const std::string &name, const std::any &any_value,
                               stk::util::ParameterType::Type type)
 {
     try {
         switch(type)
         {
             case stk::util::ParameterType::INTEGER: {
-                int value = STK_ANY_NAMESPACE::any_cast<int>(any_value);
+                int value = std::any_cast<int>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::INT64: {
-                int64_t value = STK_ANY_NAMESPACE::any_cast<int64_t>(any_value);
+                int64_t value = std::any_cast<int64_t>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLE: {
-                double value = STK_ANY_NAMESPACE::any_cast<double>(any_value);
+                double value = std::any_cast<double>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLEVECTOR: {
-                std::vector<double> vec = STK_ANY_NAMESPACE::any_cast<std::vector<double> >(any_value);
+                std::vector<double> vec = std::any_cast<std::vector<double> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INTEGERVECTOR: {
-                std::vector<int> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int> >(any_value);
+                std::vector<int> vec = std::any_cast<std::vector<int> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INT64VECTOR: {
-                std::vector<int64_t> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int64_t> >(any_value);
+                std::vector<int64_t> vec = std::any_cast<std::vector<int64_t> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
@@ -298,7 +297,7 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
 {
     for (size_t i=0; i < global_any_fields.size(); i++) {
         const std::string &name = global_any_fields[i].m_name;
-        const STK_ANY_NAMESPACE::any *value = global_any_fields[i].m_value;
+        const std::any *value = global_any_fields[i].m_value;
         stk::util::ParameterType::Type type = global_any_fields[i].m_type;
         internal_write_parameter(region, name, *value, type);
     }
@@ -314,7 +313,7 @@ bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
 
 bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
                              const std::string &globalVarName,
-                             STK_ANY_NAMESPACE::any &any_value, stk::util::ParameterType::Type type,
+                             std::any &any_value, stk::util::ParameterType::Type type,
                              bool abort_if_not_found)
 {
     bool success = false;
@@ -383,7 +382,7 @@ void internal_add_global(Teuchos::RCP<Ioss::Region> region,
                          int copies,
                          Ioss::Field::RoleType role)
 {
-    ThrowErrorMsgIf (region->field_exists(globalVarName),
+    STK_ThrowErrorMsgIf(region->field_exists(globalVarName),
                      "On region named " << region->name() <<
                      " Attempt to add global variable '" << globalVarName << "' twice.");
 
@@ -447,7 +446,7 @@ void unpack_distribution_factor(const stk::mesh::BulkData& bulk,
     buf.unpack<stk::mesh::EntityKey>(key);
 
     stk::mesh::Entity side = bulk.get_entity(key);
-    ThrowRequire(bulk.is_valid(side));
+    STK_ThrowRequire(bulk.is_valid(side));
     const stk::mesh::Bucket & bucket = bulk.bucket(side);
     const unsigned size = field_bytes_per_entity( *distFact, bucket );
     if (size)
@@ -466,7 +465,7 @@ void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
     const bool anythingToUnpack =
         stk::pack_and_communicate(comm, [&comm, &bulk, &distFact, &sides]() {
             for (stk::mesh::Entity side : sides) {
-                ThrowRequireMsg(bulk.is_valid(side),"communicate_shared_side_entity_fields, invalid side");
+                STK_ThrowRequireMsg(bulk.is_valid(side),"communicate_shared_side_entity_fields, invalid side");
                 if (!bulk.bucket(side).owned()) {
                     CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
                     pack_distribution_factor(bulk, buffer, distFact, side);

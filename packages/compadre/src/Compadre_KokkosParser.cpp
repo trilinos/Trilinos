@@ -5,7 +5,7 @@ using namespace Compadre;
 // for InitArguments, pass them directly in to Kokkos
 KokkosParser::KokkosParser(KokkosInitArguments args, bool print_status) {
     this->ksg = !Kokkos::is_initialized()
-#ifdef KOKKOS_GREATEREQUAL_3_7
+#ifdef COMPADRE_KOKKOS_GREATEREQUAL_3_7
                 && !Kokkos::is_finalized()
 #endif
                 ?
@@ -16,7 +16,7 @@ KokkosParser::KokkosParser(KokkosInitArguments args, bool print_status) {
 // for command line arguments, pass them directly in to Kokkos
 KokkosParser::KokkosParser(int narg, char* args[], bool print_status) {
     this->ksg = !Kokkos::is_initialized()
-#ifdef KOKKOS_GREATEREQUAL_3_7
+#ifdef COMPADRE_KOKKOS_GREATEREQUAL_3_7
                 && !Kokkos::is_finalized()
 #endif
                 ?
@@ -33,7 +33,7 @@ KokkosParser::KokkosParser(std::vector<std::string> stdvec_args, bool print_stat
     int narg = (int)stdvec_args.size();
 
     this->ksg = !Kokkos::is_initialized()
-#ifdef KOKKOS_GREATEREQUAL_3_7
+#ifdef COMPADRE_KOKKOS_GREATEREQUAL_3_7
                 && !Kokkos::is_finalized()
 #endif
                 ?

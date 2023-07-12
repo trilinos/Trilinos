@@ -51,7 +51,7 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_decl.hpp"
 
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"

@@ -86,7 +86,7 @@ struct NemesisInfo
 
     size_t get_number_subdomain_nodes() const
     {
-        ThrowRequireWithSierraHelpMsg(num_border_nodes_per_subdomain+num_internal_nodes_per_subdomain>0);
+        STK_ThrowRequireWithSierraHelpMsg(num_border_nodes_per_subdomain+num_internal_nodes_per_subdomain>0);
         return num_border_nodes_per_subdomain + num_internal_nodes_per_subdomain;
     }
 
@@ -147,9 +147,9 @@ struct NemesisInfo
 
     size_t get_index_of_global_id(const NemesisId global_id, const std::vector<NemesisId>& ids)
     {
-        ThrowRequireWithSierraHelpMsg(ids.size()>0);
+        STK_ThrowRequireWithSierraHelpMsg(ids.size()>0);
         std::vector<NemesisId>::const_iterator iter = std::find(ids.begin(), ids.end(), global_id);
-        ThrowRequireMsg(iter != ids.end(), "Program error. Could not find " << global_id);
+        STK_ThrowRequireMsg(iter != ids.end(), "Program error. Could not find " << global_id);
         return std::distance(ids.begin(), iter);
     }
 

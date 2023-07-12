@@ -176,10 +176,6 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::TpetraMultiVector<ST,LO,GO,N
   */
 void identityRowIndices(const Tpetra::Map<LO,GO,NT> & rowMap, const Tpetra::CrsMatrix<ST,LO,GO,NT> & mat,std::vector<GO> & outIndices)
 {
-   GO maxSz = mat.getGlobalMaxNumRowEntries();
-   std::vector<ST> values(maxSz);
-   std::vector<GO> indices(maxSz);
-
    // loop over elements owned by this processor
    for(size_t i=0;i<rowMap.getLocalNumElements();i++) {
       bool rowIsIdentity = true;

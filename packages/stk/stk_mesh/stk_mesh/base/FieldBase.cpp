@@ -193,13 +193,6 @@ void FieldBase::insert_restriction(
     const bool new_restriction = ( ( restr == last_restriction ) || !(*restr == tmp) );
 
     if ( new_restriction ) { 
-      if (mesh_meta_data().is_commit()) {
-        ThrowRequireMsg(mesh_meta_data().are_late_fields_enabled(),
-                        "Attempting to register Field '" << m_name << "' after MetaData is" << std::endl <<
-                        "committed. If you are willing to accept the performance implications, call" << std::endl <<
-                        "MetaData::enable_late_fields() before adding these Fields.");
-      }   
-
       PartVector arg_selector_parts, selectorI_parts;
       OrdinalVector arg_selector_parts_and_subsets, selectorI_parts_and_subsets;
       arg_selector.get_parts(arg_selector_parts);
@@ -213,40 +206,54 @@ void FieldBase::insert_restriction(
 
         const unsigned i_num_scalars_per_entity = i->num_scalars_per_entity();
 
-        bool shouldCheckForExistingSubsetsOrSupersets =
-          arg_num_scalars_per_entity != i_num_scalars_per_entity;
-#ifndef NDEBUG
-        shouldCheckForExistingSubsetsOrSupersets = true;
-#endif
-        if (shouldCheckForExistingSubsetsOrSupersets) {
-          std::pair<bool,bool> result =
-             check_for_existing_subsets_or_supersets(tmp, i,
-                                                     selectorI_parts, selectorI_parts_and_subsets,
-                                                     arg_selector_parts, arg_selector_parts_and_subsets,
-                                                     arg_selector_is_all_unions
-                                                      );
-          if (result.first) {
-            found_superset = true;
-          }
-          if (result.second) {
-            found_subset = true;
-          }
+        std::pair<bool,bool> result =
+           check_for_existing_subsets_or_supersets(tmp, i,
+                                                   selectorI_parts, selectorI_parts_and_subsets,
+                                                   arg_selector_parts, arg_selector_parts_and_subsets,
+                                                   arg_selector_is_all_unions
+                                                    );
+        if (result.first) {
+          found_superset = true;
+        }
+        if (result.second) {
+          found_subset = true;
         }
 
-        if (found_superset) {
-          ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
+        if (found_superset || found_subset) {
+          STK_ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
                           "FAILED to add new field-restriction " << print_restriction(*i, arg_selector) <<
                           " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
+        }
+        if (found_superset) {
           return;
-          }
-        if (found_subset) {
-          ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
-                          arg_method << " FAILED for " << *this << " " << print_restriction(*i, arg_selector) <<
-                          " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
         }
       }
+
       if (!found_subset) {
-        restrs.insert( restr , tmp );
+        if (mesh_meta_data().is_commit()) {
+          if (!mesh_meta_data().are_late_fields_enabled()) {
+            std::cerr<<"field "<<m_name<<", arg sel: "<<arg_selector<<", old restrs: "<<std::endl;
+            for(const FieldRestriction& r : restrs) {
+              std::cerr<<" -  "<<r.selector()<<std::endl;
+            }
+          }
+          STK_ThrowRequireMsg(mesh_meta_data().are_late_fields_enabled(),
+                          "Attempting to register Field '" << m_name << "' after MetaData is" << std::endl <<
+                          "committed. If you are willing to accept the performance implications, call" << std::endl <<
+                          "MetaData::enable_late_fields() before adding these Fields.");
+        }   
+
+        bool addedToUnion = false;
+        for(FieldRestriction& r : restrs) {
+          if (r.num_scalars_per_entity() == tmp.num_scalars_per_entity() && r.dimension() == tmp.dimension()) {
+            r.add_union(tmp.selector());
+            addedToUnion = true;
+            break;
+          }
+        }
+        if (!addedToUnion) {
+          restrs.insert( restr , tmp );
+        }
       }
       else {
         //if subsets were found, we replaced them with the new restriction. so now we need
@@ -255,7 +262,7 @@ void FieldBase::insert_restriction(
       }
     }
     else {
-      ThrowErrorMsgIf(restr->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
+      STK_ThrowErrorMsgIf(restr->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
                       arg_method << " FAILED for " << *this << " " << print_restriction(*restr, arg_selector) <<
                       " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
     }
@@ -289,7 +296,7 @@ void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& 
       if (i != r &&
           check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
           is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
-        ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
+        STK_ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
                          "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
         delete_me = true;
         break;
@@ -310,7 +317,7 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
     m_mesh = bulk;
   }
   else {
-    ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
+    STK_ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
   }
 }
 
@@ -323,7 +330,7 @@ unsigned
 FieldBase::field_array_rank() const
 {
   if (m_meta_data->is_using_simple_fields()) {
-    ThrowErrorMsg("FieldBase::field_array_rank() is no longer supported since it represents" << std::endl
+    STK_ThrowErrorMsg("FieldBase::field_array_rank() is no longer supported since it represents" << std::endl
                << "the number of extra template parameters, which are being removed.");
   }
 
@@ -334,7 +341,7 @@ const shards::ArrayDimTag * const *
 FieldBase::dimension_tags() const
 {
   if (m_meta_data->is_using_simple_fields()) {
-    ThrowErrorMsg("FieldBase::dimension_tags() is no longer supported since it holds the" << std::endl
+    STK_ThrowErrorMsg("FieldBase::dimension_tags() is no longer supported since it holds the" << std::endl
                << "extra template parameters, which are being removed.");
   }
 
@@ -347,7 +354,8 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
   return restriction.num_scalars_per_entity();
 }
 
-unsigned FieldBase::max_size( EntityRank ent_rank) const
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
+STK_DEPRECATED unsigned FieldBase::max_size( EntityRank ent_rank) const
 {
   unsigned max = 0 ; 
 
@@ -362,6 +370,18 @@ unsigned FieldBase::max_size( EntityRank ent_rank) const
           if ( max < len ) { max = len ; } 
       }   
   }   
+  return max ;
+}
+#endif
+
+unsigned FieldBase::max_size() const
+{
+  FieldRestriction::size_type max = 0 ; 
+
+  for (const FieldRestriction& restriction : restrictions()) {
+    max = std::max(max, restriction.num_scalars_per_entity());
+  }   
+
   return max ;
 }
 
@@ -389,7 +409,7 @@ void FieldBase::rotate_multistate_data()
 void
 FieldBase::modify_on_host() const
 { 
-  ThrowRequireMsg(m_modifiedOnDevice == false,
+  STK_ThrowRequireMsg(m_modifiedOnDevice == false,
                   "Modify on host called for Field: " << name() << " but it has an uncleared modified_on_device");
 
   m_modifiedOnHost = true;
@@ -398,7 +418,7 @@ FieldBase::modify_on_host() const
 void
 FieldBase::modify_on_device() const
 { 
-  ThrowRequireMsg(m_modifiedOnHost == false,
+  STK_ThrowRequireMsg(m_modifiedOnHost == false,
                   "Modify on device called for Field: " << name() << " but it has an uncleared modified_on_host");
 
   m_modifiedOnDevice = true;
@@ -497,7 +517,7 @@ FieldBase::clear_device_sync_state() const
 void
 FieldBase::set_ngp_field(NgpFieldBase * ngpField) const
 {
-  ThrowRequireMsg(m_ngpField == nullptr || m_ngpField == ngpField,
+  STK_ThrowRequireMsg(m_ngpField == nullptr || m_ngpField == ngpField,
                   "Error: Only one NgpField may be set on a StkField(" /*<< m_name <<*/ ")");
   m_ngpField = ngpField;
 }

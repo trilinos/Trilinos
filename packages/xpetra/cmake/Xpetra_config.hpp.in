@@ -26,8 +26,6 @@
 
 #cmakedefine HAVE_XPETRA_KOKKOSKERNELS
 
-#cmakedefine HAVE_XPETRA_KOKKOS_REFACTOR
-
 #cmakedefine HAVE_XPETRA_PROFILING
 
 #cmakedefine HAVE_XPETRA_THYRA

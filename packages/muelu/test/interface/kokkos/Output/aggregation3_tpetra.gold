@@ -10,7 +10,7 @@ smoother ->
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -25,8 +25,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -46,7 +45,7 @@ smoother ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
@@ -61,8 +60,7 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -76,6 +74,8 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -41,8 +41,6 @@
 #include <cstddef>                         // for size_t
 #include <stk_mesh/base/MetaData.hpp>      // for MetaData
 #include "Ioss_DatabaseIO.h"               // for DatabaseIO
-#include "Teuchos_RCP.hpp"                 // for RCP::operator->, RCP::RCP<T>
-#include "Teuchos_RCPDecl.hpp"             // for RCP
 #include "mpi.h"                           // for ompi_communicator_t
 #include "stk_io/DatabasePurpose.hpp"      // for READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"      // for StkMeshIoBroker

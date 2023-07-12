@@ -99,7 +99,7 @@
   INSTANTIATE_UQ_PCE_S_SD(INSTMACRO, N)
 
 #define INSTANTIATE_TPETRA_UQ_PCE_WRAPPER_NODES(INSTMACRO) \
-  INSTMACRO(Kokkos_Compat_Kokkos@DEVICE@WrapperNode)
+  INSTMACRO(Tpetra_KokkosCompat_Kokkos@DEVICE@WrapperNode)
 
 #define INSTANTIATE_TPETRA_UQ_PCE(INSTMACRO)                    \
   namespace Tpetra {                                            \

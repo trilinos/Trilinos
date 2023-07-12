@@ -241,8 +241,7 @@ LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A)
 {
   initializeState();
-  typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> crs_matrix_type;
+
   if (! A.is_null ()) {
     Teuchos::RCP<const crs_matrix_type> A_crs =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
@@ -266,8 +265,7 @@ LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
     *out_ << ">>> DEBUG Ifpack2::LocalSparseTriangularSolver constructor"
           << std::endl;
   }
-  typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> crs_matrix_type;
+
   if (! A.is_null ()) {
     Teuchos::RCP<const crs_matrix_type> A_crs =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
@@ -376,8 +374,7 @@ LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
   using Tpetra::Details::determineLocalTriangularStructure;
-  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type>;
+
   using local_matrix_type = typename crs_matrix_type::local_matrix_device_type;
   using LO = local_ordinal_type;
 
@@ -460,7 +457,6 @@ initialize ()
     typename crs_matrix_type::execution_space().fence();
 
     // Reverse maps
-    using map_type = typename crs_matrix_type::map_type;
     Teuchos::RCP<map_type> newRowMap, newColMap;
     {
       // Reverse row map
@@ -996,8 +992,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isInitialized_ = false;
     isComputed_ = false;
 
-    typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-      global_ordinal_type, node_type> crs_matrix_type;
     if (A.is_null ()) {
       A_crs_ = Teuchos::null;
       A_ = Teuchos::null;

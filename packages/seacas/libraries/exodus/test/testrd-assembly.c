@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -295,8 +295,11 @@ int main(int argc, char **argv)
         for (int k = 0; k < num_assembly; k++) {
           EXCHECK(ex_get_reduction_vars(exoid, i + 1, EX_ASSEMBLY, assmbly[k].id, num_assembly_vars,
                                         var_values));
-          printf("Values for Assembly %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", assmbly[k].id,
-                 i + 1, var_values[0], var_values[1], var_values[2], var_values[3]);
+          printf("Values for Assembly %" PRId64 " at step %d:", assmbly[k].id, i + 1);
+          for (int kk = 0; kk < num_assembly_vars; kk++) {
+            printf("\t%f", var_values[kk]);
+          }
+          printf("\n");
         }
       }
       free(var_values);

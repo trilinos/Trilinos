@@ -289,7 +289,7 @@ int CHOLMOD(transpose_unsym)
 	Wi [i] = 0 ;
     }
 
-    jlast = EMPTY ;
+    jlast = TRILINOS_CHOLMOD_EMPTY ;
     Fsorted = TRUE ;
 
     if (use_fset)
@@ -569,12 +569,12 @@ int CHOLMOD(transpose_sym)
     {
 	for (i = 0 ; i < n ; i++)
 	{
-	    Pinv [i] = EMPTY ;
+	    Pinv [i] = TRILINOS_CHOLMOD_EMPTY ;
 	}
 	for (k = 0 ; k < n ; k++)
 	{
 	    i = Perm [k] ;
-	    if (i < 0 || i > n || Pinv [i] != EMPTY)
+	    if (i < 0 || i > n || Pinv [i] != TRILINOS_CHOLMOD_EMPTY)
 	    {
 		ERROR (CHOLMOD_INVALID, "invalid permutation") ;
 		return (FALSE) ;

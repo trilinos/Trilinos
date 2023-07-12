@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace {
   stream_holder default_logger_info;
 
   // initializes the SMART_ASSERT library
-  struct assert_initializer
+  [[maybe_unused]] struct assert_initializer
   {
     assert_initializer() { Private::init_assert(); }
   } init;

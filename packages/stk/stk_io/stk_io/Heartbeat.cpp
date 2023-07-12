@@ -53,8 +53,7 @@
 #include "StkIoUtils.hpp"                   // for get_io_parameter_size_and...
 #include "Teuchos_RCP.hpp"                  // for RCP::operator->, RCP::RCP<T>
 #include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank
-#include "stk_util/util/ParameterList.hpp"  // for Parameter, Type, STK_ANY_...
-namespace Teuchos { class any; }
+#include "stk_util/util/ParameterList.hpp"  // for Parameter, Type, ...
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -127,7 +126,7 @@ impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
 void impl::Heartbeat::begin_define_transient()
 {
     if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
+        STK_ThrowErrorMsgIf(m_currentStep != 0,
                          "At least one output step has been written to the history/heartbeat file. "
                          "Variables cannot be added anymore.");
 
@@ -154,13 +153,13 @@ bool impl::Heartbeat::has_global(const std::string &name)
 }
 
 void impl::Heartbeat::internal_define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
+                                        const std::any *value,
                                         stk::util::ParameterType::Type type,
                                         int copies,
                                         Ioss::Field::RoleType role)
 {
     if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
+        STK_ThrowErrorMsgIf(m_currentStep != 0,
                          "At least one output step has been written to the history/heartbeat file. "
                          "Variables cannot be added anymore.");
 
@@ -185,7 +184,7 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
                                      Ioss::Field::RoleType role)
 {
     if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
+        STK_ThrowErrorMsgIf(m_currentStep != 0,
                          "At least one output step has been written to the history/heartbeat file. "
                          "Variables cannot be added anymore.");
 
@@ -199,14 +198,14 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
 }
 
 void impl::Heartbeat::internal_define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
+                                        const std::any *value,
                                         const std::string &storage,
                                         Ioss::Field::BasicType dataType,
                                         int copies,
                                         Ioss::Field::RoleType role)
 {
     if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
+        STK_ThrowErrorMsgIf(m_currentStep != 0,
                          "At least one output step has been written to the history/heartbeat file. "
                          "Variables cannot be added anymore.");
 
@@ -214,7 +213,7 @@ void impl::Heartbeat::internal_define_global_ref(const std::string &name,
 
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type.second, *value);
-        ThrowRequireMsg(dataType == parameter_type.second, "data type must be consistent");
+        STK_ThrowRequireMsg(dataType == parameter_type.second, "data type must be consistent");
         internal_add_global(m_region, name, storage, dataType, copies, role);
         m_fields.emplace_back(name, value, type.second);
     }
@@ -238,7 +237,7 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
                                      Ioss::Field::RoleType role)
 {
     if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
+        STK_ThrowErrorMsgIf(m_currentStep != 0,
                          "At least one output step has been written to the history/heartbeat file. "
                          "Variables cannot be added anymore.");
 

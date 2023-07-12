@@ -37,29 +37,37 @@ from paraview.simple import *
 class PhactoriCellDataToPointDataOperation(PhactoriOperationSpecifics):
   def __init__(self):
     PhactoriOperationSpecifics.__init__(self)
+    self.passCellData = 0
+    self.pieceInvariant = 0
     return
 
   def ParseParametersFromJson(self, inJson):
+    key1 = "pass cell data"
+    if key1 in inJson:
+      self.passCellData = inJson[key1]
+    key1 = "piece invariant"
+    if key1 in inJson:
+      self.pieceInvariant = inJson[key1]
     return
 
   def CreateParaViewFilter(self, inInputFilter):
     if PhactoriDbg(100):
       myDebugPrint3('PhactoriCellDataToPointDataOperation:CreateParaViewFilter entered\n', 100)
-    #info in block class should already be parsed and checked
 
-
-    if PhactoriDbg(100):
-      myDebugPrint3('about to call UpdatePipelineWithCurrentTimeArgument\n', 100)
     UpdatePipelineWithCurrentTimeArgument(inInputFilter)
 
     savedActiveSource = GetActiveSource()
-    if PhactoriDbg(100):
-      myDebugPrint3('about to call CellDatatoPointData\n', 100)
     newParaViewFilter = CellDatatoPointData(Input = inInputFilter)
+    if self.passCellData:
+      newParaViewFilter.PassCellData = 1
+    else:
+      newParaViewFilter.PassCellData = 0
+    if self.pieceInvariant:
+      newParaViewFilter.PieceInvariant = 1
+    else:
+      newParaViewFilter.PieceInvariant = 0
 
     SetActiveSource(newParaViewFilter)
-    if PhactoriDbg(100):
-      myDebugPrint3('about to call UpdatePipelineWithCurrentTimeArgument\n', 100)
     UpdatePipelineWithCurrentTimeArgument(newParaViewFilter)
     SetActiveSource(savedActiveSource)
 

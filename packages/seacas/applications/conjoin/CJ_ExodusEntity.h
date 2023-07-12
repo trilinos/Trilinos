@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef SEACAS_ExodusEntity_H
-#define SEACAS_ExodusEntity_H
+#pragma once
 
 #define NO_NETCDF_2
 #include "CJ_ObjectType.h"
@@ -193,4 +192,3 @@ namespace Excn {
     size_t elementsBorder{0};
   };
 } // namespace Excn
-#endif /* SEACAS_ExodusEntity_H */

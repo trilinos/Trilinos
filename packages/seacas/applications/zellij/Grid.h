@@ -3,8 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ZE_Grid_H
-#define ZE_Grid_H
+#pragma once
 
 #include <vector>
 
@@ -130,4 +129,3 @@ private:
   Minimize     m_minimizeOpenFiles{Minimize::NONE}; // 1: Unit, 2: output, 3: all
   unsigned int m_generatedSideSets{0};
 };
-#endif

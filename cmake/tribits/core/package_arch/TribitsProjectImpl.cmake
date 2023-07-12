@@ -117,7 +117,7 @@ macro(tribits_project_impl)
 
   # Since the version header file is now configured the root build
   # dir needs to be on the include path
-  include_directories(${CMAKE_CURRENT_BINARY_DIR})
+  tribits_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
   #
   # B) Set up user options and global variables that will be used throughout
@@ -189,10 +189,6 @@ macro(tribits_project_impl)
   #
   # G) Go get the information for all enabled TPLS
   #
-
-  message("")
-  message("Getting information for all enabled external packages/TPLs ...")
-  message("")
 
   tribits_process_enabled_tpls()
 

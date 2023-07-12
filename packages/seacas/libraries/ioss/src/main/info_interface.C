@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -151,6 +151,8 @@ void Info::Interface::enroll_options()
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
                   "List information only for the specified group.", nullptr, nullptr, true);
 
+  options_.enroll("query_timesteps_only", Ioss::GetLongOption::NoValue,
+                  "Only read and output the timestep data on the file", nullptr);
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers", nullptr);
   options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
 
@@ -180,7 +182,8 @@ bool Info::Interface::parse_options(int argc, char **argv)
     options_.usage(std::cerr);
     fmt::print(stderr,
                "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n"
-	       "\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-info\n\n"
+               "\tDocumentation: "
+               "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-info\n\n"
                "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
@@ -200,6 +203,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   useGenericNames_ = options_.retrieve("use_generic_names") != nullptr;
   summary_         = options_.retrieve("summary") != nullptr;
   showConfig_      = options_.retrieve("configuration") != nullptr;
+  queryTimeOnly_   = options_.retrieve("query_timesteps_only") != nullptr;
 
   filetype_  = options_.get_option_value("db_type", filetype_);
   filetype_  = options_.get_option_value("in_type", filetype_);

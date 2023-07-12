@@ -11,7 +11,7 @@ We follow google's c++ coding style. See https://google.github.io/styleguide/cpp
         do
         if [ -e $file ]; then
             clang-format-8 -i -style=file $FILE
-            git add $FILEA
+            git add $FILE
         fi
         done
         chmod +x kokkos-kernels/.git/hooks/pre-commit

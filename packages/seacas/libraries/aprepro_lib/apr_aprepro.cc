@@ -323,7 +323,7 @@ namespace SEAMS {
 
     /* See if file exists in current directory (or as specified) */
     auto pointer = new std::fstream(file, smode);
-    if ((pointer == nullptr || pointer->bad() || !pointer->good()) &&
+    if ((pointer->bad() || !pointer->good()) &&
         !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
@@ -334,7 +334,7 @@ namespace SEAMS {
     }
 
     /* If pointer still null, print error message */
-    if (pointer == nullptr || pointer->fail() || pointer->bad() || !pointer->good()) {
+    if (pointer->fail() || pointer->bad() || !pointer->good()) {
       std::string err = "Can't open '" + file + "'. " + strerror(errno);
       error(err, false);
       delete pointer;
@@ -356,7 +356,7 @@ namespace SEAMS {
 
     auto pointer = new std::fstream(file, smode);
 
-    if ((pointer == nullptr || pointer->bad() || !pointer->good()) &&
+    if ((pointer->bad() || !pointer->good()) &&
         !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);

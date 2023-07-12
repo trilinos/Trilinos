@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
   for (n = 0; n < nexofiles; n++) {
-    sprintf(exofname, "test%d.exo", n);
+    snprintf(exofname, 256, "test%d.exo", n);
     printf("test file name: %s\n", exofname);
     exoidm[n] = ex_create(exofname,       /* filename path */
                           EX_CLOBBER,     /* create mode */
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   num_side_sets2 = 5;
 
   for (n = 0; n < nexofiles; n++) {
-    sprintf(tmpstr, "This is test %d", n);
+    snprintf(tmpstr, 80, "This is test %d", n);
 
     error = ex_put_init(exoidm[n], tmpstr, num_dim2, num_nodes2, num_elem2, num_elem_blk2,
                         num_node_sets2, num_side_sets2);

@@ -579,7 +579,7 @@ static void tokenize(std::string srcInput,std::string whitespace,std::string pre
       // get string to break up
       input = wsTokens[i];
 
-      std::size_t endPos   = input.length()-1;
+      endPos   = input.length()-1;
       while(endPos<input.length()) {
          std::size_t next = input.find_first_of(prefer);
 

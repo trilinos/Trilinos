@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -231,16 +231,15 @@ namespace Iohb {
         new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
 
-      if (properties.exists("SHOW_TIME_STAMP")) {
-        bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
-        if (show_time_stamp) {
-          if (tsFormat.empty()) {
-            new_this->tsFormat = defaultTsFormat;
-          }
+      bool show_time_stamp = false;
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_TIME_STAMP", show_time_stamp);
+      if (show_time_stamp) {
+        if (tsFormat.empty()) {
+          new_this->tsFormat = defaultTsFormat;
         }
-        else {
-          new_this->tsFormat = "";
-        }
+      }
+      else {
+        new_this->tsFormat = "";
       }
 
       if (properties.exists("PRECISION")) {
@@ -255,18 +254,13 @@ namespace Iohb {
         new_this->fieldWidth_ = precision_ + 7;
       }
 
-      if (properties.exists("SHOW_LABELS")) {
-        new_this->showLabels = (properties.get("SHOW_LABELS").get_int() == 1);
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_LABELS", new_this->showLabels);
+
+      if (!new_this->appendOutput) {
+        Ioss::Utils::check_set_bool_property(properties, "SHOW_LEGEND", new_this->showLegend);
       }
 
-      if (properties.exists("SHOW_LEGEND")) {
-        new_this->showLegend =
-            (properties.get("SHOW_LEGEND").get_int() == 1 && !new_this->appendOutput);
-      }
-
-      if (properties.exists("SHOW_TIME_FIELD")) {
-        new_this->addTimeField = (properties.get("SHOW_TIME_FIELD").get_int() == 1);
-      }
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_TIME_FIELD", new_this->addTimeField);
 
       // SpyHis format is specific format, so don't override these settings:
       if (fileFormat == Iohb::Format::SPYHIS) {

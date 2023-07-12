@@ -1,4 +1,4 @@
-ARG BASE=nvidia/cuda:10.2-devel
+ARG BASE=nvidia/cuda:11.7.0-devel-ubuntu22.04
 FROM $BASE
 
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
         ninja-build \
         python3 \
         git \
+        libomp-dev \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -22,7 +23,7 @@ RUN KEYDUMP_URL=https://cloud.cees.ornl.gov/download && \
     gpg --verify ${KEYDUMP_FILE}.sig ${KEYDUMP_FILE} && \
     rm ${KEYDUMP_FILE}*
 
-ARG CMAKE_VERSION=3.18.5
+ARG CMAKE_VERSION=3.23.2
 ENV CMAKE_DIR=/opt/cmake
 RUN CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION} && \
     CMAKE_SCRIPT=cmake-${CMAKE_VERSION}-Linux-x86_64.sh && \
@@ -31,25 +32,26 @@ RUN CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSIO
     wget --quiet ${CMAKE_URL}/${CMAKE_SHA256}.asc && \
     wget --quiet ${CMAKE_URL}/${CMAKE_SCRIPT} && \
     gpg --verify ${CMAKE_SHA256}.asc ${CMAKE_SHA256} && \
-    grep ${CMAKE_SCRIPT} ${CMAKE_SHA256} | sha256sum --check && \
+    grep -i ${CMAKE_SCRIPT} ${CMAKE_SHA256} | sed -e s/linux/Linux/ | sha256sum --check && \
     mkdir -p ${CMAKE_DIR} && \
     sh ${CMAKE_SCRIPT} --skip-license --prefix=${CMAKE_DIR} && \
     rm cmake*
 ENV PATH=${CMAKE_DIR}/bin:$PATH
 
-ENV SYCL_DIR=/opt/sycl
-RUN SYCL_VERSION=20220112 && \
-    SYCL_URL=https://github.com/intel/llvm/archive/sycl-nightly && \
-    SYCL_ARCHIVE=${SYCL_VERSION}.tar.gz && \
-    SCRATCH_DIR=/scratch && mkdir -p ${SCRATCH_DIR} && cd ${SCRATCH_DIR} && \
-    wget --quiet ${SYCL_URL}/${SYCL_ARCHIVE} && \
-    mkdir llvm && \
-    tar -xf ${SYCL_ARCHIVE} -C llvm --strip-components=1 && \
-    cd llvm && \
-    python3 buildbot/configure.py --cuda && \
-    python3 buildbot/compile.py && \
-    mkdir -p ${SYCL_DIR} && \
-    mv ${SCRATCH_DIR}/llvm/build/install/* ${SYCL_DIR} && \
-    echo "${SYCL_DIR}/lib" > /etc/ld.so.conf.d/sycl.conf && ldconfig && \
-    rm -rf ${SCRATCH_DIR}
-ENV PATH=${SYCL_DIR}/bin:$PATH
+RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB && \
+    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB && \
+    echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+    apt-get update -o Dir::Etc::sourcelist="sources.list.d/oneAPI.list" -o APT::Get::List-Cleanup="0" && \
+    apt-get install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-2023.0.0 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN wget https://cloud.cees.ornl.gov/download/oneapi-for-nvidia-gpus-2023.0.0-linux.sh && \
+    chmod +x oneapi-for-nvidia-gpus-2023.0.0-linux.sh && \
+    ./oneapi-for-nvidia-gpus-2023.0.0-linux.sh -y && \
+    rm oneapi-for-nvidia-gpus-2023.0.0-linux.sh
+
+RUN wget https://registrationcenter-download.intel.com/akdlm/irc_nas/19133/l_oneDPL_p_2022.0.0.25335.sh &&\
+    chmod +x ./l_oneDPL_p_2022.0.0.25335.sh && \
+    ./l_oneDPL_p_2022.0.0.25335.sh -a -s --eula accept && \
+    rm l_oneDPL_p_2022.0.0.25335.sh

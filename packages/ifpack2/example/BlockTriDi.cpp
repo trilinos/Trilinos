@@ -11,13 +11,14 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include "Teuchos_StackedTimer.hpp"
 #include <Teuchos_StandardCatchMacros.hpp>
 
 namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10),useStackedTimer(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -28,6 +29,8 @@ struct CmdLineArgs {
   double tol;
   int nx;
   int lpp;
+  bool useStackedTimer;
+  std::string problemName;
 };
 
 // Read in values of command-line arguments.
@@ -48,6 +51,9 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
   cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
   cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
+  cmdp.setOption ("withStackedTimer", "withoutStackedTimer", &args.useStackedTimer,
+      "Whether to run with a StackedTimer and print the timer tree at the end (and try to output Watchr report)");
+  cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
   auto result = cmdp.parse (argc, argv);
   return result == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL;
 }
@@ -182,6 +188,7 @@ main (int argc, char* argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Time;
+  using Teuchos::StackedTimer;
   using std::cerr;
   using std::endl;
   typedef Tpetra::CrsMatrix<> crs_matrix_type;
@@ -203,15 +210,8 @@ main (int argc, char* argv[])
 
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
-  RCP<Time> totalTime = Teuchos::TimeMonitor::getNewTimer ("Total");
-  RCP<Time> precSetupTime =
-    Teuchos::TimeMonitor::getNewTimer ("Preconditioner setup");
-  RCP<Time> solveTime = Teuchos::TimeMonitor::getNewTimer ("Solve");
-
-  Teuchos::TimeMonitor totalTimeMon (*totalTime);
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   bool rank0 = comm->getRank() == 0;
-
 
   // Get command-line arguments.
   CmdLineArgs args;
@@ -221,6 +221,18 @@ main (int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
+  // If using StackedTimer, then do not time Galeri or matrix I/O because that will dominate the total time.
+
+  RCP<StackedTimer> stackedTimer;
+  RCP<Time> totalTime;
+  RCP<Teuchos::TimeMonitor> totalTimeMon;
+  RCP<Time> precSetupTime = Teuchos::TimeMonitor::getNewTimer ("Preconditioner setup");
+  RCP<Time> solveTime = Teuchos::TimeMonitor::getNewTimer ("Solve");
+  if(!args.useStackedTimer)
+  {
+    totalTime = Teuchos::TimeMonitor::getNewTimer ("Total");
+    totalTimeMon = rcp(new Teuchos::TimeMonitor(*totalTime));
+  }
 
   bool inline_matrix = false;
 #if defined(HAVE_IFPACK2_XPETRA)
@@ -301,7 +313,12 @@ main (int argc, char* argv[])
       // Read matrix
       if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
-      A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
+      if (comm->getSize() == 0)
+        A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
+      else {
+        if(rank0) std::cout<<"Using per-rank reader..."<<std::endl;
+        A = reader_type::readSparsePerRank(args.matrixFilename, ".mm", point_map, dummy_col_map, point_map, point_map,true,false,8,true);
+      }
       if (A.is_null()) {
         if (rank0) {
           cerr << "Failed to load sparse matrix A from file "
@@ -309,6 +326,8 @@ main (int argc, char* argv[])
         }
         return EXIT_FAILURE;
       }
+      if(rank0) std::cout<<"Matrix read complete..."<<std::endl;
+
 
       // Read right-hand side vector(s) B from Matrix Market file.
       if(rank0) std::cout<<"Reading rhs file..."<<std::endl;
@@ -350,6 +369,11 @@ main (int argc, char* argv[])
              << " rows with an implied block size of "<< ((double)numDomains / (double)numRows)<<std::endl;
   }
 
+  if(args.useStackedTimer)
+  {
+    stackedTimer = rcp(new StackedTimer("BlockTriDiagonalSolver"));
+    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+  }
 
   // Initial Guess
   if(rank0) std::cout<<"Allocating initial guess..."<<std::endl;
@@ -445,8 +469,30 @@ main (int argc, char* argv[])
 
 
   // Report timings.
-  Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
-  
+  if(args.useStackedTimer)
+  {
+    stackedTimer->stopBaseTimer();
+    StackedTimer::OutputOptions options;
+    options.num_histogram=3;
+    options.print_warnings = false;
+    options.output_histogram = true;
+    options.output_fraction=true;
+    options.output_minmax = true;
+    stackedTimer->report(std::cout, comm, options);
+    auto xmlOut = stackedTimer->reportWatchrXML(args.problemName, comm);
+    if(rank0)
+    {
+      if(xmlOut.length())
+        std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+    }
+  }
+  else
+  {
+    // Stop the "Total" timer.
+    if(!args.useStackedTimer)
+      totalTimeMon = Teuchos::null;
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   // Test output if this doesn't crash
   bool success=true;
@@ -459,8 +505,8 @@ main (int argc, char* argv[])
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   */
 
-  
-  std::cout<<"End Result: TEST PASSED"<<std::endl;
+  comm->barrier();
+  if(rank0) std::cout<<"End Result: TEST PASSED"<<std::endl;
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

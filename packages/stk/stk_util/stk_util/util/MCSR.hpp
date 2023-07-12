@@ -73,7 +73,7 @@ public:
 
   unsigned size(unsigned row) const
   {
-    ThrowAssertMsg(row < m_offsets.size(),"MCSR::size: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
+    STK_ThrowAssertMsg(row < m_offsets.size(),"MCSR::size: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
 
     const IndexRange& range = m_offsets[row];
     return range.second - range.first;
@@ -81,21 +81,21 @@ public:
 
   PairIter<const T*> items(unsigned row) const
   {
-    ThrowAssertMsg(row < m_offsets.size(),"MCSR::items: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
+    STK_ThrowAssertMsg(row < m_offsets.size(),"MCSR::items: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
     const IndexRange& indices = m_offsets[row];
     return PairIter<const T*>(&m_items[indices.first], &m_items[indices.second]);
   }
 
   const T* begin(unsigned row) const
   {
-    ThrowAssertMsg(row < m_offsets.size(),"MCSR::begin: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
+    STK_ThrowAssertMsg(row < m_offsets.size(),"MCSR::begin: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
 
     return &m_items[m_offsets[row].first];
   }
 
   const T* end(unsigned row) const
   {
-    ThrowAssertMsg(row < m_offsets.size(),"MCSR::end: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
+    STK_ThrowAssertMsg(row < m_offsets.size(),"MCSR::end: row("<<row<<") must be less than num_rows()("<<m_offsets.size()<<")");
 
     return &m_items[m_offsets[row].second];
   }

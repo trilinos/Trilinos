@@ -7,9 +7,7 @@
 // Might be good to add a callback function which would be called
 // when there was output -- In LexerOutput for example.  Default
 // could be to just write to std::cout or to resultsOutput stringstream...
-
-#ifndef SEAMS_DRIVER_H
-#define SEAMS_DRIVER_H
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -271,5 +269,3 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-
-#endif // SEAMS_DRIVER_H

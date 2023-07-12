@@ -10,6 +10,7 @@ ADD_LIBRARY(catalystiosstest SHARED
 TARGET_LINK_LIBRARIES(catalystiosstest
                       catalystiossapp
                       VTK::jsoncpp
+                      VTK::IOParallelXML
                       MPI::MPI_C)
 
 TARGET_INCLUDE_DIRECTORIES(catalystiosstest PUBLIC

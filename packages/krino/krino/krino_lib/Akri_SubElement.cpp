@@ -126,8 +126,7 @@ bool SubElementChildNode::needs_to_be_ale_prolonged(const CDMesh & mesh) const
   if (mesh.get_prolongation_model() == INTERPOLATION)
     return false;
 
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  const bool is_initial_mesh = old_mesh->stash_step_count() < 0;
+  const bool is_initial_mesh = !mesh.was_mesh_previously_decomposed();
   if (is_initial_mesh)
     return false;
 
@@ -161,7 +160,10 @@ SubElementChildNode::prolongate_fields(const CDMesh & mesh) const
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "SubElementEdgeNode::prolongate_fields for node#" << entityId() << "\n";
   my_is_prolonged_flag = true;
 
-  const ProlongationPointData * prolong_node = needs_to_be_ale_prolonged(mesh) ? mesh.get_old_mesh()->find_prolongation_node(*this) : nullptr;
+  ProlongationQuery prolongQuery;
+  if (needs_to_be_ale_prolonged(mesh))
+    prolongQuery = mesh.find_prolongation_node(*this);
+  const ProlongationPointData * prolong_node = prolongQuery.get_prolongation_point_data();
 
   prolong_cdfem_displacements(mesh, prolong_node);
 
@@ -188,9 +190,9 @@ bool SubElementMidSideNode::is_mesh_node_that_needs_to_be_prolonged(const CDMesh
   // This means the interface was cutting this edge, but now is not -> prolong OR
   // the interface is passing through one of the parents of this uncut edge -> do not prolong.
 
-  const bool have_or_did_have_interface = my_cached_owner->have_interface() || mesh.get_old_mesh()->find_mesh_element(my_cached_owner->entityId())->have_interface();
+  const bool have_or_did_have_interface = my_cached_owner->have_interface() || mesh.fetch_prolong_element(my_cached_owner->entityId())->have_subelements();
 
-  return have_or_did_have_interface && nullptr == mesh.get_old_mesh()->fetch_prolong_node(entityId());
+  return have_or_did_have_interface && nullptr == mesh.fetch_prolong_node(entityId());
 }
 
 void
@@ -223,12 +225,11 @@ SubElementMidSideNode::prolongate_fields(const CDMesh & mesh) const
 void
 SubElementMidSideNode::prolong_interpolation_fields(const CDMesh & mesh) const
 {
-  const ElementObj * interp_elem = nullptr;
+  const ProlongationElementData * interpolationElem = nullptr;
   Vector3d interp_elem_p_coords;
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  const Mesh_Element * old_owner =  old_mesh->find_mesh_element(my_cached_owner->entityId());
-  ThrowAssert(old_owner);
-  old_owner->find_child_coordinates_at_owner_coordinates(my_cached_owner_coords, interp_elem, interp_elem_p_coords);
+  const ProlongationElementData * prolongElem =  mesh.fetch_prolong_element(my_cached_owner->entityId());
+  ThrowRequire(prolongElem);
+  prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interp_elem_p_coords);
 
   for(auto && field : mesh.get_interpolation_fields())
   {
@@ -237,7 +238,7 @@ SubElementMidSideNode::prolong_interpolation_fields(const CDMesh & mesh) const
     double * val = field_data<double>(field, my_entity);
     if (NULL == val) continue;
 
-    interp_elem->evaluate_prolongation_field(*old_mesh, field, field_length, interp_elem_p_coords, val);
+    interpolationElem->evaluate_prolongation_field(mesh.get_cdfem_support(), field, field_length, interp_elem_p_coords, val);
   }
 }
 
@@ -329,13 +330,14 @@ SubElementSteinerNode::prolongate_fields(const CDMesh & mesh) const
   }
 }
 
-bool on_interface_or_io_parts_have_changed(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, stk::mesh::Entity node, const ProlongationNodeData & oldProlongNode)
+bool on_interface_or_io_parts_have_changed(const CDMesh & mesh, const Phase_Support & phaseSupport, stk::mesh::Entity node, const ProlongationNodeData & oldProlongNode)
 {
-  const auto newParts = ProlongationNodeData::get_node_io_parts(mesh, node);
-  if (newParts != oldProlongNode.get_io_parts())
+  const auto newParts = PartAndFieldCollections::determine_io_parts(mesh.stk_bulk().bucket(node));
+  const auto & oldParts = mesh.get_prolong_part_and_field_collections().get_parts(oldProlongNode.get_part_collection_id());
+  if (newParts != oldParts)
     return true;
   for (auto && partOrdinal : newParts)
-    if (phaseSupport.is_interface(&mesh.mesh_meta_data().get_part(partOrdinal)))
+    if (phaseSupport.is_interface(&mesh.stk_meta().get_part(partOrdinal)))
       return true;
   return false;
 }
@@ -343,10 +345,9 @@ bool on_interface_or_io_parts_have_changed(const stk::mesh::BulkData & mesh, con
 bool SubElementMeshNode::needs_to_be_ale_prolonged(const CDMesh & mesh) const
 {/* %TRACE[ON]% */ Trace trace__("SubElementMeshNode::needs_to_be_ale_prolonged() const"); /* %TRACE% */
   const ProlongationNodeData * old_prolong_node = NULL;
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  old_prolong_node = old_mesh->fetch_prolong_node(entityId());
-  const bool is_initial_mesh = old_mesh->stash_step_count() < 0;
-  return !is_initial_mesh && nullptr != old_prolong_node && on_interface_or_io_parts_have_changed(mesh.stk_bulk(), mesh.get_phase_support(), entity(), *old_prolong_node);
+  old_prolong_node = mesh.fetch_prolong_node(entityId());
+  const bool is_initial_mesh = !mesh.was_mesh_previously_decomposed();
+  return !is_initial_mesh && nullptr != old_prolong_node && on_interface_or_io_parts_have_changed(mesh, mesh.get_phase_support(), entity(), *old_prolong_node);
 }
 
 void
@@ -356,16 +357,14 @@ SubElementMeshNode::prolongate_fields(const CDMesh & mesh) const
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "SubElementMeshNode::prolongate_fields for node#" << entityId() << "\n";
   my_is_prolonged_flag = true;
 
-  const ProlongationPointData * prolong_data = NULL;
-  const ProlongationNodeData * old_prolong_node = NULL;
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  old_prolong_node = old_mesh->fetch_prolong_node(entityId());
+  const ProlongationNodeData * old_prolong_node = nullptr;
+  old_prolong_node = mesh.fetch_prolong_node(entityId());
 
   const bool needsToBeALEProlonged = needs_to_be_ale_prolonged(mesh);
+  ProlongationQuery prolongQuery;
   if (mesh.get_prolongation_model() != INTERPOLATION && needsToBeALEProlonged)
-  {
-    prolong_data = old_mesh->find_prolongation_node(*this);
-  }
+    prolongQuery = mesh.find_prolongation_node(*this);
+  const ProlongationPointData * prolong_data = prolongQuery.get_prolongation_point_data();
 
   if( !old_prolong_node && !prolong_data )
   {
@@ -428,7 +427,7 @@ void SubElementNode::prolong_cdfem_displacements(const CDMesh & mesh,
       if (state == stk::mesh::StateNew)
       {
         const Vector3d & coords = coordinates();
-        const Vector3d & old_coords = prolong_data->get_coordinates();
+        const Vector3d & old_coords = prolong_data->get_previous_coordinates();
         for (unsigned i=0; i<field_length; ++i)
         {
           val[i] += coords[i] - old_coords[i];
@@ -477,8 +476,7 @@ bool SubElementNode::have_child(const SubElementNode* child) const
 void
 SubElementChildNode::prolong_ale_fields(const CDMesh & mesh, const ProlongationPointData * prolong_data) const
 {
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  const ElementObj * interp_elem = nullptr;
+  const ProlongationElementData * interpolationElem = nullptr;
   Vector3d interp_elem_p_coords;
   const FieldSet & ale_prolongation_fields = mesh.get_ale_prolongation_fields();
   for(FieldSet::const_iterator it = ale_prolongation_fields.begin(); it != ale_prolongation_fields.end(); ++it)
@@ -503,14 +501,14 @@ SubElementChildNode::prolong_ale_fields(const CDMesh & mesh, const ProlongationP
     }
     else
     {
-      if (nullptr == interp_elem)
+      if (nullptr == interpolationElem)
       {
-        const Mesh_Element * old_owner = old_mesh->find_mesh_element(my_cached_owner->entityId());
-        ThrowAssert(old_owner);
-        old_owner->find_child_coordinates_at_owner_coordinates(my_cached_owner_coords, interp_elem, interp_elem_p_coords);
+        const ProlongationElementData * prolongElem = mesh.fetch_prolong_element(my_cached_owner->entityId());
+        ThrowRequire(prolongElem);
+        prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interp_elem_p_coords);
       }
 
-      interp_elem->evaluate_prolongation_field(*old_mesh, field, field_length, interp_elem_p_coords, val);
+      interpolationElem->evaluate_prolongation_field(mesh.get_cdfem_support(), field, field_length, interp_elem_p_coords, val);
     }
   }
 }
@@ -564,12 +562,11 @@ SubElementMeshNode::prolong_ale_fields(const CDMesh & mesh,
 void
 SubElementChildNode::prolong_interpolation_fields(const CDMesh & mesh) const
 {
-  const ElementObj * interp_elem = nullptr;
-  Vector3d interp_elem_p_coords;
-  const CDMesh* old_mesh = mesh.get_old_mesh();
-  const Mesh_Element * old_owner =  old_mesh->find_mesh_element(my_cached_owner->entityId());
-  ThrowAssert(old_owner);
-  old_owner->find_child_coordinates_at_owner_coordinates(my_cached_owner_coords, interp_elem, interp_elem_p_coords);
+  const ProlongationElementData * interpolationElem = nullptr;
+  Vector3d interpElemParamCoords;
+  const ProlongationElementData * prolongElem =  mesh.fetch_prolong_element(my_cached_owner->entityId());
+  ThrowRequire(prolongElem);
+  prolongElem->find_subelement_and_parametric_coordinates_at_point(coordinates(), interpolationElem, interpElemParamCoords);
 
   const FieldSet & interpolation_fields = mesh.get_interpolation_fields();
   for(FieldSet::const_iterator it = interpolation_fields.begin(); it != interpolation_fields.end(); ++it)
@@ -580,7 +577,7 @@ SubElementChildNode::prolong_interpolation_fields(const CDMesh & mesh) const
     double * val = field_data<double>(field, my_entity);
     if (NULL == val) continue;
 
-    interp_elem->evaluate_prolongation_field(*old_mesh, field, field_length, interp_elem_p_coords, val);
+    interpolationElem->evaluate_prolongation_field(mesh.get_cdfem_support(), field, field_length, interpElemParamCoords, val);
   }
 }
 
@@ -694,31 +691,6 @@ void SubElementNode::insert_node_domains(const std::vector<int> & domainsToAdd) 
 {
   my_sorted_node_domains.insert(my_sorted_node_domains.end(), domainsToAdd.begin(), domainsToAdd.end());
   stk::util::sort_and_unique(my_sorted_node_domains);
-}
-
-
-const SubElementNode *
-SubElementNode::find_node_with_common_ancestry(const CDMesh & search_mesh) const
-{
-  // This only works with a lineage of edge nodes (not internal nodes).
-  if (is_mesh_node())
-  {
-    return search_mesh.get_mesh_node(entityId());
-  }
-
-  const NodeVec parents = get_parents();
-  const unsigned num_parents = parents.size();
-
-  if (num_parents == 2)
-  {
-    const SubElementNode * search_parent1 = search_mesh.find_node_with_common_ancestry(parents[0]);
-    const SubElementNode * search_parent2 = search_mesh.find_node_with_common_ancestry(parents[1]);
-    if (nullptr != search_parent1 && nullptr != search_parent2)
-    {
-      return SubElementNode::common_child({search_parent1, search_parent2});
-    }
-  }
-  return nullptr;
 }
 
 void

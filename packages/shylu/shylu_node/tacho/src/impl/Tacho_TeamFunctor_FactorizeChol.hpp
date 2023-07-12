@@ -50,14 +50,16 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  int *_rval;
+
 public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeChol() = delete;
 
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
-                            const ordinal_type_array &level_sids, const value_type_array buf)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf) {}
+                            const ordinal_type_array &level_sids, const value_type_array buf, int *rval)
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _rval(rval) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -76,15 +78,20 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using HerkAlgoType = typename HerkAlgorithm::type;
 
+    int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       if (n_m > 0) {
-        // member.team_barrier();
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
@@ -102,16 +109,21 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using HerkAlgoType = typename HerkAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       if (n_m > 0) {
-        // member.team_barrier();
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
@@ -143,16 +155,21 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using HerkAlgoType = typename HerkAlgorithm::type;
 
+    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
 
       if (n_m > 0) {
-        // member.team_barrier();
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
@@ -186,6 +203,9 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void update(MemberType &member, const supernode_type &cur,
                                      const value_type_matrix &ABR) const {
+
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename value_type_matrix::execution_space>;
+
     const auto info = _info;
     value_type *buf = ABR.data() + ABR.span();
     const ordinal_type sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
@@ -250,25 +270,25 @@ public:
             for (; s2t[ijbeg] == -1; ++ijbeg)
               ;
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-            for (ordinal_type iii = 0; iii < (srcsize - ijbeg); ++iii) {
-              const ordinal_type ii = ijbeg + iii;
-              const ordinal_type row = s2t[ii];
-              if (row < s.m) {
-                for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
-                  Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+            if constexpr(runOnHost) {
+              for (ordinal_type iii = 0; iii < (srcsize - ijbeg); ++iii) {
+                const ordinal_type ii = ijbeg + iii;
+                const ordinal_type row = s2t[ii];
+                if (row < s.m) {
+                  for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
+                    Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                }
               }
+            } else {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize - ijbeg), [&](const ordinal_type &iii) {
+                const ordinal_type ii = ijbeg + iii;
+                const ordinal_type row = s2t[ii];
+                if (row < s.m) {
+                  for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
+                    Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                }
+              });
             }
-#else
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize - ijbeg), [&](const ordinal_type &iii) {
-              const ordinal_type ii = ijbeg + iii;
-              const ordinal_type row = s2t[ii];
-              if (row < s.m) {
-                for (ordinal_type jj = ijbeg; jj < srcsize; ++jj)
-                  Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-              }
-            });
-#endif
           }
         });
     return;

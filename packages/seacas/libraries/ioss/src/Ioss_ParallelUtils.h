@@ -14,6 +14,10 @@
 #include <cstddef> // for size_t
 #include <string>  // for string
 #include <vector>  // for vector
+#if IOSS_DEBUG_OUTPUT
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#endif
 
 #ifdef SEACAS_HAVE_MPI
 #include <Ioss_SerializeIO.h>
@@ -57,7 +61,8 @@ namespace Ioss {
      * getenv system call is only done on processor 0.
      * If '!sync_parallel', then don't push to other processors.
      */
-    bool get_environment(const std::string &name, std::string &value, bool sync_parallel) const;
+    bool get_environment(const std::string &name, std::string &value,
+                         IOSS_MAYBE_UNUSED bool sync_parallel) const;
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.  The
@@ -67,7 +72,8 @@ namespace Ioss {
      * system call is only done on processor 0.  If '!sync_parallel',
      * then don't push to other processors.
      */
-    bool get_environment(const std::string &name, int &value, bool sync_parallel) const;
+    bool get_environment(const std::string &name, int &value,
+                         IOSS_MAYBE_UNUSED bool sync_parallel) const;
 
     /*!
      * Returns 'true' if 'name' is defined in the environment no
@@ -75,7 +81,7 @@ namespace Ioss {
      * getenv system call is only done on processor 0.
      * If '!sync_parallel', then don't push to other processors.
      */
-    bool get_environment(const std::string &name, bool sync_parallel) const;
+    bool get_environment(const std::string &name, IOSS_MAYBE_UNUSED bool sync_parallel) const;
 
     std::string decode_filename(const std::string &filename, bool is_parallel) const;
 
@@ -90,7 +96,7 @@ namespace Ioss {
      * knowledge of the value should initialize to '0' and the
      * processors with knowledge set the appropriate values.
      */
-    void attribute_reduction(int length, char buffer[]) const;
+    void attribute_reduction(IOSS_MAYBE_UNUSED int length, IOSS_MAYBE_UNUSED char buffer[]) const;
 
     /*!
      * Generate a "globally unique id" which is unique over all entities
@@ -98,7 +104,7 @@ namespace Ioss {
      * Used by some applications for uniquely identifying an entity.
      * If `rank` == -1, then use parallel_rank; otherwise use rank
      */
-    int64_t generate_guid(size_t id, int rank = -1) const;
+    int64_t generate_guid(IOSS_MAYBE_UNUSED size_t id, int rank = -1) const;
 
     /*! Return min, max, average memory used by any process */
     void memory_stats(int64_t &min, int64_t &max, int64_t &avg) const;
@@ -115,10 +121,12 @@ namespace Ioss {
     void global_count(const IntVector &local_counts, IntVector &global_counts) const;
     void global_count(const Int64Vector &local_counts, Int64Vector &global_counts) const;
 
-    template <typename T> T global_minmax(T local_minmax, MinMax which) const;
+    template <typename T>
+    T global_minmax(IOSS_MAYBE_UNUSED T local_minmax, IOSS_MAYBE_UNUSED MinMax which) const;
 
     template <typename T>
-    void global_array_minmax(std::vector<T> &local_minmax, MinMax which) const;
+    void global_array_minmax(IOSS_MAYBE_UNUSED std::vector<T> &local_minmax,
+                             IOSS_MAYBE_UNUSED MinMax          which) const;
 
     template <typename T> void gather(T my_value, std::vector<T> &result) const;
     template <typename T> void all_gather(T my_value, std::vector<T> &result) const;
@@ -221,6 +229,21 @@ namespace Ioss {
 //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
 // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
 //    -- call special alltoallv which does point-to-point sends
+#if IOSS_DEBUG_OUTPUT
+    {
+      Ioss::ParallelUtils utils(comm);
+      int                 processor_count = utils.parallel_size();
+
+      int              max_comm = sendcnts[processor_count - 1] + senddisp[processor_count - 1];
+      std::vector<int> comm_size;
+
+      utils.gather(max_comm, comm_size);
+      int my_rank = utils.parallel_rank();
+      if (my_rank == 0) {
+        fmt::print("Send Communication Size: {}\n", fmt::join(comm_size, ", "));
+      }
+    }
+#endif
 #if 1
     int processor_count = 0;
     MPI_Comm_size(comm, &processor_count);
@@ -254,6 +277,21 @@ namespace Ioss {
                    const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
                    Ioss_MPI_Comm comm)
   {
+#if IOSS_DEBUG_OUTPUT
+    {
+      Ioss::ParallelUtils utils(comm);
+      int                 processor_count = utils.parallel_size();
+
+      int              max_comm = sendcnts[processor_count - 1] + senddisp[processor_count - 1];
+      std::vector<int> comm_size;
+
+      utils.gather(max_comm, comm_size);
+      int my_rank = utils.parallel_rank();
+      if (my_rank == 0) {
+        fmt::print("Send Communication Size: {}\n", fmt::join(comm_size, ", "));
+      }
+    }
+#endif
     return MPI_Alltoallv((void *)sendbuf.data(), const_cast<int *>(sendcnts.data()),
                          const_cast<int *>(senddisp.data()), mpi_type(T(0)), recvbuf.data(),
                          const_cast<int *>(recvcnts.data()), const_cast<int *>(recvdisp.data()),
@@ -262,10 +300,11 @@ namespace Ioss {
 #endif
 
   template <typename T>
-  void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
+  void ParallelUtils::global_array_minmax(IOSS_MAYBE_UNUSED std::vector<T> &local_minmax,
+                                          IOSS_MAYBE_UNUSED MinMax          which) const
   {
-    PAR_UNUSED(local_minmax);
-    PAR_UNUSED(which);
+    IOSS_PAR_UNUSED(local_minmax);
+    IOSS_PAR_UNUSED(which);
 #ifdef SEACAS_HAVE_MPI
     if (parallel_size() > 1 && !local_minmax.empty()) {
       if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {

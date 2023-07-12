@@ -179,6 +179,38 @@ void fill_all_children(const RefinementInterface & refinement, const stk::mesh::
   fill_all_children(refinement, children, all_children);
 }
 
+template<class RefinementClass>
+void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementClass * refinement)
+{
+  bool error = false;
+  std::string msg = "Error: leaf child without parent owned by same processor";
+  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
+  for(auto bucket : buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(refinement->is_child(elem) && !refinement->is_parent(elem))
+      {
+        auto parent = refinement->get_parent(elem);
+        if(!mesh.is_valid(parent))
+        {
+          error = true;
+          msg +=  " " + debug_entity(mesh, elem);
+          break;
+        }
+        else if(!mesh.bucket(parent).owned())
+        {
+          error = true;
+          msg +=  " " + debug_entity(mesh, elem);
+          break;
+        }
+      }
+    }
+    if(error == true) break;
+  }
+  ParallelThrowRequireMsg(mesh.parallel(), !error, msg);
+}
+
 PerceptRefinement &
 PerceptRefinement::get(const stk::mesh::MetaData & meta)
 {
@@ -255,6 +287,12 @@ bool PerceptRefinement::is_parent(const stk::mesh::Entity parent) const
   return false;
 }
 
+bool PerceptRefinement::is_parent_side(const stk::mesh::Entity side) const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  return mesh.num_connectivity(side, stk::topology::CONSTRAINT_RANK) > 0; // Not a great answer but was working before and this is temporary
+}
+
 stk::mesh::Entity PerceptRefinement::get_parent(const stk::mesh::Entity entity) const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
@@ -268,6 +306,13 @@ stk::mesh::Entity PerceptRefinement::get_parent(const stk::mesh::Entity entity) 
     if(family_tree_entities[0] != entity) return family_tree_entities[0];
   }
   return stk::mesh::Entity();
+}
+
+std::pair<stk::mesh::EntityId,int> PerceptRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
+{
+  stk::mesh::Entity parent = get_parent(child);
+  ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
+  return {myMeta.mesh_bulk_data().identifier(parent), myMeta.mesh_bulk_data().parallel_owner_rank(parent)};
 }
 
 static stk::mesh::Part & get_percept_refinement_inactive_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
@@ -335,6 +380,39 @@ void PerceptRefinement::fill_children(const stk::mesh::Entity parent, std::vecto
       }
     }
   }
+}
+
+void PerceptRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElementIds) const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  childElementIds.clear();
+  const unsigned num_family_trees = mesh.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
+  const stk::mesh::Entity* family_trees = mesh.begin(parent, stk::topology::CONSTRAINT_RANK);
+  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
+  {
+    const stk::mesh::Entity* family_tree_entities = mesh.begin_elements(family_trees[ifamily]);
+    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
+    if (parent == tree_parent) // I am the parent
+    {
+      const unsigned num_family_tree_entities = mesh.num_elements(family_trees[ifamily]);
+      for (unsigned ichild=1; ichild < num_family_tree_entities; ++ichild)
+      {
+        childElementIds.push_back(mesh.identifier(family_tree_entities[ichild]));
+      }
+    }
+  }
+}
+
+void PerceptRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
+{
+  dependents.clear();
+  if(is_child(parent)) return;
+  fill_all_children(*this, parent, dependents);
+}
+
+bool PerceptRefinement::has_rebalance_constraint(const stk::mesh::Entity entity) const
+{
+  return is_child(entity);
 }
 
 int PerceptRefinement::fully_refined_level(const stk::mesh::Entity elem) const
@@ -418,6 +496,7 @@ KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::Meta
     auxMeta.register_field("REFINEMENT_REFINED_EDGE_NODE_PARENTS_IDS", krino::FieldType::UNSIGNED_INTEGER_64, stk::topology::NODE_RANK, 1, 2, RefinedEdgeNodePart);
     auxMeta.register_field("REFINEMENT_LEVEL", krino::FieldType::INTEGER, stk::topology::ELEMENT_RANK, 1, 1, meta.universal_part()); // needed everywhere for restart
     auxMeta.register_field("REFINEMENT_PARENT_ELEMENT_ID", krino::FieldType::UNSIGNED_INTEGER_64, stk::topology::ELEMENT_RANK, 1, 1, meta.universal_part()); // needed everywhere for restart
+    auxMeta.register_field("ORIGINATING_PROC_FOR_PARENT_ELEMENT", krino::FieldType::INTEGER, stk::topology::ELEMENT_RANK, 1, 1, meta.universal_part()); // needed everywhere for restart
   }
 }
 
@@ -443,6 +522,20 @@ bool KrinoRefinement::is_parent(const stk::mesh::Entity entity) const
   return myRefinement.is_parent(entity);
 }
 
+bool KrinoRefinement::is_parent_side(const stk::mesh::Entity side) const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  bool haveAttachedParentElement = false;
+  for (auto element : StkMeshEntities{mesh.begin_elements(side), mesh.end_elements(side)})
+  {
+    if (is_parent(element))
+      haveAttachedParentElement = true;
+    else
+      return false;
+  }
+  return haveAttachedParentElement;
+}
+
 stk::mesh::Part & KrinoRefinement::parent_part() const
 {
   return myRefinement.parent_part();
@@ -458,6 +551,11 @@ stk::mesh::Entity KrinoRefinement::get_parent(const stk::mesh::Entity child) con
   return myRefinement.get_parent(child);
 }
 
+std::pair<stk::mesh::EntityId,int> KrinoRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
+{
+  return myRefinement.get_parent_id_and_parallel_owner_rank(child);
+}
+
 unsigned KrinoRefinement::get_num_children(const stk::mesh::Entity elem) const
 {
   return myRefinement.get_num_children(elem);
@@ -468,6 +566,47 @@ void KrinoRefinement::fill_children(const stk::mesh::Entity parent, std::vector<
   myRefinement.fill_children(parent, children);
 }
 
+void KrinoRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const
+{
+  myRefinement.fill_child_element_ids(parent, childElemIds);
+}
+
+void KrinoRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
+{
+  dependents.clear();
+  std::vector<stk::mesh::Entity> children;
+  fill_children(parent, children);
+  for(auto && child : children)
+  {
+    if(child == stk::mesh::Entity()) continue;
+    if(is_parent(child)) continue;
+    dependents.push_back(child);
+  }
+}
+
+bool KrinoRefinement::has_rebalance_constraint(const stk::mesh::Entity entity) const
+{
+  if(!is_parent(entity))
+  {
+    //if not a parent but is a child, must be leaf element, constrained
+    if(is_child(entity)) return true;
+    //if not a parent or child, must be completed unadapted element. No constraint
+    else return false;
+  }
+  //if a parent, check if any children are parents or invalid elements (already moved)
+  //if so, constrained. If not, not constrained
+  std::vector<stk::mesh::Entity> children;
+  fill_children(entity, children);
+  for(auto && child : children)
+  {
+    if(child == stk::mesh::Entity())
+      return true;
+    if(is_parent(child))
+      return true;
+  }
+  return false;
+}
+
 TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
 {
   // This is delayed to make sure the bulkdata has been created.  It might be better to just pass in the bulkdata when the marker is used.
@@ -476,6 +615,11 @@ TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
     myMarker = std::make_unique<TransitionElementEdgeMarker>(myMeta.mesh_bulk_data(), const_cast<Refinement&>(myRefinement), myElementMarkerField.name());
   }
   return *myMarker;
+}
+
+void KrinoRefinement::set_marker_field(const std::string & markerFieldName)
+{
+  myElementMarkerField = myMeta.get_field(stk::topology::ELEMENT_RANK, markerFieldName);
 }
 
 FieldRef KrinoRefinement::get_marker_field() const
@@ -492,6 +636,12 @@ int KrinoRefinement::fully_refined_level(const stk::mesh::Entity elem) const
   return refineLevel;
 }
 
+int KrinoRefinement::partially_refined_level(const stk::mesh::Entity elem) const
+{
+  const int refineLevel = myRefinement.refinement_level(elem);
+  return refineLevel;
+}
+
 bool KrinoRefinement::is_transition(const stk::mesh::Entity elem) const
 {
   return get_marker().is_transition(elem);
@@ -499,7 +649,8 @@ bool KrinoRefinement::is_transition(const stk::mesh::Entity elem) const
 
 TransitionElementEdgeMarker & KrinoRefinement::get_marker() const
 {
-  ThrowAssertMsg(myMarker, "Logic error.  Marker should have already been setup.");
+  setup_marker();
+  ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
   return *myMarker;
 }
 
@@ -558,6 +709,7 @@ void KrinoRefinement::do_refinement(const int debugLevel)
 
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
+
 }
 
 void KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
@@ -589,4 +741,6 @@ void KrinoRefinement::restore_after_restart()
   ParallelThrowAssert(myMeta.mesh_bulk_data().parallel(), check_face_and_edge_relations(myMeta.mesh_bulk_data()));
 }
 
+template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementInterface * refinement);
+template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const Refinement * refinement);
 }

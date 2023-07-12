@@ -49,7 +49,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
@@ -59,15 +58,17 @@
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_MasterList.hpp"
+#include "MueLu_FactoryManager.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_SmootherPrototype_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
-#include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
-#include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
-#endif
 
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
@@ -79,8 +80,8 @@
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
-#include "MueLu_XpetraOperator.hpp"
 
+#include "Xpetra_Operator.hpp"
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"
@@ -384,10 +385,8 @@ namespace MueLu {
     //! dump out boolean ArrayView
     void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     //! dump out boolean Kokkos::View
     void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
-#endif
 
     //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
@@ -404,11 +403,8 @@ namespace MueLu {
     Teuchos::RCP<const Map> D0origDomainMap_;
     Teuchos::RCP<const Import> D0origImporter_;
     //! Vectors for BCs
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
-#endif
+    Kokkos::View<bool*, typename Node::device_type> BCrows_, BCcols_, BCdomain_;
     int BCedges_, BCnodes_;
-    Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates

@@ -1,11 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef _SystemInterface_h
-#define _SystemInterface_h
+#pragma once
 
 #include <EML_CodeTypes.h> // for StringIdVector
 #include <GetLongOpt.h>    // for GetLongOption
@@ -56,4 +54,3 @@ private:
   bool listVars_{false};
   char fieldSuffix_{0};
 };
-#endif

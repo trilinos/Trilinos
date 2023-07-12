@@ -196,7 +196,6 @@ private:
 
     typedef typename V::scalar_type scalar_type;
     typedef typename V::mag_type mag_type;
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
 
     const scalar_type ONE = STS::one ();
     const mag_type min_val_abs = STS::magnitude (STS::eps ());

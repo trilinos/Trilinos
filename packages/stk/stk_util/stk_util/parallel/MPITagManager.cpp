@@ -13,13 +13,13 @@ MPITagManager::MPITagManager(int deletionGroupSize, int delayCount) :
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);
-  ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPITagManager");
+  STK_ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPITagManager");
 
   int flag;
   int* val;
   MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &val, &flag);
-  ThrowRequireMsg(flag, "This MPI implementation is erroneous");
-  ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
+  STK_ThrowRequireMsg(flag, "This MPI implementation is erroneous");
+  STK_ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
   m_tagMax = util::get_common_coupling_version() >= 9 ? *val - 1 : *val;
 
   m_callbackUID = m_keyManager->get_UID();
@@ -70,7 +70,7 @@ int MPITagManager::get_new_tag(impl::CommTagInUseList& commData, int tagHint)
   }
 
   assert(newTag >= 0);
-  ThrowRequireMsg(newTag <= m_tagMax, "New tag must be <= " + std::to_string(m_tagMax));
+  STK_ThrowRequireMsg(newTag <= m_tagMax, "New tag must be <= " + std::to_string(m_tagMax));
   check_same_value_on_all_procs_debug_only(commData.get_comm(), newTag);
 
   return newTag;
@@ -80,7 +80,7 @@ int MPITagManager::get_new_tag(impl::CommTagInUseList& commData, int tagHint)
 int MPITagManager::get_any_tag(impl::CommTagInUseList& commData)
 {
   int newTag = commData.get_min_free_tag();
-  ThrowRequireMsg(newTag <= m_tagMax, std::string("MPI tag supply exhausted: there can only be ") + 
+  STK_ThrowRequireMsg(newTag <= m_tagMax, std::string("MPI tag supply exhausted: there can only be ") + 
                                       std::to_string(m_tagMax) + " tags in use at any time");
 
   return newTag;
@@ -140,7 +140,7 @@ void MPITagManager::erase_comm(MPI_Comm origComm)
   comm = origComm;
 #endif
 
-  ThrowRequireMsg(m_commData.count(comm) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
+  STK_ThrowRequireMsg(m_commData.count(comm) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
   m_commData.erase(comm);
 
 #ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
@@ -167,7 +167,7 @@ void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int 
       isSame = isSame && v == recvBuf[0];
     }
 
-    ThrowRequireMsg(isSame, "Calls to MPICommManager must be collective");
+    STK_ThrowRequireMsg(isSame, "Calls to MPICommManager must be collective");
   }
 
   MPI_Barrier(comm);

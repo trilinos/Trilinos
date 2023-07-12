@@ -26,8 +26,8 @@ rm -rf CMakeFiles CMakeCache.txt
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DCMAKE_CXX_STANDARD="14" \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_CXX_STANDARD:STRING=17 \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=OFF \

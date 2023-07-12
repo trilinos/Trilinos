@@ -92,10 +92,10 @@ public:
 
 #ifdef KOKKOS_ENABLE_CUDA
       cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
+      STK_ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
 #elif defined(KOKKOS_ENABLE_HIP)
       hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
+      STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
 #endif
 
       hostBucketPtrData(i) = reinterpret_cast<uintptr_t>(deviceBucketPtr);
@@ -128,7 +128,7 @@ public:
     Kokkos::deep_copy(hostBucketComponentsPerEntity, numPerEntity);
     Kokkos::deep_copy(deviceBucketComponentsPerEntity, hostBucketComponentsPerEntity);
 
-    deviceBucketsMarkedModified = stk::mesh::BoolViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numAlloc);
+    deviceBucketsMarkedModified = stk::mesh::UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numAlloc);
     hostBucketsMarkedModified = Kokkos::create_mirror_view(deviceBucketsMarkedModified);
     Kokkos::deep_copy(hostBucketsMarkedModified, true);
     Kokkos::deep_copy(deviceBucketsMarkedModified, hostBucketsMarkedModified);
@@ -176,8 +176,8 @@ protected:
   stk::mesh::UnsignedViewType::HostMirror  hostBucketSizes;
   stk::mesh::UnsignedViewType  deviceBucketComponentsPerEntity;
   stk::mesh::UnsignedViewType::HostMirror  hostBucketComponentsPerEntity;
-  stk::mesh::BoolViewType  deviceBucketsMarkedModified;
-  stk::mesh::BoolViewType::HostMirror  hostBucketsMarkedModified;
+  stk::mesh::UnsignedViewType  deviceBucketsMarkedModified;
+  stk::mesh::UnsignedViewType::HostMirror  hostBucketsMarkedModified;
 };
 
 TEST_F(TestTranspose, no_overallocation_transpose_from)

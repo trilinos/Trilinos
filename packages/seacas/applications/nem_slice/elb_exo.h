@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _ELB_EXO_CONST_H_
-#define _ELB_EXO_CONST_H_
+#pragma once
 
 #include "elb.h"
 
@@ -32,5 +30,3 @@ template <typename INT>
 int init_weight_struct(Problem_Description     *problem, /* Problem information */
                        Mesh_Description<INT>   *mesh,    /* Mesh information structure */
                        Weight_Description<INT> *weight); /* Weight specification structure */
-
-#endif /* _ELB_EXO_CONST_H_ */

@@ -44,7 +44,7 @@
     {
       const P_uint nNodes = nodes.size();
       //const P_uint length = field.field()->length();
-      const P_uint length = field.max_size(stk::topology::NODE_RANK);
+      const P_uint length = field.max_size();
 
       ThrowAssert(values.size()==nNodes*length);
 

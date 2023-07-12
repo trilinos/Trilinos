@@ -42,7 +42,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -230,7 +229,7 @@ public:
 
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
-    Kokkos::parallel_for(numElems,
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numElems),
                          KOKKOS_LAMBDA(const int& elemIdx) {
                            stk::mesh::Entity elem = ngpElements.device_get(elemIdx);
                            auto meshIndex = ngpMesh.fast_mesh_index(elem);
@@ -258,14 +257,14 @@ public:
   }
 
   template<typename T, typename Func>
-  void check_field_data_equality_on_device(stk::mesh::EntityVector& elements, stk::mesh::EntityRank rank,
+  void check_field_data_equality_on_device(stk::mesh::EntityVector& elements,
                                            stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField,
                                            Func&& checkFunc)
   {
     using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 
     unsigned numElems = elements.size();
-    unsigned numPerEntity = stkField.max_size(rank);
+    unsigned numPerEntity = stkField.max_size();
     FieldData deviceData = FieldData("deviceData", numElems, numPerEntity);
     typename FieldData::HostMirror hostData = Kokkos::create_mirror_view(deviceData);
 
@@ -285,7 +284,7 @@ public:
     {
       EXPECT_NE(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   template<typename T>
@@ -300,7 +299,7 @@ public:
     {
       EXPECT_EQ(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   template<typename T>
@@ -313,7 +312,7 @@ public:
     {
       EXPECT_EQ(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   void set_element_field_data(stk::mesh::FieldBase* field)
@@ -795,7 +794,7 @@ struct CheckFieldValues {
   void operator()(const stk::mesh::FastMeshIndex& entity) const
   {
     for (unsigned component = 0; component < numScalarsPerEntity; component++) {
-      NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
+      STK_NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
     }
   }
 
@@ -1793,6 +1792,13 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
   ngpFieldByRef.sync_to_device();
 
   check_field_data_on_device<int>(ngpFieldByRef, stkField);
+}
+
+TEST(NgpField, checkSizeof)
+{
+  size_t expectedNumBytes = 400;
+  std::cout << "sizeof(stk::mesh::NgpField<double>): " << sizeof(stk::mesh::NgpField<double>) << std::endl;
+  EXPECT_TRUE(expectedNumBytes >= sizeof(stk::mesh::NgpField<double>));
 }
 
 }

@@ -8,8 +8,10 @@ MESSAGE(STATUS "The project name is: ${PROJECT_NAME}")
 
 IF(GTest_FOUND)
   SET(KOKKOS_GTEST_LIB GTest::gtest)
+  MESSAGE(STATUS "Using gtest found in ${GTest_DIR}")
 ELSE()  # fallback to internal gtest
   SET(KOKKOS_GTEST_LIB kokkos_gtest)
+  MESSAGE(STATUS "Using internal gtest for testing")
 ENDIF()
 
 FUNCTION(VERIFY_EMPTY CONTEXT)
@@ -88,9 +90,7 @@ MACRO(KOKKOS_PROCESS_SUBPACKAGES)
     ADD_SUBDIRECTORY(core)
     ADD_SUBDIRECTORY(containers)
     ADD_SUBDIRECTORY(algorithms)
-    if (KOKKOS_CXX_STANDARD GREATER_EQUAL 17)
-      ADD_SUBDIRECTORY(simd)
-    endif()
+    ADD_SUBDIRECTORY(simd)
     ADD_SUBDIRECTORY(example)
   endif()
 ENDMACRO()
@@ -217,6 +217,7 @@ MACRO(KOKKOS_SETUP_BUILD_ENVIRONMENT)
   SET(Kokkos_INSTALL_TESTING OFF CACHE INTERNAL "Whether to build tests and examples against installation")
   IF (Kokkos_INSTALL_TESTING)
     SET(KOKKOS_ENABLE_TESTS ON)
+    SET(KOKKOS_ENABLE_BENCHMARKS ON)
     SET(KOKKOS_ENABLE_EXAMPLES ON)
     # This looks a little weird, but what we are doing
     # is to NOT build Kokkos but instead look for an
@@ -281,11 +282,7 @@ MACRO(KOKKOS_CONFIGURE_CORE)
       LIST(APPEND FWD_BACKEND_LIST ${MEMSPACE})
    ENDFOREACH()
    FOREACH(BACKEND_ ${KOKKOS_ENABLED_DEVICES})
-      IF( ${BACKEND_} STREQUAL "PTHREAD")
-         LIST(APPEND FWD_BACKEND_LIST THREADS)
-      ELSE()
-         LIST(APPEND FWD_BACKEND_LIST ${BACKEND_})
-      ENDIF()
+      LIST(APPEND FWD_BACKEND_LIST ${BACKEND_})
    ENDFOREACH()
    MESSAGE(STATUS "Kokkos Devices: ${KOKKOS_ENABLED_DEVICES}, Kokkos Backends: ${FWD_BACKEND_LIST}")
    KOKKOS_CONFIG_HEADER( KokkosCore_Config_HeaderSet.in KokkosCore_Config_FwdBackend.hpp "KOKKOS_FWD" "fwd/Kokkos_Fwd" "${FWD_BACKEND_LIST}")
@@ -355,6 +352,7 @@ MACRO(KOKKOS_INSTALL_ADDITIONAL_FILES)
           "${CMAKE_CURRENT_BINARY_DIR}/KokkosCore_Config_PostInclude.hpp"
           DESTINATION ${KOKKOS_HEADER_DIR})
 ENDMACRO()
+
 
 FUNCTION(KOKKOS_SET_LIBRARY_PROPERTIES LIBRARY_NAME)
   CMAKE_PARSE_ARGUMENTS(PARSE
@@ -444,6 +442,7 @@ FUNCTION(KOKKOS_SET_LIBRARY_PROPERTIES LIBRARY_NAME)
   ENDIF()
 ENDFUNCTION()
 
+
 FUNCTION(KOKKOS_INTERNAL_ADD_LIBRARY LIBRARY_NAME)
   CMAKE_PARSE_ARGUMENTS(PARSE
     "STATIC;SHARED"
@@ -506,19 +505,11 @@ FUNCTION(KOKKOS_ADD_LIBRARY LIBRARY_NAME)
     # preserving the directory structure, e.g. impl
     # If headers got installed in both locations, it breaks some
     # downstream packages
-    TRIBITS_ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_UNPARSED_ARGUMENTS})
-    #Stolen from Tribits - it can add prefixes
-    SET(TRIBITS_LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
-    SET(TRIBITS_LIBRARY_NAME ${TRIBITS_LIBRARY_NAME_PREFIX}${LIBRARY_NAME})
-    #Tribits has way too much techinical debt and baggage to even
-    #allow PUBLIC target_compile_options to be used. It forces C++ flags on projects
-    #as a giant blob of space-separated strings. We end up with duplicated
-    #flags between the flags implicitly forced on Kokkos-dependent and those Kokkos
-    #has in its public INTERFACE_COMPILE_OPTIONS.
-    #These do NOT get de-deduplicated because Tribits
-    #creates flags as a giant monolithic space-separated string
-    #Do not set any transitive properties and keep everything working as before
-    #KOKKOS_SET_LIBRARY_PROPERTIES(${TRIBITS_LIBRARY_NAME} PLAIN_STYLE)
+    TRIBITS_ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_UNPARSED_ARGUMENTS}
+      ADDED_LIB_TARGET_NAME_OUT  ${LIBRARY_NAME}_TARGET_NAME )
+    IF (PARSE_ADD_BUILD_OPTIONS)
+      KOKKOS_SET_LIBRARY_PROPERTIES(${${LIBRARY_NAME}_TARGET_NAME})
+    ENDIF()
   ELSE()
     # Forward the headers, we want to know about all headers
     # to make sure they appear correctly in IDEs
@@ -530,21 +521,16 @@ FUNCTION(KOKKOS_ADD_LIBRARY LIBRARY_NAME)
   ENDIF()
 ENDFUNCTION()
 
-FUNCTION(KOKKOS_ADD_INTERFACE_LIBRARY NAME)
-IF (KOKKOS_HAS_TRILINOS)
-  TRIBITS_ADD_LIBRARY(${NAME} ${ARGN})
-ELSE()
-  CMAKE_PARSE_ARGUMENTS(PARSE
-    ""
-    ""
-    "HEADERS;SOURCES"
-    ${ARGN}
-  )
 
-  ADD_LIBRARY(${NAME} INTERFACE)
-  KOKKOS_INTERNAL_ADD_LIBRARY_INSTALL(${NAME})
-ENDIF()
+FUNCTION(KOKKOS_ADD_INTERFACE_LIBRARY NAME)
+  IF (KOKKOS_HAS_TRILINOS)
+    TRIBITS_ADD_LIBRARY(${NAME} ${ARGN})
+  ELSE()
+    ADD_LIBRARY(${NAME} INTERFACE)
+    KOKKOS_INTERNAL_ADD_LIBRARY_INSTALL(${NAME})
+  ENDIF()
 ENDFUNCTION()
+
 
 FUNCTION(KOKKOS_LIB_INCLUDE_DIRECTORIES TARGET)
   IF(KOKKOS_HAS_TRILINOS)
@@ -559,13 +545,8 @@ FUNCTION(KOKKOS_LIB_INCLUDE_DIRECTORIES TARGET)
 ENDFUNCTION()
 
 FUNCTION(KOKKOS_LIB_COMPILE_OPTIONS TARGET)
-  IF(KOKKOS_HAS_TRILINOS)
-    #don't trust tribits to do this correctly
-    KOKKOS_TARGET_COMPILE_OPTIONS(${TARGET} ${ARGN})
-  ELSE()
-    KOKKOS_LIB_TYPE(${TARGET} INCTYPE)
-    KOKKOS_TARGET_COMPILE_OPTIONS(${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${TARGET} ${INCTYPE} ${ARGN})
-  ENDIF()
+  KOKKOS_LIB_TYPE(${TARGET} INCTYPE)
+  KOKKOS_TARGET_COMPILE_OPTIONS(${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${TARGET} ${INCTYPE} ${ARGN})
 ENDFUNCTION()
 
 MACRO(KOKKOS_ADD_TEST_DIRECTORIES)

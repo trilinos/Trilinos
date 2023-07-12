@@ -50,12 +50,13 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_IteratorOps.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory_kokkos.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -116,7 +117,7 @@ namespace MueLuTests {
 
     // construct the data to compare
     SC omega = dampingFactor / lambdaMax;
-    RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
+    RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
     RCP<ParameterList> APparams = rcp(new ParameterList);
     RCP<Matrix> Ptest   = Xpetra::IteratorOps<SC,LO,GO,NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label", APparams);
 
@@ -329,11 +330,10 @@ namespace MueLuTests {
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
         // define transfer operators
-        RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-        CoupledAggFact->SetMinNodesPerAggregate(3);
-        CoupledAggFact->SetMaxNeighAlreadySelected(0);
-        CoupledAggFact->SetOrdering("natural");
-        CoupledAggFact->SetPhase3AggCreation(0.5);
+        RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+        UncoupledAggFact->SetMinNodesPerAggregate(3);
+        UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+        UncoupledAggFact->SetOrdering("natural");
 
         RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
         RCP<SaPFactory>        Pfact = rcp( new SaPFactory());
@@ -357,7 +357,7 @@ namespace MueLuTests {
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
         M.SetFactory("Ptent", Ptentfact);
-        M.SetFactory("Aggregates", CoupledAggFact);
+        M.SetFactory("Aggregates", UncoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
 

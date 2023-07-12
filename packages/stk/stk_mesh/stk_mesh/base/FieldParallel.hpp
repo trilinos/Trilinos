@@ -37,7 +37,6 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
-#include <stk_mesh/base/FieldTraits.hpp>  // for FieldTraits
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine

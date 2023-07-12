@@ -13,6 +13,7 @@
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_LevelSet_Parser.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_RefinementSupport.hpp>
 #include <Akri_Region.hpp>
 #include <Akri_ResultsOutput_Parser.hpp>
 #include <Akri_Surface_Manager.hpp>
@@ -38,16 +39,6 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     }
     Region * region = new Region(simulation, region_name );
 
-    int initial_refinement_levels = 0;
-    if (region_node.get_if_present("initial_uniform_refinement_levels", initial_refinement_levels))
-    {
-      region->set_initial_refinement_levels(initial_refinement_levels);
-    }
-
-    bool usePercept = true;
-    region_node.get_if_present("use_percept", usePercept);
-    region->set_use_percept(usePercept);
-
     bool use_32bit_ids = false;
     region_node.get_if_present("use_32bit_ids", use_32bit_ids);
 
@@ -68,6 +59,22 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     region->associate_input_mesh(fem_model_name, use_32bit_ids, force_64bit_ids);
 
     stk::mesh::MetaData & meta = region->get_stk_mesh_meta_data();
+    RefinementSupport & refinementSupport = RefinementSupport::get(meta);
+
+    int initial_refinement_levels = 0;
+    if (region_node.get_if_present("initial_uniform_refinement_levels", initial_refinement_levels))
+    {
+      refinementSupport.set_initial_refinement_levels(initial_refinement_levels);
+    }
+
+    int levelsetRefinementLevels = 0;
+    region_node.get_if_present("level_set_refinement_levels", levelsetRefinementLevels);
+    if (levelsetRefinementLevels < 0)
+    {
+      stk::RuntimeDoomedAdHoc() << "Invalid negative level_set_refinement_levels " << levelsetRefinementLevels << "\n";
+    }
+    refinementSupport.activate_nonconformal_adaptivity(levelsetRefinementLevels);
+
     const stk::diag::Timer & regionTimer = region->getRegionTimer();
     Phase_Support::associate_FEModel_and_metadata(fem_model_name, meta);
     Surface_Manager::associate_FEModel_and_metadata(fem_model_name, meta);

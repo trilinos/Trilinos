@@ -39,7 +39,7 @@
 #include "stk_util/stk_config.h"
 #include <type_traits>
 
-namespace stk { namespace topology_detail {
+namespace stk::topology_detail {
 
 //------------------------------------------------------------------------------
 template <typename Topology, unsigned EdgeOrdinal>
@@ -89,17 +89,12 @@ constexpr bool defined_on_spatial_dimension_()
 
 template <typename Topology, unsigned EdgeOrdinal>
 STK_INLINE_FUNCTION
-constexpr typename std::enable_if<EdgeOrdinal < Topology::num_edges, topology::topology_t>::type
-edge_topology_()
+constexpr topology::topology_t edge_topology_()
 {
-  return Topology::edge_topology_vector[EdgeOrdinal];
-}
-
-template <typename Topology, unsigned EdgeOrdinal>
-STK_INLINE_FUNCTION
-constexpr typename std::enable_if<EdgeOrdinal >= Topology::num_edges, topology::topology_t>::type
-edge_topology_()
-{
+  if constexpr (EdgeOrdinal < Topology::num_edges)
+  {
+    return Topology::edge_topology_vector[EdgeOrdinal]; 
+  }
   return topology::INVALID_TOPOLOGY;
 }
 
@@ -107,17 +102,12 @@ edge_topology_()
 
 template <typename Topology, unsigned FaceOrdinal>
 STK_INLINE_FUNCTION
-constexpr typename std::enable_if<FaceOrdinal < Topology::num_faces, topology::topology_t>::type
-face_topology_()
+constexpr topology::topology_t face_topology_()
 {
-  return Topology::face_topology_vector[FaceOrdinal];
-}
-
-template <typename Topology, unsigned FaceOrdinal>
-STK_INLINE_FUNCTION
-constexpr typename std::enable_if<FaceOrdinal >= Topology::num_faces, topology::topology_t>::type
-face_topology_()
-{
+  if constexpr (FaceOrdinal < Topology::num_faces)
+  {
+    return Topology::face_topology_vector[FaceOrdinal];
+  }
   return topology::INVALID_TOPOLOGY;
 }
 
@@ -141,15 +131,12 @@ struct edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, Num
 
 template <typename Topology, unsigned EdgeOrdinal, typename OrdinalOutputFunctor>
 STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(EdgeOrdinal < Topology::num_edges), int>::type edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
+constexpr int edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
-  return edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, num_edge_nodes_<Topology, EdgeOrdinal>()>::execute(fillOutput);
-}
-
-template <typename Topology, unsigned EdgeOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(EdgeOrdinal >= Topology::num_edges), int>::type edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
-{
+  if constexpr (EdgeOrdinal < Topology::num_edges)
+  {
+    return edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, num_edge_nodes_<Topology, EdgeOrdinal>()>::execute(fillOutput);
+  }
   return 0;
 }
 
@@ -174,15 +161,12 @@ struct face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, Num
 
 template <typename Topology, unsigned FaceOrdinal, typename OrdinalOutputFunctor>
 STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(FaceOrdinal < Topology::num_faces), int>::type face_node_ordinals_(OrdinalOutputFunctor fillOutput)
+constexpr int face_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
-  return face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, num_face_nodes_<Topology, FaceOrdinal>()>::execute(fillOutput);
-}
-
-template <typename Topology, unsigned FaceOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(FaceOrdinal >= Topology::num_faces), int>::type face_node_ordinals_(OrdinalOutputFunctor fillOutput)
-{
+  if constexpr (FaceOrdinal < Topology::num_faces)
+  {
+    return face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, num_face_nodes_<Topology, FaceOrdinal>()>::execute(fillOutput);
+  }
   return 0;
 }
 
@@ -207,20 +191,16 @@ struct permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, Permutati
 
 template <typename Topology, unsigned PermutationOrdinal, typename OrdinalOutputFunctor>
 STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(PermutationOrdinal < Topology::num_permutations), int>::type permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
+constexpr int permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
-  return permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, Topology::num_nodes>::execute(fillOutput);
-}
-
-template <typename Topology, unsigned PermutationOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
-constexpr typename std::enable_if<(PermutationOrdinal >= Topology::num_permutations), int>::type permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
-{
+  if constexpr (PermutationOrdinal < Topology::num_permutations)
+  {
+    return permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, Topology::num_nodes>::execute(fillOutput);
+  }
   return 0;
 }
 
-
 //------------------------------------------------------------------------------
-}} //namespace stk::topology_detail
+} //namespace stk::topology_detail
 
 #endif //STKTOPOLOGY_DETAIL_META_FUNCTION_HPP

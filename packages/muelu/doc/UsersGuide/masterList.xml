@@ -1147,6 +1147,7 @@
       <Elasticity-2D-complex>"sa"</Elasticity-2D-complex>
       <Elasticity-3D-complex>"sa"</Elasticity-3D-complex>
       <MHD>"unsmoothed"</MHD>
+      <GMHD>"replicate"</GMHD>
       <ConvectionDiffusion>"pg"</ConvectionDiffusion>
       <description>Multigrid method. Possible values: see Table~\ref{t:mgs}.</description>
       <name-ML>energy minimization: enable</name-ML>
@@ -1328,6 +1329,15 @@ Only used when tentative: calculate qr is set to false.</description>
       <type>bool</type>
       <default>true</default>
       <description>If a row has a single entry, set the inverse of the diagonal entry to be zero.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>replicate: npdes</name>
+      <type>int</type>
+      <default>1</default>
+      <description> Used with multigrid algorithm 'replicate' to transform scalar prolongator to one  for PDE systems with npdes dofs per node. </description>
       <visible>false</visible>
       <name-ML>not supported by ML</name-ML>
     </parameter>

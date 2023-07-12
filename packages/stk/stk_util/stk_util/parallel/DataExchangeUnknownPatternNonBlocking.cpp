@@ -8,8 +8,8 @@ namespace stk {
 void DataExchangeUnknownPatternNonBlocking::reset()
 {
     // check that communication finished from previous iteration
-    ThrowRequireMsg(!m_areRecvsInProgress, "Previous receive must have completed before starting a new one");
-    ThrowRequireMsg(!m_areSendsInProgress, "Previous send must have completed before starting a new one");
+    STK_ThrowRequireMsg(!m_areRecvsInProgress, "Previous receive must have completed before starting a new one");
+    STK_ThrowRequireMsg(!m_areSendsInProgress, "Previous send must have completed before starting a new one");
 
     // setup for new iteration
     m_sendRankMap.resize(0);
