@@ -67,5 +67,5 @@ void testFactoryConstruction(std::string stepperType,
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 #endif // Tempus_UnitTest_Utils_hpp

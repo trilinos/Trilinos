@@ -1240,4 +1240,4 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, createTimeEventComposite)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
